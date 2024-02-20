@@ -38,7 +38,7 @@ chat_completion = client.chat.completions.create(
     ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
 )
-print(chat_completion.id)
+print(chat_completion.choices)
 ```
 
 While you can provide a `access_token` keyword argument,
@@ -71,7 +71,7 @@ async def main() -> None:
         ],
         model="mistralai/Mixtral-8x7B-Instruct-v0.1",
     )
-    print(chat_completion.id)
+    print(chat_completion.choices)
 
 
 asyncio.run(main())
@@ -99,7 +99,7 @@ stream = client.chat.completions.create(
     stream=True,
 )
 for chat_completion in stream:
-    print(chat_completion.id)
+    print(chat_completion.choices)
 ```
 
 The async client uses the exact same interface.
@@ -120,7 +120,7 @@ stream = await client.chat.completions.create(
     stream=True,
 )
 async for chat_completion in stream:
-    print(chat_completion.id)
+    print(chat_completion.choices)
 ```
 
 ## Using types
@@ -287,7 +287,7 @@ response = client.chat.completions.with_raw_response.create(
 print(response.headers.get('X-My-Header'))
 
 completion = response.parse()  # get the object that `chat.completions.create()` would have returned
-print(completion.id)
+print(completion.choices)
 ```
 
 These methods return an [`APIResponse`](https://github.com/stainless-sdks/tree/main/src/together_ai/_response.py) object.
