@@ -1,6 +1,6 @@
 # Together AI Python API library
 
-[![PyPI version](https://img.shields.io/pypi/v/together-ai.svg)](https://pypi.org/project/together-ai/)
+[![PyPI version](https://img.shields.io/pypi/v/togetherai.svg)](https://pypi.org/project/togetherai/)
 
 The Together AI Python library provides convenient access to the Together AI REST API from any Python 3.7+
 application. The library includes type definitions for all request params and response fields,
@@ -13,7 +13,7 @@ The REST API documentation can be found [on www.together.ai](https://www.togethe
 ## Installation
 
 ```sh
-pip install --pre together-ai
+pip install --pre togetherai
 ```
 
 ## Usage
@@ -354,7 +354,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/together-ai-python/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/togetherai-python/issues) with questions, bugs, or suggestions.
 
 ## Requirements
 
