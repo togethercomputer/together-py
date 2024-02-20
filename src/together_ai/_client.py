@@ -6,7 +6,7 @@ import httpx
 
 import os
 
-from ._streaming import AsyncStream as AsyncStream, Stream as Stream
+from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 
 from ._exceptions import TogetherAIError, APIStatusError
 
@@ -86,6 +86,8 @@ class TogetherAI(SyncAPIClient):
           base_url = f"https://api.together.xyz/v1"
 
         super().__init__(version=__version__, base_url=base_url, max_retries=max_retries, timeout=timeout, http_client=http_client, custom_headers=default_headers, custom_query=default_query, _strict_response_validation=_strict_response_validation)
+
+        self._default_stream_cls = Stream
 
         self.chat = resources.Chat(self)
         self.completions = resources.Completions(self)
@@ -215,6 +217,8 @@ class AsyncTogetherAI(AsyncAPIClient):
           base_url = f"https://api.together.xyz/v1"
 
         super().__init__(version=__version__, base_url=base_url, max_retries=max_retries, timeout=timeout, http_client=http_client, custom_headers=default_headers, custom_query=default_query, _strict_response_validation=_strict_response_validation)
+
+        self._default_stream_cls = AsyncStream
 
         self.chat = resources.AsyncChat(self)
         self.completions = resources.AsyncCompletions(self)

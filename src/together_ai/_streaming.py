@@ -57,7 +57,19 @@ self.response.iter_lines()
         iterator = self._iter_events()
         
         for sse in iterator:
-            yield process_data(data=sse.json(), cast_to=cast_to, response=response)
+            if sse.data.startswith("[DONE]"):
+                break
+        
+            if sse.event is None:
+                data = sse.json()
+                if is_mapping(data) and data.get('error'):
+                    raise APIError(
+                      message='An error occurred during streaming',
+                      request=self.response.request,
+                      body=data['error'],
+                    )
+        
+                yield process_data(data=data, cast_to=cast_to, response=response)
         
         # Ensure the entire stream is consumed
         for _sse in iterator:
@@ -121,7 +133,19 @@ self.response.aiter_lines()
         iterator = self._iter_events()
         
         async for sse in iterator:
-            yield process_data(data=sse.json(), cast_to=cast_to, response=response)
+            if sse.data.startswith("[DONE]"):
+                break
+        
+            if sse.event is None:
+                data = sse.json()
+                if is_mapping(data) and data.get('error'):
+                    raise APIError(
+                      message='An error occurred during streaming',
+                      request=self.response.request,
+                      body=data['error'],
+                    )
+        
+                yield process_data(data=data, cast_to=cast_to, response=response)
         
         # Ensure the entire stream is consumed
         async for _sse in iterator:
