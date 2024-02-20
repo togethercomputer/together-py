@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing_extensions import TypedDict, Required, Literal
 
-from typing import Iterable, List
+from typing import Iterable, List, Union
 
 from typing import List, Union, Dict, Optional
 from typing_extensions import Literal, TypedDict, Required, Annotated
@@ -12,9 +12,9 @@ from ..._types import FileTypes
 from ..._utils import PropertyInfo
 from ...types import shared_params
 
-__all__ = ["CompletionCreateParams", "Message"]
+__all__ = ["CompletionCreateParamsBase", "Message", "CompletionCreateParamsNonStreaming"]
 
-class CompletionCreateParams(TypedDict, total=False):
+class CompletionCreateParamsBase(TypedDict, total=False):
     messages: Required[Iterable[Message]]
     """A list of messages comprising the conversation so far."""
 
@@ -75,3 +75,11 @@ class Message(TypedDict, total=False):
 
     role: Required[Literal["system", "user", "assistant"]]
     """The role of the messages author. Choice between: system, user, or assistant."""
+
+class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
+    pass
+
+class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
+    pass
+
+CompletionCreateParams = Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsNonStreaming]

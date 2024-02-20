@@ -6,9 +6,11 @@ import httpx
 
 from ..._compat import cached_property
 
+from typing import Iterable, List
+
 from ...types.chat import ChatCompletionResponse, completion_create_params
 
-from typing import Iterable, List
+from ..._streaming import Stream, AsyncStream
 
 from ..._response import to_raw_response_wrapper, async_to_raw_response_wrapper, to_streamed_response_wrapper, async_to_streamed_response_wrapper
 
@@ -33,6 +35,7 @@ class Completions(SyncAPIResource):
     def with_streaming_response(self) -> CompletionsWithStreamingResponse:
         return CompletionsWithStreamingResponse(self)
 
+    @overload
     def create(self,
     *,
     messages: Iterable[completion_create_params.Message],
@@ -95,6 +98,92 @@ class Completions(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        ...
+    @overload
+    def create(self,
+    *,
+    messages: Iterable[completion_create_params.Message],
+    model: str,
+    echo: bool | NotGiven = NOT_GIVEN,
+    logprobs: int | NotGiven = NOT_GIVEN,
+    max_tokens: int | NotGiven = NOT_GIVEN,
+    n: int | NotGiven = NOT_GIVEN,
+    repetition_penalty: float | NotGiven = NOT_GIVEN,
+    stop: List[str] | NotGiven = NOT_GIVEN,
+    stream: bool | NotGiven = NOT_GIVEN,
+    temperature: float | NotGiven = NOT_GIVEN,
+    top_k: int | NotGiven = NOT_GIVEN,
+    top_p: float | NotGiven = NOT_GIVEN,
+    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+    # The extra values given here take precedence over values defined on the client or passed to this method.
+    extra_headers: Headers | None = None,
+    extra_query: Query | None = None,
+    extra_body: Body | None = None,
+    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletionResponse:
+        """
+        Creates a model response for the given chat conversation.
+
+        Args:
+          messages: A list of messages comprising the conversation so far.
+
+          model: The name of the model to query.
+
+          echo: If set, the response will contain the prompt, and will also return prompt
+              logprobs if set with logprobs.
+
+          logprobs: Determines the number of most likely tokens to return at each token position log
+              probabilities to return
+
+          max_tokens: The maximum number of tokens to generate.
+
+          n: Number of generations to return
+
+          repetition_penalty: A number that controls the diversity of generated text by reducing the
+              likelihood of repeated sequences. Higher values decrease repetition.
+
+          stop: A list of string sequences that will truncate (stop) inference text output.
+
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
+
+          temperature: Determines the degree of randomness in the response.
+
+          top_k: The `top_k` parameter is used to limit the number of choices for the next
+              predicted word or token.
+
+          top_p: The `top_p` (nucleus) parameter is used to dynamically adjust the number of
+              choices for each predicted token based on the cumulative probabilities.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        ...
+    @required_args(["messages", "model"], ["messages", "model"])
+    def create(self,
+    *,
+    messages: Iterable[completion_create_params.Message],
+    model: str,
+    echo: bool | NotGiven = NOT_GIVEN,
+    logprobs: int | NotGiven = NOT_GIVEN,
+    max_tokens: int | NotGiven = NOT_GIVEN,
+    n: int | NotGiven = NOT_GIVEN,
+    repetition_penalty: float | NotGiven = NOT_GIVEN,
+    stop: List[str] | NotGiven = NOT_GIVEN,
+    stream: bool | NotGiven = NOT_GIVEN,
+    temperature: float | NotGiven = NOT_GIVEN,
+    top_k: int | NotGiven = NOT_GIVEN,
+    top_p: float | NotGiven = NOT_GIVEN,
+    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+    # The extra values given here take precedence over values defined on the client or passed to this method.
+    extra_headers: Headers | None = None,
+    extra_query: Query | None = None,
+    extra_body: Body | None = None,
+    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletionResponse | Stream[ChatCompletionResponse]:
         return self._post(
             "/chat/completions",
             body=maybe_transform({
@@ -113,6 +202,8 @@ class Completions(SyncAPIResource):
             }, completion_create_params.CompletionCreateParams),
             options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout),
             cast_to=ChatCompletionResponse,
+            stream = stream_tokens or False,
+            stream_cls=Stream[ChatCompletionResponse],
         )
 
 class AsyncCompletions(AsyncAPIResource):
@@ -124,6 +215,7 @@ class AsyncCompletions(AsyncAPIResource):
     def with_streaming_response(self) -> AsyncCompletionsWithStreamingResponse:
         return AsyncCompletionsWithStreamingResponse(self)
 
+    @overload
     async def create(self,
     *,
     messages: Iterable[completion_create_params.Message],
@@ -186,6 +278,92 @@ class AsyncCompletions(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        ...
+    @overload
+    async def create(self,
+    *,
+    messages: Iterable[completion_create_params.Message],
+    model: str,
+    echo: bool | NotGiven = NOT_GIVEN,
+    logprobs: int | NotGiven = NOT_GIVEN,
+    max_tokens: int | NotGiven = NOT_GIVEN,
+    n: int | NotGiven = NOT_GIVEN,
+    repetition_penalty: float | NotGiven = NOT_GIVEN,
+    stop: List[str] | NotGiven = NOT_GIVEN,
+    stream: bool | NotGiven = NOT_GIVEN,
+    temperature: float | NotGiven = NOT_GIVEN,
+    top_k: int | NotGiven = NOT_GIVEN,
+    top_p: float | NotGiven = NOT_GIVEN,
+    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+    # The extra values given here take precedence over values defined on the client or passed to this method.
+    extra_headers: Headers | None = None,
+    extra_query: Query | None = None,
+    extra_body: Body | None = None,
+    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletionResponse:
+        """
+        Creates a model response for the given chat conversation.
+
+        Args:
+          messages: A list of messages comprising the conversation so far.
+
+          model: The name of the model to query.
+
+          echo: If set, the response will contain the prompt, and will also return prompt
+              logprobs if set with logprobs.
+
+          logprobs: Determines the number of most likely tokens to return at each token position log
+              probabilities to return
+
+          max_tokens: The maximum number of tokens to generate.
+
+          n: Number of generations to return
+
+          repetition_penalty: A number that controls the diversity of generated text by reducing the
+              likelihood of repeated sequences. Higher values decrease repetition.
+
+          stop: A list of string sequences that will truncate (stop) inference text output.
+
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
+
+          temperature: Determines the degree of randomness in the response.
+
+          top_k: The `top_k` parameter is used to limit the number of choices for the next
+              predicted word or token.
+
+          top_p: The `top_p` (nucleus) parameter is used to dynamically adjust the number of
+              choices for each predicted token based on the cumulative probabilities.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        ...
+    @required_args(["messages", "model"], ["messages", "model"])
+    async def create(self,
+    *,
+    messages: Iterable[completion_create_params.Message],
+    model: str,
+    echo: bool | NotGiven = NOT_GIVEN,
+    logprobs: int | NotGiven = NOT_GIVEN,
+    max_tokens: int | NotGiven = NOT_GIVEN,
+    n: int | NotGiven = NOT_GIVEN,
+    repetition_penalty: float | NotGiven = NOT_GIVEN,
+    stop: List[str] | NotGiven = NOT_GIVEN,
+    stream: bool | NotGiven = NOT_GIVEN,
+    temperature: float | NotGiven = NOT_GIVEN,
+    top_k: int | NotGiven = NOT_GIVEN,
+    top_p: float | NotGiven = NOT_GIVEN,
+    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+    # The extra values given here take precedence over values defined on the client or passed to this method.
+    extra_headers: Headers | None = None,
+    extra_query: Query | None = None,
+    extra_body: Body | None = None,
+    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletionResponse | AsyncStream[ChatCompletionResponse]:
         return await self._post(
             "/chat/completions",
             body=maybe_transform({
@@ -204,6 +382,8 @@ class AsyncCompletions(AsyncAPIResource):
             }, completion_create_params.CompletionCreateParams),
             options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout),
             cast_to=ChatCompletionResponse,
+            stream = stream_tokens or False,
+            stream_cls=AsyncStream[ChatCompletionResponse],
         )
 
 class CompletionsWithRawResponse:

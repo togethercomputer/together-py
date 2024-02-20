@@ -23,7 +23,7 @@ class TestCompletions:
 
 
     @parametrize
-    def test_method_create(self, client: TogetherAI) -> None:
+    def test_method_create_overload_1(self, client: TogetherAI) -> None:
         completion = client.chat.completions.create(
             messages=[{
                 "role": "system",
@@ -40,7 +40,7 @@ class TestCompletions:
         assert_matches_type(ChatCompletionResponse, completion, path=['response'])
 
     @parametrize
-    def test_method_create_with_all_params(self, client: TogetherAI) -> None:
+    def test_method_create_with_all_params_overload_1(self, client: TogetherAI) -> None:
         completion = client.chat.completions.create(
             messages=[{
                 "role": "system",
@@ -67,7 +67,7 @@ class TestCompletions:
         assert_matches_type(ChatCompletionResponse, completion, path=['response'])
 
     @parametrize
-    def test_raw_response_create(self, client: TogetherAI) -> None:
+    def test_raw_response_create_overload_1(self, client: TogetherAI) -> None:
 
         response = client.chat.completions.with_raw_response.create(
             messages=[{
@@ -89,7 +89,96 @@ class TestCompletions:
         assert_matches_type(ChatCompletionResponse, completion, path=['response'])
 
     @parametrize
-    def test_streaming_response_create(self, client: TogetherAI) -> None:
+    def test_streaming_response_create_overload_1(self, client: TogetherAI) -> None:
+        with client.chat.completions.with_streaming_response.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        ) as response :
+            assert not response.is_closed
+            assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
+
+            completion = response.parse()
+            assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_create_overload_2(self, client: TogetherAI) -> None:
+        completion = client.chat.completions.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        )
+        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+    @parametrize
+    def test_method_create_with_all_params_overload_2(self, client: TogetherAI) -> None:
+        completion = client.chat.completions.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            echo=True,
+            logprobs=0,
+            max_tokens=0,
+            n=1,
+            repetition_penalty=0,
+            stop=["string", "string", "string"],
+            stream=True,
+            temperature=0,
+            top_k=0,
+            top_p=0,
+        )
+        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+    @parametrize
+    def test_raw_response_create_overload_2(self, client: TogetherAI) -> None:
+
+        response = client.chat.completions.with_raw_response.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
+        completion = response.parse()
+        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+    @parametrize
+    def test_streaming_response_create_overload_2(self, client: TogetherAI) -> None:
         with client.chat.completions.with_streaming_response.create(
             messages=[{
                 "role": "system",
@@ -115,7 +204,7 @@ class TestAsyncCompletions:
 
 
     @parametrize
-    async def test_method_create(self, async_client: AsyncTogetherAI) -> None:
+    async def test_method_create_overload_1(self, async_client: AsyncTogetherAI) -> None:
         completion = await async_client.chat.completions.create(
             messages=[{
                 "role": "system",
@@ -132,7 +221,7 @@ class TestAsyncCompletions:
         assert_matches_type(ChatCompletionResponse, completion, path=['response'])
 
     @parametrize
-    async def test_method_create_with_all_params(self, async_client: AsyncTogetherAI) -> None:
+    async def test_method_create_with_all_params_overload_1(self, async_client: AsyncTogetherAI) -> None:
         completion = await async_client.chat.completions.create(
             messages=[{
                 "role": "system",
@@ -159,7 +248,7 @@ class TestAsyncCompletions:
         assert_matches_type(ChatCompletionResponse, completion, path=['response'])
 
     @parametrize
-    async def test_raw_response_create(self, async_client: AsyncTogetherAI) -> None:
+    async def test_raw_response_create_overload_1(self, async_client: AsyncTogetherAI) -> None:
 
         response = await async_client.chat.completions.with_raw_response.create(
             messages=[{
@@ -181,7 +270,96 @@ class TestAsyncCompletions:
         assert_matches_type(ChatCompletionResponse, completion, path=['response'])
 
     @parametrize
-    async def test_streaming_response_create(self, async_client: AsyncTogetherAI) -> None:
+    async def test_streaming_response_create_overload_1(self, async_client: AsyncTogetherAI) -> None:
+        async with async_client.chat.completions.with_streaming_response.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        ) as response :
+            assert not response.is_closed
+            assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
+
+            completion = await response.parse()
+            assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_create_overload_2(self, async_client: AsyncTogetherAI) -> None:
+        completion = await async_client.chat.completions.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        )
+        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+    @parametrize
+    async def test_method_create_with_all_params_overload_2(self, async_client: AsyncTogetherAI) -> None:
+        completion = await async_client.chat.completions.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            echo=True,
+            logprobs=0,
+            max_tokens=0,
+            n=1,
+            repetition_penalty=0,
+            stop=["string", "string", "string"],
+            stream=True,
+            temperature=0,
+            top_k=0,
+            top_p=0,
+        )
+        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+    @parametrize
+    async def test_raw_response_create_overload_2(self, async_client: AsyncTogetherAI) -> None:
+
+        response = await async_client.chat.completions.with_raw_response.create(
+            messages=[{
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }, {
+                "role": "system",
+                "content": "string",
+            }],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
+        completion = await response.parse()
+        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+
+    @parametrize
+    async def test_streaming_response_create_overload_2(self, async_client: AsyncTogetherAI) -> None:
         async with async_client.chat.completions.with_streaming_response.create(
             messages=[{
                 "role": "system",
