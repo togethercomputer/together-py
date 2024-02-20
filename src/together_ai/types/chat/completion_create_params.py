@@ -12,7 +12,7 @@ from ..._types import FileTypes
 from ..._utils import PropertyInfo
 from ...types import shared_params
 
-__all__ = ["CompletionCreateParamsBase", "Message", "CompletionCreateParamsNonStreaming"]
+__all__ = ["CompletionCreateParamsBase", "Message", "CompletionCreateParamsNonStreaming", "CompletionCreateParamsStreaming"]
 
 class CompletionCreateParamsBase(TypedDict, total=False):
     messages: Required[Iterable[Message]]
@@ -48,12 +48,6 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     stop: List[str]
     """A list of string sequences that will truncate (stop) inference text output."""
 
-    stream: bool
-    """If set, tokens are returned as Server-Sent Events as they are made available.
-
-    Stream terminates with `data: [DONE]`
-    """
-
     temperature: float
     """Determines the degree of randomness in the response."""
 
@@ -77,9 +71,17 @@ class Message(TypedDict, total=False):
     """The role of the messages author. Choice between: system, user, or assistant."""
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
-    pass
+    stream: Literal[False]
+    """If set, tokens are returned as Server-Sent Events as they are made available.
 
-class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
-    pass
+    Stream terminates with `data: [DONE]`
+    """
 
-CompletionCreateParams = Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsNonStreaming]
+class CompletionCreateParamsStreaming(CompletionCreateParamsBase):
+    stream: Required[Literal[True]]
+    """If set, tokens are returned as Server-Sent Events as they are made available.
+
+    Stream terminates with `data: [DONE]`
+    """
+
+CompletionCreateParams = Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming]

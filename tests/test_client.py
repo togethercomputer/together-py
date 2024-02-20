@@ -648,20 +648,26 @@ class TestTogetherAI:
     @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
-        respx_mock.post("/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
+        respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
 
         with pytest.raises(APITimeoutError):
-            self.client.post("/completions", body=cast(object, dict(model="mistralai/Mixtral-8x7B-Instruct-v0.1", prompt="<s>[INST] What is the capital of France? [/INST]")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
+            self.client.post("/chat/completions", body=cast(object, dict(messages=[{
+                "role": "user",
+                "content": "Say this is a test",
+            }], model="mistralai/Mixtral-8x7B-Instruct-v0.1")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
 
         assert _get_open_connections(self.client) == 0
 
     @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
-        respx_mock.post("/completions").mock(return_value=httpx.Response(500))
+        respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
 
         with pytest.raises(APIStatusError):
-            self.client.post("/completions", body=cast(object, dict(model="mistralai/Mixtral-8x7B-Instruct-v0.1", prompt="<s>[INST] What is the capital of France? [/INST]")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
+            self.client.post("/chat/completions", body=cast(object, dict(messages=[{
+                "role": "user",
+                "content": "Say this is a test",
+            }], model="mistralai/Mixtral-8x7B-Instruct-v0.1")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
 
         assert _get_open_connections(self.client) == 0
 class TestAsyncTogetherAI:
@@ -1267,19 +1273,25 @@ class TestAsyncTogetherAI:
     @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     async def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
-        respx_mock.post("/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
+        respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
 
         with pytest.raises(APITimeoutError):
-            await self.client.post("/completions", body=cast(object, dict(model="mistralai/Mixtral-8x7B-Instruct-v0.1", prompt="<s>[INST] What is the capital of France? [/INST]")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
+            await self.client.post("/chat/completions", body=cast(object, dict(messages=[{
+                "role": "user",
+                "content": "Say this is a test",
+            }], model="mistralai/Mixtral-8x7B-Instruct-v0.1")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
 
         assert _get_open_connections(self.client) == 0
 
     @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     async def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
-        respx_mock.post("/completions").mock(return_value=httpx.Response(500))
+        respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
 
         with pytest.raises(APIStatusError):
-            await self.client.post("/completions", body=cast(object, dict(model="mistralai/Mixtral-8x7B-Instruct-v0.1", prompt="<s>[INST] What is the capital of France? [/INST]")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
+            await self.client.post("/chat/completions", body=cast(object, dict(messages=[{
+                "role": "user",
+                "content": "Say this is a test",
+            }], model="mistralai/Mixtral-8x7B-Instruct-v0.1")), cast_to=httpx.Response, options={"headers": {RAW_RESPONSE_HEADER: "stream"}})
 
         assert _get_open_connections(self.client) == 0

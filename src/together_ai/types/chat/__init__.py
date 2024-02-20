@@ -2,5 +2,6 @@
 
 from __future__ import annotations
 
-from .chat_completion_response import ChatCompletionResponse as ChatCompletionResponse
+from .chat_completion import ChatCompletion as ChatCompletion
+from .usage import Usage as Usage
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams

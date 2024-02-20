@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from together_ai.types.chat import ChatCompletionResponse
+from together_ai.types.chat import ChatCompletion
 
 from typing import Any, cast
 
@@ -37,7 +37,7 @@ class TestCompletions:
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        assert_matches_type(ChatCompletion, completion, path=['response'])
 
     @parametrize
     def test_method_create_with_all_params_overload_1(self, client: TogetherAI) -> None:
@@ -59,12 +59,12 @@ class TestCompletions:
             n=1,
             repetition_penalty=0,
             stop=["string", "string", "string"],
-            stream=True,
+            stream=False,
             temperature=0,
             top_k=0,
             top_p=0,
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        assert_matches_type(ChatCompletion, completion, path=['response'])
 
     @parametrize
     def test_raw_response_create_overload_1(self, client: TogetherAI) -> None:
@@ -86,7 +86,7 @@ class TestCompletions:
         assert response.is_closed is True
         assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
         completion = response.parse()
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        assert_matches_type(ChatCompletion, completion, path=['response'])
 
     @parametrize
     def test_streaming_response_create_overload_1(self, client: TogetherAI) -> None:
@@ -107,13 +107,13 @@ class TestCompletions:
             assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
 
             completion = response.parse()
-            assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+            assert_matches_type(ChatCompletion, completion, path=['response'])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_method_create_overload_2(self, client: TogetherAI) -> None:
-        completion = client.chat.completions.create(
+        completion_stream = client.chat.completions.create(
             messages=[{
                 "role": "system",
                 "content": "string",
@@ -125,12 +125,13 @@ class TestCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        completion_stream.response.close()
 
     @parametrize
     def test_method_create_with_all_params_overload_2(self, client: TogetherAI) -> None:
-        completion = client.chat.completions.create(
+        completion_stream = client.chat.completions.create(
             messages=[{
                 "role": "system",
                 "content": "string",
@@ -142,18 +143,18 @@ class TestCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
             echo=True,
             logprobs=0,
             max_tokens=0,
             n=1,
             repetition_penalty=0,
             stop=["string", "string", "string"],
-            stream=True,
             temperature=0,
             top_k=0,
             top_p=0,
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        completion_stream.response.close()
 
     @parametrize
     def test_raw_response_create_overload_2(self, client: TogetherAI) -> None:
@@ -170,12 +171,12 @@ class TestCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
         )
 
-        assert response.is_closed is True
         assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
-        completion = response.parse()
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        stream = response.parse()
+        stream.close()
 
     @parametrize
     def test_streaming_response_create_overload_2(self, client: TogetherAI) -> None:
@@ -191,12 +192,13 @@ class TestCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
         ) as response :
             assert not response.is_closed
             assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
 
-            completion = response.parse()
-            assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+            stream = response.parse()
+            stream.close()
 
         assert cast(Any, response.is_closed) is True
 class TestAsyncCompletions:
@@ -218,7 +220,7 @@ class TestAsyncCompletions:
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        assert_matches_type(ChatCompletion, completion, path=['response'])
 
     @parametrize
     async def test_method_create_with_all_params_overload_1(self, async_client: AsyncTogetherAI) -> None:
@@ -240,12 +242,12 @@ class TestAsyncCompletions:
             n=1,
             repetition_penalty=0,
             stop=["string", "string", "string"],
-            stream=True,
+            stream=False,
             temperature=0,
             top_k=0,
             top_p=0,
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        assert_matches_type(ChatCompletion, completion, path=['response'])
 
     @parametrize
     async def test_raw_response_create_overload_1(self, async_client: AsyncTogetherAI) -> None:
@@ -267,7 +269,7 @@ class TestAsyncCompletions:
         assert response.is_closed is True
         assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
         completion = await response.parse()
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        assert_matches_type(ChatCompletion, completion, path=['response'])
 
     @parametrize
     async def test_streaming_response_create_overload_1(self, async_client: AsyncTogetherAI) -> None:
@@ -288,13 +290,13 @@ class TestAsyncCompletions:
             assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
 
             completion = await response.parse()
-            assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+            assert_matches_type(ChatCompletion, completion, path=['response'])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_method_create_overload_2(self, async_client: AsyncTogetherAI) -> None:
-        completion = await async_client.chat.completions.create(
+        completion_stream = await async_client.chat.completions.create(
             messages=[{
                 "role": "system",
                 "content": "string",
@@ -306,12 +308,13 @@ class TestAsyncCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        await completion_stream.response.aclose()
 
     @parametrize
     async def test_method_create_with_all_params_overload_2(self, async_client: AsyncTogetherAI) -> None:
-        completion = await async_client.chat.completions.create(
+        completion_stream = await async_client.chat.completions.create(
             messages=[{
                 "role": "system",
                 "content": "string",
@@ -323,18 +326,18 @@ class TestAsyncCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
             echo=True,
             logprobs=0,
             max_tokens=0,
             n=1,
             repetition_penalty=0,
             stop=["string", "string", "string"],
-            stream=True,
             temperature=0,
             top_k=0,
             top_p=0,
         )
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        await completion_stream.response.aclose()
 
     @parametrize
     async def test_raw_response_create_overload_2(self, async_client: AsyncTogetherAI) -> None:
@@ -351,12 +354,12 @@ class TestAsyncCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
         )
 
-        assert response.is_closed is True
         assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
-        completion = await response.parse()
-        assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+        stream = await response.parse()
+        await stream.close()
 
     @parametrize
     async def test_streaming_response_create_overload_2(self, async_client: AsyncTogetherAI) -> None:
@@ -372,11 +375,12 @@ class TestAsyncCompletions:
                 "content": "string",
             }],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            stream=True,
         ) as response :
             assert not response.is_closed
             assert response.http_request.headers.get('X-Stainless-Lang') == 'python'
 
-            completion = await response.parse()
-            assert_matches_type(ChatCompletionResponse, completion, path=['response'])
+            stream = await response.parse()
+            await stream.close()
 
         assert cast(Any, response.is_closed) is True

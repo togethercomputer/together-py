@@ -29,11 +29,14 @@ client = TogetherAI(
     access_token=os.environ.get("TOGETHER_AI_ACCESS_TOKEN"),
 )
 
-completion_response = client.completions.create(
+chat_completion = client.chat.completions.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-    prompt="<s>[INST] What is the capital of France? [/INST]",
 )
-print(completion_response.id)
+print(chat_completion.id)
 ```
 
 While you can provide a `access_token` keyword argument,
@@ -56,16 +59,59 @@ client = AsyncTogetherAI(
 )
 
 async def main() -> None:
-  completion_response = await client.completions.create(
+  chat_completion = await client.chat.completions.create(
+      messages=[{
+          "role": "user",
+          "content": "Say this is a test",
+      }],
       model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-      prompt="<s>[INST] What is the capital of France? [/INST]",
   )
-  print(completion_response.id)
+  print(chat_completion.id)
 
 asyncio.run(main())
 ```
 
 Functionality between the synchronous and asynchronous clients is otherwise identical.
+
+## Streaming Responses
+
+We provide support for streaming responses using Server Side Events (SSE).
+
+```python
+from together_ai import TogetherAI
+
+client = TogetherAI()
+
+stream = client.chat.completions.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
+    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    stream=True,
+)
+for chat_completion in stream:
+  print(chat_completion.id)
+```
+
+The async client uses the exact same interface.
+
+```python
+from together_ai import TogetherAI
+
+client = TogetherAI()
+
+stream = await client.chat.completions.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
+    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    stream=True,
+)
+async for chat_completion in stream:
+  print(chat_completion.id)
+```
 
 ## Using types
 
@@ -92,9 +138,12 @@ from together_ai import TogetherAI
 client = TogetherAI()
 
 try:
-    client.completions.create(
+    client.chat.completions.create(
+        messages=[{
+            "role": "user",
+            "content": "Say this is a test",
+        }],
         model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-        prompt="<s>[INST] What is the capital of France? [/INST]",
     )
 except together_ai.APIConnectionError as e:
     print("The server could not be reached")
@@ -138,9 +187,12 @@ client = TogetherAI(
 )
 
 # Or, configure per-request:
-client.with_options(max_retries = 5).completions.create(
+client.with_options(max_retries = 5).chat.completions.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-    prompt="<s>[INST] What is the capital of France? [/INST]",
 )
 ```
 
@@ -164,9 +216,12 @@ client = TogetherAI(
 )
 
 # Override per-request:
-client.with_options(timeout = 5 * 1000).completions.create(
+client.with_options(timeout = 5 * 1000).chat.completions.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-    prompt="<s>[INST] What is the capital of France? [/INST]",
 )
 ```
 
@@ -206,13 +261,16 @@ The "raw" Response object can be accessed by prefixing `.with_raw_response.` to 
 from together_ai import TogetherAI
 
 client = TogetherAI()
-response = client.completions.with_raw_response.create(
+response = client.chat.completions.with_raw_response.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-    prompt="<s>[INST] What is the capital of France? [/INST]",
 )
 print(response.headers.get('X-My-Header'))
 
-completion = response.parse()  # get the object that `completions.create()` would have returned
+completion = response.parse()  # get the object that `chat.completions.create()` would have returned
 print(completion.id)
 ```
 
@@ -227,9 +285,12 @@ The above interface eagerly reads the full response body when you make the reque
 To stream the response body, use `.with_streaming_response` instead, which requires a context manager and only reads the response body once you call `.read()`, `.text()`, `.json()`, `.iter_bytes()`, `.iter_text()`, `.iter_lines()` or `.parse()`. In the async client, these are async methods.
 
 ```python
-with client.completions.with_streaming_response.create(
+with client.chat.completions.with_streaming_response.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-    prompt="<s>[INST] What is the capital of France? [/INST]",
 ) as response :
     print(response.headers.get('X-My-Header'))
 

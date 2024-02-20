@@ -4,13 +4,15 @@ from typing import Optional, List
 
 from typing_extensions import Literal
 
+from .usage import Usage
+
 from typing import Optional, Union, List, Dict, Any
 from typing_extensions import Literal
 from pydantic import Field as FieldInfo
 from ..._models import BaseModel
 from ...types import shared
 
-__all__ = ["ChatCompletionResponse", "Choice", "ChoiceLogprobs", "ChoiceMessage", "Usage"]
+__all__ = ["ChatCompletion", "Choice", "ChoiceLogprobs", "ChoiceMessage"]
 
 class ChoiceLogprobs(BaseModel):
     token_logprobs: Optional[List[float]] = None
@@ -31,14 +33,7 @@ class Choice(BaseModel):
 
     message: Optional[ChoiceMessage] = None
 
-class Usage(BaseModel):
-    completion_tokens: Optional[int] = None
-
-    prompt_tokens: Optional[int] = None
-
-    total_tokens: Optional[int] = None
-
-class ChatCompletionResponse(BaseModel):
+class ChatCompletion(BaseModel):
     id: Optional[str] = None
 
     choices: Optional[List[Choice]] = None

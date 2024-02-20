@@ -5,12 +5,12 @@
 Types:
 
 ```python
-from together_ai.types.chat import ChatCompletionResponse
+from together_ai.types.chat import ChatCompletion, ChatCompletionChunk, Usage
 ```
 
 Methods:
 
-- <code title="post /chat/completions">client.chat.completions.<a href="./src/together_ai/resources/chat/completions.py">create</a>(\*\*<a href="src/together_ai/types/chat/completion_create_params.py">params</a>) -> <a href="./src/together_ai/types/chat/chat_completion_response.py">ChatCompletionResponse</a></code>
+- <code title="post /chat/completions">client.chat.completions.<a href="./src/together_ai/resources/chat/completions.py">create</a>(\*\*<a href="src/together_ai/types/chat/completion_create_params.py">params</a>) -> <a href="./src/together_ai/types/chat/chat_completion.py">ChatCompletion</a></code>
 
 # Completions
 
