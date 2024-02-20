@@ -1,18 +1,13 @@
 # File generated from our OpenAPI spec by Stainless.
 
-from typing import Optional, List
-
+from typing import List, Optional
 from typing_extensions import Literal
 
 from .usage import Usage
-
-from typing import Optional, Union, List, Dict, Any
-from typing_extensions import Literal
-from pydantic import Field as FieldInfo
 from ..._models import BaseModel
-from ...types import shared
 
 __all__ = ["ChatCompletion", "Choice", "ChoiceLogprobs", "ChoiceMessage"]
+
 
 class ChoiceLogprobs(BaseModel):
     token_logprobs: Optional[List[float]] = None
@@ -21,10 +16,12 @@ class ChoiceLogprobs(BaseModel):
     tokens: Optional[List[str]] = None
     """List of token strings"""
 
+
 class ChoiceMessage(BaseModel):
     content: Optional[str] = None
 
     role: Optional[str] = None
+
 
 class Choice(BaseModel):
     finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls"]] = None
@@ -32,6 +29,7 @@ class Choice(BaseModel):
     logprobs: Optional[ChoiceLogprobs] = None
 
     message: Optional[ChoiceMessage] = None
+
 
 class ChatCompletion(BaseModel):
     id: Optional[str] = None

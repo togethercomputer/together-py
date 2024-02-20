@@ -61,7 +61,7 @@ from ._types import (
     RequestOptions,
     ModelBuilderProtocol,
 )
-from ._utils import is_dict, is_given, is_mapping, is_list
+from ._utils import is_dict, is_list, is_given, is_mapping
 from ._compat import model_copy, model_dump
 from ._models import GenericModel, FinalRequestOptions, validate_type, construct_type
 from ._response import (
@@ -70,13 +70,12 @@ from ._response import (
     AsyncAPIResponse,
     extract_response_type,
 )
-from ._legacy_response import LegacyAPIResponse
 from ._constants import (
     DEFAULT_LIMITS,
-    DEFAULT_MAX_RETRIES,
     DEFAULT_TIMEOUT,
-    INITIAL_RETRY_DELAY,
     MAX_RETRY_DELAY,
+    DEFAULT_MAX_RETRIES,
+    INITIAL_RETRY_DELAY,
     RAW_RESPONSE_HEADER,
     OVERRIDE_CAST_TO_HEADER,
 )
@@ -1027,8 +1026,6 @@ class SyncAPIClient(BaseClient[httpx.Client, Stream[Any]]):
         stream: bool,
         stream_cls: type[Stream[Any]] | type[AsyncStream[Any]] | None,
     ) -> ResponseT:
-        
-
         origin = get_origin(cast_to) or cast_to
 
         if inspect.isclass(origin) and issubclass(origin, BaseAPIResponse):
@@ -1553,8 +1550,6 @@ class AsyncAPIClient(BaseClient[httpx.AsyncClient, AsyncStream[Any]]):
         stream: bool,
         stream_cls: type[Stream[Any]] | type[AsyncStream[Any]] | None,
     ) -> ResponseT:
-        
-
         origin = get_origin(cast_to) or cast_to
 
         if inspect.isclass(origin) and issubclass(origin, BaseAPIResponse):
@@ -1878,11 +1873,13 @@ class OtherArch:
 
 Arch = Union[OtherArch, Literal["x32", "x64", "arm", "arm64", "unknown"]]
 
+
 def get_python_runtime() -> str:
     try:
         return platform.python_implementation()
     except Exception:
         return "unknown"
+
 
 def get_python_version() -> str:
     try:

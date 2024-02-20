@@ -2,31 +2,29 @@
 
 from __future__ import annotations
 
+from typing import List, Iterable, overload
+from typing_extensions import Literal
+
 import httpx
 
+from ..._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from ..._utils import required_args, maybe_transform
 from ..._compat import cached_property
-
-from typing import Iterable, List
-
-from typing_extensions import Literal
-
-from ...types.chat import ChatCompletion, completion_create_params
-
-from ..._streaming import Stream, AsyncStream
-
-from ..._response import to_raw_response_wrapper, async_to_raw_response_wrapper, to_streamed_response_wrapper, async_to_streamed_response_wrapper
-
-import warnings
-from typing import TYPE_CHECKING, Optional, Union, List, Dict, Any, Mapping, cast, overload
-from typing_extensions import Literal
-from ..._utils import extract_files, maybe_transform, required_args, deepcopy_minimal, strip_not_given
-from ..._types import NotGiven, Timeout, Headers, NoneType, Query, Body, NOT_GIVEN, FileTypes, BinaryResponseContent
 from ..._resource import SyncAPIResource, AsyncAPIResource
-from ..._base_client import SyncAPIClient, AsyncAPIClient, _merge_mappings, AsyncPaginator, make_request_options, HttpxBinaryResponseContent
-from ...types import shared_params
-from ...types.chat import completion_create_params
+from ..._response import (
+    to_raw_response_wrapper,
+    to_streamed_response_wrapper,
+    async_to_raw_response_wrapper,
+    async_to_streamed_response_wrapper,
+)
+from ..._streaming import Stream, AsyncStream
+from ...types.chat import ChatCompletion, completion_create_params
+from ..._base_client import (
+    make_request_options,
+)
 
 __all__ = ["Completions", "AsyncCompletions"]
+
 
 class Completions(SyncAPIResource):
     @cached_property
@@ -38,26 +36,28 @@ class Completions(SyncAPIResource):
         return CompletionsWithStreamingResponse(self)
 
     @overload
-    def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    stream: Literal[False] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletion:
+    def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        stream: Literal[False] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletion:
         """
         Creates a model response for the given chat conversation.
 
@@ -101,27 +101,30 @@ class Completions(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         ...
+
     @overload
-    def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    stream: Literal[True],
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> Stream[ChatCompletion]:
+    def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        stream: Literal[True],
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> Stream[ChatCompletion]:
         """
         Creates a model response for the given chat conversation.
 
@@ -165,27 +168,30 @@ class Completions(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         ...
+
     @overload
-    def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    stream: bool,
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletion | Stream[ChatCompletion]:
+    def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        stream: bool,
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletion | Stream[ChatCompletion]:
         """
         Creates a model response for the given chat conversation.
 
@@ -229,48 +235,57 @@ class Completions(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         ...
+
     @required_args(["messages", "model"], ["messages", "model", "stream"])
-    def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletion | Stream[ChatCompletion]:
+    def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletion | Stream[ChatCompletion]:
         return self._post(
             "/chat/completions",
-            body=maybe_transform({
-                "messages": messages,
-                "model": model,
-                "echo": echo,
-                "logprobs": logprobs,
-                "max_tokens": max_tokens,
-                "n": n,
-                "repetition_penalty": repetition_penalty,
-                "stop": stop,
-                "stream": stream,
-                "temperature": temperature,
-                "top_k": top_k,
-                "top_p": top_p,
-            }, completion_create_params.CompletionCreateParams),
-            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout),
+            body=maybe_transform(
+                {
+                    "messages": messages,
+                    "model": model,
+                    "echo": echo,
+                    "logprobs": logprobs,
+                    "max_tokens": max_tokens,
+                    "n": n,
+                    "repetition_penalty": repetition_penalty,
+                    "stop": stop,
+                    "stream": stream,
+                    "temperature": temperature,
+                    "top_k": top_k,
+                    "top_p": top_p,
+                },
+                completion_create_params.CompletionCreateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
             cast_to=ChatCompletion,
-            stream = stream or False,
+            stream=stream or False,
             stream_cls=Stream[ChatCompletion],
         )
+
 
 class AsyncCompletions(AsyncAPIResource):
     @cached_property
@@ -282,26 +297,28 @@ class AsyncCompletions(AsyncAPIResource):
         return AsyncCompletionsWithStreamingResponse(self)
 
     @overload
-    async def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    stream: Literal[False] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletion:
+    async def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        stream: Literal[False] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletion:
         """
         Creates a model response for the given chat conversation.
 
@@ -345,27 +362,30 @@ class AsyncCompletions(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         ...
+
     @overload
-    async def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    stream: Literal[True],
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> AsyncStream[ChatCompletion]:
+    async def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        stream: Literal[True],
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> AsyncStream[ChatCompletion]:
         """
         Creates a model response for the given chat conversation.
 
@@ -409,27 +429,30 @@ class AsyncCompletions(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         ...
+
     @overload
-    async def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    stream: bool,
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletion | AsyncStream[ChatCompletion]:
+    async def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        stream: bool,
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletion | AsyncStream[ChatCompletion]:
         """
         Creates a model response for the given chat conversation.
 
@@ -473,48 +496,57 @@ class AsyncCompletions(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         ...
+
     @required_args(["messages", "model"], ["messages", "model", "stream"])
-    async def create(self,
-    *,
-    messages: Iterable[completion_create_params.Message],
-    model: str,
-    echo: bool | NotGiven = NOT_GIVEN,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-    # The extra values given here take precedence over values defined on the client or passed to this method.
-    extra_headers: Headers | None = None,
-    extra_query: Query | None = None,
-    extra_body: Body | None = None,
-    timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,) -> ChatCompletion | AsyncStream[ChatCompletion]:
+    async def create(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        echo: bool | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletion | AsyncStream[ChatCompletion]:
         return await self._post(
             "/chat/completions",
-            body=maybe_transform({
-                "messages": messages,
-                "model": model,
-                "echo": echo,
-                "logprobs": logprobs,
-                "max_tokens": max_tokens,
-                "n": n,
-                "repetition_penalty": repetition_penalty,
-                "stop": stop,
-                "stream": stream,
-                "temperature": temperature,
-                "top_k": top_k,
-                "top_p": top_p,
-            }, completion_create_params.CompletionCreateParams),
-            options=make_request_options(extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout),
+            body=maybe_transform(
+                {
+                    "messages": messages,
+                    "model": model,
+                    "echo": echo,
+                    "logprobs": logprobs,
+                    "max_tokens": max_tokens,
+                    "n": n,
+                    "repetition_penalty": repetition_penalty,
+                    "stop": stop,
+                    "stream": stream,
+                    "temperature": temperature,
+                    "top_k": top_k,
+                    "top_p": top_p,
+                },
+                completion_create_params.CompletionCreateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
             cast_to=ChatCompletion,
-            stream = stream or False,
+            stream=stream or False,
             stream_cls=AsyncStream[ChatCompletion],
         )
+
 
 class CompletionsWithRawResponse:
     def __init__(self, completions: Completions) -> None:
@@ -524,6 +556,7 @@ class CompletionsWithRawResponse:
             completions.create,
         )
 
+
 class AsyncCompletionsWithRawResponse:
     def __init__(self, completions: AsyncCompletions) -> None:
         self._completions = completions
@@ -532,6 +565,7 @@ class AsyncCompletionsWithRawResponse:
             completions.create,
         )
 
+
 class CompletionsWithStreamingResponse:
     def __init__(self, completions: Completions) -> None:
         self._completions = completions
@@ -539,6 +573,7 @@ class CompletionsWithStreamingResponse:
         self.create = to_streamed_response_wrapper(
             completions.create,
         )
+
 
 class AsyncCompletionsWithStreamingResponse:
     def __init__(self, completions: AsyncCompletions) -> None:

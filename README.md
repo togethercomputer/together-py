@@ -1,6 +1,6 @@
 # Together AI Python API library
 
-[![PyPI version](https://img.shields.io/pypi/v/.svg)](https://pypi.org/project//)
+[![PyPI version](https://img.shields.io/pypi/v/together-ai.svg)](https://pypi.org/project/together-ai/)
 
 The Together AI Python library provides convenient access to the Together AI REST API from any Python 3.7+
 application. The library includes type definitions for all request params and response fields,
@@ -13,7 +13,7 @@ The REST API documentation can be found [on www.together.ai](https://www.togethe
 ## Installation
 
 ```sh
-pip install --pre
+pip install --pre together-ai
 ```
 
 ## Usage
@@ -30,10 +30,12 @@ client = TogetherAI(
 )
 
 chat_completion = client.chat.completions.create(
-    messages=[{
-        "role": "user",
-        "content": "Say this is a test",
-    }],
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
 )
 print(chat_completion.id)
@@ -58,15 +60,19 @@ client = AsyncTogetherAI(
     access_token=os.environ.get("TOGETHER_AI_ACCESS_TOKEN"),
 )
 
+
 async def main() -> None:
-  chat_completion = await client.chat.completions.create(
-      messages=[{
-          "role": "user",
-          "content": "Say this is a test",
-      }],
-      model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-  )
-  print(chat_completion.id)
+    chat_completion = await client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": "Say this is a test",
+            }
+        ],
+        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    )
+    print(chat_completion.id)
+
 
 asyncio.run(main())
 ```
@@ -83,15 +89,17 @@ from together_ai import TogetherAI
 client = TogetherAI()
 
 stream = client.chat.completions.create(
-    messages=[{
-        "role": "user",
-        "content": "Say this is a test",
-    }],
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
     stream=True,
 )
 for chat_completion in stream:
-  print(chat_completion.id)
+    print(chat_completion.id)
 ```
 
 The async client uses the exact same interface.
@@ -102,15 +110,17 @@ from together_ai import TogetherAI
 client = TogetherAI()
 
 stream = await client.chat.completions.create(
-    messages=[{
-        "role": "user",
-        "content": "Say this is a test",
-    }],
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
     stream=True,
 )
 async for chat_completion in stream:
-  print(chat_completion.id)
+    print(chat_completion.id)
 ```
 
 ## Using types
@@ -139,15 +149,17 @@ client = TogetherAI()
 
 try:
     client.chat.completions.create(
-        messages=[{
-            "role": "user",
-            "content": "Say this is a test",
-        }],
+        messages=[
+            {
+                "role": "user",
+                "content": "Say this is a test",
+            }
+        ],
         model="mistralai/Mixtral-8x7B-Instruct-v0.1",
     )
 except together_ai.APIConnectionError as e:
     print("The server could not be reached")
-    print(e.__cause__) # an underlying Exception, likely raised within httpx.
+    print(e.__cause__)  # an underlying Exception, likely raised within httpx.
 except together_ai.RateLimitError as e:
     print("A 429 status code was received; we should back off a bit.")
 except together_ai.APIStatusError as e:
@@ -187,11 +199,13 @@ client = TogetherAI(
 )
 
 # Or, configure per-request:
-client.with_options(max_retries = 5).chat.completions.create(
-    messages=[{
-        "role": "user",
-        "content": "Say this is a test",
-    }],
+client.with_options(max_retries=5).chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
 )
 ```
@@ -216,11 +230,13 @@ client = TogetherAI(
 )
 
 # Override per-request:
-client.with_options(timeout = 5 * 1000).chat.completions.create(
-    messages=[{
-        "role": "user",
-        "content": "Say this is a test",
-    }],
+client.with_options(timeout=5 * 1000).chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
 )
 ```
@@ -286,16 +302,18 @@ To stream the response body, use `.with_streaming_response` instead, which requi
 
 ```python
 with client.chat.completions.with_streaming_response.create(
-    messages=[{
-        "role": "user",
-        "content": "Say this is a test",
-    }],
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-) as response :
-    print(response.headers.get('X-My-Header'))
+) as response:
+    print(response.headers.get("X-My-Header"))
 
     for line in response.iter_lines():
-      print(line)
+        print(line)
 ```
 
 The context manager is required so that the response will reliably be closed.
@@ -315,7 +333,10 @@ from together_ai import TogetherAI
 client = TogetherAI(
     # Or use the `TOGETHER_AI_BASE_URL` env var
     base_url="http://my.test.server.example.com:8083",
-    http_client=httpx.Client(proxies="http://my.test.proxy.example.com", transport=httpx.HTTPTransport(local_address="0.0.0.0")),
+    http_client=httpx.Client(
+        proxies="http://my.test.proxy.example.com",
+        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+    ),
 )
 ```
 
@@ -333,7 +354,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/-python/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/together-ai-python/issues) with questions, bugs, or suggestions.
 
 ## Requirements
 

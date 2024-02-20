@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypedDict, Required, Literal
+from typing import List, Union, Iterable
+from typing_extensions import Literal, Required, TypedDict
 
-from typing import Iterable, List, Union
+__all__ = [
+    "CompletionCreateParamsBase",
+    "Message",
+    "CompletionCreateParamsNonStreaming",
+    "CompletionCreateParamsStreaming",
+]
 
-from typing import List, Union, Dict, Optional
-from typing_extensions import Literal, TypedDict, Required, Annotated
-from ..._types import FileTypes
-from ..._utils import PropertyInfo
-from ...types import shared_params
-
-__all__ = ["CompletionCreateParamsBase", "Message", "CompletionCreateParamsNonStreaming", "CompletionCreateParamsStreaming"]
 
 class CompletionCreateParamsBase(TypedDict, total=False):
     messages: Required[Iterable[Message]]
@@ -63,12 +62,14 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     choices for each predicted token based on the cumulative probabilities.
     """
 
+
 class Message(TypedDict, total=False):
     content: Required[str]
     """The contents of the message."""
 
     role: Required[Literal["system", "user", "assistant"]]
     """The role of the messages author. Choice between: system, user, or assistant."""
+
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
     stream: Literal[False]
@@ -77,11 +78,13 @@ class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
     Stream terminates with `data: [DONE]`
     """
 
+
 class CompletionCreateParamsStreaming(CompletionCreateParamsBase):
     stream: Required[Literal[True]]
     """If set, tokens are returned as Server-Sent Events as they are made available.
 
     Stream terminates with `data: [DONE]`
     """
+
 
 CompletionCreateParams = Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming]

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from os import PathLike
-from abc import ABC, abstractmethod
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -14,10 +13,8 @@ from typing import (
     Mapping,
     TypeVar,
     Callable,
-    Iterator,
     Optional,
     Sequence,
-    AsyncIterator,
 )
 from typing_extensions import Literal, Protocol, TypeAlias, TypedDict, override, runtime_checkable
 
@@ -28,7 +25,6 @@ from httpx import URL, Proxy, Timeout, Response, BaseTransport, AsyncBaseTranspo
 if TYPE_CHECKING:
     from ._models import BaseModel
     from ._response import APIResponse, AsyncAPIResponse
-    from ._legacy_response import HttpxBinaryResponseContent
 
 Transport = BaseTransport
 AsyncTransport = AsyncBaseTransport
@@ -113,11 +109,13 @@ class NotGiven:
     For example:
 
     ```py
-    def get(timeout: Union[int, NotGiven, None] = NotGiven()) -> Response: ...
+    def get(timeout: Union[int, NotGiven, None] = NotGiven()) -> Response:
+        ...
 
-    get(timeout=1) # 1s timeout
-    get(timeout=None) # No timeout
-    get() # Default timeout behavior, which may not be statically known at the method definition.
+
+    get(timeout=1)  # 1s timeout
+    get(timeout=None)  # No timeout
+    get()  # Default timeout behavior, which may not be statically known at the method definition.
     ```
     """
 
@@ -139,14 +137,14 @@ class Omit:
 
     ```py
     # as the default `Content-Type` header is `application/json` that will be sent
-    client.post('/upload/files', files={'file': b'my raw file content'})
+    client.post("/upload/files", files={"file": b"my raw file content"})
 
     # you can't explicitly override the header as it has to be dynamically generated
     # to look something like: 'multipart/form-data; boundary=0d8382fcf5f8c3be01ca2e11002d2983'
-    client.post(..., headers={'Content-Type': 'multipart/form-data'})
+    client.post(..., headers={"Content-Type": "multipart/form-data"})
 
     # instead you can remove the default `application/json` header by passing Omit
-    client.post(..., headers={'Content-Type': Omit()})
+    client.post(..., headers={"Content-Type": Omit()})
     ```
     """
 
@@ -189,7 +187,6 @@ ResponseT = TypeVar(
         ModelBuilderProtocol,
         "APIResponse[Any]",
         "AsyncAPIResponse[Any]",
-
     ],
 )
 
