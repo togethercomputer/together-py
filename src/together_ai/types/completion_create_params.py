@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import List
-from typing_extensions import Required, TypedDict
+from typing import List, Union
+from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["CompletionCreateParams"]
+__all__ = ["CompletionCreateParamsBase", "CompletionCreateParamsNonStreaming", "CompletionCreateParamsStreaming"]
 
 
-class CompletionCreateParams(TypedDict, total=False):
+class CompletionCreateParamsBase(TypedDict, total=False):
     model: Required[str]
     """The name of the model to query."""
 
@@ -42,12 +42,6 @@ class CompletionCreateParams(TypedDict, total=False):
     stop: List[str]
     """A list of string sequences that will truncate (stop) inference text output."""
 
-    stream: bool
-    """If set, tokens are returned as Server-Sent Events as they are made available.
-
-    Stream terminates with `data: [DONE]`
-    """
-
     temperature: float
     """Determines the degree of randomness in the response."""
 
@@ -62,3 +56,22 @@ class CompletionCreateParams(TypedDict, total=False):
     The `top_p` (nucleus) parameter is used to dynamically adjust the number of
     choices for each predicted token based on the cumulative probabilities.
     """
+
+
+class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
+    stream: Literal[False]
+    """If set, tokens are returned as Server-Sent Events as they are made available.
+
+    Stream terminates with `data: [DONE]`
+    """
+
+
+class CompletionCreateParamsStreaming(CompletionCreateParamsBase):
+    stream: Required[Literal[True]]
+    """If set, tokens are returned as Server-Sent Events as they are made available.
+
+    Stream terminates with `data: [DONE]`
+    """
+
+
+CompletionCreateParams = Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming]
