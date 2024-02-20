@@ -18,7 +18,7 @@ from ..._response import (
     async_to_streamed_response_wrapper,
 )
 from ..._streaming import Stream, AsyncStream
-from ...types.chat import ChatCompletion, completion_create_params
+from ...types.chat import ChatCompletion, ChatCompletionChunk, completion_create_params
 from ..._base_client import (
     make_request_options,
 )
@@ -124,7 +124,7 @@ class Completions(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Stream[ChatCompletion]:
+    ) -> Stream[ChatCompletionChunk]:
         """
         Creates a model response for the given chat conversation.
 
@@ -191,7 +191,7 @@ class Completions(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> ChatCompletion | Stream[ChatCompletion]:
+    ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         """
         Creates a model response for the given chat conversation.
 
@@ -258,7 +258,7 @@ class Completions(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> ChatCompletion | Stream[ChatCompletion]:
+    ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         return self._post(
             "/chat/completions",
             body=maybe_transform(
@@ -283,7 +283,7 @@ class Completions(SyncAPIResource):
             ),
             cast_to=ChatCompletion,
             stream=stream or False,
-            stream_cls=Stream[ChatCompletion],
+            stream_cls=Stream[ChatCompletionChunk],
         )
 
 
@@ -385,7 +385,7 @@ class AsyncCompletions(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> AsyncStream[ChatCompletion]:
+    ) -> AsyncStream[ChatCompletionChunk]:
         """
         Creates a model response for the given chat conversation.
 
@@ -452,7 +452,7 @@ class AsyncCompletions(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> ChatCompletion | AsyncStream[ChatCompletion]:
+    ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         """
         Creates a model response for the given chat conversation.
 
@@ -519,7 +519,7 @@ class AsyncCompletions(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> ChatCompletion | AsyncStream[ChatCompletion]:
+    ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         return await self._post(
             "/chat/completions",
             body=maybe_transform(
@@ -544,7 +544,7 @@ class AsyncCompletions(AsyncAPIResource):
             ),
             cast_to=ChatCompletion,
             stream=stream or False,
-            stream_cls=AsyncStream[ChatCompletion],
+            stream_cls=AsyncStream[ChatCompletionChunk],
         )
 
 
