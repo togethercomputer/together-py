@@ -13,6 +13,7 @@ The REST API documentation can be found [on www.together.ai](https://www.togethe
 ## Installation
 
 ```sh
+# install from PyPI
 pip install --pre togetherai
 ```
 
@@ -105,9 +106,9 @@ for chat_completion in stream:
 The async client uses the exact same interface.
 
 ```python
-from together_ai import TogetherAI
+from together_ai import AsyncTogetherAI
 
-client = TogetherAI()
+client = AsyncTogetherAI()
 
 stream = await client.chat.completions.create(
     messages=[

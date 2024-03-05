@@ -9,7 +9,11 @@ import httpx
 
 from ..types import CompletionResponse, completion_create_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
-from .._utils import required_args, maybe_transform
+from .._utils import (
+    required_args,
+    maybe_transform,
+    async_maybe_transform,
+)
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._response import (
@@ -522,7 +526,7 @@ class AsyncCompletions(AsyncAPIResource):
     ) -> CompletionResponse | AsyncStream[CompletionResponse]:
         return await self._post(
             "/completions",
-            body=maybe_transform(
+            body=await async_maybe_transform(
                 {
                     "model": model,
                     "prompt": prompt,
