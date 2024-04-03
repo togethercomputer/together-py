@@ -85,8 +85,8 @@ class Completions(SyncAPIResource):
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
+              terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
 
@@ -137,8 +137,8 @@ class Completions(SyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
+              terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -204,8 +204,8 @@ class Completions(SyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
+              terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -346,8 +346,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
+              terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
 
@@ -398,8 +398,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
+              terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -465,8 +465,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
+              terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.

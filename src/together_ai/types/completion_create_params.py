@@ -60,7 +60,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
     stream: Literal[False]
-    """If set, tokens are returned as Server-Sent Events as they are made available.
+    """If set, tokens are returned as Server-Sent Events as they are available.
 
     Stream terminates with `data: [DONE]`
     """
@@ -68,7 +68,7 @@ class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
 
 class CompletionCreateParamsStreaming(CompletionCreateParamsBase):
     stream: Required[Literal[True]]
-    """If set, tokens are returned as Server-Sent Events as they are made available.
+    """If set, tokens are returned as Server-Sent Events as they are available.
 
     Stream terminates with `data: [DONE]`
     """
