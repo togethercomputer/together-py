@@ -71,13 +71,13 @@ from ._response import (
     extract_response_type,
 )
 from ._constants import (
-    DEFAULT_LIMITS,
     DEFAULT_TIMEOUT,
     MAX_RETRY_DELAY,
     DEFAULT_MAX_RETRIES,
     INITIAL_RETRY_DELAY,
     RAW_RESPONSE_HEADER,
     OVERRIDE_CAST_TO_HEADER,
+    DEFAULT_CONNECTION_LIMITS,
 )
 from ._streaming import Stream, SSEDecoder, AsyncStream, SSEBytesDecoder
 from ._exceptions import (
@@ -359,6 +359,11 @@ class BaseClient(Generic[_HttpxClientT, _DefaultStreamT]):
         self._custom_query = custom_query or {}
         self._strict_response_validation = _strict_response_validation
         self._idempotency_header = None
+
+        if max_retries is None:  # pyright: ignore[reportUnnecessaryComparison]
+            raise TypeError(
+                "max_retries cannot be None. If you want to disable retries, pass `0`; if you want unlimited retries, pass `math.inf` or a very high number; if you want the default behavior, pass `togetherai.DEFAULT_MAX_RETRIES`"
+            )
 
     def _enforce_trailing_slash(self, url: URL) -> URL:
         if url.raw_path.endswith(b"/"):
@@ -746,7 +751,7 @@ class SyncAPIClient(BaseClient[httpx.Client, Stream[Any]]):
             if http_client is not None:
                 raise ValueError("The `http_client` argument is mutually exclusive with `connection_pool_limits`")
         else:
-            limits = DEFAULT_LIMITS
+            limits = DEFAULT_CONNECTION_LIMITS
 
         if transport is not None:
             warnings.warn(
@@ -1280,7 +1285,7 @@ class AsyncAPIClient(BaseClient[httpx.AsyncClient, AsyncStream[Any]]):
             if http_client is not None:
                 raise ValueError("The `http_client` argument is mutually exclusive with `connection_pool_limits`")
         else:
-            limits = DEFAULT_LIMITS
+            limits = DEFAULT_CONNECTION_LIMITS
 
         if transport is not None:
             warnings.warn(
