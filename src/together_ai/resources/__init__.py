@@ -16,6 +16,22 @@ from .files import (
     FilesWithStreamingResponse,
     AsyncFilesWithStreamingResponse,
 )
+from .images import (
+    Images,
+    AsyncImages,
+    ImagesWithRawResponse,
+    AsyncImagesWithRawResponse,
+    ImagesWithStreamingResponse,
+    AsyncImagesWithStreamingResponse,
+)
+from .models import (
+    Models,
+    AsyncModels,
+    ModelsWithRawResponse,
+    AsyncModelsWithRawResponse,
+    ModelsWithStreamingResponse,
+    AsyncModelsWithStreamingResponse,
+)
 from .embeddings import (
     Embeddings,
     AsyncEmbeddings,
@@ -72,4 +88,16 @@ __all__ = [
     "AsyncFineTunesWithRawResponse",
     "FineTunesWithStreamingResponse",
     "AsyncFineTunesWithStreamingResponse",
+    "Images",
+    "AsyncImages",
+    "ImagesWithRawResponse",
+    "AsyncImagesWithRawResponse",
+    "ImagesWithStreamingResponse",
+    "AsyncImagesWithStreamingResponse",
+    "Models",
+    "AsyncModels",
+    "ModelsWithRawResponse",
+    "AsyncModelsWithRawResponse",
+    "ModelsWithStreamingResponse",
+    "AsyncModelsWithStreamingResponse",
 ]

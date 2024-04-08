@@ -1,0 +1,24 @@
+# File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+from __future__ import annotations
+
+from typing_extensions import Required, TypedDict
+
+__all__ = ["FineTuneDownloadParams"]
+
+
+class FineTuneDownloadParams(TypedDict, total=False):
+    ft_id: Required[str]
+    """Fine-tune ID to download. A string that starts with `ft-`."""
+
+    checkpoint_step: int
+    """Specifies step number for checkpoint to download.
+
+    Defaults to -1 (download the final model).
+    """
+
+    output: str
+    """Specifies output file name for downloaded model.
+
+    Defaults to `$PWD/{model_name}.{extension}`.
+    """

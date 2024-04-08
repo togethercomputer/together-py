@@ -13,7 +13,9 @@ from together_ai.types import (
     FineTuneListResponse,
     FineTuneCancelResponse,
     FineTuneCreateResponse,
+    FineTuneDownloadResponse,
     FineTuneRetrieveResponse,
+    FineTuneListEventsResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -171,6 +173,84 @@ class TestFineTunes:
                 "",
             )
 
+    @parametrize
+    def test_method_download(self, client: TogetherAI) -> None:
+        fine_tune = client.fine_tunes.download(
+            ft_id="string",
+        )
+        assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_method_download_with_all_params(self, client: TogetherAI) -> None:
+        fine_tune = client.fine_tunes.download(
+            ft_id="string",
+            checkpoint_step=0,
+            output="string",
+        )
+        assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_raw_response_download(self, client: TogetherAI) -> None:
+        response = client.fine_tunes.with_raw_response.download(
+            ft_id="string",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tune = response.parse()
+        assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_streaming_response_download(self, client: TogetherAI) -> None:
+        with client.fine_tunes.with_streaming_response.download(
+            ft_id="string",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tune = response.parse()
+            assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_list_events(self, client: TogetherAI) -> None:
+        fine_tune = client.fine_tunes.list_events(
+            "string",
+        )
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_raw_response_list_events(self, client: TogetherAI) -> None:
+        response = client.fine_tunes.with_raw_response.list_events(
+            "string",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tune = response.parse()
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_streaming_response_list_events(self, client: TogetherAI) -> None:
+        with client.fine_tunes.with_streaming_response.list_events(
+            "string",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tune = response.parse()
+            assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_list_events(self, client: TogetherAI) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.fine_tunes.with_raw_response.list_events(
+                "",
+            )
+
 
 class TestAsyncFineTunes:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
@@ -321,5 +401,83 @@ class TestAsyncFineTunes:
     async def test_path_params_cancel(self, async_client: AsyncTogetherAI) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.fine_tunes.with_raw_response.cancel(
+                "",
+            )
+
+    @parametrize
+    async def test_method_download(self, async_client: AsyncTogetherAI) -> None:
+        fine_tune = await async_client.fine_tunes.download(
+            ft_id="string",
+        )
+        assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_method_download_with_all_params(self, async_client: AsyncTogetherAI) -> None:
+        fine_tune = await async_client.fine_tunes.download(
+            ft_id="string",
+            checkpoint_step=0,
+            output="string",
+        )
+        assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_raw_response_download(self, async_client: AsyncTogetherAI) -> None:
+        response = await async_client.fine_tunes.with_raw_response.download(
+            ft_id="string",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tune = await response.parse()
+        assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_download(self, async_client: AsyncTogetherAI) -> None:
+        async with async_client.fine_tunes.with_streaming_response.download(
+            ft_id="string",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tune = await response.parse()
+            assert_matches_type(FineTuneDownloadResponse, fine_tune, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_list_events(self, async_client: AsyncTogetherAI) -> None:
+        fine_tune = await async_client.fine_tunes.list_events(
+            "string",
+        )
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_raw_response_list_events(self, async_client: AsyncTogetherAI) -> None:
+        response = await async_client.fine_tunes.with_raw_response.list_events(
+            "string",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tune = await response.parse()
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_list_events(self, async_client: AsyncTogetherAI) -> None:
+        async with async_client.fine_tunes.with_streaming_response.list_events(
+            "string",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tune = await response.parse()
+            assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_list_events(self, async_client: AsyncTogetherAI) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.fine_tunes.with_raw_response.list_events(
                 "",
             )

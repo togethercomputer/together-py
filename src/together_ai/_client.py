@@ -51,6 +51,8 @@ class TogetherAI(SyncAPIClient):
     embeddings: resources.Embeddings
     files: resources.Files
     fine_tunes: resources.FineTunes
+    images: resources.Images
+    models: resources.Models
     with_raw_response: TogetherAIWithRawResponse
     with_streaming_response: TogetherAIWithStreamedResponse
 
@@ -115,6 +117,8 @@ class TogetherAI(SyncAPIClient):
         self.embeddings = resources.Embeddings(self)
         self.files = resources.Files(self)
         self.fine_tunes = resources.FineTunes(self)
+        self.images = resources.Images(self)
+        self.models = resources.Models(self)
         self.with_raw_response = TogetherAIWithRawResponse(self)
         self.with_streaming_response = TogetherAIWithStreamedResponse(self)
 
@@ -229,6 +233,8 @@ class AsyncTogetherAI(AsyncAPIClient):
     embeddings: resources.AsyncEmbeddings
     files: resources.AsyncFiles
     fine_tunes: resources.AsyncFineTunes
+    images: resources.AsyncImages
+    models: resources.AsyncModels
     with_raw_response: AsyncTogetherAIWithRawResponse
     with_streaming_response: AsyncTogetherAIWithStreamedResponse
 
@@ -293,6 +299,8 @@ class AsyncTogetherAI(AsyncAPIClient):
         self.embeddings = resources.AsyncEmbeddings(self)
         self.files = resources.AsyncFiles(self)
         self.fine_tunes = resources.AsyncFineTunes(self)
+        self.images = resources.AsyncImages(self)
+        self.models = resources.AsyncModels(self)
         self.with_raw_response = AsyncTogetherAIWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherAIWithStreamedResponse(self)
 
@@ -408,6 +416,8 @@ class TogetherAIWithRawResponse:
         self.embeddings = resources.EmbeddingsWithRawResponse(client.embeddings)
         self.files = resources.FilesWithRawResponse(client.files)
         self.fine_tunes = resources.FineTunesWithRawResponse(client.fine_tunes)
+        self.images = resources.ImagesWithRawResponse(client.images)
+        self.models = resources.ModelsWithRawResponse(client.models)
 
 
 class AsyncTogetherAIWithRawResponse:
@@ -417,6 +427,8 @@ class AsyncTogetherAIWithRawResponse:
         self.embeddings = resources.AsyncEmbeddingsWithRawResponse(client.embeddings)
         self.files = resources.AsyncFilesWithRawResponse(client.files)
         self.fine_tunes = resources.AsyncFineTunesWithRawResponse(client.fine_tunes)
+        self.images = resources.AsyncImagesWithRawResponse(client.images)
+        self.models = resources.AsyncModelsWithRawResponse(client.models)
 
 
 class TogetherAIWithStreamedResponse:
@@ -426,6 +438,8 @@ class TogetherAIWithStreamedResponse:
         self.embeddings = resources.EmbeddingsWithStreamingResponse(client.embeddings)
         self.files = resources.FilesWithStreamingResponse(client.files)
         self.fine_tunes = resources.FineTunesWithStreamingResponse(client.fine_tunes)
+        self.images = resources.ImagesWithStreamingResponse(client.images)
+        self.models = resources.ModelsWithStreamingResponse(client.models)
 
 
 class AsyncTogetherAIWithStreamedResponse:
@@ -435,6 +449,8 @@ class AsyncTogetherAIWithStreamedResponse:
         self.embeddings = resources.AsyncEmbeddingsWithStreamingResponse(client.embeddings)
         self.files = resources.AsyncFilesWithStreamingResponse(client.files)
         self.fine_tunes = resources.AsyncFineTunesWithStreamingResponse(client.fine_tunes)
+        self.images = resources.AsyncImagesWithStreamingResponse(client.images)
+        self.models = resources.AsyncModelsWithStreamingResponse(client.models)
 
 
 Client = TogetherAI
