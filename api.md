@@ -57,10 +57,8 @@ Types:
 
 ```python
 from together_ai.types import (
-    FineTuneCreateResponse,
-    FineTuneRetrieveResponse,
+    FineTunes,
     FineTuneListResponse,
-    FineTuneCancelResponse,
     FineTuneDownloadResponse,
     FineTuneListEventsResponse,
 )
@@ -68,10 +66,10 @@ from together_ai.types import (
 
 Methods:
 
-- <code title="post /fine-tunes">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">create</a>(\*\*<a href="src/together_ai/types/fine_tune_create_params.py">params</a>) -> <a href="./src/together_ai/types/fine_tune_create_response.py">FineTuneCreateResponse</a></code>
-- <code title="get /fine-tunes/{id}">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">retrieve</a>(id) -> <a href="./src/together_ai/types/fine_tune_retrieve_response.py">FineTuneRetrieveResponse</a></code>
+- <code title="post /fine-tunes">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">create</a>(\*\*<a href="src/together_ai/types/fine_tune_create_params.py">params</a>) -> <a href="./src/together_ai/types/fine_tunes.py">FineTunes</a></code>
+- <code title="get /fine-tunes/{id}">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">retrieve</a>(id) -> <a href="./src/together_ai/types/fine_tunes.py">FineTunes</a></code>
 - <code title="get /fine-tunes">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">list</a>() -> <a href="./src/together_ai/types/fine_tune_list_response.py">FineTuneListResponse</a></code>
-- <code title="post /fine-tunes/{id}/cancel">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">cancel</a>(id) -> <a href="./src/together_ai/types/fine_tune_cancel_response.py">FineTuneCancelResponse</a></code>
+- <code title="post /fine-tunes/{id}/cancel">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">cancel</a>(id) -> <a href="./src/together_ai/types/fine_tunes.py">FineTunes</a></code>
 - <code title="get /fine-tunes/download">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">download</a>(\*\*<a href="src/together_ai/types/fine_tune_download_params.py">params</a>) -> <a href="./src/together_ai/types/fine_tune_download_response.py">FineTuneDownloadResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">list_events</a>(id) -> <a href="./src/together_ai/types/fine_tune_list_events_response.py">FineTuneListEventsResponse</a></code>
 
