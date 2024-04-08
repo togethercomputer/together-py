@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 from .._models import BaseModel
 
-__all__ = ["ImageCreateResponse", "Image"]
+__all__ = ["ImagesResponse", "Image"]
 
 
 class Image(BaseModel):
@@ -13,7 +13,7 @@ class Image(BaseModel):
     url: Optional[str] = None
 
 
-class ImageCreateResponse(BaseModel):
+class ImagesResponse(BaseModel):
     id: Optional[str] = None
 
     created: Optional[int] = None

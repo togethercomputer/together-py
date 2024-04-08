@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from ..types import ImageCreateResponse, image_create_params
+from ..types import ImagesResponse, image_create_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._utils import (
     maybe_transform,
@@ -51,7 +51,7 @@ class Images(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> ImageCreateResponse:
+    ) -> ImagesResponse:
         """
         Generate images based on a given prompt using a specified model
 
@@ -98,7 +98,7 @@ class Images(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=ImageCreateResponse,
+            cast_to=ImagesResponse,
         )
 
 
@@ -128,7 +128,7 @@ class AsyncImages(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> ImageCreateResponse:
+    ) -> ImagesResponse:
         """
         Generate images based on a given prompt using a specified model
 
@@ -175,7 +175,7 @@ class AsyncImages(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=ImageCreateResponse,
+            cast_to=ImagesResponse,
         )
 
 
