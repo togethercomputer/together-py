@@ -8,8 +8,11 @@ from ..types import (
     FineTuneListResponse,
     FineTuneCancelResponse,
     FineTuneCreateResponse,
+    FineTuneDownloadResponse,
     FineTuneRetrieveResponse,
+    FineTuneListEventsResponse,
     fine_tune_create_params,
+    fine_tune_download_params,
 )
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._utils import (
@@ -192,6 +195,91 @@ class FineTunes(SyncAPIResource):
             cast_to=FineTuneCancelResponse,
         )
 
+    def download(
+        self,
+        *,
+        ft_id: str,
+        checkpoint_step: int | NotGiven = NOT_GIVEN,
+        output: str | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> FineTuneDownloadResponse:
+        """
+        Downloads a compressed fine-tuned model or checkpoint to local disk.
+
+        Args:
+          ft_id: Fine-tune ID to download. A string that starts with `ft-`.
+
+          checkpoint_step: Specifies step number for checkpoint to download. Defaults to -1 (download the
+              final model).
+
+          output: Specifies output file name for downloaded model. Defaults to
+              `$PWD/{model_name}.{extension}`.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._get(
+            "/fine-tunes/download",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "ft_id": ft_id,
+                        "checkpoint_step": checkpoint_step,
+                        "output": output,
+                    },
+                    fine_tune_download_params.FineTuneDownloadParams,
+                ),
+            ),
+            cast_to=FineTuneDownloadResponse,
+        )
+
+    def list_events(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> FineTuneListEventsResponse:
+        """
+        List events of a fine-tune job
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            f"/fine-tunes/{id}/events",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneListEventsResponse,
+        )
+
 
 class AsyncFineTunes(AsyncAPIResource):
     @cached_property
@@ -354,6 +442,91 @@ class AsyncFineTunes(AsyncAPIResource):
             cast_to=FineTuneCancelResponse,
         )
 
+    async def download(
+        self,
+        *,
+        ft_id: str,
+        checkpoint_step: int | NotGiven = NOT_GIVEN,
+        output: str | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> FineTuneDownloadResponse:
+        """
+        Downloads a compressed fine-tuned model or checkpoint to local disk.
+
+        Args:
+          ft_id: Fine-tune ID to download. A string that starts with `ft-`.
+
+          checkpoint_step: Specifies step number for checkpoint to download. Defaults to -1 (download the
+              final model).
+
+          output: Specifies output file name for downloaded model. Defaults to
+              `$PWD/{model_name}.{extension}`.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._get(
+            "/fine-tunes/download",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {
+                        "ft_id": ft_id,
+                        "checkpoint_step": checkpoint_step,
+                        "output": output,
+                    },
+                    fine_tune_download_params.FineTuneDownloadParams,
+                ),
+            ),
+            cast_to=FineTuneDownloadResponse,
+        )
+
+    async def list_events(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> FineTuneListEventsResponse:
+        """
+        List events of a fine-tune job
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            f"/fine-tunes/{id}/events",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneListEventsResponse,
+        )
+
 
 class FineTunesWithRawResponse:
     def __init__(self, fine_tunes: FineTunes) -> None:
@@ -370,6 +543,12 @@ class FineTunesWithRawResponse:
         )
         self.cancel = to_raw_response_wrapper(
             fine_tunes.cancel,
+        )
+        self.download = to_raw_response_wrapper(
+            fine_tunes.download,
+        )
+        self.list_events = to_raw_response_wrapper(
+            fine_tunes.list_events,
         )
 
 
@@ -389,6 +568,12 @@ class AsyncFineTunesWithRawResponse:
         self.cancel = async_to_raw_response_wrapper(
             fine_tunes.cancel,
         )
+        self.download = async_to_raw_response_wrapper(
+            fine_tunes.download,
+        )
+        self.list_events = async_to_raw_response_wrapper(
+            fine_tunes.list_events,
+        )
 
 
 class FineTunesWithStreamingResponse:
@@ -407,6 +592,12 @@ class FineTunesWithStreamingResponse:
         self.cancel = to_streamed_response_wrapper(
             fine_tunes.cancel,
         )
+        self.download = to_streamed_response_wrapper(
+            fine_tunes.download,
+        )
+        self.list_events = to_streamed_response_wrapper(
+            fine_tunes.list_events,
+        )
 
 
 class AsyncFineTunesWithStreamingResponse:
@@ -424,4 +615,10 @@ class AsyncFineTunesWithStreamingResponse:
         )
         self.cancel = async_to_streamed_response_wrapper(
             fine_tunes.cancel,
+        )
+        self.download = async_to_streamed_response_wrapper(
+            fine_tunes.download,
+        )
+        self.list_events = async_to_streamed_response_wrapper(
+            fine_tunes.list_events,
         )
