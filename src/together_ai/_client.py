@@ -50,6 +50,7 @@ class TogetherAI(SyncAPIClient):
     completions: resources.Completions
     embeddings: resources.Embeddings
     files: resources.Files
+    fine_tunes: resources.FineTunes
     with_raw_response: TogetherAIWithRawResponse
     with_streaming_response: TogetherAIWithStreamedResponse
 
@@ -113,6 +114,7 @@ class TogetherAI(SyncAPIClient):
         self.completions = resources.Completions(self)
         self.embeddings = resources.Embeddings(self)
         self.files = resources.Files(self)
+        self.fine_tunes = resources.FineTunes(self)
         self.with_raw_response = TogetherAIWithRawResponse(self)
         self.with_streaming_response = TogetherAIWithStreamedResponse(self)
 
@@ -226,6 +228,7 @@ class AsyncTogetherAI(AsyncAPIClient):
     completions: resources.AsyncCompletions
     embeddings: resources.AsyncEmbeddings
     files: resources.AsyncFiles
+    fine_tunes: resources.AsyncFineTunes
     with_raw_response: AsyncTogetherAIWithRawResponse
     with_streaming_response: AsyncTogetherAIWithStreamedResponse
 
@@ -289,6 +292,7 @@ class AsyncTogetherAI(AsyncAPIClient):
         self.completions = resources.AsyncCompletions(self)
         self.embeddings = resources.AsyncEmbeddings(self)
         self.files = resources.AsyncFiles(self)
+        self.fine_tunes = resources.AsyncFineTunes(self)
         self.with_raw_response = AsyncTogetherAIWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherAIWithStreamedResponse(self)
 
@@ -403,6 +407,7 @@ class TogetherAIWithRawResponse:
         self.completions = resources.CompletionsWithRawResponse(client.completions)
         self.embeddings = resources.EmbeddingsWithRawResponse(client.embeddings)
         self.files = resources.FilesWithRawResponse(client.files)
+        self.fine_tunes = resources.FineTunesWithRawResponse(client.fine_tunes)
 
 
 class AsyncTogetherAIWithRawResponse:
@@ -411,6 +416,7 @@ class AsyncTogetherAIWithRawResponse:
         self.completions = resources.AsyncCompletionsWithRawResponse(client.completions)
         self.embeddings = resources.AsyncEmbeddingsWithRawResponse(client.embeddings)
         self.files = resources.AsyncFilesWithRawResponse(client.files)
+        self.fine_tunes = resources.AsyncFineTunesWithRawResponse(client.fine_tunes)
 
 
 class TogetherAIWithStreamedResponse:
@@ -419,6 +425,7 @@ class TogetherAIWithStreamedResponse:
         self.completions = resources.CompletionsWithStreamingResponse(client.completions)
         self.embeddings = resources.EmbeddingsWithStreamingResponse(client.embeddings)
         self.files = resources.FilesWithStreamingResponse(client.files)
+        self.fine_tunes = resources.FineTunesWithStreamingResponse(client.fine_tunes)
 
 
 class AsyncTogetherAIWithStreamedResponse:
@@ -427,6 +434,7 @@ class AsyncTogetherAIWithStreamedResponse:
         self.completions = resources.AsyncCompletionsWithStreamingResponse(client.completions)
         self.embeddings = resources.AsyncEmbeddingsWithStreamingResponse(client.embeddings)
         self.files = resources.AsyncFilesWithStreamingResponse(client.files)
+        self.fine_tunes = resources.AsyncFineTunesWithStreamingResponse(client.fine_tunes)
 
 
 Client = TogetherAI

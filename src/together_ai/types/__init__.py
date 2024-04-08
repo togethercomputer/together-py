@@ -8,4 +8,9 @@ from .embeddings_response import EmbeddingsResponse as EmbeddingsResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .file_retrieve_response import FileRetrieveResponse as FileRetrieveResponse
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
+from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
+from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
+from .fine_tune_cancel_response import FineTuneCancelResponse as FineTuneCancelResponse
+from .fine_tune_create_response import FineTuneCreateResponse as FineTuneCreateResponse
+from .fine_tune_retrieve_response import FineTuneRetrieveResponse as FineTuneRetrieveResponse
