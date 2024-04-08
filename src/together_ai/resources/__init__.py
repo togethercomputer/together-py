@@ -32,6 +32,14 @@ from .models import (
     ModelsWithStreamingResponse,
     AsyncModelsWithStreamingResponse,
 )
+from .fine_tune import (
+    FineTuneResource,
+    AsyncFineTuneResource,
+    FineTuneResourceWithRawResponse,
+    AsyncFineTuneResourceWithRawResponse,
+    FineTuneResourceWithStreamingResponse,
+    AsyncFineTuneResourceWithStreamingResponse,
+)
 from .embeddings import (
     Embeddings,
     AsyncEmbeddings,
@@ -39,14 +47,6 @@ from .embeddings import (
     AsyncEmbeddingsWithRawResponse,
     EmbeddingsWithStreamingResponse,
     AsyncEmbeddingsWithStreamingResponse,
-)
-from .fine_tunes import (
-    FineTunes,
-    AsyncFineTunes,
-    FineTunesWithRawResponse,
-    AsyncFineTunesWithRawResponse,
-    FineTunesWithStreamingResponse,
-    AsyncFineTunesWithStreamingResponse,
 )
 from .completions import (
     Completions,
@@ -82,12 +82,12 @@ __all__ = [
     "AsyncFilesWithRawResponse",
     "FilesWithStreamingResponse",
     "AsyncFilesWithStreamingResponse",
-    "FineTunes",
-    "AsyncFineTunes",
-    "FineTunesWithRawResponse",
-    "AsyncFineTunesWithRawResponse",
-    "FineTunesWithStreamingResponse",
-    "AsyncFineTunesWithStreamingResponse",
+    "FineTuneResource",
+    "AsyncFineTuneResource",
+    "FineTuneResourceWithRawResponse",
+    "AsyncFineTuneResourceWithRawResponse",
+    "FineTuneResourceWithStreamingResponse",
+    "AsyncFineTuneResourceWithStreamingResponse",
     "Images",
     "AsyncImages",
     "ImagesWithRawResponse",
