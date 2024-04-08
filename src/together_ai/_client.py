@@ -50,7 +50,7 @@ class TogetherAI(SyncAPIClient):
     completions: resources.Completions
     embeddings: resources.Embeddings
     files: resources.Files
-    fine_tune: resources.FineTuneResource
+    fine_tune: resources.FineTune
     images: resources.Images
     models: resources.Models
     with_raw_response: TogetherAIWithRawResponse
@@ -116,7 +116,7 @@ class TogetherAI(SyncAPIClient):
         self.completions = resources.Completions(self)
         self.embeddings = resources.Embeddings(self)
         self.files = resources.Files(self)
-        self.fine_tune = resources.FineTuneResource(self)
+        self.fine_tune = resources.FineTune(self)
         self.images = resources.Images(self)
         self.models = resources.Models(self)
         self.with_raw_response = TogetherAIWithRawResponse(self)
@@ -232,7 +232,7 @@ class AsyncTogetherAI(AsyncAPIClient):
     completions: resources.AsyncCompletions
     embeddings: resources.AsyncEmbeddings
     files: resources.AsyncFiles
-    fine_tune: resources.AsyncFineTuneResource
+    fine_tune: resources.AsyncFineTune
     images: resources.AsyncImages
     models: resources.AsyncModels
     with_raw_response: AsyncTogetherAIWithRawResponse
@@ -298,7 +298,7 @@ class AsyncTogetherAI(AsyncAPIClient):
         self.completions = resources.AsyncCompletions(self)
         self.embeddings = resources.AsyncEmbeddings(self)
         self.files = resources.AsyncFiles(self)
-        self.fine_tune = resources.AsyncFineTuneResource(self)
+        self.fine_tune = resources.AsyncFineTune(self)
         self.images = resources.AsyncImages(self)
         self.models = resources.AsyncModels(self)
         self.with_raw_response = AsyncTogetherAIWithRawResponse(self)
@@ -415,7 +415,7 @@ class TogetherAIWithRawResponse:
         self.completions = resources.CompletionsWithRawResponse(client.completions)
         self.embeddings = resources.EmbeddingsWithRawResponse(client.embeddings)
         self.files = resources.FilesWithRawResponse(client.files)
-        self.fine_tune = resources.FineTuneResourceWithRawResponse(client.fine_tune)
+        self.fine_tune = resources.FineTuneWithRawResponse(client.fine_tune)
         self.images = resources.ImagesWithRawResponse(client.images)
         self.models = resources.ModelsWithRawResponse(client.models)
 
@@ -426,7 +426,7 @@ class AsyncTogetherAIWithRawResponse:
         self.completions = resources.AsyncCompletionsWithRawResponse(client.completions)
         self.embeddings = resources.AsyncEmbeddingsWithRawResponse(client.embeddings)
         self.files = resources.AsyncFilesWithRawResponse(client.files)
-        self.fine_tune = resources.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
+        self.fine_tune = resources.AsyncFineTuneWithRawResponse(client.fine_tune)
         self.images = resources.AsyncImagesWithRawResponse(client.images)
         self.models = resources.AsyncModelsWithRawResponse(client.models)
 
@@ -437,7 +437,7 @@ class TogetherAIWithStreamedResponse:
         self.completions = resources.CompletionsWithStreamingResponse(client.completions)
         self.embeddings = resources.EmbeddingsWithStreamingResponse(client.embeddings)
         self.files = resources.FilesWithStreamingResponse(client.files)
-        self.fine_tune = resources.FineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.fine_tune = resources.FineTuneWithStreamingResponse(client.fine_tune)
         self.images = resources.ImagesWithStreamingResponse(client.images)
         self.models = resources.ModelsWithStreamingResponse(client.models)
 
@@ -448,7 +448,7 @@ class AsyncTogetherAIWithStreamedResponse:
         self.completions = resources.AsyncCompletionsWithStreamingResponse(client.completions)
         self.embeddings = resources.AsyncEmbeddingsWithStreamingResponse(client.embeddings)
         self.files = resources.AsyncFilesWithStreamingResponse(client.files)
-        self.fine_tune = resources.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.fine_tune = resources.AsyncFineTuneWithStreamingResponse(client.fine_tune)
         self.images = resources.AsyncImagesWithStreamingResponse(client.images)
         self.models = resources.AsyncModelsWithStreamingResponse(client.models)
 
