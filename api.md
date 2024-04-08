@@ -35,3 +35,15 @@ from together_ai.types import EmbeddingsResponse
 Methods:
 
 - <code title="post /embeddings">client.embeddings.<a href="./src/together_ai/resources/embeddings.py">create</a>(\*\*<a href="src/together_ai/types/embedding_create_params.py">params</a>) -> <a href="./src/together_ai/types/embeddings_response.py">EmbeddingsResponse</a></code>
+
+# Files
+
+Types:
+
+```python
+from together_ai.types import FileListResponse
+```
+
+Methods:
+
+- <code title="get /files">client.files.<a href="./src/together_ai/resources/files.py">list</a>() -> <a href="./src/together_ai/types/file_list_response.py">FileListResponse</a></code>
