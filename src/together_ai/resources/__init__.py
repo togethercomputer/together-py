@@ -24,6 +24,14 @@ from .embeddings import (
     EmbeddingsWithStreamingResponse,
     AsyncEmbeddingsWithStreamingResponse,
 )
+from .fine_tunes import (
+    FineTunes,
+    AsyncFineTunes,
+    FineTunesWithRawResponse,
+    AsyncFineTunesWithRawResponse,
+    FineTunesWithStreamingResponse,
+    AsyncFineTunesWithStreamingResponse,
+)
 from .completions import (
     Completions,
     AsyncCompletions,
@@ -58,4 +66,10 @@ __all__ = [
     "AsyncFilesWithRawResponse",
     "FilesWithStreamingResponse",
     "AsyncFilesWithStreamingResponse",
+    "FineTunes",
+    "AsyncFineTunes",
+    "FineTunesWithRawResponse",
+    "AsyncFineTunesWithRawResponse",
+    "FineTunesWithStreamingResponse",
+    "AsyncFineTunesWithStreamingResponse",
 ]

@@ -50,3 +50,23 @@ Methods:
 - <code title="get /files">client.files.<a href="./src/together_ai/resources/files.py">list</a>() -> <a href="./src/together_ai/types/file_list_response.py">FileListResponse</a></code>
 - <code title="delete /files/{id}">client.files.<a href="./src/together_ai/resources/files.py">delete</a>(id) -> <a href="./src/together_ai/types/file_delete_response.py">FileDeleteResponse</a></code>
 - <code title="get /files/{id}/content">client.files.<a href="./src/together_ai/resources/files.py">content</a>(id) -> BinaryAPIResponse</code>
+
+# FineTunes
+
+Types:
+
+```python
+from together_ai.types import (
+    FineTuneCreateResponse,
+    FineTuneRetrieveResponse,
+    FineTuneListResponse,
+    FineTuneCancelResponse,
+)
+```
+
+Methods:
+
+- <code title="post /fine-tunes">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">create</a>(\*\*<a href="src/together_ai/types/fine_tune_create_params.py">params</a>) -> <a href="./src/together_ai/types/fine_tune_create_response.py">FineTuneCreateResponse</a></code>
+- <code title="get /fine-tunes/{id}">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">retrieve</a>(id) -> <a href="./src/together_ai/types/fine_tune_retrieve_response.py">FineTuneRetrieveResponse</a></code>
+- <code title="get /fine-tunes">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">list</a>() -> <a href="./src/together_ai/types/fine_tune_list_response.py">FineTuneListResponse</a></code>
+- <code title="post /fine-tunes/{id}/cancel">client.fine_tunes.<a href="./src/together_ai/resources/fine_tunes.py">cancel</a>(id) -> <a href="./src/together_ai/types/fine_tune_cancel_response.py">FineTuneCancelResponse</a></code>
