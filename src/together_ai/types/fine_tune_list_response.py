@@ -2,8 +2,8 @@
 
 from typing import List
 
-from .fine_tunes import FineTunes
+from .fine_tune import FineTune
 
 __all__ = ["FineTuneListResponse"]
 
-FineTuneListResponse = List[FineTunes]
+FineTuneListResponse = List[FineTune]
