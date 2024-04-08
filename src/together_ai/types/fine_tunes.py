@@ -5,7 +5,7 @@ from typing_extensions import Literal
 
 from .._models import BaseModel
 
-__all__ = ["FineTune", "Event"]
+__all__ = ["FineTunes", "Event"]
 
 
 class Event(BaseModel):
@@ -56,7 +56,7 @@ class Event(BaseModel):
     wandb_url: Optional[str] = None
 
 
-class FineTune(BaseModel):
+class FineTunes(BaseModel):
     id: Optional[str] = None
 
     batch_size: Optional[int] = None

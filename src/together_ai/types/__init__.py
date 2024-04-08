@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .fine_tune import FineTune as FineTune
+from .fine_tunes import FineTunes as FineTunes
 from .images_response import ImagesResponse as ImagesResponse
 from .file_list_response import FileListResponse as FileListResponse
 from .completion_response import CompletionResponse as CompletionResponse
