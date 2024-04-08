@@ -36,7 +36,7 @@ chat_completion = client.chat.completions.create(
     messages=[
         {
             "role": "user",
-            "content": "Say this is a test",
+            "content": "Say this is a test!",
         }
     ],
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -69,7 +69,7 @@ async def main() -> None:
         messages=[
             {
                 "role": "user",
-                "content": "Say this is a test",
+                "content": "Say this is a test!",
             }
         ],
         model="mistralai/Mixtral-8x7B-Instruct-v0.1",
