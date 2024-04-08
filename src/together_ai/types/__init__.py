@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .fine_tunes import FineTunes as FineTunes
 from .images_response import ImagesResponse as ImagesResponse
 from .file_list_response import FileListResponse as FileListResponse
 from .completion_response import CompletionResponse as CompletionResponse
@@ -14,9 +15,6 @@ from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreatePar
 from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
-from .fine_tune_cancel_response import FineTuneCancelResponse as FineTuneCancelResponse
-from .fine_tune_create_response import FineTuneCreateResponse as FineTuneCreateResponse
 from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloadParams
 from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
-from .fine_tune_retrieve_response import FineTuneRetrieveResponse as FineTuneRetrieveResponse
 from .fine_tune_list_events_response import FineTuneListEventsResponse as FineTuneListEventsResponse

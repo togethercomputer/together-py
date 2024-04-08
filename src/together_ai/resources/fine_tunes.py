@@ -6,11 +6,9 @@ import httpx
 
 from ..types import (
     FineTuneListResponse,
-    FineTuneCancelResponse,
-    FineTuneCreateResponse,
     FineTuneDownloadResponse,
-    FineTuneRetrieveResponse,
     FineTuneListEventsResponse,
+    fine_tunes,
     fine_tune_create_params,
     fine_tune_download_params,
 )
@@ -60,7 +58,7 @@ class FineTunes(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneCreateResponse:
+    ) -> fine_tunes.FineTunes:
         """
         Create a fine-tuning job
 
@@ -107,7 +105,7 @@ class FineTunes(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCreateResponse,
+            cast_to=fine_tunes.FineTunes,
         )
 
     def retrieve(
@@ -120,7 +118,7 @@ class FineTunes(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneRetrieveResponse:
+    ) -> fine_tunes.FineTunes:
         """
         Retrieve fine-tune job details
 
@@ -140,7 +138,7 @@ class FineTunes(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneRetrieveResponse,
+            cast_to=fine_tunes.FineTunes,
         )
 
     def list(
@@ -172,7 +170,7 @@ class FineTunes(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneCancelResponse:
+    ) -> fine_tunes.FineTunes:
         """
         Cancels a running fine-tuning job.
 
@@ -192,7 +190,7 @@ class FineTunes(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCancelResponse,
+            cast_to=fine_tunes.FineTunes,
         )
 
     def download(
@@ -307,7 +305,7 @@ class AsyncFineTunes(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneCreateResponse:
+    ) -> fine_tunes.FineTunes:
         """
         Create a fine-tuning job
 
@@ -354,7 +352,7 @@ class AsyncFineTunes(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCreateResponse,
+            cast_to=fine_tunes.FineTunes,
         )
 
     async def retrieve(
@@ -367,7 +365,7 @@ class AsyncFineTunes(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneRetrieveResponse:
+    ) -> fine_tunes.FineTunes:
         """
         Retrieve fine-tune job details
 
@@ -387,7 +385,7 @@ class AsyncFineTunes(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneRetrieveResponse,
+            cast_to=fine_tunes.FineTunes,
         )
 
     async def list(
@@ -419,7 +417,7 @@ class AsyncFineTunes(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneCancelResponse:
+    ) -> fine_tunes.FineTunes:
         """
         Cancels a running fine-tuning job.
 
@@ -439,7 +437,7 @@ class AsyncFineTunes(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCancelResponse,
+            cast_to=fine_tunes.FineTunes,
         )
 
     async def download(
