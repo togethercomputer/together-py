@@ -8,6 +8,14 @@ from .chat import (
     ChatWithStreamingResponse,
     AsyncChatWithStreamingResponse,
 )
+from .files import (
+    Files,
+    AsyncFiles,
+    FilesWithRawResponse,
+    AsyncFilesWithRawResponse,
+    FilesWithStreamingResponse,
+    AsyncFilesWithStreamingResponse,
+)
 from .embeddings import (
     Embeddings,
     AsyncEmbeddings,
@@ -44,4 +52,10 @@ __all__ = [
     "AsyncEmbeddingsWithRawResponse",
     "EmbeddingsWithStreamingResponse",
     "AsyncEmbeddingsWithStreamingResponse",
+    "Files",
+    "AsyncFiles",
+    "FilesWithRawResponse",
+    "AsyncFilesWithRawResponse",
+    "FilesWithStreamingResponse",
+    "AsyncFilesWithStreamingResponse",
 ]
