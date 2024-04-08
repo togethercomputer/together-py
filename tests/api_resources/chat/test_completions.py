@@ -61,9 +61,41 @@ class TestCompletions:
             max_tokens=0,
             n=1,
             repetition_penalty=0,
+            response_format={
+                "type": "json",
+                "schema": {"foo": "bar"},
+            },
+            safety_model="safety_model_name",
             stop=["string", "string", "string"],
             stream=False,
             temperature=0,
+            tool_choice="tool_name",
+            tools=[
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+            ],
             top_k=0,
             top_p=0,
         )
@@ -167,8 +199,40 @@ class TestCompletions:
             max_tokens=0,
             n=1,
             repetition_penalty=0,
+            response_format={
+                "type": "json",
+                "schema": {"foo": "bar"},
+            },
+            safety_model="safety_model_name",
             stop=["string", "string", "string"],
             temperature=0,
+            tool_choice="tool_name",
+            tools=[
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+            ],
             top_k=0,
             top_p=0,
         )
@@ -275,9 +339,41 @@ class TestAsyncCompletions:
             max_tokens=0,
             n=1,
             repetition_penalty=0,
+            response_format={
+                "type": "json",
+                "schema": {"foo": "bar"},
+            },
+            safety_model="safety_model_name",
             stop=["string", "string", "string"],
             stream=False,
             temperature=0,
+            tool_choice="tool_name",
+            tools=[
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+            ],
             top_k=0,
             top_p=0,
         )
@@ -381,8 +477,40 @@ class TestAsyncCompletions:
             max_tokens=0,
             n=1,
             repetition_penalty=0,
+            response_format={
+                "type": "json",
+                "schema": {"foo": "bar"},
+            },
+            safety_model="safety_model_name",
             stop=["string", "string", "string"],
             temperature=0,
+            tool_choice="tool_name",
+            tools=[
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+                {
+                    "type": "tool_type",
+                    "function": {
+                        "description": "A description of the function.",
+                        "name": "function_name",
+                        "parameters": {"foo": "bar"},
+                    },
+                },
+            ],
             top_k=0,
             top_p=0,
         )

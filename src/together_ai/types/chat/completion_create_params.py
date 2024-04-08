@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from typing import List, Union, Iterable
+from typing import Dict, List, Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
 __all__ = [
     "CompletionCreateParamsBase",
     "Message",
+    "ResponseFormat",
+    "ToolChoice",
+    "ToolChoiceToolChoice",
+    "ToolChoiceToolChoiceFunction",
+    "Tool",
+    "ToolFunction",
     "CompletionCreateParamsNonStreaming",
     "CompletionCreateParamsStreaming",
 ]
@@ -44,11 +50,23 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     likelihood of repeated sequences. Higher values decrease repetition.
     """
 
+    response_format: ResponseFormat
+    """Specifies the format of the response."""
+
+    safety_model: str
+    """The name of the safety model to use."""
+
     stop: List[str]
     """A list of string sequences that will truncate (stop) inference text output."""
 
     temperature: float
     """Determines the degree of randomness in the response."""
+
+    tool_choice: ToolChoice
+    """The choice of tool to use."""
+
+    tools: Iterable[Tool]
+    """A list of tools to be used in the query."""
 
     top_k: int
     """
@@ -69,6 +87,42 @@ class Message(TypedDict, total=False):
 
     role: Required[Literal["system", "user", "assistant"]]
     """The role of the messages author. Choice between: system, user, or assistant."""
+
+
+class ResponseFormat(TypedDict, total=False):
+    schema: Dict[str, object]
+    """The schema of the response format."""
+
+    type: str
+    """The type of the response format."""
+
+
+class ToolChoiceToolChoiceFunction(TypedDict, total=False):
+    name: str
+
+
+class ToolChoiceToolChoice(TypedDict, total=False):
+    function: ToolChoiceToolChoiceFunction
+
+    type: str
+
+
+ToolChoice = Union[str, ToolChoiceToolChoice]
+
+
+class ToolFunction(TypedDict, total=False):
+    description: str
+
+    name: str
+
+    parameters: Dict[str, object]
+    """A map of parameter names to their values."""
+
+
+class Tool(TypedDict, total=False):
+    function: ToolFunction
+
+    type: str
 
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):

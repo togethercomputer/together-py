@@ -50,6 +50,7 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -83,10 +84,12 @@ class Completions(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
-              terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
 
@@ -118,6 +121,7 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -137,8 +141,8 @@ class Completions(SyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
-              terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -152,6 +156,8 @@ class Completions(SyncAPIResource):
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
+
+          safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
@@ -185,6 +191,7 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -204,8 +211,8 @@ class Completions(SyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
-              terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -219,6 +226,8 @@ class Completions(SyncAPIResource):
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
+
+          safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
@@ -251,6 +260,7 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -274,6 +284,7 @@ class Completions(SyncAPIResource):
                     "max_tokens": max_tokens,
                     "n": n,
                     "repetition_penalty": repetition_penalty,
+                    "safety_model": safety_model,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
@@ -311,6 +322,7 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -344,10 +356,12 @@ class AsyncCompletions(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
-              terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
 
@@ -379,6 +393,7 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -398,8 +413,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
-              terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -413,6 +428,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
+
+          safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
@@ -446,6 +463,7 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -465,8 +483,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          stream: If set, tokens are returned as Server-Sent Events as they are available. Stream
-              terminates with `data: [DONE]`
+          stream: If set, tokens are returned as Server-Sent Events as they are made available.
+              Stream terminates with `data: [DONE]`
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -480,6 +498,8 @@ class AsyncCompletions(AsyncAPIResource):
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
+
+          safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
@@ -512,6 +532,7 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -535,6 +556,7 @@ class AsyncCompletions(AsyncAPIResource):
                     "max_tokens": max_tokens,
                     "n": n,
                     "repetition_penalty": repetition_penalty,
+                    "safety_model": safety_model,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,

@@ -50,9 +50,13 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -83,12 +87,20 @@ class Completions(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
               Stream terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -118,8 +130,12 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -153,9 +169,17 @@ class Completions(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -185,8 +209,12 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -220,9 +248,17 @@ class Completions(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -251,9 +287,13 @@ class Completions(SyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -274,9 +314,13 @@ class Completions(SyncAPIResource):
                     "max_tokens": max_tokens,
                     "n": n,
                     "repetition_penalty": repetition_penalty,
+                    "response_format": response_format,
+                    "safety_model": safety_model,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
+                    "tool_choice": tool_choice,
+                    "tools": tools,
                     "top_k": top_k,
                     "top_p": top_p,
                 },
@@ -311,9 +355,13 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -344,12 +392,20 @@ class AsyncCompletions(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
               Stream terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -379,8 +435,12 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -414,9 +474,17 @@ class AsyncCompletions(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -446,8 +514,12 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -481,9 +553,17 @@ class AsyncCompletions(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
+          safety_model: The name of the safety model to use.
+
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -512,9 +592,13 @@ class AsyncCompletions(AsyncAPIResource):
         max_tokens: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[completion_create_params.Tool] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -535,9 +619,13 @@ class AsyncCompletions(AsyncAPIResource):
                     "max_tokens": max_tokens,
                     "n": n,
                     "repetition_penalty": repetition_penalty,
+                    "response_format": response_format,
+                    "safety_model": safety_model,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
+                    "tool_choice": tool_choice,
+                    "tools": tools,
                     "top_k": top_k,
                     "top_p": top_p,
                 },

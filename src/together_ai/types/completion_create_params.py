@@ -39,6 +39,9 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     likelihood of repeated sequences. Higher values decrease repetition.
     """
 
+    safety_model: str
+    """The name of the safety model to use."""
+
     stop: List[str]
     """A list of string sequences that will truncate (stop) inference text output."""
 
@@ -60,7 +63,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
     stream: Literal[False]
-    """If set, tokens are returned as Server-Sent Events as they are available.
+    """If set, tokens are returned as Server-Sent Events as they are made available.
 
     Stream terminates with `data: [DONE]`
     """
@@ -68,7 +71,7 @@ class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
 
 class CompletionCreateParamsStreaming(CompletionCreateParamsBase):
     stream: Required[Literal[True]]
-    """If set, tokens are returned as Server-Sent Events as they are available.
+    """If set, tokens are returned as Server-Sent Events as they are made available.
 
     Stream terminates with `data: [DONE]`
     """
