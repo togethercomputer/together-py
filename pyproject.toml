@@ -1,5 +1,5 @@
 [project]
-name = "togetherai"
+name = "togetherai-python"
 version = "0.0.1-alpha.0"
 description = "The official Python library for the TogetherAI API"
 dynamic = ["readme"]
@@ -39,8 +39,8 @@ classifiers = [
 
 
 [project.urls]
-Homepage = "https://github.com/stainless-sdks/togetherai-python"
-Repository = "https://github.com/stainless-sdks/togetherai-python"
+Homepage = "https://github.com/stainless-sdks/togetherai-python-python"
+Repository = "https://github.com/stainless-sdks/togetherai-python-python"
 
 
 
