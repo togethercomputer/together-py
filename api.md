@@ -80,12 +80,12 @@ Methods:
 Types:
 
 ```python
-from together_ai.types import ImageCreateResponse
+from together_ai.types import ImagesResponse
 ```
 
 Methods:
 
-- <code title="post /images/generations">client.images.<a href="./src/together_ai/resources/images.py">create</a>(\*\*<a href="src/together_ai/types/image_create_params.py">params</a>) -> <a href="./src/together_ai/types/image_create_response.py">ImageCreateResponse</a></code>
+- <code title="post /images/generations">client.images.<a href="./src/together_ai/resources/images.py">create</a>(\*\*<a href="src/together_ai/types/image_create_params.py">params</a>) -> <a href="./src/together_ai/types/images_response.py">ImagesResponse</a></code>
 
 # Models
 
