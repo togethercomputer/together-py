@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 
 from ..types import (
-    FineTunes,
+    FineTune,
     FineTuneListResponse,
     FineTuneDownloadResponse,
     FineTuneListEventsResponse,
@@ -29,17 +29,17 @@ from .._base_client import (
     make_request_options,
 )
 
-__all__ = ["FineTune", "AsyncFineTune"]
+__all__ = ["FineTuneResource", "AsyncFineTuneResource"]
 
 
-class FineTune(SyncAPIResource):
+class FineTuneResource(SyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> FineTuneWithRawResponse:
-        return FineTuneWithRawResponse(self)
+    def with_raw_response(self) -> FineTuneResourceWithRawResponse:
+        return FineTuneResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> FineTuneWithStreamingResponse:
-        return FineTuneWithStreamingResponse(self)
+    def with_streaming_response(self) -> FineTuneResourceWithStreamingResponse:
+        return FineTuneResourceWithStreamingResponse(self)
 
     def create(
         self,
@@ -58,7 +58,7 @@ class FineTune(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTunes:
+    ) -> FineTune:
         """
         Create a fine-tuning job
 
@@ -105,7 +105,7 @@ class FineTune(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTunes,
+            cast_to=FineTune,
         )
 
     def retrieve(
@@ -118,7 +118,7 @@ class FineTune(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTunes:
+    ) -> FineTune:
         """
         Retrieve fine-tune job details
 
@@ -138,7 +138,7 @@ class FineTune(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTunes,
+            cast_to=FineTune,
         )
 
     def list(
@@ -170,7 +170,7 @@ class FineTune(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTunes:
+    ) -> FineTune:
         """
         Cancels a running fine-tuning job.
 
@@ -190,7 +190,7 @@ class FineTune(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTunes,
+            cast_to=FineTune,
         )
 
     def download(
@@ -279,14 +279,14 @@ class FineTune(SyncAPIResource):
         )
 
 
-class AsyncFineTune(AsyncAPIResource):
+class AsyncFineTuneResource(AsyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> AsyncFineTuneWithRawResponse:
-        return AsyncFineTuneWithRawResponse(self)
+    def with_raw_response(self) -> AsyncFineTuneResourceWithRawResponse:
+        return AsyncFineTuneResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> AsyncFineTuneWithStreamingResponse:
-        return AsyncFineTuneWithStreamingResponse(self)
+    def with_streaming_response(self) -> AsyncFineTuneResourceWithStreamingResponse:
+        return AsyncFineTuneResourceWithStreamingResponse(self)
 
     async def create(
         self,
@@ -305,7 +305,7 @@ class AsyncFineTune(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTunes:
+    ) -> FineTune:
         """
         Create a fine-tuning job
 
@@ -352,7 +352,7 @@ class AsyncFineTune(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTunes,
+            cast_to=FineTune,
         )
 
     async def retrieve(
@@ -365,7 +365,7 @@ class AsyncFineTune(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTunes:
+    ) -> FineTune:
         """
         Retrieve fine-tune job details
 
@@ -385,7 +385,7 @@ class AsyncFineTune(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTunes,
+            cast_to=FineTune,
         )
 
     async def list(
@@ -417,7 +417,7 @@ class AsyncFineTune(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTunes:
+    ) -> FineTune:
         """
         Cancels a running fine-tuning job.
 
@@ -437,7 +437,7 @@ class AsyncFineTune(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTunes,
+            cast_to=FineTune,
         )
 
     async def download(
@@ -526,8 +526,8 @@ class AsyncFineTune(AsyncAPIResource):
         )
 
 
-class FineTuneWithRawResponse:
-    def __init__(self, fine_tune: FineTune) -> None:
+class FineTuneResourceWithRawResponse:
+    def __init__(self, fine_tune: FineTuneResource) -> None:
         self._fine_tune = fine_tune
 
         self.create = to_raw_response_wrapper(
@@ -550,8 +550,8 @@ class FineTuneWithRawResponse:
         )
 
 
-class AsyncFineTuneWithRawResponse:
-    def __init__(self, fine_tune: AsyncFineTune) -> None:
+class AsyncFineTuneResourceWithRawResponse:
+    def __init__(self, fine_tune: AsyncFineTuneResource) -> None:
         self._fine_tune = fine_tune
 
         self.create = async_to_raw_response_wrapper(
@@ -574,8 +574,8 @@ class AsyncFineTuneWithRawResponse:
         )
 
 
-class FineTuneWithStreamingResponse:
-    def __init__(self, fine_tune: FineTune) -> None:
+class FineTuneResourceWithStreamingResponse:
+    def __init__(self, fine_tune: FineTuneResource) -> None:
         self._fine_tune = fine_tune
 
         self.create = to_streamed_response_wrapper(
@@ -598,8 +598,8 @@ class FineTuneWithStreamingResponse:
         )
 
 
-class AsyncFineTuneWithStreamingResponse:
-    def __init__(self, fine_tune: AsyncFineTune) -> None:
+class AsyncFineTuneResourceWithStreamingResponse:
+    def __init__(self, fine_tune: AsyncFineTuneResource) -> None:
         self._fine_tune = fine_tune
 
         self.create = async_to_streamed_response_wrapper(
