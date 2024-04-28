@@ -50,6 +50,6 @@ class CompletionResponse(BaseModel):
 
     object: Literal["text_completion"]
 
-    usage: Optional[Usage] = None
+    usage: Usage
 
     prompt: Optional[List[Prompt]] = None
