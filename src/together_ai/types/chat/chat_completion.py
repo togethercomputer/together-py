@@ -32,9 +32,9 @@ class Choice(BaseModel):
 
 
 class ChatCompletion(BaseModel):
-    id: str
+    id: Optional[str] = None
 
-    choices: List[Choice]
+    choices: Optional[List[Choice]] = None
 
     created: Optional[int] = None
 
