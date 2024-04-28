@@ -15,9 +15,12 @@ The REST API documentation can be found [on www.together.ai](https://www.togethe
 ## Installation
 
 ```sh
-# install from PyPI
-pip install --pre together
+# install from this staging repo
+pip install git+ssh://git@github.com/stainless-sdks/togetherai/TogetherAI-python.git
 ```
+
+> [!NOTE]
+> Once this package is [published to PyPI](https://app.stainlessapi.com/docs/guides/publish), this will become: `pip install --pre together`
 
 ## Usage
 
@@ -323,7 +326,7 @@ The context manager is required so that the response will reliably be closed.
 
 ### Making custom/undocumented requests
 
-This library is typed for convenient access the documented API.
+This library is typed for convenient access to the documented API.
 
 If you need to access undocumented endpoints, params, or response properties, the library can still be used.
 
@@ -391,7 +394,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/together-python/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/togetherai/TogetherAI-python/issues) with questions, bugs, or suggestions.
 
 ## Requirements
 

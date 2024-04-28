@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import CompletionResponse, completion_create_params
+from ..types import completion_create_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._utils import (
     required_args,
@@ -26,18 +26,19 @@ from .._streaming import Stream, AsyncStream
 from .._base_client import (
     make_request_options,
 )
+from ..types.completion_response import CompletionResponse
 
-__all__ = ["Completions", "AsyncCompletions"]
+__all__ = ["CompletionsResource", "AsyncCompletionsResource"]
 
 
-class Completions(SyncAPIResource):
+class CompletionsResource(SyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> CompletionsWithRawResponse:
-        return CompletionsWithRawResponse(self)
+    def with_raw_response(self) -> CompletionsResourceWithRawResponse:
+        return CompletionsResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> CompletionsWithStreamingResponse:
-        return CompletionsWithStreamingResponse(self)
+    def with_streaming_response(self) -> CompletionsResourceWithStreamingResponse:
+        return CompletionsResourceWithStreamingResponse(self)
 
     @overload
     def create(
@@ -302,14 +303,14 @@ class Completions(SyncAPIResource):
         )
 
 
-class AsyncCompletions(AsyncAPIResource):
+class AsyncCompletionsResource(AsyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> AsyncCompletionsWithRawResponse:
-        return AsyncCompletionsWithRawResponse(self)
+    def with_raw_response(self) -> AsyncCompletionsResourceWithRawResponse:
+        return AsyncCompletionsResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> AsyncCompletionsWithStreamingResponse:
-        return AsyncCompletionsWithStreamingResponse(self)
+    def with_streaming_response(self) -> AsyncCompletionsResourceWithStreamingResponse:
+        return AsyncCompletionsResourceWithStreamingResponse(self)
 
     @overload
     async def create(
@@ -574,8 +575,8 @@ class AsyncCompletions(AsyncAPIResource):
         )
 
 
-class CompletionsWithRawResponse:
-    def __init__(self, completions: Completions) -> None:
+class CompletionsResourceWithRawResponse:
+    def __init__(self, completions: CompletionsResource) -> None:
         self._completions = completions
 
         self.create = to_raw_response_wrapper(
@@ -583,8 +584,8 @@ class CompletionsWithRawResponse:
         )
 
 
-class AsyncCompletionsWithRawResponse:
-    def __init__(self, completions: AsyncCompletions) -> None:
+class AsyncCompletionsResourceWithRawResponse:
+    def __init__(self, completions: AsyncCompletionsResource) -> None:
         self._completions = completions
 
         self.create = async_to_raw_response_wrapper(
@@ -592,8 +593,8 @@ class AsyncCompletionsWithRawResponse:
         )
 
 
-class CompletionsWithStreamingResponse:
-    def __init__(self, completions: Completions) -> None:
+class CompletionsResourceWithStreamingResponse:
+    def __init__(self, completions: CompletionsResource) -> None:
         self._completions = completions
 
         self.create = to_streamed_response_wrapper(
@@ -601,8 +602,8 @@ class CompletionsWithStreamingResponse:
         )
 
 
-class AsyncCompletionsWithStreamingResponse:
-    def __init__(self, completions: AsyncCompletions) -> None:
+class AsyncCompletionsResourceWithStreamingResponse:
+    def __init__(self, completions: AsyncCompletionsResource) -> None:
         self._completions = completions
 
         self.create = async_to_streamed_response_wrapper(
