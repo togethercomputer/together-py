@@ -4,13 +4,13 @@ from typing import Dict, List, Optional
 
 from .._models import BaseModel
 
-__all__ = ["ImagesResponse", "Image"]
+__all__ = ["ImagesResponse", "Data"]
 
 
-class Image(BaseModel):
+class Data(BaseModel):
+    b64_json: Optional[str] = None
+
     metadata: Optional[Dict[str, object]] = None
-
-    url: Optional[str] = None
 
 
 class ImagesResponse(BaseModel):
@@ -18,6 +18,6 @@ class ImagesResponse(BaseModel):
 
     created: Optional[int] = None
 
-    images: Optional[List[Image]] = None
+    data: Optional[List[Data]] = None
 
     object: Optional[str] = None
