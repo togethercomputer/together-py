@@ -18,9 +18,9 @@ class ChoiceLogprobs(BaseModel):
 
 
 class ChoiceMessage(BaseModel):
-    content: str
+    content: Optional[str] = None
 
-    role: str
+    role: Optional[str] = None
 
 
 class Choice(BaseModel):
