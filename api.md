@@ -51,7 +51,7 @@ Methods:
 - <code title="delete /files/{id}">client.files.<a href="./src/together_ai/resources/files.py">delete</a>(id) -> <a href="./src/together_ai/types/file_delete_response.py">FileDeleteResponse</a></code>
 - <code title="get /files/{id}/content">client.files.<a href="./src/together_ai/resources/files.py">content</a>(id) -> BinaryAPIResponse</code>
 
-# FineTuneResource
+# FineTune
 
 Types:
 

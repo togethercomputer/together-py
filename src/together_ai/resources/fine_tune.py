@@ -4,14 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from ..types import (
-    FineTune,
-    FineTuneListResponse,
-    FineTuneDownloadResponse,
-    FineTuneListEventsResponse,
-    fine_tune_create_params,
-    fine_tune_download_params,
-)
+from ..types import fine_tune_create_params, fine_tune_download_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._utils import (
     maybe_transform,
@@ -28,6 +21,10 @@ from .._response import (
 from .._base_client import (
     make_request_options,
 )
+from ..types.fine_tune import FineTune
+from ..types.fine_tune_list_response import FineTuneListResponse
+from ..types.fine_tune_download_response import FineTuneDownloadResponse
+from ..types.fine_tune_list_events_response import FineTuneListEventsResponse
 
 __all__ = ["FineTuneResource", "AsyncFineTuneResource"]
 

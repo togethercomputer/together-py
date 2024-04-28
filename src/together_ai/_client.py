@@ -46,13 +46,13 @@ __all__ = [
 
 
 class TogetherAI(SyncAPIClient):
-    chat: resources.Chat
-    completions: resources.Completions
-    embeddings: resources.Embeddings
-    files: resources.Files
+    chat: resources.ChatResource
+    completions: resources.CompletionsResource
+    embeddings: resources.EmbeddingsResource
+    files: resources.FilesResource
     fine_tune: resources.FineTuneResource
-    images: resources.Images
-    models: resources.Models
+    images: resources.ImagesResource
+    models: resources.ModelsResource
     with_raw_response: TogetherAIWithRawResponse
     with_streaming_response: TogetherAIWithStreamedResponse
 
@@ -112,13 +112,13 @@ class TogetherAI(SyncAPIClient):
 
         self._default_stream_cls = Stream
 
-        self.chat = resources.Chat(self)
-        self.completions = resources.Completions(self)
-        self.embeddings = resources.Embeddings(self)
-        self.files = resources.Files(self)
+        self.chat = resources.ChatResource(self)
+        self.completions = resources.CompletionsResource(self)
+        self.embeddings = resources.EmbeddingsResource(self)
+        self.files = resources.FilesResource(self)
         self.fine_tune = resources.FineTuneResource(self)
-        self.images = resources.Images(self)
-        self.models = resources.Models(self)
+        self.images = resources.ImagesResource(self)
+        self.models = resources.ModelsResource(self)
         self.with_raw_response = TogetherAIWithRawResponse(self)
         self.with_streaming_response = TogetherAIWithStreamedResponse(self)
 
@@ -228,13 +228,13 @@ class TogetherAI(SyncAPIClient):
 
 
 class AsyncTogetherAI(AsyncAPIClient):
-    chat: resources.AsyncChat
-    completions: resources.AsyncCompletions
-    embeddings: resources.AsyncEmbeddings
-    files: resources.AsyncFiles
+    chat: resources.AsyncChatResource
+    completions: resources.AsyncCompletionsResource
+    embeddings: resources.AsyncEmbeddingsResource
+    files: resources.AsyncFilesResource
     fine_tune: resources.AsyncFineTuneResource
-    images: resources.AsyncImages
-    models: resources.AsyncModels
+    images: resources.AsyncImagesResource
+    models: resources.AsyncModelsResource
     with_raw_response: AsyncTogetherAIWithRawResponse
     with_streaming_response: AsyncTogetherAIWithStreamedResponse
 
@@ -294,13 +294,13 @@ class AsyncTogetherAI(AsyncAPIClient):
 
         self._default_stream_cls = AsyncStream
 
-        self.chat = resources.AsyncChat(self)
-        self.completions = resources.AsyncCompletions(self)
-        self.embeddings = resources.AsyncEmbeddings(self)
-        self.files = resources.AsyncFiles(self)
+        self.chat = resources.AsyncChatResource(self)
+        self.completions = resources.AsyncCompletionsResource(self)
+        self.embeddings = resources.AsyncEmbeddingsResource(self)
+        self.files = resources.AsyncFilesResource(self)
         self.fine_tune = resources.AsyncFineTuneResource(self)
-        self.images = resources.AsyncImages(self)
-        self.models = resources.AsyncModels(self)
+        self.images = resources.AsyncImagesResource(self)
+        self.models = resources.AsyncModelsResource(self)
         self.with_raw_response = AsyncTogetherAIWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherAIWithStreamedResponse(self)
 
@@ -411,46 +411,46 @@ class AsyncTogetherAI(AsyncAPIClient):
 
 class TogetherAIWithRawResponse:
     def __init__(self, client: TogetherAI) -> None:
-        self.chat = resources.ChatWithRawResponse(client.chat)
-        self.completions = resources.CompletionsWithRawResponse(client.completions)
-        self.embeddings = resources.EmbeddingsWithRawResponse(client.embeddings)
-        self.files = resources.FilesWithRawResponse(client.files)
+        self.chat = resources.ChatResourceWithRawResponse(client.chat)
+        self.completions = resources.CompletionsResourceWithRawResponse(client.completions)
+        self.embeddings = resources.EmbeddingsResourceWithRawResponse(client.embeddings)
+        self.files = resources.FilesResourceWithRawResponse(client.files)
         self.fine_tune = resources.FineTuneResourceWithRawResponse(client.fine_tune)
-        self.images = resources.ImagesWithRawResponse(client.images)
-        self.models = resources.ModelsWithRawResponse(client.models)
+        self.images = resources.ImagesResourceWithRawResponse(client.images)
+        self.models = resources.ModelsResourceWithRawResponse(client.models)
 
 
 class AsyncTogetherAIWithRawResponse:
     def __init__(self, client: AsyncTogetherAI) -> None:
-        self.chat = resources.AsyncChatWithRawResponse(client.chat)
-        self.completions = resources.AsyncCompletionsWithRawResponse(client.completions)
-        self.embeddings = resources.AsyncEmbeddingsWithRawResponse(client.embeddings)
-        self.files = resources.AsyncFilesWithRawResponse(client.files)
+        self.chat = resources.AsyncChatResourceWithRawResponse(client.chat)
+        self.completions = resources.AsyncCompletionsResourceWithRawResponse(client.completions)
+        self.embeddings = resources.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
+        self.files = resources.AsyncFilesResourceWithRawResponse(client.files)
         self.fine_tune = resources.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
-        self.images = resources.AsyncImagesWithRawResponse(client.images)
-        self.models = resources.AsyncModelsWithRawResponse(client.models)
+        self.images = resources.AsyncImagesResourceWithRawResponse(client.images)
+        self.models = resources.AsyncModelsResourceWithRawResponse(client.models)
 
 
 class TogetherAIWithStreamedResponse:
     def __init__(self, client: TogetherAI) -> None:
-        self.chat = resources.ChatWithStreamingResponse(client.chat)
-        self.completions = resources.CompletionsWithStreamingResponse(client.completions)
-        self.embeddings = resources.EmbeddingsWithStreamingResponse(client.embeddings)
-        self.files = resources.FilesWithStreamingResponse(client.files)
+        self.chat = resources.ChatResourceWithStreamingResponse(client.chat)
+        self.completions = resources.CompletionsResourceWithStreamingResponse(client.completions)
+        self.embeddings = resources.EmbeddingsResourceWithStreamingResponse(client.embeddings)
+        self.files = resources.FilesResourceWithStreamingResponse(client.files)
         self.fine_tune = resources.FineTuneResourceWithStreamingResponse(client.fine_tune)
-        self.images = resources.ImagesWithStreamingResponse(client.images)
-        self.models = resources.ModelsWithStreamingResponse(client.models)
+        self.images = resources.ImagesResourceWithStreamingResponse(client.images)
+        self.models = resources.ModelsResourceWithStreamingResponse(client.models)
 
 
 class AsyncTogetherAIWithStreamedResponse:
     def __init__(self, client: AsyncTogetherAI) -> None:
-        self.chat = resources.AsyncChatWithStreamingResponse(client.chat)
-        self.completions = resources.AsyncCompletionsWithStreamingResponse(client.completions)
-        self.embeddings = resources.AsyncEmbeddingsWithStreamingResponse(client.embeddings)
-        self.files = resources.AsyncFilesWithStreamingResponse(client.files)
+        self.chat = resources.AsyncChatResourceWithStreamingResponse(client.chat)
+        self.completions = resources.AsyncCompletionsResourceWithStreamingResponse(client.completions)
+        self.embeddings = resources.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
+        self.files = resources.AsyncFilesResourceWithStreamingResponse(client.files)
         self.fine_tune = resources.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
-        self.images = resources.AsyncImagesWithStreamingResponse(client.images)
-        self.models = resources.AsyncModelsWithStreamingResponse(client.models)
+        self.images = resources.AsyncImagesResourceWithStreamingResponse(client.images)
+        self.models = resources.AsyncModelsResourceWithStreamingResponse(client.models)
 
 
 Client = TogetherAI

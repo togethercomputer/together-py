@@ -3,8 +3,8 @@
 from typing import List, Optional
 from typing_extensions import Literal
 
-from .chat import Usage
 from .._models import BaseModel
+from .chat.usage import Usage
 
 __all__ = ["CompletionResponse", "Choice", "ChoiceLogprobs", "Prompt", "PromptLogprobs"]
 

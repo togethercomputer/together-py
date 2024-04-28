@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from ..types import ImagesResponse, image_create_params
+from ..types import image_create_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._utils import (
     maybe_transform,
@@ -21,18 +21,19 @@ from .._response import (
 from .._base_client import (
     make_request_options,
 )
+from ..types.images_response import ImagesResponse
 
-__all__ = ["Images", "AsyncImages"]
+__all__ = ["ImagesResource", "AsyncImagesResource"]
 
 
-class Images(SyncAPIResource):
+class ImagesResource(SyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> ImagesWithRawResponse:
-        return ImagesWithRawResponse(self)
+    def with_raw_response(self) -> ImagesResourceWithRawResponse:
+        return ImagesResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> ImagesWithStreamingResponse:
-        return ImagesWithStreamingResponse(self)
+    def with_streaming_response(self) -> ImagesResourceWithStreamingResponse:
+        return ImagesResourceWithStreamingResponse(self)
 
     def create(
         self,
@@ -102,14 +103,14 @@ class Images(SyncAPIResource):
         )
 
 
-class AsyncImages(AsyncAPIResource):
+class AsyncImagesResource(AsyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> AsyncImagesWithRawResponse:
-        return AsyncImagesWithRawResponse(self)
+    def with_raw_response(self) -> AsyncImagesResourceWithRawResponse:
+        return AsyncImagesResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> AsyncImagesWithStreamingResponse:
-        return AsyncImagesWithStreamingResponse(self)
+    def with_streaming_response(self) -> AsyncImagesResourceWithStreamingResponse:
+        return AsyncImagesResourceWithStreamingResponse(self)
 
     async def create(
         self,
@@ -179,8 +180,8 @@ class AsyncImages(AsyncAPIResource):
         )
 
 
-class ImagesWithRawResponse:
-    def __init__(self, images: Images) -> None:
+class ImagesResourceWithRawResponse:
+    def __init__(self, images: ImagesResource) -> None:
         self._images = images
 
         self.create = to_raw_response_wrapper(
@@ -188,8 +189,8 @@ class ImagesWithRawResponse:
         )
 
 
-class AsyncImagesWithRawResponse:
-    def __init__(self, images: AsyncImages) -> None:
+class AsyncImagesResourceWithRawResponse:
+    def __init__(self, images: AsyncImagesResource) -> None:
         self._images = images
 
         self.create = async_to_raw_response_wrapper(
@@ -197,8 +198,8 @@ class AsyncImagesWithRawResponse:
         )
 
 
-class ImagesWithStreamingResponse:
-    def __init__(self, images: Images) -> None:
+class ImagesResourceWithStreamingResponse:
+    def __init__(self, images: ImagesResource) -> None:
         self._images = images
 
         self.create = to_streamed_response_wrapper(
@@ -206,8 +207,8 @@ class ImagesWithStreamingResponse:
         )
 
 
-class AsyncImagesWithStreamingResponse:
-    def __init__(self, images: AsyncImages) -> None:
+class AsyncImagesResourceWithStreamingResponse:
+    def __init__(self, images: AsyncImagesResource) -> None:
         self._images = images
 
         self.create = async_to_streamed_response_wrapper(

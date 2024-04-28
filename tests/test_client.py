@@ -17,7 +17,6 @@ from respx import MockRouter
 from pydantic import ValidationError
 
 from together_ai import TogetherAI, AsyncTogetherAI, APIResponseValidationError
-from together_ai._client import TogetherAI, AsyncTogetherAI
 from together_ai._models import BaseModel, FinalRequestOptions
 from together_ai._constants import RAW_RESPONSE_HEADER
 from together_ai._streaming import Stream, AsyncStream

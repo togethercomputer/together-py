@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from ..types import EmbeddingsResponse, embedding_create_params
+from ..types import embedding_create_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._utils import (
     maybe_transform,
@@ -21,18 +21,19 @@ from .._response import (
 from .._base_client import (
     make_request_options,
 )
+from ..types.embeddings_response import EmbeddingsResponse
 
-__all__ = ["Embeddings", "AsyncEmbeddings"]
+__all__ = ["EmbeddingsResource", "AsyncEmbeddingsResource"]
 
 
-class Embeddings(SyncAPIResource):
+class EmbeddingsResource(SyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> EmbeddingsWithRawResponse:
-        return EmbeddingsWithRawResponse(self)
+    def with_raw_response(self) -> EmbeddingsResourceWithRawResponse:
+        return EmbeddingsResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> EmbeddingsWithStreamingResponse:
-        return EmbeddingsWithStreamingResponse(self)
+    def with_streaming_response(self) -> EmbeddingsResourceWithStreamingResponse:
+        return EmbeddingsResourceWithStreamingResponse(self)
 
     def create(
         self,
@@ -78,14 +79,14 @@ class Embeddings(SyncAPIResource):
         )
 
 
-class AsyncEmbeddings(AsyncAPIResource):
+class AsyncEmbeddingsResource(AsyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> AsyncEmbeddingsWithRawResponse:
-        return AsyncEmbeddingsWithRawResponse(self)
+    def with_raw_response(self) -> AsyncEmbeddingsResourceWithRawResponse:
+        return AsyncEmbeddingsResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> AsyncEmbeddingsWithStreamingResponse:
-        return AsyncEmbeddingsWithStreamingResponse(self)
+    def with_streaming_response(self) -> AsyncEmbeddingsResourceWithStreamingResponse:
+        return AsyncEmbeddingsResourceWithStreamingResponse(self)
 
     async def create(
         self,
@@ -131,8 +132,8 @@ class AsyncEmbeddings(AsyncAPIResource):
         )
 
 
-class EmbeddingsWithRawResponse:
-    def __init__(self, embeddings: Embeddings) -> None:
+class EmbeddingsResourceWithRawResponse:
+    def __init__(self, embeddings: EmbeddingsResource) -> None:
         self._embeddings = embeddings
 
         self.create = to_raw_response_wrapper(
@@ -140,8 +141,8 @@ class EmbeddingsWithRawResponse:
         )
 
 
-class AsyncEmbeddingsWithRawResponse:
-    def __init__(self, embeddings: AsyncEmbeddings) -> None:
+class AsyncEmbeddingsResourceWithRawResponse:
+    def __init__(self, embeddings: AsyncEmbeddingsResource) -> None:
         self._embeddings = embeddings
 
         self.create = async_to_raw_response_wrapper(
@@ -149,8 +150,8 @@ class AsyncEmbeddingsWithRawResponse:
         )
 
 
-class EmbeddingsWithStreamingResponse:
-    def __init__(self, embeddings: Embeddings) -> None:
+class EmbeddingsResourceWithStreamingResponse:
+    def __init__(self, embeddings: EmbeddingsResource) -> None:
         self._embeddings = embeddings
 
         self.create = to_streamed_response_wrapper(
@@ -158,8 +159,8 @@ class EmbeddingsWithStreamingResponse:
         )
 
 
-class AsyncEmbeddingsWithStreamingResponse:
-    def __init__(self, embeddings: AsyncEmbeddings) -> None:
+class AsyncEmbeddingsResourceWithStreamingResponse:
+    def __init__(self, embeddings: AsyncEmbeddingsResource) -> None:
         self._embeddings = embeddings
 
         self.create = async_to_streamed_response_wrapper(
