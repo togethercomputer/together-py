@@ -3,6 +3,8 @@
 from typing import List, Optional
 from typing_extensions import Literal
 
+from pydantic import Field as FieldInfo
+
 from .._models import BaseModel
 
 __all__ = ["FineTune", "Event"]
@@ -57,7 +59,19 @@ class Event(BaseModel):
 
 
 class FineTune(BaseModel):
-    id: Optional[str] = None
+    id: str
+
+    status: Literal[
+        "pending",
+        "queued",
+        "running",
+        "compressing",
+        "uploading",
+        "cancel_requested",
+        "cancelled",
+        "error",
+        "completed",
+    ]
 
     batch_size: Optional[int] = None
 
@@ -83,29 +97,17 @@ class FineTune(BaseModel):
 
     model: Optional[str] = None
 
+    api_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
+
+    api_model_output_path: Optional[str] = FieldInfo(alias="model_output_path", default=None)
+
     n_checkpoints: Optional[int] = None
 
     n_epochs: Optional[int] = None
 
-    output_name: Optional[str] = None
-
     param_count: Optional[int] = None
 
     queue_depth: Optional[int] = None
-
-    status: Optional[
-        Literal[
-            "pending",
-            "queued",
-            "running",
-            "compressing",
-            "uploading",
-            "cancel_requested",
-            "cancelled",
-            "error",
-            "completed",
-        ]
-    ] = None
 
     token_count: Optional[int] = None
 
@@ -113,9 +115,9 @@ class FineTune(BaseModel):
 
     training_file: Optional[str] = None
 
-    training_file_num_lines: Optional[int] = None
+    training_file_num_lines: Optional[int] = FieldInfo(alias="TrainingFileNumLines", default=None)
 
-    training_file_size: Optional[int] = None
+    training_file_size: Optional[int] = FieldInfo(alias="TrainingFileSize", default=None)
 
     updated_at: Optional[str] = None
 

@@ -1,44 +1,33 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import List
+
+from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FileListResponse", "FileListResponseItem", "FileListResponseItemPricing"]
+__all__ = ["FileListResponse", "Data"]
 
 
-class FileListResponseItemPricing(BaseModel):
-    base: Optional[float] = None
+class Data(BaseModel):
+    id: str
 
-    finetune: Optional[float] = None
+    bytes: int
 
-    hourly: Optional[float] = None
+    created_at: int
 
-    input: Optional[float] = None
+    filename: str
 
-    output: Optional[float] = None
+    file_type: str = FieldInfo(alias="FileType")
 
+    line_count: int = FieldInfo(alias="LineCount")
 
-class FileListResponseItem(BaseModel):
-    id: Optional[str] = None
+    object: str
 
-    context_length: Optional[int] = None
+    processed: bool = FieldInfo(alias="Processed")
 
-    created: Optional[int] = None
-
-    display_name: Optional[str] = None
-
-    license: Optional[str] = None
-
-    link: Optional[str] = None
-
-    object: Optional[str] = None
-
-    organization: Optional[str] = None
-
-    pricing: Optional[FileListResponseItemPricing] = None
-
-    type: Optional[str] = None
+    purpose: str
 
 
-FileListResponse = List[FileListResponseItem]
+class FileListResponse(BaseModel):
+    data: List[Data]

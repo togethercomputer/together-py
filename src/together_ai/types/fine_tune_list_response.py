@@ -2,8 +2,11 @@
 
 from typing import List
 
+from .._models import BaseModel
 from .fine_tune import FineTune
 
 __all__ = ["FineTuneListResponse"]
 
-FineTuneListResponse = List[FineTune]
+
+class FineTuneListResponse(BaseModel):
+    data: List[FineTune]

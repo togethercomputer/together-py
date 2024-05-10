@@ -16,7 +16,7 @@ The REST API documentation can be found [on www.together.ai](https://www.togethe
 
 ```sh
 # install from this staging repo
-pip install git+ssh://git@github.com/stainless-sdks/togetherai/TogetherAI-python.git
+pip install git+ssh://git@github.com/stainless-sdks/TogetherAI-python.git
 ```
 
 > [!NOTE]
@@ -236,7 +236,7 @@ client = TogetherAI(
 )
 
 # Override per-request:
-client.with_options(timeout=5 * 1000).chat.completions.create(
+client.with_options(timeout=5.0).chat.completions.create(
     messages=[
         {
             "role": "user",
@@ -394,7 +394,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/togetherai/TogetherAI-python/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/TogetherAI-python/issues) with questions, bugs, or suggestions.
 
 ## Requirements
 

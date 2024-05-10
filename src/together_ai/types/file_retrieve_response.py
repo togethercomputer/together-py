@@ -1,41 +1,28 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Optional
+
+from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FileRetrieveResponse", "Pricing"]
-
-
-class Pricing(BaseModel):
-    base: Optional[float] = None
-
-    finetune: Optional[float] = None
-
-    hourly: Optional[float] = None
-
-    input: Optional[float] = None
-
-    output: Optional[float] = None
+__all__ = ["FileRetrieveResponse"]
 
 
 class FileRetrieveResponse(BaseModel):
-    id: Optional[str] = None
+    id: str
 
-    context_length: Optional[int] = None
+    bytes: int
 
-    created: Optional[int] = None
+    created_at: int
 
-    display_name: Optional[str] = None
+    filename: str
 
-    license: Optional[str] = None
+    file_type: str = FieldInfo(alias="FileType")
 
-    link: Optional[str] = None
+    line_count: int = FieldInfo(alias="LineCount")
 
-    object: Optional[str] = None
+    object: str
 
-    organization: Optional[str] = None
+    processed: bool = FieldInfo(alias="Processed")
 
-    pricing: Optional[Pricing] = None
-
-    type: Optional[str] = None
+    purpose: str

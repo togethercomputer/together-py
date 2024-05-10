@@ -1,18 +1,44 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Dict, List, Optional
+from typing import List, Optional
+from typing_extensions import Literal
+
+from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FineTuneListEventsResponse", "FineTuneListEventsResponseItem"]
+__all__ = ["FineTuneListEventsResponse", "Data"]
 
 
-class FineTuneListEventsResponseItem(BaseModel):
-    details: Optional[Dict[str, object]] = None
+class Data(BaseModel):
+    checkpoint_path: str
 
-    event: Optional[str] = None
+    created_at: str
 
-    timestamp: Optional[int] = None
+    hash: str
+
+    message: str
+
+    api_model_path: str = FieldInfo(alias="model_path")
+
+    object: Literal["fine-tune-event"]
+
+    param_count: int
+
+    step: int
+
+    token_count: int
+
+    total_steps: int
+
+    training_offset: int
+
+    type: str
+
+    wandb_url: str
+
+    level: Optional[str] = None
 
 
-FineTuneListEventsResponse = List[FineTuneListEventsResponseItem]
+class FineTuneListEventsResponse(BaseModel):
+    data: List[Data]

@@ -1,23 +1,23 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Dict, List, Optional
+from typing import List
 
 from .._models import BaseModel
 
-__all__ = ["ImagesResponse", "Image"]
+__all__ = ["ImagesResponse", "Data"]
 
 
-class Image(BaseModel):
-    metadata: Optional[Dict[str, object]] = None
+class Data(BaseModel):
+    b64_json: str
 
-    url: Optional[str] = None
+    index: int
 
 
 class ImagesResponse(BaseModel):
-    id: Optional[str] = None
+    id: str
 
-    created: Optional[int] = None
+    data: List[Data]
 
-    images: Optional[List[Image]] = None
+    model: str
 
-    object: Optional[str] = None
+    object: str
