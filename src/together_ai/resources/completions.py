@@ -47,9 +47,13 @@ class CompletionsResource(SyncAPIResource):
         model: str,
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -75,12 +79,25 @@ class CompletionsResource(SyncAPIResource):
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
 
+          frequency_penalty: The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will decrease the likelihood of repeating tokens that were
+              mentioned prior.
+
+          logit_bias: The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+              appearing in the generated output.
+
           logprobs: Determines the number of most likely tokens to return at each token position log
               probabilities to return
 
           max_tokens: The maximum number of tokens to generate.
 
+          min_p: The `min_p` parameter is a number between 0 and 1 and an alternative to
+              `temperature`.
+
           n: Number of generations to return
+
+          presence_penalty: The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will increase the likelihood of a model talking about new topics.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -118,9 +135,13 @@ class CompletionsResource(SyncAPIResource):
         prompt: str,
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -148,12 +169,25 @@ class CompletionsResource(SyncAPIResource):
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
 
+          frequency_penalty: The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will decrease the likelihood of repeating tokens that were
+              mentioned prior.
+
+          logit_bias: The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+              appearing in the generated output.
+
           logprobs: Determines the number of most likely tokens to return at each token position log
               probabilities to return
 
           max_tokens: The maximum number of tokens to generate.
 
+          min_p: The `min_p` parameter is a number between 0 and 1 and an alternative to
+              `temperature`.
+
           n: Number of generations to return
+
+          presence_penalty: The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will increase the likelihood of a model talking about new topics.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -188,9 +222,13 @@ class CompletionsResource(SyncAPIResource):
         prompt: str,
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -218,12 +256,25 @@ class CompletionsResource(SyncAPIResource):
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
 
+          frequency_penalty: The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will decrease the likelihood of repeating tokens that were
+              mentioned prior.
+
+          logit_bias: The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+              appearing in the generated output.
+
           logprobs: Determines the number of most likely tokens to return at each token position log
               probabilities to return
 
           max_tokens: The maximum number of tokens to generate.
 
+          min_p: The `min_p` parameter is a number between 0 and 1 and an alternative to
+              `temperature`.
+
           n: Number of generations to return
+
+          presence_penalty: The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will increase the likelihood of a model talking about new topics.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -257,9 +308,13 @@ class CompletionsResource(SyncAPIResource):
         model: str,
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -281,9 +336,13 @@ class CompletionsResource(SyncAPIResource):
                     "model": model,
                     "prompt": prompt,
                     "echo": echo,
+                    "frequency_penalty": frequency_penalty,
+                    "logit_bias": logit_bias,
                     "logprobs": logprobs,
                     "max_tokens": max_tokens,
+                    "min_p": min_p,
                     "n": n,
+                    "presence_penalty": presence_penalty,
                     "repetition_penalty": repetition_penalty,
                     "safety_model": safety_model,
                     "stop": stop,
@@ -319,9 +378,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
         model: str,
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -347,12 +410,25 @@ class AsyncCompletionsResource(AsyncAPIResource):
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
 
+          frequency_penalty: The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will decrease the likelihood of repeating tokens that were
+              mentioned prior.
+
+          logit_bias: The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+              appearing in the generated output.
+
           logprobs: Determines the number of most likely tokens to return at each token position log
               probabilities to return
 
           max_tokens: The maximum number of tokens to generate.
 
+          min_p: The `min_p` parameter is a number between 0 and 1 and an alternative to
+              `temperature`.
+
           n: Number of generations to return
+
+          presence_penalty: The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will increase the likelihood of a model talking about new topics.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -390,9 +466,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
         prompt: str,
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -420,12 +500,25 @@ class AsyncCompletionsResource(AsyncAPIResource):
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
 
+          frequency_penalty: The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will decrease the likelihood of repeating tokens that were
+              mentioned prior.
+
+          logit_bias: The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+              appearing in the generated output.
+
           logprobs: Determines the number of most likely tokens to return at each token position log
               probabilities to return
 
           max_tokens: The maximum number of tokens to generate.
 
+          min_p: The `min_p` parameter is a number between 0 and 1 and an alternative to
+              `temperature`.
+
           n: Number of generations to return
+
+          presence_penalty: The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will increase the likelihood of a model talking about new topics.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -460,9 +553,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
         prompt: str,
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -490,12 +587,25 @@ class AsyncCompletionsResource(AsyncAPIResource):
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
 
+          frequency_penalty: The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will decrease the likelihood of repeating tokens that were
+              mentioned prior.
+
+          logit_bias: The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+              appearing in the generated output.
+
           logprobs: Determines the number of most likely tokens to return at each token position log
               probabilities to return
 
           max_tokens: The maximum number of tokens to generate.
 
+          min_p: The `min_p` parameter is a number between 0 and 1 and an alternative to
+              `temperature`.
+
           n: Number of generations to return
+
+          presence_penalty: The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+              positive value will increase the likelihood of a model talking about new topics.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -529,9 +639,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
         model: str,
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        logit_bias: object | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
@@ -553,9 +667,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
                     "model": model,
                     "prompt": prompt,
                     "echo": echo,
+                    "frequency_penalty": frequency_penalty,
+                    "logit_bias": logit_bias,
                     "logprobs": logprobs,
                     "max_tokens": max_tokens,
+                    "min_p": min_p,
                     "n": n,
+                    "presence_penalty": presence_penalty,
                     "repetition_penalty": repetition_penalty,
                     "safety_model": safety_model,
                     "stop": stop,

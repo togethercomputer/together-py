@@ -32,6 +32,19 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     logprobs if set with logprobs.
     """
 
+    frequency_penalty: float
+    """
+    The `frequency_penalty` parameter is a number between -2.0 and 2.0 where a
+    positive value will decrease the likelihood of repeating tokens that were
+    mentioned prior.
+    """
+
+    logit_bias: object
+    """
+    The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
+    appearing in the generated output.
+    """
+
     logprobs: int
     """
     Determines the number of most likely tokens to return at each token position log
@@ -41,8 +54,20 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     max_tokens: int
     """The maximum number of tokens to generate."""
 
+    min_p: float
+    """
+    The `min_p` parameter is a number between 0 and 1 and an alternative to
+    `temperature`.
+    """
+
     n: int
     """Number of generations to return"""
+
+    presence_penalty: float
+    """
+    The `presence_penalty` parameter is a number between -2.0 and 2.0 where a
+    positive value will increase the likelihood of a model talking about new topics.
+    """
 
     repetition_penalty: float
     """
@@ -90,7 +115,7 @@ class Message(TypedDict, total=False):
 
 
 class ResponseFormat(TypedDict, total=False):
-    schema: Dict[str, object]
+    schema: object
     """The schema of the response format."""
 
     type: str

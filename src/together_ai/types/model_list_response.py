@@ -1,30 +1,34 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Optional
+from typing import List, Optional
 
 from .._models import BaseModel
 
-__all__ = ["ModelListResponse", "Pricing"]
+__all__ = ["ModelListResponse", "ModelListResponseItem", "ModelListResponseItemPricing"]
 
 
-class Pricing(BaseModel):
-    base: Optional[float] = None
+class ModelListResponseItemPricing(BaseModel):
+    base: float
 
-    finetune: Optional[float] = None
+    finetune: float
 
-    hourly: Optional[float] = None
+    hourly: float
 
-    input: Optional[float] = None
+    input: float
 
-    output: Optional[float] = None
+    output: float
 
 
-class ModelListResponse(BaseModel):
-    id: Optional[str] = None
+class ModelListResponseItem(BaseModel):
+    id: str
+
+    created: int
+
+    object: str
+
+    type: str
 
     context_length: Optional[int] = None
-
-    created: Optional[int] = None
 
     display_name: Optional[str] = None
 
@@ -32,10 +36,9 @@ class ModelListResponse(BaseModel):
 
     link: Optional[str] = None
 
-    object: Optional[str] = None
-
     organization: Optional[str] = None
 
-    pricing: Optional[Pricing] = None
+    pricing: Optional[ModelListResponseItemPricing] = None
 
-    type: Optional[str] = None
+
+ModelListResponse = List[ModelListResponseItem]
