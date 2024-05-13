@@ -56,12 +56,7 @@ Methods:
 Types:
 
 ```python
-from together_ai.types import (
-    FineTune,
-    FineTuneListResponse,
-    FineTuneDownloadResponse,
-    FineTuneListEventsResponse,
-)
+from together_ai.types import FineTune, FineTuneListResponse, FineTuneListEventsResponse
 ```
 
 Methods:
@@ -70,7 +65,6 @@ Methods:
 - <code title="get /fine-tunes/{id}">client.fine_tune.<a href="./src/together_ai/resources/fine_tune.py">retrieve</a>(id) -> <a href="./src/together_ai/types/fine_tune.py">FineTune</a></code>
 - <code title="get /fine-tunes">client.fine_tune.<a href="./src/together_ai/resources/fine_tune.py">list</a>() -> <a href="./src/together_ai/types/fine_tune_list_response.py">FineTuneListResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tune.<a href="./src/together_ai/resources/fine_tune.py">cancel</a>(id) -> <a href="./src/together_ai/types/fine_tune.py">FineTune</a></code>
-- <code title="get /fine-tunes/download">client.fine_tune.<a href="./src/together_ai/resources/fine_tune.py">download</a>(\*\*<a href="src/together_ai/types/fine_tune_download_params.py">params</a>) -> <a href="./src/together_ai/types/fine_tune_download_response.py">FineTuneDownloadResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tune.<a href="./src/together_ai/resources/fine_tune.py">list_events</a>(id) -> <a href="./src/together_ai/types/fine_tune_list_events_response.py">FineTuneListEventsResponse</a></code>
 
 # Images

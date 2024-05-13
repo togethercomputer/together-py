@@ -15,6 +15,4 @@ from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreatePar
 from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
-from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloadParams
-from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
 from .fine_tune_list_events_response import FineTuneListEventsResponse as FineTuneListEventsResponse
