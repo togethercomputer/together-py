@@ -3,8 +3,8 @@
 from typing import List, Optional
 from typing_extensions import Literal
 
-from .usage import Usage
 from ..._models import BaseModel
+from .chat_completion_usage import ChatCompletionUsage
 
 __all__ = ["ChatCompletionChunk", "Token", "Choice", "ChoiceDelta"]
 
@@ -42,4 +42,4 @@ class ChatCompletionChunk(BaseModel):
 
     finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls"]] = None
 
-    usage: Optional[Usage] = None
+    usage: Optional[ChatCompletionUsage] = None

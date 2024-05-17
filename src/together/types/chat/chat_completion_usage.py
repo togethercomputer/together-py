@@ -4,10 +4,10 @@
 
 from ..._models import BaseModel
 
-__all__ = ["Usage"]
+__all__ = ["ChatCompletionUsage"]
 
 
-class Usage(BaseModel):
+class ChatCompletionUsage(BaseModel):
     completion_tokens: int
 
     prompt_tokens: int

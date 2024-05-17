@@ -26,7 +26,7 @@ from .._streaming import Stream, AsyncStream
 from .._base_client import (
     make_request_options,
 )
-from ..types.completion_response import CompletionResponse
+from ..types.completion import Completion
 
 __all__ = ["CompletionsResource", "AsyncCompletionsResource"]
 
@@ -67,7 +67,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse:
+    ) -> Completion:
         """
         Creates a completion for the provided prompt and parameters
 
@@ -154,7 +154,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Stream[CompletionResponse]:
+    ) -> Stream[Completion]:
         """
         Creates a completion for the provided prompt and parameters
 
@@ -241,7 +241,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | Stream[CompletionResponse]:
+    ) -> Completion | Stream[Completion]:
         """
         Creates a completion for the provided prompt and parameters
 
@@ -328,7 +328,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | Stream[CompletionResponse]:
+    ) -> Completion | Stream[Completion]:
         return self._post(
             "/completions",
             body=maybe_transform(
@@ -356,9 +356,9 @@ class CompletionsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=CompletionResponse,
+            cast_to=Completion,
             stream=stream or False,
-            stream_cls=Stream[CompletionResponse],
+            stream_cls=Stream[Completion],
         )
 
 
@@ -398,7 +398,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse:
+    ) -> Completion:
         """
         Creates a completion for the provided prompt and parameters
 
@@ -485,7 +485,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> AsyncStream[CompletionResponse]:
+    ) -> AsyncStream[Completion]:
         """
         Creates a completion for the provided prompt and parameters
 
@@ -572,7 +572,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | AsyncStream[CompletionResponse]:
+    ) -> Completion | AsyncStream[Completion]:
         """
         Creates a completion for the provided prompt and parameters
 
@@ -659,7 +659,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | AsyncStream[CompletionResponse]:
+    ) -> Completion | AsyncStream[Completion]:
         return await self._post(
             "/completions",
             body=await async_maybe_transform(
@@ -687,9 +687,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=CompletionResponse,
+            cast_to=Completion,
             stream=stream or False,
-            stream_cls=AsyncStream[CompletionResponse],
+            stream_cls=AsyncStream[Completion],
         )
 
 

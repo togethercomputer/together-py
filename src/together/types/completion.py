@@ -5,9 +5,9 @@ from typing_extensions import Literal
 
 from .._models import BaseModel
 from .log_probs import LogProbs
-from .chat.usage import Usage
+from .chat.chat_completion_usage import ChatCompletionUsage
 
-__all__ = ["CompletionResponse", "Choice", "Prompt"]
+__all__ = ["Completion", "Choice", "Prompt"]
 
 
 class Choice(BaseModel):
@@ -24,7 +24,7 @@ class Prompt(BaseModel):
     text: Optional[str] = None
 
 
-class CompletionResponse(BaseModel):
+class Completion(BaseModel):
     id: str
 
     choices: List[Choice]
@@ -35,6 +35,6 @@ class CompletionResponse(BaseModel):
 
     object: Literal["text_completion"]
 
-    usage: Optional[Usage] = None
+    usage: Optional[ChatCompletionUsage] = None
 
     prompt: Optional[List[Prompt]] = None

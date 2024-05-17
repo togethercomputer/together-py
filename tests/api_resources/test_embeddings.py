@@ -9,7 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types import EmbeddingsResponse
+from together.types import Embedding
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -23,7 +23,7 @@ class TestEmbeddings:
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
         )
-        assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
+        assert_matches_type(Embedding, embedding, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -35,7 +35,7 @@ class TestEmbeddings:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         embedding = response.parse()
-        assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
+        assert_matches_type(Embedding, embedding, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -47,7 +47,7 @@ class TestEmbeddings:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             embedding = response.parse()
-            assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
+            assert_matches_type(Embedding, embedding, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -61,7 +61,7 @@ class TestAsyncEmbeddings:
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
         )
-        assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
+        assert_matches_type(Embedding, embedding, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -73,7 +73,7 @@ class TestAsyncEmbeddings:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         embedding = await response.parse()
-        assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
+        assert_matches_type(Embedding, embedding, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -85,6 +85,6 @@ class TestAsyncEmbeddings:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             embedding = await response.parse()
-            assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
+            assert_matches_type(Embedding, embedding, path=["response"])
 
         assert cast(Any, response.is_closed) is True
