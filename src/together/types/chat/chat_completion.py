@@ -3,9 +3,9 @@
 from typing import List, Optional
 from typing_extensions import Literal
 
-from .usage import Usage
 from ..._models import BaseModel
 from ..log_probs import LogProbs
+from .chat_completion_usage import ChatCompletionUsage
 
 __all__ = ["ChatCompletion", "Choice", "ChoiceMessage"]
 
@@ -35,4 +35,4 @@ class ChatCompletion(BaseModel):
 
     object: Optional[Literal["chat.completion"]] = None
 
-    usage: Optional[Usage] = None
+    usage: Optional[ChatCompletionUsage] = None

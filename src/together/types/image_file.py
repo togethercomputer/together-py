@@ -4,7 +4,7 @@ from typing import List
 
 from .._models import BaseModel
 
-__all__ = ["ImagesResponse", "Data"]
+__all__ = ["ImageFile", "Data"]
 
 
 class Data(BaseModel):
@@ -13,7 +13,7 @@ class Data(BaseModel):
     index: int
 
 
-class ImagesResponse(BaseModel):
+class ImageFile(BaseModel):
     id: str
 
     data: List[Data]

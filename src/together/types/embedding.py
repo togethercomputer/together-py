@@ -5,7 +5,7 @@ from typing_extensions import Literal
 
 from .._models import BaseModel
 
-__all__ = ["EmbeddingsResponse", "Data"]
+__all__ = ["Embedding", "Data"]
 
 
 class Data(BaseModel):
@@ -16,7 +16,7 @@ class Data(BaseModel):
     object: Literal["embedding"]
 
 
-class EmbeddingsResponse(BaseModel):
+class Embedding(BaseModel):
     data: List[Data]
 
     model: str

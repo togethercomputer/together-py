@@ -5,7 +5,7 @@
 Types:
 
 ```python
-from together.types.chat import ChatCompletion, ChatCompletionChunk, Usage
+from together.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionUsage
 ```
 
 Methods:
@@ -17,24 +17,24 @@ Methods:
 Types:
 
 ```python
-from together.types import CompletionResponse, LogProbs, ToolChoice, Tools
+from together.types import Completion, LogProbs, ToolChoice, Tools
 ```
 
 Methods:
 
-- <code title="post /completions">client.completions.<a href="./src/together/resources/completions.py">create</a>(\*\*<a href="src/together/types/completion_create_params.py">params</a>) -> <a href="./src/together/types/completion_response.py">CompletionResponse</a></code>
+- <code title="post /completions">client.completions.<a href="./src/together/resources/completions.py">create</a>(\*\*<a href="src/together/types/completion_create_params.py">params</a>) -> <a href="./src/together/types/completion.py">Completion</a></code>
 
 # Embeddings
 
 Types:
 
 ```python
-from together.types import EmbeddingsResponse
+from together.types import Embedding
 ```
 
 Methods:
 
-- <code title="post /embeddings">client.embeddings.<a href="./src/together/resources/embeddings.py">create</a>(\*\*<a href="src/together/types/embedding_create_params.py">params</a>) -> <a href="./src/together/types/embeddings_response.py">EmbeddingsResponse</a></code>
+- <code title="post /embeddings">client.embeddings.<a href="./src/together/resources/embeddings.py">create</a>(\*\*<a href="src/together/types/embedding_create_params.py">params</a>) -> <a href="./src/together/types/embedding.py">Embedding</a></code>
 
 # Files
 
@@ -73,12 +73,12 @@ Methods:
 Types:
 
 ```python
-from together.types import ImagesResponse
+from together.types import ImageFile
 ```
 
 Methods:
 
-- <code title="post /images/generations">client.images.<a href="./src/together/resources/images.py">create</a>(\*\*<a href="src/together/types/image_create_params.py">params</a>) -> <a href="./src/together/types/images_response.py">ImagesResponse</a></code>
+- <code title="post /images/generations">client.images.<a href="./src/together/resources/images.py">create</a>(\*\*<a href="src/together/types/image_create_params.py">params</a>) -> <a href="./src/together/types/image_file.py">ImageFile</a></code>
 
 # Models
 

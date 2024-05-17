@@ -9,7 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types import ImagesResponse
+from together.types import ImageFile
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -23,7 +23,7 @@ class TestImages:
             model="stabilityai/stable-diffusion-xl-base-1.0",
             prompt="cat floating in space, cinematic",
         )
-        assert_matches_type(ImagesResponse, image, path=["response"])
+        assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -37,7 +37,7 @@ class TestImages:
             steps=0,
             width=0,
         )
-        assert_matches_type(ImagesResponse, image, path=["response"])
+        assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -49,7 +49,7 @@ class TestImages:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         image = response.parse()
-        assert_matches_type(ImagesResponse, image, path=["response"])
+        assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -61,7 +61,7 @@ class TestImages:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             image = response.parse()
-            assert_matches_type(ImagesResponse, image, path=["response"])
+            assert_matches_type(ImageFile, image, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -75,7 +75,7 @@ class TestAsyncImages:
             model="stabilityai/stable-diffusion-xl-base-1.0",
             prompt="cat floating in space, cinematic",
         )
-        assert_matches_type(ImagesResponse, image, path=["response"])
+        assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -89,7 +89,7 @@ class TestAsyncImages:
             steps=0,
             width=0,
         )
-        assert_matches_type(ImagesResponse, image, path=["response"])
+        assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -101,7 +101,7 @@ class TestAsyncImages:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         image = await response.parse()
-        assert_matches_type(ImagesResponse, image, path=["response"])
+        assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -113,6 +113,6 @@ class TestAsyncImages:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             image = await response.parse()
-            assert_matches_type(ImagesResponse, image, path=["response"])
+            assert_matches_type(ImageFile, image, path=["response"])
 
         assert cast(Any, response.is_closed) is True
