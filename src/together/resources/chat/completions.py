@@ -2,31 +2,33 @@
 
 from __future__ import annotations
 
-from typing import List, overload
+from typing import Dict, List, Iterable, overload
 from typing_extensions import Literal
 
 import httpx
 
-from ..types import completion_create_params
-from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
-from .._utils import (
+from ..._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from ..._utils import (
     required_args,
     maybe_transform,
     async_maybe_transform,
 )
-from .._compat import cached_property
-from .._resource import SyncAPIResource, AsyncAPIResource
-from .._response import (
+from ..._compat import cached_property
+from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .._streaming import Stream, AsyncStream
-from .._base_client import (
+from ..._streaming import Stream, AsyncStream
+from ...types.chat import completion_create_params
+from ..._base_client import (
     make_request_options,
 )
-from ..types.completion_response import CompletionResponse
+from ...types.tools_param import ToolsParam
+from ...types.chat.chat_completion import ChatCompletion
+from ...types.chat.chat_completion_chunk import ChatCompletionChunk
 
 __all__ = ["CompletionsResource", "AsyncCompletionsResource"]
 
@@ -44,21 +46,24 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -67,14 +72,14 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse:
+    ) -> ChatCompletion:
         """
-        Creates a completion for the provided prompt and parameters
+        Creates a model response for the given chat conversation.
 
         Args:
-          model: The name of the model to query.
+          messages: A list of messages comprising the conversation so far.
 
-          prompt: A string providing context for the model to complete.
+          model: The name of the model to query.
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -102,6 +107,8 @@ class CompletionsResource(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
           safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
@@ -110,6 +117,10 @@ class CompletionsResource(SyncAPIResource):
               Stream terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -131,21 +142,24 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -154,14 +168,14 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Stream[CompletionResponse]:
+    ) -> Stream[ChatCompletionChunk]:
         """
-        Creates a completion for the provided prompt and parameters
+        Creates a model response for the given chat conversation.
 
         Args:
-          model: The name of the model to query.
+          messages: A list of messages comprising the conversation so far.
 
-          prompt: A string providing context for the model to complete.
+          model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
               Stream terminates with `data: [DONE]`
@@ -192,11 +206,17 @@ class CompletionsResource(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
           safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -218,21 +238,24 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -241,14 +264,14 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | Stream[CompletionResponse]:
+    ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         """
-        Creates a completion for the provided prompt and parameters
+        Creates a model response for the given chat conversation.
 
         Args:
-          model: The name of the model to query.
+          messages: A list of messages comprising the conversation so far.
 
-          prompt: A string providing context for the model to complete.
+          model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
               Stream terminates with `data: [DONE]`
@@ -279,11 +302,17 @@ class CompletionsResource(SyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
           safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -301,25 +330,28 @@ class CompletionsResource(SyncAPIResource):
         """
         ...
 
-    @required_args(["model", "prompt"], ["model", "prompt", "stream"])
+    @required_args(["messages", "model"], ["messages", "model", "stream"])
     def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -328,13 +360,13 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | Stream[CompletionResponse]:
+    ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         return self._post(
-            "/completions",
+            "/chat/completions",
             body=maybe_transform(
                 {
+                    "messages": messages,
                     "model": model,
-                    "prompt": prompt,
                     "echo": echo,
                     "frequency_penalty": frequency_penalty,
                     "logit_bias": logit_bias,
@@ -344,10 +376,13 @@ class CompletionsResource(SyncAPIResource):
                     "n": n,
                     "presence_penalty": presence_penalty,
                     "repetition_penalty": repetition_penalty,
+                    "response_format": response_format,
                     "safety_model": safety_model,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
+                    "tool_choice": tool_choice,
+                    "tools": tools,
                     "top_k": top_k,
                     "top_p": top_p,
                 },
@@ -356,9 +391,9 @@ class CompletionsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=CompletionResponse,
+            cast_to=ChatCompletion,
             stream=stream or False,
-            stream_cls=Stream[CompletionResponse],
+            stream_cls=Stream[ChatCompletionChunk],
         )
 
 
@@ -375,21 +410,24 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -398,14 +436,14 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse:
+    ) -> ChatCompletion:
         """
-        Creates a completion for the provided prompt and parameters
+        Creates a model response for the given chat conversation.
 
         Args:
-          model: The name of the model to query.
+          messages: A list of messages comprising the conversation so far.
 
-          prompt: A string providing context for the model to complete.
+          model: The name of the model to query.
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -433,6 +471,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
           safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
@@ -441,6 +481,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
               Stream terminates with `data: [DONE]`
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -462,21 +506,24 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -485,14 +532,14 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> AsyncStream[CompletionResponse]:
+    ) -> AsyncStream[ChatCompletionChunk]:
         """
-        Creates a completion for the provided prompt and parameters
+        Creates a model response for the given chat conversation.
 
         Args:
-          model: The name of the model to query.
+          messages: A list of messages comprising the conversation so far.
 
-          prompt: A string providing context for the model to complete.
+          model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
               Stream terminates with `data: [DONE]`
@@ -523,11 +570,17 @@ class AsyncCompletionsResource(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
           safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -549,21 +602,24 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -572,14 +628,14 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | AsyncStream[CompletionResponse]:
+    ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         """
-        Creates a completion for the provided prompt and parameters
+        Creates a model response for the given chat conversation.
 
         Args:
-          model: The name of the model to query.
+          messages: A list of messages comprising the conversation so far.
 
-          prompt: A string providing context for the model to complete.
+          model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
               Stream terminates with `data: [DONE]`
@@ -610,11 +666,17 @@ class AsyncCompletionsResource(AsyncAPIResource):
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
 
+          response_format: Specifies the format of the response.
+
           safety_model: The name of the safety model to use.
 
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           temperature: Determines the degree of randomness in the response.
+
+          tool_choice: The choice of tool to use.
+
+          tools: A list of tools to be used in the query.
 
           top_k: The `top_k` parameter is used to limit the number of choices for the next
               predicted word or token.
@@ -632,25 +694,28 @@ class AsyncCompletionsResource(AsyncAPIResource):
         """
         ...
 
-    @required_args(["model", "prompt"], ["model", "prompt", "stream"])
+    @required_args(["messages", "model"], ["messages", "model", "stream"])
     async def create(
         self,
         *,
+        messages: Iterable[completion_create_params.Message],
         model: str,
-        prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -659,13 +724,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> CompletionResponse | AsyncStream[CompletionResponse]:
+    ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         return await self._post(
-            "/completions",
+            "/chat/completions",
             body=await async_maybe_transform(
                 {
+                    "messages": messages,
                     "model": model,
-                    "prompt": prompt,
                     "echo": echo,
                     "frequency_penalty": frequency_penalty,
                     "logit_bias": logit_bias,
@@ -675,10 +740,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
                     "n": n,
                     "presence_penalty": presence_penalty,
                     "repetition_penalty": repetition_penalty,
+                    "response_format": response_format,
                     "safety_model": safety_model,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
+                    "tool_choice": tool_choice,
+                    "tools": tools,
                     "top_k": top_k,
                     "top_p": top_p,
                 },
@@ -687,9 +755,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=CompletionResponse,
+            cast_to=ChatCompletion,
             stream=stream or False,
-            stream_cls=AsyncStream[CompletionResponse],
+            stream_cls=AsyncStream[ChatCompletionChunk],
         )
 
 

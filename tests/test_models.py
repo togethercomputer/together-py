@@ -7,9 +7,9 @@ import pytest
 import pydantic
 from pydantic import Field
 
-from together_ai._utils import PropertyInfo
-from together_ai._compat import PYDANTIC_V2, parse_obj, model_dump, model_json
-from together_ai._models import BaseModel, construct_type
+from together._utils import PropertyInfo
+from together._compat import PYDANTIC_V2, parse_obj, model_dump, model_json
+from together._models import BaseModel, construct_type
 
 
 class BasicModel(BaseModel):

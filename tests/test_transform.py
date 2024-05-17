@@ -8,15 +8,15 @@ from typing_extensions import Required, Annotated, TypedDict
 
 import pytest
 
-from together_ai._types import Base64FileInput
-from together_ai._utils import (
+from together._types import Base64FileInput
+from together._utils import (
     PropertyInfo,
     transform as _transform,
     parse_datetime,
     async_transform as _async_transform,
 )
-from together_ai._compat import PYDANTIC_V2
-from together_ai._models import BaseModel
+from together._compat import PYDANTIC_V2
+from together._models import BaseModel
 
 _T = TypeVar("_T")
 

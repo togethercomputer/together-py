@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Iterator, AsyncIterator
 
 import pytest
 
-from together_ai import TogetherAI, AsyncTogetherAI
+from together import Together, AsyncTogether
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
 
 pytest.register_assert_rewrite("tests.utils")
 
-logging.getLogger("together_ai").setLevel(logging.DEBUG)
+logging.getLogger("together").setLevel(logging.DEBUG)
 
 
 @pytest.fixture(scope="session")
@@ -30,22 +30,22 @@ access_token = "My Access Token"
 
 
 @pytest.fixture(scope="session")
-def client(request: FixtureRequest) -> Iterator[TogetherAI]:
+def client(request: FixtureRequest) -> Iterator[Together]:
     strict = getattr(request, "param", True)
     if not isinstance(strict, bool):
         raise TypeError(f"Unexpected fixture parameter type {type(strict)}, expected {bool}")
 
-    with TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=strict) as client:
+    with Together(base_url=base_url, access_token=access_token, _strict_response_validation=strict) as client:
         yield client
 
 
 @pytest.fixture(scope="session")
-async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncTogetherAI]:
+async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncTogether]:
     strict = getattr(request, "param", True)
     if not isinstance(strict, bool):
         raise TypeError(f"Unexpected fixture parameter type {type(strict)}, expected {bool}")
 
-    async with AsyncTogetherAI(
+    async with AsyncTogether(
         base_url=base_url, access_token=access_token, _strict_response_validation=strict
     ) as client:
         yield client

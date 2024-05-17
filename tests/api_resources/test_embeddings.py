@@ -7,9 +7,9 @@ from typing import Any, cast
 
 import pytest
 
+from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together_ai import TogetherAI, AsyncTogetherAI
-from together_ai.types import EmbeddingsResponse
+from together.types import EmbeddingsResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -18,7 +18,7 @@ class TestEmbeddings:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    def test_method_create(self, client: TogetherAI) -> None:
+    def test_method_create(self, client: Together) -> None:
         embedding = client.embeddings.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
@@ -26,7 +26,7 @@ class TestEmbeddings:
         assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
 
     @parametrize
-    def test_raw_response_create(self, client: TogetherAI) -> None:
+    def test_raw_response_create(self, client: Together) -> None:
         response = client.embeddings.with_raw_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
@@ -38,7 +38,7 @@ class TestEmbeddings:
         assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
 
     @parametrize
-    def test_streaming_response_create(self, client: TogetherAI) -> None:
+    def test_streaming_response_create(self, client: Together) -> None:
         with client.embeddings.with_streaming_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
@@ -56,7 +56,7 @@ class TestAsyncEmbeddings:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    async def test_method_create(self, async_client: AsyncTogetherAI) -> None:
+    async def test_method_create(self, async_client: AsyncTogether) -> None:
         embedding = await async_client.embeddings.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
@@ -64,7 +64,7 @@ class TestAsyncEmbeddings:
         assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
 
     @parametrize
-    async def test_raw_response_create(self, async_client: AsyncTogetherAI) -> None:
+    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.embeddings.with_raw_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",
@@ -76,7 +76,7 @@ class TestAsyncEmbeddings:
         assert_matches_type(EmbeddingsResponse, embedding, path=["response"])
 
     @parametrize
-    async def test_streaming_response_create(self, async_client: AsyncTogetherAI) -> None:
+    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.embeddings.with_streaming_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
             model="togethercomputer/m2-bert-80M-8k-retrieval",

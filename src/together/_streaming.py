@@ -13,7 +13,7 @@ from ._utils import is_mapping, extract_type_var_from_base
 from ._exceptions import APIError
 
 if TYPE_CHECKING:
-    from ._client import TogetherAI, AsyncTogetherAI
+    from ._client import Together, AsyncTogether
 
 
 _T = TypeVar("_T")
@@ -31,7 +31,7 @@ class Stream(Generic[_T]):
         *,
         cast_to: type[_T],
         response: httpx.Response,
-        client: TogetherAI,
+        client: Together,
     ) -> None:
         self.response = response
         self._cast_to = cast_to
@@ -113,7 +113,7 @@ class AsyncStream(Generic[_T]):
         *,
         cast_to: type[_T],
         response: httpx.Response,
-        client: AsyncTogetherAI,
+        client: AsyncTogether,
     ) -> None:
         self.response = response
         self._cast_to = cast_to
