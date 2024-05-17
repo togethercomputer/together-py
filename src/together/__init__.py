@@ -7,12 +7,12 @@ from ._client import (
     Client,
     Stream,
     Timeout,
+    Together,
     Transport,
-    TogetherAI,
     AsyncClient,
     AsyncStream,
+    AsyncTogether,
     RequestOptions,
-    AsyncTogetherAI,
 )
 from ._models import BaseModel
 from ._version import __title__, __version__
@@ -22,11 +22,11 @@ from ._exceptions import (
     APIError,
     ConflictError,
     NotFoundError,
+    TogetherError,
     APIStatusError,
     RateLimitError,
     APITimeoutError,
     BadRequestError,
-    TogetherAIError,
     APIConnectionError,
     AuthenticationError,
     InternalServerError,
@@ -46,7 +46,7 @@ __all__ = [
     "ProxiesTypes",
     "NotGiven",
     "NOT_GIVEN",
-    "TogetherAIError",
+    "TogetherError",
     "APIError",
     "APIStatusError",
     "APITimeoutError",
@@ -66,8 +66,8 @@ __all__ = [
     "AsyncClient",
     "Stream",
     "AsyncStream",
-    "TogetherAI",
-    "AsyncTogetherAI",
+    "Together",
+    "AsyncTogether",
     "file_from_path",
     "BaseModel",
     "DEFAULT_TIMEOUT",
@@ -82,12 +82,12 @@ _setup_logging()
 # Update the __module__ attribute for exported symbols so that
 # error messages point to this module instead of the module
 # it was originally defined in, e.g.
-# together_ai._exceptions.NotFoundError -> together_ai.NotFoundError
+# together._exceptions.NotFoundError -> together.NotFoundError
 __locals = locals()
 for __name in __all__:
     if not __name.startswith("__"):
         try:
-            __locals[__name].__module__ = "together_ai"
+            __locals[__name].__module__ = "together"
         except (TypeError, AttributeError):
             # Some of our exported symbols are builtins which we can't set attributes for.
             pass

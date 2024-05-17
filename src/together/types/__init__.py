@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from .fine_tune import FineTune as FineTune
+from .log_probs import LogProbs as LogProbs
+from .tools_param import ToolsParam as ToolsParam
+from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .images_response import ImagesResponse as ImagesResponse
+from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
 from .file_list_response import FileListResponse as FileListResponse
 from .completion_response import CompletionResponse as CompletionResponse
 from .embeddings_response import EmbeddingsResponse as EmbeddingsResponse
@@ -15,4 +19,5 @@ from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreatePar
 from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
-from .fine_tune_list_events_response import FineTuneListEventsResponse as FineTuneListEventsResponse
+from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloadParams
+from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse

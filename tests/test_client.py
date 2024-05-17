@@ -16,12 +16,12 @@ import pytest
 from respx import MockRouter
 from pydantic import ValidationError
 
-from together_ai import TogetherAI, AsyncTogetherAI, APIResponseValidationError
-from together_ai._models import BaseModel, FinalRequestOptions
-from together_ai._constants import RAW_RESPONSE_HEADER
-from together_ai._streaming import Stream, AsyncStream
-from together_ai._exceptions import APIStatusError, APITimeoutError, TogetherAIError, APIResponseValidationError
-from together_ai._base_client import (
+from together import Together, AsyncTogether, APIResponseValidationError
+from together._models import BaseModel, FinalRequestOptions
+from together._constants import RAW_RESPONSE_HEADER
+from together._streaming import Stream, AsyncStream
+from together._exceptions import TogetherError, APIStatusError, APITimeoutError, APIResponseValidationError
+from together._base_client import (
     DEFAULT_TIMEOUT,
     HTTPX_DEFAULT_TIMEOUT,
     BaseClient,
@@ -44,7 +44,7 @@ def _low_retry_timeout(*_args: Any, **_kwargs: Any) -> float:
     return 0.1
 
 
-def _get_open_connections(client: TogetherAI | AsyncTogetherAI) -> int:
+def _get_open_connections(client: Together | AsyncTogether) -> int:
     transport = client._client._transport
     assert isinstance(transport, httpx.HTTPTransport) or isinstance(transport, httpx.AsyncHTTPTransport)
 
@@ -52,8 +52,8 @@ def _get_open_connections(client: TogetherAI | AsyncTogetherAI) -> int:
     return len(pool._requests)
 
 
-class TestTogetherAI:
-    client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+class TestTogether:
+    client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=True)
 
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response(self, respx_mock: MockRouter) -> None:
@@ -87,7 +87,7 @@ class TestTogetherAI:
         # options that have a default are overridden correctly
         copied = self.client.copy(max_retries=7)
         assert copied.max_retries == 7
-        assert self.client.max_retries == 2
+        assert self.client.max_retries == 5
 
         copied2 = copied.copy(max_retries=6)
         assert copied2.max_retries == 6
@@ -100,7 +100,7 @@ class TestTogetherAI:
         assert isinstance(self.client.timeout, httpx.Timeout)
 
     def test_copy_default_headers(self) -> None:
-        client = TogetherAI(
+        client = Together(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -137,7 +137,7 @@ class TestTogetherAI:
             client.copy(set_default_headers={}, default_headers={"X-Foo": "Bar"})
 
     def test_copy_default_query(self) -> None:
-        client = TogetherAI(
+        client = Together(
             base_url=base_url, access_token=access_token, _strict_response_validation=True, default_query={"foo": "bar"}
         )
         assert _get_params(client)["foo"] == "bar"
@@ -228,10 +228,10 @@ class TestTogetherAI:
                         # to_raw_response_wrapper leaks through the @functools.wraps() decorator.
                         #
                         # removing the decorator fixes the leak for reasons we don't understand.
-                        "together_ai/_legacy_response.py",
-                        "together_ai/_response.py",
+                        "together/_legacy_response.py",
+                        "together/_response.py",
                         # pydantic.BaseModel.model_dump || pydantic.BaseModel.dict leak memory for some reason.
-                        "together_ai/_compat.py",
+                        "together/_compat.py",
                         # Standard library leaks we don't care about.
                         "/logging/__init__.py",
                     ]
@@ -262,7 +262,7 @@ class TestTogetherAI:
         assert timeout == httpx.Timeout(100.0)
 
     def test_client_timeout_option(self) -> None:
-        client = TogetherAI(
+        client = Together(
             base_url=base_url, access_token=access_token, _strict_response_validation=True, timeout=httpx.Timeout(0)
         )
 
@@ -273,7 +273,7 @@ class TestTogetherAI:
     def test_http_client_timeout_option(self) -> None:
         # custom timeout given to the httpx client should be used
         with httpx.Client(timeout=None) as http_client:
-            client = TogetherAI(
+            client = Together(
                 base_url=base_url, access_token=access_token, _strict_response_validation=True, http_client=http_client
             )
 
@@ -283,7 +283,7 @@ class TestTogetherAI:
 
         # no timeout given to the httpx client should not use the httpx default
         with httpx.Client() as http_client:
-            client = TogetherAI(
+            client = Together(
                 base_url=base_url, access_token=access_token, _strict_response_validation=True, http_client=http_client
             )
 
@@ -293,7 +293,7 @@ class TestTogetherAI:
 
         # explicitly passing the default timeout currently results in it being ignored
         with httpx.Client(timeout=HTTPX_DEFAULT_TIMEOUT) as http_client:
-            client = TogetherAI(
+            client = Together(
                 base_url=base_url, access_token=access_token, _strict_response_validation=True, http_client=http_client
             )
 
@@ -304,7 +304,7 @@ class TestTogetherAI:
     async def test_invalid_http_client(self) -> None:
         with pytest.raises(TypeError, match="Invalid `http_client` arg"):
             async with httpx.AsyncClient() as http_client:
-                TogetherAI(
+                Together(
                     base_url=base_url,
                     access_token=access_token,
                     _strict_response_validation=True,
@@ -312,7 +312,7 @@ class TestTogetherAI:
                 )
 
     def test_default_headers_option(self) -> None:
-        client = TogetherAI(
+        client = Together(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -322,7 +322,7 @@ class TestTogetherAI:
         assert request.headers.get("x-foo") == "bar"
         assert request.headers.get("x-stainless-lang") == "python"
 
-        client2 = TogetherAI(
+        client2 = Together(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -336,16 +336,16 @@ class TestTogetherAI:
         assert request.headers.get("x-stainless-lang") == "my-overriding-header"
 
     def test_validate_headers(self) -> None:
-        client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=True)
         request = client._build_request(FinalRequestOptions(method="get", url="/foo"))
         assert request.headers.get("Authorization") == f"Bearer {access_token}"
 
-        with pytest.raises(TogetherAIError):
-            client2 = TogetherAI(base_url=base_url, access_token=None, _strict_response_validation=True)
+        with pytest.raises(TogetherError):
+            client2 = Together(base_url=base_url, access_token=None, _strict_response_validation=True)
             _ = client2
 
     def test_default_query_option(self) -> None:
-        client = TogetherAI(
+        client = Together(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -462,7 +462,7 @@ class TestTogetherAI:
         params = dict(request.url.params)
         assert params == {"foo": "2"}
 
-    def test_multipart_repeating_array(self, client: TogetherAI) -> None:
+    def test_multipart_repeating_array(self, client: Together) -> None:
         request = client._build_request(
             FinalRequestOptions.construct(
                 method="get",
@@ -549,7 +549,7 @@ class TestTogetherAI:
         assert response.foo == 2
 
     def test_base_url_setter(self) -> None:
-        client = TogetherAI(
+        client = Together(
             base_url="https://example.com/from_init", access_token=access_token, _strict_response_validation=True
         )
         assert client.base_url == "https://example.com/from_init/"
@@ -559,19 +559,19 @@ class TestTogetherAI:
         assert client.base_url == "https://example.com/from_setter/"
 
     def test_base_url_env(self) -> None:
-        with update_env(TOGETHER_AI_BASE_URL="http://localhost:5000/from/env"):
-            client = TogetherAI(access_token=access_token, _strict_response_validation=True)
+        with update_env(TOGETHER_BASE_URL="http://localhost:5000/from/env"):
+            client = Together(access_token=access_token, _strict_response_validation=True)
             assert client.base_url == "http://localhost:5000/from/env/"
 
     @pytest.mark.parametrize(
         "client",
         [
-            TogetherAI(
+            Together(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
             ),
-            TogetherAI(
+            Together(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -580,7 +580,7 @@ class TestTogetherAI:
         ],
         ids=["standard", "custom http client"],
     )
-    def test_base_url_trailing_slash(self, client: TogetherAI) -> None:
+    def test_base_url_trailing_slash(self, client: Together) -> None:
         request = client._build_request(
             FinalRequestOptions(
                 method="post",
@@ -593,12 +593,12 @@ class TestTogetherAI:
     @pytest.mark.parametrize(
         "client",
         [
-            TogetherAI(
+            Together(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
             ),
-            TogetherAI(
+            Together(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -607,7 +607,7 @@ class TestTogetherAI:
         ],
         ids=["standard", "custom http client"],
     )
-    def test_base_url_no_trailing_slash(self, client: TogetherAI) -> None:
+    def test_base_url_no_trailing_slash(self, client: Together) -> None:
         request = client._build_request(
             FinalRequestOptions(
                 method="post",
@@ -620,12 +620,12 @@ class TestTogetherAI:
     @pytest.mark.parametrize(
         "client",
         [
-            TogetherAI(
+            Together(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
             ),
-            TogetherAI(
+            Together(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -634,7 +634,7 @@ class TestTogetherAI:
         ],
         ids=["standard", "custom http client"],
     )
-    def test_absolute_request_url(self, client: TogetherAI) -> None:
+    def test_absolute_request_url(self, client: Together) -> None:
         request = client._build_request(
             FinalRequestOptions(
                 method="post",
@@ -645,7 +645,7 @@ class TestTogetherAI:
         assert request.url == "https://myapi.com/foo"
 
     def test_copied_client_does_not_close_http(self) -> None:
-        client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=True)
         assert not client.is_closed()
 
         copied = client.copy()
@@ -656,7 +656,7 @@ class TestTogetherAI:
         assert not client.is_closed()
 
     def test_client_context_manager(self) -> None:
-        client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=True)
         with client as c2:
             assert c2 is client
             assert not c2.is_closed()
@@ -677,7 +677,7 @@ class TestTogetherAI:
 
     def test_client_max_retries_validation(self) -> None:
         with pytest.raises(TypeError, match=r"max_retries cannot be None"):
-            TogetherAI(
+            Together(
                 base_url=base_url,
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -702,12 +702,12 @@ class TestTogetherAI:
 
         respx_mock.get("/foo").mock(return_value=httpx.Response(200, text="my-custom-format"))
 
-        strict_client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        strict_client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=True)
 
         with pytest.raises(APIResponseValidationError):
             strict_client.get("/foo", cast_to=Model)
 
-        client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=False)
+        client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=False)
 
         response = client.get("/foo", cast_to=Model)
         assert isinstance(response, str)  # type: ignore[unreachable]
@@ -716,32 +716,32 @@ class TestTogetherAI:
         "remaining_retries,retry_after,timeout",
         [
             [3, "20", 20],
-            [3, "0", 0.5],
-            [3, "-10", 0.5],
+            [3, "0", 1],
+            [3, "-10", 1],
             [3, "60", 60],
-            [3, "61", 0.5],
+            [3, "61", 1],
             [3, "Fri, 29 Sep 2023 16:26:57 GMT", 20],
-            [3, "Fri, 29 Sep 2023 16:26:37 GMT", 0.5],
-            [3, "Fri, 29 Sep 2023 16:26:27 GMT", 0.5],
+            [3, "Fri, 29 Sep 2023 16:26:37 GMT", 1],
+            [3, "Fri, 29 Sep 2023 16:26:27 GMT", 1],
             [3, "Fri, 29 Sep 2023 16:27:37 GMT", 60],
-            [3, "Fri, 29 Sep 2023 16:27:38 GMT", 0.5],
-            [3, "99999999999999999999999999999999999", 0.5],
-            [3, "Zun, 29 Sep 2023 16:26:27 GMT", 0.5],
-            [3, "", 0.5],
-            [2, "", 0.5 * 2.0],
-            [1, "", 0.5 * 4.0],
+            [3, "Fri, 29 Sep 2023 16:27:38 GMT", 1],
+            [3, "99999999999999999999999999999999999", 1],
+            [3, "Zun, 29 Sep 2023 16:26:27 GMT", 1],
+            [3, "", 1],
+            [2, "", 1 * 2.0],
+            [1, "", 1 * 4.0],
         ],
     )
     @mock.patch("time.time", mock.MagicMock(return_value=1696004797))
     def test_parse_retry_after_header(self, remaining_retries: int, retry_after: str, timeout: float) -> None:
-        client = TogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = Together(base_url=base_url, access_token=access_token, _strict_response_validation=True)
 
         headers = httpx.Headers({"retry-after": retry_after})
         options = FinalRequestOptions(method="get", url="/foo", max_retries=3)
         calculated = client._calculate_retry_timeout(remaining_retries, options, headers)
-        assert calculated == pytest.approx(timeout, 0.5 * 0.875)  # pyright: ignore[reportUnknownMemberType]
+        assert calculated == pytest.approx(timeout, 1 * 0.875)  # pyright: ignore[reportUnknownMemberType]
 
-    @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
+    @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
         respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
@@ -767,7 +767,7 @@ class TestTogetherAI:
 
         assert _get_open_connections(self.client) == 0
 
-    @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
+    @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
         respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
@@ -794,8 +794,8 @@ class TestTogetherAI:
         assert _get_open_connections(self.client) == 0
 
 
-class TestAsyncTogetherAI:
-    client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+class TestAsyncTogether:
+    client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=True)
 
     @pytest.mark.respx(base_url=base_url)
     @pytest.mark.asyncio
@@ -831,7 +831,7 @@ class TestAsyncTogetherAI:
         # options that have a default are overridden correctly
         copied = self.client.copy(max_retries=7)
         assert copied.max_retries == 7
-        assert self.client.max_retries == 2
+        assert self.client.max_retries == 5
 
         copied2 = copied.copy(max_retries=6)
         assert copied2.max_retries == 6
@@ -844,7 +844,7 @@ class TestAsyncTogetherAI:
         assert isinstance(self.client.timeout, httpx.Timeout)
 
     def test_copy_default_headers(self) -> None:
-        client = AsyncTogetherAI(
+        client = AsyncTogether(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -881,7 +881,7 @@ class TestAsyncTogetherAI:
             client.copy(set_default_headers={}, default_headers={"X-Foo": "Bar"})
 
     def test_copy_default_query(self) -> None:
-        client = AsyncTogetherAI(
+        client = AsyncTogether(
             base_url=base_url, access_token=access_token, _strict_response_validation=True, default_query={"foo": "bar"}
         )
         assert _get_params(client)["foo"] == "bar"
@@ -972,10 +972,10 @@ class TestAsyncTogetherAI:
                         # to_raw_response_wrapper leaks through the @functools.wraps() decorator.
                         #
                         # removing the decorator fixes the leak for reasons we don't understand.
-                        "together_ai/_legacy_response.py",
-                        "together_ai/_response.py",
+                        "together/_legacy_response.py",
+                        "together/_response.py",
                         # pydantic.BaseModel.model_dump || pydantic.BaseModel.dict leak memory for some reason.
-                        "together_ai/_compat.py",
+                        "together/_compat.py",
                         # Standard library leaks we don't care about.
                         "/logging/__init__.py",
                     ]
@@ -1006,7 +1006,7 @@ class TestAsyncTogetherAI:
         assert timeout == httpx.Timeout(100.0)
 
     async def test_client_timeout_option(self) -> None:
-        client = AsyncTogetherAI(
+        client = AsyncTogether(
             base_url=base_url, access_token=access_token, _strict_response_validation=True, timeout=httpx.Timeout(0)
         )
 
@@ -1017,7 +1017,7 @@ class TestAsyncTogetherAI:
     async def test_http_client_timeout_option(self) -> None:
         # custom timeout given to the httpx client should be used
         async with httpx.AsyncClient(timeout=None) as http_client:
-            client = AsyncTogetherAI(
+            client = AsyncTogether(
                 base_url=base_url, access_token=access_token, _strict_response_validation=True, http_client=http_client
             )
 
@@ -1027,7 +1027,7 @@ class TestAsyncTogetherAI:
 
         # no timeout given to the httpx client should not use the httpx default
         async with httpx.AsyncClient() as http_client:
-            client = AsyncTogetherAI(
+            client = AsyncTogether(
                 base_url=base_url, access_token=access_token, _strict_response_validation=True, http_client=http_client
             )
 
@@ -1037,7 +1037,7 @@ class TestAsyncTogetherAI:
 
         # explicitly passing the default timeout currently results in it being ignored
         async with httpx.AsyncClient(timeout=HTTPX_DEFAULT_TIMEOUT) as http_client:
-            client = AsyncTogetherAI(
+            client = AsyncTogether(
                 base_url=base_url, access_token=access_token, _strict_response_validation=True, http_client=http_client
             )
 
@@ -1048,7 +1048,7 @@ class TestAsyncTogetherAI:
     def test_invalid_http_client(self) -> None:
         with pytest.raises(TypeError, match="Invalid `http_client` arg"):
             with httpx.Client() as http_client:
-                AsyncTogetherAI(
+                AsyncTogether(
                     base_url=base_url,
                     access_token=access_token,
                     _strict_response_validation=True,
@@ -1056,7 +1056,7 @@ class TestAsyncTogetherAI:
                 )
 
     def test_default_headers_option(self) -> None:
-        client = AsyncTogetherAI(
+        client = AsyncTogether(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -1066,7 +1066,7 @@ class TestAsyncTogetherAI:
         assert request.headers.get("x-foo") == "bar"
         assert request.headers.get("x-stainless-lang") == "python"
 
-        client2 = AsyncTogetherAI(
+        client2 = AsyncTogether(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -1080,16 +1080,16 @@ class TestAsyncTogetherAI:
         assert request.headers.get("x-stainless-lang") == "my-overriding-header"
 
     def test_validate_headers(self) -> None:
-        client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=True)
         request = client._build_request(FinalRequestOptions(method="get", url="/foo"))
         assert request.headers.get("Authorization") == f"Bearer {access_token}"
 
-        with pytest.raises(TogetherAIError):
-            client2 = AsyncTogetherAI(base_url=base_url, access_token=None, _strict_response_validation=True)
+        with pytest.raises(TogetherError):
+            client2 = AsyncTogether(base_url=base_url, access_token=None, _strict_response_validation=True)
             _ = client2
 
     def test_default_query_option(self) -> None:
-        client = AsyncTogetherAI(
+        client = AsyncTogether(
             base_url=base_url,
             access_token=access_token,
             _strict_response_validation=True,
@@ -1206,7 +1206,7 @@ class TestAsyncTogetherAI:
         params = dict(request.url.params)
         assert params == {"foo": "2"}
 
-    def test_multipart_repeating_array(self, async_client: AsyncTogetherAI) -> None:
+    def test_multipart_repeating_array(self, async_client: AsyncTogether) -> None:
         request = async_client._build_request(
             FinalRequestOptions.construct(
                 method="get",
@@ -1293,7 +1293,7 @@ class TestAsyncTogetherAI:
         assert response.foo == 2
 
     def test_base_url_setter(self) -> None:
-        client = AsyncTogetherAI(
+        client = AsyncTogether(
             base_url="https://example.com/from_init", access_token=access_token, _strict_response_validation=True
         )
         assert client.base_url == "https://example.com/from_init/"
@@ -1303,19 +1303,19 @@ class TestAsyncTogetherAI:
         assert client.base_url == "https://example.com/from_setter/"
 
     def test_base_url_env(self) -> None:
-        with update_env(TOGETHER_AI_BASE_URL="http://localhost:5000/from/env"):
-            client = AsyncTogetherAI(access_token=access_token, _strict_response_validation=True)
+        with update_env(TOGETHER_BASE_URL="http://localhost:5000/from/env"):
+            client = AsyncTogether(access_token=access_token, _strict_response_validation=True)
             assert client.base_url == "http://localhost:5000/from/env/"
 
     @pytest.mark.parametrize(
         "client",
         [
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
             ),
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -1324,7 +1324,7 @@ class TestAsyncTogetherAI:
         ],
         ids=["standard", "custom http client"],
     )
-    def test_base_url_trailing_slash(self, client: AsyncTogetherAI) -> None:
+    def test_base_url_trailing_slash(self, client: AsyncTogether) -> None:
         request = client._build_request(
             FinalRequestOptions(
                 method="post",
@@ -1337,12 +1337,12 @@ class TestAsyncTogetherAI:
     @pytest.mark.parametrize(
         "client",
         [
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
             ),
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -1351,7 +1351,7 @@ class TestAsyncTogetherAI:
         ],
         ids=["standard", "custom http client"],
     )
-    def test_base_url_no_trailing_slash(self, client: AsyncTogetherAI) -> None:
+    def test_base_url_no_trailing_slash(self, client: AsyncTogether) -> None:
         request = client._build_request(
             FinalRequestOptions(
                 method="post",
@@ -1364,12 +1364,12 @@ class TestAsyncTogetherAI:
     @pytest.mark.parametrize(
         "client",
         [
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
             ),
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url="http://localhost:5000/custom/path/",
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -1378,7 +1378,7 @@ class TestAsyncTogetherAI:
         ],
         ids=["standard", "custom http client"],
     )
-    def test_absolute_request_url(self, client: AsyncTogetherAI) -> None:
+    def test_absolute_request_url(self, client: AsyncTogether) -> None:
         request = client._build_request(
             FinalRequestOptions(
                 method="post",
@@ -1389,7 +1389,7 @@ class TestAsyncTogetherAI:
         assert request.url == "https://myapi.com/foo"
 
     async def test_copied_client_does_not_close_http(self) -> None:
-        client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=True)
         assert not client.is_closed()
 
         copied = client.copy()
@@ -1401,7 +1401,7 @@ class TestAsyncTogetherAI:
         assert not client.is_closed()
 
     async def test_client_context_manager(self) -> None:
-        client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=True)
         async with client as c2:
             assert c2 is client
             assert not c2.is_closed()
@@ -1423,7 +1423,7 @@ class TestAsyncTogetherAI:
 
     async def test_client_max_retries_validation(self) -> None:
         with pytest.raises(TypeError, match=r"max_retries cannot be None"):
-            AsyncTogetherAI(
+            AsyncTogether(
                 base_url=base_url,
                 access_token=access_token,
                 _strict_response_validation=True,
@@ -1450,12 +1450,12 @@ class TestAsyncTogetherAI:
 
         respx_mock.get("/foo").mock(return_value=httpx.Response(200, text="my-custom-format"))
 
-        strict_client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        strict_client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=True)
 
         with pytest.raises(APIResponseValidationError):
             await strict_client.get("/foo", cast_to=Model)
 
-        client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=False)
+        client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=False)
 
         response = await client.get("/foo", cast_to=Model)
         assert isinstance(response, str)  # type: ignore[unreachable]
@@ -1464,33 +1464,33 @@ class TestAsyncTogetherAI:
         "remaining_retries,retry_after,timeout",
         [
             [3, "20", 20],
-            [3, "0", 0.5],
-            [3, "-10", 0.5],
+            [3, "0", 1],
+            [3, "-10", 1],
             [3, "60", 60],
-            [3, "61", 0.5],
+            [3, "61", 1],
             [3, "Fri, 29 Sep 2023 16:26:57 GMT", 20],
-            [3, "Fri, 29 Sep 2023 16:26:37 GMT", 0.5],
-            [3, "Fri, 29 Sep 2023 16:26:27 GMT", 0.5],
+            [3, "Fri, 29 Sep 2023 16:26:37 GMT", 1],
+            [3, "Fri, 29 Sep 2023 16:26:27 GMT", 1],
             [3, "Fri, 29 Sep 2023 16:27:37 GMT", 60],
-            [3, "Fri, 29 Sep 2023 16:27:38 GMT", 0.5],
-            [3, "99999999999999999999999999999999999", 0.5],
-            [3, "Zun, 29 Sep 2023 16:26:27 GMT", 0.5],
-            [3, "", 0.5],
-            [2, "", 0.5 * 2.0],
-            [1, "", 0.5 * 4.0],
+            [3, "Fri, 29 Sep 2023 16:27:38 GMT", 1],
+            [3, "99999999999999999999999999999999999", 1],
+            [3, "Zun, 29 Sep 2023 16:26:27 GMT", 1],
+            [3, "", 1],
+            [2, "", 1 * 2.0],
+            [1, "", 1 * 4.0],
         ],
     )
     @mock.patch("time.time", mock.MagicMock(return_value=1696004797))
     @pytest.mark.asyncio
     async def test_parse_retry_after_header(self, remaining_retries: int, retry_after: str, timeout: float) -> None:
-        client = AsyncTogetherAI(base_url=base_url, access_token=access_token, _strict_response_validation=True)
+        client = AsyncTogether(base_url=base_url, access_token=access_token, _strict_response_validation=True)
 
         headers = httpx.Headers({"retry-after": retry_after})
         options = FinalRequestOptions(method="get", url="/foo", max_retries=3)
         calculated = client._calculate_retry_timeout(remaining_retries, options, headers)
-        assert calculated == pytest.approx(timeout, 0.5 * 0.875)  # pyright: ignore[reportUnknownMemberType]
+        assert calculated == pytest.approx(timeout, 1 * 0.875)  # pyright: ignore[reportUnknownMemberType]
 
-    @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
+    @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     async def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
         respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
@@ -1516,7 +1516,7 @@ class TestAsyncTogetherAI:
 
         assert _get_open_connections(self.client) == 0
 
-    @mock.patch("together_ai._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
+    @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
     async def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
         respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))

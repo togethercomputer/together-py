@@ -1,8 +1,8 @@
-# Together AI Python API library
+# Together Python API library
 
 [![PyPI version](https://img.shields.io/pypi/v/together.svg)](https://pypi.org/project/together/)
 
-The Together AI Python library provides convenient access to the Together AI REST API from any Python 3.7+
+The Together Python library provides convenient access to the Together REST API from any Python 3.7+
 application. The library includes type definitions for all request params and response fields,
 and offers both synchronous and asynchronous clients powered by [httpx](https://github.com/encode/httpx).
 
@@ -10,7 +10,7 @@ It is generated with [Stainless](https://www.stainlessapi.com/).
 
 ## Documentation
 
-The REST API documentation can be found [on www.together.ai](https://www.together.ai/contact). The full API of this library can be found in [api.md](api.md).
+The REST API documentation can be found [on docs.together.ai](https://docs.together.ai/). The full API of this library can be found in [api.md](api.md).
 
 ## Installation
 
@@ -28,11 +28,11 @@ The full API of this library can be found in [api.md](api.md).
 
 ```python
 import os
-from together_ai import TogetherAI
+from together import Together
 
-client = TogetherAI(
+client = Together(
     # This is the default and can be omitted
-    access_token=os.environ.get("TOGETHER_AI_ACCESS_TOKEN"),
+    access_token=os.environ.get("TOGETHER_API_KEY"),
 )
 
 chat_completion = client.chat.completions.create(
@@ -49,21 +49,21 @@ print(chat_completion.choices)
 
 While you can provide a `access_token` keyword argument,
 we recommend using [python-dotenv](https://pypi.org/project/python-dotenv/)
-to add `TOGETHER_AI_ACCESS_TOKEN="My Access Token"` to your `.env` file
+to add `TOGETHER_API_KEY="My Access Token"` to your `.env` file
 so that your Access Token is not stored in source control.
 
 ## Async usage
 
-Simply import `AsyncTogetherAI` instead of `TogetherAI` and use `await` with each API call:
+Simply import `AsyncTogether` instead of `Together` and use `await` with each API call:
 
 ```python
 import os
 import asyncio
-from together_ai import AsyncTogetherAI
+from together import AsyncTogether
 
-client = AsyncTogetherAI(
+client = AsyncTogether(
     # This is the default and can be omitted
-    access_token=os.environ.get("TOGETHER_AI_ACCESS_TOKEN"),
+    access_token=os.environ.get("TOGETHER_API_KEY"),
 )
 
 
@@ -90,9 +90,9 @@ Functionality between the synchronous and asynchronous clients is otherwise iden
 We provide support for streaming responses using Server Side Events (SSE).
 
 ```python
-from together_ai import TogetherAI
+from together import Together
 
-client = TogetherAI()
+client = Together()
 
 stream = client.chat.completions.create(
     messages=[
@@ -111,9 +111,9 @@ for chat_completion in stream:
 The async client uses the exact same interface.
 
 ```python
-from together_ai import AsyncTogetherAI
+from together import AsyncTogether
 
-client = AsyncTogetherAI()
+client = AsyncTogether()
 
 stream = await client.chat.completions.create(
     messages=[
@@ -140,18 +140,18 @@ Typed requests and responses provide autocomplete and documentation within your 
 
 ## Handling errors
 
-When the library is unable to connect to the API (for example, due to network connection problems or a timeout), a subclass of `together_ai.APIConnectionError` is raised.
+When the library is unable to connect to the API (for example, due to network connection problems or a timeout), a subclass of `together.APIConnectionError` is raised.
 
 When the API returns a non-success status code (that is, 4xx or 5xx
-response), a subclass of `together_ai.APIStatusError` is raised, containing `status_code` and `response` properties.
+response), a subclass of `together.APIStatusError` is raised, containing `status_code` and `response` properties.
 
-All errors inherit from `together_ai.APIError`.
+All errors inherit from `together.APIError`.
 
 ```python
-import together_ai
-from together_ai import TogetherAI
+import together
+from together import Together
 
-client = TogetherAI()
+client = Together()
 
 try:
     client.chat.completions.create(
@@ -163,12 +163,12 @@ try:
         ],
         model="mistralai/Mixtral-8x7B-Instruct-v0.1",
     )
-except together_ai.APIConnectionError as e:
+except together.APIConnectionError as e:
     print("The server could not be reached")
     print(e.__cause__)  # an underlying Exception, likely raised within httpx.
-except together_ai.RateLimitError as e:
+except together.RateLimitError as e:
     print("A 429 status code was received; we should back off a bit.")
-except together_ai.APIStatusError as e:
+except together.APIStatusError as e:
     print("Another non-200-range status code was received")
     print(e.status_code)
     print(e.response)
@@ -189,17 +189,17 @@ Error codes are as followed:
 
 ### Retries
 
-Certain errors are automatically retried 2 times by default, with a short exponential backoff.
+Certain errors are automatically retried 5 times by default, with a short exponential backoff.
 Connection errors (for example, due to a network connectivity problem), 408 Request Timeout, 409 Conflict,
 429 Rate Limit, and >=500 Internal errors are all retried by default.
 
 You can use the `max_retries` option to configure or disable retry settings:
 
 ```python
-from together_ai import TogetherAI
+from together import Together
 
 # Configure the default for all requests:
-client = TogetherAI(
+client = Together(
     # default is 2
     max_retries=0,
 )
@@ -222,16 +222,16 @@ By default requests time out after 1 minute. You can configure this with a `time
 which accepts a float or an [`httpx.Timeout`](https://www.python-httpx.org/advanced/#fine-tuning-the-configuration) object:
 
 ```python
-from together_ai import TogetherAI
+from together import Together
 
 # Configure the default for all requests:
-client = TogetherAI(
+client = Together(
     # 20 seconds (default is 1 minute)
     timeout=20.0,
 )
 
 # More granular control:
-client = TogetherAI(
+client = Together(
     timeout=httpx.Timeout(60.0, read=5.0, write=10.0, connect=2.0),
 )
 
@@ -257,10 +257,10 @@ Note that requests that time out are [retried twice by default](#retries).
 
 We use the standard library [`logging`](https://docs.python.org/3/library/logging.html) module.
 
-You can enable logging by setting the environment variable `TOGETHER_AI_LOG` to `debug`.
+You can enable logging by setting the environment variable `TOGETHER_LOG` to `debug`.
 
 ```shell
-$ export TOGETHER_AI_LOG=debug
+$ export TOGETHER_LOG=debug
 ```
 
 ### How to tell whether `None` means `null` or missing
@@ -280,9 +280,9 @@ if response.my_field is None:
 The "raw" Response object can be accessed by prefixing `.with_raw_response.` to any HTTP method call, e.g.,
 
 ```py
-from together_ai import TogetherAI
+from together import Together
 
-client = TogetherAI()
+client = Together()
 response = client.chat.completions.with_raw_response.create(
     messages=[{
         "role": "user",
@@ -296,9 +296,9 @@ completion = response.parse()  # get the object that `chat.completions.create()`
 print(completion.choices)
 ```
 
-These methods return an [`APIResponse`](https://github.com/stainless-sdks/TogetherAI-python/tree/main/src/together_ai/_response.py) object.
+These methods return an [`APIResponse`](https://github.com/stainless-sdks/TogetherAI-python/tree/main/src/together/_response.py) object.
 
-The async client returns an [`AsyncAPIResponse`](https://github.com/stainless-sdks/TogetherAI-python/tree/main/src/together_ai/_response.py) with the same structure, the only difference being `await`able methods for reading the response content.
+The async client returns an [`AsyncAPIResponse`](https://github.com/stainless-sdks/TogetherAI-python/tree/main/src/together/_response.py) with the same structure, the only difference being `await`able methods for reading the response content.
 
 #### `.with_streaming_response`
 
@@ -368,10 +368,10 @@ You can directly override the [httpx client](https://www.python-httpx.org/api/#c
 - Additional [advanced](https://www.python-httpx.org/advanced/#client-instances) functionality
 
 ```python
-from together_ai import TogetherAI, DefaultHttpxClient
+from together import Together, DefaultHttpxClient
 
-client = TogetherAI(
-    # Or use the `TOGETHER_AI_BASE_URL` env var
+client = Together(
+    # Or use the `TOGETHER_BASE_URL` env var
     base_url="http://my.test.server.example.com:8083",
     http_client=DefaultHttpxClient(
         proxies="http://my.test.proxy.example.com",

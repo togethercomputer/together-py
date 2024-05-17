@@ -7,7 +7,7 @@ from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FineTuneListEventsResponse", "Data"]
+__all__ = ["FineTuneEvent", "Data"]
 
 
 class Data(BaseModel):
@@ -40,5 +40,5 @@ class Data(BaseModel):
     level: Optional[str] = None
 
 
-class FineTuneListEventsResponse(BaseModel):
+class FineTuneEvent(BaseModel):
     data: List[Data]

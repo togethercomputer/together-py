@@ -18,11 +18,11 @@ __all__ = [
 ]
 
 
-class TogetherAIError(Exception):
+class TogetherError(Exception):
     pass
 
 
-class APIError(TogetherAIError):
+class APIError(TogetherError):
     message: str
     request: httpx.Request
 

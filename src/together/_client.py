@@ -25,7 +25,7 @@ from ._utils import (
 )
 from ._version import __version__
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
-from ._exceptions import APIStatusError, TogetherAIError
+from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
     DEFAULT_MAX_RETRIES,
     SyncAPIClient,
@@ -38,14 +38,14 @@ __all__ = [
     "ProxiesTypes",
     "RequestOptions",
     "resources",
-    "TogetherAI",
-    "AsyncTogetherAI",
+    "Together",
+    "AsyncTogether",
     "Client",
     "AsyncClient",
 ]
 
 
-class TogetherAI(SyncAPIClient):
+class Together(SyncAPIClient):
     chat: resources.ChatResource
     completions: resources.CompletionsResource
     embeddings: resources.EmbeddingsResource
@@ -53,8 +53,8 @@ class TogetherAI(SyncAPIClient):
     fine_tune: resources.FineTuneResource
     images: resources.ImagesResource
     models: resources.ModelsResource
-    with_raw_response: TogetherAIWithRawResponse
-    with_streaming_response: TogetherAIWithStreamedResponse
+    with_raw_response: TogetherWithRawResponse
+    with_streaming_response: TogetherWithStreamedResponse
 
     # client options
     access_token: str
@@ -82,20 +82,20 @@ class TogetherAI(SyncAPIClient):
         # part of our public interface in the future.
         _strict_response_validation: bool = False,
     ) -> None:
-        """Construct a new synchronous TogetherAI client instance.
+        """Construct a new synchronous together client instance.
 
-        This automatically infers the `access_token` argument from the `TOGETHER_AI_ACCESS_TOKEN` environment variable if it is not provided.
+        This automatically infers the `access_token` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
         if access_token is None:
-            access_token = os.environ.get("TOGETHER_AI_ACCESS_TOKEN")
+            access_token = os.environ.get("TOGETHER_API_KEY")
         if access_token is None:
-            raise TogetherAIError(
-                "The access_token client option must be set either by passing access_token to the client or by setting the TOGETHER_AI_ACCESS_TOKEN environment variable"
+            raise TogetherError(
+                "The access_token client option must be set either by passing access_token to the client or by setting the TOGETHER_API_KEY environment variable"
             )
         self.access_token = access_token
 
         if base_url is None:
-            base_url = os.environ.get("TOGETHER_AI_BASE_URL")
+            base_url = os.environ.get("TOGETHER_BASE_URL")
         if base_url is None:
             base_url = f"https://api.together.xyz/v1"
 
@@ -119,8 +119,8 @@ class TogetherAI(SyncAPIClient):
         self.fine_tune = resources.FineTuneResource(self)
         self.images = resources.ImagesResource(self)
         self.models = resources.ModelsResource(self)
-        self.with_raw_response = TogetherAIWithRawResponse(self)
-        self.with_streaming_response = TogetherAIWithStreamedResponse(self)
+        self.with_raw_response = TogetherWithRawResponse(self)
+        self.with_streaming_response = TogetherWithStreamedResponse(self)
 
     @property
     @override
@@ -227,7 +227,7 @@ class TogetherAI(SyncAPIClient):
         return APIStatusError(err_msg, response=response, body=body)
 
 
-class AsyncTogetherAI(AsyncAPIClient):
+class AsyncTogether(AsyncAPIClient):
     chat: resources.AsyncChatResource
     completions: resources.AsyncCompletionsResource
     embeddings: resources.AsyncEmbeddingsResource
@@ -235,8 +235,8 @@ class AsyncTogetherAI(AsyncAPIClient):
     fine_tune: resources.AsyncFineTuneResource
     images: resources.AsyncImagesResource
     models: resources.AsyncModelsResource
-    with_raw_response: AsyncTogetherAIWithRawResponse
-    with_streaming_response: AsyncTogetherAIWithStreamedResponse
+    with_raw_response: AsyncTogetherWithRawResponse
+    with_streaming_response: AsyncTogetherWithStreamedResponse
 
     # client options
     access_token: str
@@ -264,20 +264,20 @@ class AsyncTogetherAI(AsyncAPIClient):
         # part of our public interface in the future.
         _strict_response_validation: bool = False,
     ) -> None:
-        """Construct a new async TogetherAI client instance.
+        """Construct a new async together client instance.
 
-        This automatically infers the `access_token` argument from the `TOGETHER_AI_ACCESS_TOKEN` environment variable if it is not provided.
+        This automatically infers the `access_token` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
         if access_token is None:
-            access_token = os.environ.get("TOGETHER_AI_ACCESS_TOKEN")
+            access_token = os.environ.get("TOGETHER_API_KEY")
         if access_token is None:
-            raise TogetherAIError(
-                "The access_token client option must be set either by passing access_token to the client or by setting the TOGETHER_AI_ACCESS_TOKEN environment variable"
+            raise TogetherError(
+                "The access_token client option must be set either by passing access_token to the client or by setting the TOGETHER_API_KEY environment variable"
             )
         self.access_token = access_token
 
         if base_url is None:
-            base_url = os.environ.get("TOGETHER_AI_BASE_URL")
+            base_url = os.environ.get("TOGETHER_BASE_URL")
         if base_url is None:
             base_url = f"https://api.together.xyz/v1"
 
@@ -301,8 +301,8 @@ class AsyncTogetherAI(AsyncAPIClient):
         self.fine_tune = resources.AsyncFineTuneResource(self)
         self.images = resources.AsyncImagesResource(self)
         self.models = resources.AsyncModelsResource(self)
-        self.with_raw_response = AsyncTogetherAIWithRawResponse(self)
-        self.with_streaming_response = AsyncTogetherAIWithStreamedResponse(self)
+        self.with_raw_response = AsyncTogetherWithRawResponse(self)
+        self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
 
     @property
     @override
@@ -409,8 +409,8 @@ class AsyncTogetherAI(AsyncAPIClient):
         return APIStatusError(err_msg, response=response, body=body)
 
 
-class TogetherAIWithRawResponse:
-    def __init__(self, client: TogetherAI) -> None:
+class TogetherWithRawResponse:
+    def __init__(self, client: Together) -> None:
         self.chat = resources.ChatResourceWithRawResponse(client.chat)
         self.completions = resources.CompletionsResourceWithRawResponse(client.completions)
         self.embeddings = resources.EmbeddingsResourceWithRawResponse(client.embeddings)
@@ -420,8 +420,8 @@ class TogetherAIWithRawResponse:
         self.models = resources.ModelsResourceWithRawResponse(client.models)
 
 
-class AsyncTogetherAIWithRawResponse:
-    def __init__(self, client: AsyncTogetherAI) -> None:
+class AsyncTogetherWithRawResponse:
+    def __init__(self, client: AsyncTogether) -> None:
         self.chat = resources.AsyncChatResourceWithRawResponse(client.chat)
         self.completions = resources.AsyncCompletionsResourceWithRawResponse(client.completions)
         self.embeddings = resources.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
@@ -431,8 +431,8 @@ class AsyncTogetherAIWithRawResponse:
         self.models = resources.AsyncModelsResourceWithRawResponse(client.models)
 
 
-class TogetherAIWithStreamedResponse:
-    def __init__(self, client: TogetherAI) -> None:
+class TogetherWithStreamedResponse:
+    def __init__(self, client: Together) -> None:
         self.chat = resources.ChatResourceWithStreamingResponse(client.chat)
         self.completions = resources.CompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = resources.EmbeddingsResourceWithStreamingResponse(client.embeddings)
@@ -442,8 +442,8 @@ class TogetherAIWithStreamedResponse:
         self.models = resources.ModelsResourceWithStreamingResponse(client.models)
 
 
-class AsyncTogetherAIWithStreamedResponse:
-    def __init__(self, client: AsyncTogetherAI) -> None:
+class AsyncTogetherWithStreamedResponse:
+    def __init__(self, client: AsyncTogether) -> None:
         self.chat = resources.AsyncChatResourceWithStreamingResponse(client.chat)
         self.completions = resources.AsyncCompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = resources.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
@@ -453,6 +453,6 @@ class AsyncTogetherAIWithStreamedResponse:
         self.models = resources.AsyncModelsResourceWithStreamingResponse(client.models)
 
 
-Client = TogetherAI
+Client = Together
 
-AsyncClient = AsyncTogetherAI
+AsyncClient = AsyncTogether

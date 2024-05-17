@@ -5,16 +5,9 @@ from typing_extensions import Literal
 
 from .usage import Usage
 from ..._models import BaseModel
+from ..log_probs import LogProbs
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceLogprobs", "ChoiceMessage"]
-
-
-class ChoiceLogprobs(BaseModel):
-    token_logprobs: Optional[List[float]] = None
-    """List of token log probabilities"""
-
-    tokens: Optional[List[str]] = None
-    """List of token strings"""
+__all__ = ["ChatCompletion", "Choice", "ChoiceMessage"]
 
 
 class ChoiceMessage(BaseModel):
@@ -26,7 +19,7 @@ class ChoiceMessage(BaseModel):
 class Choice(BaseModel):
     finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls"]] = None
 
-    logprobs: Optional[ChoiceLogprobs] = None
+    logprobs: Optional[LogProbs] = None
 
     message: Optional[ChoiceMessage] = None
 

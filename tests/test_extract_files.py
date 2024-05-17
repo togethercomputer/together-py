@@ -4,8 +4,8 @@ from typing import Sequence
 
 import pytest
 
-from together_ai._types import FileTypes
-from together_ai._utils import extract_files
+from together._types import FileTypes
+from together._utils import extract_files
 
 
 def test_removes_files_from_input() -> None:

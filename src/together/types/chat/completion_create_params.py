@@ -2,18 +2,28 @@
 
 from __future__ import annotations
 
-from typing import List, Union
+from typing import Dict, List, Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["CompletionCreateParamsBase", "CompletionCreateParamsNonStreaming", "CompletionCreateParamsStreaming"]
+from ..tools_param import ToolsParam
+from ..tool_choice_param import ToolChoiceParam
+
+__all__ = [
+    "CompletionCreateParamsBase",
+    "Message",
+    "ResponseFormat",
+    "ToolChoice",
+    "CompletionCreateParamsNonStreaming",
+    "CompletionCreateParamsStreaming",
+]
 
 
 class CompletionCreateParamsBase(TypedDict, total=False):
+    messages: Required[Iterable[Message]]
+    """A list of messages comprising the conversation so far."""
+
     model: Required[str]
     """The name of the model to query."""
-
-    prompt: Required[str]
-    """A string providing context for the model to complete."""
 
     echo: bool
     """
@@ -28,7 +38,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     mentioned prior.
     """
 
-    logit_bias: object
+    logit_bias: Dict[str, str]
     """
     The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
     appearing in the generated output.
@@ -64,6 +74,9 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     likelihood of repeated sequences. Higher values decrease repetition.
     """
 
+    response_format: ResponseFormat
+    """Specifies the format of the response."""
+
     safety_model: str
     """The name of the safety model to use."""
 
@@ -72,6 +85,12 @@ class CompletionCreateParamsBase(TypedDict, total=False):
 
     temperature: float
     """Determines the degree of randomness in the response."""
+
+    tool_choice: ToolChoice
+    """The choice of tool to use."""
+
+    tools: Iterable[ToolsParam]
+    """A list of tools to be used in the query."""
 
     top_k: int
     """
@@ -84,6 +103,25 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     The `top_p` (nucleus) parameter is used to dynamically adjust the number of
     choices for each predicted token based on the cumulative probabilities.
     """
+
+
+class Message(TypedDict, total=False):
+    content: Required[str]
+    """The contents of the message."""
+
+    role: Required[Literal["system", "user", "assistant"]]
+    """The role of the messages author. Choice between: system, user, or assistant."""
+
+
+class ResponseFormat(TypedDict, total=False):
+    schema: Dict[str, str]
+    """The schema of the response format."""
+
+    type: str
+    """The type of the response format."""
+
+
+ToolChoice = Union[str, ToolChoiceParam]
 
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):

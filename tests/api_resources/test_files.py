@@ -9,10 +9,10 @@ import httpx
 import pytest
 from respx import MockRouter
 
+from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together_ai import TogetherAI, AsyncTogetherAI
-from together_ai.types import FileListResponse, FileDeleteResponse, FileRetrieveResponse
-from together_ai._response import (
+from together.types import FileListResponse, FileDeleteResponse, FileRetrieveResponse
+from together._response import (
     BinaryAPIResponse,
     AsyncBinaryAPIResponse,
     StreamedBinaryAPIResponse,
@@ -26,14 +26,14 @@ class TestFiles:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    def test_method_retrieve(self, client: TogetherAI) -> None:
+    def test_method_retrieve(self, client: Together) -> None:
         file = client.files.retrieve(
             "string",
         )
         assert_matches_type(FileRetrieveResponse, file, path=["response"])
 
     @parametrize
-    def test_raw_response_retrieve(self, client: TogetherAI) -> None:
+    def test_raw_response_retrieve(self, client: Together) -> None:
         response = client.files.with_raw_response.retrieve(
             "string",
         )
@@ -44,7 +44,7 @@ class TestFiles:
         assert_matches_type(FileRetrieveResponse, file, path=["response"])
 
     @parametrize
-    def test_streaming_response_retrieve(self, client: TogetherAI) -> None:
+    def test_streaming_response_retrieve(self, client: Together) -> None:
         with client.files.with_streaming_response.retrieve(
             "string",
         ) as response:
@@ -57,19 +57,19 @@ class TestFiles:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    def test_path_params_retrieve(self, client: TogetherAI) -> None:
+    def test_path_params_retrieve(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.files.with_raw_response.retrieve(
                 "",
             )
 
     @parametrize
-    def test_method_list(self, client: TogetherAI) -> None:
+    def test_method_list(self, client: Together) -> None:
         file = client.files.list()
         assert_matches_type(FileListResponse, file, path=["response"])
 
     @parametrize
-    def test_raw_response_list(self, client: TogetherAI) -> None:
+    def test_raw_response_list(self, client: Together) -> None:
         response = client.files.with_raw_response.list()
 
         assert response.is_closed is True
@@ -78,7 +78,7 @@ class TestFiles:
         assert_matches_type(FileListResponse, file, path=["response"])
 
     @parametrize
-    def test_streaming_response_list(self, client: TogetherAI) -> None:
+    def test_streaming_response_list(self, client: Together) -> None:
         with client.files.with_streaming_response.list() as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -89,14 +89,14 @@ class TestFiles:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    def test_method_delete(self, client: TogetherAI) -> None:
+    def test_method_delete(self, client: Together) -> None:
         file = client.files.delete(
             "string",
         )
         assert_matches_type(FileDeleteResponse, file, path=["response"])
 
     @parametrize
-    def test_raw_response_delete(self, client: TogetherAI) -> None:
+    def test_raw_response_delete(self, client: Together) -> None:
         response = client.files.with_raw_response.delete(
             "string",
         )
@@ -107,7 +107,7 @@ class TestFiles:
         assert_matches_type(FileDeleteResponse, file, path=["response"])
 
     @parametrize
-    def test_streaming_response_delete(self, client: TogetherAI) -> None:
+    def test_streaming_response_delete(self, client: Together) -> None:
         with client.files.with_streaming_response.delete(
             "string",
         ) as response:
@@ -120,7 +120,7 @@ class TestFiles:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    def test_path_params_delete(self, client: TogetherAI) -> None:
+    def test_path_params_delete(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.files.with_raw_response.delete(
                 "",
@@ -128,7 +128,7 @@ class TestFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_method_content(self, client: TogetherAI, respx_mock: MockRouter) -> None:
+    def test_method_content(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/files/string/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         file = client.files.content(
             "string",
@@ -140,7 +140,7 @@ class TestFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_raw_response_content(self, client: TogetherAI, respx_mock: MockRouter) -> None:
+    def test_raw_response_content(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/files/string/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         file = client.files.with_raw_response.content(
@@ -154,7 +154,7 @@ class TestFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_streaming_response_content(self, client: TogetherAI, respx_mock: MockRouter) -> None:
+    def test_streaming_response_content(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/files/string/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.files.with_streaming_response.content(
             "string",
@@ -170,7 +170,7 @@ class TestFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_path_params_content(self, client: TogetherAI) -> None:
+    def test_path_params_content(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.files.with_raw_response.content(
                 "",
@@ -181,14 +181,14 @@ class TestAsyncFiles:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    async def test_method_retrieve(self, async_client: AsyncTogetherAI) -> None:
+    async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
         file = await async_client.files.retrieve(
             "string",
         )
         assert_matches_type(FileRetrieveResponse, file, path=["response"])
 
     @parametrize
-    async def test_raw_response_retrieve(self, async_client: AsyncTogetherAI) -> None:
+    async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
         response = await async_client.files.with_raw_response.retrieve(
             "string",
         )
@@ -199,7 +199,7 @@ class TestAsyncFiles:
         assert_matches_type(FileRetrieveResponse, file, path=["response"])
 
     @parametrize
-    async def test_streaming_response_retrieve(self, async_client: AsyncTogetherAI) -> None:
+    async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
         async with async_client.files.with_streaming_response.retrieve(
             "string",
         ) as response:
@@ -212,19 +212,19 @@ class TestAsyncFiles:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    async def test_path_params_retrieve(self, async_client: AsyncTogetherAI) -> None:
+    async def test_path_params_retrieve(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.files.with_raw_response.retrieve(
                 "",
             )
 
     @parametrize
-    async def test_method_list(self, async_client: AsyncTogetherAI) -> None:
+    async def test_method_list(self, async_client: AsyncTogether) -> None:
         file = await async_client.files.list()
         assert_matches_type(FileListResponse, file, path=["response"])
 
     @parametrize
-    async def test_raw_response_list(self, async_client: AsyncTogetherAI) -> None:
+    async def test_raw_response_list(self, async_client: AsyncTogether) -> None:
         response = await async_client.files.with_raw_response.list()
 
         assert response.is_closed is True
@@ -233,7 +233,7 @@ class TestAsyncFiles:
         assert_matches_type(FileListResponse, file, path=["response"])
 
     @parametrize
-    async def test_streaming_response_list(self, async_client: AsyncTogetherAI) -> None:
+    async def test_streaming_response_list(self, async_client: AsyncTogether) -> None:
         async with async_client.files.with_streaming_response.list() as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -244,14 +244,14 @@ class TestAsyncFiles:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    async def test_method_delete(self, async_client: AsyncTogetherAI) -> None:
+    async def test_method_delete(self, async_client: AsyncTogether) -> None:
         file = await async_client.files.delete(
             "string",
         )
         assert_matches_type(FileDeleteResponse, file, path=["response"])
 
     @parametrize
-    async def test_raw_response_delete(self, async_client: AsyncTogetherAI) -> None:
+    async def test_raw_response_delete(self, async_client: AsyncTogether) -> None:
         response = await async_client.files.with_raw_response.delete(
             "string",
         )
@@ -262,7 +262,7 @@ class TestAsyncFiles:
         assert_matches_type(FileDeleteResponse, file, path=["response"])
 
     @parametrize
-    async def test_streaming_response_delete(self, async_client: AsyncTogetherAI) -> None:
+    async def test_streaming_response_delete(self, async_client: AsyncTogether) -> None:
         async with async_client.files.with_streaming_response.delete(
             "string",
         ) as response:
@@ -275,7 +275,7 @@ class TestAsyncFiles:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    async def test_path_params_delete(self, async_client: AsyncTogetherAI) -> None:
+    async def test_path_params_delete(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.files.with_raw_response.delete(
                 "",
@@ -283,7 +283,7 @@ class TestAsyncFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_method_content(self, async_client: AsyncTogetherAI, respx_mock: MockRouter) -> None:
+    async def test_method_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/files/string/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         file = await async_client.files.content(
             "string",
@@ -295,7 +295,7 @@ class TestAsyncFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_raw_response_content(self, async_client: AsyncTogetherAI, respx_mock: MockRouter) -> None:
+    async def test_raw_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/files/string/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
         file = await async_client.files.with_raw_response.content(
@@ -309,7 +309,7 @@ class TestAsyncFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_streaming_response_content(self, async_client: AsyncTogetherAI, respx_mock: MockRouter) -> None:
+    async def test_streaming_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/files/string/content").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.files.with_streaming_response.content(
             "string",
@@ -325,7 +325,7 @@ class TestAsyncFiles:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_path_params_content(self, async_client: AsyncTogetherAI) -> None:
+    async def test_path_params_content(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.files.with_raw_response.content(
                 "",
