@@ -59,8 +59,8 @@ class TestCompletions:
             echo=True,
             frequency_penalty=0,
             logit_bias={
-                "105": "string",
-                "1024": "string",
+                "105": 21.4,
+                "1024": -10.5,
             },
             logprobs=0,
             max_tokens=0,
@@ -204,8 +204,8 @@ class TestCompletions:
             echo=True,
             frequency_penalty=0,
             logit_bias={
-                "105": "string",
-                "1024": "string",
+                "105": 21.4,
+                "1024": -10.5,
             },
             logprobs=0,
             max_tokens=0,
@@ -351,8 +351,8 @@ class TestAsyncCompletions:
             echo=True,
             frequency_penalty=0,
             logit_bias={
-                "105": "string",
-                "1024": "string",
+                "105": 21.4,
+                "1024": -10.5,
             },
             logprobs=0,
             max_tokens=0,
@@ -496,8 +496,8 @@ class TestAsyncCompletions:
             echo=True,
             frequency_penalty=0,
             logit_bias={
-                "105": "string",
-                "1024": "string",
+                "105": 21.4,
+                "1024": -10.5,
             },
             logprobs=0,
             max_tokens=0,

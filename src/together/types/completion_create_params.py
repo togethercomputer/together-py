@@ -28,7 +28,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     mentioned prior.
     """
 
-    logit_bias: Dict[str, str]
+    logit_bias: Dict[str, object]
     """
     The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
     appearing in the generated output.
