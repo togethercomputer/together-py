@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Iterable, overload
+from typing import Dict, List, Iterable, overload
 from typing_extensions import Literal
 
 import httpx
@@ -50,7 +50,7 @@ class CompletionsResource(SyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -147,7 +147,7 @@ class CompletionsResource(SyncAPIResource):
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -243,7 +243,7 @@ class CompletionsResource(SyncAPIResource):
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -338,7 +338,7 @@ class CompletionsResource(SyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -414,7 +414,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -511,7 +511,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -607,7 +607,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -702,7 +702,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: object | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, str] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
