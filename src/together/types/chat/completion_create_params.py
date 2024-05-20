@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Union, Iterable
+from typing import Dict, List, Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
 from ..tools_param import ToolsParam
@@ -38,7 +38,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     mentioned prior.
     """
 
-    logit_bias: object
+    logit_bias: Dict[str, str]
     """
     The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
     appearing in the generated output.
@@ -114,7 +114,7 @@ class Message(TypedDict, total=False):
 
 
 class ResponseFormat(TypedDict, total=False):
-    schema: object
+    schema: Dict[str, str]
     """The schema of the response format."""
 
     type: str

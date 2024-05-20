@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Union
+from typing import Dict, List, Union
 from typing_extensions import Literal, Required, TypedDict
 
 __all__ = ["CompletionCreateParamsBase", "CompletionCreateParamsNonStreaming", "CompletionCreateParamsStreaming"]
@@ -28,7 +28,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     mentioned prior.
     """
 
-    logit_bias: object
+    logit_bias: Dict[str, str]
     """
     The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
     appearing in the generated output.
