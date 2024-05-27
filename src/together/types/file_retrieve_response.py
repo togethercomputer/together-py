@@ -1,5 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
+from typing_extensions import Literal
 
 from pydantic import Field as FieldInfo
 
@@ -17,7 +18,7 @@ class FileRetrieveResponse(BaseModel):
 
     filename: str
 
-    file_type: str = FieldInfo(alias="FileType")
+    file_type: Literal["jsonl", "parquet"] = FieldInfo(alias="FileType")
 
     line_count: int = FieldInfo(alias="LineCount")
 
@@ -25,4 +26,4 @@ class FileRetrieveResponse(BaseModel):
 
     processed: bool = FieldInfo(alias="Processed")
 
-    purpose: str
+    purpose: Literal["fine-tune"]
