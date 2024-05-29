@@ -32,7 +32,7 @@ from together import Together
 
 client = Together(
     # This is the default and can be omitted
-    access_token=os.environ.get("TOGETHER_API_KEY"),
+    api_key=os.environ.get("TOGETHER_API_KEY"),
 )
 
 chat_completion = client.chat.completions.create(
@@ -47,10 +47,10 @@ chat_completion = client.chat.completions.create(
 print(chat_completion.choices)
 ```
 
-While you can provide a `access_token` keyword argument,
+While you can provide an `api_key` keyword argument,
 we recommend using [python-dotenv](https://pypi.org/project/python-dotenv/)
-to add `TOGETHER_API_KEY="My Access Token"` to your `.env` file
-so that your Access Token is not stored in source control.
+to add `TOGETHER_API_KEY="My API Key"` to your `.env` file
+so that your API Key is not stored in source control.
 
 ## Async usage
 
@@ -63,7 +63,7 @@ from together import AsyncTogether
 
 client = AsyncTogether(
     # This is the default and can be omitted
-    access_token=os.environ.get("TOGETHER_API_KEY"),
+    api_key=os.environ.get("TOGETHER_API_KEY"),
 )
 
 

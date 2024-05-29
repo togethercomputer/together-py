@@ -57,12 +57,12 @@ class Together(SyncAPIClient):
     with_streaming_response: TogetherWithStreamedResponse
 
     # client options
-    access_token: str
+    api_key: str
 
     def __init__(
         self,
         *,
-        access_token: str | None = None,
+        api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: Union[float, Timeout, None, NotGiven] = NOT_GIVEN,
         max_retries: int = DEFAULT_MAX_RETRIES,
@@ -84,15 +84,15 @@ class Together(SyncAPIClient):
     ) -> None:
         """Construct a new synchronous together client instance.
 
-        This automatically infers the `access_token` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
+        This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
-        if access_token is None:
-            access_token = os.environ.get("TOGETHER_API_KEY")
-        if access_token is None:
+        if api_key is None:
+            api_key = os.environ.get("TOGETHER_API_KEY")
+        if api_key is None:
             raise TogetherError(
-                "The access_token client option must be set either by passing access_token to the client or by setting the TOGETHER_API_KEY environment variable"
+                "The api_key client option must be set either by passing api_key to the client or by setting the TOGETHER_API_KEY environment variable"
             )
-        self.access_token = access_token
+        self.api_key = api_key
 
         if base_url is None:
             base_url = os.environ.get("TOGETHER_BASE_URL")
@@ -130,8 +130,8 @@ class Together(SyncAPIClient):
     @property
     @override
     def auth_headers(self) -> dict[str, str]:
-        access_token = self.access_token
-        return {"Authorization": f"Bearer {access_token}"}
+        api_key = self.api_key
+        return {"Authorization": f"Bearer {api_key}"}
 
     @property
     @override
@@ -145,7 +145,7 @@ class Together(SyncAPIClient):
     def copy(
         self,
         *,
-        access_token: str | None = None,
+        api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: float | Timeout | None | NotGiven = NOT_GIVEN,
         http_client: httpx.Client | None = None,
@@ -179,7 +179,7 @@ class Together(SyncAPIClient):
 
         http_client = http_client or self._client
         return self.__class__(
-            access_token=access_token or self.access_token,
+            api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
             http_client=http_client,
@@ -239,12 +239,12 @@ class AsyncTogether(AsyncAPIClient):
     with_streaming_response: AsyncTogetherWithStreamedResponse
 
     # client options
-    access_token: str
+    api_key: str
 
     def __init__(
         self,
         *,
-        access_token: str | None = None,
+        api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: Union[float, Timeout, None, NotGiven] = NOT_GIVEN,
         max_retries: int = DEFAULT_MAX_RETRIES,
@@ -266,15 +266,15 @@ class AsyncTogether(AsyncAPIClient):
     ) -> None:
         """Construct a new async together client instance.
 
-        This automatically infers the `access_token` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
+        This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
-        if access_token is None:
-            access_token = os.environ.get("TOGETHER_API_KEY")
-        if access_token is None:
+        if api_key is None:
+            api_key = os.environ.get("TOGETHER_API_KEY")
+        if api_key is None:
             raise TogetherError(
-                "The access_token client option must be set either by passing access_token to the client or by setting the TOGETHER_API_KEY environment variable"
+                "The api_key client option must be set either by passing api_key to the client or by setting the TOGETHER_API_KEY environment variable"
             )
-        self.access_token = access_token
+        self.api_key = api_key
 
         if base_url is None:
             base_url = os.environ.get("TOGETHER_BASE_URL")
@@ -312,8 +312,8 @@ class AsyncTogether(AsyncAPIClient):
     @property
     @override
     def auth_headers(self) -> dict[str, str]:
-        access_token = self.access_token
-        return {"Authorization": f"Bearer {access_token}"}
+        api_key = self.api_key
+        return {"Authorization": f"Bearer {api_key}"}
 
     @property
     @override
@@ -327,7 +327,7 @@ class AsyncTogether(AsyncAPIClient):
     def copy(
         self,
         *,
-        access_token: str | None = None,
+        api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: float | Timeout | None | NotGiven = NOT_GIVEN,
         http_client: httpx.AsyncClient | None = None,
@@ -361,7 +361,7 @@ class AsyncTogether(AsyncAPIClient):
 
         http_client = http_client or self._client
         return self.__class__(
-            access_token=access_token or self.access_token,
+            api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
             http_client=http_client,
