@@ -52,7 +52,7 @@ class FilesResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FileRetrieveResponse:
         """
-        Retrieve a file
+        List the metadata for a single uploaded data file.
 
         Args:
           extra_headers: Send extra headers
@@ -83,7 +83,7 @@ class FilesResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FileListResponse:
-        """List all files"""
+        """List the metadata for all uploaded data files."""
         return self._get(
             "/files",
             options=make_request_options(
@@ -104,7 +104,7 @@ class FilesResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FileDeleteResponse:
         """
-        Delete a file
+        Delete a previously uploaded data file.
 
         Args:
           extra_headers: Send extra headers
@@ -137,7 +137,7 @@ class FilesResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> BinaryAPIResponse:
         """
-        Retrieve file content
+        Get the contents of a single uploaded data file.
 
         Args:
           extra_headers: Send extra headers
@@ -181,7 +181,7 @@ class AsyncFilesResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FileRetrieveResponse:
         """
-        Retrieve a file
+        List the metadata for a single uploaded data file.
 
         Args:
           extra_headers: Send extra headers
@@ -212,7 +212,7 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FileListResponse:
-        """List all files"""
+        """List the metadata for all uploaded data files."""
         return await self._get(
             "/files",
             options=make_request_options(
@@ -233,7 +233,7 @@ class AsyncFilesResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FileDeleteResponse:
         """
-        Delete a file
+        Delete a previously uploaded data file.
 
         Args:
           extra_headers: Send extra headers
@@ -266,7 +266,7 @@ class AsyncFilesResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> AsyncBinaryAPIResponse:
         """
-        Retrieve file content
+        Get the contents of a single uploaded data file.
 
         Args:
           extra_headers: Send extra headers
