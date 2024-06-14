@@ -40,7 +40,7 @@ class ModelsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ModelListResponse:
-        """Lists all the available models"""
+        """Lists all of Together's open-source models"""
         return self._get(
             "/models",
             options=make_request_options(
@@ -69,7 +69,7 @@ class AsyncModelsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ModelListResponse:
-        """Lists all the available models"""
+        """Lists all of Together's open-source models"""
         return await self._get(
             "/models",
             options=make_request_options(

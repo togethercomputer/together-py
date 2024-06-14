@@ -54,7 +54,7 @@ class ImagesResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ImageFile:
         """
-        Generate images based on a given prompt using a specified model
+        Use an image model to generate an image for a given prompt.
 
         Args:
           model: The model to use for image generation.
@@ -131,7 +131,7 @@ class AsyncImagesResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ImageFile:
         """
-        Generate images based on a given prompt using a specified model
+        Use an image model to generate an image for a given prompt.
 
         Args:
           model: The model to use for image generation.

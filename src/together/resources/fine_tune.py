@@ -57,7 +57,7 @@ class FineTuneResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTune:
         """
-        Create a fine-tuning job
+        Use a model to create a fine-tuning job.
 
         Args:
           model: Name of the base model to run fine-tune job on
@@ -117,7 +117,7 @@ class FineTuneResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTune:
         """
-        Retrieve fine-tune job details
+        List the metadata for a single fine-tuning job.
 
         Args:
           extra_headers: Send extra headers
@@ -148,7 +148,7 @@ class FineTuneResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneListResponse:
-        """List fine-tune job history"""
+        """List the metadata for all fine-tuning jobs."""
         return self._get(
             "/fine-tunes",
             options=make_request_options(
@@ -169,7 +169,7 @@ class FineTuneResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTune:
         """
-        Cancels a running fine-tuning job.
+        Cancel a currently running fine-tuning job.
 
         Args:
           extra_headers: Send extra headers
@@ -204,7 +204,7 @@ class FineTuneResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneDownloadResponse:
         """
-        Downloads a compressed fine-tuned model or checkpoint to local disk.
+        Download a compressed fine-tuned model or checkpoint to local disk.
 
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
@@ -253,7 +253,7 @@ class FineTuneResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneEvent:
         """
-        List events of a fine-tune job
+        List the events for a single fine-tuning job.
 
         Args:
           extra_headers: Send extra headers
@@ -303,7 +303,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTune:
         """
-        Create a fine-tuning job
+        Use a model to create a fine-tuning job.
 
         Args:
           model: Name of the base model to run fine-tune job on
@@ -363,7 +363,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTune:
         """
-        Retrieve fine-tune job details
+        List the metadata for a single fine-tuning job.
 
         Args:
           extra_headers: Send extra headers
@@ -394,7 +394,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneListResponse:
-        """List fine-tune job history"""
+        """List the metadata for all fine-tuning jobs."""
         return await self._get(
             "/fine-tunes",
             options=make_request_options(
@@ -415,7 +415,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTune:
         """
-        Cancels a running fine-tuning job.
+        Cancel a currently running fine-tuning job.
 
         Args:
           extra_headers: Send extra headers
@@ -450,7 +450,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneDownloadResponse:
         """
-        Downloads a compressed fine-tuned model or checkpoint to local disk.
+        Download a compressed fine-tuned model or checkpoint to local disk.
 
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
@@ -499,7 +499,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneEvent:
         """
-        List events of a fine-tune job
+        List the events for a single fine-tuning job.
 
         Args:
           extra_headers: Send extra headers
