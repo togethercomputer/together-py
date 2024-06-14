@@ -38,7 +38,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     mentioned prior.
     """
 
-    logit_bias: Dict[str, object]
+    logit_bias: Dict[str, float]
     """
     The `logit_bias` parameter allows us to adjust the likelihood of specific tokens
     appearing in the generated output.
@@ -128,7 +128,8 @@ class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
     stream: Literal[False]
     """If set, tokens are returned as Server-Sent Events as they are made available.
 
-    Stream terminates with `data: [DONE]`
+    Stream terminates with `data: [DONE]`. If false, return a single JSON object
+    containing the results.
     """
 
 
@@ -136,7 +137,8 @@ class CompletionCreateParamsStreaming(CompletionCreateParamsBase):
     stream: Required[Literal[True]]
     """If set, tokens are returned as Server-Sent Events as they are made available.
 
-    Stream terminates with `data: [DONE]`
+    Stream terminates with `data: [DONE]`. If false, return a single JSON object
+    containing the results.
     """
 
 

@@ -332,7 +332,7 @@ class TestTogether:
     def test_validate_headers(self) -> None:
         client = Together(base_url=base_url, api_key=api_key, _strict_response_validation=True)
         request = client._build_request(FinalRequestOptions(method="get", url="/foo"))
-        assert request.headers.get("Authorization") == f"Bearer {api_key}"
+        assert request.headers.get("Authorization") == api_key
 
         with pytest.raises(TogetherError):
             client2 = Together(base_url=base_url, api_key=None, _strict_response_validation=True)
@@ -1048,7 +1048,7 @@ class TestAsyncTogether:
     def test_validate_headers(self) -> None:
         client = AsyncTogether(base_url=base_url, api_key=api_key, _strict_response_validation=True)
         request = client._build_request(FinalRequestOptions(method="get", url="/foo"))
-        assert request.headers.get("Authorization") == f"Bearer {api_key}"
+        assert request.headers.get("Authorization") == api_key
 
         with pytest.raises(TogetherError):
             client2 = AsyncTogether(base_url=base_url, api_key=None, _strict_response_validation=True)

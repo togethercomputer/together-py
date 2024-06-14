@@ -48,7 +48,7 @@ class CompletionsResource(SyncAPIResource):
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -69,7 +69,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Completion:
         """
-        Creates a completion for the provided prompt and parameters
+        Query a language, code, or image model.
 
         Args:
           model: The name of the model to query.
@@ -136,7 +136,7 @@ class CompletionsResource(SyncAPIResource):
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -156,7 +156,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Stream[Completion]:
         """
-        Creates a completion for the provided prompt and parameters
+        Query a language, code, or image model.
 
         Args:
           model: The name of the model to query.
@@ -223,7 +223,7 @@ class CompletionsResource(SyncAPIResource):
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -243,7 +243,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Completion | Stream[Completion]:
         """
-        Creates a completion for the provided prompt and parameters
+        Query a language, code, or image model.
 
         Args:
           model: The name of the model to query.
@@ -309,7 +309,7 @@ class CompletionsResource(SyncAPIResource):
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -379,7 +379,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -400,7 +400,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Completion:
         """
-        Creates a completion for the provided prompt and parameters
+        Query a language, code, or image model.
 
         Args:
           model: The name of the model to query.
@@ -467,7 +467,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -487,7 +487,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> AsyncStream[Completion]:
         """
-        Creates a completion for the provided prompt and parameters
+        Query a language, code, or image model.
 
         Args:
           model: The name of the model to query.
@@ -554,7 +554,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -574,7 +574,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Completion | AsyncStream[Completion]:
         """
-        Creates a completion for the provided prompt and parameters
+        Query a language, code, or image model.
 
         Args:
           model: The name of the model to query.
@@ -640,7 +640,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,

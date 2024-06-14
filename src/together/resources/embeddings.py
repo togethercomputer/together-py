@@ -48,7 +48,7 @@ class EmbeddingsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Embedding:
         """
-        Creates an embedding vector representing the input text
+        Query an embedding model for a given string of text.
 
         Args:
           input: A string providing the text for the model to embed.
@@ -101,7 +101,7 @@ class AsyncEmbeddingsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Embedding:
         """
-        Creates an embedding vector representing the input text
+        Query an embedding model for a given string of text.
 
         Args:
           input: A string providing the text for the model to embed.
