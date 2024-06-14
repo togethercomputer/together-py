@@ -50,7 +50,7 @@ class CompletionsResource(SyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -74,7 +74,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ChatCompletion:
         """
-        Creates a model response for the given chat conversation.
+        Query a chat model.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -114,7 +114,8 @@ class CompletionsResource(SyncAPIResource):
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+              Stream terminates with `data: [DONE]`. If false, return a single JSON object
+              containing the results.
 
           temperature: Determines the degree of randomness in the response.
 
@@ -147,7 +148,7 @@ class CompletionsResource(SyncAPIResource):
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -170,7 +171,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> Stream[ChatCompletionChunk]:
         """
-        Creates a model response for the given chat conversation.
+        Query a chat model.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -178,7 +179,8 @@ class CompletionsResource(SyncAPIResource):
           model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+              Stream terminates with `data: [DONE]`. If false, return a single JSON object
+              containing the results.
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -243,7 +245,7 @@ class CompletionsResource(SyncAPIResource):
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -266,7 +268,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         """
-        Creates a model response for the given chat conversation.
+        Query a chat model.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -274,7 +276,8 @@ class CompletionsResource(SyncAPIResource):
           model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+              Stream terminates with `data: [DONE]`. If false, return a single JSON object
+              containing the results.
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -338,7 +341,7 @@ class CompletionsResource(SyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -414,7 +417,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -438,7 +441,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ChatCompletion:
         """
-        Creates a model response for the given chat conversation.
+        Query a chat model.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -478,7 +481,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           stop: A list of string sequences that will truncate (stop) inference text output.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+              Stream terminates with `data: [DONE]`. If false, return a single JSON object
+              containing the results.
 
           temperature: Determines the degree of randomness in the response.
 
@@ -511,7 +515,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -534,7 +538,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> AsyncStream[ChatCompletionChunk]:
         """
-        Creates a model response for the given chat conversation.
+        Query a chat model.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -542,7 +546,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+              Stream terminates with `data: [DONE]`. If false, return a single JSON object
+              containing the results.
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -607,7 +612,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
@@ -630,7 +635,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         """
-        Creates a model response for the given chat conversation.
+        Query a chat model.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -638,7 +643,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           model: The name of the model to query.
 
           stream: If set, tokens are returned as Server-Sent Events as they are made available.
-              Stream terminates with `data: [DONE]`
+              Stream terminates with `data: [DONE]`. If false, return a single JSON object
+              containing the results.
 
           echo: If set, the response will contain the prompt, and will also return prompt
               logprobs if set with logprobs.
@@ -702,7 +708,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         model: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
-        logit_bias: Dict[str, object] | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
         logprobs: int | NotGiven = NOT_GIVEN,
         max_tokens: int | NotGiven = NOT_GIVEN,
         min_p: float | NotGiven = NOT_GIVEN,
