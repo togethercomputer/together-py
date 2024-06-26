@@ -58,6 +58,7 @@ class TestCompletions:
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
             echo=True,
             frequency_penalty=0,
+            function_call="none",
             logit_bias={
                 "105": 21.4,
                 "1024": -10.5,
@@ -203,6 +204,7 @@ class TestCompletions:
             stream=True,
             echo=True,
             frequency_penalty=0,
+            function_call="none",
             logit_bias={
                 "105": 21.4,
                 "1024": -10.5,
@@ -350,6 +352,7 @@ class TestAsyncCompletions:
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
             echo=True,
             frequency_penalty=0,
+            function_call="none",
             logit_bias={
                 "105": 21.4,
                 "1024": -10.5,
@@ -495,6 +498,7 @@ class TestAsyncCompletions:
             stream=True,
             echo=True,
             frequency_penalty=0,
+            function_call="none",
             logit_bias={
                 "105": 21.4,
                 "1024": -10.5,

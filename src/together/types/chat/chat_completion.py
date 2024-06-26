@@ -5,34 +5,51 @@ from typing_extensions import Literal
 
 from ..._models import BaseModel
 from ..log_probs import LogProbs
+from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceMessage"]
+__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall"]
+
+
+class ChoiceMessageFunctionCall(BaseModel):
+    arguments: str
+
+    name: str
 
 
 class ChoiceMessage(BaseModel):
     content: Optional[str] = None
 
-    role: Optional[str] = None
+    role: Literal["assistant"]
+
+    function_call: Optional[ChoiceMessageFunctionCall] = None
+
+    tool_calls: Optional[List[ToolChoice]] = None
 
 
 class Choice(BaseModel):
-    finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls"]] = None
+    finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls", "function_call"]] = None
+
+    index: Optional[int] = None
 
     logprobs: Optional[LogProbs] = None
 
     message: Optional[ChoiceMessage] = None
 
+    seed: Optional[int] = None
+
+    text: Optional[str] = None
+
 
 class ChatCompletion(BaseModel):
-    id: Optional[str] = None
+    id: str
 
-    choices: Optional[List[Choice]] = None
+    choices: List[Choice]
 
-    created: Optional[int] = None
+    created: int
 
-    model: Optional[str] = None
+    model: str
 
-    object: Optional[Literal["chat.completion"]] = None
+    object: Literal["chat.completion"]
 
     usage: Optional[ChatCompletionUsage] = None
