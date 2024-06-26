@@ -11,7 +11,7 @@ __all__ = ["Completion", "Choice", "Prompt"]
 
 
 class Choice(BaseModel):
-    finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls"]] = None
+    finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls", "function_call"]] = None
 
     logprobs: Optional[LogProbs] = None
 
