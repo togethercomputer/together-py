@@ -4,42 +4,52 @@ from typing import List, Optional
 from typing_extensions import Literal
 
 from ..._models import BaseModel
+from ..log_probs import LogProbs
+from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 
-__all__ = ["ChatCompletionChunk", "Token", "Choice", "ChoiceDelta"]
+__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall"]
 
 
-class Token(BaseModel):
-    id: int
+class ChoiceDeltaFunctionCall(BaseModel):
+    arguments: str
 
-    logprob: float
-
-    special: bool
-
-    text: str
+    name: str
 
 
 class ChoiceDelta(BaseModel):
-    content: str
+    content: Optional[str] = None
+
+    function_call: Optional[ChoiceDeltaFunctionCall] = None
+
+    role: Optional[Literal["system", "user", "assistant", "function", "tool"]] = None
+
+    token_id: Optional[int] = None
+
+    tool_calls: Optional[List[ToolChoice]] = None
 
 
 class Choice(BaseModel):
     delta: ChoiceDelta
 
+    finish_reason: Literal["stop", "eos", "length", "tool_calls", "function_call"]
+
     index: int
+
+    logprobs: Optional[LogProbs] = None
 
 
 class ChatCompletionChunk(BaseModel):
     id: str
 
-    token: Token
-
     choices: List[Choice]
 
     created: int
 
+    model: str
+
     object: Literal["chat.completion.chunk"]
 
-    finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls"]] = None
+    system_fingerprint: Optional[str] = None
 
     usage: Optional[ChatCompletionUsage] = None

@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypedDict
+from typing_extensions import Literal, Required, TypedDict
 
 __all__ = ["ToolChoiceParam", "Function"]
 
 
 class Function(TypedDict, total=False):
-    name: str
+    arguments: Required[str]
+
+    name: Required[str]
 
 
 class ToolChoiceParam(TypedDict, total=False):
-    function: Function
+    id: Required[str]
 
-    type: str
+    function: Required[Function]
+
+    index: Required[float]
+
+    type: Required[Literal["function"]]
