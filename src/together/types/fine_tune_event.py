@@ -1,6 +1,5 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import builtins
 from typing import List, Optional
 from typing_extensions import Literal
 
@@ -64,7 +63,7 @@ class Data(BaseModel):
 
     wandb_url: str
 
-    level: Optional[builtins.object] = None
+    level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
 
 
 class FineTuneEvent(BaseModel):

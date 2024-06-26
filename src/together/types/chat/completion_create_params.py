@@ -11,6 +11,8 @@ from ..tool_choice_param import ToolChoiceParam
 __all__ = [
     "CompletionCreateParamsBase",
     "Message",
+    "FunctionCall",
+    "FunctionCallName",
     "ResponseFormat",
     "ToolChoice",
     "CompletionCreateParamsNonStreaming",
@@ -36,6 +38,8 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     A number between -2.0 and 2.0 where a positive value decreases the likelihood of
     repeating tokens that have already been mentioned.
     """
+
+    function_call: FunctionCall
 
     logit_bias: Dict[str, float]
     """Adjusts the likelihood of specific tokens appearing in the generated output."""
@@ -131,6 +135,13 @@ class Message(TypedDict, total=False):
 
     role: Required[Literal["system", "user", "assistant"]]
     """The role of the messages author. Choice between: system, user, or assistant."""
+
+
+class FunctionCallName(TypedDict, total=False):
+    name: Required[str]
+
+
+FunctionCall = Union[Literal["none", "auto"], FunctionCallName]
 
 
 class ResponseFormat(TypedDict, total=False):
