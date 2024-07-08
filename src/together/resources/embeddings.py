@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import List, Union
+
 import httpx
 
 from ..types import embedding_create_params
@@ -38,7 +40,7 @@ class EmbeddingsResource(SyncAPIResource):
     def create(
         self,
         *,
-        input: str,
+        input: Union[str, List[str]],
         model: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -91,7 +93,7 @@ class AsyncEmbeddingsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        input: str,
+        input: Union[str, List[str]],
         model: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
