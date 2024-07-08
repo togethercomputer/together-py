@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from typing import List, Union
 from typing_extensions import Required, TypedDict
 
 __all__ = ["EmbeddingCreateParams"]
 
 
 class EmbeddingCreateParams(TypedDict, total=False):
-    input: Required[str]
+    input: Required[Union[str, List[str]]]
     """A string providing the text for the model to embed."""
 
     model: Required[str]
