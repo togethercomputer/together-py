@@ -1,6 +1,6 @@
-from together_ai import TogetherAI
+from together import Together
 
-client = TogetherAI()
+client = Together()
 
 stream = client.chat.completions.create(
     messages=[
@@ -16,4 +16,3 @@ for chunk in stream:
     choice = chunk.choices[0]
     if choice.delta.content:
         print(choice.delta.content, end="", flush=True)
-print()
