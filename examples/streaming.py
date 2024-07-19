@@ -16,4 +16,3 @@ for chunk in stream:
     choice = chunk.choices[0]
     if choice.delta.content:
         print(choice.delta.content, end="", flush=True)
-print()
