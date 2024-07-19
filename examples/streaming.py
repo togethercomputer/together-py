@@ -1,6 +1,6 @@
-from together_ai import TogetherAI
+from together import Together
 
-client = TogetherAI()
+client = Together()
 
 stream = client.chat.completions.create(
     messages=[
