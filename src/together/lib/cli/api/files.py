@@ -29,7 +29,7 @@ def files(_ctx: click.Context) -> None:
 @click.option(
     "--purpose",
     type=str,
-    default=FilePurpose.FineTune.value,
+    default="fine-tunes",
     help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tunes`.",
 )
 @click.option(
@@ -37,14 +37,17 @@ def files(_ctx: click.Context) -> None:
     default=True,
     help="Whether to check the file before uploading.",
 )
-def upload(ctx: click.Context, file: pathlib.Path, purpose: str, check: bool) -> None:
+def upload(_ctx: click.Context, _file: pathlib.Path, _purpose: str, _check: bool) -> None:
     """Upload file"""
 
-    client: Together = ctx.obj
+    # the file upload API is not implemented yet
+    raise NotImplementedError
 
-    response = client.files.upload(file=file, purpose=purpose, check=check)
+    # client: Together = ctx.obj
 
-    click.echo(json.dumps(response.model_dump(), indent=4))
+    # response = client.files.upload(file=file, purpose=purpose, check=check)
+
+    # click.echo(json.dumps(response.model_dump(), indent=4))
 
 
 @files.command()

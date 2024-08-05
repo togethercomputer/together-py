@@ -78,11 +78,17 @@ def completions(
                 click.echo(f"{json.dumps(chunk.model_dump())}")
                 continue
 
-            should_print_header = len(chunk.choices) > 1
-            for stream_choice in sorted(chunk.choices, key=lambda c: c.index):  # type: ignore
+            dumped = chunk.model_dump()
+
+            # todo: use automatic typing once choice.index is added to the model
+            # and stream_choice.delta.content is added to the model
+            choices = dumped["choices"]
+
+            should_print_header = len(choices) > 1
+            for stream_choice in sorted(choices, key=lambda c: c["index"]):
                 if should_print_header:
                     click.echo(f"\n===== Completion {stream_choice.index} =====\n")
-                click.echo(f"{stream_choice.delta.content}", nl=False)
+                click.echo(f"{stream_choice['delta']['content']}", nl=False)
 
                 if should_print_header:
                     click.echo("\n")
