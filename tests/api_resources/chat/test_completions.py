@@ -23,15 +23,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -44,15 +44,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -115,15 +115,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -140,15 +140,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -167,15 +167,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -189,15 +189,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -260,15 +260,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -285,15 +285,15 @@ class TestCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -317,15 +317,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -338,15 +338,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -409,15 +409,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -434,15 +434,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -461,15 +461,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -483,15 +483,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -554,15 +554,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -579,15 +579,15 @@ class TestAsyncCompletions:
             messages=[
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
                 {
                     "role": "system",
-                    "content": "string",
+                    "content": "content",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
