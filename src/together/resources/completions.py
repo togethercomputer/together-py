@@ -23,9 +23,7 @@ from .._response import (
     async_to_streamed_response_wrapper,
 )
 from .._streaming import Stream, AsyncStream
-from .._base_client import (
-    make_request_options,
-)
+from .._base_client import make_request_options
 from ..types.completion import Completion
 
 __all__ = ["CompletionsResource", "AsyncCompletionsResource"]
@@ -89,7 +87,7 @@ class CompletionsResource(SyncAPIResource):
 
           max_tokens: The maximum number of tokens to generate.
 
-          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+          min_p: A number between 0 and 1 that can be used as an alternative to top-p and top-k.
 
           n: The number of completions to generate for each prompt.
 
@@ -191,7 +189,7 @@ class CompletionsResource(SyncAPIResource):
 
           max_tokens: The maximum number of tokens to generate.
 
-          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+          min_p: A number between 0 and 1 that can be used as an alternative to top-p and top-k.
 
           n: The number of completions to generate for each prompt.
 
@@ -289,7 +287,7 @@ class CompletionsResource(SyncAPIResource):
 
           max_tokens: The maximum number of tokens to generate.
 
-          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+          min_p: A number between 0 and 1 that can be used as an alternative to top-p and top-k.
 
           n: The number of completions to generate for each prompt.
 
@@ -453,7 +451,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           max_tokens: The maximum number of tokens to generate.
 
-          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+          min_p: A number between 0 and 1 that can be used as an alternative to top-p and top-k.
 
           n: The number of completions to generate for each prompt.
 
@@ -555,7 +553,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           max_tokens: The maximum number of tokens to generate.
 
-          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+          min_p: A number between 0 and 1 that can be used as an alternative to top-p and top-k.
 
           n: The number of completions to generate for each prompt.
 
@@ -653,7 +651,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           max_tokens: The maximum number of tokens to generate.
 
-          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+          min_p: A number between 0 and 1 that can be used as an alternative to top-p and top-k.
 
           n: The number of completions to generate for each prompt.
 

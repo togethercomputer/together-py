@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Union, Iterable
-from typing_extensions import Literal, Required, TypedDict
+from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 from ..tools_param import ToolsParam
 from ..tool_choice_param import ToolChoiceParam
@@ -54,7 +54,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """The maximum number of tokens to generate."""
 
     min_p: float
-    """A number between 0 and 1 that can be used as an alternative to temperature."""
+    """A number between 0 and 1 that can be used as an alternative to top_p and top-k."""
 
     n: int
     """The number of completions to generate for each prompt."""
@@ -141,7 +141,7 @@ class FunctionCallName(TypedDict, total=False):
     name: Required[str]
 
 
-FunctionCall = Union[Literal["none", "auto"], FunctionCallName]
+FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
 
 
 class ResponseFormat(TypedDict, total=False):
@@ -152,7 +152,7 @@ class ResponseFormat(TypedDict, total=False):
     """The type of the response format."""
 
 
-ToolChoice = Union[str, ToolChoiceParam]
+ToolChoice: TypeAlias = Union[str, ToolChoiceParam]
 
 
 class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):

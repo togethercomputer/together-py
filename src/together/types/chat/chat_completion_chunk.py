@@ -4,7 +4,6 @@ from typing import List, Optional
 from typing_extensions import Literal
 
 from ..._models import BaseModel
-from ..log_probs import LogProbs
 from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 
@@ -18,11 +17,11 @@ class ChoiceDeltaFunctionCall(BaseModel):
 
 
 class ChoiceDelta(BaseModel):
+    role: Literal["system", "user", "assistant", "function", "tool"]
+
     content: Optional[str] = None
 
     function_call: Optional[ChoiceDeltaFunctionCall] = None
-
-    role: Optional[Literal["system", "user", "assistant", "function", "tool"]] = None
 
     token_id: Optional[int] = None
 
@@ -36,7 +35,7 @@ class Choice(BaseModel):
 
     index: int
 
-    logprobs: Optional[LogProbs] = None
+    logprobs: Optional[float] = None
 
 
 class ChatCompletionChunk(BaseModel):
