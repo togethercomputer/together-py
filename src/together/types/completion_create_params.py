@@ -40,7 +40,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """The maximum number of tokens to generate."""
 
     min_p: float
-    """A number between 0 and 1 that can be used as an alternative to temperature."""
+    """A number between 0 and 1 that can be used as an alternative to top-p and top-k."""
 
     n: int
     """The number of completions to generate for each prompt."""

@@ -97,9 +97,9 @@ class FineTune(BaseModel):
 
     model: Optional[str] = None
 
-    api_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
+    x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
 
-    api_model_output_path: Optional[str] = FieldInfo(alias="model_output_path", default=None)
+    x_model_output_path: Optional[str] = FieldInfo(alias="model_output_path", default=None)
 
     n_checkpoints: Optional[int] = None
 

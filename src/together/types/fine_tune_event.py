@@ -19,7 +19,7 @@ class Data(BaseModel):
 
     message: str
 
-    api_model_path: str = FieldInfo(alias="model_path")
+    x_model_path: str = FieldInfo(alias="model_path")
 
     object: Literal["fine-tune-event"]
 
