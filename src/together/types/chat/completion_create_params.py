@@ -133,7 +133,7 @@ class Message(TypedDict, total=False):
     content: Required[str]
     """The contents of the message."""
 
-    role: Required[Literal["system", "user", "assistant"]]
+    role: Required[Literal["system", "user", "assistant", "tool"]]
     """The role of the messages author. Choice between: system, user, or assistant."""
 
 
