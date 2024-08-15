@@ -787,16 +787,16 @@ class TestTogether:
         response = client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -1559,16 +1559,16 @@ class TestAsyncTogether:
         response = await client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
