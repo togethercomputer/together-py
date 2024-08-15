@@ -4,17 +4,12 @@ from typing import List, Optional
 
 from .._models import BaseModel
 
-__all__ = ["LogProbs", "Content"]
-
-
-class Content(BaseModel):
-    token: str
-
-    logprob: float
+__all__ = ["LogProbs"]
 
 
 class LogProbs(BaseModel):
-    content: Optional[List[Content]] = None
+    token_ids: Optional[List[float]] = None
+    """List of token IDs corresponding to the logprobs"""
 
     token_logprobs: Optional[List[float]] = None
     """List of token log probabilities"""
