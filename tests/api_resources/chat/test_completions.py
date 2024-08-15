@@ -22,16 +22,16 @@ class TestCompletions:
         completion = client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -43,16 +43,16 @@ class TestCompletions:
         completion = client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -70,8 +70,8 @@ class TestCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "type": "json",
                 "schema": {"foo": "string"},
+                "type": "json",
             },
             safety_model="safety_model_name",
             stop=["string", "string", "string"],
@@ -80,28 +80,28 @@ class TestCompletions:
             tool_choice="tool_name",
             tools=[
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
             ],
             top_k=0,
@@ -114,16 +114,16 @@ class TestCompletions:
         response = client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -139,16 +139,16 @@ class TestCompletions:
         with client.chat.completions.with_streaming_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -166,16 +166,16 @@ class TestCompletions:
         completion_stream = client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -188,16 +188,16 @@ class TestCompletions:
         completion_stream = client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -216,8 +216,8 @@ class TestCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "type": "json",
                 "schema": {"foo": "string"},
+                "type": "json",
             },
             safety_model="safety_model_name",
             stop=["string", "string", "string"],
@@ -225,28 +225,28 @@ class TestCompletions:
             tool_choice="tool_name",
             tools=[
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
             ],
             top_k=0,
@@ -259,16 +259,16 @@ class TestCompletions:
         response = client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -284,16 +284,16 @@ class TestCompletions:
         with client.chat.completions.with_streaming_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -316,16 +316,16 @@ class TestAsyncCompletions:
         completion = await async_client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -337,16 +337,16 @@ class TestAsyncCompletions:
         completion = await async_client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -364,8 +364,8 @@ class TestAsyncCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "type": "json",
                 "schema": {"foo": "string"},
+                "type": "json",
             },
             safety_model="safety_model_name",
             stop=["string", "string", "string"],
@@ -374,28 +374,28 @@ class TestAsyncCompletions:
             tool_choice="tool_name",
             tools=[
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
             ],
             top_k=0,
@@ -408,16 +408,16 @@ class TestAsyncCompletions:
         response = await async_client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -433,16 +433,16 @@ class TestAsyncCompletions:
         async with async_client.chat.completions.with_streaming_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -460,16 +460,16 @@ class TestAsyncCompletions:
         completion_stream = await async_client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -482,16 +482,16 @@ class TestAsyncCompletions:
         completion_stream = await async_client.chat.completions.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -510,8 +510,8 @@ class TestAsyncCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "type": "json",
                 "schema": {"foo": "string"},
+                "type": "json",
             },
             safety_model="safety_model_name",
             stop=["string", "string", "string"],
@@ -519,28 +519,28 @@ class TestAsyncCompletions:
             tool_choice="tool_name",
             tools=[
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
                 {
-                    "type": "tool_type",
                     "function": {
                         "description": "A description of the function.",
                         "name": "function_name",
                         "parameters": {"foo": "bar"},
                     },
+                    "type": "tool_type",
                 },
             ],
             top_k=0,
@@ -553,16 +553,16 @@ class TestAsyncCompletions:
         response = await async_client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -578,16 +578,16 @@ class TestAsyncCompletions:
         async with async_client.chat.completions.with_streaming_response.create(
             messages=[
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
                 {
-                    "role": "system",
                     "content": "content",
+                    "role": "system",
                 },
             ],
             model="mistralai/Mixtral-8x7B-Instruct-v0.1",
