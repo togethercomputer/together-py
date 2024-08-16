@@ -46,9 +46,9 @@ def check_file(
     file_size = os.stat(file.as_posix()).st_size
 
     if file_size > MAX_FILE_SIZE_GB * NUM_BYTES_IN_GB:
-        report_dict[
-            "message"
-        ] = f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB ,3)} GB."
+        report_dict["message"] = (
+            f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB ,3)} GB."
+        )
         report_dict["is_check_passed"] = False
     elif file_size == 0:
         report_dict["message"] = "File is empty"
