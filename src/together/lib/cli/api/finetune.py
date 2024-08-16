@@ -72,7 +72,7 @@ def list(ctx: click.Context) -> None:
         display_list.append(
             {
                 "Fine-tune ID": i.id,
-                "Model Output Name": "\n".join(wrap(i.api_model_output_name or "", width=30)),
+                "Model Output Name": "\n".join(wrap(i.x_model_output_name or "", width=30)),
                 "Status": i.status,
                 "Created At": i.created_at,
                 "Price": f"""${finetune_price_to_dollars(
