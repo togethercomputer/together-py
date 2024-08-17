@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.0-alpha.2 (2024-08-17)
+
+Full Changelog: [v0.1.0-alpha.1...v0.1.0-alpha.2](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.1...v0.1.0-alpha.2)
+
+### Features
+
+* **api:** manual updates ([#17](https://github.com/togethercomputer/together-py/issues/17)) ([6c36480](https://github.com/togethercomputer/together-py/commit/6c36480b01a9c06bc4a38583128dfa0103a5a15f))
+* **api:** OpenAPI spec update via Stainless API ([#12](https://github.com/togethercomputer/together-py/issues/12)) ([da7c038](https://github.com/togethercomputer/together-py/commit/da7c038db29c5b81b17f6f006ffb2086e929b4b7))
+* **api:** OpenAPI spec update via Stainless API ([#21](https://github.com/togethercomputer/together-py/issues/21)) ([26ef309](https://github.com/togethercomputer/together-py/commit/26ef30958bf3cf1253772191bc6ae9ac15b021f0))
+* **api:** removed pypi publishing for now ([#23](https://github.com/togethercomputer/together-py/issues/23)) ([badbc9a](https://github.com/togethercomputer/together-py/commit/badbc9a80cf09630b8b119e685ede1d4ed1831ed))
+
+
+### Chores
+
+* **ci:** bump prism mock server version ([#19](https://github.com/togethercomputer/together-py/issues/19)) ([fb2da6c](https://github.com/togethercomputer/together-py/commit/fb2da6c134ef986824f3f2f5a9f850674987d575))
+* **examples:** minor formatting changes ([#22](https://github.com/togethercomputer/together-py/issues/22)) ([52377af](https://github.com/togethercomputer/together-py/commit/52377af8d8404270e7e22ff29bca47cdaf18be7c))
+* **internal:** codegen related update ([#18](https://github.com/togethercomputer/together-py/issues/18)) ([8496650](https://github.com/togethercomputer/together-py/commit/84966509e71f5b8541ea09c917bc20a29ad20e63))
+* **internal:** ensure package is importable in lint cmd ([#20](https://github.com/togethercomputer/together-py/issues/20)) ([324e03a](https://github.com/togethercomputer/together-py/commit/324e03a73ccef62ec1b1cb328253db0a1813d4ab))
+* **internal:** use different 32bit detection method ([#24](https://github.com/togethercomputer/together-py/issues/24)) ([b14d279](https://github.com/togethercomputer/together-py/commit/b14d279715cc3ee2274d45fd1d44c83c7baaf279))
+
 ## 0.1.0-alpha.1 (2024-07-16)
 
 Full Changelog: [v0.0.1-alpha.0...v0.1.0-alpha.1](https://github.com/togethercomputer/together-py/compare/v0.0.1-alpha.0...v0.1.0-alpha.1)
