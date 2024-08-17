@@ -15,9 +15,12 @@ The REST API documentation can be found on [docs.together.ai](https://docs.toget
 ## Installation
 
 ```sh
-# install from PyPI
-pip install --pre together
+# install from the production repo
+pip install git+ssh://git@github.com/togethercomputer/together-py.git
 ```
+
+> [!NOTE]
+> Once this package is [published to PyPI](https://app.stainlessapi.com/docs/guides/publish), this will become: `pip install --pre together`
 
 ## Usage
 
