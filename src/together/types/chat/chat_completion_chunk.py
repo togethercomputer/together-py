@@ -31,7 +31,7 @@ class ChoiceDelta(BaseModel):
 class Choice(BaseModel):
     delta: ChoiceDelta
 
-    finish_reason: Literal["stop", "eos", "length", "tool_calls", "function_call"]
+    finish_reason: Optional[Literal["stop", "eos", "length", "tool_calls", "function_call"]] = None
 
     index: int
 
