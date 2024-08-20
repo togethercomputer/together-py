@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Iterable, overload
+from functools import partial
 from typing_extensions import Literal
 
 import httpx
@@ -26,6 +27,7 @@ from ...types.chat import completion_create_params
 from ..._base_client import make_request_options
 from ...types.tools_param import ToolsParam
 from ...types.chat.chat_completion import ChatCompletion
+from ...lib.streaming.chat._completions import ChatCompletionStreamManager, AsyncChatCompletionStreamManager
 from ...types.chat.chat_completion_chunk import ChatCompletionChunk
 
 __all__ = ["CompletionsResource", "AsyncCompletionsResource"]
@@ -441,6 +443,165 @@ class CompletionsResource(SyncAPIResource):
             stream_cls=Stream[ChatCompletionChunk],
         )
 
+    def stream(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> ChatCompletionStreamManager:
+        """
+        Wrapper over the `client.chat.completions.create(stream=True)` method that provides a more granular event API
+        and automatic accumulation of each delta.
+
+        Unlike `.create(stream=True)`, the `.stream()` method requires usage within a context manager to prevent accidental leakage of the response:
+
+        ```py
+        with client.chat.completions.stream(
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            messages=[...],
+        ) as stream:
+            async for event in stream:
+                if event.type == "content.delta":
+                    print(event.delta, flush=True, end="")
+        ```
+
+        When the context manager is entered, a `ChatCompletionStream` instance is returned which, like `.create(stream=True)` is an iterator.
+
+        When the context manager exits, the response will be closed, however the `stream` instance is still available outside
+        the context manager.
+
+        Args:
+          messages: A list of messages comprising the conversation so far.
+
+          model: The name of the model to query.
+
+          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
+              return prompt logprobs.
+
+          frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
+              repeating tokens that have already been mentioned.
+
+          logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
+
+          logprobs: Determines the number of most likely tokens to return at each token position log
+              probabilities to return.
+
+          max_tokens: The maximum number of tokens to generate.
+
+          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+
+          n: The number of completions to generate for each prompt.
+
+          presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
+              a model talking about new topics.
+
+          repetition_penalty: A number that controls the diversity of generated text by reducing the
+              likelihood of repeated sequences. Higher values decrease repetition.
+
+          response_format: An object specifying the format that the model must output.
+
+          safety_model: The name of the moderation model used to validate tokens. Choose from the
+              available moderation models found
+              [here](https://docs.together.ai/docs/inference-models#moderation-models).
+
+          stop: A list of string sequences that will truncate (stop) inference text output. For
+              example, "</s>" will stop generation as soon as the model generates the given
+              token.
+
+          temperature: A decimal number from 0-1 that determines the degree of randomness in the
+              response. A temperature less than 1 favors more correctness and is appropriate
+              for question answering or summarization. A value closer to 1 introduces more
+              randomness in the output.
+
+          tool_choice: Controls which (if any) function is called by the model. By default uses `auto`,
+              which lets the model pick between generating a message or calling a function.
+
+          tools: A list of tools the model may call. Currently, only functions are supported as a
+              tool. Use this to provide a list of functions the model may generate JSON inputs
+              for.
+
+          top_k: An integer that's used to limit the number of choices for the next predicted
+              word or token. It specifies the maximum number of tokens to consider at each
+              step, based on their probability of occurrence. This technique helps to speed up
+              the generation process and can improve the quality of the generated text by
+              focusing on the most likely options.
+
+          top_p: A percentage (also called the nucleus parameter) that's used to dynamically
+              adjust the number of choices for each predicted token based on the cumulative
+              probabilities. It specifies a probability threshold below which all less likely
+              tokens are filtered out. This technique helps maintain diversity and generate
+              more fluent and natural-sounding text.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+
+        extra_headers = {
+            "X-Stainless-Helper-Method": "chat.completions.stream",
+            **(extra_headers or {}),
+        }
+
+        api_request: partial[Stream[ChatCompletionChunk]] = partial(
+            self._client.chat.completions.create,
+            messages=messages,
+            model=model,
+            stream=True,
+            echo=echo,
+            frequency_penalty=frequency_penalty,
+            function_call=function_call,
+            logit_bias=logit_bias,
+            logprobs=logprobs,
+            max_tokens=max_tokens,
+            min_p=min_p,
+            n=n,
+            presence_penalty=presence_penalty,
+            repetition_penalty=repetition_penalty,
+            response_format=response_format,
+            safety_model=safety_model,
+            stop=stop,
+            temperature=temperature,
+            tool_choice=tool_choice,
+            tools=tools,
+            top_k=top_k,
+            top_p=top_p,
+            extra_headers=extra_headers,
+            extra_query=extra_query,
+            extra_body=extra_body,
+            timeout=timeout,
+        )
+        return ChatCompletionStreamManager(
+            api_request,
+        )
+
 
 class AsyncCompletionsResource(AsyncAPIResource):
     @cached_property
@@ -850,6 +1011,164 @@ class AsyncCompletionsResource(AsyncAPIResource):
             cast_to=ChatCompletion,
             stream=stream or False,
             stream_cls=AsyncStream[ChatCompletionChunk],
+        )
+
+    async def stream(
+        self,
+        *,
+        messages: Iterable[completion_create_params.Message],
+        model: str,
+        echo: bool | NotGiven = NOT_GIVEN,
+        frequency_penalty: float | NotGiven = NOT_GIVEN,
+        function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
+        logit_bias: Dict[str, float] | NotGiven = NOT_GIVEN,
+        logprobs: int | NotGiven = NOT_GIVEN,
+        max_tokens: int | NotGiven = NOT_GIVEN,
+        min_p: float | NotGiven = NOT_GIVEN,
+        n: int | NotGiven = NOT_GIVEN,
+        presence_penalty: float | NotGiven = NOT_GIVEN,
+        repetition_penalty: float | NotGiven = NOT_GIVEN,
+        response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
+        safety_model: str | NotGiven = NOT_GIVEN,
+        stop: List[str] | NotGiven = NOT_GIVEN,
+        temperature: float | NotGiven = NOT_GIVEN,
+        tool_choice: completion_create_params.ToolChoice | NotGiven = NOT_GIVEN,
+        tools: Iterable[ToolsParam] | NotGiven = NOT_GIVEN,
+        top_k: int | NotGiven = NOT_GIVEN,
+        top_p: float | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> AsyncChatCompletionStreamManager:
+        """
+        Wrapper over the `client.chat.completions.create(stream=True)` method that provides a more granular event API
+        and automatic accumulation of each delta.
+
+        Unlike `.create(stream=True)`, the `.stream()` method requires usage within a context manager to prevent accidental leakage of the response:
+
+        ```py
+        async with client.chat.completions.stream(
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            messages=[...],
+        ) as stream:
+            async for event in stream:
+                if event.type == "content.delta":
+                    print(event.delta, flush=True, end="")
+        ```
+
+        When the context manager is entered, an `AsyncChatCompletionStream` instance is returned which, like `.create(stream=True)` is an async iterator.
+
+        When the context manager exits, the response will be closed, however the `stream` instance is still available outside
+        the context manager.
+
+        Args:
+          messages: A list of messages comprising the conversation so far.
+
+          model: The name of the model to query.
+
+          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
+              return prompt logprobs.
+
+          frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
+              repeating tokens that have already been mentioned.
+
+          logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
+
+          logprobs: Determines the number of most likely tokens to return at each token position log
+              probabilities to return.
+
+          max_tokens: The maximum number of tokens to generate.
+
+          min_p: A number between 0 and 1 that can be used as an alternative to temperature.
+
+          n: The number of completions to generate for each prompt.
+
+          presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
+              a model talking about new topics.
+
+          repetition_penalty: A number that controls the diversity of generated text by reducing the
+              likelihood of repeated sequences. Higher values decrease repetition.
+
+          response_format: An object specifying the format that the model must output.
+
+          safety_model: The name of the moderation model used to validate tokens. Choose from the
+              available moderation models found
+              [here](https://docs.together.ai/docs/inference-models#moderation-models).
+
+          stop: A list of string sequences that will truncate (stop) inference text output. For
+              example, "</s>" will stop generation as soon as the model generates the given
+              token.
+
+          temperature: A decimal number from 0-1 that determines the degree of randomness in the
+              response. A temperature less than 1 favors more correctness and is appropriate
+              for question answering or summarization. A value closer to 1 introduces more
+              randomness in the output.
+
+          tool_choice: Controls which (if any) function is called by the model. By default uses `auto`,
+              which lets the model pick between generating a message or calling a function.
+
+          tools: A list of tools the model may call. Currently, only functions are supported as a
+              tool. Use this to provide a list of functions the model may generate JSON inputs
+              for.
+
+          top_k: An integer that's used to limit the number of choices for the next predicted
+              word or token. It specifies the maximum number of tokens to consider at each
+              step, based on their probability of occurrence. This technique helps to speed up
+              the generation process and can improve the quality of the generated text by
+              focusing on the most likely options.
+
+          top_p: A percentage (also called the nucleus parameter) that's used to dynamically
+              adjust the number of choices for each predicted token based on the cumulative
+              probabilities. It specifies a probability threshold below which all less likely
+              tokens are filtered out. This technique helps maintain diversity and generate
+              more fluent and natural-sounding text.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+
+        extra_headers = {
+            "X-Stainless-Helper-Method": "chat.completions.stream",
+            **(extra_headers or {}),
+        }
+
+        api_request = self._client.chat.completions.create(
+            messages=messages,
+            model=model,
+            stream=True,
+            echo=echo,
+            frequency_penalty=frequency_penalty,
+            function_call=function_call,
+            logit_bias=logit_bias,
+            logprobs=logprobs,
+            max_tokens=max_tokens,
+            min_p=min_p,
+            n=n,
+            presence_penalty=presence_penalty,
+            repetition_penalty=repetition_penalty,
+            response_format=response_format,
+            safety_model=safety_model,
+            stop=stop,
+            temperature=temperature,
+            tool_choice=tool_choice,
+            tools=tools,
+            top_k=top_k,
+            top_p=top_p,
+            extra_headers=extra_headers,
+            extra_query=extra_query,
+            extra_body=extra_body,
+            timeout=timeout,
+        )
+        return AsyncChatCompletionStreamManager(
+            api_request,
         )
 
 
