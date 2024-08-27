@@ -27,7 +27,7 @@ class ModelListResponseItem(BaseModel):
 
     object: str
 
-    type: Literal["chat", "language", "code", "image", "embedding", "moderation"]
+    type: Literal["chat", "language", "code", "image", "embedding", "moderation", "rerank"]
 
     context_length: Optional[int] = None
 
