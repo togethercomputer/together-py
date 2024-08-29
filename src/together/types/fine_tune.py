@@ -91,9 +91,11 @@ class FineTune(BaseModel):
 
     lora_alpha: Optional[int] = None
 
-    lora_dropout: Optional[int] = None
+    lora_dropout: Optional[float] = None
 
     lora_r: Optional[int] = None
+
+    lora_trainable_modules: Optional[str] = None
 
     model: Optional[str] = None
 
@@ -105,6 +107,8 @@ class FineTune(BaseModel):
 
     n_epochs: Optional[int] = None
 
+    n_evals: Optional[int] = None
+
     param_count: Optional[int] = None
 
     queue_depth: Optional[int] = None
@@ -115,9 +119,9 @@ class FineTune(BaseModel):
 
     training_file: Optional[str] = None
 
-    training_file_num_lines: Optional[int] = FieldInfo(alias="TrainingFileNumLines", default=None)
+    trainingfile_numlines: Optional[int] = None
 
-    training_file_size: Optional[int] = FieldInfo(alias="TrainingFileSize", default=None)
+    trainingfile_size: Optional[int] = None
 
     updated_at: Optional[str] = None
 
