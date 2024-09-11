@@ -64,6 +64,9 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     [here](https://docs.together.ai/docs/inference-models#moderation-models).
     """
 
+    seed: int
+    """Seed value for reproducibility."""
+
     stop: List[str]
     """A list of string sequences that will truncate (stop) inference text output.
 

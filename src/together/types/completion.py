@@ -15,6 +15,8 @@ class Choice(BaseModel):
 
     logprobs: Optional[LogProbs] = None
 
+    seed: Optional[int] = None
+
     text: Optional[str] = None
 
 
