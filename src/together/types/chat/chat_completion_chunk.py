@@ -37,6 +37,8 @@ class Choice(BaseModel):
 
     logprobs: Optional[float] = None
 
+    seed: Optional[int] = None
+
 
 class ChatCompletionChunk(BaseModel):
     id: str
