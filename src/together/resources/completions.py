@@ -54,6 +54,7 @@ class CompletionsResource(SyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -100,6 +101,8 @@ class CompletionsResource(SyncAPIResource):
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
+
+          seed: Seed value for reproducibility.
 
           stop: A list of string sequences that will truncate (stop) inference text output. For
               example, "</s>" will stop generation as soon as the model generates the given
@@ -153,6 +156,7 @@ class CompletionsResource(SyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -203,6 +207,8 @@ class CompletionsResource(SyncAPIResource):
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
 
+          seed: Seed value for reproducibility.
+
           stop: A list of string sequences that will truncate (stop) inference text output. For
               example, "</s>" will stop generation as soon as the model generates the given
               token.
@@ -251,6 +257,7 @@ class CompletionsResource(SyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -301,6 +308,8 @@ class CompletionsResource(SyncAPIResource):
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
 
+          seed: Seed value for reproducibility.
+
           stop: A list of string sequences that will truncate (stop) inference text output. For
               example, "</s>" will stop generation as soon as the model generates the given
               token.
@@ -348,6 +357,7 @@ class CompletionsResource(SyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -376,6 +386,7 @@ class CompletionsResource(SyncAPIResource):
                     "presence_penalty": presence_penalty,
                     "repetition_penalty": repetition_penalty,
                     "safety_model": safety_model,
+                    "seed": seed,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
@@ -418,6 +429,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -464,6 +476,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
+
+          seed: Seed value for reproducibility.
 
           stop: A list of string sequences that will truncate (stop) inference text output. For
               example, "</s>" will stop generation as soon as the model generates the given
@@ -517,6 +531,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -567,6 +582,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
 
+          seed: Seed value for reproducibility.
+
           stop: A list of string sequences that will truncate (stop) inference text output. For
               example, "</s>" will stop generation as soon as the model generates the given
               token.
@@ -615,6 +632,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -665,6 +683,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
 
+          seed: Seed value for reproducibility.
+
           stop: A list of string sequences that will truncate (stop) inference text output. For
               example, "</s>" will stop generation as soon as the model generates the given
               token.
@@ -712,6 +732,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
+        seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -740,6 +761,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
                     "presence_penalty": presence_penalty,
                     "repetition_penalty": repetition_penalty,
                     "safety_model": safety_model,
+                    "seed": seed,
                     "stop": stop,
                     "stream": stream,
                     "temperature": temperature,
