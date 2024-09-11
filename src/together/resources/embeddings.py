@@ -29,10 +29,21 @@ __all__ = ["EmbeddingsResource", "AsyncEmbeddingsResource"]
 class EmbeddingsResource(SyncAPIResource):
     @cached_property
     def with_raw_response(self) -> EmbeddingsResourceWithRawResponse:
+        """
+        This property can be used as a prefix for any HTTP method call to return the
+        the raw response object instead of the parsed content.
+
+        For more information, see https://www.github.com/togethercomputer/together-py#accessing-raw-response-data-eg-headers
+        """
         return EmbeddingsResourceWithRawResponse(self)
 
     @cached_property
     def with_streaming_response(self) -> EmbeddingsResourceWithStreamingResponse:
+        """
+        An alternative to `.with_raw_response` that doesn't eagerly read the response body.
+
+        For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
+        """
         return EmbeddingsResourceWithStreamingResponse(self)
 
     def create(
@@ -82,10 +93,21 @@ class EmbeddingsResource(SyncAPIResource):
 class AsyncEmbeddingsResource(AsyncAPIResource):
     @cached_property
     def with_raw_response(self) -> AsyncEmbeddingsResourceWithRawResponse:
+        """
+        This property can be used as a prefix for any HTTP method call to return the
+        the raw response object instead of the parsed content.
+
+        For more information, see https://www.github.com/togethercomputer/together-py#accessing-raw-response-data-eg-headers
+        """
         return AsyncEmbeddingsResourceWithRawResponse(self)
 
     @cached_property
     def with_streaming_response(self) -> AsyncEmbeddingsResourceWithStreamingResponse:
+        """
+        An alternative to `.with_raw_response` that doesn't eagerly read the response body.
+
+        For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
+        """
         return AsyncEmbeddingsResourceWithStreamingResponse(self)
 
     async def create(
