@@ -1,13 +1,13 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
-from typing_extensions import Literal
+from typing import List, Union, Optional
+from typing_extensions import Literal, TypeAlias
 
 from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FineTune", "Event"]
+__all__ = ["FineTune", "Event", "TrainingType", "TrainingTypeFullTrainingType", "TrainingTypeLoRaTrainingType"]
 
 
 class Event(BaseModel):
@@ -58,6 +58,25 @@ class Event(BaseModel):
     wandb_url: Optional[str] = None
 
 
+class TrainingTypeFullTrainingType(BaseModel):
+    type: Literal["Full"]
+
+
+class TrainingTypeLoRaTrainingType(BaseModel):
+    lora_alpha: int
+
+    lora_r: int
+
+    type: Literal["Lora"]
+
+    lora_dropout: Optional[float] = None
+
+    lora_trainable_modules: Optional[str] = None
+
+
+TrainingType: TypeAlias = Union[TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType]
+
+
 class FineTune(BaseModel):
     id: str
 
@@ -87,16 +106,6 @@ class FineTune(BaseModel):
 
     learning_rate: Optional[float] = None
 
-    lora: Optional[bool] = None
-
-    lora_alpha: Optional[int] = None
-
-    lora_dropout: Optional[float] = None
-
-    lora_r: Optional[int] = None
-
-    lora_trainable_modules: Optional[str] = None
-
     model: Optional[str] = None
 
     x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
@@ -118,6 +127,8 @@ class FineTune(BaseModel):
     total_price: Optional[int] = None
 
     training_file: Optional[str] = None
+
+    training_type: Optional[TrainingType] = None
 
     trainingfile_numlines: Optional[int] = None
 
