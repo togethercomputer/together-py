@@ -54,15 +54,11 @@ class FineTuneResource(SyncAPIResource):
         training_file: str,
         batch_size: int | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
-        lora: bool | NotGiven = NOT_GIVEN,
-        lora_alpha: int | NotGiven = NOT_GIVEN,
-        lora_dropout: float | NotGiven = NOT_GIVEN,
-        lora_r: int | NotGiven = NOT_GIVEN,
-        lora_trainable_modules: str | NotGiven = NOT_GIVEN,
         n_checkpoints: int | NotGiven = NOT_GIVEN,
         n_epochs: int | NotGiven = NOT_GIVEN,
         n_evals: int | NotGiven = NOT_GIVEN,
         suffix: str | NotGiven = NOT_GIVEN,
+        training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -83,17 +79,6 @@ class FineTuneResource(SyncAPIResource):
           batch_size: Batch size for fine-tuning
 
           learning_rate: Learning rate multiplier to use for training
-
-          lora: Whether to enable LoRA training. If not provided, full fine-tuning will be
-              applied.
-
-          lora_alpha: The alpha value for LoRA adapter training.
-
-          lora_dropout: The dropout probability for Lora layers.
-
-          lora_r: Rank for LoRA adapter weights
-
-          lora_trainable_modules: A list of LoRA trainable modules, separated by a comma
 
           n_checkpoints: Number of checkpoints to save during fine-tuning
 
@@ -123,15 +108,11 @@ class FineTuneResource(SyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "learning_rate": learning_rate,
-                    "lora": lora,
-                    "lora_alpha": lora_alpha,
-                    "lora_dropout": lora_dropout,
-                    "lora_r": lora_r,
-                    "lora_trainable_modules": lora_trainable_modules,
                     "n_checkpoints": n_checkpoints,
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
                     "suffix": suffix,
+                    "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
                 },
@@ -340,15 +321,11 @@ class AsyncFineTuneResource(AsyncAPIResource):
         training_file: str,
         batch_size: int | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
-        lora: bool | NotGiven = NOT_GIVEN,
-        lora_alpha: int | NotGiven = NOT_GIVEN,
-        lora_dropout: float | NotGiven = NOT_GIVEN,
-        lora_r: int | NotGiven = NOT_GIVEN,
-        lora_trainable_modules: str | NotGiven = NOT_GIVEN,
         n_checkpoints: int | NotGiven = NOT_GIVEN,
         n_epochs: int | NotGiven = NOT_GIVEN,
         n_evals: int | NotGiven = NOT_GIVEN,
         suffix: str | NotGiven = NOT_GIVEN,
+        training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -369,17 +346,6 @@ class AsyncFineTuneResource(AsyncAPIResource):
           batch_size: Batch size for fine-tuning
 
           learning_rate: Learning rate multiplier to use for training
-
-          lora: Whether to enable LoRA training. If not provided, full fine-tuning will be
-              applied.
-
-          lora_alpha: The alpha value for LoRA adapter training.
-
-          lora_dropout: The dropout probability for Lora layers.
-
-          lora_r: Rank for LoRA adapter weights
-
-          lora_trainable_modules: A list of LoRA trainable modules, separated by a comma
 
           n_checkpoints: Number of checkpoints to save during fine-tuning
 
@@ -409,15 +375,11 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "learning_rate": learning_rate,
-                    "lora": lora,
-                    "lora_alpha": lora_alpha,
-                    "lora_dropout": lora_dropout,
-                    "lora_r": lora_r,
-                    "lora_trainable_modules": lora_trainable_modules,
                     "n_checkpoints": n_checkpoints,
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
                     "suffix": suffix,
+                    "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
                 },
