@@ -158,7 +158,7 @@ class ResponseFormat(TypedDict, total=False):
 ToolChoice: TypeAlias = Union[str, ToolChoiceParam]
 
 
-class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase):
+class CompletionCreateParamsNonStreaming(CompletionCreateParamsBase, total=False):
     stream: Literal[False]
     """
     If true, stream tokens as Server-Sent Events as the model generates them instead
