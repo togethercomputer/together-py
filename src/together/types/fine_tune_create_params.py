@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing_extensions import Required, TypedDict
+from typing import Union
+from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
-__all__ = ["FineTuneCreateParams"]
+__all__ = ["FineTuneCreateParams", "TrainingType", "TrainingTypeFullTrainingType", "TrainingTypeLoRaTrainingType"]
 
 
 class FineTuneCreateParams(TypedDict, total=False):
@@ -20,24 +21,6 @@ class FineTuneCreateParams(TypedDict, total=False):
     learning_rate: float
     """Learning rate multiplier to use for training"""
 
-    lora: bool
-    """Whether to enable LoRA training.
-
-    If not provided, full fine-tuning will be applied.
-    """
-
-    lora_alpha: int
-    """The alpha value for LoRA adapter training."""
-
-    lora_dropout: float
-    """The dropout probability for Lora layers."""
-
-    lora_r: int
-    """Rank for LoRA adapter weights"""
-
-    lora_trainable_modules: str
-    """A list of LoRA trainable modules, separated by a comma"""
-
     n_checkpoints: int
     """Number of checkpoints to save during fine-tuning"""
 
@@ -50,8 +33,29 @@ class FineTuneCreateParams(TypedDict, total=False):
     suffix: str
     """Suffix that will be added to your fine-tuned model name"""
 
+    training_type: TrainingType
+
     validation_file: str
     """File-ID of a validation file uploaded to the Together API"""
 
     wandb_api_key: str
     """API key for Weights & Biases integration"""
+
+
+class TrainingTypeFullTrainingType(TypedDict, total=False):
+    type: Required[Literal["Full"]]
+
+
+class TrainingTypeLoRaTrainingType(TypedDict, total=False):
+    lora_alpha: Required[int]
+
+    lora_r: Required[int]
+
+    type: Required[Literal["Lora"]]
+
+    lora_dropout: float
+
+    lora_trainable_modules: str
+
+
+TrainingType: TypeAlias = Union[TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType]
