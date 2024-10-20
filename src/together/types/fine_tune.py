@@ -141,3 +141,5 @@ class FineTune(BaseModel):
     wandb_project_name: Optional[str] = None
 
     wandb_url: Optional[str] = None
+
+    warmup_ratio: Optional[float] = None

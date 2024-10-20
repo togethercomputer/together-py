@@ -44,6 +44,7 @@ class TestFineTune:
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",
+            warmup_ratio=0,
         )
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
@@ -278,6 +279,7 @@ class TestAsyncFineTune:
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",
+            warmup_ratio=0,
         )
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
