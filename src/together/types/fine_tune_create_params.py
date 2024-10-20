@@ -41,6 +41,12 @@ class FineTuneCreateParams(TypedDict, total=False):
     wandb_api_key: str
     """API key for Weights & Biases integration"""
 
+    warmup_ratio: float
+    """
+    The percent of steps at the start of training to linearly increase the
+    learning-rate.
+    """
+
 
 class TrainingTypeFullTrainingType(TypedDict, total=False):
     type: Required[Literal["Full"]]

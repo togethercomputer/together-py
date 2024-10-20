@@ -61,6 +61,7 @@ class FineTuneResource(SyncAPIResource):
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
+        warmup_ratio: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -92,6 +93,9 @@ class FineTuneResource(SyncAPIResource):
 
           wandb_api_key: API key for Weights & Biases integration
 
+          warmup_ratio: The percent of steps at the start of training to linearly increase the
+              learning-rate.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -115,6 +119,7 @@ class FineTuneResource(SyncAPIResource):
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
+                    "warmup_ratio": warmup_ratio,
                 },
                 fine_tune_create_params.FineTuneCreateParams,
             ),
@@ -328,6 +333,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
+        warmup_ratio: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -359,6 +365,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           wandb_api_key: API key for Weights & Biases integration
 
+          warmup_ratio: The percent of steps at the start of training to linearly increase the
+              learning-rate.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -382,6 +391,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
+                    "warmup_ratio": warmup_ratio,
                 },
                 fine_tune_create_params.FineTuneCreateParams,
             ),
