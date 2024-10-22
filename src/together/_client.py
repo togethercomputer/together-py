@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Union, Mapping
+from typing import Any, Dict, List, Union, Mapping, Iterable
 from typing_extensions import Self, override
 
 import httpx
 
 from . import resources, _exceptions
 from ._qs import Querystring
+from .types import client_rerank_params
 from ._types import (
     NOT_GIVEN,
+    Body,
     Omit,
+    Query,
+    Headers,
     Timeout,
     NotGiven,
     Transport,
@@ -21,16 +25,26 @@ from ._types import (
 )
 from ._utils import (
     is_given,
+    maybe_transform,
     get_async_library,
+    async_maybe_transform,
 )
 from ._version import __version__
+from ._response import (
+    to_raw_response_wrapper,
+    to_streamed_response_wrapper,
+    async_to_raw_response_wrapper,
+    async_to_streamed_response_wrapper,
+)
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
     DEFAULT_MAX_RETRIES,
     SyncAPIClient,
     AsyncAPIClient,
+    make_request_options,
 )
+from .types.rerank_response import RerankResponse
 
 __all__ = [
     "Timeout",
@@ -192,6 +206,66 @@ class Together(SyncAPIClient):
     # Alias for `copy` for nicer inline usage, e.g.
     # client.with_options(timeout=10).foo.create(...)
     with_options = copy
+
+    def rerank(
+        self,
+        *,
+        documents: Union[Iterable[Dict[str, object]], List[str]],
+        model: str,
+        query: str,
+        rank_fields: List[str] | NotGiven = NOT_GIVEN,
+        return_documents: bool | NotGiven = NOT_GIVEN,
+        top_n: int | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> RerankResponse:
+        """
+        Query a reranker model
+
+        Args:
+          documents: List of documents, which can be either strings or objects.
+
+          model: The model to be used for the rerank request.
+
+          query: The search query to be used for ranking.
+
+          rank_fields: List of keys in the JSON Object document to rank by. Defaults to use all
+              supplied keys for ranking.
+
+          return_documents: Whether to return supplied documents with the response.
+
+          top_n: The number of top results to return.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self.post(
+            "/rerank",
+            body=maybe_transform(
+                {
+                    "documents": documents,
+                    "model": model,
+                    "query": query,
+                    "rank_fields": rank_fields,
+                    "return_documents": return_documents,
+                    "top_n": top_n,
+                },
+                client_rerank_params.ClientRerankParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=RerankResponse,
+        )
 
     @override
     def _make_status_error(
@@ -375,6 +449,66 @@ class AsyncTogether(AsyncAPIClient):
     # client.with_options(timeout=10).foo.create(...)
     with_options = copy
 
+    async def rerank(
+        self,
+        *,
+        documents: Union[Iterable[Dict[str, object]], List[str]],
+        model: str,
+        query: str,
+        rank_fields: List[str] | NotGiven = NOT_GIVEN,
+        return_documents: bool | NotGiven = NOT_GIVEN,
+        top_n: int | NotGiven = NOT_GIVEN,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> RerankResponse:
+        """
+        Query a reranker model
+
+        Args:
+          documents: List of documents, which can be either strings or objects.
+
+          model: The model to be used for the rerank request.
+
+          query: The search query to be used for ranking.
+
+          rank_fields: List of keys in the JSON Object document to rank by. Defaults to use all
+              supplied keys for ranking.
+
+          return_documents: Whether to return supplied documents with the response.
+
+          top_n: The number of top results to return.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self.post(
+            "/rerank",
+            body=await async_maybe_transform(
+                {
+                    "documents": documents,
+                    "model": model,
+                    "query": query,
+                    "rank_fields": rank_fields,
+                    "return_documents": return_documents,
+                    "top_n": top_n,
+                },
+                client_rerank_params.ClientRerankParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=RerankResponse,
+        )
+
     @override
     def _make_status_error(
         self,
@@ -419,6 +553,10 @@ class TogetherWithRawResponse:
         self.images = resources.ImagesResourceWithRawResponse(client.images)
         self.models = resources.ModelsResourceWithRawResponse(client.models)
 
+        self.rerank = to_raw_response_wrapper(
+            client.rerank,
+        )
+
 
 class AsyncTogetherWithRawResponse:
     def __init__(self, client: AsyncTogether) -> None:
@@ -429,6 +567,10 @@ class AsyncTogetherWithRawResponse:
         self.fine_tune = resources.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
         self.images = resources.AsyncImagesResourceWithRawResponse(client.images)
         self.models = resources.AsyncModelsResourceWithRawResponse(client.models)
+
+        self.rerank = async_to_raw_response_wrapper(
+            client.rerank,
+        )
 
 
 class TogetherWithStreamedResponse:
@@ -441,6 +583,10 @@ class TogetherWithStreamedResponse:
         self.images = resources.ImagesResourceWithStreamingResponse(client.images)
         self.models = resources.ModelsResourceWithStreamingResponse(client.models)
 
+        self.rerank = to_streamed_response_wrapper(
+            client.rerank,
+        )
+
 
 class AsyncTogetherWithStreamedResponse:
     def __init__(self, client: AsyncTogether) -> None:
@@ -451,6 +597,10 @@ class AsyncTogetherWithStreamedResponse:
         self.fine_tune = resources.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
         self.images = resources.AsyncImagesResourceWithStreamingResponse(client.images)
         self.models = resources.AsyncModelsResourceWithStreamingResponse(client.models)
+
+        self.rerank = async_to_streamed_response_wrapper(
+            client.rerank,
+        )
 
 
 Client = Together
