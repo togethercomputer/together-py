@@ -43,8 +43,8 @@ class FineTuneCreateParams(TypedDict, total=False):
 
     warmup_ratio: float
     """
-    The percent of steps at the start of training to linearly increase the
-    learning-rate.
+    The percent of steps at the start of training to linearly increase the learning
+    rate.
     """
 
 
