@@ -25,7 +25,18 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """A list of messages comprising the conversation so far."""
 
     model: Required[str]
-    """The name of the model to query."""
+    """The name of the model to query.
+
+    Popular models:
+
+    - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
+    - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
+    - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
+    - Qwen/Qwen2.5-7B-Instruct-Turbo
+    - Qwen/Qwen2.5-72B-Instruct-Turbo
+
+    [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
+    """
 
     echo: bool
     """If true, the response will contain the prompt.
