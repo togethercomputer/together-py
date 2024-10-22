@@ -1,0 +1,256 @@
+# File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+from __future__ import annotations
+
+import os
+from typing import Any, cast
+
+import pytest
+
+from together import Together, AsyncTogether
+from tests.utils import assert_matches_type
+from together.types import RerankResponse
+
+base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+
+class TestClient:
+    parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
+
+    @parametrize
+    def test_method_rerank(self, client: Together) -> None:
+        client_ = client.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+        )
+        assert_matches_type(RerankResponse, client_, path=["response"])
+
+    @parametrize
+    def test_method_rerank_with_all_params(self, client: Together) -> None:
+        client_ = client.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+            rank_fields=["title", "text"],
+            return_documents=True,
+            top_n=2,
+        )
+        assert_matches_type(RerankResponse, client_, path=["response"])
+
+    @parametrize
+    def test_raw_response_rerank(self, client: Together) -> None:
+        response = client.with_raw_response.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        client_ = response.parse()
+        assert_matches_type(RerankResponse, client_, path=["response"])
+
+    @parametrize
+    def test_streaming_response_rerank(self, client: Together) -> None:
+        with client.with_streaming_response.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            client_ = response.parse()
+            assert_matches_type(RerankResponse, client_, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+
+class TestAsyncClient:
+    parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
+
+    @parametrize
+    async def test_method_rerank(self, async_client: AsyncTogether) -> None:
+        client = await async_client.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+        )
+        assert_matches_type(RerankResponse, client, path=["response"])
+
+    @parametrize
+    async def test_method_rerank_with_all_params(self, async_client: AsyncTogether) -> None:
+        client = await async_client.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+            rank_fields=["title", "text"],
+            return_documents=True,
+            top_n=2,
+        )
+        assert_matches_type(RerankResponse, client, path=["response"])
+
+    @parametrize
+    async def test_raw_response_rerank(self, async_client: AsyncTogether) -> None:
+        response = await async_client.with_raw_response.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        client = await response.parse()
+        assert_matches_type(RerankResponse, client, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_rerank(self, async_client: AsyncTogether) -> None:
+        async with async_client.with_streaming_response.rerank(
+            documents=[
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+                {
+                    "title": "bar",
+                    "text": "bar",
+                },
+            ],
+            model="Salesforce/Llama-Rank-V1",
+            query="What animals can I find near Peru?",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            client = await response.parse()
+            assert_matches_type(RerankResponse, client, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
