@@ -810,7 +810,7 @@ class TestTogether:
                     "role": "system",
                 },
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
 
         assert response.retries_taken == failures_before_success
@@ -850,7 +850,7 @@ class TestTogether:
                     "role": "system",
                 },
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": Omit()},
         )
 
@@ -890,7 +890,7 @@ class TestTogether:
                     "role": "system",
                 },
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": "42"},
         )
 
@@ -1671,7 +1671,7 @@ class TestAsyncTogether:
                     "role": "system",
                 },
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
 
         assert response.retries_taken == failures_before_success
@@ -1712,7 +1712,7 @@ class TestAsyncTogether:
                     "role": "system",
                 },
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": Omit()},
         )
 
@@ -1753,7 +1753,7 @@ class TestAsyncTogether:
                     "role": "system",
                 },
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": "42"},
         )
 
