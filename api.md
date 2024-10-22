@@ -1,3 +1,15 @@
+# Together
+
+Types:
+
+```python
+from together.types import RerankResponse
+```
+
+Methods:
+
+- <code title="post /rerank">client.<a href="./src/together/_client.py">rerank</a>(\*\*<a href="src/together/types/client_rerank_params.py">params</a>) -> <a href="./src/together/types/rerank_response.py">RerankResponse</a></code>
+
 # Chat
 
 ## Completions
