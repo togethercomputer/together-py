@@ -93,8 +93,8 @@ class FineTuneResource(SyncAPIResource):
 
           wandb_api_key: API key for Weights & Biases integration
 
-          warmup_ratio: The percent of steps at the start of training to linearly increase the
-              learning-rate.
+          warmup_ratio: The percent of steps at the start of training to linearly increase the learning
+              rate.
 
           extra_headers: Send extra headers
 
@@ -365,8 +365,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           wandb_api_key: API key for Weights & Biases integration
 
-          warmup_ratio: The percent of steps at the start of training to linearly increase the
-              learning-rate.
+          warmup_ratio: The percent of steps at the start of training to linearly increase the learning
+              rate.
 
           extra_headers: Send extra headers
 
