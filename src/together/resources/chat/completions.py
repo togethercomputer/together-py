@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Iterable
+from typing import Dict, List, Union, Iterable
 from typing_extensions import Literal, overload
 
 import httpx
@@ -56,7 +56,16 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -92,16 +101,6 @@ class CompletionsResource(SyncAPIResource):
 
           model: The name of the model to query.
 
-              Popular models:
-
-              - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-              - Qwen/Qwen2.5-7B-Instruct-Turbo
-              - Qwen/Qwen2.5-72B-Instruct-Turbo
-
-              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
-
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
 
@@ -180,7 +179,16 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -216,16 +224,6 @@ class CompletionsResource(SyncAPIResource):
 
           model: The name of the model to query.
 
-              Popular models:
-
-              - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-              - Qwen/Qwen2.5-7B-Instruct-Turbo
-              - Qwen/Qwen2.5-72B-Instruct-Turbo
-
-              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
-
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
@@ -304,7 +302,16 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -339,16 +346,6 @@ class CompletionsResource(SyncAPIResource):
           messages: A list of messages comprising the conversation so far.
 
           model: The name of the model to query.
-
-              Popular models:
-
-              - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-              - Qwen/Qwen2.5-7B-Instruct-Turbo
-              - Qwen/Qwen2.5-72B-Instruct-Turbo
-
-              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -428,7 +425,16 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -519,7 +525,16 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -555,16 +570,6 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           model: The name of the model to query.
 
-              Popular models:
-
-              - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-              - Qwen/Qwen2.5-7B-Instruct-Turbo
-              - Qwen/Qwen2.5-72B-Instruct-Turbo
-
-              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
-
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
 
@@ -643,7 +648,16 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -679,16 +693,6 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           model: The name of the model to query.
 
-              Popular models:
-
-              - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-              - Qwen/Qwen2.5-7B-Instruct-Turbo
-              - Qwen/Qwen2.5-72B-Instruct-Turbo
-
-              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
-
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
@@ -767,7 +771,16 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -802,16 +815,6 @@ class AsyncCompletionsResource(AsyncAPIResource):
           messages: A list of messages comprising the conversation so far.
 
           model: The name of the model to query.
-
-              Popular models:
-
-              - meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
-              - meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
-              - Qwen/Qwen2.5-7B-Instruct-Turbo
-              - Qwen/Qwen2.5-72B-Instruct-Turbo
-
-              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models)
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -891,7 +894,16 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: str,
+        model: Union[
+            Literal[
+                "Qwen/Qwen2.5-72B-Instruct-Turbo",
+                "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ],
+            str,
+        ],
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
