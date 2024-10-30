@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Union
 from typing_extensions import Literal, overload
 
 import httpx
@@ -53,7 +53,15 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -64,7 +72,7 @@ class CompletionsResource(SyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
@@ -84,6 +92,8 @@ class CompletionsResource(SyncAPIResource):
         Args:
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           prompt: A string providing context for the model to complete.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
@@ -154,7 +164,15 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
@@ -166,7 +184,7 @@ class CompletionsResource(SyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -185,6 +203,8 @@ class CompletionsResource(SyncAPIResource):
         Args:
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           prompt: A string providing context for the model to complete.
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
@@ -255,7 +275,15 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
@@ -267,7 +295,7 @@ class CompletionsResource(SyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -285,6 +313,8 @@ class CompletionsResource(SyncAPIResource):
 
         Args:
           model: The name of the model to query.
+
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
 
           prompt: A string providing context for the model to complete.
 
@@ -356,7 +386,15 @@ class CompletionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -367,7 +405,7 @@ class CompletionsResource(SyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
@@ -439,7 +477,15 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -450,7 +496,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
@@ -470,6 +516,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
         Args:
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           prompt: A string providing context for the model to complete.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
@@ -540,7 +588,15 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         stream: Literal[True],
         echo: bool | NotGiven = NOT_GIVEN,
@@ -552,7 +608,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -571,6 +627,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
         Args:
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           prompt: A string providing context for the model to complete.
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
@@ -641,7 +699,15 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         stream: bool,
         echo: bool | NotGiven = NOT_GIVEN,
@@ -653,7 +719,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
@@ -671,6 +737,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
         Args:
           model: The name of the model to query.
+
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
 
           prompt: A string providing context for the model to complete.
 
@@ -742,7 +810,15 @@ class AsyncCompletionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ],
         prompt: str,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
@@ -753,7 +829,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
+        safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         stop: List[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
