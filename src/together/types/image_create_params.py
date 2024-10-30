@@ -2,14 +2,27 @@
 
 from __future__ import annotations
 
-from typing_extensions import Required, TypedDict
+from typing import Union
+from typing_extensions import Literal, Required, TypedDict
 
 __all__ = ["ImageCreateParams"]
 
 
 class ImageCreateParams(TypedDict, total=False):
-    model: Required[str]
-    """The model to use for image generation."""
+    model: Required[
+        Union[
+            Literal[
+                "black-forest-labs/FLUX.1-schnell-Free",
+                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/FLUX.1.1-pro",
+            ],
+            str,
+        ]
+    ]
+    """The model to use for image generation.
+
+    [See all of Together AI's image models](https://docs.together.ai/docs/serverless-models#image-models)
+    """
 
     prompt: Required[str]
     """A description of the desired images. Maximum length varies by model."""

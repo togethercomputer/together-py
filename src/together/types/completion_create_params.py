@@ -9,8 +9,21 @@ __all__ = ["CompletionCreateParamsBase", "CompletionCreateParamsNonStreaming", "
 
 
 class CompletionCreateParamsBase(TypedDict, total=False):
-    model: Required[str]
-    """The name of the model to query."""
+    model: Required[
+        Union[
+            Literal[
+                "meta-llama/Llama-2-70b-hf",
+                "mistralai/Mistral-7B-v0.1",
+                "mistralai/Mixtral-8x7B-v0.1",
+                "Meta-Llama/Llama-Guard-7b",
+            ],
+            str,
+        ]
+    ]
+    """The name of the model to query.
+
+    [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+    """
 
     prompt: Required[str]
     """A string providing context for the model to complete."""
@@ -57,7 +70,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     likelihood of repeated sequences. Higher values decrease repetition.
     """
 
-    safety_model: str
+    safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str]
     """The name of the moderation model used to validate tokens.
 
     Choose from the available moderation models found

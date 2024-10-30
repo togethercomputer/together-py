@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List, Union, Mapping, Iterable
-from typing_extensions import Self, override
+from typing_extensions import Self, Literal, override
 
 import httpx
 
@@ -211,7 +211,7 @@ class Together(SyncAPIClient):
         self,
         *,
         documents: Union[Iterable[Dict[str, object]], List[str]],
-        model: str,
+        model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
         rank_fields: List[str] | NotGiven = NOT_GIVEN,
         return_documents: bool | NotGiven = NOT_GIVEN,
@@ -230,6 +230,8 @@ class Together(SyncAPIClient):
           documents: List of documents, which can be either strings or objects.
 
           model: The model to be used for the rerank request.
+
+              [See all of Together AI's rerank models](https://docs.together.ai/docs/serverless-models#rerank-models)
 
           query: The search query to be used for ranking.
 
@@ -453,7 +455,7 @@ class AsyncTogether(AsyncAPIClient):
         self,
         *,
         documents: Union[Iterable[Dict[str, object]], List[str]],
-        model: str,
+        model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
         rank_fields: List[str] | NotGiven = NOT_GIVEN,
         return_documents: bool | NotGiven = NOT_GIVEN,
@@ -472,6 +474,8 @@ class AsyncTogether(AsyncAPIClient):
           documents: List of documents, which can be either strings or objects.
 
           model: The model to be used for the rerank request.
+
+              [See all of Together AI's rerank models](https://docs.together.ai/docs/serverless-models#rerank-models)
 
           query: The search query to be used for ranking.
 

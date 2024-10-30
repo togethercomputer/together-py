@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import List, Union
+from typing_extensions import Literal
 
 import httpx
 
@@ -50,7 +51,15 @@ class EmbeddingsResource(SyncAPIResource):
         self,
         *,
         input: Union[str, List[str]],
-        model: str,
+        model: Union[
+            Literal[
+                "WhereIsAI/UAE-Large-V1",
+                "BAAI/bge-large-en-v1.5",
+                "BAAI/bge-base-en-v1.5",
+                "togethercomputer/m2-bert-80M-8k-retrieval",
+            ],
+            str,
+        ],
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -65,6 +74,8 @@ class EmbeddingsResource(SyncAPIResource):
           input: A string providing the text for the model to embed.
 
           model: The name of the embedding model to use.
+
+              [See all of Together AI's embedding models](https://docs.together.ai/docs/serverless-models#embedding-models)
 
           extra_headers: Send extra headers
 
@@ -114,7 +125,15 @@ class AsyncEmbeddingsResource(AsyncAPIResource):
         self,
         *,
         input: Union[str, List[str]],
-        model: str,
+        model: Union[
+            Literal[
+                "WhereIsAI/UAE-Large-V1",
+                "BAAI/bge-large-en-v1.5",
+                "BAAI/bge-base-en-v1.5",
+                "togethercomputer/m2-bert-80M-8k-retrieval",
+            ],
+            str,
+        ],
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -129,6 +148,8 @@ class AsyncEmbeddingsResource(AsyncAPIResource):
           input: A string providing the text for the model to embed.
 
           model: The name of the embedding model to use.
+
+              [See all of Together AI's embedding models](https://docs.together.ai/docs/serverless-models#embedding-models)
 
           extra_headers: Send extra headers
 
