@@ -36,7 +36,10 @@ class CompletionCreateParamsBase(TypedDict, total=False):
             str,
         ]
     ]
-    """The name of the model to query."""
+    """The name of the model to query.
+
+    [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+    """
 
     echo: bool
     """If true, the response will contain the prompt.

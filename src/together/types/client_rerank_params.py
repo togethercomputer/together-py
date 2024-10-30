@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Union, Iterable
-from typing_extensions import Required, TypedDict
+from typing_extensions import Literal, Required, TypedDict
 
 __all__ = ["ClientRerankParams"]
 
@@ -12,8 +12,11 @@ class ClientRerankParams(TypedDict, total=False):
     documents: Required[Union[Iterable[Dict[str, object]], List[str]]]
     """List of documents, which can be either strings or objects."""
 
-    model: Required[str]
-    """The model to be used for the rerank request."""
+    model: Required[Union[Literal["Salesforce/Llama-Rank-v1"], str]]
+    """The model to be used for the rerank request.
+
+    [See all of Together AI's rerank models](https://docs.together.ai/docs/serverless-models#rerank-models)
+    """
 
     query: Required[str]
     """The search query to be used for ranking."""

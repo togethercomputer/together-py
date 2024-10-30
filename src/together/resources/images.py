@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Union
+from typing_extensions import Literal
+
 import httpx
 
 from ..types import image_create_params
@@ -47,7 +50,14 @@ class ImagesResource(SyncAPIResource):
     def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "black-forest-labs/FLUX.1-schnell-Free",
+                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/FLUX.1.1-pro",
+            ],
+            str,
+        ],
         prompt: str,
         height: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
@@ -67,6 +77,8 @@ class ImagesResource(SyncAPIResource):
 
         Args:
           model: The model to use for image generation.
+
+              [See all of Together AI's image models](https://docs.together.ai/docs/serverless-models#image-models)
 
           prompt: A description of the desired images. Maximum length varies by model.
 
@@ -135,7 +147,14 @@ class AsyncImagesResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        model: str,
+        model: Union[
+            Literal[
+                "black-forest-labs/FLUX.1-schnell-Free",
+                "black-forest-labs/FLUX.1-schnell",
+                "black-forest-labs/FLUX.1.1-pro",
+            ],
+            str,
+        ],
         prompt: str,
         height: int | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
@@ -155,6 +174,8 @@ class AsyncImagesResource(AsyncAPIResource):
 
         Args:
           model: The model to use for image generation.
+
+              [See all of Together AI's image models](https://docs.together.ai/docs/serverless-models#image-models)
 
           prompt: A description of the desired images. Maximum length varies by model.
 
