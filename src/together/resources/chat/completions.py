@@ -101,6 +101,8 @@ class CompletionsResource(SyncAPIResource):
 
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
 
@@ -224,6 +226,8 @@ class CompletionsResource(SyncAPIResource):
 
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
@@ -346,6 +350,8 @@ class CompletionsResource(SyncAPIResource):
           messages: A list of messages comprising the conversation so far.
 
           model: The name of the model to query.
+
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -570,6 +576,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
 
@@ -693,6 +701,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           model: The name of the model to query.
 
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
@@ -815,6 +825,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           messages: A list of messages comprising the conversation so far.
 
           model: The name of the model to query.
+
+              [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
