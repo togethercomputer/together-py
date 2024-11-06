@@ -705,7 +705,7 @@ class TestTogether:
             [3, "", 1],
             [2, "", 1 * 2.0],
             [1, "", 1 * 4.0],
-            [-1100, "", 7.8],  # test large number potentially overflowing
+            [-1100, "", 10],  # test large number potentially overflowing
         ],
     )
     @mock.patch("time.time", mock.MagicMock(return_value=1696004797))
@@ -1564,7 +1564,7 @@ class TestAsyncTogether:
             [3, "", 1],
             [2, "", 1 * 2.0],
             [1, "", 1 * 4.0],
-            [-1100, "", 7.8],  # test large number potentially overflowing
+            [-1100, "", 10],  # test large number potentially overflowing
         ],
     )
     @mock.patch("time.time", mock.MagicMock(return_value=1696004797))
