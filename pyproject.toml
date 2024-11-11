@@ -41,8 +41,6 @@ classifiers = [
   "License :: OSI Approved :: Apache Software License"
 ]
 
-
-
 [project.urls]
 Homepage = "https://github.com/togethercomputer/together-py"
 Repository = "https://github.com/togethercomputer/together-py"
@@ -65,7 +63,6 @@ dev-dependencies = [
     "dirty-equals>=0.6.0",
     "importlib-metadata>=6.7.0",
     "rich>=13.7.1",
-
 ]
 
 [tool.rye.scripts]
