@@ -31,8 +31,7 @@ import os
 from together import Together
 
 client = Together(
-    # This is the default and can be omitted
-    api_key=os.environ.get("TOGETHER_API_KEY"),
+    api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
 )
 
 chat_completion = client.chat.completions.create(
@@ -62,8 +61,7 @@ import asyncio
 from together import AsyncTogether
 
 client = AsyncTogether(
-    # This is the default and can be omitted
-    api_key=os.environ.get("TOGETHER_API_KEY"),
+    api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
 )
 
 
