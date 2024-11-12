@@ -186,6 +186,7 @@ class TestFineTune:
     def test_method_download_with_all_params(self, client: Together) -> None:
         fine_tune = client.fine_tune.download(
             ft_id="ft_id",
+            checkpoint="merged",
             checkpoint_step=0,
             output="output",
         )
@@ -421,6 +422,7 @@ class TestAsyncFineTune:
     async def test_method_download_with_all_params(self, async_client: AsyncTogether) -> None:
         fine_tune = await async_client.fine_tune.download(
             ft_id="ft_id",
+            checkpoint="merged",
             checkpoint_step=0,
             output="output",
         )
