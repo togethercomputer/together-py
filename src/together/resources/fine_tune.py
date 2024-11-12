@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing_extensions import Literal
+
 import httpx
 
 from ..types import fine_tune_create_params, fine_tune_download_params
@@ -218,6 +220,7 @@ class FineTuneResource(SyncAPIResource):
         self,
         *,
         ft_id: str,
+        checkpoint: Literal["merged", "adapter"] | NotGiven = NOT_GIVEN,
         checkpoint_step: int | NotGiven = NOT_GIVEN,
         output: str | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -233,7 +236,11 @@ class FineTuneResource(SyncAPIResource):
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
 
-          checkpoint_step: Specifies step number for checkpoint to download.
+          checkpoint: Specifies checkpoint type to download - `merged` vs `adapter`. This field is
+              required if the checkpoint_step is not set.
+
+          checkpoint_step: Specifies step number for checkpoint to download. Ignores `checkpoint` value if
+              set.
 
           output: Specifies output file name for downloaded model. Defaults to
               `$PWD/{model_name}.{extension}`.
@@ -256,6 +263,7 @@ class FineTuneResource(SyncAPIResource):
                 query=maybe_transform(
                     {
                         "ft_id": ft_id,
+                        "checkpoint": checkpoint,
                         "checkpoint_step": checkpoint_step,
                         "output": output,
                     },
@@ -490,6 +498,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         self,
         *,
         ft_id: str,
+        checkpoint: Literal["merged", "adapter"] | NotGiven = NOT_GIVEN,
         checkpoint_step: int | NotGiven = NOT_GIVEN,
         output: str | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -505,7 +514,11 @@ class AsyncFineTuneResource(AsyncAPIResource):
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
 
-          checkpoint_step: Specifies step number for checkpoint to download.
+          checkpoint: Specifies checkpoint type to download - `merged` vs `adapter`. This field is
+              required if the checkpoint_step is not set.
+
+          checkpoint_step: Specifies step number for checkpoint to download. Ignores `checkpoint` value if
+              set.
 
           output: Specifies output file name for downloaded model. Defaults to
               `$PWD/{model_name}.{extension}`.
@@ -528,6 +541,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                 query=await async_maybe_transform(
                     {
                         "ft_id": ft_id,
+                        "checkpoint": checkpoint,
                         "checkpoint_step": checkpoint_step,
                         "output": output,
                     },

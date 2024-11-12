@@ -21,7 +21,7 @@ click==8.1.7
     # via together
 distro==1.8.0
     # via together
-exceptiongroup==1.1.3
+exceptiongroup==1.2.2
     # via anyio
 h11==0.14.0
     # via httpcore
@@ -40,9 +40,9 @@ pyarrow==16.1.0
     # via together
 pyarrow-stubs==10.0.1.7
     # via together
-pydantic==2.7.1
+pydantic==2.9.2
     # via together
-pydantic-core==2.18.2
+pydantic-core==2.23.4
     # via pydantic
 sniffio==1.3.0
     # via anyio
@@ -52,7 +52,7 @@ tabulate==0.9.0
     # via together
 types-tabulate==0.9.0.20240106
     # via together
-typing-extensions==4.8.0
+typing-extensions==4.12.2
     # via anyio
     # via pydantic
     # via pydantic-core
