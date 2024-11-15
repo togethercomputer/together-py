@@ -126,6 +126,8 @@ class FineTune(BaseModel):
 
     total_price: Optional[int] = None
 
+    train_on_inputs: Union[bool, Literal["auto"], None] = None
+
     training_file: Optional[str] = None
 
     training_type: Optional[TrainingType] = None
