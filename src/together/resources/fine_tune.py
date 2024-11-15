@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Union
 from typing_extensions import Literal
 
 import httpx
@@ -60,6 +61,7 @@ class FineTuneResource(SyncAPIResource):
         n_epochs: int | NotGiven = NOT_GIVEN,
         n_evals: int | NotGiven = NOT_GIVEN,
         suffix: str | NotGiven = NOT_GIVEN,
+        train_on_inputs: Union[bool, Literal["auto"]] | NotGiven = NOT_GIVEN,
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
@@ -91,6 +93,9 @@ class FineTuneResource(SyncAPIResource):
 
           suffix: Suffix that will be added to your fine-tuned model name
 
+          train_on_inputs: Whether to mask the user messages in conversational data or prompts in
+              instruction data.
+
           validation_file: File-ID of a validation file uploaded to the Together API
 
           wandb_api_key: API key for Weights & Biases integration
@@ -118,6 +123,7 @@ class FineTuneResource(SyncAPIResource):
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
                     "suffix": suffix,
+                    "train_on_inputs": train_on_inputs,
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
@@ -338,6 +344,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         n_epochs: int | NotGiven = NOT_GIVEN,
         n_evals: int | NotGiven = NOT_GIVEN,
         suffix: str | NotGiven = NOT_GIVEN,
+        train_on_inputs: Union[bool, Literal["auto"]] | NotGiven = NOT_GIVEN,
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
@@ -369,6 +376,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           suffix: Suffix that will be added to your fine-tuned model name
 
+          train_on_inputs: Whether to mask the user messages in conversational data or prompts in
+              instruction data.
+
           validation_file: File-ID of a validation file uploaded to the Together API
 
           wandb_api_key: API key for Weights & Biases integration
@@ -396,6 +406,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
                     "suffix": suffix,
+                    "train_on_inputs": train_on_inputs,
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
