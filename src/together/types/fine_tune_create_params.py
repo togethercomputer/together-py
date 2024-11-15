@@ -33,6 +33,12 @@ class FineTuneCreateParams(TypedDict, total=False):
     suffix: str
     """Suffix that will be added to your fine-tuned model name"""
 
+    train_on_inputs: Union[bool, Literal["auto"]]
+    """
+    Whether to mask the user messages in conversational data or prompts in
+    instruction data.
+    """
+
     training_type: TrainingType
 
     validation_file: str
