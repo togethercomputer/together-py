@@ -24,15 +24,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         )
@@ -45,15 +37,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             echo=True,
@@ -75,7 +59,7 @@ class TestCompletions:
             },
             safety_model="safety_model_name",
             seed=42,
-            stop=["string", "string", "string"],
+            stop=["string"],
             stream=False,
             temperature=0,
             tool_choice="tool_name",
@@ -87,23 +71,7 @@ class TestCompletions:
                         "parameters": {"foo": "bar"},
                     },
                     "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
+                }
             ],
             top_k=0,
             top_p=0,
@@ -117,15 +85,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         )
@@ -142,15 +102,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         ) as response:
@@ -169,15 +121,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -191,15 +135,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -222,7 +158,7 @@ class TestCompletions:
             },
             safety_model="safety_model_name",
             seed=42,
-            stop=["string", "string", "string"],
+            stop=["string"],
             temperature=0,
             tool_choice="tool_name",
             tools=[
@@ -233,23 +169,7 @@ class TestCompletions:
                         "parameters": {"foo": "bar"},
                     },
                     "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
+                }
             ],
             top_k=0,
             top_p=0,
@@ -263,15 +183,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -288,15 +200,7 @@ class TestCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -320,15 +224,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         )
@@ -341,15 +237,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             echo=True,
@@ -371,7 +259,7 @@ class TestAsyncCompletions:
             },
             safety_model="safety_model_name",
             seed=42,
-            stop=["string", "string", "string"],
+            stop=["string"],
             stream=False,
             temperature=0,
             tool_choice="tool_name",
@@ -383,23 +271,7 @@ class TestAsyncCompletions:
                         "parameters": {"foo": "bar"},
                     },
                     "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
+                }
             ],
             top_k=0,
             top_p=0,
@@ -413,15 +285,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         )
@@ -438,15 +302,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         ) as response:
@@ -465,15 +321,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -487,15 +335,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -518,7 +358,7 @@ class TestAsyncCompletions:
             },
             safety_model="safety_model_name",
             seed=42,
-            stop=["string", "string", "string"],
+            stop=["string"],
             temperature=0,
             tool_choice="tool_name",
             tools=[
@@ -529,23 +369,7 @@ class TestAsyncCompletions:
                         "parameters": {"foo": "bar"},
                     },
                     "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
-                {
-                    "function": {
-                        "description": "A description of the function.",
-                        "name": "function_name",
-                        "parameters": {"foo": "bar"},
-                    },
-                    "type": "tool_type",
-                },
+                }
             ],
             top_k=0,
             top_p=0,
@@ -559,15 +383,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
@@ -584,15 +400,7 @@ class TestAsyncCompletions:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
