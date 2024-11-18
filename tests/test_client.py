@@ -800,15 +800,7 @@ class TestTogether:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         )
@@ -840,15 +832,7 @@ class TestTogether:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": Omit()},
@@ -880,15 +864,7 @@ class TestTogether:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": "42"},
@@ -1661,15 +1637,7 @@ class TestAsyncTogether:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
         )
@@ -1702,15 +1670,7 @@ class TestAsyncTogether:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": Omit()},
@@ -1743,15 +1703,7 @@ class TestAsyncTogether:
                 {
                     "content": "content",
                     "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
-                {
-                    "content": "content",
-                    "role": "system",
-                },
+                }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": "42"},
