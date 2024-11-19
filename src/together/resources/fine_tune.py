@@ -57,6 +57,8 @@ class FineTuneResource(SyncAPIResource):
         training_file: str,
         batch_size: int | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
+        lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
+        max_grad_norm: float | NotGiven = NOT_GIVEN,
         n_checkpoints: int | NotGiven = NOT_GIVEN,
         n_epochs: int | NotGiven = NOT_GIVEN,
         n_evals: int | NotGiven = NOT_GIVEN,
@@ -66,6 +68,7 @@ class FineTuneResource(SyncAPIResource):
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
         warmup_ratio: float | NotGiven = NOT_GIVEN,
+        weight_decay: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -85,6 +88,8 @@ class FineTuneResource(SyncAPIResource):
 
           learning_rate: Learning rate multiplier to use for training
 
+          max_grad_norm: Max gradient norm to be used for gradient clipping. Set to 0 to disable.
+
           n_checkpoints: Number of checkpoints to save during fine-tuning
 
           n_epochs: Number of epochs for fine-tuning
@@ -103,6 +108,8 @@ class FineTuneResource(SyncAPIResource):
           warmup_ratio: The percent of steps at the start of training to linearly increase the learning
               rate.
 
+          weight_decay: Weight decay
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -119,6 +126,8 @@ class FineTuneResource(SyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "learning_rate": learning_rate,
+                    "lr_scheduler": lr_scheduler,
+                    "max_grad_norm": max_grad_norm,
                     "n_checkpoints": n_checkpoints,
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
@@ -128,6 +137,7 @@ class FineTuneResource(SyncAPIResource):
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
                     "warmup_ratio": warmup_ratio,
+                    "weight_decay": weight_decay,
                 },
                 fine_tune_create_params.FineTuneCreateParams,
             ),
@@ -340,6 +350,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
         training_file: str,
         batch_size: int | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
+        lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
+        max_grad_norm: float | NotGiven = NOT_GIVEN,
         n_checkpoints: int | NotGiven = NOT_GIVEN,
         n_epochs: int | NotGiven = NOT_GIVEN,
         n_evals: int | NotGiven = NOT_GIVEN,
@@ -349,6 +361,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
         warmup_ratio: float | NotGiven = NOT_GIVEN,
+        weight_decay: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -368,6 +381,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           learning_rate: Learning rate multiplier to use for training
 
+          max_grad_norm: Max gradient norm to be used for gradient clipping. Set to 0 to disable.
+
           n_checkpoints: Number of checkpoints to save during fine-tuning
 
           n_epochs: Number of epochs for fine-tuning
@@ -386,6 +401,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
           warmup_ratio: The percent of steps at the start of training to linearly increase the learning
               rate.
 
+          weight_decay: Weight decay
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -402,6 +419,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "learning_rate": learning_rate,
+                    "lr_scheduler": lr_scheduler,
+                    "max_grad_norm": max_grad_norm,
                     "n_checkpoints": n_checkpoints,
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
@@ -411,6 +430,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
                     "warmup_ratio": warmup_ratio,
+                    "weight_decay": weight_decay,
                 },
                 fine_tune_create_params.FineTuneCreateParams,
             ),

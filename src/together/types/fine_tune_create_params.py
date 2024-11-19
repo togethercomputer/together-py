@@ -5,7 +5,14 @@ from __future__ import annotations
 from typing import Union
 from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
-__all__ = ["FineTuneCreateParams", "TrainingType", "TrainingTypeFullTrainingType", "TrainingTypeLoRaTrainingType"]
+__all__ = [
+    "FineTuneCreateParams",
+    "LrScheduler",
+    "LrSchedulerLrSchedulerArgs",
+    "TrainingType",
+    "TrainingTypeFullTrainingType",
+    "TrainingTypeLoRaTrainingType",
+]
 
 
 class FineTuneCreateParams(TypedDict, total=False):
@@ -20,6 +27,11 @@ class FineTuneCreateParams(TypedDict, total=False):
 
     learning_rate: float
     """Learning rate multiplier to use for training"""
+
+    lr_scheduler: LrScheduler
+
+    max_grad_norm: float
+    """Max gradient norm to be used for gradient clipping. Set to 0 to disable."""
 
     n_checkpoints: int
     """Number of checkpoints to save during fine-tuning"""
@@ -52,6 +64,20 @@ class FineTuneCreateParams(TypedDict, total=False):
     The percent of steps at the start of training to linearly increase the learning
     rate.
     """
+
+    weight_decay: float
+    """Weight decay"""
+
+
+class LrSchedulerLrSchedulerArgs(TypedDict, total=False):
+    min_lr_ratio: float
+    """The ratio of the final learning rate to the peak learning rate"""
+
+
+class LrScheduler(TypedDict, total=False):
+    lr_scheduler_type: Required[str]
+
+    lr_scheduler_args: LrSchedulerLrSchedulerArgs
 
 
 class TrainingTypeFullTrainingType(TypedDict, total=False):

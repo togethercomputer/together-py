@@ -7,7 +7,15 @@ from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FineTune", "Event", "TrainingType", "TrainingTypeFullTrainingType", "TrainingTypeLoRaTrainingType"]
+__all__ = [
+    "FineTune",
+    "Event",
+    "LrScheduler",
+    "LrSchedulerLrSchedulerArgs",
+    "TrainingType",
+    "TrainingTypeFullTrainingType",
+    "TrainingTypeLoRaTrainingType",
+]
 
 
 class Event(BaseModel):
@@ -58,6 +66,17 @@ class Event(BaseModel):
     wandb_url: Optional[str] = None
 
 
+class LrSchedulerLrSchedulerArgs(BaseModel):
+    min_lr_ratio: Optional[float] = None
+    """The ratio of the final learning rate to the peak learning rate"""
+
+
+class LrScheduler(BaseModel):
+    lr_scheduler_type: str
+
+    lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
+
+
 class TrainingTypeFullTrainingType(BaseModel):
     type: Literal["Full"]
 
@@ -106,6 +125,10 @@ class FineTune(BaseModel):
 
     learning_rate: Optional[float] = None
 
+    lr_scheduler: Optional[LrScheduler] = None
+
+    max_grad_norm: Optional[float] = None
+
     model: Optional[str] = None
 
     x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
@@ -145,3 +168,5 @@ class FineTune(BaseModel):
     wandb_url: Optional[str] = None
 
     warmup_ratio: Optional[float] = None
+
+    weight_decay: Optional[float] = None
