@@ -67,6 +67,9 @@ class FineTuneResource(SyncAPIResource):
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
+        wandb_base_url: str | NotGiven = NOT_GIVEN,
+        wandb_name: str | NotGiven = NOT_GIVEN,
+        wandb_project_name: str | NotGiven = NOT_GIVEN,
         warmup_ratio: float | NotGiven = NOT_GIVEN,
         weight_decay: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -105,6 +108,13 @@ class FineTuneResource(SyncAPIResource):
 
           wandb_api_key: API key for Weights & Biases integration
 
+          wandb_base_url: The base URL of a dedicated Weights & Biases instance.
+
+          wandb_name: The Weights & Biases name for your run.
+
+          wandb_project_name: The Weights & Biases project for your run. If not specified, will use `together`
+              as the project name.
+
           warmup_ratio: The percent of steps at the start of training to linearly increase the learning
               rate.
 
@@ -136,6 +146,9 @@ class FineTuneResource(SyncAPIResource):
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
+                    "wandb_base_url": wandb_base_url,
+                    "wandb_name": wandb_name,
+                    "wandb_project_name": wandb_project_name,
                     "warmup_ratio": warmup_ratio,
                     "weight_decay": weight_decay,
                 },
@@ -360,6 +373,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
+        wandb_base_url: str | NotGiven = NOT_GIVEN,
+        wandb_name: str | NotGiven = NOT_GIVEN,
+        wandb_project_name: str | NotGiven = NOT_GIVEN,
         warmup_ratio: float | NotGiven = NOT_GIVEN,
         weight_decay: float | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -398,6 +414,13 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           wandb_api_key: API key for Weights & Biases integration
 
+          wandb_base_url: The base URL of a dedicated Weights & Biases instance.
+
+          wandb_name: The Weights & Biases name for your run.
+
+          wandb_project_name: The Weights & Biases project for your run. If not specified, will use `together`
+              as the project name.
+
           warmup_ratio: The percent of steps at the start of training to linearly increase the learning
               rate.
 
@@ -429,6 +452,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
+                    "wandb_base_url": wandb_base_url,
+                    "wandb_name": wandb_name,
+                    "wandb_project_name": wandb_project_name,
                     "warmup_ratio": warmup_ratio,
                     "weight_decay": weight_decay,
                 },
