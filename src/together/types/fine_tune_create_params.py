@@ -59,6 +59,18 @@ class FineTuneCreateParams(TypedDict, total=False):
     wandb_api_key: str
     """API key for Weights & Biases integration"""
 
+    wandb_base_url: str
+    """The base URL of a dedicated Weights & Biases instance."""
+
+    wandb_name: str
+    """The Weights & Biases name for your run."""
+
+    wandb_project_name: str
+    """The Weights & Biases project for your run.
+
+    If not specified, will use `together` as the project name.
+    """
+
     warmup_ratio: float
     """
     The percent of steps at the start of training to linearly increase the learning
