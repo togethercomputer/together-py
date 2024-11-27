@@ -60,8 +60,10 @@ class ImagesResource(SyncAPIResource):
         ],
         prompt: str,
         height: int | NotGiven = NOT_GIVEN,
+        image_url: str | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         negative_prompt: str | NotGiven = NOT_GIVEN,
+        response_format: Literal["base64", "url"] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         steps: int | NotGiven = NOT_GIVEN,
         width: int | NotGiven = NOT_GIVEN,
@@ -84,9 +86,13 @@ class ImagesResource(SyncAPIResource):
 
           height: Height of the image to generate in number of pixels.
 
+          image_url: URL of an image to use for image models that support it.
+
           n: Number of image results to generate.
 
           negative_prompt: The prompt or prompts not to guide the image generation.
+
+          response_format: Format of the image response. Can be either a base64 string or a URL.
 
           seed: Seed used for generation. Can be used to reproduce image generations.
 
@@ -109,8 +115,10 @@ class ImagesResource(SyncAPIResource):
                     "model": model,
                     "prompt": prompt,
                     "height": height,
+                    "image_url": image_url,
                     "n": n,
                     "negative_prompt": negative_prompt,
+                    "response_format": response_format,
                     "seed": seed,
                     "steps": steps,
                     "width": width,
@@ -157,8 +165,10 @@ class AsyncImagesResource(AsyncAPIResource):
         ],
         prompt: str,
         height: int | NotGiven = NOT_GIVEN,
+        image_url: str | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         negative_prompt: str | NotGiven = NOT_GIVEN,
+        response_format: Literal["base64", "url"] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         steps: int | NotGiven = NOT_GIVEN,
         width: int | NotGiven = NOT_GIVEN,
@@ -181,9 +191,13 @@ class AsyncImagesResource(AsyncAPIResource):
 
           height: Height of the image to generate in number of pixels.
 
+          image_url: URL of an image to use for image models that support it.
+
           n: Number of image results to generate.
 
           negative_prompt: The prompt or prompts not to guide the image generation.
+
+          response_format: Format of the image response. Can be either a base64 string or a URL.
 
           seed: Seed used for generation. Can be used to reproduce image generations.
 
@@ -206,8 +220,10 @@ class AsyncImagesResource(AsyncAPIResource):
                     "model": model,
                     "prompt": prompt,
                     "height": height,
+                    "image_url": image_url,
                     "n": n,
                     "negative_prompt": negative_prompt,
+                    "response_format": response_format,
                     "seed": seed,
                     "steps": steps,
                     "width": width,
