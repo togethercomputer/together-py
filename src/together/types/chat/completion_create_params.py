@@ -11,10 +11,6 @@ from ..tool_choice_param import ToolChoiceParam
 __all__ = [
     "CompletionCreateParamsBase",
     "Message",
-    "MessageContentUnionMember1",
-    "MessageContentUnionMember1UnionMember0",
-    "MessageContentUnionMember1UnionMember1",
-    "MessageContentUnionMember1UnionMember1ImageURL",
     "FunctionCall",
     "FunctionCallName",
     "ResponseFormat",
@@ -150,30 +146,8 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
 
-class MessageContentUnionMember1UnionMember0(TypedDict, total=False):
-    text: Required[str]
-
-    type: Required[Literal["text"]]
-
-
-class MessageContentUnionMember1UnionMember1ImageURL(TypedDict, total=False):
-    url: Required[str]
-    """The URL of the image as a plain string."""
-
-
-class MessageContentUnionMember1UnionMember1(TypedDict, total=False):
-    image_url: Required[MessageContentUnionMember1UnionMember1ImageURL]
-
-    type: Required[Literal["image_url"]]
-
-
-MessageContentUnionMember1: TypeAlias = Union[
-    MessageContentUnionMember1UnionMember0, MessageContentUnionMember1UnionMember1
-]
-
-
 class Message(TypedDict, total=False):
-    content: Required[Union[str, Iterable[MessageContentUnionMember1]]]
+    content: Required[str]
     """
     The content of the message, which can either be a simple string or a structured
     format.
