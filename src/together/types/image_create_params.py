@@ -30,11 +30,17 @@ class ImageCreateParams(TypedDict, total=False):
     height: int
     """Height of the image to generate in number of pixels."""
 
+    image_url: str
+    """URL of an image to use for image models that support it."""
+
     n: int
     """Number of image results to generate."""
 
     negative_prompt: str
     """The prompt or prompts not to guide the image generation."""
+
+    response_format: Literal["base64", "url"]
+    """Format of the image response. Can be either a base64 string or a URL."""
 
     seed: int
     """Seed used for generation. Can be used to reproduce image generations."""
