@@ -17,7 +17,13 @@ Methods:
 Types:
 
 ```python
-from together.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionUsage
+from together.types.chat import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionStructuredMessageImageURL,
+    ChatCompletionStructuredMessageText,
+    ChatCompletionUsage,
+)
 ```
 
 Methods:
