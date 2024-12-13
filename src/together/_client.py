@@ -8,7 +8,7 @@ from typing_extensions import Self, Literal, override
 
 import httpx
 
-from . import resources, _exceptions
+from . import _exceptions
 from ._qs import Querystring
 from .types import client_rerank_params
 from ._types import (
@@ -36,6 +36,7 @@ from ._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
+from .resources import files, images, models, fine_tune, embeddings, completions
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -44,6 +45,7 @@ from ._base_client import (
     AsyncAPIClient,
     make_request_options,
 )
+from .resources.chat import chat
 from .types.rerank_response import RerankResponse
 
 __all__ = [
@@ -51,7 +53,6 @@ __all__ = [
     "Transport",
     "ProxiesTypes",
     "RequestOptions",
-    "resources",
     "Together",
     "AsyncTogether",
     "Client",
@@ -60,13 +61,13 @@ __all__ = [
 
 
 class Together(SyncAPIClient):
-    chat: resources.ChatResource
-    completions: resources.CompletionsResource
-    embeddings: resources.EmbeddingsResource
-    files: resources.FilesResource
-    fine_tune: resources.FineTuneResource
-    images: resources.ImagesResource
-    models: resources.ModelsResource
+    chat: chat.ChatResource
+    completions: completions.CompletionsResource
+    embeddings: embeddings.EmbeddingsResource
+    files: files.FilesResource
+    fine_tune: fine_tune.FineTuneResource
+    images: images.ImagesResource
+    models: models.ModelsResource
     with_raw_response: TogetherWithRawResponse
     with_streaming_response: TogetherWithStreamedResponse
 
@@ -126,13 +127,13 @@ class Together(SyncAPIClient):
 
         self._default_stream_cls = Stream
 
-        self.chat = resources.ChatResource(self)
-        self.completions = resources.CompletionsResource(self)
-        self.embeddings = resources.EmbeddingsResource(self)
-        self.files = resources.FilesResource(self)
-        self.fine_tune = resources.FineTuneResource(self)
-        self.images = resources.ImagesResource(self)
-        self.models = resources.ModelsResource(self)
+        self.chat = chat.ChatResource(self)
+        self.completions = completions.CompletionsResource(self)
+        self.embeddings = embeddings.EmbeddingsResource(self)
+        self.files = files.FilesResource(self)
+        self.fine_tune = fine_tune.FineTuneResource(self)
+        self.images = images.ImagesResource(self)
+        self.models = models.ModelsResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
         self.with_streaming_response = TogetherWithStreamedResponse(self)
 
@@ -304,13 +305,13 @@ class Together(SyncAPIClient):
 
 
 class AsyncTogether(AsyncAPIClient):
-    chat: resources.AsyncChatResource
-    completions: resources.AsyncCompletionsResource
-    embeddings: resources.AsyncEmbeddingsResource
-    files: resources.AsyncFilesResource
-    fine_tune: resources.AsyncFineTuneResource
-    images: resources.AsyncImagesResource
-    models: resources.AsyncModelsResource
+    chat: chat.AsyncChatResource
+    completions: completions.AsyncCompletionsResource
+    embeddings: embeddings.AsyncEmbeddingsResource
+    files: files.AsyncFilesResource
+    fine_tune: fine_tune.AsyncFineTuneResource
+    images: images.AsyncImagesResource
+    models: models.AsyncModelsResource
     with_raw_response: AsyncTogetherWithRawResponse
     with_streaming_response: AsyncTogetherWithStreamedResponse
 
@@ -370,13 +371,13 @@ class AsyncTogether(AsyncAPIClient):
 
         self._default_stream_cls = AsyncStream
 
-        self.chat = resources.AsyncChatResource(self)
-        self.completions = resources.AsyncCompletionsResource(self)
-        self.embeddings = resources.AsyncEmbeddingsResource(self)
-        self.files = resources.AsyncFilesResource(self)
-        self.fine_tune = resources.AsyncFineTuneResource(self)
-        self.images = resources.AsyncImagesResource(self)
-        self.models = resources.AsyncModelsResource(self)
+        self.chat = chat.AsyncChatResource(self)
+        self.completions = completions.AsyncCompletionsResource(self)
+        self.embeddings = embeddings.AsyncEmbeddingsResource(self)
+        self.files = files.AsyncFilesResource(self)
+        self.fine_tune = fine_tune.AsyncFineTuneResource(self)
+        self.images = images.AsyncImagesResource(self)
+        self.models = models.AsyncModelsResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
 
@@ -549,13 +550,13 @@ class AsyncTogether(AsyncAPIClient):
 
 class TogetherWithRawResponse:
     def __init__(self, client: Together) -> None:
-        self.chat = resources.ChatResourceWithRawResponse(client.chat)
-        self.completions = resources.CompletionsResourceWithRawResponse(client.completions)
-        self.embeddings = resources.EmbeddingsResourceWithRawResponse(client.embeddings)
-        self.files = resources.FilesResourceWithRawResponse(client.files)
-        self.fine_tune = resources.FineTuneResourceWithRawResponse(client.fine_tune)
-        self.images = resources.ImagesResourceWithRawResponse(client.images)
-        self.models = resources.ModelsResourceWithRawResponse(client.models)
+        self.chat = chat.ChatResourceWithRawResponse(client.chat)
+        self.completions = completions.CompletionsResourceWithRawResponse(client.completions)
+        self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
+        self.files = files.FilesResourceWithRawResponse(client.files)
+        self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
+        self.images = images.ImagesResourceWithRawResponse(client.images)
+        self.models = models.ModelsResourceWithRawResponse(client.models)
 
         self.rerank = to_raw_response_wrapper(
             client.rerank,
@@ -564,13 +565,13 @@ class TogetherWithRawResponse:
 
 class AsyncTogetherWithRawResponse:
     def __init__(self, client: AsyncTogether) -> None:
-        self.chat = resources.AsyncChatResourceWithRawResponse(client.chat)
-        self.completions = resources.AsyncCompletionsResourceWithRawResponse(client.completions)
-        self.embeddings = resources.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
-        self.files = resources.AsyncFilesResourceWithRawResponse(client.files)
-        self.fine_tune = resources.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
-        self.images = resources.AsyncImagesResourceWithRawResponse(client.images)
-        self.models = resources.AsyncModelsResourceWithRawResponse(client.models)
+        self.chat = chat.AsyncChatResourceWithRawResponse(client.chat)
+        self.completions = completions.AsyncCompletionsResourceWithRawResponse(client.completions)
+        self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
+        self.files = files.AsyncFilesResourceWithRawResponse(client.files)
+        self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
+        self.images = images.AsyncImagesResourceWithRawResponse(client.images)
+        self.models = models.AsyncModelsResourceWithRawResponse(client.models)
 
         self.rerank = async_to_raw_response_wrapper(
             client.rerank,
@@ -579,13 +580,13 @@ class AsyncTogetherWithRawResponse:
 
 class TogetherWithStreamedResponse:
     def __init__(self, client: Together) -> None:
-        self.chat = resources.ChatResourceWithStreamingResponse(client.chat)
-        self.completions = resources.CompletionsResourceWithStreamingResponse(client.completions)
-        self.embeddings = resources.EmbeddingsResourceWithStreamingResponse(client.embeddings)
-        self.files = resources.FilesResourceWithStreamingResponse(client.files)
-        self.fine_tune = resources.FineTuneResourceWithStreamingResponse(client.fine_tune)
-        self.images = resources.ImagesResourceWithStreamingResponse(client.images)
-        self.models = resources.ModelsResourceWithStreamingResponse(client.models)
+        self.chat = chat.ChatResourceWithStreamingResponse(client.chat)
+        self.completions = completions.CompletionsResourceWithStreamingResponse(client.completions)
+        self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
+        self.files = files.FilesResourceWithStreamingResponse(client.files)
+        self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.images = images.ImagesResourceWithStreamingResponse(client.images)
+        self.models = models.ModelsResourceWithStreamingResponse(client.models)
 
         self.rerank = to_streamed_response_wrapper(
             client.rerank,
@@ -594,13 +595,13 @@ class TogetherWithStreamedResponse:
 
 class AsyncTogetherWithStreamedResponse:
     def __init__(self, client: AsyncTogether) -> None:
-        self.chat = resources.AsyncChatResourceWithStreamingResponse(client.chat)
-        self.completions = resources.AsyncCompletionsResourceWithStreamingResponse(client.completions)
-        self.embeddings = resources.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
-        self.files = resources.AsyncFilesResourceWithStreamingResponse(client.files)
-        self.fine_tune = resources.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
-        self.images = resources.AsyncImagesResourceWithStreamingResponse(client.images)
-        self.models = resources.AsyncModelsResourceWithStreamingResponse(client.models)
+        self.chat = chat.AsyncChatResourceWithStreamingResponse(client.chat)
+        self.completions = completions.AsyncCompletionsResourceWithStreamingResponse(client.completions)
+        self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
+        self.files = files.AsyncFilesResourceWithStreamingResponse(client.files)
+        self.fine_tune = fine_tune.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
+        self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
 
         self.rerank = async_to_streamed_response_wrapper(
             client.rerank,
