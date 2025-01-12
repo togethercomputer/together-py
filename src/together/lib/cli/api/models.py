@@ -1,15 +1,15 @@
-from typing import Any, List
 from textwrap import wrap
 
 import click
 from tabulate import tabulate
 
 from together import Together
+from together.types.models import ModelObject
 
 
 @click.group()
 @click.pass_context
-def models(_ctx: click.Context) -> None:
+def models(ctx: click.Context) -> None:
     """Models API commands"""
     pass
 
@@ -22,8 +22,9 @@ def list(ctx: click.Context) -> None:
 
     response = client.models.list()
 
-    display_list: List[dict[str, Any]] = []
+    display_list = []
 
+    model: ModelObject
     for model in response:
         display_list.append(
             {
@@ -33,8 +34,8 @@ def list(ctx: click.Context) -> None:
                 "Type": model.type,
                 "Context Length": model.context_length,
                 "License": "\n".join(wrap(model.license or "", width=30)),
-                "Input per 1M token": model.pricing.input if model.pricing else None,
-                "Output per 1M token": model.pricing.output if model.pricing else None,
+                "Input per 1M token": model.pricing.input,
+                "Output per 1M token": model.pricing.output,
             }
         )
 
