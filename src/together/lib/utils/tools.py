@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import os
 import logging
+import os
 from datetime import datetime
+
 
 logger = logging.getLogger("together")
 
