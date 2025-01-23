@@ -36,7 +36,7 @@ from ._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .resources import files, images, models, fine_tune, embeddings, completions
+from .resources import audio, files, images, models, fine_tune, embeddings, completions
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -67,6 +67,7 @@ class Together(SyncAPIClient):
     files: files.FilesResource
     fine_tune: fine_tune.FineTuneResource
     images: images.ImagesResource
+    audio: audio.AudioResource
     models: models.ModelsResource
     with_raw_response: TogetherWithRawResponse
     with_streaming_response: TogetherWithStreamedResponse
@@ -133,6 +134,7 @@ class Together(SyncAPIClient):
         self.files = files.FilesResource(self)
         self.fine_tune = fine_tune.FineTuneResource(self)
         self.images = images.ImagesResource(self)
+        self.audio = audio.AudioResource(self)
         self.models = models.ModelsResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
         self.with_streaming_response = TogetherWithStreamedResponse(self)
@@ -311,6 +313,7 @@ class AsyncTogether(AsyncAPIClient):
     files: files.AsyncFilesResource
     fine_tune: fine_tune.AsyncFineTuneResource
     images: images.AsyncImagesResource
+    audio: audio.AsyncAudioResource
     models: models.AsyncModelsResource
     with_raw_response: AsyncTogetherWithRawResponse
     with_streaming_response: AsyncTogetherWithStreamedResponse
@@ -377,6 +380,7 @@ class AsyncTogether(AsyncAPIClient):
         self.files = files.AsyncFilesResource(self)
         self.fine_tune = fine_tune.AsyncFineTuneResource(self)
         self.images = images.AsyncImagesResource(self)
+        self.audio = audio.AsyncAudioResource(self)
         self.models = models.AsyncModelsResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
@@ -556,6 +560,7 @@ class TogetherWithRawResponse:
         self.files = files.FilesResourceWithRawResponse(client.files)
         self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
         self.images = images.ImagesResourceWithRawResponse(client.images)
+        self.audio = audio.AudioResourceWithRawResponse(client.audio)
         self.models = models.ModelsResourceWithRawResponse(client.models)
 
         self.rerank = to_raw_response_wrapper(
@@ -571,6 +576,7 @@ class AsyncTogetherWithRawResponse:
         self.files = files.AsyncFilesResourceWithRawResponse(client.files)
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
+        self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
         self.models = models.AsyncModelsResourceWithRawResponse(client.models)
 
         self.rerank = async_to_raw_response_wrapper(
@@ -586,6 +592,7 @@ class TogetherWithStreamedResponse:
         self.files = files.FilesResourceWithStreamingResponse(client.files)
         self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
+        self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
         self.models = models.ModelsResourceWithStreamingResponse(client.models)
 
         self.rerank = to_streamed_response_wrapper(
@@ -601,6 +608,7 @@ class AsyncTogetherWithStreamedResponse:
         self.files = files.AsyncFilesResourceWithStreamingResponse(client.files)
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
         self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
+        self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
         self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
 
         self.rerank = async_to_streamed_response_wrapper(

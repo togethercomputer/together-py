@@ -98,6 +98,18 @@ Methods:
 
 - <code title="post /images/generations">client.images.<a href="./src/together/resources/images.py">create</a>(\*\*<a href="src/together/types/image_create_params.py">params</a>) -> <a href="./src/together/types/image_file.py">ImageFile</a></code>
 
+# Audio
+
+Types:
+
+```python
+from together.types import AudioFile
+```
+
+Methods:
+
+- <code title="post /audio/speech">client.audio.<a href="./src/together/resources/audio.py">create</a>(\*\*<a href="src/together/types/audio_create_params.py">params</a>) -> BinaryAPIResponse</code>
+
 # Models
 
 Types:
