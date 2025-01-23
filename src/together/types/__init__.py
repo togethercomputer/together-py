@@ -13,6 +13,7 @@ from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .rerank_response import RerankResponse as RerankResponse
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
 from .file_list_response import FileListResponse as FileListResponse
+from .audio_create_params import AudioCreateParams as AudioCreateParams
 from .image_create_params import ImageCreateParams as ImageCreateParams
 from .model_list_response import ModelListResponse as ModelListResponse
 from .client_rerank_params import ClientRerankParams as ClientRerankParams
