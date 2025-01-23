@@ -8,6 +8,14 @@ from .chat import (
     ChatResourceWithStreamingResponse,
     AsyncChatResourceWithStreamingResponse,
 )
+from .audio import (
+    AudioResource,
+    AsyncAudioResource,
+    AudioResourceWithRawResponse,
+    AsyncAudioResourceWithRawResponse,
+    AudioResourceWithStreamingResponse,
+    AsyncAudioResourceWithStreamingResponse,
+)
 from .files import (
     FilesResource,
     AsyncFilesResource,
@@ -94,6 +102,12 @@ __all__ = [
     "AsyncImagesResourceWithRawResponse",
     "ImagesResourceWithStreamingResponse",
     "AsyncImagesResourceWithStreamingResponse",
+    "AudioResource",
+    "AsyncAudioResource",
+    "AudioResourceWithRawResponse",
+    "AsyncAudioResourceWithRawResponse",
+    "AudioResourceWithStreamingResponse",
+    "AsyncAudioResourceWithStreamingResponse",
     "ModelsResource",
     "AsyncModelsResource",
     "ModelsResourceWithRawResponse",
