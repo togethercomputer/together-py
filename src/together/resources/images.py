@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Iterable
 from typing_extensions import Literal
 
 import httpx
@@ -59,7 +59,9 @@ class ImagesResource(SyncAPIResource):
             str,
         ],
         prompt: str,
+        guidance: float | NotGiven = NOT_GIVEN,
         height: int | NotGiven = NOT_GIVEN,
+        image_loras: Iterable[image_create_params.ImageLora] | NotGiven = NOT_GIVEN,
         image_url: str | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         negative_prompt: str | NotGiven = NOT_GIVEN,
@@ -84,7 +86,14 @@ class ImagesResource(SyncAPIResource):
 
           prompt: A description of the desired images. Maximum length varies by model.
 
+          guidance: Adjusts the alignment of the generated image with the input prompt. Higher
+              values (e.g., 8-10) make the output more faithful to the prompt, while lower
+              values (e.g., 1-5) encourage more creative freedom.
+
           height: Height of the image to generate in number of pixels.
+
+          image_loras: An array of objects that define LoRAs (Low-Rank Adaptations) to influence the
+              generated image.
 
           image_url: URL of an image to use for image models that support it.
 
@@ -114,7 +123,9 @@ class ImagesResource(SyncAPIResource):
                 {
                     "model": model,
                     "prompt": prompt,
+                    "guidance": guidance,
                     "height": height,
+                    "image_loras": image_loras,
                     "image_url": image_url,
                     "n": n,
                     "negative_prompt": negative_prompt,
@@ -164,7 +175,9 @@ class AsyncImagesResource(AsyncAPIResource):
             str,
         ],
         prompt: str,
+        guidance: float | NotGiven = NOT_GIVEN,
         height: int | NotGiven = NOT_GIVEN,
+        image_loras: Iterable[image_create_params.ImageLora] | NotGiven = NOT_GIVEN,
         image_url: str | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         negative_prompt: str | NotGiven = NOT_GIVEN,
@@ -189,7 +202,14 @@ class AsyncImagesResource(AsyncAPIResource):
 
           prompt: A description of the desired images. Maximum length varies by model.
 
+          guidance: Adjusts the alignment of the generated image with the input prompt. Higher
+              values (e.g., 8-10) make the output more faithful to the prompt, while lower
+              values (e.g., 1-5) encourage more creative freedom.
+
           height: Height of the image to generate in number of pixels.
+
+          image_loras: An array of objects that define LoRAs (Low-Rank Adaptations) to influence the
+              generated image.
 
           image_url: URL of an image to use for image models that support it.
 
@@ -219,7 +239,9 @@ class AsyncImagesResource(AsyncAPIResource):
                 {
                     "model": model,
                     "prompt": prompt,
+                    "guidance": guidance,
                     "height": height,
+                    "image_loras": image_loras,
                     "image_url": image_url,
                     "n": n,
                     "negative_prompt": negative_prompt,
