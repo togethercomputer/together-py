@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["ImageCreateParams"]
+__all__ = ["ImageCreateParams", "ImageLora"]
 
 
 class ImageCreateParams(TypedDict, total=False):
@@ -27,8 +27,21 @@ class ImageCreateParams(TypedDict, total=False):
     prompt: Required[str]
     """A description of the desired images. Maximum length varies by model."""
 
+    guidance: float
+    """Adjusts the alignment of the generated image with the input prompt.
+
+    Higher values (e.g., 8-10) make the output more faithful to the prompt, while
+    lower values (e.g., 1-5) encourage more creative freedom.
+    """
+
     height: int
     """Height of the image to generate in number of pixels."""
+
+    image_loras: Iterable[ImageLora]
+    """
+    An array of objects that define LoRAs (Low-Rank Adaptations) to influence the
+    generated image.
+    """
 
     image_url: str
     """URL of an image to use for image models that support it."""
@@ -50,3 +63,14 @@ class ImageCreateParams(TypedDict, total=False):
 
     width: int
     """Width of the image to generate in number of pixels."""
+
+
+class ImageLora(TypedDict, total=False):
+    path: Required[str]
+    """The URL of the LoRA to apply (e.g.
+
+    https://huggingface.co/strangerzonehf/Flux-Midjourney-Mix2-LoRA).
+    """
+
+    scale: Required[float]
+    """The strength of the LoRA's influence. Most LoRA's recommend a value of 1."""
