@@ -63,11 +63,12 @@ def generate(
     )
 
     for i, choice in enumerate(response.data):
-        with open(f"{output}/{prefix}{choice.index}.png", "wb") as f:
-            f.write(base64.b64decode(choice.b64_json))
+        if choice.b64_json:
+            with open(f"{output}/{prefix}{choice.index}.png", "wb") as f:
+                f.write(base64.b64decode(choice.b64_json))
 
-        click.echo(f"Image [{i + 1}/{len(response.data)}] saved to {output}/{prefix}{choice.index}.png")
+            click.echo(f"Image [{i + 1}/{len(response.data)}] saved to {output}/{prefix}{choice.index}.png")
 
-        if not no_show:
-            image = Image.open(f"{output}/{prefix}{choice.index}.png")
-            image.show()
+            if not no_show:
+                image = Image.open(f"{output}/{prefix}{choice.index}.png")
+                image.show()
