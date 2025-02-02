@@ -65,6 +65,7 @@ class ImagesResource(SyncAPIResource):
         image_url: str | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         negative_prompt: str | NotGiven = NOT_GIVEN,
+        output_format: Literal["jpeg", "png"] | NotGiven = NOT_GIVEN,
         response_format: Literal["base64", "url"] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         steps: int | NotGiven = NOT_GIVEN,
@@ -101,6 +102,9 @@ class ImagesResource(SyncAPIResource):
 
           negative_prompt: The prompt or prompts not to guide the image generation.
 
+          output_format: The format of the image response. Can be either be `jpeg` or `png`. Defaults to
+              `jpeg`.
+
           response_format: Format of the image response. Can be either a base64 string or a URL.
 
           seed: Seed used for generation. Can be used to reproduce image generations.
@@ -129,6 +133,7 @@ class ImagesResource(SyncAPIResource):
                     "image_url": image_url,
                     "n": n,
                     "negative_prompt": negative_prompt,
+                    "output_format": output_format,
                     "response_format": response_format,
                     "seed": seed,
                     "steps": steps,
@@ -181,6 +186,7 @@ class AsyncImagesResource(AsyncAPIResource):
         image_url: str | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         negative_prompt: str | NotGiven = NOT_GIVEN,
+        output_format: Literal["jpeg", "png"] | NotGiven = NOT_GIVEN,
         response_format: Literal["base64", "url"] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
         steps: int | NotGiven = NOT_GIVEN,
@@ -217,6 +223,9 @@ class AsyncImagesResource(AsyncAPIResource):
 
           negative_prompt: The prompt or prompts not to guide the image generation.
 
+          output_format: The format of the image response. Can be either be `jpeg` or `png`. Defaults to
+              `jpeg`.
+
           response_format: Format of the image response. Can be either a base64 string or a URL.
 
           seed: Seed used for generation. Can be used to reproduce image generations.
@@ -245,6 +254,7 @@ class AsyncImagesResource(AsyncAPIResource):
                     "image_url": image_url,
                     "n": n,
                     "negative_prompt": negative_prompt,
+                    "output_format": output_format,
                     "response_format": response_format,
                     "seed": seed,
                     "steps": steps,
