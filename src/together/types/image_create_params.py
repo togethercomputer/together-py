@@ -52,6 +52,12 @@ class ImageCreateParams(TypedDict, total=False):
     negative_prompt: str
     """The prompt or prompts not to guide the image generation."""
 
+    output_format: Literal["jpeg", "png"]
+    """The format of the image response.
+
+    Can be either be `jpeg` or `png`. Defaults to `jpeg`.
+    """
+
     response_format: Literal["base64", "url"]
     """Format of the image response. Can be either a base64 string or a URL."""
 
