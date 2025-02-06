@@ -40,6 +40,7 @@ class TestCompletions:
                 }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            context_length_exceeded_behavior="truncate",
             echo=True,
             frequency_penalty=0,
             function_call="none",
@@ -139,6 +140,7 @@ class TestCompletions:
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
+            context_length_exceeded_behavior="truncate",
             echo=True,
             frequency_penalty=0,
             function_call="none",
@@ -240,6 +242,7 @@ class TestAsyncCompletions:
                 }
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            context_length_exceeded_behavior="truncate",
             echo=True,
             frequency_penalty=0,
             function_call="none",
@@ -339,6 +342,7 @@ class TestAsyncCompletions:
             ],
             model="Qwen/Qwen2.5-72B-Instruct-Turbo",
             stream=True,
+            context_length_exceeded_behavior="truncate",
             echo=True,
             frequency_penalty=0,
             function_call="none",
