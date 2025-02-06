@@ -66,6 +66,7 @@ class CompletionsResource(SyncAPIResource):
             ],
             str,
         ],
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -102,6 +103,11 @@ class CompletionsResource(SyncAPIResource):
           model: The name of the model to query.
 
               [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
+          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', API will return 400 with appropriate
+              error message. When set to 'truncate', override the max_tokens with maximum
+              context length of the model.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
@@ -192,6 +198,7 @@ class CompletionsResource(SyncAPIResource):
             str,
         ],
         stream: Literal[True],
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -231,6 +238,11 @@ class CompletionsResource(SyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', API will return 400 with appropriate
+              error message. When set to 'truncate', override the max_tokens with maximum
+              context length of the model.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
@@ -317,6 +329,7 @@ class CompletionsResource(SyncAPIResource):
             str,
         ],
         stream: bool,
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -356,6 +369,11 @@ class CompletionsResource(SyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', API will return 400 with appropriate
+              error message. When set to 'truncate', override the max_tokens with maximum
+              context length of the model.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
@@ -441,6 +459,7 @@ class CompletionsResource(SyncAPIResource):
             ],
             str,
         ],
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -474,6 +493,7 @@ class CompletionsResource(SyncAPIResource):
                 {
                     "messages": messages,
                     "model": model,
+                    "context_length_exceeded_behavior": context_length_exceeded_behavior,
                     "echo": echo,
                     "frequency_penalty": frequency_penalty,
                     "function_call": function_call,
@@ -541,6 +561,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
             ],
             str,
         ],
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -577,6 +598,11 @@ class AsyncCompletionsResource(AsyncAPIResource):
           model: The name of the model to query.
 
               [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
+          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', API will return 400 with appropriate
+              error message. When set to 'truncate', override the max_tokens with maximum
+              context length of the model.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
@@ -667,6 +693,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
             str,
         ],
         stream: Literal[True],
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -706,6 +733,11 @@ class AsyncCompletionsResource(AsyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', API will return 400 with appropriate
+              error message. When set to 'truncate', override the max_tokens with maximum
+              context length of the model.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
@@ -792,6 +824,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
             str,
         ],
         stream: bool,
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -831,6 +864,11 @@ class AsyncCompletionsResource(AsyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', API will return 400 with appropriate
+              error message. When set to 'truncate', override the max_tokens with maximum
+              context length of the model.
 
           echo: If true, the response will contain the prompt. Can be used with `logprobs` to
               return prompt logprobs.
@@ -916,6 +954,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
             ],
             str,
         ],
+        context_length_exceeded_behavior: Literal["truncate", "error"] | NotGiven = NOT_GIVEN,
         echo: bool | NotGiven = NOT_GIVEN,
         frequency_penalty: float | NotGiven = NOT_GIVEN,
         function_call: completion_create_params.FunctionCall | NotGiven = NOT_GIVEN,
@@ -949,6 +988,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
                 {
                     "messages": messages,
                     "model": model,
+                    "context_length_exceeded_behavior": context_length_exceeded_behavior,
                     "echo": echo,
                     "frequency_penalty": frequency_penalty,
                     "function_call": function_call,
