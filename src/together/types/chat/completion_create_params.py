@@ -44,6 +44,14 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
     """
 
+    context_length_exceeded_behavior: Literal["truncate", "error"]
+    """
+    Defined the behavior of the API when max_tokens exceed the maximum context
+    length of the model. When set to 'error', API will return 400 with appropriate
+    error message. When set to 'truncate', override the max_tokens with maximum
+    context length of the model.
+    """
+
     echo: bool
     """If true, the response will contain the prompt.
 
