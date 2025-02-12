@@ -23,6 +23,7 @@ from pydantic import ValidationError
 
 from together import Together, AsyncTogether, APIResponseValidationError
 from together._types import Omit
+from together._utils import maybe_transform
 from together._models import BaseModel, FinalRequestOptions
 from together._constants import RAW_RESPONSE_HEADER
 from together._streaming import Stream, AsyncStream
@@ -33,6 +34,7 @@ from together._base_client import (
     BaseClient,
     make_request_options,
 )
+from together.types.chat.completion_create_params import CompletionCreateParamsNonStreaming
 
 from .utils import update_env
 
@@ -731,14 +733,17 @@ class TestTogether:
                 "/chat/completions",
                 body=cast(
                     object,
-                    dict(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": "Say this is a test",
-                            }
-                        ],
-                        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    maybe_transform(
+                        dict(
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": "Say this is a test",
+                                }
+                            ],
+                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                        ),
+                        CompletionCreateParamsNonStreaming,
                     ),
                 ),
                 cast_to=httpx.Response,
@@ -757,14 +762,17 @@ class TestTogether:
                 "/chat/completions",
                 body=cast(
                     object,
-                    dict(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": "Say this is a test",
-                            }
-                        ],
-                        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    maybe_transform(
+                        dict(
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": "Say this is a test",
+                                }
+                            ],
+                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                        ),
+                        CompletionCreateParamsNonStreaming,
                     ),
                 ),
                 cast_to=httpx.Response,
@@ -1567,14 +1575,17 @@ class TestAsyncTogether:
                 "/chat/completions",
                 body=cast(
                     object,
-                    dict(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": "Say this is a test",
-                            }
-                        ],
-                        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    maybe_transform(
+                        dict(
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": "Say this is a test",
+                                }
+                            ],
+                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                        ),
+                        CompletionCreateParamsNonStreaming,
                     ),
                 ),
                 cast_to=httpx.Response,
@@ -1593,14 +1604,17 @@ class TestAsyncTogether:
                 "/chat/completions",
                 body=cast(
                     object,
-                    dict(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": "Say this is a test",
-                            }
-                        ],
-                        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    maybe_transform(
+                        dict(
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": "Say this is a test",
+                                }
+                            ],
+                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+                        ),
+                        CompletionCreateParamsNonStreaming,
                     ),
                 ),
                 cast_to=httpx.Response,
