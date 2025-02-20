@@ -104,8 +104,8 @@ class CompletionsResource(SyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Determines the number of most likely tokens to return at each token position log
-              probabilities to return.
+          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
+              returned. Log probabilities help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -219,8 +219,8 @@ class CompletionsResource(SyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Determines the number of most likely tokens to return at each token position log
-              probabilities to return.
+          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
+              returned. Log probabilities help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -330,8 +330,8 @@ class CompletionsResource(SyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Determines the number of most likely tokens to return at each token position log
-              probabilities to return.
+          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
+              returned. Log probabilities help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -528,8 +528,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Determines the number of most likely tokens to return at each token position log
-              probabilities to return.
+          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
+              returned. Log probabilities help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -643,8 +643,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Determines the number of most likely tokens to return at each token position log
-              probabilities to return.
+          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
+              returned. Log probabilities help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -754,8 +754,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Determines the number of most likely tokens to return at each token position log
-              probabilities to return.
+          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
+              returned. Log probabilities help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
