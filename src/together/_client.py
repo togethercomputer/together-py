@@ -98,7 +98,7 @@ class Together(SyncAPIClient):
         # part of our public interface in the future.
         _strict_response_validation: bool = False,
     ) -> None:
-        """Construct a new synchronous together client instance.
+        """Construct a new synchronous Together client instance.
 
         This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
@@ -344,7 +344,7 @@ class AsyncTogether(AsyncAPIClient):
         # part of our public interface in the future.
         _strict_response_validation: bool = False,
     ) -> None:
-        """Construct a new async together client instance.
+        """Construct a new async AsyncTogether client instance.
 
         This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
