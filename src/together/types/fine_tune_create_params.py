@@ -23,10 +23,16 @@ class FineTuneCreateParams(TypedDict, total=False):
     """File-ID of a training file uploaded to the Together API"""
 
     batch_size: int
-    """Batch size for fine-tuning"""
+    """
+    Number of training examples processed together (larger batches use more memory
+    but may train faster)
+    """
 
     learning_rate: float
-    """Learning rate multiplier to use for training"""
+    """
+    Controls how quickly the model adapts to new information (too high may cause
+    instability, too low may slow convergence)
+    """
 
     lr_scheduler: LrScheduler
 
@@ -34,10 +40,13 @@ class FineTuneCreateParams(TypedDict, total=False):
     """Max gradient norm to be used for gradient clipping. Set to 0 to disable."""
 
     n_checkpoints: int
-    """Number of checkpoints to save during fine-tuning"""
+    """Number of intermediate model versions saved during training for evaluation"""
 
     n_epochs: int
-    """Number of epochs for fine-tuning"""
+    """
+    Number of complete passes through the training dataset (higher values may
+    improve results but increase cost and risk of overfitting)
+    """
 
     n_evals: int
     """Number of evaluations to be run on a given validation set during training"""
@@ -57,7 +66,7 @@ class FineTuneCreateParams(TypedDict, total=False):
     """File-ID of a validation file uploaded to the Together API"""
 
     wandb_api_key: str
-    """API key for Weights & Biases integration"""
+    """Integration key for tracking experiments and model metrics on W&B platform"""
 
     wandb_base_url: str
     """The base URL of a dedicated Weights & Biases instance."""
