@@ -87,15 +87,18 @@ class FineTuneResource(SyncAPIResource):
 
           training_file: File-ID of a training file uploaded to the Together API
 
-          batch_size: Batch size for fine-tuning
+          batch_size: Number of training examples processed together (larger batches use more memory
+              but may train faster)
 
-          learning_rate: Learning rate multiplier to use for training
+          learning_rate: Controls how quickly the model adapts to new information (too high may cause
+              instability, too low may slow convergence)
 
           max_grad_norm: Max gradient norm to be used for gradient clipping. Set to 0 to disable.
 
-          n_checkpoints: Number of checkpoints to save during fine-tuning
+          n_checkpoints: Number of intermediate model versions saved during training for evaluation
 
-          n_epochs: Number of epochs for fine-tuning
+          n_epochs: Number of complete passes through the training dataset (higher values may
+              improve results but increase cost and risk of overfitting)
 
           n_evals: Number of evaluations to be run on a given validation set during training
 
@@ -106,7 +109,7 @@ class FineTuneResource(SyncAPIResource):
 
           validation_file: File-ID of a validation file uploaded to the Together API
 
-          wandb_api_key: API key for Weights & Biases integration
+          wandb_api_key: Integration key for tracking experiments and model metrics on W&B platform
 
           wandb_base_url: The base URL of a dedicated Weights & Biases instance.
 
@@ -393,15 +396,18 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           training_file: File-ID of a training file uploaded to the Together API
 
-          batch_size: Batch size for fine-tuning
+          batch_size: Number of training examples processed together (larger batches use more memory
+              but may train faster)
 
-          learning_rate: Learning rate multiplier to use for training
+          learning_rate: Controls how quickly the model adapts to new information (too high may cause
+              instability, too low may slow convergence)
 
           max_grad_norm: Max gradient norm to be used for gradient clipping. Set to 0 to disable.
 
-          n_checkpoints: Number of checkpoints to save during fine-tuning
+          n_checkpoints: Number of intermediate model versions saved during training for evaluation
 
-          n_epochs: Number of epochs for fine-tuning
+          n_epochs: Number of complete passes through the training dataset (higher values may
+              improve results but increase cost and risk of overfitting)
 
           n_evals: Number of evaluations to be run on a given validation set during training
 
@@ -412,7 +418,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           validation_file: File-ID of a validation file uploaded to the Together API
 
-          wandb_api_key: API key for Weights & Biases integration
+          wandb_api_key: Integration key for tracking experiments and model metrics on W&B platform
 
           wandb_base_url: The base URL of a dedicated Weights & Biases instance.
 
