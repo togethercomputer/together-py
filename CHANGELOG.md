@@ -1,5 +1,103 @@
 # Changelog
 
+## 0.1.0-alpha.3 (2025-03-05)
+
+Full Changelog: [v0.1.0-alpha.2...v0.1.0-alpha.3](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.2...v0.1.0-alpha.3)
+
+### Features
+
+* **api:** add audio create method ([#92](https://github.com/togethercomputer/together-py/issues/92)) ([bcf3aa1](https://github.com/togethercomputer/together-py/commit/bcf3aa18688ad9ea36fea2bcfe067db01289120a))
+* **api:** add models for chat completion structured message types ([#75](https://github.com/togethercomputer/together-py/issues/75)) ([f2ae323](https://github.com/togethercomputer/together-py/commit/f2ae3239bb6bf699fc065d071a1c5ba87db5f88a))
+* **api:** api update ([#101](https://github.com/togethercomputer/together-py/issues/101)) ([2bd8e65](https://github.com/togethercomputer/together-py/commit/2bd8e65544d59c69a80bafe169eb04897d71245a))
+* **api:** api update ([#105](https://github.com/togethercomputer/together-py/issues/105)) ([4eef0b2](https://github.com/togethercomputer/together-py/commit/4eef0b218aba9fc9256399b42e176701b5ff60d5))
+* **api:** api update ([#108](https://github.com/togethercomputer/together-py/issues/108)) ([b601cca](https://github.com/togethercomputer/together-py/commit/b601cca20a962ed13d81edd421fc828614e2a10d))
+* **api:** api update ([#114](https://github.com/togethercomputer/together-py/issues/114)) ([6f01742](https://github.com/togethercomputer/together-py/commit/6f0174242cabac214cce8dd09002825bcb02d1dd))
+* **api:** api update ([#45](https://github.com/togethercomputer/together-py/issues/45)) ([d387d6a](https://github.com/togethercomputer/together-py/commit/d387d6abb8c674927598309d57802d97c7c00b89))
+* **api:** api update ([#46](https://github.com/togethercomputer/together-py/issues/46)) ([def7699](https://github.com/togethercomputer/together-py/commit/def76990bafc2d34d37c1e4e25895593945d0822))
+* **api:** api update ([#47](https://github.com/togethercomputer/together-py/issues/47)) ([d02eebd](https://github.com/togethercomputer/together-py/commit/d02eebd261e87bfc4e1de13aa865290935976fd8))
+* **api:** api update ([#48](https://github.com/togethercomputer/together-py/issues/48)) ([3653de7](https://github.com/togethercomputer/together-py/commit/3653de7c2cee68ba4028ae4dd321cfae7627865c))
+* **api:** api update ([#49](https://github.com/togethercomputer/together-py/issues/49)) ([7a7f47e](https://github.com/togethercomputer/together-py/commit/7a7f47e3cf9e72a4889bb08ff754aaf98c8759f0))
+* **api:** api update ([#50](https://github.com/togethercomputer/together-py/issues/50)) ([15d98b6](https://github.com/togethercomputer/together-py/commit/15d98b6a3f41077e6416acf27a7c533efdc7d70e))
+* **api:** api update ([#51](https://github.com/togethercomputer/together-py/issues/51)) ([206d67c](https://github.com/togethercomputer/together-py/commit/206d67c4776b0edeead915d0c1194deef05553b4))
+* **api:** api update ([#57](https://github.com/togethercomputer/together-py/issues/57)) ([5fa99e8](https://github.com/togethercomputer/together-py/commit/5fa99e8d5d17833b48a2483c1ef8b5adeefb7527))
+* **api:** api update ([#60](https://github.com/togethercomputer/together-py/issues/60)) ([1ee28e1](https://github.com/togethercomputer/together-py/commit/1ee28e1e767b72b073196cee1231c2a582a7009a))
+* **api:** api update ([#61](https://github.com/togethercomputer/together-py/issues/61)) ([b330e50](https://github.com/togethercomputer/together-py/commit/b330e50d40f30e1ffb3293b3bb602664085a97ed))
+* **api:** api update ([#65](https://github.com/togethercomputer/together-py/issues/65)) ([db5d526](https://github.com/togethercomputer/together-py/commit/db5d526fff7953cb40947ec820b68a44463c5662))
+* **api:** api update ([#66](https://github.com/togethercomputer/together-py/issues/66)) ([a7f9670](https://github.com/togethercomputer/together-py/commit/a7f967053aa1c9095b6d8e019797d0e8ea167471))
+* **api:** api update ([#67](https://github.com/togethercomputer/together-py/issues/67)) ([cb2be54](https://github.com/togethercomputer/together-py/commit/cb2be54bb0060f6139dabb9a10a72e76ac042263))
+* **api:** api update ([#95](https://github.com/togethercomputer/together-py/issues/95)) ([f98a54f](https://github.com/togethercomputer/together-py/commit/f98a54ff0ed5e74333c07fa06ae3276e5278fbb9))
+* **api:** api update ([#97](https://github.com/togethercomputer/together-py/issues/97)) ([41f9f89](https://github.com/togethercomputer/together-py/commit/41f9f8968a4f8bba01881d05b88b894328df90af))
+* **api:** OpenAPI spec update via Stainless API ([#26](https://github.com/togethercomputer/together-py/issues/26)) ([cbbd44c](https://github.com/togethercomputer/together-py/commit/cbbd44ce8dae1d12129ce5703f01884ff56e46a1))
+* **api:** OpenAPI spec update via Stainless API ([#31](https://github.com/togethercomputer/together-py/issues/31)) ([87136bb](https://github.com/togethercomputer/together-py/commit/87136bb2d9a11485e587aa6265b11cd407a2b213))
+* **api:** OpenAPI spec update via Stainless API ([#32](https://github.com/togethercomputer/together-py/issues/32)) ([8cb6e69](https://github.com/togethercomputer/together-py/commit/8cb6e69d8f294695c4ad8847b24443c59c327bb2))
+* **api:** OpenAPI spec update via Stainless API ([#33](https://github.com/togethercomputer/together-py/issues/33)) ([c4e5afb](https://github.com/togethercomputer/together-py/commit/c4e5afbe89e938a0ead46fd1b309e078bb879c33))
+* **api:** OpenAPI spec update via Stainless API ([#35](https://github.com/togethercomputer/together-py/issues/35)) ([3d1993e](https://github.com/togethercomputer/together-py/commit/3d1993ed5e0f9b540d0e4007a505948eab863a77))
+* **api:** OpenAPI spec update via Stainless API ([#39](https://github.com/togethercomputer/together-py/issues/39)) ([6dd6113](https://github.com/togethercomputer/together-py/commit/6dd6113e0a6e6047a459a9ced7dfebeea9c00a10))
+* **client:** allow passing `NotGiven` for body ([#107](https://github.com/togethercomputer/together-py/issues/107)) ([8a33c2e](https://github.com/togethercomputer/together-py/commit/8a33c2eb83b37e1da3b77d1c996d856ed2501366))
+* **client:** send `X-Stainless-Read-Timeout` header ([#100](https://github.com/togethercomputer/together-py/issues/100)) ([f32ec38](https://github.com/togethercomputer/together-py/commit/f32ec387fe4aba3583d2ab56643d1db8b1becb28))
+
+
+### Bug Fixes
+
+* asyncify on non-asyncio runtimes ([#106](https://github.com/togethercomputer/together-py/issues/106)) ([573af88](https://github.com/togethercomputer/together-py/commit/573af88a8eb6e0b7b2e86e06db5edef8d5286e4a))
+* **client:** avoid OverflowError with very large retry counts ([#42](https://github.com/togethercomputer/together-py/issues/42)) ([580649d](https://github.com/togethercomputer/together-py/commit/580649d2168ed69328c33c1d5d03bb3f85ad8840))
+* **client:** compat with new httpx 0.28.0 release ([#69](https://github.com/togethercomputer/together-py/issues/69)) ([6b181ec](https://github.com/togethercomputer/together-py/commit/6b181ecf4876483e553080cb701f6f814d180a89))
+* **client:** mark some request bodies as optional ([8a33c2e](https://github.com/togethercomputer/together-py/commit/8a33c2eb83b37e1da3b77d1c996d856ed2501366))
+* **client:** only call .close() when needed ([#85](https://github.com/togethercomputer/together-py/issues/85)) ([79ef703](https://github.com/togethercomputer/together-py/commit/79ef70387b107a6ff7af73d6e773a7efcff6ff25))
+* **cli:** handle nullable choice property ([8af8258](https://github.com/togethercomputer/together-py/commit/8af825830bb45afc592089b34ff9bcf8485bbc57))
+* correctly handle deserialising `cls` fields ([#88](https://github.com/togethercomputer/together-py/issues/88)) ([dfe1abb](https://github.com/togethercomputer/together-py/commit/dfe1abb2d5bbecea63587279aa04356bb5951054))
+* **tests:** skip invalid test ([#96](https://github.com/togethercomputer/together-py/issues/96)) ([e66f177](https://github.com/togethercomputer/together-py/commit/e66f177a3f6dbd02710aae2ae9ea27e9d25bd2c7))
+
+
+### Chores
+
+* add docstrings to raw response properties ([#37](https://github.com/togethercomputer/together-py/issues/37)) ([8d8e94b](https://github.com/togethercomputer/together-py/commit/8d8e94b4f6998b1f01e9afda84f90ff19c07802f))
+* add missing isclass check ([#83](https://github.com/togethercomputer/together-py/issues/83)) ([e99d895](https://github.com/togethercomputer/together-py/commit/e99d895ffe68dedab5023ba95c715d5b68cebd47))
+* add repr to PageInfo class ([#43](https://github.com/togethercomputer/together-py/issues/43)) ([7879084](https://github.com/togethercomputer/together-py/commit/787908403f1cb0394e4b4a4f8ea86e5cb8672e1f))
+* **client:** fix parsing union responses when non-json is returned ([#28](https://github.com/togethercomputer/together-py/issues/28)) ([f748a99](https://github.com/togethercomputer/together-py/commit/f748a995b81fa2250a161e27be139cf796600700))
+* **docs:** update client docstring ([#112](https://github.com/togethercomputer/together-py/issues/112)) ([1ea62fe](https://github.com/togethercomputer/together-py/commit/1ea62fe9605f93143fbbc63e2a6ba56ed23b6e45))
+* **internal:** add support for parsing bool response content ([#41](https://github.com/togethercomputer/together-py/issues/41)) ([848cd31](https://github.com/togethercomputer/together-py/commit/848cd31a072cd8cab99ed8796aecda9787197c24))
+* **internal:** add support for TypeAliasType ([#77](https://github.com/togethercomputer/together-py/issues/77)) ([8850496](https://github.com/togethercomputer/together-py/commit/8850496bad1c864e97c6993c661bc8829c814b94))
+* **internal:** bummp ruff dependency ([#99](https://github.com/togethercomputer/together-py/issues/99)) ([c152d80](https://github.com/togethercomputer/together-py/commit/c152d805cade1e92a9bd17ac8c1d3d4d59015bfa))
+* **internal:** bump httpx dependency ([#84](https://github.com/togethercomputer/together-py/issues/84)) ([7155d20](https://github.com/togethercomputer/together-py/commit/7155d205e82c5e5f255d7435b36ecc1a31182754))
+* **internal:** bump pydantic dependency ([#72](https://github.com/togethercomputer/together-py/issues/72)) ([9266b43](https://github.com/togethercomputer/together-py/commit/9266b438f3bcd76b0821653099e0618c16ba1a5d))
+* **internal:** bump pyright ([#70](https://github.com/togethercomputer/together-py/issues/70)) ([34237b9](https://github.com/togethercomputer/together-py/commit/34237b935b82e314b19b391eb740052b9f6c3ef3))
+* **internal:** bump pyright ([#76](https://github.com/togethercomputer/together-py/issues/76)) ([b0f7cf2](https://github.com/togethercomputer/together-py/commit/b0f7cf20542a72d978f88d1c4acc8f789eed81ec))
+* **internal:** change default timeout to an int ([#98](https://github.com/togethercomputer/together-py/issues/98)) ([5e0fd91](https://github.com/togethercomputer/together-py/commit/5e0fd9103c651ba148f4dbc7997bd9d71d6ed020))
+* **internal:** codegen related update ([#113](https://github.com/togethercomputer/together-py/issues/113)) ([bbfb435](https://github.com/togethercomputer/together-py/commit/bbfb435fd81613ffd8537c88de8ff72aa3030bc8))
+* **internal:** codegen related update ([#36](https://github.com/togethercomputer/together-py/issues/36)) ([523c4d1](https://github.com/togethercomputer/together-py/commit/523c4d1e4f0885e82abb9b3e4b7e773eb39ace51))
+* **internal:** codegen related update ([#40](https://github.com/togethercomputer/together-py/issues/40)) ([40ea230](https://github.com/togethercomputer/together-py/commit/40ea2301b74e82f79293961cb0148d0c3c92db1f))
+* **internal:** codegen related update ([#62](https://github.com/togethercomputer/together-py/issues/62)) ([53019a6](https://github.com/togethercomputer/together-py/commit/53019a60a126b8f69df6b8f00cc9f2727b2b8f72))
+* **internal:** codegen related update ([#68](https://github.com/togethercomputer/together-py/issues/68)) ([5716d81](https://github.com/togethercomputer/together-py/commit/5716d8131b189d0a4f269932d1f506b6832c530b))
+* **internal:** codegen related update ([#82](https://github.com/togethercomputer/together-py/issues/82)) ([69cc9ed](https://github.com/togethercomputer/together-py/commit/69cc9edb0d4b50ce1190dabdfb222c1ff1dbcf96))
+* **internal:** codegen related update ([#87](https://github.com/togethercomputer/together-py/issues/87)) ([1ff846c](https://github.com/togethercomputer/together-py/commit/1ff846c69170e569a27ad4e561298c094ed3df98))
+* **internal:** codegen related update ([#93](https://github.com/togethercomputer/together-py/issues/93)) ([1c16d7b](https://github.com/togethercomputer/together-py/commit/1c16d7bb252c6effb8180dd4aa9b4f1edc571422))
+* **internal:** fix devcontainers setup ([#109](https://github.com/togethercomputer/together-py/issues/109)) ([df0b4c6](https://github.com/togethercomputer/together-py/commit/df0b4c6c024c142480b3366418934cd39011c6c9))
+* **internal:** fix some typos ([#81](https://github.com/togethercomputer/together-py/issues/81)) ([1bcc6f0](https://github.com/togethercomputer/together-py/commit/1bcc6f020b95152cabc45add97db2245073505eb))
+* **internal:** fix type traversing dictionary params ([#102](https://github.com/togethercomputer/together-py/issues/102)) ([ca385c7](https://github.com/togethercomputer/together-py/commit/ca385c743610da4c82b674bbfec2f820151036b9))
+* **internal:** minor formatting changes ([#94](https://github.com/togethercomputer/together-py/issues/94)) ([b66a762](https://github.com/togethercomputer/together-py/commit/b66a762419391ad07bcd4501142296641fb0e4f2))
+* **internal:** minor type handling changes ([#103](https://github.com/togethercomputer/together-py/issues/103)) ([901a1d3](https://github.com/togethercomputer/together-py/commit/901a1d37fc719e34a935940cbb176402b862c512))
+* **internal:** properly set __pydantic_private__ ([#110](https://github.com/togethercomputer/together-py/issues/110)) ([634041c](https://github.com/togethercomputer/together-py/commit/634041c61fa25fd7dedfc8a972030a3776adac1f))
+* **internal:** update client tests ([#104](https://github.com/togethercomputer/together-py/issues/104)) ([026f971](https://github.com/togethercomputer/together-py/commit/026f97187ef926303ae4fb00b9a9d06665e8a455))
+* **internal:** update deps ([#91](https://github.com/togethercomputer/together-py/issues/91)) ([2a6fd12](https://github.com/togethercomputer/together-py/commit/2a6fd1225b89b44d3ee067d8d590feba9ea5db32))
+* **internal:** updated imports ([#78](https://github.com/togethercomputer/together-py/issues/78)) ([3e66395](https://github.com/togethercomputer/together-py/commit/3e66395cd6ce99505636e446afe3b97a96bd6816))
+* make the `Omit` type public ([#71](https://github.com/togethercomputer/together-py/issues/71)) ([e50e602](https://github.com/togethercomputer/together-py/commit/e50e602072586b0003afba7b32a22d455949ef5e))
+* rebuild project due to codegen change ([#52](https://github.com/togethercomputer/together-py/issues/52)) ([140ec3a](https://github.com/togethercomputer/together-py/commit/140ec3a98ff40156f417eaece8b0738367a7a572))
+* rebuild project due to codegen change ([#55](https://github.com/togethercomputer/together-py/issues/55)) ([46088fc](https://github.com/togethercomputer/together-py/commit/46088fc360d2d05ad2fc59cb42331c87e3ab3f06))
+* rebuild project due to codegen change ([#56](https://github.com/togethercomputer/together-py/issues/56)) ([6fdde5a](https://github.com/togethercomputer/together-py/commit/6fdde5aaf60bf05de17c83ac369fbd6e66c9e9ba))
+* rebuild project due to codegen change ([#58](https://github.com/togethercomputer/together-py/issues/58)) ([98cd9d5](https://github.com/togethercomputer/together-py/commit/98cd9d5700cfdcaba486d4c83b98dc86a702dbec))
+* rebuild project due to codegen change ([#59](https://github.com/togethercomputer/together-py/issues/59)) ([96f0ddb](https://github.com/togethercomputer/together-py/commit/96f0ddb63bc654363303e23c1f02bda28d18f816))
+* remove now unused `cached-property` dep ([#63](https://github.com/togethercomputer/together-py/issues/63)) ([e61ac83](https://github.com/togethercomputer/together-py/commit/e61ac834296fc38fc88158cd4d8d61d0273bd823))
+
+
+### Documentation
+
+* fix typos ([#86](https://github.com/togethercomputer/together-py/issues/86)) ([8061902](https://github.com/togethercomputer/together-py/commit/80619026d4dfb78e9823a87461a49fec2525014c))
+* **readme:** add section on determining installed version ([#38](https://github.com/togethercomputer/together-py/issues/38)) ([f52840b](https://github.com/togethercomputer/together-py/commit/f52840b684a47a9d611511a325d4343360b61338))
+* **readme:** example snippet for client context manager ([#79](https://github.com/togethercomputer/together-py/issues/79)) ([81f9dad](https://github.com/togethercomputer/together-py/commit/81f9dad95c710bc6de5d106ba67521699b692875))
+* **readme:** fix http client proxies example ([#74](https://github.com/togethercomputer/together-py/issues/74)) ([001a301](https://github.com/togethercomputer/together-py/commit/001a301da287333c3cb20e90c3d26c9fbd578334))
+* update URLs from stainlessapi.com to stainless.com ([#111](https://github.com/togethercomputer/together-py/issues/111)) ([728c998](https://github.com/togethercomputer/together-py/commit/728c9983019b13cd6a08f378f134902ab9e905d6))
+
 ## 0.1.0-alpha.2 (2024-08-17)
 
 Full Changelog: [v0.1.0-alpha.1...v0.1.0-alpha.2](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.1...v0.1.0-alpha.2)
