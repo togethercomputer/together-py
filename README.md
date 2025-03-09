@@ -136,6 +136,31 @@ Nested request parameters are [TypedDicts](https://docs.python.org/3/library/typ
 
 Typed requests and responses provide autocomplete and documentation within your editor. If you would like to see type errors in VS Code to help catch bugs earlier, set `python.analysis.typeCheckingMode` to `basic`.
 
+## Nested params
+
+Nested parameters are dictionaries, typed using `TypedDict`, for example:
+
+```python
+from together import Together
+
+client = Together()
+
+chat_completion = client.chat.completions.create(
+    messages=[
+        {
+            "content": "string",
+            "role": "system",
+        }
+    ],
+    model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+    response_format={
+        "schema": {"foo": "string"},
+        "type": "json",
+    },
+)
+print(chat_completion.response_format)
+```
+
 ## Handling errors
 
 When the library is unable to connect to the API (for example, due to network connection problems or a timeout), a subclass of `together.APIConnectionError` is raised.
