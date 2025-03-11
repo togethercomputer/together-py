@@ -36,6 +36,7 @@ class TestFineTune:
             model="model",
             training_file="training_file",
             batch_size=0,
+            dpo_beta=0,
             from_checkpoint="from_checkpoint",
             learning_rate=0,
             lr_scheduler={
@@ -48,6 +49,7 @@ class TestFineTune:
             n_evals=0,
             suffix="suffix",
             train_on_inputs=True,
+            training_method="sft",
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",
@@ -283,6 +285,7 @@ class TestAsyncFineTune:
             model="model",
             training_file="training_file",
             batch_size=0,
+            dpo_beta=0,
             from_checkpoint="from_checkpoint",
             learning_rate=0,
             lr_scheduler={
@@ -295,6 +298,7 @@ class TestAsyncFineTune:
             n_evals=0,
             suffix="suffix",
             train_on_inputs=True,
+            training_method="sft",
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",

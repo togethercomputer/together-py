@@ -123,6 +123,8 @@ class FineTune(BaseModel):
 
     created_at: Optional[str] = None
 
+    dpo_beta: Optional[float] = None
+
     epochs_completed: Optional[int] = None
 
     eval_steps: Optional[int] = None
@@ -162,6 +164,8 @@ class FineTune(BaseModel):
     train_on_inputs: Union[bool, Literal["auto"], None] = None
 
     training_file: Optional[str] = None
+
+    training_method: Optional[Literal["sft", "dpo"]] = None
 
     training_type: Optional[TrainingType] = None
 
