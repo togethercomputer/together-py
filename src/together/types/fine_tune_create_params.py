@@ -28,6 +28,12 @@ class FineTuneCreateParams(TypedDict, total=False):
     but may train faster)
     """
 
+    dpo_beta: float
+    """The beta parameter for DPO training.
+
+    Only applicable when training_method is 'dpo'.
+    """
+
     from_checkpoint: str
     """The checkpoint identifier to continue training from a previous fine-tuning job.
 
@@ -65,6 +71,12 @@ class FineTuneCreateParams(TypedDict, total=False):
     """
     Whether to mask the user messages in conversational data or prompts in
     instruction data.
+    """
+
+    training_method: Literal["sft", "dpo"]
+    """The training method to use.
+
+    'sft' for Supervised Fine-Tuning or 'dpo' for Direct Preference Optimization.
     """
 
     training_type: TrainingType
