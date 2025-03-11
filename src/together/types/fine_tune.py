@@ -129,6 +129,8 @@ class FineTune(BaseModel):
 
     events: Optional[List[Event]] = None
 
+    from_checkpoint: Optional[str] = None
+
     job_id: Optional[str] = None
 
     learning_rate: Optional[float] = None
