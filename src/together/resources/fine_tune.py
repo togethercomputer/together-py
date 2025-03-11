@@ -56,6 +56,7 @@ class FineTuneResource(SyncAPIResource):
         model: str,
         training_file: str,
         batch_size: int | NotGiven = NOT_GIVEN,
+        from_checkpoint: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
@@ -89,6 +90,10 @@ class FineTuneResource(SyncAPIResource):
 
           batch_size: Number of training examples processed together (larger batches use more memory
               but may train faster)
+
+          from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
+              Format `{$JOB_ID/$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional,
+              without it the final checkpoint will be used.
 
           learning_rate: Controls how quickly the model adapts to new information (too high may cause
               instability, too low may slow convergence)
@@ -138,6 +143,7 @@ class FineTuneResource(SyncAPIResource):
                     "model": model,
                     "training_file": training_file,
                     "batch_size": batch_size,
+                    "from_checkpoint": from_checkpoint,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
                     "max_grad_norm": max_grad_norm,
@@ -365,6 +371,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         model: str,
         training_file: str,
         batch_size: int | NotGiven = NOT_GIVEN,
+        from_checkpoint: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
@@ -398,6 +405,10 @@ class AsyncFineTuneResource(AsyncAPIResource):
 
           batch_size: Number of training examples processed together (larger batches use more memory
               but may train faster)
+
+          from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
+              Format `{$JOB_ID/$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional,
+              without it the final checkpoint will be used.
 
           learning_rate: Controls how quickly the model adapts to new information (too high may cause
               instability, too low may slow convergence)
@@ -447,6 +458,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "model": model,
                     "training_file": training_file,
                     "batch_size": batch_size,
+                    "from_checkpoint": from_checkpoint,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
                     "max_grad_norm": max_grad_norm,
