@@ -36,6 +36,7 @@ class TestFineTune:
             model="model",
             training_file="training_file",
             batch_size=0,
+            from_checkpoint="from_checkpoint",
             learning_rate=0,
             lr_scheduler={
                 "lr_scheduler_type": "lr_scheduler_type",
@@ -282,6 +283,7 @@ class TestAsyncFineTune:
             model="model",
             training_file="training_file",
             batch_size=0,
+            from_checkpoint="from_checkpoint",
             learning_rate=0,
             lr_scheduler={
                 "lr_scheduler_type": "lr_scheduler_type",
