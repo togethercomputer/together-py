@@ -1,7 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import builtins
 from typing import Optional
+from typing_extensions import Literal
 
 from .._models import BaseModel
 
@@ -15,6 +15,6 @@ class FineTuneDownloadResponse(BaseModel):
 
     filename: Optional[str] = None
 
-    object: Optional[builtins.object] = None
+    object: Optional[Literal["local"]] = None
 
     size: Optional[int] = None
