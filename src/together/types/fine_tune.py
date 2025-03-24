@@ -12,6 +12,8 @@ __all__ = [
     "Event",
     "LrScheduler",
     "LrSchedulerLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
     "TrainingType",
     "TrainingTypeFullTrainingType",
     "TrainingTypeLoRaTrainingType",
@@ -74,13 +76,26 @@ class Event(BaseModel):
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
 
 
-class LrSchedulerLrSchedulerArgs(BaseModel):
+class LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(BaseModel):
     min_lr_ratio: Optional[float] = None
     """The ratio of the final learning rate to the peak learning rate"""
 
 
+class LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
+    min_lr_ratio: Optional[float] = None
+    """The ratio of the final learning rate to the peak learning rate"""
+
+    num_cycles: Optional[float] = None
+    """Number or fraction of cycles for the cosine learning rate scheduler"""
+
+
+LrSchedulerLrSchedulerArgs: TypeAlias = Union[
+    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
+]
+
+
 class LrScheduler(BaseModel):
-    lr_scheduler_type: str
+    lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
 
