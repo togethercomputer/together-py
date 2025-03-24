@@ -9,6 +9,8 @@ __all__ = [
     "FineTuneCreateParams",
     "LrScheduler",
     "LrSchedulerLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
     "TrainingType",
     "TrainingTypeFullTrainingType",
     "TrainingTypeLoRaTrainingType",
@@ -109,13 +111,26 @@ class FineTuneCreateParams(TypedDict, total=False):
     """Weight decay"""
 
 
-class LrSchedulerLrSchedulerArgs(TypedDict, total=False):
+class LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(TypedDict, total=False):
     min_lr_ratio: float
     """The ratio of the final learning rate to the peak learning rate"""
 
 
+class LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(TypedDict, total=False):
+    min_lr_ratio: float
+    """The ratio of the final learning rate to the peak learning rate"""
+
+    num_cycles: float
+    """Number or fraction of cycles for the cosine learning rate scheduler"""
+
+
+LrSchedulerLrSchedulerArgs: TypeAlias = Union[
+    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
+]
+
+
 class LrScheduler(TypedDict, total=False):
-    lr_scheduler_type: Required[str]
+    lr_scheduler_type: Required[Literal["linear", "cosine"]]
 
     lr_scheduler_args: LrSchedulerLrSchedulerArgs
 
