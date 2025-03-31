@@ -39,8 +39,8 @@ class FineTuneCreateParams(TypedDict, total=False):
     from_checkpoint: str
     """The checkpoint identifier to continue training from a previous fine-tuning job.
 
-    Format `{$JOB_ID/$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional,
-    without it the final checkpoint will be used.
+    Format `{$JOB_ID}:{$STEP}` or `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is
+    optional, without it the final checkpoint will be used.
     """
 
     learning_rate: float
