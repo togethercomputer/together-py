@@ -1741,7 +1741,7 @@ class TestAsyncTogether:
         import threading
 
         from together._utils import asyncify
-        from together._base_client import get_platform 
+        from together._base_client import get_platform
 
         async def test_main() -> None:
             result = await asyncify(get_platform)()
