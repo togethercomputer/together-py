@@ -14,6 +14,9 @@ __all__ = [
     "LrSchedulerLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "TrainingMethod",
+    "TrainingMethodTrainingMethodSft",
+    "TrainingMethodTrainingMethodDpo",
     "TrainingType",
     "TrainingTypeFullTrainingType",
     "TrainingTypeLoRaTrainingType",
@@ -100,6 +103,19 @@ class LrScheduler(BaseModel):
     lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
 
 
+class TrainingMethodTrainingMethodSft(BaseModel):
+    method: Literal["sft"]
+
+
+class TrainingMethodTrainingMethodDpo(BaseModel):
+    method: Literal["dpo"]
+
+    dpo_beta: Optional[float] = None
+
+
+TrainingMethod: TypeAlias = Union[TrainingMethodTrainingMethodSft, TrainingMethodTrainingMethodDpo]
+
+
 class TrainingTypeFullTrainingType(BaseModel):
     type: Literal["Full"]
 
@@ -134,11 +150,9 @@ class FineTune(BaseModel):
         "completed",
     ]
 
-    batch_size: Optional[int] = None
+    batch_size: Union[int, Literal["max"], None] = None
 
     created_at: Optional[str] = None
-
-    dpo_beta: Optional[float] = None
 
     epochs_completed: Optional[int] = None
 
@@ -180,7 +194,7 @@ class FineTune(BaseModel):
 
     training_file: Optional[str] = None
 
-    training_method: Optional[Literal["sft", "dpo"]] = None
+    training_method: Optional[TrainingMethod] = None
 
     training_type: Optional[TrainingType] = None
 
