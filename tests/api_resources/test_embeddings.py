@@ -21,7 +21,7 @@ class TestEmbeddings:
     def test_method_create(self, client: Together) -> None:
         embedding = client.embeddings.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
-            model="WhereIsAI/UAE-Large-V1",
+            model="togethercomputer/m2-bert-80M-8k-retrieval",
         )
         assert_matches_type(Embedding, embedding, path=["response"])
 
@@ -29,7 +29,7 @@ class TestEmbeddings:
     def test_raw_response_create(self, client: Together) -> None:
         response = client.embeddings.with_raw_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
-            model="WhereIsAI/UAE-Large-V1",
+            model="togethercomputer/m2-bert-80M-8k-retrieval",
         )
 
         assert response.is_closed is True
@@ -41,7 +41,7 @@ class TestEmbeddings:
     def test_streaming_response_create(self, client: Together) -> None:
         with client.embeddings.with_streaming_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
-            model="WhereIsAI/UAE-Large-V1",
+            model="togethercomputer/m2-bert-80M-8k-retrieval",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -59,7 +59,7 @@ class TestAsyncEmbeddings:
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         embedding = await async_client.embeddings.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
-            model="WhereIsAI/UAE-Large-V1",
+            model="togethercomputer/m2-bert-80M-8k-retrieval",
         )
         assert_matches_type(Embedding, embedding, path=["response"])
 
@@ -67,7 +67,7 @@ class TestAsyncEmbeddings:
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.embeddings.with_raw_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
-            model="WhereIsAI/UAE-Large-V1",
+            model="togethercomputer/m2-bert-80M-8k-retrieval",
         )
 
         assert response.is_closed is True
@@ -79,7 +79,7 @@ class TestAsyncEmbeddings:
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.embeddings.with_streaming_response.create(
             input="Our solar system orbits the Milky Way galaxy at about 515,000 mph",
-            model="WhereIsAI/UAE-Large-V1",
+            model="togethercomputer/m2-bert-80M-8k-retrieval",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"

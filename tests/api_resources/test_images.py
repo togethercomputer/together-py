@@ -21,7 +21,7 @@ class TestImages:
     @parametrize
     def test_method_create(self, client: Together) -> None:
         image = client.images.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
         assert_matches_type(ImageFile, image, path=["response"])
@@ -30,7 +30,7 @@ class TestImages:
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         image = client.images.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
             guidance=0,
             height=0,
@@ -55,7 +55,7 @@ class TestImages:
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.images.with_raw_response.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
 
@@ -68,7 +68,7 @@ class TestImages:
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.images.with_streaming_response.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         ) as response:
             assert not response.is_closed
@@ -87,7 +87,7 @@ class TestAsyncImages:
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         image = await async_client.images.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
         assert_matches_type(ImageFile, image, path=["response"])
@@ -96,7 +96,7 @@ class TestAsyncImages:
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         image = await async_client.images.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
             guidance=0,
             height=0,
@@ -121,7 +121,7 @@ class TestAsyncImages:
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.images.with_raw_response.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
 
@@ -134,7 +134,7 @@ class TestAsyncImages:
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.images.with_streaming_response.create(
-            model="black-forest-labs/FLUX.1-schnell-Free",
+            model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         ) as response:
             assert not response.is_closed
