@@ -26,7 +26,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
         assert_matches_type(ChatCompletion, completion, path=["response"])
 
@@ -39,7 +39,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             context_length_exceeded_behavior="truncate",
             echo=True,
             frequency_penalty=0,
@@ -88,7 +88,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
 
         assert response.is_closed is True
@@ -105,7 +105,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -124,7 +124,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
         )
         completion_stream.response.close()
@@ -138,7 +138,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
             context_length_exceeded_behavior="truncate",
             echo=True,
@@ -187,7 +187,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
         )
 
@@ -204,7 +204,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
         ) as response:
             assert not response.is_closed
@@ -228,7 +228,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
         assert_matches_type(ChatCompletion, completion, path=["response"])
 
@@ -241,7 +241,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             context_length_exceeded_behavior="truncate",
             echo=True,
             frequency_penalty=0,
@@ -290,7 +290,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
 
         assert response.is_closed is True
@@ -307,7 +307,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -326,7 +326,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
         )
         await completion_stream.response.aclose()
@@ -340,7 +340,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
             context_length_exceeded_behavior="truncate",
             echo=True,
@@ -389,7 +389,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
         )
 
@@ -406,7 +406,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             stream=True,
         ) as response:
             assert not response.is_closed

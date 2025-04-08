@@ -152,7 +152,7 @@ chat_completion = client.chat.completions.create(
             "role": "system",
         }
     ],
-    model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     response_format={
         "schema": {"foo": "string"},
         "type": "json",
