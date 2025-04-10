@@ -11,6 +11,7 @@ from .tool_choice import ToolChoice as ToolChoice
 from .tools_param import ToolsParam as ToolsParam
 from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .rerank_response import RerankResponse as RerankResponse
+from .execute_response import ExecuteResponse as ExecuteResponse
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
 from .file_list_response import FileListResponse as FileListResponse
 from .audio_create_params import AudioCreateParams as AudioCreateParams
@@ -25,3 +26,4 @@ from .fine_tune_list_response import FineTuneListResponse as FineTuneListRespons
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloadParams
 from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
+from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams

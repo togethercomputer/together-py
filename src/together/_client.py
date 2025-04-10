@@ -47,6 +47,7 @@ from ._base_client import (
 )
 from .resources.chat import chat
 from .types.rerank_response import RerankResponse
+from .resources.code_interpreter import code_interpreter
 
 __all__ = [
     "Timeout",
@@ -66,6 +67,7 @@ class Together(SyncAPIClient):
     embeddings: embeddings.EmbeddingsResource
     files: files.FilesResource
     fine_tune: fine_tune.FineTuneResource
+    code_interpreter: code_interpreter.CodeInterpreterResource
     images: images.ImagesResource
     audio: audio.AudioResource
     models: models.ModelsResource
@@ -133,6 +135,7 @@ class Together(SyncAPIClient):
         self.embeddings = embeddings.EmbeddingsResource(self)
         self.files = files.FilesResource(self)
         self.fine_tune = fine_tune.FineTuneResource(self)
+        self.code_interpreter = code_interpreter.CodeInterpreterResource(self)
         self.images = images.ImagesResource(self)
         self.audio = audio.AudioResource(self)
         self.models = models.ModelsResource(self)
@@ -312,6 +315,7 @@ class AsyncTogether(AsyncAPIClient):
     embeddings: embeddings.AsyncEmbeddingsResource
     files: files.AsyncFilesResource
     fine_tune: fine_tune.AsyncFineTuneResource
+    code_interpreter: code_interpreter.AsyncCodeInterpreterResource
     images: images.AsyncImagesResource
     audio: audio.AsyncAudioResource
     models: models.AsyncModelsResource
@@ -379,6 +383,7 @@ class AsyncTogether(AsyncAPIClient):
         self.embeddings = embeddings.AsyncEmbeddingsResource(self)
         self.files = files.AsyncFilesResource(self)
         self.fine_tune = fine_tune.AsyncFineTuneResource(self)
+        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResource(self)
         self.images = images.AsyncImagesResource(self)
         self.audio = audio.AsyncAudioResource(self)
         self.models = models.AsyncModelsResource(self)
@@ -559,6 +564,7 @@ class TogetherWithRawResponse:
         self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
         self.files = files.FilesResourceWithRawResponse(client.files)
         self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.CodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithRawResponse(client.images)
         self.audio = audio.AudioResourceWithRawResponse(client.audio)
         self.models = models.ModelsResourceWithRawResponse(client.models)
@@ -575,6 +581,7 @@ class AsyncTogetherWithRawResponse:
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
         self.files = files.AsyncFilesResourceWithRawResponse(client.files)
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
         self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
         self.models = models.AsyncModelsResourceWithRawResponse(client.models)
@@ -591,6 +598,7 @@ class TogetherWithStreamedResponse:
         self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
         self.files = files.FilesResourceWithStreamingResponse(client.files)
         self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.CodeInterpreterResourceWithStreamingResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
         self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
         self.models = models.ModelsResourceWithStreamingResponse(client.models)
@@ -607,6 +615,9 @@ class AsyncTogetherWithStreamedResponse:
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
         self.files = files.AsyncFilesResourceWithStreamingResponse(client.files)
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithStreamingResponse(
+            client.code_interpreter
+        )
         self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
         self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
         self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)

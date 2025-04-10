@@ -64,6 +64,14 @@ from .completions import (
     CompletionsResourceWithStreamingResponse,
     AsyncCompletionsResourceWithStreamingResponse,
 )
+from .code_interpreter import (
+    CodeInterpreterResource,
+    AsyncCodeInterpreterResource,
+    CodeInterpreterResourceWithRawResponse,
+    AsyncCodeInterpreterResourceWithRawResponse,
+    CodeInterpreterResourceWithStreamingResponse,
+    AsyncCodeInterpreterResourceWithStreamingResponse,
+)
 
 __all__ = [
     "ChatResource",
@@ -96,6 +104,12 @@ __all__ = [
     "AsyncFineTuneResourceWithRawResponse",
     "FineTuneResourceWithStreamingResponse",
     "AsyncFineTuneResourceWithStreamingResponse",
+    "CodeInterpreterResource",
+    "AsyncCodeInterpreterResource",
+    "CodeInterpreterResourceWithRawResponse",
+    "AsyncCodeInterpreterResourceWithRawResponse",
+    "CodeInterpreterResourceWithStreamingResponse",
+    "AsyncCodeInterpreterResourceWithStreamingResponse",
     "ImagesResource",
     "AsyncImagesResource",
     "ImagesResourceWithRawResponse",
