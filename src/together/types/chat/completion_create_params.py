@@ -14,8 +14,8 @@ __all__ = [
     "CompletionCreateParamsBase",
     "Message",
     "MessageContentUnionMember1",
-    "MessageContentUnionMember1UnionMember2",
-    "MessageContentUnionMember1UnionMember2VideoURL",
+    "MessageContentUnionMember1Video",
+    "MessageContentUnionMember1VideoVideoURL",
     "FunctionCall",
     "FunctionCallName",
     "ResponseFormat",
@@ -159,21 +159,21 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
 
-class MessageContentUnionMember1UnionMember2VideoURL(TypedDict, total=False):
+class MessageContentUnionMember1VideoVideoURL(TypedDict, total=False):
     url: Required[str]
     """The URL of the video"""
 
 
-class MessageContentUnionMember1UnionMember2(TypedDict, total=False):
+class MessageContentUnionMember1Video(TypedDict, total=False):
     type: Required[Literal["video_url"]]
 
-    video_url: Required[MessageContentUnionMember1UnionMember2VideoURL]
+    video_url: Required[MessageContentUnionMember1VideoVideoURL]
 
 
 MessageContentUnionMember1: TypeAlias = Union[
     ChatCompletionStructuredMessageTextParam,
     ChatCompletionStructuredMessageImageURLParam,
-    MessageContentUnionMember1UnionMember2,
+    MessageContentUnionMember1Video,
 ]
 
 
