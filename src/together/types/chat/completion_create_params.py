@@ -185,7 +185,10 @@ class Message(TypedDict, total=False):
     """
 
     role: Required[Literal["system", "user", "assistant", "tool"]]
-    """The role of the messages author. Choice between: system, user, or assistant."""
+    """The role of the messages author.
+
+    Choice between: system, user, assistant, or tool.
+    """
 
 
 class FunctionCallName(TypedDict, total=False):
@@ -196,7 +199,7 @@ FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
 
 
 class ResponseFormat(TypedDict, total=False):
-    schema: Dict[str, str]
+    schema: Dict[str, object]
     """The schema of the response format."""
 
     type: str
