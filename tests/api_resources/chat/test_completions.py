@@ -55,7 +55,7 @@ class TestCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "schema": {"foo": "string"},
+                "schema": {"foo": "bar"},
                 "type": "json",
             },
             safety_model="safety_model_name",
@@ -155,7 +155,7 @@ class TestCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "schema": {"foo": "string"},
+                "schema": {"foo": "bar"},
                 "type": "json",
             },
             safety_model="safety_model_name",
@@ -257,7 +257,7 @@ class TestAsyncCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "schema": {"foo": "string"},
+                "schema": {"foo": "bar"},
                 "type": "json",
             },
             safety_model="safety_model_name",
@@ -357,7 +357,7 @@ class TestAsyncCompletions:
             presence_penalty=0,
             repetition_penalty=0,
             response_format={
-                "schema": {"foo": "string"},
+                "schema": {"foo": "bar"},
                 "type": "json",
             },
             safety_model="safety_model_name",
