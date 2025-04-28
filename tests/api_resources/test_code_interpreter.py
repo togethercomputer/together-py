@@ -36,6 +36,13 @@ class TestCodeInterpreter:
         code_interpreter = client.code_interpreter.execute(
             code="print('Hello, world!')",
             language="python",
+            files=[
+                {
+                    "content": "content",
+                    "encoding": "string",
+                    "name": "name",
+                }
+            ],
             session_id="ses_abcDEF123",
         )
         assert_matches_type(ExecuteResponse, code_interpreter, path=["response"])
@@ -95,6 +102,13 @@ class TestAsyncCodeInterpreter:
         code_interpreter = await async_client.code_interpreter.execute(
             code="print('Hello, world!')",
             language="python",
+            files=[
+                {
+                    "content": "content",
+                    "encoding": "string",
+                    "name": "name",
+                }
+            ],
             session_id="ses_abcDEF123",
         )
         assert_matches_type(ExecuteResponse, code_interpreter, path=["response"])

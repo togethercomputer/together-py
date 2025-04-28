@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Iterable, cast
 from typing_extensions import Literal
 
 import httpx
@@ -61,6 +61,7 @@ class CodeInterpreterResource(SyncAPIResource):
         *,
         code: str,
         language: Literal["python"],
+        files: Iterable[code_interpreter_execute_params.File] | NotGiven = NOT_GIVEN,
         session_id: str | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -83,6 +84,9 @@ class CodeInterpreterResource(SyncAPIResource):
           language: Programming language for the code to execute. Currently only supports Python,
               but more will be added.
 
+          files: Files to upload to the session. If present, files will be uploaded before
+              executing the given code.
+
           session_id: Identifier of the current session. Used to make follow-up calls. Requests will
               return an error if the session does not belong to the caller or has expired.
 
@@ -102,6 +106,7 @@ class CodeInterpreterResource(SyncAPIResource):
                     {
                         "code": code,
                         "language": language,
+                        "files": files,
                         "session_id": session_id,
                     },
                     code_interpreter_execute_params.CodeInterpreterExecuteParams,
@@ -143,6 +148,7 @@ class AsyncCodeInterpreterResource(AsyncAPIResource):
         *,
         code: str,
         language: Literal["python"],
+        files: Iterable[code_interpreter_execute_params.File] | NotGiven = NOT_GIVEN,
         session_id: str | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -165,6 +171,9 @@ class AsyncCodeInterpreterResource(AsyncAPIResource):
           language: Programming language for the code to execute. Currently only supports Python,
               but more will be added.
 
+          files: Files to upload to the session. If present, files will be uploaded before
+              executing the given code.
+
           session_id: Identifier of the current session. Used to make follow-up calls. Requests will
               return an error if the session does not belong to the caller or has expired.
 
@@ -184,6 +193,7 @@ class AsyncCodeInterpreterResource(AsyncAPIResource):
                     {
                         "code": code,
                         "language": language,
+                        "files": files,
                         "session_id": session_id,
                     },
                     code_interpreter_execute_params.CodeInterpreterExecuteParams,
