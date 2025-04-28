@@ -36,7 +36,7 @@ from ._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .resources import audio, files, images, models, fine_tune, embeddings, completions
+from .resources import jobs, audio, files, images, models, hardware, endpoints, fine_tune, embeddings, completions
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -71,6 +71,9 @@ class Together(SyncAPIClient):
     images: images.ImagesResource
     audio: audio.AudioResource
     models: models.ModelsResource
+    jobs: jobs.JobsResource
+    endpoints: endpoints.EndpointsResource
+    hardware: hardware.HardwareResource
     with_raw_response: TogetherWithRawResponse
     with_streaming_response: TogetherWithStreamedResponse
 
@@ -139,6 +142,9 @@ class Together(SyncAPIClient):
         self.images = images.ImagesResource(self)
         self.audio = audio.AudioResource(self)
         self.models = models.ModelsResource(self)
+        self.jobs = jobs.JobsResource(self)
+        self.endpoints = endpoints.EndpointsResource(self)
+        self.hardware = hardware.HardwareResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
         self.with_streaming_response = TogetherWithStreamedResponse(self)
 
@@ -319,6 +325,9 @@ class AsyncTogether(AsyncAPIClient):
     images: images.AsyncImagesResource
     audio: audio.AsyncAudioResource
     models: models.AsyncModelsResource
+    jobs: jobs.AsyncJobsResource
+    endpoints: endpoints.AsyncEndpointsResource
+    hardware: hardware.AsyncHardwareResource
     with_raw_response: AsyncTogetherWithRawResponse
     with_streaming_response: AsyncTogetherWithStreamedResponse
 
@@ -387,6 +396,9 @@ class AsyncTogether(AsyncAPIClient):
         self.images = images.AsyncImagesResource(self)
         self.audio = audio.AsyncAudioResource(self)
         self.models = models.AsyncModelsResource(self)
+        self.jobs = jobs.AsyncJobsResource(self)
+        self.endpoints = endpoints.AsyncEndpointsResource(self)
+        self.hardware = hardware.AsyncHardwareResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
 
@@ -568,6 +580,9 @@ class TogetherWithRawResponse:
         self.images = images.ImagesResourceWithRawResponse(client.images)
         self.audio = audio.AudioResourceWithRawResponse(client.audio)
         self.models = models.ModelsResourceWithRawResponse(client.models)
+        self.jobs = jobs.JobsResourceWithRawResponse(client.jobs)
+        self.endpoints = endpoints.EndpointsResourceWithRawResponse(client.endpoints)
+        self.hardware = hardware.HardwareResourceWithRawResponse(client.hardware)
 
         self.rerank = to_raw_response_wrapper(
             client.rerank,
@@ -585,6 +600,9 @@ class AsyncTogetherWithRawResponse:
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
         self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
         self.models = models.AsyncModelsResourceWithRawResponse(client.models)
+        self.jobs = jobs.AsyncJobsResourceWithRawResponse(client.jobs)
+        self.endpoints = endpoints.AsyncEndpointsResourceWithRawResponse(client.endpoints)
+        self.hardware = hardware.AsyncHardwareResourceWithRawResponse(client.hardware)
 
         self.rerank = async_to_raw_response_wrapper(
             client.rerank,
@@ -602,6 +620,9 @@ class TogetherWithStreamedResponse:
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
         self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
         self.models = models.ModelsResourceWithStreamingResponse(client.models)
+        self.jobs = jobs.JobsResourceWithStreamingResponse(client.jobs)
+        self.endpoints = endpoints.EndpointsResourceWithStreamingResponse(client.endpoints)
+        self.hardware = hardware.HardwareResourceWithStreamingResponse(client.hardware)
 
         self.rerank = to_streamed_response_wrapper(
             client.rerank,
@@ -621,6 +642,9 @@ class AsyncTogetherWithStreamedResponse:
         self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
         self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
         self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
+        self.jobs = jobs.AsyncJobsResourceWithStreamingResponse(client.jobs)
+        self.endpoints = endpoints.AsyncEndpointsResourceWithStreamingResponse(client.endpoints)
+        self.hardware = hardware.AsyncHardwareResourceWithStreamingResponse(client.hardware)
 
         self.rerank = async_to_streamed_response_wrapper(
             client.rerank,
