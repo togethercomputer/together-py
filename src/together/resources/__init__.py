@@ -8,6 +8,14 @@ from .chat import (
     ChatResourceWithStreamingResponse,
     AsyncChatResourceWithStreamingResponse,
 )
+from .jobs import (
+    JobsResource,
+    AsyncJobsResource,
+    JobsResourceWithRawResponse,
+    AsyncJobsResourceWithRawResponse,
+    JobsResourceWithStreamingResponse,
+    AsyncJobsResourceWithStreamingResponse,
+)
 from .audio import (
     AudioResource,
     AsyncAudioResource,
@@ -39,6 +47,22 @@ from .models import (
     AsyncModelsResourceWithRawResponse,
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
+)
+from .hardware import (
+    HardwareResource,
+    AsyncHardwareResource,
+    HardwareResourceWithRawResponse,
+    AsyncHardwareResourceWithRawResponse,
+    HardwareResourceWithStreamingResponse,
+    AsyncHardwareResourceWithStreamingResponse,
+)
+from .endpoints import (
+    EndpointsResource,
+    AsyncEndpointsResource,
+    EndpointsResourceWithRawResponse,
+    AsyncEndpointsResourceWithRawResponse,
+    EndpointsResourceWithStreamingResponse,
+    AsyncEndpointsResourceWithStreamingResponse,
 )
 from .fine_tune import (
     FineTuneResource,
@@ -128,4 +152,22 @@ __all__ = [
     "AsyncModelsResourceWithRawResponse",
     "ModelsResourceWithStreamingResponse",
     "AsyncModelsResourceWithStreamingResponse",
+    "JobsResource",
+    "AsyncJobsResource",
+    "JobsResourceWithRawResponse",
+    "AsyncJobsResourceWithRawResponse",
+    "JobsResourceWithStreamingResponse",
+    "AsyncJobsResourceWithStreamingResponse",
+    "EndpointsResource",
+    "AsyncEndpointsResource",
+    "EndpointsResourceWithRawResponse",
+    "AsyncEndpointsResourceWithRawResponse",
+    "EndpointsResourceWithStreamingResponse",
+    "AsyncEndpointsResourceWithStreamingResponse",
+    "HardwareResource",
+    "AsyncHardwareResource",
+    "HardwareResourceWithRawResponse",
+    "AsyncHardwareResourceWithRawResponse",
+    "HardwareResourceWithStreamingResponse",
+    "AsyncHardwareResourceWithStreamingResponse",
 ]
