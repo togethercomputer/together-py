@@ -8,6 +8,14 @@ from .chat import (
     ChatResourceWithStreamingResponse,
     AsyncChatResourceWithStreamingResponse,
 )
+from .jobs import (
+    JobsResource,
+    AsyncJobsResource,
+    JobsResourceWithRawResponse,
+    AsyncJobsResourceWithRawResponse,
+    JobsResourceWithStreamingResponse,
+    AsyncJobsResourceWithStreamingResponse,
+)
 from .audio import (
     AudioResource,
     AsyncAudioResource,
@@ -40,6 +48,22 @@ from .models import (
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
 )
+from .hardware import (
+    HardwareResource,
+    AsyncHardwareResource,
+    HardwareResourceWithRawResponse,
+    AsyncHardwareResourceWithRawResponse,
+    HardwareResourceWithStreamingResponse,
+    AsyncHardwareResourceWithStreamingResponse,
+)
+from .endpoints import (
+    EndpointsResource,
+    AsyncEndpointsResource,
+    EndpointsResourceWithRawResponse,
+    AsyncEndpointsResourceWithRawResponse,
+    EndpointsResourceWithStreamingResponse,
+    AsyncEndpointsResourceWithStreamingResponse,
+)
 from .fine_tune import (
     FineTuneResource,
     AsyncFineTuneResource,
@@ -63,6 +87,14 @@ from .completions import (
     AsyncCompletionsResourceWithRawResponse,
     CompletionsResourceWithStreamingResponse,
     AsyncCompletionsResourceWithStreamingResponse,
+)
+from .code_interpreter import (
+    CodeInterpreterResource,
+    AsyncCodeInterpreterResource,
+    CodeInterpreterResourceWithRawResponse,
+    AsyncCodeInterpreterResourceWithRawResponse,
+    CodeInterpreterResourceWithStreamingResponse,
+    AsyncCodeInterpreterResourceWithStreamingResponse,
 )
 
 __all__ = [
@@ -96,6 +128,12 @@ __all__ = [
     "AsyncFineTuneResourceWithRawResponse",
     "FineTuneResourceWithStreamingResponse",
     "AsyncFineTuneResourceWithStreamingResponse",
+    "CodeInterpreterResource",
+    "AsyncCodeInterpreterResource",
+    "CodeInterpreterResourceWithRawResponse",
+    "AsyncCodeInterpreterResourceWithRawResponse",
+    "CodeInterpreterResourceWithStreamingResponse",
+    "AsyncCodeInterpreterResourceWithStreamingResponse",
     "ImagesResource",
     "AsyncImagesResource",
     "ImagesResourceWithRawResponse",
@@ -114,4 +152,22 @@ __all__ = [
     "AsyncModelsResourceWithRawResponse",
     "ModelsResourceWithStreamingResponse",
     "AsyncModelsResourceWithStreamingResponse",
+    "JobsResource",
+    "AsyncJobsResource",
+    "JobsResourceWithRawResponse",
+    "AsyncJobsResourceWithRawResponse",
+    "JobsResourceWithStreamingResponse",
+    "AsyncJobsResourceWithStreamingResponse",
+    "EndpointsResource",
+    "AsyncEndpointsResource",
+    "EndpointsResourceWithRawResponse",
+    "AsyncEndpointsResourceWithRawResponse",
+    "EndpointsResourceWithStreamingResponse",
+    "AsyncEndpointsResourceWithStreamingResponse",
+    "HardwareResource",
+    "AsyncHardwareResource",
+    "HardwareResourceWithRawResponse",
+    "AsyncHardwareResourceWithRawResponse",
+    "HardwareResourceWithStreamingResponse",
+    "AsyncHardwareResourceWithStreamingResponse",
 ]

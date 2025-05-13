@@ -9,10 +9,10 @@ __all__ = ["ChatCompletionStructuredMessageImageURLParam", "ImageURL"]
 
 class ImageURL(TypedDict, total=False):
     url: Required[str]
-    """The URL of the image as a plain string."""
+    """The URL of the image"""
 
 
 class ChatCompletionStructuredMessageImageURLParam(TypedDict, total=False):
-    image_url: Required[ImageURL]
+    image_url: ImageURL
 
-    type: Required[Literal["image_url"]]
+    type: Literal["image_url"]

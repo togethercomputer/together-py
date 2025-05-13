@@ -1,0 +1,43 @@
+# File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+from typing import List, Optional
+from datetime import datetime
+from typing_extensions import Literal
+
+from pydantic import Field as FieldInfo
+
+from .._models import BaseModel
+
+__all__ = ["JobRetrieveResponse", "Args", "StatusUpdate"]
+
+
+class Args(BaseModel):
+    description: Optional[str] = None
+
+    api_model_name: Optional[str] = FieldInfo(alias="modelName", default=None)
+
+    api_model_source: Optional[str] = FieldInfo(alias="modelSource", default=None)
+
+
+class StatusUpdate(BaseModel):
+    message: str
+
+    status: str
+
+    timestamp: datetime
+
+
+class JobRetrieveResponse(BaseModel):
+    args: Args
+
+    created_at: datetime
+
+    job_id: str
+
+    status: Literal["Queued", "Running", "Complete", "Failed"]
+
+    status_updates: List[StatusUpdate]
+
+    type: str
+
+    updated_at: datetime

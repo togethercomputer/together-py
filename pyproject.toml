@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -50,7 +50,7 @@ together = "together.lib.cli.cli:main"
 managed = true
 # version pins are in requirements-dev.lock
 dev-dependencies = [
-    "pyright>=1.1.359",
+    "pyright==1.1.399",
     "mypy",
     "respx",
     "pytest",
@@ -94,7 +94,7 @@ typecheck = { chain = [
 "typecheck:mypy" = "mypy ."
 
 [build-system]
-requires = ["hatchling", "hatch-fancy-pypi-readme"]
+requires = ["hatchling==1.26.3", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
@@ -155,10 +155,10 @@ exclude = [
 ]
 
 reportImplicitOverride = true
+reportOverlappingOverload = false
 
 reportImportCycles = false
 reportPrivateUsage = false
-
 
 [tool.ruff]
 line-length = 120

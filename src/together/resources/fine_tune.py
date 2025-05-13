@@ -9,10 +9,7 @@ import httpx
 
 from ..types import fine_tune_create_params, fine_tune_download_params
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
-from .._utils import (
-    maybe_transform,
-    async_maybe_transform,
-)
+from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._response import (
@@ -55,7 +52,8 @@ class FineTuneResource(SyncAPIResource):
         *,
         model: str,
         training_file: str,
-        batch_size: int | NotGiven = NOT_GIVEN,
+        batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
+        from_checkpoint: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
@@ -64,6 +62,7 @@ class FineTuneResource(SyncAPIResource):
         n_evals: int | NotGiven = NOT_GIVEN,
         suffix: str | NotGiven = NOT_GIVEN,
         train_on_inputs: Union[bool, Literal["auto"]] | NotGiven = NOT_GIVEN,
+        training_method: fine_tune_create_params.TrainingMethod | NotGiven = NOT_GIVEN,
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
@@ -88,10 +87,19 @@ class FineTuneResource(SyncAPIResource):
           training_file: File-ID of a training file uploaded to the Together API
 
           batch_size: Number of training examples processed together (larger batches use more memory
-              but may train faster)
+              but may train faster). Defaults to "max". We use training optimizations like
+              packing, so the effective batch size may be different than the value you set.
+
+          from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
+              Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
+              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
+              final checkpoint will be used.
 
           learning_rate: Controls how quickly the model adapts to new information (too high may cause
               instability, too low may slow convergence)
+
+          lr_scheduler: The learning rate scheduler to use. It specifies how the learning rate is
+              adjusted during training.
 
           max_grad_norm: Max gradient norm to be used for gradient clipping. Set to 0 to disable.
 
@@ -107,6 +115,9 @@ class FineTuneResource(SyncAPIResource):
           train_on_inputs: Whether to mask the user messages in conversational data or prompts in
               instruction data.
 
+          training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
+              Preference Optimization.
+
           validation_file: File-ID of a validation file uploaded to the Together API
 
           wandb_api_key: Integration key for tracking experiments and model metrics on W&B platform
@@ -121,7 +132,7 @@ class FineTuneResource(SyncAPIResource):
           warmup_ratio: The percent of steps at the start of training to linearly increase the learning
               rate.
 
-          weight_decay: Weight decay
+          weight_decay: Weight decay. Regularization parameter for the optimizer.
 
           extra_headers: Send extra headers
 
@@ -138,6 +149,7 @@ class FineTuneResource(SyncAPIResource):
                     "model": model,
                     "training_file": training_file,
                     "batch_size": batch_size,
+                    "from_checkpoint": from_checkpoint,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
                     "max_grad_norm": max_grad_norm,
@@ -146,6 +158,7 @@ class FineTuneResource(SyncAPIResource):
                     "n_evals": n_evals,
                     "suffix": suffix,
                     "train_on_inputs": train_on_inputs,
+                    "training_method": training_method,
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,
@@ -364,7 +377,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
         *,
         model: str,
         training_file: str,
-        batch_size: int | NotGiven = NOT_GIVEN,
+        batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
+        from_checkpoint: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
@@ -373,6 +387,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         n_evals: int | NotGiven = NOT_GIVEN,
         suffix: str | NotGiven = NOT_GIVEN,
         train_on_inputs: Union[bool, Literal["auto"]] | NotGiven = NOT_GIVEN,
+        training_method: fine_tune_create_params.TrainingMethod | NotGiven = NOT_GIVEN,
         training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
         validation_file: str | NotGiven = NOT_GIVEN,
         wandb_api_key: str | NotGiven = NOT_GIVEN,
@@ -397,10 +412,19 @@ class AsyncFineTuneResource(AsyncAPIResource):
           training_file: File-ID of a training file uploaded to the Together API
 
           batch_size: Number of training examples processed together (larger batches use more memory
-              but may train faster)
+              but may train faster). Defaults to "max". We use training optimizations like
+              packing, so the effective batch size may be different than the value you set.
+
+          from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
+              Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
+              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
+              final checkpoint will be used.
 
           learning_rate: Controls how quickly the model adapts to new information (too high may cause
               instability, too low may slow convergence)
+
+          lr_scheduler: The learning rate scheduler to use. It specifies how the learning rate is
+              adjusted during training.
 
           max_grad_norm: Max gradient norm to be used for gradient clipping. Set to 0 to disable.
 
@@ -416,6 +440,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
           train_on_inputs: Whether to mask the user messages in conversational data or prompts in
               instruction data.
 
+          training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
+              Preference Optimization.
+
           validation_file: File-ID of a validation file uploaded to the Together API
 
           wandb_api_key: Integration key for tracking experiments and model metrics on W&B platform
@@ -430,7 +457,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
           warmup_ratio: The percent of steps at the start of training to linearly increase the learning
               rate.
 
-          weight_decay: Weight decay
+          weight_decay: Weight decay. Regularization parameter for the optimizer.
 
           extra_headers: Send extra headers
 
@@ -447,6 +474,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "model": model,
                     "training_file": training_file,
                     "batch_size": batch_size,
+                    "from_checkpoint": from_checkpoint,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
                     "max_grad_norm": max_grad_norm,
@@ -455,6 +483,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "n_evals": n_evals,
                     "suffix": suffix,
                     "train_on_inputs": train_on_inputs,
+                    "training_method": training_method,
                     "training_type": training_type,
                     "validation_file": validation_file,
                     "wandb_api_key": wandb_api_key,

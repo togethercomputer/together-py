@@ -9,6 +9,11 @@ __all__ = [
     "FineTuneCreateParams",
     "LrScheduler",
     "LrSchedulerLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "TrainingMethod",
+    "TrainingMethodTrainingMethodSft",
+    "TrainingMethodTrainingMethodDpo",
     "TrainingType",
     "TrainingTypeFullTrainingType",
     "TrainingTypeLoRaTrainingType",
@@ -22,10 +27,19 @@ class FineTuneCreateParams(TypedDict, total=False):
     training_file: Required[str]
     """File-ID of a training file uploaded to the Together API"""
 
-    batch_size: int
+    batch_size: Union[int, Literal["max"]]
     """
     Number of training examples processed together (larger batches use more memory
-    but may train faster)
+    but may train faster). Defaults to "max". We use training optimizations like
+    packing, so the effective batch size may be different than the value you set.
+    """
+
+    from_checkpoint: str
+    """The checkpoint identifier to continue training from a previous fine-tuning job.
+
+    Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
+    `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
+    final checkpoint will be used.
     """
 
     learning_rate: float
@@ -35,6 +49,10 @@ class FineTuneCreateParams(TypedDict, total=False):
     """
 
     lr_scheduler: LrScheduler
+    """The learning rate scheduler to use.
+
+    It specifies how the learning rate is adjusted during training.
+    """
 
     max_grad_norm: float
     """Max gradient norm to be used for gradient clipping. Set to 0 to disable."""
@@ -58,6 +76,12 @@ class FineTuneCreateParams(TypedDict, total=False):
     """
     Whether to mask the user messages in conversational data or prompts in
     instruction data.
+    """
+
+    training_method: TrainingMethod
+    """The training method to use.
+
+    'sft' for Supervised Fine-Tuning or 'dpo' for Direct Preference Optimization.
     """
 
     training_type: TrainingType
@@ -87,18 +111,44 @@ class FineTuneCreateParams(TypedDict, total=False):
     """
 
     weight_decay: float
-    """Weight decay"""
+    """Weight decay. Regularization parameter for the optimizer."""
 
 
-class LrSchedulerLrSchedulerArgs(TypedDict, total=False):
+class LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(TypedDict, total=False):
     min_lr_ratio: float
     """The ratio of the final learning rate to the peak learning rate"""
 
 
+class LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(TypedDict, total=False):
+    min_lr_ratio: float
+    """The ratio of the final learning rate to the peak learning rate"""
+
+    num_cycles: float
+    """Number or fraction of cycles for the cosine learning rate scheduler"""
+
+
+LrSchedulerLrSchedulerArgs: TypeAlias = Union[
+    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
+]
+
+
 class LrScheduler(TypedDict, total=False):
-    lr_scheduler_type: Required[str]
+    lr_scheduler_type: Required[Literal["linear", "cosine"]]
 
     lr_scheduler_args: LrSchedulerLrSchedulerArgs
+
+
+class TrainingMethodTrainingMethodSft(TypedDict, total=False):
+    method: Required[Literal["sft"]]
+
+
+class TrainingMethodTrainingMethodDpo(TypedDict, total=False):
+    method: Required[Literal["dpo"]]
+
+    dpo_beta: float
+
+
+TrainingMethod: TypeAlias = Union[TrainingMethodTrainingMethodSft, TrainingMethodTrainingMethodDpo]
 
 
 class TrainingTypeFullTrainingType(TypedDict, total=False):

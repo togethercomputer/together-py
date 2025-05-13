@@ -12,6 +12,11 @@ __all__ = [
     "Event",
     "LrScheduler",
     "LrSchedulerLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "TrainingMethod",
+    "TrainingMethodTrainingMethodSft",
+    "TrainingMethodTrainingMethodDpo",
     "TrainingType",
     "TrainingTypeFullTrainingType",
     "TrainingTypeLoRaTrainingType",
@@ -74,15 +79,41 @@ class Event(BaseModel):
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
 
 
-class LrSchedulerLrSchedulerArgs(BaseModel):
+class LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(BaseModel):
     min_lr_ratio: Optional[float] = None
     """The ratio of the final learning rate to the peak learning rate"""
 
 
+class LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
+    min_lr_ratio: Optional[float] = None
+    """The ratio of the final learning rate to the peak learning rate"""
+
+    num_cycles: Optional[float] = None
+    """Number or fraction of cycles for the cosine learning rate scheduler"""
+
+
+LrSchedulerLrSchedulerArgs: TypeAlias = Union[
+    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
+]
+
+
 class LrScheduler(BaseModel):
-    lr_scheduler_type: str
+    lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
+
+
+class TrainingMethodTrainingMethodSft(BaseModel):
+    method: Literal["sft"]
+
+
+class TrainingMethodTrainingMethodDpo(BaseModel):
+    method: Literal["dpo"]
+
+    dpo_beta: Optional[float] = None
+
+
+TrainingMethod: TypeAlias = Union[TrainingMethodTrainingMethodSft, TrainingMethodTrainingMethodDpo]
 
 
 class TrainingTypeFullTrainingType(BaseModel):
@@ -119,7 +150,7 @@ class FineTune(BaseModel):
         "completed",
     ]
 
-    batch_size: Optional[int] = None
+    batch_size: Union[int, Literal["max"], None] = None
 
     created_at: Optional[str] = None
 
@@ -128,6 +159,8 @@ class FineTune(BaseModel):
     eval_steps: Optional[int] = None
 
     events: Optional[List[Event]] = None
+
+    from_checkpoint: Optional[str] = None
 
     job_id: Optional[str] = None
 
@@ -160,6 +193,8 @@ class FineTune(BaseModel):
     train_on_inputs: Union[bool, Literal["auto"], None] = None
 
     training_file: Optional[str] = None
+
+    training_method: Optional[TrainingMethod] = None
 
     training_type: Optional[TrainingType] = None
 

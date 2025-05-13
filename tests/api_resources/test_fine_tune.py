@@ -22,6 +22,7 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestFineTune:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_method_create(self, client: Together) -> None:
         fine_tune = client.fine_tune.create(
@@ -30,15 +31,17 @@ class TestFineTune:
         )
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         fine_tune = client.fine_tune.create(
             model="model",
             training_file="training_file",
             batch_size=0,
+            from_checkpoint="from_checkpoint",
             learning_rate=0,
             lr_scheduler={
-                "lr_scheduler_type": "lr_scheduler_type",
+                "lr_scheduler_type": "linear",
                 "lr_scheduler_args": {"min_lr_ratio": 0},
             },
             max_grad_norm=0,
@@ -47,6 +50,7 @@ class TestFineTune:
             n_evals=0,
             suffix="suffix",
             train_on_inputs=True,
+            training_method={"method": "sft"},
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",
@@ -58,6 +62,7 @@ class TestFineTune:
         )
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.fine_tune.with_raw_response.create(
@@ -70,6 +75,7 @@ class TestFineTune:
         fine_tune = response.parse()
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.fine_tune.with_streaming_response.create(
@@ -268,6 +274,7 @@ class TestFineTune:
 class TestAsyncFineTune:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         fine_tune = await async_client.fine_tune.create(
@@ -276,15 +283,17 @@ class TestAsyncFineTune:
         )
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         fine_tune = await async_client.fine_tune.create(
             model="model",
             training_file="training_file",
             batch_size=0,
+            from_checkpoint="from_checkpoint",
             learning_rate=0,
             lr_scheduler={
-                "lr_scheduler_type": "lr_scheduler_type",
+                "lr_scheduler_type": "linear",
                 "lr_scheduler_args": {"min_lr_ratio": 0},
             },
             max_grad_norm=0,
@@ -293,6 +302,7 @@ class TestAsyncFineTune:
             n_evals=0,
             suffix="suffix",
             train_on_inputs=True,
+            training_method={"method": "sft"},
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",
@@ -304,6 +314,7 @@ class TestAsyncFineTune:
         )
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.fine_tune.with_raw_response.create(
@@ -316,6 +327,7 @@ class TestAsyncFineTune:
         fine_tune = await response.parse()
         assert_matches_type(FineTune, fine_tune, path=["response"])
 
+    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.fine_tune.with_streaming_response.create(

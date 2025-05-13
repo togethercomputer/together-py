@@ -36,7 +36,7 @@ from ._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .resources import audio, files, images, models, fine_tune, embeddings, completions
+from .resources import jobs, audio, files, images, models, hardware, endpoints, fine_tune, embeddings, completions
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -47,6 +47,7 @@ from ._base_client import (
 )
 from .resources.chat import chat
 from .types.rerank_response import RerankResponse
+from .resources.code_interpreter import code_interpreter
 
 __all__ = [
     "Timeout",
@@ -66,9 +67,13 @@ class Together(SyncAPIClient):
     embeddings: embeddings.EmbeddingsResource
     files: files.FilesResource
     fine_tune: fine_tune.FineTuneResource
+    code_interpreter: code_interpreter.CodeInterpreterResource
     images: images.ImagesResource
     audio: audio.AudioResource
     models: models.ModelsResource
+    jobs: jobs.JobsResource
+    endpoints: endpoints.EndpointsResource
+    hardware: hardware.HardwareResource
     with_raw_response: TogetherWithRawResponse
     with_streaming_response: TogetherWithStreamedResponse
 
@@ -133,9 +138,13 @@ class Together(SyncAPIClient):
         self.embeddings = embeddings.EmbeddingsResource(self)
         self.files = files.FilesResource(self)
         self.fine_tune = fine_tune.FineTuneResource(self)
+        self.code_interpreter = code_interpreter.CodeInterpreterResource(self)
         self.images = images.ImagesResource(self)
         self.audio = audio.AudioResource(self)
         self.models = models.ModelsResource(self)
+        self.jobs = jobs.JobsResource(self)
+        self.endpoints = endpoints.EndpointsResource(self)
+        self.hardware = hardware.HardwareResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
         self.with_streaming_response = TogetherWithStreamedResponse(self)
 
@@ -312,9 +321,13 @@ class AsyncTogether(AsyncAPIClient):
     embeddings: embeddings.AsyncEmbeddingsResource
     files: files.AsyncFilesResource
     fine_tune: fine_tune.AsyncFineTuneResource
+    code_interpreter: code_interpreter.AsyncCodeInterpreterResource
     images: images.AsyncImagesResource
     audio: audio.AsyncAudioResource
     models: models.AsyncModelsResource
+    jobs: jobs.AsyncJobsResource
+    endpoints: endpoints.AsyncEndpointsResource
+    hardware: hardware.AsyncHardwareResource
     with_raw_response: AsyncTogetherWithRawResponse
     with_streaming_response: AsyncTogetherWithStreamedResponse
 
@@ -379,9 +392,13 @@ class AsyncTogether(AsyncAPIClient):
         self.embeddings = embeddings.AsyncEmbeddingsResource(self)
         self.files = files.AsyncFilesResource(self)
         self.fine_tune = fine_tune.AsyncFineTuneResource(self)
+        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResource(self)
         self.images = images.AsyncImagesResource(self)
         self.audio = audio.AsyncAudioResource(self)
         self.models = models.AsyncModelsResource(self)
+        self.jobs = jobs.AsyncJobsResource(self)
+        self.endpoints = endpoints.AsyncEndpointsResource(self)
+        self.hardware = hardware.AsyncHardwareResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
 
@@ -559,9 +576,13 @@ class TogetherWithRawResponse:
         self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
         self.files = files.FilesResourceWithRawResponse(client.files)
         self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.CodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithRawResponse(client.images)
         self.audio = audio.AudioResourceWithRawResponse(client.audio)
         self.models = models.ModelsResourceWithRawResponse(client.models)
+        self.jobs = jobs.JobsResourceWithRawResponse(client.jobs)
+        self.endpoints = endpoints.EndpointsResourceWithRawResponse(client.endpoints)
+        self.hardware = hardware.HardwareResourceWithRawResponse(client.hardware)
 
         self.rerank = to_raw_response_wrapper(
             client.rerank,
@@ -575,9 +596,13 @@ class AsyncTogetherWithRawResponse:
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
         self.files = files.AsyncFilesResourceWithRawResponse(client.files)
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
         self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
         self.models = models.AsyncModelsResourceWithRawResponse(client.models)
+        self.jobs = jobs.AsyncJobsResourceWithRawResponse(client.jobs)
+        self.endpoints = endpoints.AsyncEndpointsResourceWithRawResponse(client.endpoints)
+        self.hardware = hardware.AsyncHardwareResourceWithRawResponse(client.hardware)
 
         self.rerank = async_to_raw_response_wrapper(
             client.rerank,
@@ -591,9 +616,13 @@ class TogetherWithStreamedResponse:
         self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
         self.files = files.FilesResourceWithStreamingResponse(client.files)
         self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.CodeInterpreterResourceWithStreamingResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
         self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
         self.models = models.ModelsResourceWithStreamingResponse(client.models)
+        self.jobs = jobs.JobsResourceWithStreamingResponse(client.jobs)
+        self.endpoints = endpoints.EndpointsResourceWithStreamingResponse(client.endpoints)
+        self.hardware = hardware.HardwareResourceWithStreamingResponse(client.hardware)
 
         self.rerank = to_streamed_response_wrapper(
             client.rerank,
@@ -607,9 +636,15 @@ class AsyncTogetherWithStreamedResponse:
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
         self.files = files.AsyncFilesResourceWithStreamingResponse(client.files)
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithStreamingResponse(
+            client.code_interpreter
+        )
         self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
         self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
         self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
+        self.jobs = jobs.AsyncJobsResourceWithStreamingResponse(client.jobs)
+        self.endpoints = endpoints.AsyncEndpointsResourceWithStreamingResponse(client.endpoints)
+        self.hardware = hardware.AsyncHardwareResourceWithStreamingResponse(client.hardware)
 
         self.rerank = async_to_streamed_response_wrapper(
             client.rerank,

@@ -14,6 +14,8 @@ __all__ = [
     "CompletionCreateParamsBase",
     "Message",
     "MessageContentUnionMember1",
+    "MessageContentUnionMember1Video",
+    "MessageContentUnionMember1VideoVideoURL",
     "FunctionCall",
     "FunctionCallName",
     "ResponseFormat",
@@ -157,8 +159,21 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
 
+class MessageContentUnionMember1VideoVideoURL(TypedDict, total=False):
+    url: Required[str]
+    """The URL of the video"""
+
+
+class MessageContentUnionMember1Video(TypedDict, total=False):
+    type: Required[Literal["video_url"]]
+
+    video_url: Required[MessageContentUnionMember1VideoVideoURL]
+
+
 MessageContentUnionMember1: TypeAlias = Union[
-    ChatCompletionStructuredMessageTextParam, ChatCompletionStructuredMessageImageURLParam
+    ChatCompletionStructuredMessageTextParam,
+    ChatCompletionStructuredMessageImageURLParam,
+    MessageContentUnionMember1Video,
 ]
 
 
@@ -170,7 +185,10 @@ class Message(TypedDict, total=False):
     """
 
     role: Required[Literal["system", "user", "assistant", "tool"]]
-    """The role of the messages author. Choice between: system, user, or assistant."""
+    """The role of the messages author.
+
+    Choice between: system, user, assistant, or tool.
+    """
 
 
 class FunctionCallName(TypedDict, total=False):
@@ -181,7 +199,7 @@ FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
 
 
 class ResponseFormat(TypedDict, total=False):
-    schema: Dict[str, str]
+    schema: Dict[str, object]
     """The schema of the response format."""
 
     type: str

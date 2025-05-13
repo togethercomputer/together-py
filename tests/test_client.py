@@ -814,7 +814,7 @@ class TestTogether:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
 
         assert response.retries_taken == failures_before_success
@@ -846,7 +846,7 @@ class TestTogether:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": Omit()},
         )
 
@@ -878,7 +878,7 @@ class TestTogether:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": "42"},
         )
 
@@ -1657,7 +1657,7 @@ class TestAsyncTogether:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
 
         assert response.retries_taken == failures_before_success
@@ -1690,7 +1690,7 @@ class TestAsyncTogether:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": Omit()},
         )
 
@@ -1723,7 +1723,7 @@ class TestAsyncTogether:
                     "role": "system",
                 }
             ],
-            model="Qwen/Qwen2.5-72B-Instruct-Turbo",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             extra_headers={"x-stainless-retry-count": "42"},
         )
 
@@ -1741,7 +1741,7 @@ class TestAsyncTogether:
         import threading
 
         from together._utils import asyncify
-        from together._base_client import get_platform 
+        from together._base_client import get_platform
 
         async def test_main() -> None:
             result = await asyncify(get_platform)()
