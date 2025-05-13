@@ -1,5 +1,70 @@
 # Changelog
 
+## 0.1.0-alpha.4 (2025-05-13)
+
+Full Changelog: [v0.1.0-alpha.3...v0.1.0-alpha.4](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.3...v0.1.0-alpha.4)
+
+### Features
+
+* **api:** add tci resources ([023b3a0](https://github.com/togethercomputer/together-py/commit/023b3a00991729a0a06845ee7f64f760cf6f4325))
+* **api:** adds unspecified endpoints ([678f58a](https://github.com/togethercomputer/together-py/commit/678f58af8b2be9e65b667cb0b104a9be4b6667f4))
+* **api:** api update ([6d9609e](https://github.com/togethercomputer/together-py/commit/6d9609e279d228ba1aad926914d089904b858c01))
+* **api:** api update ([bb40eb9](https://github.com/togethercomputer/together-py/commit/bb40eb96cbf911f0f9772c98e261988ab1432383))
+* **api:** api update ([271887f](https://github.com/togethercomputer/together-py/commit/271887fe30d8f4b8f0405d16366e1f82868a1d0d))
+* **api:** api update ([2a7de06](https://github.com/togethercomputer/together-py/commit/2a7de06a3a1b5425a1dd553c32390df21b252e21))
+* **api:** api update ([#117](https://github.com/togethercomputer/together-py/issues/117)) ([dd8e841](https://github.com/togethercomputer/together-py/commit/dd8e841d1eaf40a9f143f63f7f4ced0f701b0fbd))
+* **api:** api update ([#120](https://github.com/togethercomputer/together-py/issues/120)) ([adf0e5b](https://github.com/togethercomputer/together-py/commit/adf0e5ba1cd266278cf4503b04cfcd847a97b0e4))
+* **api:** api update ([#121](https://github.com/togethercomputer/together-py/issues/121)) ([0ab0bc9](https://github.com/togethercomputer/together-py/commit/0ab0bc97ca4db4d2d64f3c2f9eeada9ffa37fc97))
+* **api:** api update ([#130](https://github.com/togethercomputer/together-py/issues/130)) ([4f1a7ea](https://github.com/togethercomputer/together-py/commit/4f1a7ea708c55466f4fa3f1698b505ffbfe2aea6))
+* **api:** api update ([#132](https://github.com/togethercomputer/together-py/issues/132)) ([7c8a194](https://github.com/togethercomputer/together-py/commit/7c8a194c4e1f484f8455adce6f56c840411f4946))
+* **api:** api update ([#135](https://github.com/togethercomputer/together-py/issues/135)) ([22a93e9](https://github.com/togethercomputer/together-py/commit/22a93e9c5c7a33c502f5a4c380c576c2a752d6a5))
+
+
+### Bug Fixes
+
+* **ci:** ensure pip is always available ([#127](https://github.com/togethercomputer/together-py/issues/127)) ([4da2bc0](https://github.com/togethercomputer/together-py/commit/4da2bc0bb7cc4516cf0d93032544fbb71025c118))
+* **ci:** remove publishing patch ([#128](https://github.com/togethercomputer/together-py/issues/128)) ([6bd4d6f](https://github.com/togethercomputer/together-py/commit/6bd4d6f8d8f8842f56cdbb56df0a4d5e5227dde4))
+* **client:** correct type to enum ([#129](https://github.com/togethercomputer/together-py/issues/129)) ([8a5fa0e](https://github.com/togethercomputer/together-py/commit/8a5fa0e2858e851756f022943ada948374bb017c))
+* **package:** support direct resource imports ([f59e7c3](https://github.com/togethercomputer/together-py/commit/f59e7c3b3bcc7c076bd8c71b2ab42f8a117e5519))
+* **perf:** optimize some hot paths ([f79734d](https://github.com/togethercomputer/together-py/commit/f79734d809a4a7c18eb8903190e6b4d90d299e45))
+* **perf:** skip traversing types for NotGiven values ([1103dd0](https://github.com/togethercomputer/together-py/commit/1103dd03e7f021deadd0b000b3bff9c5494442b6))
+* **pydantic v1:** more robust ModelField.annotation check ([d380238](https://github.com/togethercomputer/together-py/commit/d3802383e80ad8d3606a1e753c72a20864531332))
+* skip invalid fine-tune test ([#133](https://github.com/togethercomputer/together-py/issues/133)) ([2f41046](https://github.com/togethercomputer/together-py/commit/2f4104625264947305cee0bd26fc38ff290f16ea))
+* **tests:** correctly skip create fine tune tests ([#138](https://github.com/togethercomputer/together-py/issues/138)) ([47c9cae](https://github.com/togethercomputer/together-py/commit/47c9cae7da9caee8de3ba7480b784fc5d168e1b0))
+* **types:** handle more discriminated union shapes ([#126](https://github.com/togethercomputer/together-py/issues/126)) ([2483c76](https://github.com/togethercomputer/together-py/commit/2483c76ee0cf06ee7a1819446cfa4fa349958da4))
+
+
+### Chores
+
+* broadly detect json family of content-type headers ([6e2421e](https://github.com/togethercomputer/together-py/commit/6e2421e126e74b4bcc7bc2aaef07a078bdd1e0ea))
+* **ci:** add timeout thresholds for CI jobs ([2425c53](https://github.com/togethercomputer/together-py/commit/2425c53723d34959380d44131d607ded5a665004))
+* **ci:** only use depot for staging repos ([2dfe569](https://github.com/togethercomputer/together-py/commit/2dfe569cf72f74a97fbe1e282c9d079c371d32aa))
+* **ci:** run on more branches and use depot runners ([3c61f56](https://github.com/togethercomputer/together-py/commit/3c61f565633c395dba16fda924c241910145c13c))
+* **client:** minor internal fixes ([f6f5174](https://github.com/togethercomputer/together-py/commit/f6f5174c6ec0b9a3a4decfc25737efbbb52bffe5))
+* fix typos ([#131](https://github.com/togethercomputer/together-py/issues/131)) ([dedf3ad](https://github.com/togethercomputer/together-py/commit/dedf3adb709255ba9303e29354b013db8a8520b9))
+* **internal:** avoid errors for isinstance checks on proxies ([8b81509](https://github.com/togethercomputer/together-py/commit/8b81509faac153ee4a33b3460c17759e2465dfcd))
+* **internal:** base client updates ([890efc3](https://github.com/togethercomputer/together-py/commit/890efc36f00553025237601bad51f3f0a906376b))
+* **internal:** bump pyright version ([01e104a](https://github.com/togethercomputer/together-py/commit/01e104a2bba92c77ef610cf48720d8a2785ff39b))
+* **internal:** bump rye to 0.44.0 ([#124](https://github.com/togethercomputer/together-py/issues/124)) ([e8c3dc3](https://github.com/togethercomputer/together-py/commit/e8c3dc3be0e56d7c4e7a48d8f824a88878e0c981))
+* **internal:** codegen related update ([#125](https://github.com/togethercomputer/together-py/issues/125)) ([5e83e04](https://github.com/togethercomputer/together-py/commit/5e83e043b3f62c38fa13c72d54278e845c2df46a))
+* **internal:** expand CI branch coverage ([#139](https://github.com/togethercomputer/together-py/issues/139)) ([2db8ca2](https://github.com/togethercomputer/together-py/commit/2db8ca2b6d063b136e9cb50c3991a11f6f47e4fb))
+* **internal:** fix list file params ([8a8dcd3](https://github.com/togethercomputer/together-py/commit/8a8dcd384e480c52358460ba662a48311a415cfb))
+* **internal:** import reformatting ([49f361b](https://github.com/togethercomputer/together-py/commit/49f361bf9d548ca45a01e31972b5db797752e481))
+* **internal:** minor formatting changes ([33e3a75](https://github.com/togethercomputer/together-py/commit/33e3a751bd9f3382e5e462bbcf92a212e14d26ff))
+* **internal:** reduce CI branch coverage ([6f6ac97](https://github.com/togethercomputer/together-py/commit/6f6ac973e36bdeb28883ff6281228c67f76c55a1))
+* **internal:** refactor retries to not use recursion ([ffb0eb4](https://github.com/togethercomputer/together-py/commit/ffb0eb46712544a86f01eaa842ac13f085e37fee))
+* **internal:** remove extra empty newlines ([#122](https://github.com/togethercomputer/together-py/issues/122)) ([b0cbbaa](https://github.com/togethercomputer/together-py/commit/b0cbbaa10e003e84cf2c8c23ef05baa6bc9d4e82))
+* **internal:** remove trailing character ([#134](https://github.com/togethercomputer/together-py/issues/134)) ([f09c6cb](https://github.com/togethercomputer/together-py/commit/f09c6cb1620997e72b99bc918d77ae9a2be9e8b3))
+* **internal:** slight transform perf improvement ([#136](https://github.com/togethercomputer/together-py/issues/136)) ([d31383c](https://github.com/togethercomputer/together-py/commit/d31383c0f8fb1749381fad871aa60bd0eaad3e03))
+* **internal:** update models test ([b64d4cc](https://github.com/togethercomputer/together-py/commit/b64d4cc9a1424fa7f46088e51306b877afba3fae))
+* **internal:** update pyright settings ([05720d5](https://github.com/togethercomputer/together-py/commit/05720d5b0b7387fbe3b04975dfa6b764898a7a02))
+* **tests:** improve enum examples ([#137](https://github.com/togethercomputer/together-py/issues/137)) ([4c3e75d](https://github.com/togethercomputer/together-py/commit/4c3e75d5aa75421d4aca257c0df89d24e2db264e))
+
+
+### Documentation
+
+* revise readme docs about nested params ([#118](https://github.com/togethercomputer/together-py/issues/118)) ([0eefffd](https://github.com/togethercomputer/together-py/commit/0eefffd623bc692f2e03fd299b9b05c3bb88bf53))
+
 ## 0.1.0-alpha.3 (2025-03-05)
 
 Full Changelog: [v0.1.0-alpha.2...v0.1.0-alpha.3](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.2...v0.1.0-alpha.3)
