@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing_extensions import Literal
+
 import httpx
 
 from ..types import model_upload_params
@@ -66,8 +68,11 @@ class ModelsResource(SyncAPIResource):
         *,
         model_name: str,
         model_source: str,
+        base_model: str | NotGiven = NOT_GIVEN,
         description: str | NotGiven = NOT_GIVEN,
         hf_token: str | NotGiven = NOT_GIVEN,
+        lora_model: str | NotGiven = NOT_GIVEN,
+        model_type: Literal["model", "adapter"] | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -76,16 +81,24 @@ class ModelsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ModelUploadResponse:
         """
-        Upload a custom model from Hugging Face or S3
+        Upload a custom model or adapter from Hugging Face or S3
 
         Args:
           model_name: The name to give to your uploaded model
 
           model_source: The source location of the model (Hugging Face repo or S3 path)
 
+          base_model: The base model to use for an adapter if setting it to run against a serverless
+              pool. Only used for model_type `adapter`.
+
           description: A description of your model
 
           hf_token: Hugging Face token (if uploading from Hugging Face)
+
+          lora_model: The lora pool to use for an adapter if setting it to run against, say, a
+              dedicated pool. Only used for model_type `adapter`.
+
+          model_type: Whether the model is a full model or an adapter
 
           extra_headers: Send extra headers
 
@@ -101,8 +114,11 @@ class ModelsResource(SyncAPIResource):
                 {
                     "model_name": model_name,
                     "model_source": model_source,
+                    "base_model": base_model,
                     "description": description,
                     "hf_token": hf_token,
+                    "lora_model": lora_model,
+                    "model_type": model_type,
                 },
                 model_upload_params.ModelUploadParams,
             ),
@@ -157,8 +173,11 @@ class AsyncModelsResource(AsyncAPIResource):
         *,
         model_name: str,
         model_source: str,
+        base_model: str | NotGiven = NOT_GIVEN,
         description: str | NotGiven = NOT_GIVEN,
         hf_token: str | NotGiven = NOT_GIVEN,
+        lora_model: str | NotGiven = NOT_GIVEN,
+        model_type: Literal["model", "adapter"] | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -167,16 +186,24 @@ class AsyncModelsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> ModelUploadResponse:
         """
-        Upload a custom model from Hugging Face or S3
+        Upload a custom model or adapter from Hugging Face or S3
 
         Args:
           model_name: The name to give to your uploaded model
 
           model_source: The source location of the model (Hugging Face repo or S3 path)
 
+          base_model: The base model to use for an adapter if setting it to run against a serverless
+              pool. Only used for model_type `adapter`.
+
           description: A description of your model
 
           hf_token: Hugging Face token (if uploading from Hugging Face)
+
+          lora_model: The lora pool to use for an adapter if setting it to run against, say, a
+              dedicated pool. Only used for model_type `adapter`.
+
+          model_type: Whether the model is a full model or an adapter
 
           extra_headers: Send extra headers
 
@@ -192,8 +219,11 @@ class AsyncModelsResource(AsyncAPIResource):
                 {
                     "model_name": model_name,
                     "model_source": model_source,
+                    "base_model": base_model,
                     "description": description,
                     "hf_token": hf_token,
+                    "lora_model": lora_model,
+                    "model_type": model_type,
                 },
                 model_upload_params.ModelUploadParams,
             ),
