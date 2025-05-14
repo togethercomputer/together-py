@@ -1,18 +1,18 @@
 import os
 
 import pytest
+from typing_extensions import Literal
 
 from together import Together
-from together.types import CompletionChunk
-from together.types.common import DeltaContent, ObjectType, UsageData
-from together.types.completions import CompletionChoicesChunk
+from together.types.chat.chat_completion_chunk import ChoiceDelta, ChatCompletionChunk, Choice
+from together.types.chat.chat_completion_usage import ChatCompletionUsage
 
 from .generate_hyperparameters import (
-    random_max_tokens,  # noqa
-    random_repetition_penalty,  # noqa
-    random_temperature,  # noqa
-    random_top_k,  # noqa
-    random_top_p,  # noqa
+    random_max_tokens,  # pyright: ignore[reportUnusedImport]
+    random_repetition_penalty,  # pyright: ignore[reportUnusedImport]
+    random_temperature,  # pyright: ignore[reportUnusedImport]
+    random_top_k,  # pyright: ignore[reportUnusedImport]
+    random_top_p,  # pyright: ignore[reportUnusedImport]
 )
 
 
@@ -27,12 +27,12 @@ class TestTogetherCompletionStream:
 
     def test_create(
         self,
-        sync_together_client,
-        random_max_tokens,  # noqa
-        random_temperature,  # noqa
-        random_top_p,  # noqa
-        random_top_k,  # noqa
-        random_repetition_penalty,  # noqa
+        sync_together_client: Together,
+        random_max_tokens: int,
+        random_temperature: float,
+        random_top_p: float,
+        random_top_k: int,
+        random_repetition_penalty: float,
     ) -> None:
         prompt = "The space robots have"
         model = "mistralai/Mixtral-8x7B-v0.1"
@@ -64,19 +64,19 @@ class TestTogetherCompletionStream:
         usage = None
 
         for chunk in response:
-            assert isinstance(chunk, CompletionChunk)
+            assert isinstance(chunk, ChatCompletionChunk)
 
             assert isinstance(chunk.id, str)
             assert isinstance(chunk.created, int)
-            assert isinstance(chunk.object, ObjectType)
-            assert isinstance(chunk.choices[0], CompletionChoicesChunk)
+            assert isinstance(chunk.object, Literal["chat.completion.chunk"])
+            assert isinstance(chunk.choices[0], Choice)
             assert isinstance(chunk.choices[0].index, int)
-            assert isinstance(chunk.choices[0].delta, DeltaContent)
+            assert isinstance(chunk.choices[0].delta, ChoiceDelta)
             assert isinstance(chunk.choices[0].delta.content, str)
 
             usage = chunk.usage
 
-        assert isinstance(usage, UsageData)
+        assert isinstance(usage, ChatCompletionUsage)
         assert isinstance(usage.prompt_tokens, int)
         assert isinstance(usage.completion_tokens, int)
         assert isinstance(usage.total_tokens, int)
