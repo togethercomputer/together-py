@@ -1,13 +1,14 @@
 import os
 from itertools import product
+from typing_extensions import Literal
 
 import pytest
 
 from together import Together
-from together.error import InvalidRequestError
-from together.types import CompletionResponse
-from together.types.common import ObjectType, UsageData
-from together.types.completions import CompletionChoicesData
+from together import BadRequestError
+from together.types import Completion
+from together.types.chat.chat_completion_usage import ChatCompletionUsage
+from together.types.completion import Choice
 
 from ..constants import (
     completion_prompt_list,
@@ -15,14 +16,14 @@ from ..constants import (
     moderation_test_model_list,
 )
 from .generate_hyperparameters import (
-    random_frequency_penalty,  # noqa
-    random_max_tokens,  # noqa
-    random_min_p,  # noqa
-    random_presence_penalty,  # noqa
-    random_repetition_penalty,  # noqa
-    random_temperature,  # noqa
-    random_top_k,  # noqa
-    random_top_p,  # noqa
+    random_frequency_penalty,  # pyright: ignore[reportUnusedImport]
+    random_max_tokens,  # pyright: ignore[reportUnusedImport]
+    random_min_p,  # pyright: ignore[reportUnusedImport]
+    random_presence_penalty,  # pyright: ignore[reportUnusedImport]
+    random_repetition_penalty,  # pyright: ignore[reportUnusedImport]
+    random_temperature,  # pyright: ignore[reportUnusedImport]
+    random_top_k,  # pyright: ignore[reportUnusedImport]
+    random_top_p,  # pyright: ignore[reportUnusedImport]
 )
 
 
@@ -44,16 +45,16 @@ class TestTogetherCompletion:
     )
     def test_create(
         self,
-        model,
-        prompt,
-        sync_together_client,
-        random_max_tokens,  # noqa
-        random_temperature,  # noqa
-        random_top_p,  # noqa
-        random_top_k,  # noqa
-        random_presence_penalty,  # noqa
-        random_frequency_penalty,  # noqa
-        random_min_p,  # noqa
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
+        random_max_tokens: int,
+        random_temperature: float,
+        random_top_p: float,
+        random_top_k: int,
+        random_presence_penalty: float,
+        random_frequency_penalty: float,
+        random_min_p: float,
     ) -> None:
         """
         Tests structure and typing
@@ -90,17 +91,17 @@ class TestTogetherCompletion:
             echo=True,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
         assert isinstance(response.id, str)
         assert isinstance(response.created, int)
-        assert isinstance(response.object, ObjectType)
+        assert isinstance(response.object, Literal['text_completion'])
         assert isinstance(response.choices, list)
-        assert isinstance(response.choices[0], CompletionChoicesData)
+        assert isinstance(response.choices[0], Choice)
         assert isinstance(response.choices[0].text, str)
         assert isinstance(response.prompt, list)
         assert isinstance(response.prompt[0].text, str)
-        assert isinstance(response.usage, UsageData)
+        assert isinstance(response.usage, ChatCompletionUsage)
         assert isinstance(response.usage.prompt_tokens, int)
         assert isinstance(response.usage.completion_tokens, int)
         assert isinstance(response.usage.total_tokens, int)
@@ -115,9 +116,9 @@ class TestTogetherCompletion:
     )
     def test_prompt(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -127,8 +128,9 @@ class TestTogetherCompletion:
             echo=True,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
+        assert isinstance(response.prompt, list)
         assert response.prompt[0].text == prompt
 
     @pytest.mark.parametrize(
@@ -137,12 +139,12 @@ class TestTogetherCompletion:
     )
     def test_no_prompt(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
-            response = sync_together_client.completions.create(  # noqa
+            sync_together_client.completions.create(  # pyright: ignore[reportCallIssue]
                 model=model,
                 stop=STOP,
                 max_tokens=10,
@@ -155,9 +157,9 @@ class TestTogetherCompletion:
     )
     def test_model(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -167,7 +169,7 @@ class TestTogetherCompletion:
             echo=True,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -175,12 +177,12 @@ class TestTogetherCompletion:
     )
     def test_no_model(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
-            response = sync_together_client.completions.create(  # noqa
+            sync_together_client.completions.create(  # pyright: ignore[reportCallIssue]
                 prompt=prompt,
                 stop=STOP,
                 max_tokens=10,
@@ -193,9 +195,9 @@ class TestTogetherCompletion:
     )
     def test_max_tokens(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -204,8 +206,9 @@ class TestTogetherCompletion:
             max_tokens=1,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
+        assert response.usage is not None
         assert response.usage.completion_tokens == 1
 
     @pytest.mark.parametrize(
@@ -218,13 +221,13 @@ class TestTogetherCompletion:
     )
     def test_high_max_tokens(
         self,
-        model,
-        prompt,
-        max_tokens,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        sync_together_client: Together,
     ):
-        with pytest.raises(InvalidRequestError):
-            response = sync_together_client.completions.create(  # noqa
+        with pytest.raises(BadRequestError):
+            sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -237,17 +240,19 @@ class TestTogetherCompletion:
     )
     def test_echo(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt, model=model, stop=STOP, max_tokens=1, echo=True, logprobs=1
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
+        assert response.prompt is not None
         assert response.prompt[0].text == prompt
+        assert response.prompt[0].logprobs is not None
         assert isinstance(response.prompt[0].logprobs.tokens, list)
         assert isinstance(response.prompt[0].logprobs.token_logprobs, list)
 
@@ -257,16 +262,16 @@ class TestTogetherCompletion:
     )
     def test_n(
         self,
-        model,
-        prompt,
-        n,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        n: int,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt, model=model, stop=STOP, max_tokens=1, n=n, temperature=0.5
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
         assert len(response.choices) == n
 
@@ -279,15 +284,15 @@ class TestTogetherCompletion:
     )
     def test_high_n(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         MAX_N = 128
         n = MAX_N + 1
 
-        with pytest.raises(InvalidRequestError):
-            response = sync_together_client.completions.create(  # noqa
+        with pytest.raises(BadRequestError):
+            sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -305,15 +310,15 @@ class TestTogetherCompletion:
     )
     def test_n_with_no_sample(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         MAX_N = 128
         n = MAX_N + 1
 
-        with pytest.raises(InvalidRequestError):
-            response = sync_together_client.completions.create(  # noqa
+        with pytest.raises(BadRequestError):
+            sync_together_client.completions.create(  # noqa
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -331,10 +336,10 @@ class TestTogetherCompletion:
     )
     def test_safety_model(
         self,
-        model,
-        prompt,
-        safety_model,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        safety_model: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -344,7 +349,7 @@ class TestTogetherCompletion:
             safety_model=safety_model,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -355,10 +360,10 @@ class TestTogetherCompletion:
     )
     def test_repetition_penalty(
         self,
-        model,
-        prompt,
-        sync_together_client,
-        random_repetition_penalty,  # noqa
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
+        random_repetition_penalty: float,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -368,7 +373,7 @@ class TestTogetherCompletion:
             repetition_penalty=random_repetition_penalty,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -379,10 +384,10 @@ class TestTogetherCompletion:
     )
     def test_presence_penalty(
         self,
-        model,
-        prompt,
-        sync_together_client,
-        random_presence_penalty,  # noqa
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
+        random_presence_penalty: float,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -392,7 +397,7 @@ class TestTogetherCompletion:
             presence_penalty=random_presence_penalty,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -403,12 +408,12 @@ class TestTogetherCompletion:
     )
     def test_high_presence_penalty(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
-        with pytest.raises(InvalidRequestError):
-            response = sync_together_client.completions.create(  # noqa
+        with pytest.raises(BadRequestError):
+            sync_together_client.completions.create(  # noqa
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -425,10 +430,10 @@ class TestTogetherCompletion:
     )
     def test_frequency_penalty(
         self,
-        model,
-        prompt,
-        sync_together_client,
-        random_frequency_penalty,  # noqa
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
+        random_frequency_penalty: float,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -438,7 +443,7 @@ class TestTogetherCompletion:
             frequency_penalty=random_frequency_penalty,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -449,12 +454,12 @@ class TestTogetherCompletion:
     )
     def test_high_frequency_penalty(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
-        with pytest.raises(InvalidRequestError):
-            response = sync_together_client.completions.create(  # noqa
+        with pytest.raises(BadRequestError):
+            sync_together_client.completions.create(  # noqa
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -471,10 +476,10 @@ class TestTogetherCompletion:
     )
     def test_min_p(
         self,
-        model,
-        prompt,
-        sync_together_client,
-        random_min_p,  # noqa
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
+        random_min_p: float,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -484,7 +489,7 @@ class TestTogetherCompletion:
             min_p=random_min_p,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -495,12 +500,12 @@ class TestTogetherCompletion:
     )
     def test_high_min_p(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
-        with pytest.raises(InvalidRequestError):
-            response = sync_together_client.completions.create(  # noqa
+        with pytest.raises(BadRequestError):
+            sync_together_client.completions.create(  # noqa
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -517,9 +522,9 @@ class TestTogetherCompletion:
     )
     def test_logit_bias(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -529,7 +534,7 @@ class TestTogetherCompletion:
             logit_bias={"1024": 10},
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -540,9 +545,9 @@ class TestTogetherCompletion:
     )
     def test_seed(
         self,
-        model,
-        prompt,
-        sync_together_client,
+        model: str,
+        prompt: str,
+        sync_together_client: Together,
     ):
         response = sync_together_client.completions.create(
             prompt=prompt,
@@ -552,5 +557,5 @@ class TestTogetherCompletion:
             seed=4242,
         )
 
-        assert isinstance(response, CompletionResponse)
+        assert isinstance(response, Completion)
         assert response.choices[0].seed == 4242

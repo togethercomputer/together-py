@@ -1,10 +1,12 @@
-completion_test_model_list = [
+from typing import List
+
+completion_test_model_list: List[str] = [
     "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 ]
-chat_test_model_list = []
-embedding_test_model_list = []
-image_test_model_list = []
-moderation_test_model_list = []
+chat_test_model_list: List[str] = []
+embedding_test_model_list: List[str] = []
+image_test_model_list: List[str] = []
+moderation_test_model_list: List[str] = []
 
 LLAMA_PROMPT = """Llamas that are well-socialized and trained to halter and lead after weaning are very friendly and pleasant to be around. They are extremely curious and most will approach people easily. However, llamas that are bottle-fed or over-socialized and over-handled as youth will become extremely difficult to handle when mature, when they will begin to treat humans as they treat each other, which is characterized by bouts of spitting, kicking and neck wrestling.
 Llamas are now utilized as certified therapy animals in nursing homes and hospitals. Rojo the Llama, located in the Pacific Northwest was certified in 2008. The Mayo Clinic says animal-assisted therapy can reduce pain, depression, anxiety, and fatigue. This type of therapy is growing in popularity, and there are several organizations throughout the United States that participate.
@@ -14,7 +16,7 @@ The sound of the llama making groaning noises or going "mwa" is often a sign of 
 An "orgle" is the mating sound of a llama or alpaca, made by the sexually aroused male. The sound is reminiscent of gargling, but with a more forceful, buzzing edge. Males begin the sound when they become aroused and continue throughout copulation.
 Using llamas as livestock guards in North America began in the early 1980s, and some sheep producers have used llamas successfully since then. Some would even use them to guard their smaller cousins, the alpaca. They are used most commonly in the western regions of the United States, where larger predators, such as coyotes and feral dogs, are prevalent. Typically, a single gelding (castrated male) is used."""
 
-completion_prompt_list = [
+completion_prompt_list: List[str] = [
     "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.",
     "hi," * 25,
     LLAMA_PROMPT,
