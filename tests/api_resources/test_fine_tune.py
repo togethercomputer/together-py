@@ -50,7 +50,10 @@ class TestFineTune:
             n_evals=0,
             suffix="suffix",
             train_on_inputs=True,
-            training_method={"method": "sft"},
+            training_method={
+                "method": "sft",
+                "train_on_inputs": True,
+            },
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",
@@ -302,7 +305,10 @@ class TestAsyncFineTune:
             n_evals=0,
             suffix="suffix",
             train_on_inputs=True,
-            training_method={"method": "sft"},
+            training_method={
+                "method": "sft",
+                "train_on_inputs": True,
+            },
             training_type={"type": "Full"},
             validation_file="validation_file",
             wandb_api_key="wandb_api_key",

@@ -141,6 +141,12 @@ class LrScheduler(TypedDict, total=False):
 class TrainingMethodTrainingMethodSft(TypedDict, total=False):
     method: Required[Literal["sft"]]
 
+    train_on_inputs: Required[Union[bool, Literal["auto"]]]
+    """
+    Whether to mask the user messages in conversational data or prompts in
+    instruction data.
+    """
+
 
 class TrainingMethodTrainingMethodDpo(TypedDict, total=False):
     method: Required[Literal["dpo"]]
