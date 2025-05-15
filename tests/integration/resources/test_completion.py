@@ -144,7 +144,7 @@ class TestTogetherCompletion:
         sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
-            sync_together_client.completions.create(  # pyright: ignore[reportCallIssue]
+            _ = sync_together_client.completions.create(  # pyright: ignore[reportCallIssue, reportUnknownVariableType]
                 model=model,
                 stop=STOP,
                 max_tokens=10,
@@ -182,7 +182,7 @@ class TestTogetherCompletion:
         sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
-            sync_together_client.completions.create(  # pyright: ignore[reportCallIssue]
+            _ = sync_together_client.completions.create(  # pyright: ignore[reportCallIssue, reportUnknownVariableType]
                 prompt=prompt,
                 stop=STOP,
                 max_tokens=10,
@@ -227,7 +227,7 @@ class TestTogetherCompletion:
         sync_together_client: Together,
     ):
         with pytest.raises(BadRequestError):
-            sync_together_client.completions.create(
+            _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -292,7 +292,7 @@ class TestTogetherCompletion:
         n = MAX_N + 1
 
         with pytest.raises(BadRequestError):
-            sync_together_client.completions.create(
+            _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -318,7 +318,7 @@ class TestTogetherCompletion:
         n = MAX_N + 1
 
         with pytest.raises(BadRequestError):
-            sync_together_client.completions.create(  # noqa
+            _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -413,7 +413,7 @@ class TestTogetherCompletion:
         sync_together_client: Together,
     ):
         with pytest.raises(BadRequestError):
-            sync_together_client.completions.create(  # noqa
+            _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -459,7 +459,7 @@ class TestTogetherCompletion:
         sync_together_client: Together,
     ):
         with pytest.raises(BadRequestError):
-            sync_together_client.completions.create(  # noqa
+            _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
@@ -505,7 +505,7 @@ class TestTogetherCompletion:
         sync_together_client: Together,
     ):
         with pytest.raises(BadRequestError):
-            sync_together_client.completions.create(  # noqa
+            _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,
                 stop=STOP,
