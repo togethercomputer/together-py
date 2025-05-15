@@ -7,8 +7,10 @@ import pytest
 from together import Together
 from together import BadRequestError
 from together.types import Completion
-from together.types.chat.chat_completion_usage import ChatCompletionUsage
-from together.types.completion import Choice
+from together.types.completion import (
+    Choice,
+    ChatCompletionUsage,
+)
 
 from ..constants import (
     completion_prompt_list,
