@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 
 from together import AsyncTogether
-from together.error import AuthenticationError
-from together.types import TogetherClient
+from together import AuthenticationError
+from together import Together
 
 
 class TestAsyncTogether:
@@ -17,12 +17,12 @@ class TestAsyncTogether:
         with patch.dict("os.environ", {"TOGETHER_API_KEY": "fake_api_key"}):
             return AsyncTogether()
 
-    def test_init_with_api_key(self, async_together_instance):
+    def test_init_with_api_key(self, async_together_instance: AsyncTogether):
         """
         Test API key from environment works
         """
 
-        assert async_together_instance.client.api_key == "fake_api_key"
+        assert async_together_instance.api_key == "fake_api_key"
 
     def test_init_without_api_key(self):
         """
@@ -41,7 +41,7 @@ class TestAsyncTogether:
         with patch.dict("os.environ", {"TOGETHER_BASE_URL": "https://example.com"}):
             async_together = AsyncTogether(api_key="fake_api_key")
 
-            assert async_together.client.base_url == "https://example.com/"
+            assert async_together.base_url == "https://example.com/"
 
     def test_init_with_default_base_url(self):
         """
@@ -50,75 +50,66 @@ class TestAsyncTogether:
 
         async_together = AsyncTogether(api_key="fake_api_key")
 
-        assert async_together.client.base_url == "https://api.together.xyz/v1/"
+        assert async_together.base_url == "https://api.together.xyz/v1/"
 
-    def test_init_with_supplied_headers(self):
+    def test_init_with_default_headers(self):
         """
-        Test initializing with supplied_headers
+        Test initializing with default_headers
         """
 
-        supplied_headers = {"header1": "value1", "header2": "value2"}
+        default_headers = {"header1": "value1", "header2": "value2"}
 
         async_together = AsyncTogether(
-            api_key="fake_api_key", supplied_headers=supplied_headers
+            api_key="fake_api_key", default_headers=default_headers
         )
 
-        assert async_together.client.supplied_headers == supplied_headers
+        assert async_together.default_headers == default_headers
 
-    def test_completions_initialized(self, async_together_instance):
+    def test_completions_initialized(self, async_together_instance: AsyncTogether):
         """
         Test initializing completions
         """
 
         assert async_together_instance.completions is not None
 
-        assert isinstance(async_together_instance.completions._client, TogetherClient)
+        assert isinstance(async_together_instance.completions._client, Together)
 
-    def test_chat_initialized(self, async_together_instance):
+    def test_chat_initialized(self, async_together_instance: AsyncTogether):
         """
         Test initializing chat
         """
 
         assert async_together_instance.chat is not None
 
-        assert isinstance(async_together_instance.chat._client, TogetherClient)
+        assert isinstance(async_together_instance.chat._client, Together)
 
         assert isinstance(
-            async_together_instance.chat.completions._client, TogetherClient
+            async_together_instance.chat.completions._client, Together
         )
 
-    def test_embeddings_initialized(self, async_together_instance):
+    def test_embeddings_initialized(self, async_together_instance: AsyncTogether):
         """
         Test initializing embeddings
         """
 
         assert async_together_instance.embeddings is not None
 
-        assert isinstance(async_together_instance.embeddings._client, TogetherClient)
+        assert isinstance(async_together_instance.embeddings._client, Together)
 
-    def test_files_initialized(self, async_together_instance):
+    def test_files_initialized(self, async_together_instance: AsyncTogether):
         """
         Test initializing files
         """
 
         assert async_together_instance.files is not None
 
-        assert isinstance(async_together_instance.files._client, TogetherClient)
+        assert isinstance(async_together_instance.files._client, Together)
 
-    def test_fine_tuning_initialized(self, async_together_instance):
+    def test_fine_tuning_initialized(self, async_together_instance: AsyncTogether):
         """
-        Test initializing fine_tuning
-        """
-
-        assert async_together_instance.fine_tuning is not None
-
-        assert isinstance(async_together_instance.fine_tuning._client, TogetherClient)
-
-    def test_rerank_initialized(self, async_together_instance):
-        """
-        Test initializing rerank
+        Test initializing fine_tune
         """
 
-        assert async_together_instance.rerank is not None
+        assert async_together_instance.fine_tune is not None
 
-        assert isinstance(async_together_instance.rerank._client, TogetherClient)
+        assert isinstance(async_together_instance.fine_tune._client, Together)
