@@ -1,23 +1,21 @@
-from together.types.chat_completions import (
-    ChatCompletionMessage,
-    ChatCompletionMessageContent,
-    ChatCompletionMessageContentType,
-    ChatCompletionMessageContentVideoURL,
-    MessageRole,
+from together.types.chat.completion_create_params import (
+    Message,
+    ChatCompletionStructuredMessageTextParam,
+    MessageContentUnionMember1Video,
+    MessageContentUnionMember1VideoVideoURL,
 )
-
 
 def test_video_url_message():
     # Test creating a message with video_url content
-    message = ChatCompletionMessage(
-        role=MessageRole.USER,
+    message = Message(
+        role='user',
         content=[
-            ChatCompletionMessageContent(
-                type=ChatCompletionMessageContentType.TEXT, text="What's in this video?"
+            ChatCompletionStructuredMessageTextParam(
+                type='text', text="What's in this video?"
             ),
-            ChatCompletionMessageContent(
-                type=ChatCompletionMessageContentType.VIDEO_URL,
-                video_url=ChatCompletionMessageContentVideoURL(
+            MessageContentUnionMember1Video(
+                type='video_url',
+                video_url=MessageContentUnionMember1VideoVideoURL(
                     url="https://example.com/video.mp4"
                 ),
             ),
@@ -25,16 +23,16 @@ def test_video_url_message():
     )
 
     # Verify the message structure
-    assert message.role == MessageRole.USER
-    assert isinstance(message.content, list)
-    assert len(message.content) == 2
+    assert message['role'] == 'user'
+    assert isinstance(message['content'], list)
+    assert len(message['content']) == 2
 
     # Verify text content
-    assert message.content[0].type == ChatCompletionMessageContentType.TEXT
-    assert message.content[0].text == "What's in this video?"
-    assert message.content[0].video_url is None
+    assert 'type' in message['content'][0]
+    assert message['content'][0]['type'] == 'text'
+    assert message['content'][0]['text'] == "What's in this video?"
 
     # Verify video_url content
-    assert message.content[1].type == ChatCompletionMessageContentType.VIDEO_URL
-    assert message.content[1].text is None
-    assert message.content[1].video_url.url == "https://example.com/video.mp4"
+    assert 'type' in message['content'][1]
+    assert message['content'][1]['type'] == 'video_url'
+    assert message['content'][1]['video_url']['url'] == "https://example.com/video.mp4"
