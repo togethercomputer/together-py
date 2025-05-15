@@ -1,7 +1,6 @@
 import os
 
 import pytest
-from typing_extensions import Literal
 
 from together import Together
 from together.types.chat.chat_completion_chunk import ChoiceDelta, ChatCompletionChunk, Choice
@@ -68,7 +67,7 @@ class TestTogetherCompletionStream:
 
             assert isinstance(chunk.id, str)
             assert isinstance(chunk.created, int)
-            assert isinstance(chunk.object, Literal["chat.completion.chunk"])
+            assert chunk.object == "chat.completion.chunk"
             assert isinstance(chunk.choices[0], Choice)
             assert isinstance(chunk.choices[0].index, int)
             assert isinstance(chunk.choices[0].delta, ChoiceDelta)
