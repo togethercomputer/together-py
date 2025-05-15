@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
+from typing import List, Dict
 
-from together.utils.files import check_file
+from together.lib.utils.files import check_file
 
 
 def test_check_jsonl_valid_general(tmp_path: Path):
@@ -292,7 +293,7 @@ def test_check_jsonl_extra_column(tmp_path: Path):
 
 def test_check_jsonl_empty_messages(tmp_path: Path):
     file = tmp_path / "empty_messages.jsonl"
-    content = [{"messages": []}]
+    content: List[Dict[str, List[Dict[str, str]]]] = [{"messages": []}]
     with file.open("w") as f:
         f.write("\n".join(json.dumps(item) for item in content))
 
