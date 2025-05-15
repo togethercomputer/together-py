@@ -810,7 +810,7 @@ class TestTogether:
         response = client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "content": "string",
+                    "content": "content",
                     "role": "system",
                 }
             ],
@@ -842,7 +842,7 @@ class TestTogether:
         response = client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "content": "string",
+                    "content": "content",
                     "role": "system",
                 }
             ],
@@ -874,7 +874,7 @@ class TestTogether:
         response = client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "content": "string",
+                    "content": "content",
                     "role": "system",
                 }
             ],
@@ -1653,7 +1653,7 @@ class TestAsyncTogether:
         response = await client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "content": "string",
+                    "content": "content",
                     "role": "system",
                 }
             ],
@@ -1686,7 +1686,7 @@ class TestAsyncTogether:
         response = await client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "content": "string",
+                    "content": "content",
                     "role": "system",
                 }
             ],
@@ -1719,7 +1719,7 @@ class TestAsyncTogether:
         response = await client.chat.completions.with_raw_response.create(
             messages=[
                 {
-                    "content": "string",
+                    "content": "content",
                     "role": "system",
                 }
             ],
