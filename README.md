@@ -148,7 +148,7 @@ client = Together()
 chat_completion = client.chat.completions.create(
     messages=[
         {
-            "content": "string",
+            "content": "content",
             "role": "system",
         }
     ],
