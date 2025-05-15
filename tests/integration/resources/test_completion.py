@@ -96,7 +96,7 @@ class TestTogetherCompletion:
 
         assert isinstance(response.id, str)
         assert isinstance(response.created, int)
-        assert response.object == 'text_completion'
+        assert response.object == 'text.completion'
         assert isinstance(response.choices, list)
         assert isinstance(response.choices[0], Choice)
         assert isinstance(response.choices[0].text, str)
