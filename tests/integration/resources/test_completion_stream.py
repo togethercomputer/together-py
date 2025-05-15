@@ -3,8 +3,15 @@ import os
 import pytest
 
 from together import Together
-from together.types.chat.chat_completion_chunk import ChoiceDelta, ChatCompletionChunk, Choice
+from together.types.chat.chat_completion_chunk import (
+    ChoiceDelta,
+    ChatCompletionChunk,
+    Choice,
+)
 from together.types.chat.chat_completion_usage import ChatCompletionUsage
+from together.types import (
+    Completion,
+)
 
 from .generate_hyperparameters import (
     random_max_tokens,  # pyright: ignore[reportUnusedImport]
@@ -63,11 +70,11 @@ class TestTogetherCompletionStream:
         usage = None
 
         for chunk in response:
-            assert isinstance(chunk, ChatCompletionChunk)
+            assert isinstance(chunk, Completion)
 
             assert isinstance(chunk.id, str)
             assert isinstance(chunk.created, int)
-            assert chunk.object == "chat.completion.chunk"
+            assert chunk.object == "completion.chunk"
             assert isinstance(chunk.choices[0], Choice)
             assert isinstance(chunk.choices[0].index, int)
             assert isinstance(chunk.choices[0].delta, ChoiceDelta)

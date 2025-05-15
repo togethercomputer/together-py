@@ -4,7 +4,10 @@ from itertools import product
 import pytest
 
 from together import Together
-from together import BadRequestError
+from together import (
+    BadRequestError,
+    UnprocessableEntityError,
+)
 from together.types import Completion
 from together.types.completion import (
     Choice,
@@ -227,7 +230,7 @@ class TestTogetherCompletion:
         max_tokens: int,
         sync_together_client: Together,
     ):
-        with pytest.raises(BadRequestError):
+        with pytest.raises(UnprocessableEntityError):
             _ = sync_together_client.completions.create(
                 prompt=prompt,
                 model=model,

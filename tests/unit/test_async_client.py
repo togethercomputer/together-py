@@ -1,10 +1,11 @@
+from httpx import URL
 import os
 from unittest.mock import patch
 
 import pytest
 
 from together import AsyncTogether
-from together import AuthenticationError
+from together import TogetherError
 from together import Together
 
 
@@ -26,11 +27,11 @@ class TestAsyncTogether:
 
     def test_init_without_api_key(self):
         """
-        Test API key without API key raises AuthenticationError
+        Test API key without API key raises TogetherError
         """
 
-        with patch.dict(os.environ, {"TOGETHER_API_KEY": ""}, clear=True):
-            with pytest.raises(AuthenticationError):
+        with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(TogetherError):
                 AsyncTogether()
 
     def test_init_with_base_url_from_env(self):
@@ -41,7 +42,7 @@ class TestAsyncTogether:
         with patch.dict("os.environ", {"TOGETHER_BASE_URL": "https://example.com"}):
             async_together = AsyncTogether(api_key="fake_api_key")
 
-            assert async_together.base_url == "https://example.com/"
+            assert async_together.base_url == URL("https://example.com/")
 
     def test_init_with_default_base_url(self):
         """
@@ -50,7 +51,7 @@ class TestAsyncTogether:
 
         async_together = AsyncTogether(api_key="fake_api_key")
 
-        assert async_together.base_url == "https://api.together.xyz/v1/"
+        assert async_together.base_url == URL("https://api.together.xyz/v1/")
 
     def test_init_with_default_headers(self):
         """

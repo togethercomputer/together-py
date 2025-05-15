@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from together import Together
-from together import AuthenticationError
+from together import TogetherError
 
 
 class TestTogether:
@@ -25,11 +25,11 @@ class TestTogether:
 
     def test_init_without_api_key(self):
         """
-        Test init without API key raises AuthenticationError
+        Test init without API key raises TogetherError
         """
 
-        with patch.dict(os.environ, {"TOGETHER_API_KEY": ""}, clear=True):
-            with pytest.raises(AuthenticationError):
+        with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(TogetherError):
                 Together()
 
     def test_init_with_base_url_from_env(self):
