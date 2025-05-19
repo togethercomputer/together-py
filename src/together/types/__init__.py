@@ -11,6 +11,7 @@ from .tool_choice import ToolChoice as ToolChoice
 from .tools_param import ToolsParam as ToolsParam
 from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .rerank_response import RerankResponse as RerankResponse
+from .completion_chunk import CompletionChunk as CompletionChunk
 from .execute_response import ExecuteResponse as ExecuteResponse
 from .job_list_response import JobListResponse as JobListResponse
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam

@@ -7,12 +7,16 @@ from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 from ..tools_param import ToolsParam
 from ..tool_choice_param import ToolChoiceParam
+from .chat_completion_structured_message_text_param import ChatCompletionStructuredMessageTextParam
+from .chat_completion_structured_message_image_url_param import ChatCompletionStructuredMessageImageURLParam
+from .chat_completion_structured_message_video_url_param import ChatCompletionStructuredMessageVideoURLParam
 
 __all__ = [
     "CompletionCreateParamsBase",
     "Message",
     "MessageChatCompletionSystemMessageParam",
     "MessageChatCompletionUserMessageParam",
+    "MessageChatCompletionUserMessageParamContentUnionMember1",
     "MessageChatCompletionAssistantMessageParam",
     "MessageChatCompletionAssistantMessageParamFunctionCall",
     "MessageChatCompletionToolMessageParam",
@@ -168,8 +172,19 @@ class MessageChatCompletionSystemMessageParam(TypedDict, total=False):
     name: str
 
 
+MessageChatCompletionUserMessageParamContentUnionMember1: TypeAlias = Union[
+    ChatCompletionStructuredMessageTextParam,
+    ChatCompletionStructuredMessageImageURLParam,
+    ChatCompletionStructuredMessageVideoURLParam,
+]
+
+
 class MessageChatCompletionUserMessageParam(TypedDict, total=False):
-    content: Required[str]
+    content: Required[Union[str, Iterable[MessageChatCompletionUserMessageParamContentUnionMember1]]]
+    """
+    The content of the message, which can either be a simple string or a structured
+    format.
+    """
 
     role: Required[Literal["user"]]
 
