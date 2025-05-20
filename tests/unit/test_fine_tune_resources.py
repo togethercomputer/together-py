@@ -1,28 +1,11 @@
 import pytest
 
-pytest.skip("skipping test_fine_tune_resources.py", allow_module_level=True)
-
-from together.resources.fine_tune import FineTuneResource
-from together.types.fine_tune_create_params import FineTuneCreateParams
-from together.types.fine_tune import (
-    FineTune,
+from together.lib.resources.fine_tune import create_finetune_request
+from together.lib.types.fine_tune import (
     FinetuneFullTrainingLimits,
     FinetuneLoraTrainingLimits,
     FinetuneTrainingLimits,
 )
-from together.types.fine_tune_create_params import (
-    FineTuneCreateParams
-)
-'''
-from together.resources.fine_tune import FineTuneResource
-from together.types.fine_tune_create_params import FineTuneCreateParams
-from together.types.fine_tune import (
-    FineTune,
-    FinetuneFullTrainingLimits,
-    FinetuneLoraTrainingLimits,
-    FinetuneTrainingLimits,
-)
-'''
 
 _MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference"
 _TRAINING_FILE = "file-7dbce5e9-7993-4520-9f3e-a7ece6c39d84"
@@ -48,19 +31,25 @@ _MODEL_LIMITS = FinetuneTrainingLimits(
 
 
 def test_simple_request():
-    request = FineTuneCreateParams(
+    request = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
     )
 
-    assert request.model == _MODEL_NAME
-    assert request.training_file == _TRAINING_FILE
-    assert request.learning_rate > 0
-    assert request.n_epochs > 0
-    assert request.warmup_ratio == 0.0
-    assert request.training_type.type == "Full"
-    assert request.batch_size == _MODEL_LIMITS.full_training.max_batch_size
+    assert request["model"] == _MODEL_NAME
+    assert request["training_file"] == _TRAINING_FILE
+    assert "learning_rate" in request
+    assert request["learning_rate"] > 0
+    assert "n_epochs" in request
+    assert request["n_epochs"] > 0
+    assert "warmup_ratio" in request
+    assert request["warmup_ratio"] == 0.0
+    assert "training_type" in request
+    assert request["training_type"]["type"] == "Full"
+    assert "batch_size" in request
+    assert _MODEL_LIMITS.full_training is not None
+    assert request["batch_size"] == _MODEL_LIMITS.full_training.max_batch_size
 
 
 def test_validation_file():
@@ -71,15 +60,16 @@ def test_validation_file():
         validation_file=_VALIDATION_FILE,
     )
 
-    assert request.training_file == _TRAINING_FILE
-    assert request.validation_file == _VALIDATION_FILE
+    assert request["training_file"] == _TRAINING_FILE
+    assert "validation_file" in request
+    assert request["validation_file"] == _VALIDATION_FILE
 
 
 def test_no_training_file():
     with pytest.raises(
         TypeError, match="missing 1 required positional argument: 'training_file'"
     ):
-        _ = create_finetune_request(
+        _ = create_finetune_request( # type: ignore
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
         )
@@ -93,12 +83,17 @@ def test_lora_request():
         lora=True,
     )
 
-    assert request.training_type.type == "Lora"
-    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
-    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
-    assert request.training_type.lora_dropout == 0.0
-    assert request.training_type.lora_trainable_modules == "all-linear"
-    assert request.batch_size == _MODEL_LIMITS.lora_training.max_batch_size
+    assert "training_type" in request
+    assert request["training_type"]["type"] == "Lora"
+    assert _MODEL_LIMITS.lora_training is not None
+    assert request["training_type"]["lora_r"] == _MODEL_LIMITS.lora_training.max_rank
+    assert request["training_type"]["lora_alpha"] == _MODEL_LIMITS.lora_training.max_rank * 2
+    assert "lora_dropout" in request["training_type"]
+    assert request["training_type"]["lora_dropout"] == 0.0
+    assert "lora_trainable_modules" in request["training_type"]
+    assert request["training_type"]["lora_trainable_modules"] == "all-linear"
+    assert "batch_size" in request
+    assert request["batch_size"] == _MODEL_LIMITS.lora_training.max_batch_size
 
 
 def test_dpo_request_lora():
@@ -110,12 +105,17 @@ def test_dpo_request_lora():
         lora=True,
     )
 
-    assert request.training_type.type == "Lora"
-    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
-    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
-    assert request.training_type.lora_dropout == 0.0
-    assert request.training_type.lora_trainable_modules == "all-linear"
-    assert request.batch_size == _MODEL_LIMITS.lora_training.max_batch_size_dpo
+    assert "training_type" in request
+    assert request["training_type"]["type"] == "Lora"
+    assert _MODEL_LIMITS.lora_training is not None
+    assert request["training_type"]["lora_r"] == _MODEL_LIMITS.lora_training.max_rank
+    assert request["training_type"]["lora_alpha"] == _MODEL_LIMITS.lora_training.max_rank * 2
+    assert "lora_dropout" in request["training_type"]
+    assert request["training_type"]["lora_dropout"] == 0.0
+    assert "lora_trainable_modules" in request["training_type"]
+    assert request["training_type"]["lora_trainable_modules"] == "all-linear"
+    assert "batch_size" in request
+    assert request["batch_size"] == _MODEL_LIMITS.lora_training.max_batch_size_dpo
 
 
 def test_dpo_request():
@@ -127,8 +127,11 @@ def test_dpo_request():
         lora=False,
     )
 
-    assert request.training_type.type == "Full"
-    assert request.batch_size == _MODEL_LIMITS.full_training.max_batch_size_dpo
+    assert "training_type" in request
+    assert request["training_type"]["type"] == "Full"
+    assert "batch_size" in request
+    assert _MODEL_LIMITS.full_training is not None
+    assert request["batch_size"] == _MODEL_LIMITS.full_training.max_batch_size_dpo
 
 
 def test_from_checkpoint_request():
@@ -138,8 +141,9 @@ def test_from_checkpoint_request():
         from_checkpoint=_FROM_CHECKPOINT,
     )
 
-    assert request.model is None
-    assert request.from_checkpoint == _FROM_CHECKPOINT
+    assert request["model"] is None
+    assert "from_checkpoint" in request
+    assert request["from_checkpoint"] == _FROM_CHECKPOINT
 
 
 def test_both_from_checkpoint_model_name():
@@ -167,10 +171,11 @@ def test_no_from_checkpoint_no_model_name():
 
 @pytest.mark.parametrize("batch_size", [256, 1])
 @pytest.mark.parametrize("use_lora", [False, True])
-def test_batch_size_limit(batch_size, use_lora):
+def test_batch_size_limit(batch_size: int, use_lora: bool):
     model_limits = (
         _MODEL_LIMITS.full_training if not use_lora else _MODEL_LIMITS.lora_training
     )
+    assert model_limits is not None
     max_batch_size = model_limits.max_batch_size
     min_batch_size = model_limits.min_batch_size
 
@@ -244,7 +249,7 @@ def test_non_full_model():
 
 
 @pytest.mark.parametrize("warmup_ratio", [-1.0, 2.0])
-def test_bad_warmup(warmup_ratio):
+def test_bad_warmup(warmup_ratio: float):
     with pytest.raises(ValueError, match="Warmup ratio should be between 0 and 1"):
         _ = create_finetune_request(
             model_limits=_MODEL_LIMITS,
@@ -255,7 +260,7 @@ def test_bad_warmup(warmup_ratio):
 
 
 @pytest.mark.parametrize("min_lr_ratio", [-1.0, 2.0])
-def test_bad_min_lr_ratio(min_lr_ratio):
+def test_bad_min_lr_ratio(min_lr_ratio: float):
     with pytest.raises(
         ValueError, match="Min learning rate ratio should be between 0 and 1"
     ):
@@ -268,7 +273,7 @@ def test_bad_min_lr_ratio(min_lr_ratio):
 
 
 @pytest.mark.parametrize("max_grad_norm", [-1.0, -0.01])
-def test_bad_max_grad_norm(max_grad_norm):
+def test_bad_max_grad_norm(max_grad_norm: float):
     with pytest.raises(ValueError, match="Max gradient norm should be non-negative"):
         _ = create_finetune_request(
             model_limits=_MODEL_LIMITS,
@@ -279,7 +284,7 @@ def test_bad_max_grad_norm(max_grad_norm):
 
 
 @pytest.mark.parametrize("weight_decay", [-1.0, -0.01])
-def test_bad_weight_decay(weight_decay):
+def test_bad_weight_decay(weight_decay: float):
     with pytest.raises(ValueError, match="Weight decay should be non-negative"):
         _ = create_finetune_request(
             model_limits=_MODEL_LIMITS,
