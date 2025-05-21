@@ -13,6 +13,8 @@ from together.types import (
     FineTune,
     FineTuneEvent,
     FineTuneListResponse,
+    FineTuneCancelResponse,
+    FineTuneCreateResponse,
     FineTuneDownloadResponse,
 )
 
@@ -29,7 +31,7 @@ class TestFineTune:
             model="model",
             training_file="training_file",
         )
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
     @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
@@ -63,7 +65,7 @@ class TestFineTune:
             warmup_ratio=0,
             weight_decay=0,
         )
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
     @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
@@ -76,7 +78,7 @@ class TestFineTune:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tune = response.parse()
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
     @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
@@ -89,7 +91,7 @@ class TestFineTune:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tune = response.parse()
-            assert_matches_type(FineTune, fine_tune, path=["response"])
+            assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -161,7 +163,7 @@ class TestFineTune:
         fine_tune = client.fine_tune.cancel(
             "id",
         )
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCancelResponse, fine_tune, path=["response"])
 
     @parametrize
     def test_raw_response_cancel(self, client: Together) -> None:
@@ -172,7 +174,7 @@ class TestFineTune:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tune = response.parse()
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCancelResponse, fine_tune, path=["response"])
 
     @parametrize
     def test_streaming_response_cancel(self, client: Together) -> None:
@@ -183,7 +185,7 @@ class TestFineTune:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tune = response.parse()
-            assert_matches_type(FineTune, fine_tune, path=["response"])
+            assert_matches_type(FineTuneCancelResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -284,7 +286,7 @@ class TestAsyncFineTune:
             model="model",
             training_file="training_file",
         )
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
     @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
@@ -318,7 +320,7 @@ class TestAsyncFineTune:
             warmup_ratio=0,
             weight_decay=0,
         )
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
     @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
@@ -331,7 +333,7 @@ class TestAsyncFineTune:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tune = await response.parse()
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
     @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
@@ -344,7 +346,7 @@ class TestAsyncFineTune:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tune = await response.parse()
-            assert_matches_type(FineTune, fine_tune, path=["response"])
+            assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -416,7 +418,7 @@ class TestAsyncFineTune:
         fine_tune = await async_client.fine_tune.cancel(
             "id",
         )
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCancelResponse, fine_tune, path=["response"])
 
     @parametrize
     async def test_raw_response_cancel(self, async_client: AsyncTogether) -> None:
@@ -427,7 +429,7 @@ class TestAsyncFineTune:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tune = await response.parse()
-        assert_matches_type(FineTune, fine_tune, path=["response"])
+        assert_matches_type(FineTuneCancelResponse, fine_tune, path=["response"])
 
     @parametrize
     async def test_streaming_response_cancel(self, async_client: AsyncTogether) -> None:
@@ -438,7 +440,7 @@ class TestAsyncFineTune:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tune = await response.parse()
-            assert_matches_type(FineTune, fine_tune, path=["response"])
+            assert_matches_type(FineTuneCancelResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

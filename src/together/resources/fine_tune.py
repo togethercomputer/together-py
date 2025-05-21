@@ -22,6 +22,8 @@ from .._base_client import make_request_options
 from ..types.fine_tune import FineTune
 from ..types.fine_tune_event import FineTuneEvent
 from ..types.fine_tune_list_response import FineTuneListResponse
+from ..types.fine_tune_cancel_response import FineTuneCancelResponse
+from ..types.fine_tune_create_response import FineTuneCreateResponse
 from ..types.fine_tune_download_response import FineTuneDownloadResponse
 
 __all__ = ["FineTuneResource", "AsyncFineTuneResource"]
@@ -77,9 +79,9 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTune:
+    ) -> FineTuneCreateResponse:
         """
-        Use a model to create a fine-tuning job.
+        Create a fine-tuning job with the provided model and training data.
 
         Args:
           model: Name of the base model to run fine-tune job on
@@ -173,7 +175,7 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTune,
+            cast_to=FineTuneCreateResponse,
         )
 
     def retrieve(
@@ -219,7 +221,11 @@ class FineTuneResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneListResponse:
-        """List the metadata for all fine-tuning jobs."""
+        """List the metadata for all fine-tuning jobs.
+
+        Returns a list of
+        FinetuneResponseTruncated objects.
+        """
         return self._get(
             "/fine-tunes",
             options=make_request_options(
@@ -238,9 +244,11 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTune:
-        """
-        Cancel a currently running fine-tuning job.
+    ) -> FineTuneCancelResponse:
+        """Cancel a currently running fine-tuning job.
+
+        Returns a FinetuneResponseTruncated
+        object.
 
         Args:
           extra_headers: Send extra headers
@@ -258,7 +266,7 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTune,
+            cast_to=FineTuneCancelResponse,
         )
 
     def download(
@@ -402,9 +410,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTune:
+    ) -> FineTuneCreateResponse:
         """
-        Use a model to create a fine-tuning job.
+        Create a fine-tuning job with the provided model and training data.
 
         Args:
           model: Name of the base model to run fine-tune job on
@@ -498,7 +506,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTune,
+            cast_to=FineTuneCreateResponse,
         )
 
     async def retrieve(
@@ -544,7 +552,11 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
     ) -> FineTuneListResponse:
-        """List the metadata for all fine-tuning jobs."""
+        """List the metadata for all fine-tuning jobs.
+
+        Returns a list of
+        FinetuneResponseTruncated objects.
+        """
         return await self._get(
             "/fine-tunes",
             options=make_request_options(
@@ -563,9 +575,11 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTune:
-        """
-        Cancel a currently running fine-tuning job.
+    ) -> FineTuneCancelResponse:
+        """Cancel a currently running fine-tuning job.
+
+        Returns a FinetuneResponseTruncated
+        object.
 
         Args:
           extra_headers: Send extra headers
@@ -583,7 +597,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTune,
+            cast_to=FineTuneCancelResponse,
         )
 
     async def download(
