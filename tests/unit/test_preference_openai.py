@@ -1,10 +1,10 @@
 import json
-from _pytest.mark.structures import ParameterSet # type: ignore
-import pytest
 from pathlib import Path
 
-from together.lib.utils.files import check_file
+import pytest
+from _pytest.mark.structures import ParameterSet  # type: ignore
 
+from together.lib.utils.files import check_file
 
 _TEST_PREFERENCE_OPENAI_CONTENT = [
     {
@@ -48,9 +48,7 @@ _TEST_PREFERENCE_OPENAI_CONTENT = [
                 "and breaking down complex problems into smaller parts. Start with a beginner-friendly language like Python.",
             }
         ],
-        "non_preferred_output": [
-            {"role": "assistant", "content": "Just read some books and you'll be fine."}
-        ],
+        "non_preferred_output": [{"role": "assistant", "content": "Just read some books and you'll be fine."}],
     },
 ]
 
@@ -88,9 +86,7 @@ MISSING_FIELDS_TEST_CASES = [
 
 
 @pytest.mark.parametrize("field_to_remove, description", MISSING_FIELDS_TEST_CASES)
-def test_check_jsonl_invalid_preference_openai_missing_fields(
-    tmp_path: Path, field_to_remove: str, description: str
-):
+def test_check_jsonl_invalid_preference_openai_missing_fields(tmp_path: Path, field_to_remove: str, description: str):
     """Test missing required fields in OpenAI preference format."""
     file = tmp_path / f"invalid_preference_openai_missing_{field_to_remove}.jsonl"
     content = [item.copy() for item in _TEST_PREFERENCE_OPENAI_CONTENT]
@@ -109,13 +105,13 @@ def test_check_jsonl_invalid_preference_openai_missing_fields(
 STRUCTURAL_ISSUE_TEST_CASES = [
     pytest.param(
         "empty_messages",
-        lambda item: item.update({"input": {"messages": []}}), # type: ignore
+        lambda item: item.update({"input": {"messages": []}}),  # type: ignore
         "Empty messages array",
         id="empty_messages",
     ),
     pytest.param(
         "missing_role_preferred",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {"preferred_output": [{"content": "Missing role field"}]}
         ),
         "Missing role in preferred_output",
@@ -123,7 +119,7 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "missing_role_non_preferred",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {"non_preferred_output": [{"content": "Missing role field"}]}
         ),
         "Missing role in non_preferred_output",
@@ -131,37 +127,37 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "missing_content_preferred",
-        lambda item: item.update({"preferred_output": [{"role": "assistant"}]}), # type: ignore
+        lambda item: item.update({"preferred_output": [{"role": "assistant"}]}),  # type: ignore
         "Missing content in preferred_output",
         id="missing_content_preferred",
     ),
     pytest.param(
         "missing_content_non_preferred",
-        lambda item: item.update({"non_preferred_output": [{"role": "assistant"}]}), # type: ignore
+        lambda item: item.update({"non_preferred_output": [{"role": "assistant"}]}),  # type: ignore
         "Missing content in non_preferred_output",
         id="missing_content_non_preferred",
     ),
     pytest.param(
         "wrong_output_format_preferred",
-        lambda item: item.update({"preferred_output": "Not an array but a string"}), # type: ignore
+        lambda item: item.update({"preferred_output": "Not an array but a string"}),  # type: ignore
         "Wrong format for preferred_output",
         id="wrong_output_format_preferred",
     ),
     pytest.param(
         "wrong_output_format_non_preferred",
-        lambda item: item.update({"non_preferred_output": "Not an array but a string"}), # type: ignore
+        lambda item: item.update({"non_preferred_output": "Not an array but a string"}),  # type: ignore
         "Wrong format for non_preferred_output",
         id="wrong_output_format_non_preferred",
     ),
     pytest.param(
         "missing_content",
-        lambda item: item.update({"input": {"messages": [{"role": "user"}]}}), # type: ignore
+        lambda item: item.update({"input": {"messages": [{"role": "user"}]}}),  # type: ignore
         "Missing content in messages",
         id="missing_content",
     ),
     pytest.param(
         "multiple_preferred_outputs",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {
                 "preferred_output": [
                     {"role": "assistant", "content": "First response"},
@@ -174,7 +170,7 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "multiple_non_preferred_outputs",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {
                 "non_preferred_output": [
                     {"role": "assistant", "content": "First response"},
@@ -187,19 +183,19 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "empty_preferred_output",
-        lambda item: item.update({"preferred_output": []}), # type: ignore
+        lambda item: item.update({"preferred_output": []}),  # type: ignore
         "Empty preferred_output array",
         id="empty_preferred_output",
     ),
     pytest.param(
         "empty_non_preferred_output",
-        lambda item: item.update({"non_preferred_output": []}), # type: ignore
+        lambda item: item.update({"non_preferred_output": []}),  # type: ignore
         "Empty non_preferred_output array",
         id="empty_non_preferred_output",
     ),
     pytest.param(
         "non_string_content_in_messages",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {"input": {"messages": [{"role": "user", "content": 123}]}}
         ),
         "Non-string content in messages",
@@ -207,7 +203,7 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "invalid_role_in_messages",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {"input": {"messages": [{"role": "invalid_role", "content": "Hello"}]}}
         ),
         "Invalid role in messages",
@@ -215,7 +211,7 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "non_alternating_roles",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {
                 "input": {
                     "messages": [
@@ -230,21 +226,15 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "invalid_weight_type",
-        lambda item: item.update( # type: ignore
-            {
-                "input": {
-                    "messages": [
-                        {"role": "user", "content": "Hello", "weight": "not_an_integer"}
-                    ]
-                }
-            }
+        lambda item: item.update(  # type: ignore
+            {"input": {"messages": [{"role": "user", "content": "Hello", "weight": "not_an_integer"}]}}
         ),
         "Invalid weight type",
         id="invalid_weight_type",
     ),
     pytest.param(
         "invalid_weight_value",
-        lambda item: item.update( # type: ignore
+        lambda item: item.update(  # type: ignore
             {"input": {"messages": [{"role": "user", "content": "Hello", "weight": 2}]}}
         ),
         "Invalid weight value",
@@ -252,42 +242,34 @@ STRUCTURAL_ISSUE_TEST_CASES = [
     ),
     pytest.param(
         "non_dict_message",
-        lambda item: item.update({"input": {"messages": ["Not a dictionary"]}}), # type: ignore
+        lambda item: item.update({"input": {"messages": ["Not a dictionary"]}}),  # type: ignore
         "Non-dictionary message",
         id="non_dict_message",
     ),
     pytest.param(
         "non_dict_input",
-        lambda item: item.update({"input": "Not a dictionary"}), # type: ignore
+        lambda item: item.update({"input": "Not a dictionary"}),  # type: ignore
         "Non-dictionary input",
         id="non_dict_input",
     ),
     pytest.param(
         "missing_messages_in_input",
-        lambda item: item.update({"input": {}}), # type: ignore
+        lambda item: item.update({"input": {}}),  # type: ignore
         "Missing messages in input",
         id="missing_messages_in_input",
     ),
     pytest.param(
         "non_assistant_role_in_preferred",
-        lambda item: item.update( # type: ignore
-            {
-                "preferred_output": [
-                    {"role": "user", "content": "This should be assistant"}
-                ]
-            }
+        lambda item: item.update(  # type: ignore
+            {"preferred_output": [{"role": "user", "content": "This should be assistant"}]}
         ),
         "Non-assistant role in preferred output",
         id="non_assistant_role_in_preferred",
     ),
     pytest.param(
         "non_assistant_role_in_non_preferred",
-        lambda item: item.update( # type: ignore
-            {
-                "non_preferred_output": [
-                    {"role": "user", "content": "This should be assistant"}
-                ]
-            }
+        lambda item: item.update(  # type: ignore
+            {"non_preferred_output": [{"role": "user", "content": "This should be assistant"}]}
         ),
         "Non-assistant role in non-preferred output",
         id="non_assistant_role_in_non_preferred",
@@ -304,7 +286,7 @@ def test_check_jsonl_invalid_preference_openai_structural_issues(
     content = [item.copy() for item in _TEST_PREFERENCE_OPENAI_CONTENT]
 
     # Apply the modification to the first item
-    modifier(content[0]) # type: ignore
+    modifier(content[0])  # type: ignore
 
     with file.open("w") as f:
         f.write("\n".join(json.dumps(item) for item in content))

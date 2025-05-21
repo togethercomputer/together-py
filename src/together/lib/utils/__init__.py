@@ -1,4 +1,4 @@
-from ._log import log_debug, log_info, log_warn, log_warn_once, logfmt
+from ._log import logfmt, log_info, log_warn, log_debug, log_warn_once
 from .files import check_file
 from .tools import (
     convert_bytes,

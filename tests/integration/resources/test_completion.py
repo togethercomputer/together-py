@@ -3,8 +3,8 @@ from itertools import product
 
 import pytest
 
-from together import Together
 from together import (
+    Together,
     BadRequestError,
     UnprocessableEntityError,
 )
@@ -19,17 +19,6 @@ from ..constants import (
     completion_test_model_list,
     moderation_test_model_list,
 )
-from .generate_hyperparameters import (
-    random_frequency_penalty,  # pyright: ignore[reportUnusedImport]
-    random_max_tokens,  # pyright: ignore[reportUnusedImport]
-    random_min_p,  # pyright: ignore[reportUnusedImport]
-    random_presence_penalty,  # pyright: ignore[reportUnusedImport]
-    random_repetition_penalty,  # pyright: ignore[reportUnusedImport]
-    random_temperature,  # pyright: ignore[reportUnusedImport]
-    random_top_k,  # pyright: ignore[reportUnusedImport]
-    random_top_p,  # pyright: ignore[reportUnusedImport]
-)
-
 
 STOP = ["</s>"]
 
@@ -99,7 +88,7 @@ class TestTogetherCompletion:
 
         assert isinstance(response.id, str)
         assert isinstance(response.created, int)
-        assert response.object == 'text.completion'
+        assert response.object == "text.completion"
         assert isinstance(response.choices, list)
         assert isinstance(response.choices[0], Choice)
         assert isinstance(response.choices[0].text, str)
@@ -109,10 +98,7 @@ class TestTogetherCompletion:
         assert isinstance(response.usage.prompt_tokens, int)
         assert isinstance(response.usage.completion_tokens, int)
         assert isinstance(response.usage.total_tokens, int)
-        assert (
-            response.usage.prompt_tokens + response.usage.completion_tokens
-            == response.usage.total_tokens
-        )
+        assert response.usage.prompt_tokens + response.usage.completion_tokens == response.usage.total_tokens
 
     @pytest.mark.parametrize(
         "model,prompt",
@@ -144,7 +130,7 @@ class TestTogetherCompletion:
     def test_no_prompt(
         self,
         model: str,
-        prompt: str,
+        prompt: str,   # noqa
         sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
@@ -181,7 +167,7 @@ class TestTogetherCompletion:
     )
     def test_no_model(
         self,
-        model: str,
+        model: str,   # noqa
         prompt: str,
         sync_together_client: Together,
     ):

@@ -197,7 +197,7 @@ def chat(
     messages: List[completion_create_params.Message] = []
 
     for msg in message:
-        messages.append({"role": cast(Literal["system", "user", "assistant"], msg[0]), "content": msg[1]})
+        messages.append({"role": cast(Literal["system", "user", "assistant"], msg[0]), "content": msg[1]}) # type: ignore
 
     response = client.chat.completions.create(
         model=model,

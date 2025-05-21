@@ -3,8 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from together import Together
-from together import TogetherError
+from together import Together, TogetherError
 
 
 class TestTogether:
@@ -59,9 +58,7 @@ class TestTogether:
 
         default_headers = {"header1": "value1", "header2": "value2"}
 
-        sync_together = Together(
-            api_key="fake_api_key", default_headers=default_headers
-        )
+        sync_together = Together(api_key="fake_api_key", default_headers=default_headers)
 
         assert default_headers.items() <= sync_together.default_headers.items()
 
@@ -83,9 +80,7 @@ class TestTogether:
 
         assert isinstance(sync_together_instance.chat._client, Together)
 
-        assert isinstance(
-            sync_together_instance.chat.completions._client, Together
-        )
+        assert isinstance(sync_together_instance.chat.completions._client, Together)
 
     def test_embeddings_initialized(self, sync_together_instance: Together):
         """

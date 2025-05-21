@@ -1,11 +1,10 @@
-from httpx import URL
 import os
 from unittest.mock import patch
 
 import pytest
+from httpx import URL
 
-from together import AsyncTogether
-from together import TogetherError
+from together import AsyncTogether, TogetherError
 
 
 class TestAsyncTogether:
@@ -59,9 +58,7 @@ class TestAsyncTogether:
 
         default_headers = {"header1": "value1", "header2": "value2"}
 
-        async_together = AsyncTogether(
-            api_key="fake_api_key", default_headers=default_headers
-        )
+        async_together = AsyncTogether(api_key="fake_api_key", default_headers=default_headers)
 
         assert default_headers.items() <= async_together.default_headers.items()
 
@@ -83,9 +80,7 @@ class TestAsyncTogether:
 
         assert isinstance(async_together_instance.chat._client, AsyncTogether)
 
-        assert isinstance(
-            async_together_instance.chat.completions._client, AsyncTogether
-        )
+        assert isinstance(async_together_instance.chat.completions._client, AsyncTogether)
 
     def test_embeddings_initialized(self, async_together_instance: AsyncTogether):
         """

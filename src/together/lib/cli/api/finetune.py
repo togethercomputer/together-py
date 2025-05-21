@@ -65,7 +65,7 @@ def list(ctx: click.Context) -> None:
 
     response.data = response.data or []
 
-    response.data.sort(key=lambda x: parse_timestamp(x.created_at or ""))
+    response.data.sort(key=lambda x: x.created_at or parse_timestamp("")) # noqa
 
     display_list: List[dict[str, Any]] = []
     for i in response.data:
@@ -75,9 +75,9 @@ def list(ctx: click.Context) -> None:
                 "Model Output Name": "\n".join(wrap(i.x_model_output_name or "", width=30)),
                 "Status": i.status,
                 "Created At": i.created_at,
-                "Price": f"""${finetune_price_to_dollars(
-                    float(str(i.total_price))
-                )}""",  # convert to string for mypy typing
+                "Price": f"""${
+                    finetune_price_to_dollars(float(str(i.total_price)))
+                }""",  # convert to string for mypy typing
             }
         )
     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)

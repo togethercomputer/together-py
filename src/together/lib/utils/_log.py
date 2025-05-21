@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import logging
 import os
 import re
 import sys
-from typing import Any, Dict, Set
-
+import logging
+from typing import Any, Set, Dict
 
 logger: logging.Logger = logging.getLogger("together")
 
@@ -42,26 +41,26 @@ def logfmt(props: Dict[str, Any]) -> str:
 def log_debug(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
     if _console_log_level() == "debug":
-        print(msg, file=sys.stderr)
+        print(msg, file=sys.stderr)  # noqa
     logger.debug(msg)
 
 
 def log_info(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
     if _console_log_level() in ["debug", "info"]:
-        print(msg, file=sys.stderr)
+        print(msg, file=sys.stderr)  # noqa
     logger.info(msg)
 
 
 def log_warn(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
-    print(msg, file=sys.stderr)
+    print(msg, file=sys.stderr)  # noqa
     logger.warning(msg)
 
 
 def log_warn_once(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
     if msg not in WARNING_MESSAGES_ONCE:
-        print(msg, file=sys.stderr)
+        print(msg, file=sys.stderr)  # noqa
         logger.warning(msg)
         WARNING_MESSAGES_ONCE.add(msg)

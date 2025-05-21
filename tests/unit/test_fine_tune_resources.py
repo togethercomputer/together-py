@@ -1,11 +1,11 @@
 import pytest
 
-from together.lib.resources.fine_tune import create_finetune_request
 from together.lib.types.fine_tune import (
+    FinetuneTrainingLimits,
     FinetuneFullTrainingLimits,
     FinetuneLoraTrainingLimits,
-    FinetuneTrainingLimits,
 )
+from together.lib.resources.fine_tune import create_finetune_request
 
 _MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference"
 _TRAINING_FILE = "file-7dbce5e9-7993-4520-9f3e-a7ece6c39d84"
@@ -66,10 +66,8 @@ def test_validation_file():
 
 
 def test_no_training_file():
-    with pytest.raises(
-        TypeError, match="missing 1 required positional argument: 'training_file'"
-    ):
-        _ = create_finetune_request( # type: ignore
+    with pytest.raises(TypeError, match="missing 1 required positional argument: 'training_file'"):
+        _ = create_finetune_request(  # type: ignore
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
         )
@@ -160,9 +158,7 @@ def test_both_from_checkpoint_model_name():
 
 
 def test_no_from_checkpoint_no_model_name():
-    with pytest.raises(
-        ValueError, match="You must specify either a model or a checkpoint"
-    ):
+    with pytest.raises(ValueError, match="You must specify either a model or a checkpoint"):
         _ = create_finetune_request(
             model_limits=_MODEL_LIMITS,
             training_file=_TRAINING_FILE,
@@ -172,15 +168,15 @@ def test_no_from_checkpoint_no_model_name():
 @pytest.mark.parametrize("batch_size", [256, 1])
 @pytest.mark.parametrize("use_lora", [False, True])
 def test_batch_size_limit(batch_size: int, use_lora: bool):
-    model_limits = (
-        _MODEL_LIMITS.full_training if not use_lora else _MODEL_LIMITS.lora_training
-    )
+    model_limits = _MODEL_LIMITS.full_training if not use_lora else _MODEL_LIMITS.lora_training
     assert model_limits is not None
     max_batch_size = model_limits.max_batch_size
     min_batch_size = model_limits.min_batch_size
 
     if batch_size > max_batch_size:
-        error_message = f"Requested batch size of {batch_size} is higher that the maximum allowed value of {max_batch_size}"
+        error_message = (
+            f"Requested batch size of {batch_size} is higher that the maximum allowed value of {max_batch_size}"
+        )
         with pytest.raises(ValueError, match=error_message):
             _ = create_finetune_request(
                 model_limits=_MODEL_LIMITS,
@@ -191,7 +187,9 @@ def test_batch_size_limit(batch_size: int, use_lora: bool):
             )
 
     if batch_size < min_batch_size:
-        error_message = f"Requested batch size of {batch_size} is lower that the minimum allowed value of {min_batch_size}"
+        error_message = (
+            f"Requested batch size of {batch_size} is lower that the minimum allowed value of {min_batch_size}"
+        )
         with pytest.raises(ValueError, match=error_message):
             _ = create_finetune_request(
                 model_limits=_MODEL_LIMITS,
@@ -203,9 +201,7 @@ def test_batch_size_limit(batch_size: int, use_lora: bool):
 
 
 def test_non_lora_model():
-    with pytest.raises(
-        ValueError, match="LoRA adapters are not supported for the selected model."
-    ):
+    with pytest.raises(ValueError, match="LoRA adapters are not supported for the selected model."):
         _ = create_finetune_request(
             model_limits=FinetuneTrainingLimits(
                 max_num_epochs=20,
@@ -225,9 +221,7 @@ def test_non_lora_model():
 
 
 def test_non_full_model():
-    with pytest.raises(
-        ValueError, match="Full training is not supported for the selected model."
-    ):
+    with pytest.raises(ValueError, match="Full training is not supported for the selected model."):
         _ = create_finetune_request(
             model_limits=FinetuneTrainingLimits(
                 max_num_epochs=20,
@@ -261,9 +255,7 @@ def test_bad_warmup(warmup_ratio: float):
 
 @pytest.mark.parametrize("min_lr_ratio", [-1.0, 2.0])
 def test_bad_min_lr_ratio(min_lr_ratio: float):
-    with pytest.raises(
-        ValueError, match="Min learning rate ratio should be between 0 and 1"
-    ):
+    with pytest.raises(ValueError, match="Min learning rate ratio should be between 0 and 1"):
         _ = create_finetune_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,

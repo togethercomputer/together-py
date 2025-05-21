@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import json
 import os
+import json
+from typing import Any, Dict, List
 from pathlib import Path
 from traceback import format_exc
-from typing import Any, Dict, List
 
 from pyarrow import ArrowInvalid, parquet
 
 from ..constants import (
-    MAX_FILE_SIZE_GB,
     MIN_SAMPLES,
     NUM_BYTES_IN_GB,
+    MAX_FILE_SIZE_GB,
     PARQUET_EXPECTED_COLUMNS,
-    JSONL_REQUIRED_COLUMNS_MAP,
     REQUIRED_COLUMNS_MESSAGE,
+    JSONL_REQUIRED_COLUMNS_MAP,
     POSSIBLE_ROLES_CONVERSATION,
     DatasetFormat,
 )
@@ -66,7 +66,7 @@ def check_file(
 
     if file_size > MAX_FILE_SIZE_GB * NUM_BYTES_IN_GB:
         report_dict["message"] = (
-            f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB ,3)} GB."
+            f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB, 3)} GB."
         )
         report_dict["is_check_passed"] = False
     elif file_size == 0:
@@ -86,8 +86,7 @@ def check_file(
         data_report_dict = _check_parquet(file)
     else:
         report_dict["filetype"] = (
-            f"Unknown extension of file {file}. "
-            "Only files with extensions .jsonl and .parquet are supported."
+            f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
         )
         report_dict["is_check_passed"] = False
 
@@ -98,7 +97,7 @@ def check_file(
 
 def validate_messages(messages: List[Dict[str, str | bool]], idx: int) -> None:
     """Validate the messages column."""
-    if not isinstance(messages, list): # pyright: ignore[reportUnnecessaryIsInstance]
+    if not isinstance(messages, list):  # pyright: ignore[reportUnnecessaryIsInstance]
         raise InvalidFileFormatError(
             message=f"Invalid format on line {idx + 1} of the input file. "
             f"Expected a list of messages. Found {type(messages)}",
@@ -263,10 +262,7 @@ def _check_jsonl(file: Path) -> Dict[str, Any]:
 
                 current_format = None
                 for possible_format in JSONL_REQUIRED_COLUMNS_MAP:
-                    if all(
-                        column in json_line
-                        for column in JSONL_REQUIRED_COLUMNS_MAP[possible_format]
-                    ):
+                    if all(column in json_line for column in JSONL_REQUIRED_COLUMNS_MAP[possible_format]):
                         if current_format is None:
                             current_format = possible_format
                         elif current_format != possible_format:
@@ -279,10 +275,7 @@ def _check_jsonl(file: Path) -> Dict[str, Any]:
 
                         # Check that there are no extra columns
                         for column in json_line:  # pyright: ignore[reportUnknownVariableType]
-                            if (
-                                column
-                                not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]
-                            ):
+                            if column not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]:
                                 raise InvalidFileFormatError(
                                     message=f'Found extra column "{column}" in the line {idx + 1}.',
                                     line_number=idx + 1,
@@ -301,9 +294,7 @@ def _check_jsonl(file: Path) -> Dict[str, Any]:
                 if current_format == DatasetFormat.PREFERENCE_OPENAI:
                     validate_preference_openai(json_line, idx)  # pyright: ignore[reportUnknownArgumentType]
                 elif current_format == DatasetFormat.CONVERSATION:
-                    message_column = JSONL_REQUIRED_COLUMNS_MAP[
-                        DatasetFormat.CONVERSATION
-                    ][0]
+                    message_column = JSONL_REQUIRED_COLUMNS_MAP[DatasetFormat.CONVERSATION][0]
                     validate_messages(json_line[message_column], idx)  # pyright: ignore[reportUnknownArgumentType]
                 else:
                     for column in JSONL_REQUIRED_COLUMNS_MAP[current_format]:
@@ -330,8 +321,7 @@ def _check_jsonl(file: Path) -> Dict[str, Any]:
             if idx + 1 < MIN_SAMPLES:
                 report_dict["has_min_samples"] = False
                 report_dict["message"] = (
-                    f"Processing {file} resulted in only {idx + 1} samples. "
-                    f"Our minimum is {MIN_SAMPLES} samples. "
+                    f"Processing {file} resulted in only {idx + 1} samples. Our minimum is {MIN_SAMPLES} samples. "
                 )
                 report_dict["is_check_passed"] = False
             else:
@@ -352,14 +342,9 @@ def _check_jsonl(file: Path) -> Dict[str, Any]:
         except ValueError:
             report_dict["load_json"] = False
             if idx < 0:
-                report_dict["message"] = (
-                    "Unable to decode file. "
-                    "File may be empty or in an unsupported format. "
-                )
+                report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
             else:
-                report_dict["message"] = (
-                    f"Error parsing json payload. Unexpected format on line {idx + 1}."
-                )
+                report_dict["message"] = f"Error parsing json payload. Unexpected format on line {idx + 1}."
             report_dict["is_check_passed"] = False
 
     if "text_field" not in report_dict:
@@ -386,9 +371,7 @@ def _check_parquet(file: Path) -> Dict[str, Any]:
 
     column_names = table.schema.names
     if "input_ids" not in column_names:
-        report_dict["load_parquet"] = (
-            f"Parquet file {file} does not contain the `input_ids` column."
-        )
+        report_dict["load_parquet"] = f"Parquet file {file} does not contain the `input_ids` column."
         report_dict["is_check_passed"] = False
         return report_dict
 
@@ -405,8 +388,7 @@ def _check_parquet(file: Path) -> Dict[str, Any]:
     if num_samples < MIN_SAMPLES:
         report_dict["has_min_samples"] = False
         report_dict["message"] = (
-            f"Processing {file} resulted in only {num_samples} samples. "
-            f"Our minimum is {MIN_SAMPLES} samples. "
+            f"Processing {file} resulted in only {num_samples} samples. Our minimum is {MIN_SAMPLES} samples. "
         )
         report_dict["is_check_passed"] = False
         return report_dict
