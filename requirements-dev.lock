@@ -69,8 +69,6 @@ platformdirs==3.11.0
     # via virtualenv
 pluggy==1.5.0
     # via pytest
-py==1.11.0
-    # via pytest
 pyarrow==16.1.0
     # via together
 pyarrow-stubs==10.0.1.7
@@ -84,7 +82,9 @@ pygments==2.18.0
 pyright==1.1.399
 pytest==8.3.3
     # via pytest-asyncio
+    # via pytest-mock
 pytest-asyncio==0.24.0
+pytest-mock==3.14.0
 python-dateutil==2.8.2
     # via time-machine
 pytz==2023.3.post1
