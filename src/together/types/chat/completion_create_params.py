@@ -2,20 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Union, Iterable
+from typing import Dict, List, Union, Iterable, Optional
 from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 from ..tools_param import ToolsParam
 from ..tool_choice_param import ToolChoiceParam
 from .chat_completion_structured_message_text_param import ChatCompletionStructuredMessageTextParam
 from .chat_completion_structured_message_image_url_param import ChatCompletionStructuredMessageImageURLParam
+from .chat_completion_structured_message_video_url_param import ChatCompletionStructuredMessageVideoURLParam
 
 __all__ = [
     "CompletionCreateParamsBase",
     "Message",
-    "MessageContentUnionMember1",
-    "MessageContentUnionMember1Video",
-    "MessageContentUnionMember1VideoVideoURL",
+    "MessageChatCompletionSystemMessageParam",
+    "MessageChatCompletionUserMessageParam",
+    "MessageChatCompletionUserMessageParamContentUnionMember1",
+    "MessageChatCompletionAssistantMessageParam",
+    "MessageChatCompletionAssistantMessageParamFunctionCall",
+    "MessageChatCompletionToolMessageParam",
+    "MessageChatCompletionFunctionMessageParam",
     "FunctionCall",
     "FunctionCallName",
     "ResponseFormat",
@@ -159,36 +164,74 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
 
-class MessageContentUnionMember1VideoVideoURL(TypedDict, total=False):
-    url: Required[str]
-    """The URL of the video"""
+class MessageChatCompletionSystemMessageParam(TypedDict, total=False):
+    content: Required[str]
+
+    role: Required[Literal["system"]]
+
+    name: str
 
 
-class MessageContentUnionMember1Video(TypedDict, total=False):
-    type: Required[Literal["video_url"]]
-
-    video_url: Required[MessageContentUnionMember1VideoVideoURL]
-
-
-MessageContentUnionMember1: TypeAlias = Union[
+MessageChatCompletionUserMessageParamContentUnionMember1: TypeAlias = Union[
     ChatCompletionStructuredMessageTextParam,
     ChatCompletionStructuredMessageImageURLParam,
-    MessageContentUnionMember1Video,
+    ChatCompletionStructuredMessageVideoURLParam,
 ]
 
 
-class Message(TypedDict, total=False):
-    content: Required[Union[str, Iterable[MessageContentUnionMember1]]]
+class MessageChatCompletionUserMessageParam(TypedDict, total=False):
+    content: Required[Union[str, Iterable[MessageChatCompletionUserMessageParamContentUnionMember1]]]
     """
     The content of the message, which can either be a simple string or a structured
     format.
     """
 
-    role: Required[Literal["system", "user", "assistant", "tool"]]
-    """The role of the messages author.
+    role: Required[Literal["user"]]
 
-    Choice between: system, user, assistant, or tool.
-    """
+    name: str
+
+
+class MessageChatCompletionAssistantMessageParamFunctionCall(TypedDict, total=False):
+    arguments: Required[str]
+
+    name: Required[str]
+
+
+class MessageChatCompletionAssistantMessageParam(TypedDict, total=False):
+    role: Required[Literal["assistant"]]
+
+    content: Optional[str]
+
+    function_call: MessageChatCompletionAssistantMessageParamFunctionCall
+
+    name: str
+
+    tool_calls: Iterable[ToolChoiceParam]
+
+
+class MessageChatCompletionToolMessageParam(TypedDict, total=False):
+    content: Required[str]
+
+    role: Required[Literal["tool"]]
+
+    tool_call_id: Required[str]
+
+
+class MessageChatCompletionFunctionMessageParam(TypedDict, total=False):
+    content: Required[str]
+
+    name: Required[str]
+
+    role: Required[Literal["function"]]
+
+
+Message: TypeAlias = Union[
+    MessageChatCompletionSystemMessageParam,
+    MessageChatCompletionUserMessageParam,
+    MessageChatCompletionAssistantMessageParam,
+    MessageChatCompletionToolMessageParam,
+    MessageChatCompletionFunctionMessageParam,
+]
 
 
 class FunctionCallName(TypedDict, total=False):

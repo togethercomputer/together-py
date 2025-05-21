@@ -106,6 +106,12 @@ class LrScheduler(BaseModel):
 class TrainingMethodTrainingMethodSft(BaseModel):
     method: Literal["sft"]
 
+    train_on_inputs: Union[bool, Literal["auto"]]
+    """
+    Whether to mask the user messages in conversational data or prompts in
+    instruction data.
+    """
+
 
 class TrainingMethodTrainingMethodDpo(BaseModel):
     method: Literal["dpo"]

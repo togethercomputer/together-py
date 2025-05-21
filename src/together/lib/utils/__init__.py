@@ -1,3 +1,4 @@
+from ._log import logfmt, log_info, log_warn, log_debug, log_warn_once
 from .files import check_file
 from .tools import (
     convert_bytes,
@@ -9,6 +10,11 @@ from .tools import (
 )
 
 __all__ = [
+    "log_debug",
+    "log_info",
+    "log_warn",
+    "log_warn_once",
+    "logfmt",
     "check_file",
     "enforce_trailing_slash",
     "normalize_key",

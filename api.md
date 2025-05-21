@@ -22,6 +22,7 @@ from together.types.chat import (
     ChatCompletionChunk,
     ChatCompletionStructuredMessageImageURL,
     ChatCompletionStructuredMessageText,
+    ChatCompletionStructuredMessageVideoURL,
     ChatCompletionUsage,
 )
 ```
@@ -35,7 +36,7 @@ Methods:
 Types:
 
 ```python
-from together.types import Completion, LogProbs, ToolChoice, Tools
+from together.types import Completion, CompletionChunk, CompletionUsage, LogProbs, ToolChoice, Tools
 ```
 
 Methods:
@@ -74,15 +75,22 @@ Methods:
 Types:
 
 ```python
-from together.types import FineTune, FineTuneEvent, FineTuneListResponse, FineTuneDownloadResponse
+from together.types import (
+    FineTune,
+    FineTuneEvent,
+    FineTuneCreateResponse,
+    FineTuneListResponse,
+    FineTuneCancelResponse,
+    FineTuneDownloadResponse,
+)
 ```
 
 Methods:
 
-- <code title="post /fine-tunes">client.fine_tune.<a href="./src/together/resources/fine_tune.py">create</a>(\*\*<a href="src/together/types/fine_tune_create_params.py">params</a>) -> <a href="./src/together/types/fine_tune.py">FineTune</a></code>
+- <code title="post /fine-tunes">client.fine_tune.<a href="./src/together/resources/fine_tune.py">create</a>(\*\*<a href="src/together/types/fine_tune_create_params.py">params</a>) -> <a href="./src/together/types/fine_tune_create_response.py">FineTuneCreateResponse</a></code>
 - <code title="get /fine-tunes/{id}">client.fine_tune.<a href="./src/together/resources/fine_tune.py">retrieve</a>(id) -> <a href="./src/together/types/fine_tune.py">FineTune</a></code>
 - <code title="get /fine-tunes">client.fine_tune.<a href="./src/together/resources/fine_tune.py">list</a>() -> <a href="./src/together/types/fine_tune_list_response.py">FineTuneListResponse</a></code>
-- <code title="post /fine-tunes/{id}/cancel">client.fine_tune.<a href="./src/together/resources/fine_tune.py">cancel</a>(id) -> <a href="./src/together/types/fine_tune.py">FineTune</a></code>
+- <code title="post /fine-tunes/{id}/cancel">client.fine_tune.<a href="./src/together/resources/fine_tune.py">cancel</a>(id) -> <a href="./src/together/types/fine_tune_cancel_response.py">FineTuneCancelResponse</a></code>
 - <code title="get /finetune/download">client.fine_tune.<a href="./src/together/resources/fine_tune.py">download</a>(\*\*<a href="src/together/types/fine_tune_download_params.py">params</a>) -> <a href="./src/together/types/fine_tune_download_response.py">FineTuneDownloadResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tune.<a href="./src/together/resources/fine_tune.py">list_events</a>(id) -> <a href="./src/together/types/fine_tune_event.py">FineTuneEvent</a></code>
 

@@ -89,6 +89,9 @@ class SuccessfulExecutionData(BaseModel):
     session_id: str
     """Identifier of the current session. Used to make follow-up calls."""
 
+    status: Optional[Literal["success"]] = None
+    """Status of the execution. Currently only supports success."""
+
 
 class SuccessfulExecution(BaseModel):
     data: SuccessfulExecutionData

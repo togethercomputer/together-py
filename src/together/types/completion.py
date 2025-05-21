@@ -35,7 +35,7 @@ class Completion(BaseModel):
 
     model: str
 
-    object: Literal["text_completion"]
+    object: Literal["text.completion"]
 
     usage: Optional[ChatCompletionUsage] = None
 

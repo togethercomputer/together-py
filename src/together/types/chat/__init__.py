@@ -12,3 +12,6 @@ from .chat_completion_structured_message_text_param import (
 from .chat_completion_structured_message_image_url_param import (
     ChatCompletionStructuredMessageImageURLParam as ChatCompletionStructuredMessageImageURLParam,
 )
+from .chat_completion_structured_message_video_url_param import (
+    ChatCompletionStructuredMessageVideoURLParam as ChatCompletionStructuredMessageVideoURLParam,
+)

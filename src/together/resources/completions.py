@@ -21,6 +21,7 @@ from .._response import (
 from .._streaming import Stream, AsyncStream
 from .._base_client import make_request_options
 from ..types.completion import Completion
+from ..types.completion_chunk import CompletionChunk
 
 __all__ = ["CompletionsResource", "AsyncCompletionsResource"]
 
@@ -192,7 +193,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Stream[Completion]:
+    ) -> Stream[CompletionChunk]:
         """
         Query a language, code, or image model.
 
@@ -303,7 +304,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Completion | Stream[Completion]:
+    ) -> Completion | Stream[CompletionChunk]:
         """
         Query a language, code, or image model.
 
@@ -414,7 +415,7 @@ class CompletionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Completion | Stream[Completion]:
+    ) -> Completion | Stream[CompletionChunk]:
         return self._post(
             "/completions",
             body=maybe_transform(
@@ -447,7 +448,7 @@ class CompletionsResource(SyncAPIResource):
             ),
             cast_to=Completion,
             stream=stream or False,
-            stream_cls=Stream[Completion],
+            stream_cls=Stream[CompletionChunk],
         )
 
 
@@ -618,7 +619,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> AsyncStream[Completion]:
+    ) -> AsyncStream[CompletionChunk]:
         """
         Query a language, code, or image model.
 
@@ -729,7 +730,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Completion | AsyncStream[Completion]:
+    ) -> Completion | AsyncStream[CompletionChunk]:
         """
         Query a language, code, or image model.
 
@@ -840,7 +841,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> Completion | AsyncStream[Completion]:
+    ) -> Completion | AsyncStream[CompletionChunk]:
         return await self._post(
             "/completions",
             body=await async_maybe_transform(
@@ -873,7 +874,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
             ),
             cast_to=Completion,
             stream=stream or False,
-            stream_cls=AsyncStream[Completion],
+            stream_cls=AsyncStream[CompletionChunk],
         )
 
 

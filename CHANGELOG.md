@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.0-alpha.5 (2025-05-21)
+
+Full Changelog: [v0.1.0-alpha.4...v0.1.0-alpha.5](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.4...v0.1.0-alpha.5)
+
+### Features
+
+* **api:** api update ([ccdc937](https://github.com/togethercomputer/together-py/commit/ccdc93755af77a38f53967a7e4051bf8c8c38526))
+* **api:** api update ([33f506b](https://github.com/togethercomputer/together-py/commit/33f506b8ad4aa62c9b0c1c8c25213c4d7fd668f8))
+* **api:** api update ([e5803db](https://github.com/togethercomputer/together-py/commit/e5803db6544207bc92f193baa739a2cd1b230d5c))
+* **api:** api update ([3d7c605](https://github.com/togethercomputer/together-py/commit/3d7c605429a02698d4f651fed09ef99ee1098791))
+* **api:** api update ([ccef35f](https://github.com/togethercomputer/together-py/commit/ccef35fda09b9f39c5d6f33ec3fed8a73793a490))
+* **api:** Formatting fixes, some lint fixes ([e002ae7](https://github.com/togethercomputer/together-py/commit/e002ae790103c0e48a3116041d344785a249b61f))
+* **api:** get test_code_interpreter passing ([dc5babc](https://github.com/togethercomputer/together-py/commit/dc5babcf915591e1dc680a6f1aa440d9c5f48aa0))
+* **api:** Update spec and config to get all tests except code-interpolation an fine_tune unit tests working. ([2c21a07](https://github.com/togethercomputer/together-py/commit/2c21a07e6c56a736d51974287e3520fa52cea724))
+
+
+### Chores
+
+* **ci:** fix installation instructions ([164cbd1](https://github.com/togethercomputer/together-py/commit/164cbd14b5f399315d69318e0cb4aca0838a9ad3))
+* **ci:** upload sdks to package manager ([c9aae0a](https://github.com/togethercomputer/together-py/commit/c9aae0aeaae0a5014fa9e7383db6b24fa2c09fe2))
+* **ci:** use --pre flag for prerelease installation instructions ([9775c6b](https://github.com/togethercomputer/together-py/commit/9775c6b14a4bb7c7571b6cd7e9166fe86df51731))
+* **ci:** use --pre flag for prerelease installation instructions ([a460c1e](https://github.com/togethercomputer/together-py/commit/a460c1e8981138d2f928fab0fc8e3e40abea035b))
+* **docs:** grammar improvements ([387b072](https://github.com/togethercomputer/together-py/commit/387b07273ae75d5216aeb996e37b540572f2ac40))
+
 ## 0.1.0-alpha.4 (2025-05-13)
 
 Full Changelog: [v0.1.0-alpha.3...v0.1.0-alpha.4](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.3...v0.1.0-alpha.4)

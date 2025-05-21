@@ -9,23 +9,22 @@ from pydantic import Field as FieldInfo
 from .._models import BaseModel
 
 __all__ = [
-    "FineTuneListResponse",
-    "Data",
-    "DataEvent",
-    "DataLrScheduler",
-    "DataLrSchedulerLrSchedulerArgs",
-    "DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
-    "DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
-    "DataTrainingMethod",
-    "DataTrainingMethodTrainingMethodSft",
-    "DataTrainingMethodTrainingMethodDpo",
-    "DataTrainingType",
-    "DataTrainingTypeFullTrainingType",
-    "DataTrainingTypeLoRaTrainingType",
+    "FineTuneCancelResponse",
+    "Event",
+    "LrScheduler",
+    "LrSchedulerLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
+    "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "TrainingMethod",
+    "TrainingMethodTrainingMethodSft",
+    "TrainingMethodTrainingMethodDpo",
+    "TrainingType",
+    "TrainingTypeFullTrainingType",
+    "TrainingTypeLoRaTrainingType",
 ]
 
 
-class DataEvent(BaseModel):
+class Event(BaseModel):
     checkpoint_path: str
 
     created_at: str
@@ -81,12 +80,12 @@ class DataEvent(BaseModel):
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
 
 
-class DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(BaseModel):
+class LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(BaseModel):
     min_lr_ratio: Optional[float] = None
     """The ratio of the final learning rate to the peak learning rate"""
 
 
-class DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
+class LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
     min_lr_ratio: Optional[float] = None
     """The ratio of the final learning rate to the peak learning rate"""
 
@@ -94,18 +93,18 @@ class DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
     """Number or fraction of cycles for the cosine learning rate scheduler"""
 
 
-DataLrSchedulerLrSchedulerArgs: TypeAlias = Union[
-    DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
+LrSchedulerLrSchedulerArgs: TypeAlias = Union[
+    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
 ]
 
 
-class DataLrScheduler(BaseModel):
+class LrScheduler(BaseModel):
     lr_scheduler_type: Literal["linear", "cosine"]
 
-    lr_scheduler_args: Optional[DataLrSchedulerLrSchedulerArgs] = None
+    lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
 
 
-class DataTrainingMethodTrainingMethodSft(BaseModel):
+class TrainingMethodTrainingMethodSft(BaseModel):
     method: Literal["sft"]
 
     train_on_inputs: Union[bool, Literal["auto"]]
@@ -115,20 +114,20 @@ class DataTrainingMethodTrainingMethodSft(BaseModel):
     """
 
 
-class DataTrainingMethodTrainingMethodDpo(BaseModel):
+class TrainingMethodTrainingMethodDpo(BaseModel):
     method: Literal["dpo"]
 
     dpo_beta: Optional[float] = None
 
 
-DataTrainingMethod: TypeAlias = Union[DataTrainingMethodTrainingMethodSft, DataTrainingMethodTrainingMethodDpo]
+TrainingMethod: TypeAlias = Union[TrainingMethodTrainingMethodSft, TrainingMethodTrainingMethodDpo]
 
 
-class DataTrainingTypeFullTrainingType(BaseModel):
+class TrainingTypeFullTrainingType(BaseModel):
     type: Literal["Full"]
 
 
-class DataTrainingTypeLoRaTrainingType(BaseModel):
+class TrainingTypeLoRaTrainingType(BaseModel):
     lora_alpha: int
 
     lora_r: int
@@ -140,10 +139,10 @@ class DataTrainingTypeLoRaTrainingType(BaseModel):
     lora_trainable_modules: Optional[str] = None
 
 
-DataTrainingType: TypeAlias = Union[DataTrainingTypeFullTrainingType, DataTrainingTypeLoRaTrainingType]
+TrainingType: TypeAlias = Union[TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType]
 
 
-class Data(BaseModel):
+class FineTuneCancelResponse(BaseModel):
     id: str
     """Unique identifier for the fine-tune job"""
 
@@ -168,7 +167,7 @@ class Data(BaseModel):
     batch_size: Optional[int] = None
     """Batch size used for training"""
 
-    events: Optional[List[DataEvent]] = None
+    events: Optional[List[Event]] = None
     """Events related to this fine-tune job"""
 
     from_checkpoint: Optional[str] = None
@@ -177,7 +176,7 @@ class Data(BaseModel):
     learning_rate: Optional[float] = None
     """Learning rate used for training"""
 
-    lr_scheduler: Optional[DataLrScheduler] = None
+    lr_scheduler: Optional[LrScheduler] = None
     """Learning rate scheduler configuration"""
 
     max_grad_norm: Optional[float] = None
@@ -212,10 +211,10 @@ class Data(BaseModel):
     training_file: Optional[str] = None
     """File-ID of the training file"""
 
-    training_method: Optional[DataTrainingMethod] = None
+    training_method: Optional[TrainingMethod] = None
     """Method of training used"""
 
-    training_type: Optional[DataTrainingType] = None
+    training_type: Optional[TrainingType] = None
     """Type of training used (full or LoRA)"""
 
     user_id: Optional[str] = None
@@ -235,7 +234,3 @@ class Data(BaseModel):
 
     weight_decay: Optional[float] = None
     """Weight decay value used"""
-
-
-class FineTuneListResponse(BaseModel):
-    data: List[Data]

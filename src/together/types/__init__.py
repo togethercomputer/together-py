@@ -11,6 +11,7 @@ from .tool_choice import ToolChoice as ToolChoice
 from .tools_param import ToolsParam as ToolsParam
 from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .rerank_response import RerankResponse as RerankResponse
+from .completion_chunk import CompletionChunk as CompletionChunk
 from .execute_response import ExecuteResponse as ExecuteResponse
 from .job_list_response import JobListResponse as JobListResponse
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
@@ -36,6 +37,8 @@ from .fine_tune_list_response import FineTuneListResponse as FineTuneListRespons
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .endpoint_create_response import EndpointCreateResponse as EndpointCreateResponse
 from .endpoint_update_response import EndpointUpdateResponse as EndpointUpdateResponse
+from .fine_tune_cancel_response import FineTuneCancelResponse as FineTuneCancelResponse
+from .fine_tune_create_response import FineTuneCreateResponse as FineTuneCreateResponse
 from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloadParams
 from .endpoint_retrieve_response import EndpointRetrieveResponse as EndpointRetrieveResponse
 from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
