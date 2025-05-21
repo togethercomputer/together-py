@@ -185,6 +185,8 @@ class FineTuneCreateResponse(BaseModel):
     model: Optional[str] = None
     """Base model used for fine-tuning"""
 
+    x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
+
     n_checkpoints: Optional[int] = None
     """Number of checkpoints saved during training"""
 
