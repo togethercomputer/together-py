@@ -75,7 +75,7 @@ jobs:
       - name: Run tests
         env:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
-        run: ./scripts/test --ignore=tests/integration
+        run: './scripts/test --ignore=tests/integration'
 
   test-integration:
     timeout-minutes: 10
@@ -98,5 +98,5 @@ jobs:
       - name: Run tests
         env:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
-        run: ./scripts/test tests/integration
+        run: './scripts/test tests/integration'
     
