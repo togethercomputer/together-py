@@ -9,6 +9,7 @@ from httpx import (
 from pytest_mock import MockerFixture
 
 from together import Together
+from together._compat import parse_obj
 from together.types.execute_response import (
     SuccessfulExecution,
     SuccessfulExecutionData,
@@ -42,11 +43,12 @@ def test_interpreter_output_validation():
     # Test display_data output with dict data
     display_data = SuccessfulExecutionDataOutputDisplayorExecuteOutput(
         type="display_data",
-        data=SuccessfulExecutionDataOutputDisplayorExecuteOutputData.model_validate(
+        data=parse_obj(
+            SuccessfulExecutionDataOutputDisplayorExecuteOutputData,
             {
                 "text/plain": "Hello",
                 "text/html": "<p>Hello</p>",
-            }
+            },
         ),
     )
     assert display_data.type == "display_data"
@@ -57,10 +59,11 @@ def test_interpreter_output_validation():
     # Test execute_result output
     execute_result = SuccessfulExecutionDataOutputDisplayorExecuteOutput(
         type="execute_result",
-        data=SuccessfulExecutionDataOutputDisplayorExecuteOutputData.model_validate(
+        data=parse_obj(
+            SuccessfulExecutionDataOutputDisplayorExecuteOutputData,
             {
                 "text/plain": "42",
-            }
+            },
         ),
     )
     assert execute_result.type == "execute_result"

@@ -65,7 +65,7 @@ def list(ctx: click.Context) -> None:
 
     response.data = response.data or []
 
-    response.data.sort(key=lambda x: x.created_at or parse_timestamp("")) # noqa
+    response.data.sort(key=lambda x: x.created_at or parse_timestamp(""))  # noqa
 
     display_list: List[dict[str, Any]] = []
     for i in response.data:
