@@ -19,6 +19,16 @@ from ..constants import (
     completion_test_model_list,
     moderation_test_model_list,
 )
+from .generate_hyperparameters import (
+    random_frequency_penalty,  # pyright: ignore[reportUnusedImport]
+    random_max_tokens,  # pyright: ignore[reportUnusedImport]
+    random_min_p,  # pyright: ignore[reportUnusedImport]
+    random_presence_penalty,  # pyright: ignore[reportUnusedImport]
+    random_repetition_penalty,  # pyright: ignore[reportUnusedImport]
+    random_temperature,  # pyright: ignore[reportUnusedImport]
+    random_top_k,  # pyright: ignore[reportUnusedImport]
+    random_top_p,  # pyright: ignore[reportUnusedImport]
+)
 
 STOP = ["</s>"]
 

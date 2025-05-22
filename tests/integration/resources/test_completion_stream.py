@@ -5,6 +5,13 @@ import pytest
 from together import Together
 from together.types.completion_chunk import Choice, ChoiceDelta, CompletionChunk, ChatCompletionUsage
 
+from .generate_hyperparameters import (
+    random_max_tokens,  # pyright: ignore[reportUnusedImport]
+    random_repetition_penalty,  # pyright: ignore[reportUnusedImport]
+    random_temperature,  # pyright: ignore[reportUnusedImport]
+    random_top_k,  # pyright: ignore[reportUnusedImport]
+    random_top_p,  # pyright: ignore[reportUnusedImport]
+)
 
 class TestTogetherCompletionStream:
     @pytest.fixture
