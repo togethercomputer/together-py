@@ -56,7 +56,7 @@ jobs:
 
   test-others:
     timeout-minutes: 10
-    name: test
+    name: test-others
     runs-on: ${{ github.repository == 'stainless-sdks/togetherai-python' && 'depot-ubuntu-24.04' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
 
   test-integration:
     timeout-minutes: 10
-    name: test
+    name: test-intergration
     runs-on: ${{ github.repository == 'stainless-sdks/togetherai-python' && 'depot-ubuntu-24.04' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
