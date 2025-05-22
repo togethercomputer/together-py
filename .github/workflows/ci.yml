@@ -54,7 +54,7 @@ jobs:
           SHA: ${{ github.sha }}
         run: ./scripts/utils/upload-artifact.sh
 
-  test:
+  test-others:
     timeout-minutes: 10
     name: test
     runs-on: ${{ github.repository == 'stainless-sdks/togetherai-python' && 'depot-ubuntu-24.04' || 'ubuntu-latest' }}
@@ -75,4 +75,28 @@ jobs:
       - name: Run tests
         env:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
-        run: ./scripts/test
+        run: './scripts/test --ignore=tests/integration'
+
+  test-integration:
+    timeout-minutes: 10
+    name: test
+    runs-on: ${{ github.repository == 'stainless-sdks/togetherai-python' && 'depot-ubuntu-24.04' || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rye
+        run: |
+          curl -sSf https://rye.astral.sh/get | bash
+          echo "$HOME/.rye/shims" >> $GITHUB_PATH
+        env:
+          RYE_VERSION: '0.44.0'
+          RYE_INSTALL_OPTION: '--yes'
+
+      - name: Bootstrap
+        run: ./scripts/bootstrap
+
+      - name: Run tests
+        env:
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+        run: './scripts/test tests/integration'
+    

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.6 (2025-05-22)
+
+Full Changelog: [v0.1.0-alpha.5...v0.1.0-alpha.6](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.5...v0.1.0-alpha.6)
+
+### Features
+
+* **api:** update ([075b568](https://github.com/togethercomputer/together-py/commit/075b568c1f6b70c4c46d023de90bfeb1e9dab9cc))
+
+
+### Bug Fixes
+
+* **tests:** make test pydantic v1 compatible ([ffd8631](https://github.com/togethercomputer/together-py/commit/ffd863143a209d51ba1e3c0abd7f0d2220ac3c5e))
+
 ## 0.1.0-alpha.5 (2025-05-21)
 
 Full Changelog: [v0.1.0-alpha.4...v0.1.0-alpha.5](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.4...v0.1.0-alpha.5)
