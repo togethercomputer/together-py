@@ -9,30 +9,16 @@ from functools import partial
 from pathlib import Path
 from typing import Tuple
 
-import requests
+import httpx
 from filelock import FileLock
-from requests.structures import CaseInsensitiveDict
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 
-from ... import Together
-
-#import together.utils
-from together.abstract import api_requestor
-from together.constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE, MAX_RETRIES
-from together.error import (
-    APIError,
-    AuthenticationError,
-    DownloadError,
-    FileTypeError,
-)
-from together.together_response import TogetherResponse
-from together.types import (
-    FilePurpose,
-    FileResponse,
-    FileType,
-    TogetherRequest,
-)
+from ... import Together, RequestOptions, APIStatusError, AuthenticationError
+from ...types import FileRetrieveResponse
+from ..types.error import DownloadError, FileTypeError
+from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
+from ..types.files import FilePurpose, FileType
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -59,7 +45,7 @@ def chmod_and_replace(src: Path, dst: Path) -> None:
 
 
 def _get_file_size(
-    headers: CaseInsensitiveDict[str],
+    headers: httpx.Headers,
 ) -> int:
     """
     Extracts file size from header
@@ -80,7 +66,7 @@ def _get_file_size(
 
 
 def _prepare_output(
-    headers: CaseInsensitiveDict[str],
+    headers: httpx.Headers,
     step: int = -1,
     output: Path | None = None,
     remote_name: str | None = None,
@@ -133,31 +119,25 @@ class DownloadManager:
                 file_path = Path(remote_name)
 
             return file_path, 0
-
-        requestor = api_requestor.APIRequestor(
-            client=self._client,
-        )
-
-        response = requestor.request_raw(
-            options=TogetherRequest(
-                method="GET",
-                url=url,
+        
+        response = self._client.get(
+            path=url,
+            options=RequestOptions(
                 headers={"Range": "bytes=0-1"},
             ),
-            remaining_retries=MAX_RETRIES,
+            cast_to=httpx.Response,
             stream=False,
         )
-
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            raise APIError(
-                "Error fetching file metadata", http_status=response.status_code
+        except httpx.HTTPStatusError as e:
+            raise APIStatusError(
+                "Error fetching file metadata", response=response, body=response.content.decode(),
             ) from e
 
         headers = response.headers
 
-        assert isinstance(headers, CaseInsensitiveDict)
+        assert isinstance(headers, httpx.Headers)
 
         file_path = _prepare_output(
             headers=headers,
@@ -176,9 +156,6 @@ class DownloadManager:
         remote_name: str | None = None,
         fetch_metadata: bool = False,
     ) -> Tuple[str, int]:
-        requestor = api_requestor.APIRequestor(
-            client=self._client,
-        )
 
         # pre-fetch remote file name and file size
         file_path, file_size = self.get_file_metadata(
@@ -194,12 +171,9 @@ class DownloadManager:
 
         with FileLock(lock_path.as_posix()):
             with temp_file_manager() as temp_file:
-                response = requestor.request_raw(
-                    options=TogetherRequest(
-                        method="GET",
-                        url=url,
-                    ),
-                    remaining_retries=MAX_RETRIES,
+                response = self._client.get(
+                    path=url,
+                    cast_to=httpx.Response,
                     stream=True,
                 )
 
@@ -207,8 +181,8 @@ class DownloadManager:
                     response.raise_for_status()
                 except Exception as e:
                     os.remove(lock_path)
-                    raise APIError(
-                        "Error downloading file", http_status=response.status_code
+                    raise APIStatusError(
+                        "Error downloading file", response=response, body=response.content.decode(),
                     ) from e
 
                 if not fetch_metadata:
@@ -223,7 +197,7 @@ class DownloadManager:
                     desc=f"Downloading file {file_path.name}",
                     disable=bool(DISABLE_TQDM),
                 ) as pbar:
-                    for chunk in response.iter_content(DOWNLOAD_BLOCK_SIZE):
+                    for chunk in response.iter_bytes(DOWNLOAD_BLOCK_SIZE):
                         pbar.update(len(chunk))
                         temp_file.write(chunk)
 
@@ -248,18 +222,21 @@ class UploadManager:
 
     @classmethod
     def _redirect_error_handler(
-        cls, requestor: api_requestor.APIRequestor, response: requests.Response
+        cls, response: httpx.Response,
     ) -> None:
         if response.status_code == 401:
             raise AuthenticationError(
                 "This job would exceed your free trial credits. "
                 "Please upgrade to a paid account through "
                 "Settings -> Billing on api.together.ai to continue.",
+                response=response,
+                body=response.content.decode(),
             )
         elif response.status_code != 302:
-            raise APIError(
+            raise APIStatusError(
                 f"Unexpected error raised by endpoint: {response.content.decode()}, headers: {response.headers}",
-                http_status=response.status_code,
+                response=response,
+                body=response.content.decode(),
             )
 
     def get_upload_url(
@@ -270,48 +247,28 @@ class UploadManager:
         filetype: FileType,
     ) -> Tuple[str, str]:
         data = {
-            "purpose": purpose.value,
+            "purpose": purpose,
             "file_name": file.name,
-            "file_type": filetype.value,
+            "file_type": filetype,
         }
 
-        requestor = api_requestor.APIRequestor(
-            client=self._client,
+        response = self._client.post(
+            path=url,
+            cast_to=httpx.Response,
+            body=data,
         )
 
-        method = "POST"
-
-        headers = together.utils.get_headers(method, requestor.api_key)
-
-        response = requestor.request_raw(
-            options=TogetherRequest(
-                method=method,
-                url=url,
-                params=data,
-                allow_redirects=False,
-                override_headers=True,
-                headers=headers,
-            ),
-            remaining_retries=MAX_RETRIES,
-        )
-
-        self._redirect_error_handler(requestor, response)
+        self._redirect_error_handler(response)
 
         redirect_url = response.headers["Location"]
         file_id = response.headers["X-Together-File-Id"]
 
         return redirect_url, file_id
 
-    def callback(self, url: str) -> TogetherResponse:
-        requestor = api_requestor.APIRequestor(
-            client=self._client,
-        )
-
-        response, _, _ = requestor.request(
-            options=TogetherRequest(
-                method="POST",
-                url=url,
-            ),
+    def callback(self, url: str) -> FileRetrieveResponse:
+        response = self._client.post(
+            cast_to=FileRetrieveResponse,
+            path=url,
         )
 
         return response
@@ -322,19 +279,15 @@ class UploadManager:
         file: Path,
         purpose: FilePurpose,
         redirect: bool = False,
-    ) -> FileResponse:
+    ) -> FileRetrieveResponse:
         file_id = None
-
-        requestor = api_requestor.APIRequestor(
-            client=self._client,
-        )
 
         redirect_url = None
         if redirect:
             if file.suffix == ".jsonl":
-                filetype = FileType.jsonl
+                filetype = "jsonl"
             elif file.suffix == ".parquet":
-                filetype = FileType.parquet
+                filetype = "parquet"
             else:
                 raise FileTypeError(
                     f"Unknown extension of file {file}. "
@@ -355,36 +308,31 @@ class UploadManager:
                 wrapped_file = CallbackIOWrapper(pbar.update, f, "read")
 
                 if redirect:
-                    callback_response = requestor.request_raw(
-                        options=TogetherRequest(
-                            method="PUT",
-                            url=redirect_url,
-                            params=wrapped_file,
-                            override_headers=True,
-                        ),
-                        absolute=True,
-                        remaining_retries=MAX_RETRIES,
+                    assert redirect_url is not None
+                    callback_response = self._client.put(
+                        cast_to=httpx.Response,
+                        path=redirect_url,
+                        body=wrapped_file,
                     )
                 else:
-                    response, _, _ = requestor.request(
-                        options=TogetherRequest(
-                            method="PUT",
-                            url=url,
-                            params=wrapped_file,
-                        ),
+                    response = self._client.put(
+                        cast_to=FileRetrieveResponse,
+                        path=url,
+                        body=wrapped_file,
                     )
 
         if redirect:
-            assert isinstance(callback_response, requests.Response)
+            assert isinstance(callback_response, httpx.Response) # type: ignore
 
             if not callback_response.status_code == 200:
-                raise APIError(
+                raise APIStatusError(
                     f"Error during file upload: {callback_response.content.decode()}, headers: {callback_response.headers}",
-                    http_status=callback_response.status_code,
+                    response=callback_response,
+                    body=callback_response.content.decode(),
                 )
 
             response = self.callback(f"{url}/{file_id}/preprocess")
 
-        assert isinstance(response, TogetherResponse)
+        assert isinstance(response, FileRetrieveResponse) # type: ignore
 
-        return FileResponse(**response.data)
+        return response
