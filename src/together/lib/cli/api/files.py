@@ -7,6 +7,7 @@ import click
 from tabulate import tabulate
 
 from together import Together
+from together.lib.resources.files import Files
 
 from ...utils import check_file, convert_bytes, convert_unix_timestamp
 
@@ -37,17 +38,16 @@ def files(_ctx: click.Context) -> None:
     default=True,
     help="Whether to check the file before uploading.",
 )
-def upload(_ctx: click.Context, _file: pathlib.Path, _purpose: str, _check: bool) -> None:
+def upload(ctx: click.Context, file: pathlib.Path, purpose: str, check: bool) -> None:
     """Upload file"""
 
-    # the file upload API is not implemented yet
-    raise NotImplementedError
+    client: Together = ctx.obj
 
-    # client: Together = ctx.obj
+    files_resource = Files(client)
 
-    # response = client.files.upload(file=file, purpose=purpose, check=check)
+    response = files_resource.upload(file=file, purpose=purpose, check=check)
 
-    # click.echo(json.dumps(response.model_dump(), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 @files.command()
