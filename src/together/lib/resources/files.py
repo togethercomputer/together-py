@@ -16,10 +16,9 @@ from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 
 from ... import Together, RequestOptions, APIStatusError, AuthenticationError
-from ...types import FileRetrieveResponse
+from ...types import FileRetrieveResponse, FileType, FilePurpose
 from ..types.error import DownloadError, FileTypeError
 from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
-from ..types.files import FilePurpose, FileType
 from ..utils import check_file
 
 
