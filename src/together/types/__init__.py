@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .embedding import Embedding as Embedding
+from .file_type import FileType as FileType
 from .fine_tune import FineTune as FineTune
 from .log_probs import LogProbs as LogProbs
 from .completion import Completion as Completion
