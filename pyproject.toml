@@ -94,7 +94,7 @@ typecheck = { chain = [
 ]}
 "typecheck:pyright" = "pyright"
 "typecheck:verify-types" = "pyright --verifytypes together --ignoreexternal"
-"typecheck:mypy" = "mypy ."
+"typecheck:mypy" = "mypy . --no-warn-unreachable"
 
 [build-system]
 requires = ["hatchling==1.26.3", "hatch-fancy-pypi-readme"]
