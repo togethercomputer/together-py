@@ -193,7 +193,7 @@ class DownloadManager:
                 ) as pbar:
                     for chunk in response.iter_bytes(DOWNLOAD_BLOCK_SIZE):
                         pbar.update(len(chunk))
-                        temp_file.write(chunk)
+                        temp_file.write(chunk) # type: ignore
 
             # Raise exception if remote file size does not match downloaded file size
             if os.stat(temp_file.name).st_size != file_size:
@@ -283,7 +283,7 @@ class UploadManager:
                 raise FileTypeError(
                     f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
                 )
-            redirect_url, file_id = self.get_upload_url(url, file, purpose, filetype)
+            redirect_url, file_id = self.get_upload_url(url, file, purpose, filetype) # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
 
