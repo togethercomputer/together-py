@@ -60,7 +60,13 @@ Methods:
 Types:
 
 ```python
-from together.types import FileObject, FileRetrieveResponse, FileListResponse, FileDeleteResponse
+from together.types import (
+    FileObject,
+    FileType,
+    FileRetrieveResponse,
+    FileListResponse,
+    FileDeleteResponse,
+)
 ```
 
 Methods:

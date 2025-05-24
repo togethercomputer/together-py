@@ -6,6 +6,7 @@ from typing_extensions import Literal
 from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
+from .file_type import FileType
 
 __all__ = ["FileListResponse", "Data"]
 
@@ -19,7 +20,7 @@ class Data(BaseModel):
 
     filename: str
 
-    file_type: Literal["jsonl", "parquet"] = FieldInfo(alias="FileType")
+    file_type: FileType = FieldInfo(alias="FileType")
 
     line_count: int = FieldInfo(alias="LineCount")
 
