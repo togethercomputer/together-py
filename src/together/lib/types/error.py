@@ -2,6 +2,7 @@ from typing import Any
 
 from ... import TogetherError
 
+
 class DownloadError(TogetherError):
     def __init__(
         self,
@@ -10,6 +11,7 @@ class DownloadError(TogetherError):
     ) -> None:
         self.message = message
         super().__init__(**kwargs)
+
 
 class FileTypeError(TogetherError):
     def __init__(
