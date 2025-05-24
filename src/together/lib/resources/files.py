@@ -240,8 +240,8 @@ class UploadManager:
                     "Settings -> Billing on api.together.ai to continue.",
                     response=e.response,
                     body=e.body,
-                )
-            raise e
+                ) from e
+            raise
 
         # Raise error for non 302 status codes
         if response.status_code != 302:
