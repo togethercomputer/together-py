@@ -1,25 +1,25 @@
 from __future__ import annotations
 
 import os
-import shutil
 import stat
-import tempfile
 import uuid
-from functools import partial
-from pathlib import Path
+import shutil
+import tempfile
 from pprint import pformat
-from typing import Tuple, get_args, cast
+from typing import Tuple, cast, get_args
+from pathlib import Path
+from functools import partial
 
 import httpx
-from filelock import FileLock
 from tqdm import tqdm
+from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
-from ... import Together, RequestOptions, APIStatusError, AuthenticationError
-from ...types import FileRetrieveResponse, FileType, FilePurpose
-from ..types.error import DownloadError, FileTypeError
-from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
+from ... import Together, APIStatusError, RequestOptions, AuthenticationError
 from ..utils import check_file
+from ...types import FileType, FilePurpose, FileRetrieveResponse
+from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
+from ..types.error import DownloadError, FileTypeError
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -80,10 +80,7 @@ def _prepare_output(
 
     content_type = str(headers.get("content-type"))
 
-    assert remote_name, (
-        "No model name found in fine_tune object. "
-        "Please specify an `output` file name."
-    )
+    assert remote_name, "No model name found in fine_tune object. Please specify an `output` file name."
 
     if step > 0:
         remote_name += f"-checkpoint-{step}"
@@ -120,7 +117,7 @@ class DownloadManager:
                 file_path = Path(remote_name)
 
             return file_path, 0
-        
+
         try:
             response = self._client.get(
                 path=url,
@@ -132,7 +129,9 @@ class DownloadManager:
             )
         except APIStatusError as e:
             raise APIStatusError(
-                "Error fetching file metadata", response=e.response, body=e.body,
+                "Error fetching file metadata",
+                response=e.response,
+                body=e.body,
             ) from e
 
         headers = response.headers
@@ -156,15 +155,10 @@ class DownloadManager:
         remote_name: str | None = None,
         fetch_metadata: bool = False,
     ) -> Tuple[str, int]:
-
         # pre-fetch remote file name and file size
-        file_path, file_size = self.get_file_metadata(
-            url, output, remote_name, fetch_metadata
-        )
+        file_path, file_size = self.get_file_metadata(url, output, remote_name, fetch_metadata)
 
-        temp_file_manager = partial(
-            tempfile.NamedTemporaryFile, mode="wb", dir=file_path.parent, delete=False
-        )
+        temp_file_manager = partial(tempfile.NamedTemporaryFile, mode="wb", dir=file_path.parent, delete=False)
 
         # Prevent parallel downloads of the same file with a lock.
         lock_path = Path(file_path.as_posix() + ".lock")
@@ -180,7 +174,9 @@ class DownloadManager:
                 except APIStatusError as e:
                     os.remove(lock_path)
                     raise APIStatusError(
-                        "Error downloading file", response=e.response, body=e.response,
+                        "Error downloading file",
+                        response=e.response,
+                        body=e.response,
                     ) from e
 
                 if not fetch_metadata:
@@ -202,8 +198,7 @@ class DownloadManager:
             # Raise exception if remote file size does not match downloaded file size
             if os.stat(temp_file.name).st_size != file_size:
                 DownloadError(
-                    f"Downloaded file size `{pbar.n}` bytes does not match "
-                    f"remote file size `{file_size}` bytes."
+                    f"Downloaded file size `{pbar.n}` bytes does not match remote file size `{file_size}` bytes."
                 )
 
             # Moves temp file to output file path
@@ -247,7 +242,7 @@ class UploadManager:
                     body=e.body,
                 )
             raise e
-        
+
         # Raise error for non 302 status codes
         if response.status_code != 302:
             raise APIStatusError(
@@ -286,8 +281,7 @@ class UploadManager:
                 filetype = "parquet"
             else:
                 raise FileTypeError(
-                    f"Unknown extension of file {file}. "
-                    "Only files with extensions .jsonl and .parquet are supported."
+                    f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
                 )
             redirect_url, file_id = self.get_upload_url(url, file, purpose, filetype)
 
@@ -318,7 +312,7 @@ class UploadManager:
                     )
 
         if redirect:
-            assert isinstance(callback_response, httpx.Response) # type: ignore
+            assert isinstance(callback_response, httpx.Response)  # type: ignore
 
             if not callback_response.status_code == 200:
                 raise APIStatusError(
@@ -329,9 +323,10 @@ class UploadManager:
 
             response = self.callback(f"{url}/{file_id}/preprocess")
 
-        assert isinstance(response, FileRetrieveResponse) # type: ignore
+        assert isinstance(response, FileRetrieveResponse)  # type: ignore
 
         return response
+
 
 class Files:
     def __init__(self, client: Together) -> None:
@@ -349,16 +344,14 @@ class Files:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
-                raise FileTypeError(
-                    f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}"
-                )
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
 
         if isinstance(file, str):
             file = Path(file)
 
         if purpose not in get_args(FilePurpose):
             raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
-        
+
         purpose = cast(FilePurpose, purpose)
 
         return upload_manager.upload("files", file, purpose=purpose, redirect=True)

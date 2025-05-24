@@ -140,7 +140,7 @@ class TestTogetherCompletion:
     def test_no_prompt(
         self,
         model: str,
-        prompt: str,   # noqa
+        prompt: str,  # noqa
         sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
@@ -177,7 +177,7 @@ class TestTogetherCompletion:
     )
     def test_no_model(
         self,
-        model: str,   # noqa
+        model: str,  # noqa
         prompt: str,
         sync_together_client: Together,
     ):

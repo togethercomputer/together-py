@@ -1,15 +1,15 @@
 import enum
 
 # Session constants
-#TIMEOUT_SECS = 600
-#MAX_SESSION_LIFETIME_SECS = 180
-#MAX_CONNECTION_RETRIES = 2
-#MAX_RETRIES = 5
-#INITIAL_RETRY_DELAY = 0.5
-#MAX_RETRY_DELAY = 8.0
+# TIMEOUT_SECS = 600
+# MAX_SESSION_LIFETIME_SECS = 180
+# MAX_CONNECTION_RETRIES = 2
+# MAX_RETRIES = 5
+# INITIAL_RETRY_DELAY = 0.5
+# MAX_RETRY_DELAY = 8.0
 
 # API defaults
-#BASE_URL = "https://api.together.xyz/v1"
+# BASE_URL = "https://api.together.xyz/v1"
 
 # Download defaults
 DOWNLOAD_BLOCK_SIZE = 10 * 1024 * 1024  # 10 MB
