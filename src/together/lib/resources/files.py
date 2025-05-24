@@ -122,19 +122,18 @@ class DownloadManager:
 
             return file_path, 0
         
-        response = self._client.get(
-            path=url,
-            options=RequestOptions(
-                headers={"Range": "bytes=0-1"},
-            ),
-            cast_to=httpx.Response,
-            stream=False,
-        )
         try:
-            response.raise_for_status()
-        except httpx.HTTPStatusError as e:
+            response = self._client.get(
+                path=url,
+                options=RequestOptions(
+                    headers={"Range": "bytes=0-1"},
+                ),
+                cast_to=httpx.Response,
+                stream=False,
+            )
+        except APIStatusError as e:
             raise APIStatusError(
-                "Error fetching file metadata", response=response, body=response.content.decode(),
+                "Error fetching file metadata", response=e.response, body=e.body,
             ) from e
 
         headers = response.headers
@@ -173,18 +172,16 @@ class DownloadManager:
 
         with FileLock(lock_path.as_posix()):
             with temp_file_manager() as temp_file:
-                response = self._client.get(
-                    path=url,
-                    cast_to=httpx.Response,
-                    stream=True,
-                )
-
                 try:
-                    response.raise_for_status()
-                except Exception as e:
+                    response = self._client.get(
+                        path=url,
+                        cast_to=httpx.Response,
+                        stream=True,
+                    )
+                except APIStatusError as e:
                     os.remove(lock_path)
                     raise APIStatusError(
-                        "Error downloading file", response=response, body=response.content.decode(),
+                        "Error downloading file", response=e.response, body=e.response,
                     ) from e
 
                 if not fetch_metadata:
@@ -222,25 +219,6 @@ class UploadManager:
     def __init__(self, client: Together) -> None:
         self._client = client
 
-    @classmethod
-    def _redirect_error_handler(
-        cls, response: httpx.Response,
-    ) -> None:
-        if response.status_code == 401:
-            raise AuthenticationError(
-                "This job would exceed your free trial credits. "
-                "Please upgrade to a paid account through "
-                "Settings -> Billing on api.together.ai to continue.",
-                response=response,
-                body=response.content.decode(),
-            )
-        elif response.status_code != 302:
-            raise APIStatusError(
-                f"Unexpected error raised by endpoint: {response.content.decode()}, headers: {response.headers}",
-                response=response,
-                body=response.content.decode(),
-            )
-
     def get_upload_url(
         self,
         url: str,
@@ -254,13 +232,30 @@ class UploadManager:
             "file_type": filetype,
         }
 
-        response = self._client.post(
-            path=url,
-            cast_to=httpx.Response,
-            body=data,
-        )
-
-        self._redirect_error_handler(response)
+        try:
+            response = self._client.post(
+                path=url,
+                cast_to=httpx.Response,
+                body=data,
+            )
+        except APIStatusError as e:
+            if e.response.status_code == 401:
+                raise AuthenticationError(
+                    "This job would exceed your free trial credits. "
+                    "Please upgrade to a paid account through "
+                    "Settings -> Billing on api.together.ai to continue.",
+                    response=e.response,
+                    body=e.body,
+                )
+            raise e
+        
+        # Raise error for non 302 status codes
+        if response.status_code != 302:
+            raise APIStatusError(
+                f"Unexpected error raised by endpoint: {response.content.decode()}, headers: {response.headers}",
+                response=response,
+                body=response.content.decode(),
+            )
 
         redirect_url = response.headers["Location"]
         file_id = response.headers["X-Together-File-Id"]
