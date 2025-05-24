@@ -62,6 +62,7 @@ Types:
 ```python
 from together.types import (
     FileObject,
+    FilePurpose,
     FileType,
     FileRetrieveResponse,
     FileListResponse,
