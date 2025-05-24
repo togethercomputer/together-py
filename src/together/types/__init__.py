@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 from .embedding import Embedding as Embedding
-from .file_type import FileType as FileType
 from .fine_tune import FineTune as FineTune
 from .log_probs import LogProbs as LogProbs
 from .completion import Completion as Completion
 from .image_file import ImageFile as ImageFile
 from .tool_choice import ToolChoice as ToolChoice
 from .tools_param import ToolsParam as ToolsParam
-from .file_purpose import FilePurpose as FilePurpose
 from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .rerank_response import RerankResponse as RerankResponse
 from .completion_chunk import CompletionChunk as CompletionChunk
