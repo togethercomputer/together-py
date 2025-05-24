@@ -171,26 +171,26 @@ def create_finetune_request(
         training_method_cls = TrainingMethodTrainingMethodDpo(method="dpo", dpo_beta=dpo_beta)  # type: ignore
 
     finetune_request = FineTuneCreateParams(
-        model=model,
+        model=model, # type: ignore
         training_file=training_file,
-        validation_file=validation_file,
+        validation_file=validation_file, # type: ignore
         n_epochs=n_epochs,
-        n_evals=n_evals,
-        n_checkpoints=n_checkpoints,
+        n_evals=n_evals, # type: ignore
+        n_checkpoints=n_checkpoints, # type: ignore
         batch_size=batch_size,
-        learning_rate=learning_rate,
+        learning_rate=learning_rate, # type: ignore
         lr_scheduler=lr_scheduler,
         warmup_ratio=warmup_ratio,
         max_grad_norm=max_grad_norm,
-        weight_decay=weight_decay,
+        weight_decay=weight_decay, # type: ignore
         training_type=training_type,
-        suffix=suffix,
+        suffix=suffix, # type: ignore
         wandb_key=wandb_api_key,
-        wandb_base_url=wandb_base_url,
-        wandb_project_name=wandb_project_name,
-        wandb_name=wandb_name,
+        wandb_base_url=wandb_base_url,  # type: ignore
+        wandb_project_name=wandb_project_name,  # type: ignore
+        wandb_name=wandb_name, # type: ignore
         training_method=training_method_cls,  # type: ignore
-        from_checkpoint=from_checkpoint,
+        from_checkpoint=from_checkpoint, # type: ignore
     )
 
     return finetune_request
