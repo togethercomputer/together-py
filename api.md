@@ -60,14 +60,7 @@ Methods:
 Types:
 
 ```python
-from together.types import (
-    FileObject,
-    FilePurpose,
-    FileType,
-    FileRetrieveResponse,
-    FileListResponse,
-    FileDeleteResponse,
-)
+from together.types import FileObject, FileRetrieveResponse, FileListResponse, FileDeleteResponse
 ```
 
 Methods:
