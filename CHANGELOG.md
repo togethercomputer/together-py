@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.7 (2025-05-24)
+
+Full Changelog: [v0.1.0-alpha.6...v0.1.0-alpha.7](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.6...v0.1.0-alpha.7)
+
+### Features
+
+* **api:** update via SDK Studio ([8be984a](https://github.com/togethercomputer/together-py/commit/8be984afa71c2926525cbd2c0cac3ec1806bfda9))
+* **api:** update via SDK Studio ([7c0522d](https://github.com/togethercomputer/together-py/commit/7c0522dd99b90fbcabd21f1725d79f72e3a7c020))
+* **api:** update via SDK Studio ([e4a88e4](https://github.com/togethercomputer/together-py/commit/e4a88e45e7092e44cfdd8ab2c3c9d6c89fdd612b))
+* **api:** update via SDK Studio ([065228b](https://github.com/togethercomputer/together-py/commit/065228b816ddfb77587de79c52e0b1a93ee2c714))
+
+
+### Chores
+
+* **tests:** improve ci test names ([03a7211](https://github.com/togethercomputer/together-py/commit/03a721149086b2eaf3bf4a41334e44fd40b3c13c))
+
 ## 0.1.0-alpha.6 (2025-05-22)
 
 Full Changelog: [v0.1.0-alpha.5...v0.1.0-alpha.6](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.5...v0.1.0-alpha.6)
