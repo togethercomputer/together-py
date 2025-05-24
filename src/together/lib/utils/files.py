@@ -308,7 +308,7 @@ def _check_jsonl(file: Path) -> Dict[str, Any]:
 
                 if dataset_format is None:
                     dataset_format = current_format
-                elif current_format is not None:  # pyright: ignore[reportUnnecessaryComparison]
+                elif current_format is not None:  # pyright: ignore[reportUnnecessaryComparison] # noqa
                     if current_format != dataset_format:
                         raise InvalidFileFormatError(
                             message="All samples in the dataset must have the same dataset format. "

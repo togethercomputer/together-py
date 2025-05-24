@@ -20,14 +20,14 @@ from ..constants import (
     moderation_test_model_list,
 )
 from .generate_hyperparameters import (
-    random_frequency_penalty,  # pyright: ignore[reportUnusedImport]
-    random_max_tokens,  # pyright: ignore[reportUnusedImport]
-    random_min_p,  # pyright: ignore[reportUnusedImport]
-    random_presence_penalty,  # pyright: ignore[reportUnusedImport]
-    random_repetition_penalty,  # pyright: ignore[reportUnusedImport]
-    random_temperature,  # pyright: ignore[reportUnusedImport]
-    random_top_k,  # pyright: ignore[reportUnusedImport]
-    random_top_p,  # pyright: ignore[reportUnusedImport]
+    random_min_p,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_top_k,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_top_p,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_max_tokens,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_temperature,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_presence_penalty,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_frequency_penalty,  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    random_repetition_penalty,  # noqa: F401 # pyright: ignore[reportUnusedImport]
 )
 
 STOP = ["</s>"]
@@ -140,7 +140,7 @@ class TestTogetherCompletion:
     def test_no_prompt(
         self,
         model: str,
-        prompt: str,   # noqa
+        prompt: str,  # noqa
         sync_together_client: Together,
     ):
         with pytest.raises(TypeError):
@@ -177,7 +177,7 @@ class TestTogetherCompletion:
     )
     def test_no_model(
         self,
-        model: str,   # noqa
+        model: str,  # noqa
         prompt: str,
         sync_together_client: Together,
     ):
