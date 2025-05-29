@@ -14,12 +14,12 @@ from tqdm import tqdm
 from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
-from ..._exceptions import APIStatusError, AuthenticationError
-from ..._client import RequestOptions
-from ..._resource import SyncAPIResource
 from ...types import FileType, FilePurpose, FileRetrieveResponse
+from ..._client import RequestOptions
 from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
+from ..._resource import SyncAPIResource
 from ..types.error import DownloadError, FileTypeError
+from ..._exceptions import APIStatusError, AuthenticationError
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -95,7 +95,6 @@ def _prepare_output(
 
 
 class DownloadManager(SyncAPIResource):
-
     def get_file_metadata(
         self,
         url: str,
@@ -208,7 +207,6 @@ class DownloadManager(SyncAPIResource):
 
 
 class UploadManager(SyncAPIResource):
-
     def get_upload_url(
         self,
         url: str,

@@ -1,9 +1,9 @@
-from .fine_tune import (
-    FinetuneTrainingLimits,
-)
 from .error import (
     DownloadError,
     FileTypeError,
+)
+from .fine_tune import (
+    FinetuneTrainingLimits,
 )
 
 __all__ = [
