@@ -38,6 +38,14 @@ from ._exceptions import (
 )
 from ._base_client import DefaultHttpxClient, DefaultAsyncHttpxClient
 from ._utils._logs import setup_logging as _setup_logging
+from .lib import (
+    create_finetune_request,
+    DownloadManager,
+    UploadManager,
+    FinetuneTrainingLimits,
+    DownloadError,
+    FileTypeError,
+)
 
 __all__ = [
     "types",
@@ -78,6 +86,12 @@ __all__ = [
     "DEFAULT_CONNECTION_LIMITS",
     "DefaultHttpxClient",
     "DefaultAsyncHttpxClient",
+    "create_finetune_request",
+    "DownloadManager",
+    "UploadManager",
+    "FinetuneTrainingLimits",
+    "DownloadError",
+    "FileTypeError",
 ]
 
 if not _t.TYPE_CHECKING:
