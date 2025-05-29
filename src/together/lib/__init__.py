@@ -9,12 +9,14 @@ from .utils import (
 from .resources import (
     UploadManager,
     DownloadManager,
+    AsyncUploadManager,
     create_finetune_request,
 )
 
 __all__ = [
     "create_finetune_request",
     "DownloadManager",
+    "AsyncUploadManager",
     "UploadManager",
     "FinetuneTrainingLimits",
     "DownloadError",
