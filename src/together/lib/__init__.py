@@ -1,15 +1,15 @@
-from .resources import (
-    create_finetune_request,
-    DownloadManager,
-    UploadManager,
-)
 from .types import (
-    FinetuneTrainingLimits,
     DownloadError,
     FileTypeError,
+    FinetuneTrainingLimits,
 )
 from .utils import (
     check_file,
+)
+from .resources import (
+    UploadManager,
+    DownloadManager,
+    create_finetune_request,
 )
 
 __all__ = [

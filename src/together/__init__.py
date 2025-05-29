@@ -3,6 +3,14 @@
 import typing as _t
 
 from . import types
+from .lib import (
+    DownloadError,
+    FileTypeError,
+    UploadManager,
+    DownloadManager,
+    FinetuneTrainingLimits,
+    create_finetune_request,
+)
 from ._types import NOT_GIVEN, Omit, NoneType, NotGiven, Transport, ProxiesTypes
 from ._utils import file_from_path
 from ._client import (
@@ -38,14 +46,6 @@ from ._exceptions import (
 )
 from ._base_client import DefaultHttpxClient, DefaultAsyncHttpxClient
 from ._utils._logs import setup_logging as _setup_logging
-from .lib import (
-    create_finetune_request,
-    DownloadManager,
-    UploadManager,
-    FinetuneTrainingLimits,
-    DownloadError,
-    FileTypeError,
-)
 
 __all__ = [
     "types",

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-import httpx
 from pprint import pformat
 from typing import cast, get_args
 from pathlib import Path
 
+import httpx
+
+from ..lib import FileTypeError, UploadManager, check_file
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -25,11 +27,10 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..lib import FileTypeError, UploadManager, check_file
+from ..types.file_purpose import FilePurpose
 from ..types.file_list_response import FileListResponse
 from ..types.file_delete_response import FileDeleteResponse
 from ..types.file_retrieve_response import FileRetrieveResponse
-from ..types.file_purpose import FilePurpose
 
 __all__ = ["FilesResource", "AsyncFilesResource"]
 
@@ -162,7 +163,7 @@ class FilesResource(SyncAPIResource):
         purpose = cast(FilePurpose, purpose)
 
         return upload_manager.upload("files", file, purpose=purpose, redirect=True)
-    
+
     def content(
         self,
         id: str,
@@ -326,7 +327,7 @@ class AsyncFilesResource(AsyncAPIResource):
         purpose = cast(FilePurpose, purpose)
 
         return upload_manager.upload("files", file, purpose=purpose, redirect=True)
-    
+
     async def content(
         self,
         id: str,
