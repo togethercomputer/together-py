@@ -1,6 +1,6 @@
 from typing import Any
 
-from ... import TogetherError
+from ..._exceptions import TogetherError
 
 
 class DownloadError(TogetherError):

@@ -1,7 +1,13 @@
-from together.lib.types.fine_tune import (
+from .error import (
+    DownloadError,
+    FileTypeError,
+)
+from .fine_tune import (
     FinetuneTrainingLimits,
 )
 
 __all__ = [
     "FinetuneTrainingLimits",
+    "DownloadError",
+    "FileTypeError",
 ]

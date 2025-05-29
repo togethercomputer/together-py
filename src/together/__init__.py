@@ -3,6 +3,12 @@
 import typing as _t
 
 from . import types
+from .lib import (
+    DownloadError,
+    FileTypeError,
+    FinetuneTrainingLimits,
+    create_finetune_request,
+)
 from ._types import NOT_GIVEN, Omit, NoneType, NotGiven, Transport, ProxiesTypes
 from ._utils import file_from_path
 from ._client import (
@@ -78,6 +84,10 @@ __all__ = [
     "DEFAULT_CONNECTION_LIMITS",
     "DefaultHttpxClient",
     "DefaultAsyncHttpxClient",
+    "create_finetune_request",
+    "FinetuneTrainingLimits",
+    "DownloadError",
+    "FileTypeError",
 ]
 
 if not _t.TYPE_CHECKING:

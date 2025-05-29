@@ -5,8 +5,7 @@ import stat
 import uuid
 import shutil
 import tempfile
-from pprint import pformat
-from typing import Tuple, cast, get_args
+from typing import Tuple
 from pathlib import Path
 from functools import partial
 
@@ -15,11 +14,12 @@ from tqdm import tqdm
 from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
-from ... import Together, APIStatusError, RequestOptions, AuthenticationError
-from ..utils import check_file
 from ...types import FileType, FilePurpose, FileRetrieveResponse
+from ..._types import RequestOptions
 from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
+from ..._resource import SyncAPIResource, AsyncAPIResource
 from ..types.error import DownloadError, FileTypeError
+from ..._exceptions import APIStatusError, AuthenticationError
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -94,10 +94,7 @@ def _prepare_output(
     return Path(remote_name)
 
 
-class DownloadManager:
-    def __init__(self, client: Together) -> None:
-        self._client = client
-
+class DownloadManager(SyncAPIResource):
     def get_file_metadata(
         self,
         url: str,
@@ -209,10 +206,7 @@ class DownloadManager:
         return str(file_path.resolve()), file_size
 
 
-class UploadManager:
-    def __init__(self, client: Together) -> None:
-        self._client = client
-
+class UploadManager(SyncAPIResource):
     def get_upload_url(
         self,
         url: str,
@@ -328,30 +322,117 @@ class UploadManager:
         return response
 
 
-class Files:
-    def __init__(self, client: Together) -> None:
-        self._client = client
-
-    def upload(
+class AsyncUploadManager(AsyncAPIResource):
+    async def get_upload_url(
         self,
-        file: Path | str,
-        *,
-        purpose: str = "fine-tune",
-        check: bool = True,
+        url: str,
+        file: Path,
+        purpose: FilePurpose,
+        filetype: FileType,
+    ) -> Tuple[str, str]:
+        data = {
+            "purpose": purpose,
+            "file_name": file.name,
+            "file_type": filetype,
+        }
+
+        try:
+            response = await self._client.post(
+                path=url,
+                cast_to=httpx.Response,
+                body=data,
+            )
+        except APIStatusError as e:
+            if e.response.status_code == 401:
+                raise AuthenticationError(
+                    "This job would exceed your free trial credits. "
+                    "Please upgrade to a paid account through "
+                    "Settings -> Billing on api.together.ai to continue.",
+                    response=e.response,
+                    body=e.body,
+                ) from e
+            raise
+
+        # Raise error for non 302 status codes
+        if response.status_code != 302:
+            raise APIStatusError(
+                f"Unexpected error raised by endpoint: {response.content.decode()}, headers: {response.headers}",
+                response=response,
+                body=response.content.decode(),
+            )
+
+        redirect_url = response.headers["Location"]
+        file_id = response.headers["X-Together-File-Id"]
+
+        return redirect_url, file_id
+
+    async def callback(self, url: str) -> FileRetrieveResponse:
+        response = self._client.post(
+            cast_to=FileRetrieveResponse,
+            path=url,
+        )
+
+        return await response
+
+    async def upload(
+        self,
+        url: str,
+        file: Path,
+        purpose: FilePurpose,
+        redirect: bool = False,
     ) -> FileRetrieveResponse:
-        upload_manager = UploadManager(self._client)
+        file_id = None
 
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+        redirect_url = None
+        if redirect:
+            if file.suffix == ".jsonl":
+                filetype = "jsonl"
+            elif file.suffix == ".parquet":
+                filetype = "parquet"
+            else:
+                raise FileTypeError(
+                    f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
+                )
+            redirect_url, file_id = await self.get_upload_url(url, file, purpose, filetype)  # type: ignore
 
-        if isinstance(file, str):
-            file = Path(file)
+        file_size = os.stat(file.as_posix()).st_size
 
-        if purpose not in get_args(FilePurpose):
-            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
+        with tqdm(
+            total=file_size,
+            unit="B",
+            unit_scale=True,
+            desc=f"Uploading file {file.name}",
+            disable=bool(DISABLE_TQDM),
+        ) as pbar:
+            with file.open("rb") as f:
+                wrapped_file = CallbackIOWrapper(pbar.update, f, "read")
 
-        purpose = cast(FilePurpose, purpose)
+                if redirect:
+                    assert redirect_url is not None
+                    callback_response = self._client.put(
+                        cast_to=httpx.Response,
+                        path=redirect_url,
+                        body=wrapped_file,
+                    )
+                else:
+                    response = self._client.put(
+                        cast_to=FileRetrieveResponse,
+                        path=url,
+                        body=wrapped_file,
+                    )
 
-        return upload_manager.upload("files", file, purpose=purpose, redirect=True)
+        if redirect:
+            assert isinstance(callback_response, httpx.Response)  # type: ignore
+
+            if not callback_response.status_code == 200:
+                raise APIStatusError(
+                    f"Error during file upload: {callback_response.content.decode()}, headers: {callback_response.headers}",
+                    response=callback_response,
+                    body=callback_response.content.decode(),
+                )
+
+            response = self.callback(f"{url}/{file_id}/preprocess")
+
+        assert isinstance(response, FileRetrieveResponse)  # type: ignore
+
+        return response

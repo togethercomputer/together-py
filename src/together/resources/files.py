@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from pprint import pformat
+from typing import cast, get_args
+from pathlib import Path
+
 import httpx
 
+from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -22,6 +27,7 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
+from ..types.file_purpose import FilePurpose
 from ..types.file_list_response import FileListResponse
 from ..types.file_delete_response import FileDeleteResponse
 from ..types.file_retrieve_response import FileRetrieveResponse
@@ -133,6 +139,30 @@ class FilesResource(SyncAPIResource):
             ),
             cast_to=FileDeleteResponse,
         )
+
+    def upload(
+        self,
+        file: Path | str,
+        *,
+        purpose: str = "fine-tune",
+        check: bool = True,
+    ) -> FileRetrieveResponse:
+        upload_manager = UploadManager(self._client)
+
+        if check:
+            report_dict = check_file(file)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if purpose not in get_args(FilePurpose):
+            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
+
+        purpose = cast(FilePurpose, purpose)
+
+        return upload_manager.upload("files", file, purpose=purpose, redirect=True)
 
     def content(
         self,
@@ -273,6 +303,30 @@ class AsyncFilesResource(AsyncAPIResource):
             ),
             cast_to=FileDeleteResponse,
         )
+
+    async def upload(
+        self,
+        file: Path | str,
+        *,
+        purpose: str = "fine-tune",
+        check: bool = True,
+    ) -> FileRetrieveResponse:
+        upload_manager = AsyncUploadManager(self._client)
+
+        if check:
+            report_dict = check_file(file)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if purpose not in get_args(FilePurpose):
+            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
+
+        purpose = cast(FilePurpose, purpose)
+
+        return await upload_manager.upload("files", file, purpose=purpose, redirect=True)
 
     async def content(
         self,
