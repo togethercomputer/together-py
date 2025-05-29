@@ -235,15 +235,14 @@ class UploadManager(SyncAPIResource):
                     response=e.response,
                     body=e.body,
                 ) from e
-            raise
-
-        # Raise error for non 302 status codes
-        if response.status_code != 302:
-            raise APIStatusError(
-                f"Unexpected error raised by endpoint: {response.content.decode()}, headers: {response.headers}",
-                response=response,
-                body=response.content.decode(),
-            )
+            
+            if e.response.status_code != 302:
+                raise APIStatusError(
+                    f"Unexpected error raised by endpoint: {e.response.content.decode()}, headers: {e.response.headers}",
+                    response=e.response,
+                    body=e.response.content.decode(),
+                )
+            response = e.response
 
         redirect_url = response.headers["Location"]
         file_id = response.headers["X-Together-File-Id"]
