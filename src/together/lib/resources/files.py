@@ -15,7 +15,7 @@ from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
 from ...types import FileType, FilePurpose, FileRetrieveResponse
-from ..._client import RequestOptions
+from ..._types import RequestOptions
 from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
 from ..._resource import SyncAPIResource
 from ..types.error import DownloadError, FileTypeError

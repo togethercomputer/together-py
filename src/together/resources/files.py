@@ -311,22 +311,10 @@ class AsyncFilesResource(AsyncAPIResource):
         purpose: str = "fine-tune",
         check: bool = True,
     ) -> FileRetrieveResponse:
-        upload_manager = UploadManager(self._client)
-
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
-
-        if isinstance(file, str):
-            file = Path(file)
-
-        if purpose not in get_args(FilePurpose):
-            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
-
-        purpose = cast(FilePurpose, purpose)
-
-        return upload_manager.upload("files", file, purpose=purpose, redirect=True)
+        raise NotImplementedError(
+            "The `upload` method is not available in the async version of the FilesResource. "
+            "Use the `upload` method from the synchronous FilesResource instead."
+        )
 
     async def content(
         self,
