@@ -8,7 +8,7 @@ from pathlib import Path
 
 import httpx
 
-from ..lib import FileTypeError, UploadManager, check_file
+from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
 from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -304,17 +304,29 @@ class AsyncFilesResource(AsyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    def upload(
+    async def upload(
         self,
         file: Path | str,
         *,
         purpose: str = "fine-tune",
         check: bool = True,
     ) -> FileRetrieveResponse:
-        raise NotImplementedError(
-            "The `upload` method is not available in the async version of the FilesResource. "
-            "Use the `upload` method from the synchronous FilesResource instead."
-        )
+        upload_manager = AsyncUploadManager(self._client)
+
+        if check:
+            report_dict = check_file(file)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if purpose not in get_args(FilePurpose):
+            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
+
+        purpose = cast(FilePurpose, purpose)
+
+        return await upload_manager.upload("files", file, purpose=purpose, redirect=True)
 
     async def content(
         self,
