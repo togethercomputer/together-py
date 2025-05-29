@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.8 (2025-05-29)
+
+Full Changelog: [v0.1.0-alpha.7...v0.1.0-alpha.8](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.7...v0.1.0-alpha.8)
+
+### Features
+
+* **api:** move upload to be a method of existing files resource ([80d5ae0](https://github.com/togethercomputer/together-py/commit/80d5ae03f2fee590266fe5504f738b6d49f5311c))
+
 ## 0.1.0-alpha.7 (2025-05-24)
 
 Full Changelog: [v0.1.0-alpha.6...v0.1.0-alpha.7](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.6...v0.1.0-alpha.7)
