@@ -5,8 +5,7 @@ import stat
 import uuid
 import shutil
 import tempfile
-from pprint import pformat
-from typing import Tuple, cast, get_args
+from typing import Tuple
 from pathlib import Path
 from functools import partial
 
@@ -15,8 +14,9 @@ from tqdm import tqdm
 from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
-from ... import Together, APIStatusError, RequestOptions, AuthenticationError
-from ..utils import check_file
+from ..._exceptions import APIStatusError, AuthenticationError
+from ..._client import RequestOptions
+from ..._resource import SyncAPIResource
 from ...types import FileType, FilePurpose, FileRetrieveResponse
 from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
 from ..types.error import DownloadError, FileTypeError
@@ -94,9 +94,7 @@ def _prepare_output(
     return Path(remote_name)
 
 
-class DownloadManager:
-    def __init__(self, client: Together) -> None:
-        self._client = client
+class DownloadManager(SyncAPIResource):
 
     def get_file_metadata(
         self,
@@ -209,9 +207,7 @@ class DownloadManager:
         return str(file_path.resolve()), file_size
 
 
-class UploadManager:
-    def __init__(self, client: Together) -> None:
-        self._client = client
+class UploadManager(SyncAPIResource):
 
     def get_upload_url(
         self,
@@ -326,32 +322,3 @@ class UploadManager:
         assert isinstance(response, FileRetrieveResponse)  # type: ignore
 
         return response
-
-
-class Files:
-    def __init__(self, client: Together) -> None:
-        self._client = client
-
-    def upload(
-        self,
-        file: Path | str,
-        *,
-        purpose: str = "fine-tune",
-        check: bool = True,
-    ) -> FileRetrieveResponse:
-        upload_manager = UploadManager(self._client)
-
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
-
-        if isinstance(file, str):
-            file = Path(file)
-
-        if purpose not in get_args(FilePurpose):
-            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
-
-        purpose = cast(FilePurpose, purpose)
-
-        return upload_manager.upload("files", file, purpose=purpose, redirect=True)

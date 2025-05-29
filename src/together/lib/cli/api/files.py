@@ -7,7 +7,6 @@ import click
 from tabulate import tabulate
 
 from together import Together
-from together.lib.resources.files import Files
 
 from ...utils import check_file, convert_bytes, convert_unix_timestamp
 
@@ -43,9 +42,7 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: str, check: bool) ->
 
     client: Together = ctx.obj
 
-    files_resource = Files(client)
-
-    response = files_resource.upload(file=file, purpose=purpose, check=check)
+    response = client.files.upload(file=file, purpose=purpose, check=check)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
