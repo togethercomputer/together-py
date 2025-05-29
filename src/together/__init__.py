@@ -6,8 +6,6 @@ from . import types
 from .lib import (
     DownloadError,
     FileTypeError,
-    UploadManager,
-    DownloadManager,
     FinetuneTrainingLimits,
     create_finetune_request,
 )
@@ -87,8 +85,6 @@ __all__ = [
     "DefaultHttpxClient",
     "DefaultAsyncHttpxClient",
     "create_finetune_request",
-    "DownloadManager",
-    "UploadManager",
     "FinetuneTrainingLimits",
     "DownloadError",
     "FileTypeError",
