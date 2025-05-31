@@ -140,7 +140,7 @@ class FilesResource(SyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    def upload(
+    def upload_file(
         self,
         file: Path | str,
         *,
@@ -162,7 +162,7 @@ class FilesResource(SyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        return upload_manager.upload("files", file, purpose=purpose, redirect=True)
+        return upload_manager.upload("files", file, purpose=purpose)
 
     def content(
         self,
@@ -304,7 +304,7 @@ class AsyncFilesResource(AsyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    async def upload(
+    async def upload_file(
         self,
         file: Path | str,
         *,
@@ -326,7 +326,7 @@ class AsyncFilesResource(AsyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        return await upload_manager.upload("files", file, purpose=purpose, redirect=True)
+        return await upload_manager.upload("files/upload", file, purpose=purpose)
 
     async def content(
         self,

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.9 (2025-05-31)
+
+Full Changelog: [v0.1.0-alpha.8...v0.1.0-alpha.9](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.8...v0.1.0-alpha.9)
+
+### Features
+
+* **api:** get file upload working ([cb8b8b8](https://github.com/togethercomputer/together-py/commit/cb8b8b86974721c2b2366e8481b88b3cb4851f0c))
+* **api:** move upload to be a method of existing files resource ([b7c43be](https://github.com/togethercomputer/together-py/commit/b7c43be446e48390528994ee5a070699c490cec4))
+
+
+### Bug Fixes
+
+* **api:** correct file reroute handling, error message ([b8bc101](https://github.com/togethercomputer/together-py/commit/b8bc1010e047ba0b1bd75a311cb1220f13366f04))
+
 ## 0.1.0-alpha.8 (2025-05-29)
 
 Full Changelog: [v0.1.0-alpha.7...v0.1.0-alpha.8](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.7...v0.1.0-alpha.8)
