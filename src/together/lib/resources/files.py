@@ -4,8 +4,9 @@ import os
 import stat
 import uuid
 import shutil
+import logging
 import tempfile
-from typing import Tuple
+from typing import IO, Tuple, cast
 from pathlib import Path
 from functools import partial
 
@@ -20,6 +21,8 @@ from ..constants import DISABLE_TQDM, DOWNLOAD_BLOCK_SIZE
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ..types.error import DownloadError, FileTypeError
 from ..._exceptions import APIStatusError, AuthenticationError
+
+log: logging.Logger = logging.getLogger(__name__)
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -225,6 +228,7 @@ class UploadManager(SyncAPIResource):
                 path=url,
                 cast_to=httpx.Response,
                 body=data,
+                options={"headers": {"Content-Type": "multipart/form-data"}, "follow_redirects": False},
             )
         except APIStatusError as e:
             if e.response.status_code == 401:
@@ -235,13 +239,13 @@ class UploadManager(SyncAPIResource):
                     response=e.response,
                     body=e.body,
                 ) from e
-            
+
             if e.response.status_code != 302:
                 raise APIStatusError(
                     f"Unexpected error raised by endpoint: {e.response.content.decode()}, headers: {e.response.headers}",
                     response=e.response,
                     body=e.response.content.decode(),
-                )
+                ) from e
             response = e.response
 
         redirect_url = response.headers["Location"]
@@ -262,21 +266,19 @@ class UploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-        redirect: bool = False,
     ) -> FileRetrieveResponse:
         file_id = None
 
         redirect_url = None
-        if redirect:
-            if file.suffix == ".jsonl":
-                filetype = "jsonl"
-            elif file.suffix == ".parquet":
-                filetype = "parquet"
-            else:
-                raise FileTypeError(
-                    f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
-                )
-            redirect_url, file_id = self.get_upload_url(url, file, purpose, filetype)  # type: ignore
+        if file.suffix == ".jsonl":
+            filetype = "jsonl"
+        elif file.suffix == ".parquet":
+            filetype = "parquet"
+        else:
+            raise FileTypeError(
+                f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
+            )
+        redirect_url, file_id = self.get_upload_url(url, file, purpose, filetype)  # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
 
@@ -288,33 +290,32 @@ class UploadManager(SyncAPIResource):
             disable=bool(DISABLE_TQDM),
         ) as pbar:
             with file.open("rb") as f:
-                wrapped_file = CallbackIOWrapper(pbar.update, f, "read")
+                wrapped_file = cast(IO[bytes], CallbackIOWrapper(pbar.update, f, "read"))
 
-                if redirect:
-                    assert redirect_url is not None
-                    callback_response = self._client.put(
-                        cast_to=httpx.Response,
-                        path=redirect_url,
-                        body=wrapped_file,
-                    )
-                else:
-                    response = self._client.put(
-                        cast_to=FileRetrieveResponse,
-                        path=url,
-                        body=wrapped_file,
-                    )
-
-        if redirect:
-            assert isinstance(callback_response, httpx.Response)  # type: ignore
-
-            if not callback_response.status_code == 200:
-                raise APIStatusError(
-                    f"Error during file upload: {callback_response.content.decode()}, headers: {callback_response.headers}",
-                    response=callback_response,
-                    body=callback_response.content.decode(),
+                assert redirect_url is not None
+                callback_response = self._client._client.put(
+                    url=redirect_url,
+                    content=wrapped_file.read(),
+                )
+                log.debug(
+                    'HTTP Response: %s %s "%i %s" %s',
+                    "put",
+                    redirect_url,
+                    callback_response.status_code,
+                    callback_response.reason_phrase,
+                    callback_response.headers,
                 )
 
-            response = self.callback(f"{url}/{file_id}/preprocess")
+        assert isinstance(callback_response, httpx.Response)  # type: ignore
+
+        if not callback_response.status_code == 200:
+            raise APIStatusError(
+                f"Error during file upload: {callback_response.content.decode()}, headers: {callback_response.headers}",
+                response=callback_response,
+                body=callback_response.content.decode(),
+            )
+
+        response = self.callback(f"{url}/{file_id}/preprocess")
 
         assert isinstance(response, FileRetrieveResponse)  # type: ignore
 
@@ -378,21 +379,19 @@ class AsyncUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-        redirect: bool = False,
     ) -> FileRetrieveResponse:
         file_id = None
 
         redirect_url = None
-        if redirect:
-            if file.suffix == ".jsonl":
-                filetype = "jsonl"
-            elif file.suffix == ".parquet":
-                filetype = "parquet"
-            else:
-                raise FileTypeError(
-                    f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
-                )
-            redirect_url, file_id = await self.get_upload_url(url, file, purpose, filetype)  # type: ignore
+        if file.suffix == ".jsonl":
+            filetype = "jsonl"
+        elif file.suffix == ".parquet":
+            filetype = "parquet"
+        else:
+            raise FileTypeError(
+                f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
+            )
+        redirect_url, file_id = await self.get_upload_url(url, file, purpose, filetype)  # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
 
@@ -404,33 +403,32 @@ class AsyncUploadManager(AsyncAPIResource):
             disable=bool(DISABLE_TQDM),
         ) as pbar:
             with file.open("rb") as f:
-                wrapped_file = CallbackIOWrapper(pbar.update, f, "read")
+                wrapped_file = cast(IO[bytes], CallbackIOWrapper(pbar.update, f, "read"))
 
-                if redirect:
-                    assert redirect_url is not None
-                    callback_response = self._client.put(
-                        cast_to=httpx.Response,
-                        path=redirect_url,
-                        body=wrapped_file,
-                    )
-                else:
-                    response = self._client.put(
-                        cast_to=FileRetrieveResponse,
-                        path=url,
-                        body=wrapped_file,
-                    )
-
-        if redirect:
-            assert isinstance(callback_response, httpx.Response)  # type: ignore
-
-            if not callback_response.status_code == 200:
-                raise APIStatusError(
-                    f"Error during file upload: {callback_response.content.decode()}, headers: {callback_response.headers}",
-                    response=callback_response,
-                    body=callback_response.content.decode(),
+                assert redirect_url is not None
+                callback_response = await self._client._client.put(
+                    url=redirect_url,
+                    content=wrapped_file.read(),
+                )
+                log.debug(
+                    'HTTP Response: %s %s "%i %s" %s',
+                    "put",
+                    redirect_url,
+                    callback_response.status_code,
+                    callback_response.reason_phrase,
+                    callback_response.headers,
                 )
 
-            response = self.callback(f"{url}/{file_id}/preprocess")
+        assert isinstance(callback_response, httpx.Response)  # type: ignore
+
+        if not callback_response.status_code == 200:
+            raise APIStatusError(
+                f"Error during file upload: {callback_response.content.decode()}, headers: {callback_response.headers}",
+                response=callback_response,
+                body=callback_response.content.decode(),
+            )
+
+        response = self.callback(f"{url}/{file_id}/preprocess")
 
         assert isinstance(response, FileRetrieveResponse)  # type: ignore
 
