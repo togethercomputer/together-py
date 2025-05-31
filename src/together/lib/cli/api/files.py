@@ -29,8 +29,8 @@ def files(_ctx: click.Context) -> None:
 @click.option(
     "--purpose",
     type=str,
-    default="fine-tunes",
-    help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tunes`.",
+    default="fine-tune",
+    help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tune`.",
 )
 @click.option(
     "--check/--no-check",
@@ -42,7 +42,7 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: str, check: bool) ->
 
     client: Together = ctx.obj
 
-    response = client.files.upload(file=file, purpose=purpose, check=check)
+    response = client.files.upload_file(file=file, purpose=purpose, check=check)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
