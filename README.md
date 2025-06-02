@@ -153,10 +153,7 @@ chat_completion = client.chat.completions.create(
         }
     ],
     model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    response_format={
-        "schema": {"foo": "bar"},
-        "type": "json",
-    },
+    response_format={},
 )
 print(chat_completion.response_format)
 ```
