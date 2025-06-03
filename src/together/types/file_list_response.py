@@ -21,6 +21,7 @@ class Data(BaseModel):
     filename: str
 
     file_type: FileType = FieldInfo(alias="FileType")
+    """The type of the file"""
 
     line_count: int = FieldInfo(alias="LineCount")
 
@@ -29,6 +30,7 @@ class Data(BaseModel):
     processed: bool = FieldInfo(alias="Processed")
 
     purpose: FilePurpose
+    """The purpose of the file"""
 
 
 class FileListResponse(BaseModel):
