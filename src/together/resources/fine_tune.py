@@ -25,6 +25,7 @@ from ..types.fine_tune_list_response import FineTuneListResponse
 from ..types.fine_tune_cancel_response import FineTuneCancelResponse
 from ..types.fine_tune_create_response import FineTuneCreateResponse
 from ..types.fine_tune_download_response import FineTuneDownloadResponse
+from ..types.fine_tune_retrieve_checkpoints_response import FineTuneRetrieveCheckpointsResponse
 
 __all__ = ["FineTuneResource", "AsyncFineTuneResource"]
 
@@ -359,6 +360,39 @@ class FineTuneResource(SyncAPIResource):
             cast_to=FineTuneEvent,
         )
 
+    def retrieve_checkpoints(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> FineTuneRetrieveCheckpointsResponse:
+        """
+        List the checkpoints for a single fine-tuning job.
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            f"/fine-tunes/{id}/checkpoints",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneRetrieveCheckpointsResponse,
+        )
+
 
 class AsyncFineTuneResource(AsyncAPIResource):
     @cached_property
@@ -690,6 +724,39 @@ class AsyncFineTuneResource(AsyncAPIResource):
             cast_to=FineTuneEvent,
         )
 
+    async def retrieve_checkpoints(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+    ) -> FineTuneRetrieveCheckpointsResponse:
+        """
+        List the checkpoints for a single fine-tuning job.
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            f"/fine-tunes/{id}/checkpoints",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneRetrieveCheckpointsResponse,
+        )
+
 
 class FineTuneResourceWithRawResponse:
     def __init__(self, fine_tune: FineTuneResource) -> None:
@@ -712,6 +779,9 @@ class FineTuneResourceWithRawResponse:
         )
         self.list_events = to_raw_response_wrapper(
             fine_tune.list_events,
+        )
+        self.retrieve_checkpoints = to_raw_response_wrapper(
+            fine_tune.retrieve_checkpoints,
         )
 
 
@@ -737,6 +807,9 @@ class AsyncFineTuneResourceWithRawResponse:
         self.list_events = async_to_raw_response_wrapper(
             fine_tune.list_events,
         )
+        self.retrieve_checkpoints = async_to_raw_response_wrapper(
+            fine_tune.retrieve_checkpoints,
+        )
 
 
 class FineTuneResourceWithStreamingResponse:
@@ -761,6 +834,9 @@ class FineTuneResourceWithStreamingResponse:
         self.list_events = to_streamed_response_wrapper(
             fine_tune.list_events,
         )
+        self.retrieve_checkpoints = to_streamed_response_wrapper(
+            fine_tune.retrieve_checkpoints,
+        )
 
 
 class AsyncFineTuneResourceWithStreamingResponse:
@@ -784,4 +860,7 @@ class AsyncFineTuneResourceWithStreamingResponse:
         )
         self.list_events = async_to_streamed_response_wrapper(
             fine_tune.list_events,
+        )
+        self.retrieve_checkpoints = async_to_streamed_response_wrapper(
+            fine_tune.retrieve_checkpoints,
         )

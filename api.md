@@ -36,7 +36,7 @@ Methods:
 Types:
 
 ```python
-from together.types import Completion, CompletionChunk, CompletionUsage, LogProbs, ToolChoice, Tools
+from together.types import Completion, CompletionChunk, LogProbs, ToolChoice, Tools
 ```
 
 Methods:
@@ -91,6 +91,7 @@ from together.types import (
     FineTuneListResponse,
     FineTuneCancelResponse,
     FineTuneDownloadResponse,
+    FineTuneRetrieveCheckpointsResponse,
 )
 ```
 
@@ -102,6 +103,7 @@ Methods:
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tune.<a href="./src/together/resources/fine_tune.py">cancel</a>(id) -> <a href="./src/together/types/fine_tune_cancel_response.py">FineTuneCancelResponse</a></code>
 - <code title="get /finetune/download">client.fine_tune.<a href="./src/together/resources/fine_tune.py">download</a>(\*\*<a href="src/together/types/fine_tune_download_params.py">params</a>) -> <a href="./src/together/types/fine_tune_download_response.py">FineTuneDownloadResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tune.<a href="./src/together/resources/fine_tune.py">list_events</a>(id) -> <a href="./src/together/types/fine_tune_event.py">FineTuneEvent</a></code>
+- <code title="get /fine-tunes/{id}/checkpoints">client.fine_tune.<a href="./src/together/resources/fine_tune.py">retrieve_checkpoints</a>(id) -> <a href="./src/together/types/fine_tune_retrieve_checkpoints_response.py">FineTuneRetrieveCheckpointsResponse</a></code>
 
 # CodeInterpreter
 

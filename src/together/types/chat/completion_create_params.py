@@ -16,7 +16,7 @@ __all__ = [
     "Message",
     "MessageChatCompletionSystemMessageParam",
     "MessageChatCompletionUserMessageParam",
-    "MessageChatCompletionUserMessageParamContentUnionMember1",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal",
     "MessageChatCompletionAssistantMessageParam",
     "MessageChatCompletionAssistantMessageParamFunctionCall",
     "MessageChatCompletionToolMessageParam",
@@ -172,7 +172,7 @@ class MessageChatCompletionSystemMessageParam(TypedDict, total=False):
     name: str
 
 
-MessageChatCompletionUserMessageParamContentUnionMember1: TypeAlias = Union[
+MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal: TypeAlias = Union[
     ChatCompletionStructuredMessageTextParam,
     ChatCompletionStructuredMessageImageURLParam,
     ChatCompletionStructuredMessageVideoURLParam,
@@ -180,7 +180,9 @@ MessageChatCompletionUserMessageParamContentUnionMember1: TypeAlias = Union[
 
 
 class MessageChatCompletionUserMessageParam(TypedDict, total=False):
-    content: Required[Union[str, Iterable[MessageChatCompletionUserMessageParamContentUnionMember1]]]
+    content: Required[
+        Union[str, Iterable[MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal]]
+    ]
     """
     The content of the message, which can either be a simple string or a structured
     format.

@@ -10,11 +10,11 @@ __all__ = ["ModelUploadResponse", "Data"]
 class Data(BaseModel):
     job_id: str
 
-    api_model_id: str = FieldInfo(alias="model_id")
+    x_model_id: str = FieldInfo(alias="model_id")
 
-    api_model_name: str = FieldInfo(alias="model_name")
+    x_model_name: str = FieldInfo(alias="model_name")
 
-    api_model_source: str = FieldInfo(alias="model_source")
+    x_model_source: str = FieldInfo(alias="model_source")
 
 
 class ModelUploadResponse(BaseModel):
