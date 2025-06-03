@@ -67,6 +67,7 @@ from together.types import (
     FileRetrieveResponse,
     FileListResponse,
     FileDeleteResponse,
+    FileUploadResponse,
 )
 ```
 
@@ -76,6 +77,7 @@ Methods:
 - <code title="get /files">client.files.<a href="./src/together/resources/files.py">list</a>() -> <a href="./src/together/types/file_list_response.py">FileListResponse</a></code>
 - <code title="delete /files/{id}">client.files.<a href="./src/together/resources/files.py">delete</a>(id) -> <a href="./src/together/types/file_delete_response.py">FileDeleteResponse</a></code>
 - <code title="get /files/{id}/content">client.files.<a href="./src/together/resources/files.py">content</a>(id) -> BinaryAPIResponse</code>
+- <code title="post /files/upload">client.files.<a href="./src/together/resources/files.py">upload</a>(\*\*<a href="src/together/types/file_upload_params.py">params</a>) -> <a href="./src/together/types/file_upload_response.py">FileUploadResponse</a></code>
 
 # FineTune
 

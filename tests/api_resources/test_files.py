@@ -11,7 +11,12 @@ from respx import MockRouter
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types import FileListResponse, FileDeleteResponse, FileRetrieveResponse
+from together.types import (
+    FileListResponse,
+    FileDeleteResponse,
+    FileUploadResponse,
+    FileRetrieveResponse,
+)
 from together._response import (
     BinaryAPIResponse,
     AsyncBinaryAPIResponse,
@@ -176,6 +181,53 @@ class TestFiles:
                 "",
             )
 
+    @parametrize
+    def test_method_upload(self, client: Together) -> None:
+        file = client.files.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+        )
+        assert_matches_type(FileUploadResponse, file, path=["response"])
+
+    @parametrize
+    def test_method_upload_with_all_params(self, client: Together) -> None:
+        file = client.files.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+            file_type="jsonl",
+        )
+        assert_matches_type(FileUploadResponse, file, path=["response"])
+
+    @parametrize
+    def test_raw_response_upload(self, client: Together) -> None:
+        response = client.files.with_raw_response.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        file = response.parse()
+        assert_matches_type(FileUploadResponse, file, path=["response"])
+
+    @parametrize
+    def test_streaming_response_upload(self, client: Together) -> None:
+        with client.files.with_streaming_response.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            file = response.parse()
+            assert_matches_type(FileUploadResponse, file, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
 
 class TestAsyncFiles:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
@@ -330,3 +382,50 @@ class TestAsyncFiles:
             await async_client.files.with_raw_response.content(
                 "",
             )
+
+    @parametrize
+    async def test_method_upload(self, async_client: AsyncTogether) -> None:
+        file = await async_client.files.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+        )
+        assert_matches_type(FileUploadResponse, file, path=["response"])
+
+    @parametrize
+    async def test_method_upload_with_all_params(self, async_client: AsyncTogether) -> None:
+        file = await async_client.files.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+            file_type="jsonl",
+        )
+        assert_matches_type(FileUploadResponse, file, path=["response"])
+
+    @parametrize
+    async def test_raw_response_upload(self, async_client: AsyncTogether) -> None:
+        response = await async_client.files.with_raw_response.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        file = await response.parse()
+        assert_matches_type(FileUploadResponse, file, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_upload(self, async_client: AsyncTogether) -> None:
+        async with async_client.files.with_streaming_response.upload(
+            file=b"raw file contents",
+            file_name="dataset.csv",
+            purpose="fine-tune",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            file = await response.parse()
+            assert_matches_type(FileUploadResponse, file, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
