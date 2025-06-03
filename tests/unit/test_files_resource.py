@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 
 from together import Together
 from together.types import (
-    FileRetrieveResponse,
+    FileUploadResponse,
 )
 
 
@@ -22,19 +22,7 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
     mock_request = mocker.MagicMock()
     mock_request.headers = {}  # response.request headers have to be set otherwise it will confuse the framework and not parse the response into an object
 
-    mock_send_response0 = Response(
-        status_code=302,
-        headers={
-            "Location": "https://3721873h1.r2.cloudflarestorage.com/together-dev//finetune/file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
-            "X-Together-File-Id": "file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
-        },
-        request=mock_request,
-    )
-    mock_put_response0 = Response(
-        status_code=200,
-        request=mock_request,
-    )
-    mock_send_response1 = Response(
+    mock_send_response = Response(
         status_code=200,
         json={
             "id": "file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
@@ -51,15 +39,11 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
     )
 
     mock_send_requestor = mocker.MagicMock()
-    mock_send_requestor.side_effect = [mock_send_response0, mock_send_response1]
-
-    mock_put_requestor = mocker.MagicMock()
-    mock_put_requestor.side_effect = [mock_put_response0]
+    mock_send_requestor.side_effect = [mock_send_response]
 
     # Mock the post method directly on the client
     client = Together(api_key="fake_api_key")
     mocker.patch.object(client._client, "send", mock_send_requestor)
-    mocker.patch.object(client._client, "put", mock_put_requestor)
     files = client.files
 
     # Make a temporary file object
@@ -74,7 +58,7 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
     )
 
     # Verify the response
-    assert isinstance(response, FileRetrieveResponse)
+    assert isinstance(response, FileUploadResponse)
     assert response.filename == "valid.jsonl"
     assert response.bytes == len(content_bytes)
     assert response.created_at == 1234567890

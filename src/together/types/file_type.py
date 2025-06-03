@@ -4,4 +4,4 @@ from typing_extensions import Literal, TypeAlias
 
 __all__ = ["FileType"]
 
-FileType: TypeAlias = Literal["jsonl", "parquet"]
+FileType: TypeAlias = Literal["csv", "jsonl", "parquet"]
