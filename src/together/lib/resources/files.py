@@ -239,7 +239,6 @@ class UploadManager(SyncAPIResource):
                     response=e.response,
                     body=e.body,
                 ) from e
-
             if e.response.status_code != 302:
                 raise APIStatusError(
                     f"Unexpected error raised by endpoint: {e.response.content.decode()}, headers: {e.response.headers}",

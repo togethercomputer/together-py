@@ -153,13 +153,29 @@ chat_completion = client.chat.completions.create(
         }
     ],
     model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    response_format={
-        "schema": {"foo": "bar"},
-        "type": "json",
-    },
+    response_format={},
 )
 print(chat_completion.response_format)
 ```
+
+## File uploads
+
+Request parameters that correspond to file uploads can be passed as `bytes`, or a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance or a tuple of `(filename, contents, media type)`.
+
+```python
+from pathlib import Path
+from together import Together
+
+client = Together()
+
+client.files.upload(
+    file=Path("/path/to/file"),
+    file_name="dataset.csv",
+    purpose="fine-tune",
+)
+```
+
+The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
 
 ## Handling errors
 

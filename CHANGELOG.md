@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.10 (2025-06-03)
+
+Full Changelog: [v0.1.0-alpha.9...v0.1.0-alpha.10](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.9...v0.1.0-alpha.10)
+
+### Features
+
+* **api:** add files/upload apu support and switch upload_file method over to use it. ([2269981](https://github.com/togethercomputer/together-py/commit/2269981dba119b0dc984ae10131817d15cec889a))
+* **api:** api update ([436f32a](https://github.com/togethercomputer/together-py/commit/436f32ad54460fe029975bccee1570ff49fe80dd))
+* **client:** add follow_redirects request option ([b515197](https://github.com/togethercomputer/together-py/commit/b515197012ea3e342dfbe4a3f7d418fdc90828df))
+
+
+### Chores
+
+* **docs:** remove reference to rye shell ([1931f17](https://github.com/togethercomputer/together-py/commit/1931f174b6ef8c778a20d1292b27ccbdb67491fb))
+* **docs:** remove unnecessary param examples ([6ed818e](https://github.com/togethercomputer/together-py/commit/6ed818ea9e78be560dce5f166d4ba492e4fd1ab3))
+
 ## 0.1.0-alpha.9 (2025-05-31)
 
 Full Changelog: [v0.1.0-alpha.8...v0.1.0-alpha.9](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.8...v0.1.0-alpha.9)
