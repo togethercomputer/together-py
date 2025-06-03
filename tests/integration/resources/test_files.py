@@ -6,7 +6,7 @@ import pytest
 
 from together import Together
 from together.types import (
-    FileRetrieveResponse,
+    FileUploadResponse,
 )
 
 
@@ -39,7 +39,7 @@ class TestTogetherFiles:
         )
 
         # Verify the response
-        assert isinstance(response, FileRetrieveResponse)
+        assert isinstance(response, FileUploadResponse)
         assert response.filename == "valid.jsonl"
         assert response.file_type == "jsonl"
         assert response.line_count == 0
