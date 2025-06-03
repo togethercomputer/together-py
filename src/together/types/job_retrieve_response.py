@@ -14,9 +14,9 @@ __all__ = ["JobRetrieveResponse", "Args", "StatusUpdate"]
 class Args(BaseModel):
     description: Optional[str] = None
 
-    api_model_name: Optional[str] = FieldInfo(alias="modelName", default=None)
+    x_model_name: Optional[str] = FieldInfo(alias="modelName", default=None)
 
-    api_model_source: Optional[str] = FieldInfo(alias="modelSource", default=None)
+    x_model_source: Optional[str] = FieldInfo(alias="modelSource", default=None)
 
 
 class StatusUpdate(BaseModel):

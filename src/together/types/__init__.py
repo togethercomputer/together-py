@@ -47,3 +47,6 @@ from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloa
 from .endpoint_retrieve_response import EndpointRetrieveResponse as EndpointRetrieveResponse
 from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
 from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams
+from .fine_tune_retrieve_checkpoints_response import (
+    FineTuneRetrieveCheckpointsResponse as FineTuneRetrieveCheckpointsResponse,
+)
