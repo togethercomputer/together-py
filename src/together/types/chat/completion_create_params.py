@@ -7,6 +7,9 @@ from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 from ..tools_param import ToolsParam
 from ..tool_choice_param import ToolChoiceParam
+from .chat_completion_structured_message_text_param import ChatCompletionStructuredMessageTextParam
+from .chat_completion_structured_message_image_url_param import ChatCompletionStructuredMessageImageURLParam
+from .chat_completion_structured_message_video_url_param import ChatCompletionStructuredMessageVideoURLParam
 
 __all__ = [
     "CompletionCreateParamsBase",
@@ -14,11 +17,6 @@ __all__ = [
     "MessageChatCompletionSystemMessageParam",
     "MessageChatCompletionUserMessageParam",
     "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal",
-    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember0",
-    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember1",
-    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember1ImageURL",
-    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalVideo",
-    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalVideoVideoURL",
     "MessageChatCompletionAssistantMessageParam",
     "MessageChatCompletionAssistantMessageParamFunctionCall",
     "MessageChatCompletionToolMessageParam",
@@ -174,52 +172,10 @@ class MessageChatCompletionSystemMessageParam(TypedDict, total=False):
     name: str
 
 
-class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember0(
-    TypedDict, total=False
-):
-    text: Required[str]
-
-    type: Required[Literal["text"]]
-
-
-class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember1ImageURL(
-    TypedDict, total=False
-):
-    url: Required[str]
-    """The URL of the image"""
-
-
-class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember1(
-    TypedDict, total=False
-):
-    image_url: (
-        MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember1ImageURL
-    )
-
-    type: Literal["image_url"]
-
-
-class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalVideoVideoURL(
-    TypedDict, total=False
-):
-    url: Required[str]
-    """The URL of the video"""
-
-
-class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalVideo(
-    TypedDict, total=False
-):
-    type: Required[Literal["video_url"]]
-
-    video_url: Required[
-        MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalVideoVideoURL
-    ]
-
-
 MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal: TypeAlias = Union[
-    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember0,
-    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalUnionMember1,
-    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalVideo,
+    ChatCompletionStructuredMessageTextParam,
+    ChatCompletionStructuredMessageImageURLParam,
+    ChatCompletionStructuredMessageVideoURLParam,
 ]
 
 
