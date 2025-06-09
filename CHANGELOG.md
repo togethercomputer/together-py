@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.11 (2025-06-03)
+
+Full Changelog: [v0.1.0-alpha.10...v0.1.0-alpha.11](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.10...v0.1.0-alpha.11)
+
+### Features
+
+* **api:** api update ([3cff5ae](https://github.com/togethercomputer/together-py/commit/3cff5ae5aeda8413075dd164d30cd3afbf66413f))
+* **api:** update spec / config to remove remaining codegen warnings ([48986d2](https://github.com/togethercomputer/together-py/commit/48986d2c15b07b6761bc50c93a72a116ec73aed5))
+
 ## 0.1.0-alpha.10 (2025-06-03)
 
 Full Changelog: [v0.1.0-alpha.9...v0.1.0-alpha.10](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.9...v0.1.0-alpha.10)
