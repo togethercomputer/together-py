@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Union
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["AudioCreateParams"]
+__all__ = ["AudioCreateParamsBase", "AudioCreateParamsNonStreaming", "AudioCreateParamsStreaming"]
 
 
-class AudioCreateParams(TypedDict, total=False):
+class AudioCreateParamsBase(TypedDict, total=False):
     input: Required[str]
     """Input text to generate the audio for"""
 
@@ -36,9 +36,23 @@ class AudioCreateParams(TypedDict, total=False):
     sample_rate: float
     """Sampling rate to use for the output audio"""
 
-    stream: bool
+
+class AudioCreateParamsNonStreaming(AudioCreateParamsBase, total=False):
+    stream: Literal[False]
     """
     If true, output is streamed for several characters at a time instead of waiting
     for the full response. The stream terminates with `data: [DONE]`. If false,
     return the encoded audio as octet stream
     """
+
+
+class AudioCreateParamsStreaming(AudioCreateParamsBase):
+    stream: Required[Literal[True]]
+    """
+    If true, output is streamed for several characters at a time instead of waiting
+    for the full response. The stream terminates with `data: [DONE]`. If false,
+    return the encoded audio as octet stream
+    """
+
+
+AudioCreateParams = Union[AudioCreateParamsNonStreaming, AudioCreateParamsStreaming]

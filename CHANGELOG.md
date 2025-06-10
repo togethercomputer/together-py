@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.12 (2025-06-10)
+
+Full Changelog: [v0.1.0-alpha.11...v0.1.0-alpha.12](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.11...v0.1.0-alpha.12)
+
+### Features
+
+* **api:** address diagnostic issues in audio api, correct openapi issue in images api, disambiguate a response in finetune api, enable automated testing on finetune and images ([9d72038](https://github.com/togethercomputer/together-py/commit/9d7203895723e9be3600fa970430d33b51049094))
+
 ## 0.1.0-alpha.11 (2025-06-03)
 
 Full Changelog: [v0.1.0-alpha.10...v0.1.0-alpha.11](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.10...v0.1.0-alpha.11)

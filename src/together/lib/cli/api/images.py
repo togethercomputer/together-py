@@ -5,6 +5,7 @@ import click
 from PIL import Image
 
 from together import Together
+from together.types.image_data_b64 import ImageDataB64
 
 
 @click.group()
@@ -63,7 +64,7 @@ def generate(
     )
 
     for i, choice in enumerate(response.data):
-        if choice.b64_json:
+        if isinstance(choice, ImageDataB64):
             with open(f"{output}/{prefix}{choice.index}.png", "wb") as f:
                 f.write(base64.b64decode(choice.b64_json))
 
