@@ -5,11 +5,13 @@ from __future__ import annotations
 from typing import Optional
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["EndpointCreateParams", "Autoscaling"]
+from .autoscaling_param import AutoscalingParam
+
+__all__ = ["EndpointCreateParams"]
 
 
 class EndpointCreateParams(TypedDict, total=False):
-    autoscaling: Required[Autoscaling]
+    autoscaling: Required[AutoscalingParam]
     """Configuration for automatic scaling of the endpoint"""
 
     hardware: Required[str]
@@ -36,11 +38,3 @@ class EndpointCreateParams(TypedDict, total=False):
 
     state: Literal["STARTED", "STOPPED"]
     """The desired state of the endpoint"""
-
-
-class Autoscaling(TypedDict, total=False):
-    max_replicas: Required[int]
-    """The maximum number of replicas to scale up to under load"""
-
-    min_replicas: Required[int]
-    """The minimum number of replicas to maintain, even when there is no load"""

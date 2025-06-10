@@ -17,7 +17,6 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestImages:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_method_create(self, client: Together) -> None:
         image = client.images.create(
@@ -26,7 +25,6 @@ class TestImages:
         )
         assert_matches_type(ImageFile, image, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         image = client.images.create(
@@ -51,7 +49,6 @@ class TestImages:
         )
         assert_matches_type(ImageFile, image, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.images.with_raw_response.create(
@@ -64,7 +61,6 @@ class TestImages:
         image = response.parse()
         assert_matches_type(ImageFile, image, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.images.with_streaming_response.create(
@@ -83,7 +79,6 @@ class TestImages:
 class TestAsyncImages:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         image = await async_client.images.create(
@@ -92,7 +87,6 @@ class TestAsyncImages:
         )
         assert_matches_type(ImageFile, image, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         image = await async_client.images.create(
@@ -117,7 +111,6 @@ class TestAsyncImages:
         )
         assert_matches_type(ImageFile, image, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.images.with_raw_response.create(
@@ -130,7 +123,6 @@ class TestAsyncImages:
         image = await response.parse()
         assert_matches_type(ImageFile, image, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.images.with_streaming_response.create(

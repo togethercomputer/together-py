@@ -4,16 +4,9 @@ from datetime import datetime
 from typing_extensions import Literal
 
 from .._models import BaseModel
+from .autoscaling import Autoscaling
 
-__all__ = ["EndpointCreateResponse", "Autoscaling"]
-
-
-class Autoscaling(BaseModel):
-    max_replicas: int
-    """The maximum number of replicas to scale up to under load"""
-
-    min_replicas: int
-    """The minimum number of replicas to maintain, even when there is no load"""
+__all__ = ["EndpointCreateResponse"]
 
 
 class EndpointCreateResponse(BaseModel):

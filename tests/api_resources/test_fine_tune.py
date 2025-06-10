@@ -11,11 +11,11 @@ from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types import (
     FineTune,
-    FineTuneEvent,
     FineTuneListResponse,
     FineTuneCancelResponse,
     FineTuneCreateResponse,
     FineTuneDownloadResponse,
+    FineTuneListEventsResponse,
     FineTuneRetrieveCheckpointsResponse,
 )
 
@@ -25,7 +25,6 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestFineTune:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_method_create(self, client: Together) -> None:
         fine_tune = client.fine_tune.create(
@@ -34,7 +33,6 @@ class TestFineTune:
         )
         assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         fine_tune = client.fine_tune.create(
@@ -68,7 +66,6 @@ class TestFineTune:
         )
         assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.fine_tune.with_raw_response.create(
@@ -81,7 +78,6 @@ class TestFineTune:
         fine_tune = response.parse()
         assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.fine_tune.with_streaming_response.create(
@@ -243,7 +239,7 @@ class TestFineTune:
         fine_tune = client.fine_tune.list_events(
             "id",
         )
-        assert_matches_type(FineTuneEvent, fine_tune, path=["response"])
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
 
     @parametrize
     def test_raw_response_list_events(self, client: Together) -> None:
@@ -254,7 +250,7 @@ class TestFineTune:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tune = response.parse()
-        assert_matches_type(FineTuneEvent, fine_tune, path=["response"])
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
 
     @parametrize
     def test_streaming_response_list_events(self, client: Together) -> None:
@@ -265,7 +261,7 @@ class TestFineTune:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tune = response.parse()
-            assert_matches_type(FineTuneEvent, fine_tune, path=["response"])
+            assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -318,7 +314,6 @@ class TestFineTune:
 class TestAsyncFineTune:
     parametrize = pytest.mark.parametrize("async_client", [False, True], indirect=True, ids=["loose", "strict"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         fine_tune = await async_client.fine_tune.create(
@@ -327,7 +322,6 @@ class TestAsyncFineTune:
         )
         assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         fine_tune = await async_client.fine_tune.create(
@@ -361,7 +355,6 @@ class TestAsyncFineTune:
         )
         assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.fine_tune.with_raw_response.create(
@@ -374,7 +367,6 @@ class TestAsyncFineTune:
         fine_tune = await response.parse()
         assert_matches_type(FineTuneCreateResponse, fine_tune, path=["response"])
 
-    @pytest.mark.skip(reason="invalid oneOf in required props")
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.fine_tune.with_streaming_response.create(
@@ -536,7 +528,7 @@ class TestAsyncFineTune:
         fine_tune = await async_client.fine_tune.list_events(
             "id",
         )
-        assert_matches_type(FineTuneEvent, fine_tune, path=["response"])
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
 
     @parametrize
     async def test_raw_response_list_events(self, async_client: AsyncTogether) -> None:
@@ -547,7 +539,7 @@ class TestAsyncFineTune:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tune = await response.parse()
-        assert_matches_type(FineTuneEvent, fine_tune, path=["response"])
+        assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
 
     @parametrize
     async def test_streaming_response_list_events(self, async_client: AsyncTogether) -> None:
@@ -558,7 +550,7 @@ class TestAsyncFineTune:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tune = await response.parse()
-            assert_matches_type(FineTuneEvent, fine_tune, path=["response"])
+            assert_matches_type(FineTuneListEventsResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
