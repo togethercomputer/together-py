@@ -7,140 +7,18 @@ from typing_extensions import Literal, TypeAlias
 from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
+from .lr_scheduler import LrScheduler
+from .fine_tune_event import FineTuneEvent
+from .full_training_type import FullTrainingType
+from .lo_ra_training_type import LoRaTrainingType
+from .training_method_dpo import TrainingMethodDpo
+from .training_method_sft import TrainingMethodSft
 
-__all__ = [
-    "FineTuneListResponse",
-    "Data",
-    "DataEvent",
-    "DataLrScheduler",
-    "DataLrSchedulerLrSchedulerArgs",
-    "DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
-    "DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
-    "DataTrainingMethod",
-    "DataTrainingMethodTrainingMethodSft",
-    "DataTrainingMethodTrainingMethodDpo",
-    "DataTrainingType",
-    "DataTrainingTypeFullTrainingType",
-    "DataTrainingTypeLoRaTrainingType",
-]
+__all__ = ["FineTuneListResponse", "Data", "DataTrainingMethod", "DataTrainingType"]
 
+DataTrainingMethod: TypeAlias = Union[TrainingMethodSft, TrainingMethodDpo]
 
-class DataEvent(BaseModel):
-    checkpoint_path: str
-
-    created_at: str
-
-    hash: str
-
-    message: str
-
-    x_model_path: str = FieldInfo(alias="model_path")
-
-    object: Literal["fine-tune-event"]
-
-    param_count: int
-
-    step: int
-
-    token_count: int
-
-    total_steps: int
-
-    training_offset: int
-
-    type: Literal[
-        "job_pending",
-        "job_start",
-        "job_stopped",
-        "model_downloading",
-        "model_download_complete",
-        "training_data_downloading",
-        "training_data_download_complete",
-        "validation_data_downloading",
-        "validation_data_download_complete",
-        "wandb_init",
-        "training_start",
-        "checkpoint_save",
-        "billing_limit",
-        "epoch_complete",
-        "training_complete",
-        "model_compressing",
-        "model_compression_complete",
-        "model_uploading",
-        "model_upload_complete",
-        "job_complete",
-        "job_error",
-        "cancel_requested",
-        "job_restarted",
-        "refund",
-        "warning",
-    ]
-
-    wandb_url: str
-
-    level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
-
-
-class DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(BaseModel):
-    min_lr_ratio: Optional[float] = None
-    """The ratio of the final learning rate to the peak learning rate"""
-
-
-class DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
-    min_lr_ratio: Optional[float] = None
-    """The ratio of the final learning rate to the peak learning rate"""
-
-    num_cycles: Optional[float] = None
-    """Number or fraction of cycles for the cosine learning rate scheduler"""
-
-
-DataLrSchedulerLrSchedulerArgs: TypeAlias = Union[
-    DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
-]
-
-
-class DataLrScheduler(BaseModel):
-    lr_scheduler_type: Literal["linear", "cosine"]
-
-    lr_scheduler_args: Optional[DataLrSchedulerLrSchedulerArgs] = None
-
-
-class DataTrainingMethodTrainingMethodSft(BaseModel):
-    method: Literal["sft"]
-
-    train_on_inputs: Union[bool, Literal["auto"]]
-    """
-    Whether to mask the user messages in conversational data or prompts in
-    instruction data.
-    """
-
-
-class DataTrainingMethodTrainingMethodDpo(BaseModel):
-    method: Literal["dpo"]
-
-    dpo_beta: Optional[float] = None
-
-
-DataTrainingMethod: TypeAlias = Union[DataTrainingMethodTrainingMethodSft, DataTrainingMethodTrainingMethodDpo]
-
-
-class DataTrainingTypeFullTrainingType(BaseModel):
-    type: Literal["Full"]
-
-
-class DataTrainingTypeLoRaTrainingType(BaseModel):
-    lora_alpha: int
-
-    lora_r: int
-
-    type: Literal["Lora"]
-
-    lora_dropout: Optional[float] = None
-
-    lora_trainable_modules: Optional[str] = None
-
-
-DataTrainingType: TypeAlias = Union[DataTrainingTypeFullTrainingType, DataTrainingTypeLoRaTrainingType]
+DataTrainingType: TypeAlias = Union[FullTrainingType, LoRaTrainingType]
 
 
 class Data(BaseModel):
@@ -168,7 +46,7 @@ class Data(BaseModel):
     batch_size: Optional[int] = None
     """Batch size used for training"""
 
-    events: Optional[List[DataEvent]] = None
+    events: Optional[List[FineTuneEvent]] = None
     """Events related to this fine-tune job"""
 
     from_checkpoint: Optional[str] = None
@@ -177,7 +55,7 @@ class Data(BaseModel):
     learning_rate: Optional[float] = None
     """Learning rate used for training"""
 
-    lr_scheduler: Optional[DataLrScheduler] = None
+    lr_scheduler: Optional[LrScheduler] = None
     """Learning rate scheduler configuration"""
 
     max_grad_norm: Optional[float] = None

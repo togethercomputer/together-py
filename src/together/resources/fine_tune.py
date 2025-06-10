@@ -20,11 +20,12 @@ from .._response import (
 )
 from .._base_client import make_request_options
 from ..types.fine_tune import FineTune
-from ..types.fine_tune_event import FineTuneEvent
+from ..types.lr_scheduler_param import LrSchedulerParam
 from ..types.fine_tune_list_response import FineTuneListResponse
 from ..types.fine_tune_cancel_response import FineTuneCancelResponse
 from ..types.fine_tune_create_response import FineTuneCreateResponse
 from ..types.fine_tune_download_response import FineTuneDownloadResponse
+from ..types.fine_tune_list_events_response import FineTuneListEventsResponse
 from ..types.fine_tune_retrieve_checkpoints_response import FineTuneRetrieveCheckpointsResponse
 
 __all__ = ["FineTuneResource", "AsyncFineTuneResource"]
@@ -58,7 +59,7 @@ class FineTuneResource(SyncAPIResource):
         batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
         from_checkpoint: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
-        lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
+        lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
         n_checkpoints: int | NotGiven = NOT_GIVEN,
         n_epochs: int | NotGiven = NOT_GIVEN,
@@ -337,7 +338,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneEvent:
+    ) -> FineTuneListEventsResponse:
         """
         List the events for a single fine-tuning job.
 
@@ -357,7 +358,7 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneEvent,
+            cast_to=FineTuneListEventsResponse,
         )
 
     def retrieve_checkpoints(
@@ -422,7 +423,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
         from_checkpoint: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
-        lr_scheduler: fine_tune_create_params.LrScheduler | NotGiven = NOT_GIVEN,
+        lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
         n_checkpoints: int | NotGiven = NOT_GIVEN,
         n_epochs: int | NotGiven = NOT_GIVEN,
@@ -701,7 +702,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
-    ) -> FineTuneEvent:
+    ) -> FineTuneListEventsResponse:
         """
         List the events for a single fine-tuning job.
 
@@ -721,7 +722,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneEvent,
+            cast_to=FineTuneListEventsResponse,
         )
 
     async def retrieve_checkpoints(
