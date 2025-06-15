@@ -85,12 +85,20 @@ Types:
 
 ```python
 from together.types import (
+    CosineLrSchedulerArgs,
     FineTune,
     FineTuneEvent,
+    FullTrainingType,
+    LinearLrSchedulerArgs,
+    LoRaTrainingType,
+    LrScheduler,
+    TrainingMethodDpo,
+    TrainingMethodSft,
     FineTuneCreateResponse,
     FineTuneListResponse,
     FineTuneCancelResponse,
     FineTuneDownloadResponse,
+    FineTuneListEventsResponse,
     FineTuneRetrieveCheckpointsResponse,
 )
 ```
@@ -102,7 +110,7 @@ Methods:
 - <code title="get /fine-tunes">client.fine_tune.<a href="./src/together/resources/fine_tune.py">list</a>() -> <a href="./src/together/types/fine_tune_list_response.py">FineTuneListResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tune.<a href="./src/together/resources/fine_tune.py">cancel</a>(id) -> <a href="./src/together/types/fine_tune_cancel_response.py">FineTuneCancelResponse</a></code>
 - <code title="get /finetune/download">client.fine_tune.<a href="./src/together/resources/fine_tune.py">download</a>(\*\*<a href="src/together/types/fine_tune_download_params.py">params</a>) -> <a href="./src/together/types/fine_tune_download_response.py">FineTuneDownloadResponse</a></code>
-- <code title="get /fine-tunes/{id}/events">client.fine_tune.<a href="./src/together/resources/fine_tune.py">list_events</a>(id) -> <a href="./src/together/types/fine_tune_event.py">FineTuneEvent</a></code>
+- <code title="get /fine-tunes/{id}/events">client.fine_tune.<a href="./src/together/resources/fine_tune.py">list_events</a>(id) -> <a href="./src/together/types/fine_tune_list_events_response.py">FineTuneListEventsResponse</a></code>
 - <code title="get /fine-tunes/{id}/checkpoints">client.fine_tune.<a href="./src/together/resources/fine_tune.py">retrieve_checkpoints</a>(id) -> <a href="./src/together/types/fine_tune_retrieve_checkpoints_response.py">FineTuneRetrieveCheckpointsResponse</a></code>
 
 # CodeInterpreter
@@ -134,7 +142,7 @@ Methods:
 Types:
 
 ```python
-from together.types import ImageFile
+from together.types import ImageDataB64, ImageDataURL, ImageFile
 ```
 
 Methods:
@@ -146,7 +154,7 @@ Methods:
 Types:
 
 ```python
-from together.types import AudioFile
+from together.types import AudioFile, AudioSpeechStreamChunk
 ```
 
 Methods:
@@ -185,6 +193,7 @@ Types:
 
 ```python
 from together.types import (
+    Autoscaling,
     EndpointCreateResponse,
     EndpointRetrieveResponse,
     EndpointUpdateResponse,

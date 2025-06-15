@@ -19,6 +19,7 @@ from .._response import (
     async_to_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
+from ..types.autoscaling_param import AutoscalingParam
 from ..types.endpoint_list_response import EndpointListResponse
 from ..types.endpoint_create_response import EndpointCreateResponse
 from ..types.endpoint_update_response import EndpointUpdateResponse
@@ -50,7 +51,7 @@ class EndpointsResource(SyncAPIResource):
     def create(
         self,
         *,
-        autoscaling: endpoint_create_params.Autoscaling,
+        autoscaling: AutoscalingParam,
         hardware: str,
         model: str,
         disable_prompt_cache: bool | NotGiven = NOT_GIVEN,
@@ -157,7 +158,7 @@ class EndpointsResource(SyncAPIResource):
         self,
         endpoint_id: str,
         *,
-        autoscaling: endpoint_update_params.Autoscaling | NotGiven = NOT_GIVEN,
+        autoscaling: AutoscalingParam | NotGiven = NOT_GIVEN,
         display_name: str | NotGiven = NOT_GIVEN,
         inactive_timeout: Optional[int] | NotGiven = NOT_GIVEN,
         state: Literal["STARTED", "STOPPED"] | NotGiven = NOT_GIVEN,
@@ -308,7 +309,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        autoscaling: endpoint_create_params.Autoscaling,
+        autoscaling: AutoscalingParam,
         hardware: str,
         model: str,
         disable_prompt_cache: bool | NotGiven = NOT_GIVEN,
@@ -415,7 +416,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         self,
         endpoint_id: str,
         *,
-        autoscaling: endpoint_update_params.Autoscaling | NotGiven = NOT_GIVEN,
+        autoscaling: AutoscalingParam | NotGiven = NOT_GIVEN,
         display_name: str | NotGiven = NOT_GIVEN,
         inactive_timeout: Optional[int] | NotGiven = NOT_GIVEN,
         state: Literal["STARTED", "STOPPED"] | NotGiven = NOT_GIVEN,

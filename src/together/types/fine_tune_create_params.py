@@ -5,19 +5,13 @@ from __future__ import annotations
 from typing import Union
 from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
-__all__ = [
-    "FineTuneCreateParams",
-    "LrScheduler",
-    "LrSchedulerLrSchedulerArgs",
-    "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
-    "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
-    "TrainingMethod",
-    "TrainingMethodTrainingMethodSft",
-    "TrainingMethodTrainingMethodDpo",
-    "TrainingType",
-    "TrainingTypeFullTrainingType",
-    "TrainingTypeLoRaTrainingType",
-]
+from .lr_scheduler_param import LrSchedulerParam
+from .full_training_type_param import FullTrainingTypeParam
+from .lo_ra_training_type_param import LoRaTrainingTypeParam
+from .training_method_dpo_param import TrainingMethodDpoParam
+from .training_method_sft_param import TrainingMethodSftParam
+
+__all__ = ["FineTuneCreateParams", "TrainingMethod", "TrainingType"]
 
 
 class FineTuneCreateParams(TypedDict, total=False):
@@ -48,7 +42,7 @@ class FineTuneCreateParams(TypedDict, total=False):
     instability, too low may slow convergence)
     """
 
-    lr_scheduler: LrScheduler
+    lr_scheduler: LrSchedulerParam
     """The learning rate scheduler to use.
 
     It specifies how the learning rate is adjusted during training.
@@ -114,63 +108,6 @@ class FineTuneCreateParams(TypedDict, total=False):
     """Weight decay. Regularization parameter for the optimizer."""
 
 
-class LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(TypedDict, total=False):
-    min_lr_ratio: float
-    """The ratio of the final learning rate to the peak learning rate"""
+TrainingMethod: TypeAlias = Union[TrainingMethodSftParam, TrainingMethodDpoParam]
 
-
-class LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(TypedDict, total=False):
-    min_lr_ratio: float
-    """The ratio of the final learning rate to the peak learning rate"""
-
-    num_cycles: float
-    """Number or fraction of cycles for the cosine learning rate scheduler"""
-
-
-LrSchedulerLrSchedulerArgs: TypeAlias = Union[
-    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
-]
-
-
-class LrScheduler(TypedDict, total=False):
-    lr_scheduler_type: Required[Literal["linear", "cosine"]]
-
-    lr_scheduler_args: LrSchedulerLrSchedulerArgs
-
-
-class TrainingMethodTrainingMethodSft(TypedDict, total=False):
-    method: Required[Literal["sft"]]
-
-    train_on_inputs: Required[Union[bool, Literal["auto"]]]
-    """
-    Whether to mask the user messages in conversational data or prompts in
-    instruction data.
-    """
-
-
-class TrainingMethodTrainingMethodDpo(TypedDict, total=False):
-    method: Required[Literal["dpo"]]
-
-    dpo_beta: float
-
-
-TrainingMethod: TypeAlias = Union[TrainingMethodTrainingMethodSft, TrainingMethodTrainingMethodDpo]
-
-
-class TrainingTypeFullTrainingType(TypedDict, total=False):
-    type: Required[Literal["Full"]]
-
-
-class TrainingTypeLoRaTrainingType(TypedDict, total=False):
-    lora_alpha: Required[int]
-
-    lora_r: Required[int]
-
-    type: Required[Literal["Lora"]]
-
-    lora_dropout: float
-
-    lora_trainable_modules: str
-
-
-TrainingType: TypeAlias = Union[TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType]
+TrainingType: TypeAlias = Union[FullTrainingTypeParam, LoRaTrainingTypeParam]

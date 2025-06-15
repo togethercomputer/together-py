@@ -6,18 +6,14 @@ from ..utils import log_warn_once
 from ..types.fine_tune import (
     FinetuneTrainingLimits,
 )
-from ...types.fine_tune_create_params import (
-    LrScheduler,
-    TrainingType,
-    TrainingMethod,
-    FineTuneCreateParams,
-    TrainingTypeFullTrainingType,
-    TrainingTypeLoRaTrainingType,
-    TrainingMethodTrainingMethodDpo,
-    TrainingMethodTrainingMethodSft,
-    LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs,
-    LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs,
-)
+from ...types.lr_scheduler_param import LrSchedulerParam
+from ...types.fine_tune_create_params import TrainingType, TrainingMethod, FineTuneCreateParams
+from ...types.full_training_type_param import FullTrainingTypeParam
+from ...types.lo_ra_training_type_param import LoRaTrainingTypeParam
+from ...types.training_method_dpo_param import TrainingMethodDpoParam
+from ...types.training_method_sft_param import TrainingMethodSftParam
+from ...types.cosine_lr_scheduler_args_param import CosineLrSchedulerArgsParam
+from ...types.linear_lr_scheduler_args_param import LinearLrSchedulerArgsParam
 
 AVAILABLE_TRAINING_METHODS = {
     "sft",
@@ -71,7 +67,7 @@ def create_finetune_request(
     if warmup_ratio is None:
         warmup_ratio = 0.0
 
-    training_type: TrainingType = TrainingTypeFullTrainingType(type="Full")
+    training_type: TrainingType = FullTrainingTypeParam(type="Full")
     max_batch_size: int = 0
     max_batch_size_dpo: int = 0
     min_batch_size: int = 0
@@ -80,7 +76,7 @@ def create_finetune_request(
             raise ValueError(f"LoRA adapters are not supported for the selected model ({model_or_checkpoint}).")
         lora_r = lora_r if lora_r is not None else model_limits.lora_training.max_rank
         lora_alpha = lora_alpha if lora_alpha is not None else lora_r * 2
-        training_type = TrainingTypeLoRaTrainingType(
+        training_type = LoRaTrainingTypeParam(
             type="Lora",
             lora_r=lora_r,
             lora_alpha=lora_alpha,
@@ -146,29 +142,29 @@ def create_finetune_request(
     if dpo_beta is not None and training_method != "dpo":
         raise ValueError("dpo_beta is only supported for DPO training")
 
-    lr_scheduler: LrScheduler
+    lr_scheduler: LrSchedulerParam
     if lr_scheduler_type == "cosine":
         if scheduler_num_cycles <= 0.0:
             raise ValueError(f"Number of cycles should be greater than 0 (got {scheduler_num_cycles})")
 
-        lr_scheduler = LrScheduler(
+        lr_scheduler = LrSchedulerParam(
             lr_scheduler_type="cosine",
-            lr_scheduler_args=LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(
+            lr_scheduler_args=CosineLrSchedulerArgsParam(
                 min_lr_ratio=min_lr_ratio,  # type: ignore
                 num_cycles=scheduler_num_cycles,
             ),
         )
     else:
-        lr_scheduler = LrScheduler(
+        lr_scheduler = LrSchedulerParam(
             lr_scheduler_type="linear",
-            lr_scheduler_args=LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(min_lr_ratio=min_lr_ratio),  # type: ignore
+            lr_scheduler_args=LinearLrSchedulerArgsParam(min_lr_ratio=min_lr_ratio),  # type: ignore
         )
 
     training_method_cls: TrainingMethod
     if training_method == "sft":
-        training_method_cls = TrainingMethodTrainingMethodSft(method="sft", train_on_inputs=train_on_inputs)  # type: ignore
+        training_method_cls = TrainingMethodSftParam(method="sft", train_on_inputs=train_on_inputs)  # type: ignore
     elif training_method == "dpo":
-        training_method_cls = TrainingMethodTrainingMethodDpo(method="dpo", dpo_beta=dpo_beta)  # type: ignore
+        training_method_cls = TrainingMethodDpoParam(method="dpo", dpo_beta=dpo_beta)  # type: ignore
 
     finetune_request = FineTuneCreateParams(
         model=model,  # type: ignore

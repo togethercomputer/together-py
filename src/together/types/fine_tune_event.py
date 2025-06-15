@@ -1,16 +1,16 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import Optional
 from typing_extensions import Literal
 
 from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FineTuneEvent", "Data"]
+__all__ = ["FineTuneEvent"]
 
 
-class Data(BaseModel):
+class FineTuneEvent(BaseModel):
     checkpoint_path: str
 
     created_at: str
@@ -64,7 +64,3 @@ class Data(BaseModel):
     wandb_url: str
 
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
-
-
-class FineTuneEvent(BaseModel):
-    data: List[Data]

@@ -1,19 +1,15 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
-from typing_extensions import Literal
+from typing import List, Union
+from typing_extensions import Literal, TypeAlias
 
 from .._models import BaseModel
+from .image_data_b64 import ImageDataB64
+from .image_data_url import ImageDataURL
 
 __all__ = ["ImageFile", "Data"]
 
-
-class Data(BaseModel):
-    index: int
-
-    b64_json: Optional[str] = None
-
-    url: Optional[str] = None
+Data: TypeAlias = Union[ImageDataB64, ImageDataURL]
 
 
 class ImageFile(BaseModel):
