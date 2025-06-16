@@ -12,3 +12,11 @@ class TrainingMethodDpo(BaseModel):
     method: Literal["dpo"]
 
     dpo_beta: Optional[float] = None
+
+    dpo_normalize_logratios_by_length: Optional[bool] = None
+
+    dpo_reference_free: Optional[bool] = None
+
+    rpo_alpha: Optional[float] = None
+
+    simpo_gamma: Optional[float] = None

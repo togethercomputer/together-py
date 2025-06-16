@@ -11,3 +11,11 @@ class TrainingMethodDpoParam(TypedDict, total=False):
     method: Required[Literal["dpo"]]
 
     dpo_beta: float
+
+    dpo_normalize_logratios_by_length: bool
+
+    dpo_reference_free: bool
+
+    rpo_alpha: float
+
+    simpo_gamma: float
