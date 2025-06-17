@@ -23,9 +23,7 @@ from pydantic import ValidationError
 
 from together import Together, AsyncTogether, APIResponseValidationError
 from together._types import Omit
-from together._utils import maybe_transform
 from together._models import BaseModel, FinalRequestOptions
-from together._constants import RAW_RESPONSE_HEADER
 from together._streaming import Stream, AsyncStream
 from together._exceptions import TogetherError, APIStatusError, APITimeoutError, APIResponseValidationError
 from together._base_client import (
@@ -36,7 +34,6 @@ from together._base_client import (
     DefaultAsyncHttpxClient,
     make_request_options,
 )
-from together.types.chat.completion_create_params import CompletionCreateParamsNonStreaming
 
 from .utils import update_env
 
@@ -727,60 +724,37 @@ class TestTogether:
 
     @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
-    def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
+    def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter, client: Together) -> None:
         respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
 
         with pytest.raises(APITimeoutError):
-            self.client.post(
-                "/chat/completions",
-                body=cast(
-                    object,
-                    maybe_transform(
-                        dict(
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": "Say this is a test",
-                                }
-                            ],
-                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-                        ),
-                        CompletionCreateParamsNonStreaming,
-                    ),
-                ),
-                cast_to=httpx.Response,
-                options={"headers": {RAW_RESPONSE_HEADER: "stream"}},
-            )
+            client.chat.completions.with_streaming_response.create(
+                messages=[
+                    {
+                        "content": "content",
+                        "role": "system",
+                    }
+                ],
+                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ).__enter__()
 
         assert _get_open_connections(self.client) == 0
 
     @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
-    def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
+    def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter, client: Together) -> None:
         respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
 
         with pytest.raises(APIStatusError):
-            self.client.post(
-                "/chat/completions",
-                body=cast(
-                    object,
-                    maybe_transform(
-                        dict(
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": "Say this is a test",
-                                }
-                            ],
-                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-                        ),
-                        CompletionCreateParamsNonStreaming,
-                    ),
-                ),
-                cast_to=httpx.Response,
-                options={"headers": {RAW_RESPONSE_HEADER: "stream"}},
-            )
-
+            client.chat.completions.with_streaming_response.create(
+                messages=[
+                    {
+                        "content": "content",
+                        "role": "system",
+                    }
+                ],
+                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ).__enter__()
         assert _get_open_connections(self.client) == 0
 
     @pytest.mark.parametrize("failures_before_success", [0, 2, 4])
@@ -1618,60 +1592,41 @@ class TestAsyncTogether:
 
     @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
-    async def test_retrying_timeout_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
+    async def test_retrying_timeout_errors_doesnt_leak(
+        self, respx_mock: MockRouter, async_client: AsyncTogether
+    ) -> None:
         respx_mock.post("/chat/completions").mock(side_effect=httpx.TimeoutException("Test timeout error"))
 
         with pytest.raises(APITimeoutError):
-            await self.client.post(
-                "/chat/completions",
-                body=cast(
-                    object,
-                    maybe_transform(
-                        dict(
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": "Say this is a test",
-                                }
-                            ],
-                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-                        ),
-                        CompletionCreateParamsNonStreaming,
-                    ),
-                ),
-                cast_to=httpx.Response,
-                options={"headers": {RAW_RESPONSE_HEADER: "stream"}},
-            )
+            await async_client.chat.completions.with_streaming_response.create(
+                messages=[
+                    {
+                        "content": "content",
+                        "role": "system",
+                    }
+                ],
+                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ).__aenter__()
 
         assert _get_open_connections(self.client) == 0
 
     @mock.patch("together._base_client.BaseClient._calculate_retry_timeout", _low_retry_timeout)
     @pytest.mark.respx(base_url=base_url)
-    async def test_retrying_status_errors_doesnt_leak(self, respx_mock: MockRouter) -> None:
+    async def test_retrying_status_errors_doesnt_leak(
+        self, respx_mock: MockRouter, async_client: AsyncTogether
+    ) -> None:
         respx_mock.post("/chat/completions").mock(return_value=httpx.Response(500))
 
         with pytest.raises(APIStatusError):
-            await self.client.post(
-                "/chat/completions",
-                body=cast(
-                    object,
-                    maybe_transform(
-                        dict(
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": "Say this is a test",
-                                }
-                            ],
-                            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-                        ),
-                        CompletionCreateParamsNonStreaming,
-                    ),
-                ),
-                cast_to=httpx.Response,
-                options={"headers": {RAW_RESPONSE_HEADER: "stream"}},
-            )
-
+            await async_client.chat.completions.with_streaming_response.create(
+                messages=[
+                    {
+                        "content": "content",
+                        "role": "system",
+                    }
+                ],
+                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            ).__aenter__()
         assert _get_open_connections(self.client) == 0
 
     @pytest.mark.parametrize("failures_before_success", [0, 2, 4])
