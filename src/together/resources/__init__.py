@@ -48,6 +48,14 @@ from .models import (
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
 )
+from .batches import (
+    BatchesResource,
+    AsyncBatchesResource,
+    BatchesResourceWithRawResponse,
+    AsyncBatchesResourceWithRawResponse,
+    BatchesResourceWithStreamingResponse,
+    AsyncBatchesResourceWithStreamingResponse,
+)
 from .hardware import (
     HardwareResource,
     AsyncHardwareResource,
@@ -170,4 +178,10 @@ __all__ = [
     "AsyncHardwareResourceWithRawResponse",
     "HardwareResourceWithStreamingResponse",
     "AsyncHardwareResourceWithStreamingResponse",
+    "BatchesResource",
+    "AsyncBatchesResource",
+    "BatchesResourceWithRawResponse",
+    "AsyncBatchesResourceWithRawResponse",
+    "BatchesResourceWithStreamingResponse",
+    "AsyncBatchesResourceWithStreamingResponse",
 ]

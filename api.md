@@ -220,3 +220,17 @@ from together.types import HardwareListResponse
 Methods:
 
 - <code title="get /hardware">client.hardware.<a href="./src/together/resources/hardware.py">list</a>(\*\*<a href="src/together/types/hardware_list_params.py">params</a>) -> <a href="./src/together/types/hardware_list_response.py">HardwareListResponse</a></code>
+
+# Batches
+
+Types:
+
+```python
+from together.types import BatchCreateResponse, BatchRetrieveResponse, BatchListResponse
+```
+
+Methods:
+
+- <code title="post /batches">client.batches.<a href="./src/together/resources/batches.py">create</a>(\*\*<a href="src/together/types/batch_create_params.py">params</a>) -> <a href="./src/together/types/batch_create_response.py">BatchCreateResponse</a></code>
+- <code title="get /batches/{id}">client.batches.<a href="./src/together/resources/batches.py">retrieve</a>(id) -> <a href="./src/together/types/batch_retrieve_response.py">BatchRetrieveResponse</a></code>
+- <code title="get /batches">client.batches.<a href="./src/together/resources/batches.py">list</a>() -> <a href="./src/together/types/batch_list_response.py">BatchListResponse</a></code>
