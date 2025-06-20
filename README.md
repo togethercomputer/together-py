@@ -83,6 +83,46 @@ asyncio.run(main())
 
 Functionality between the synchronous and asynchronous clients is otherwise identical.
 
+### With aiohttp
+
+By default, the async client uses `httpx` for HTTP requests. However, for improved concurrency performance you may also use `aiohttp` as the HTTP backend.
+
+You can enable this by installing `aiohttp`:
+
+```sh
+# install from the production repo
+pip install 'together[aiohttp] @ git+ssh://git@github.com/togethercomputer/together-py.git'
+```
+
+Then you can enable it by instantiating the client with `http_client=DefaultAioHttpClient()`:
+
+```python
+import os
+import asyncio
+from together import DefaultAioHttpClient
+from together import AsyncTogether
+
+
+async def main() -> None:
+    async with AsyncTogether(
+        api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
+        http_client=DefaultAioHttpClient(),
+    ) as client:
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Say this is a test!",
+                }
+            ],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        )
+        print(chat_completion.choices)
+
+
+asyncio.run(main())
+```
+
 ## Streaming responses
 
 We provide support for streaming responses using Server Side Events (SSE).
