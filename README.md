@@ -1,6 +1,6 @@
 # Together Python API library
 
-[![PyPI version](https://img.shields.io/pypi/v/together.svg)](https://pypi.org/project/together/)
+[![PyPI version](<https://img.shields.io/pypi/v/together.svg?label=pypi%20(stable)>)](https://pypi.org/project/together/)
 
 The Together Python library provides convenient access to the Together REST API from any Python 3.8+
 application. The library includes type definitions for all request params and response fields,
@@ -20,7 +20,7 @@ pip install git+ssh://git@github.com/togethercomputer/together-py.git
 ```
 
 > [!NOTE]
-> Once this package is [published to PyPI](https://app.stainless.com/docs/guides/publish), this will become: `pip install --pre together`
+> Once this package is [published to PyPI](https://www.stainless.com/docs/guides/publish), this will become: `pip install --pre together`
 
 ## Usage
 
@@ -82,6 +82,46 @@ asyncio.run(main())
 ```
 
 Functionality between the synchronous and asynchronous clients is otherwise identical.
+
+### With aiohttp
+
+By default, the async client uses `httpx` for HTTP requests. However, for improved concurrency performance you may also use `aiohttp` as the HTTP backend.
+
+You can enable this by installing `aiohttp`:
+
+```sh
+# install from the production repo
+pip install 'together[aiohttp] @ git+ssh://git@github.com/togethercomputer/together-py.git'
+```
+
+Then you can enable it by instantiating the client with `http_client=DefaultAioHttpClient()`:
+
+```python
+import os
+import asyncio
+from together import DefaultAioHttpClient
+from together import AsyncTogether
+
+
+async def main() -> None:
+    async with AsyncTogether(
+        api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
+        http_client=DefaultAioHttpClient(),
+    ) as client:
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Say this is a test!",
+                }
+            ],
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        )
+        print(chat_completion.choices)
+
+
+asyncio.run(main())
+```
 
 ## Streaming responses
 
@@ -258,7 +298,7 @@ client.with_options(max_retries=5).chat.completions.create(
 ### Timeouts
 
 By default requests time out after 1 minute. You can configure this with a `timeout` option,
-which accepts a float or an [`httpx.Timeout`](https://www.python-httpx.org/advanced/#fine-tuning-the-configuration) object:
+which accepts a float or an [`httpx.Timeout`](https://www.python-httpx.org/advanced/timeouts/#fine-tuning-the-configuration) object:
 
 ```python
 from together import Together
