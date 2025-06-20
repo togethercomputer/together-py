@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.1.0-alpha.13 (2025-06-20)
+
+Full Changelog: [v0.1.0-alpha.12...v0.1.0-alpha.13](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.12...v0.1.0-alpha.13)
+
+### Features
+
+* **api:** add batch api to config ([07299cc](https://github.com/togethercomputer/together-py/commit/07299cc337cb356076643df7fc070b2fd8e85c54))
+* **api:** api update ([249669c](https://github.com/togethercomputer/together-py/commit/249669c03db384d71c04fe69f78a579b5235c54c))
+* **client:** add support for aiohttp ([8e4cedf](https://github.com/togethercomputer/together-py/commit/8e4cedf646520031811a97f65460f41b61894dd9))
+
+
+### Bug Fixes
+
+* **client:** correctly parse binary response | stream ([7b9486c](https://github.com/togethercomputer/together-py/commit/7b9486c29ef0eeb862460d1ee82417db9a8f801f))
+* **tests:** fix: tests which call HTTP endpoints directly with the example parameters ([82b2dcb](https://github.com/togethercomputer/together-py/commit/82b2dcb43af96a7339b2305d02486d3084850303))
+
+
+### Chores
+
+* change publish docs url ([8fac9f3](https://github.com/togethercomputer/together-py/commit/8fac9f3e12630ed88b68c6cb7d798ebcc6a88833))
+* **ci:** enable for pull requests ([6e4d972](https://github.com/togethercomputer/together-py/commit/6e4d972a3a3094fb2d8d468d1e3e89b173ce6ffd))
+* **internal:** update conftest.py ([2b13ac4](https://github.com/togethercomputer/together-py/commit/2b13ac4298cc44c0515a3aa348cfdb4bc63d9cb2))
+* **readme:** update badges ([acfabb5](https://github.com/togethercomputer/together-py/commit/acfabb57a60aab2853283f62d72897a8bb95a778))
+* **tests:** add tests for httpx client instantiation & proxies ([30ba23e](https://github.com/togethercomputer/together-py/commit/30ba23e549ed87a82a7e49164b1809388486754b))
+* **tests:** run tests in parallel ([7efb923](https://github.com/togethercomputer/together-py/commit/7efb923a6802382cdfe676c1124e6b9dafd8e233))
+
+
+### Documentation
+
+* **client:** fix httpx.Timeout documentation reference ([bed4e88](https://github.com/togethercomputer/together-py/commit/bed4e88653ff35029c1921bd2d940abade5b00c0))
+
 ## 0.1.0-alpha.12 (2025-06-10)
 
 Full Changelog: [v0.1.0-alpha.11...v0.1.0-alpha.12](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.11...v0.1.0-alpha.12)
