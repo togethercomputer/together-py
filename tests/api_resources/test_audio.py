@@ -23,7 +23,6 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestAudio:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
@@ -38,7 +37,6 @@ class TestAudio:
         assert cast(Any, audio.is_closed) is True
         assert isinstance(audio, BinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_with_all_params_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
@@ -58,7 +56,6 @@ class TestAudio:
         assert cast(Any, audio.is_closed) is True
         assert isinstance(audio, BinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
@@ -75,7 +72,6 @@ class TestAudio:
         assert audio.json() == {"foo": "bar"}
         assert isinstance(audio, BinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
@@ -94,7 +90,6 @@ class TestAudio:
 
         assert cast(Any, audio.is_closed) is True
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
@@ -107,7 +102,6 @@ class TestAudio:
         )
         audio_stream.response.close()
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_with_all_params_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
@@ -124,7 +118,6 @@ class TestAudio:
         )
         audio_stream.response.close()
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
@@ -141,7 +134,6 @@ class TestAudio:
         assert audio_stream.json() == {"foo": "bar"}
         assert isinstance(audio_stream, BinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
@@ -167,7 +159,6 @@ class TestAsyncAudio:
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_overload_1(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
@@ -182,7 +173,6 @@ class TestAsyncAudio:
         assert cast(Any, audio.is_closed) is True
         assert isinstance(audio, AsyncBinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_with_all_params_overload_1(
@@ -204,7 +194,6 @@ class TestAsyncAudio:
         assert cast(Any, audio.is_closed) is True
         assert isinstance(audio, AsyncBinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_create_overload_1(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
@@ -221,7 +210,6 @@ class TestAsyncAudio:
         assert await audio.json() == {"foo": "bar"}
         assert isinstance(audio, AsyncBinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_streaming_response_create_overload_1(
@@ -242,7 +230,6 @@ class TestAsyncAudio:
 
         assert cast(Any, audio.is_closed) is True
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_overload_2(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
@@ -255,7 +242,6 @@ class TestAsyncAudio:
         )
         await audio_stream.response.aclose()
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_with_all_params_overload_2(
@@ -274,7 +260,6 @@ class TestAsyncAudio:
         )
         await audio_stream.response.aclose()
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_create_overload_2(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
@@ -291,7 +276,6 @@ class TestAsyncAudio:
         assert await audio_stream.json() == {"foo": "bar"}
         assert isinstance(audio_stream, AsyncBinaryAPIResponse)
 
-    @pytest.mark.skip(reason="AttributeError: BinaryAPIResponse object has no attribute response")
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_streaming_response_create_overload_2(
