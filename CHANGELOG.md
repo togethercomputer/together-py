@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.14 (2025-06-23)
+
+Full Changelog: [v0.1.0-alpha.13...v0.1.0-alpha.14](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.13...v0.1.0-alpha.14)
+
+### Chores
+
+* **api:** re-enable audio unit tests ([02c8f9a](https://github.com/togethercomputer/together-py/commit/02c8f9ad850aed5aae7110ab37d33377aead1c47))
+* **tests:** skip some failing tests on the latest python versions ([49a71b3](https://github.com/togethercomputer/together-py/commit/49a71b3b35ffaef63bc8100faba69d87d517cedb))
+
 ## 0.1.0-alpha.13 (2025-06-20)
 
 Full Changelog: [v0.1.0-alpha.12...v0.1.0-alpha.13](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.12...v0.1.0-alpha.13)
