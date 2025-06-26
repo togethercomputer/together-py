@@ -101,8 +101,9 @@ class CompletionsResource(SyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
-              returned. Log probabilities help assess model confidence in token predictions.
+          logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
+              at each generation step, instead of just the sampled token. Log probabilities
+              help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -216,8 +217,9 @@ class CompletionsResource(SyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
-              returned. Log probabilities help assess model confidence in token predictions.
+          logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
+              at each generation step, instead of just the sampled token. Log probabilities
+              help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -327,8 +329,9 @@ class CompletionsResource(SyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
-              returned. Log probabilities help assess model confidence in token predictions.
+          logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
+              at each generation step, instead of just the sampled token. Log probabilities
+              help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -527,8 +530,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
-              returned. Log probabilities help assess model confidence in token predictions.
+          logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
+              at each generation step, instead of just the sampled token. Log probabilities
+              help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -642,8 +646,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
-              returned. Log probabilities help assess model confidence in token predictions.
+          logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
+              at each generation step, instead of just the sampled token. Log probabilities
+              help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
@@ -753,8 +758,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
-          logprobs: Integer (0 or 1) that controls whether log probabilities of generated tokens are
-              returned. Log probabilities help assess model confidence in token predictions.
+          logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
+              at each generation step, instead of just the sampled token. Log probabilities
+              help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
 
