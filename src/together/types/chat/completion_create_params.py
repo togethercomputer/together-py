@@ -17,6 +17,10 @@ __all__ = [
     "MessageChatCompletionSystemMessageParam",
     "MessageChatCompletionUserMessageParam",
     "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudio",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudioAudioURL",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio",
     "MessageChatCompletionAssistantMessageParam",
     "MessageChatCompletionAssistantMessageParamFunctionCall",
     "MessageChatCompletionToolMessageParam",
@@ -173,10 +177,49 @@ class MessageChatCompletionSystemMessageParam(TypedDict, total=False):
     name: str
 
 
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudioAudioURL(
+    TypedDict, total=False
+):
+    url: Required[str]
+    """The URL of the audio"""
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudio(
+    TypedDict, total=False
+):
+    audio_url: Required[
+        MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudioAudioURL
+    ]
+
+    type: Required[Literal["audio_url"]]
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio(
+    TypedDict, total=False
+):
+    data: Required[str]
+    """The base64 encoded audio data"""
+
+    format: Required[Literal["wav"]]
+    """The format of the audio data"""
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio(
+    TypedDict, total=False
+):
+    input_audio: Required[
+        MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio
+    ]
+
+    type: Required[Literal["input_audio"]]
+
+
 MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal: TypeAlias = Union[
     ChatCompletionStructuredMessageTextParam,
     ChatCompletionStructuredMessageImageURLParam,
     ChatCompletionStructuredMessageVideoURLParam,
+    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudio,
+    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio,
 ]
 
 
