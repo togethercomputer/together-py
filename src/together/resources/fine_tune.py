@@ -58,6 +58,8 @@ class FineTuneResource(SyncAPIResource):
         training_file: str,
         batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
         from_checkpoint: str | NotGiven = NOT_GIVEN,
+        hf_api_token: str | NotGiven = NOT_GIVEN,
+        hf_output_repo_name: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
@@ -98,6 +100,10 @@ class FineTuneResource(SyncAPIResource):
               Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
               `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
               final checkpoint will be used.
+
+          hf_api_token: The API token for the Hugging Face Hub.
+
+          hf_output_repo_name: The name of the Hugging Face repository to upload the fine-tuned model to.
 
           learning_rate: Controls how quickly the model adapts to new information (too high may cause
               instability, too low may slow convergence)
@@ -154,6 +160,8 @@ class FineTuneResource(SyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "from_checkpoint": from_checkpoint,
+                    "hf_api_token": hf_api_token,
+                    "hf_output_repo_name": hf_output_repo_name,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
                     "max_grad_norm": max_grad_norm,
@@ -422,6 +430,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
         training_file: str,
         batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
         from_checkpoint: str | NotGiven = NOT_GIVEN,
+        hf_api_token: str | NotGiven = NOT_GIVEN,
+        hf_output_repo_name: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
         max_grad_norm: float | NotGiven = NOT_GIVEN,
@@ -462,6 +472,10 @@ class AsyncFineTuneResource(AsyncAPIResource):
               Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
               `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
               final checkpoint will be used.
+
+          hf_api_token: The API token for the Hugging Face Hub.
+
+          hf_output_repo_name: The name of the Hugging Face repository to upload the fine-tuned model to.
 
           learning_rate: Controls how quickly the model adapts to new information (too high may cause
               instability, too low may slow convergence)
@@ -518,6 +532,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "from_checkpoint": from_checkpoint,
+                    "hf_api_token": hf_api_token,
+                    "hf_output_repo_name": hf_output_repo_name,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
                     "max_grad_norm": max_grad_norm,

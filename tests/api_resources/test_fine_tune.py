@@ -40,6 +40,8 @@ class TestFineTune:
             training_file="training_file",
             batch_size=0,
             from_checkpoint="from_checkpoint",
+            hf_api_token="hf_api_token",
+            hf_output_repo_name="hf_output_repo_name",
             learning_rate=0,
             lr_scheduler={
                 "lr_scheduler_type": "linear",
@@ -331,6 +333,8 @@ class TestAsyncFineTune:
             training_file="training_file",
             batch_size=0,
             from_checkpoint="from_checkpoint",
+            hf_api_token="hf_api_token",
+            hf_output_repo_name="hf_output_repo_name",
             learning_rate=0,
             lr_scheduler={
                 "lr_scheduler_type": "linear",

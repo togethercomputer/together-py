@@ -36,6 +36,12 @@ class FineTuneCreateParams(TypedDict, total=False):
     final checkpoint will be used.
     """
 
+    hf_api_token: str
+    """The API token for the Hugging Face Hub."""
+
+    hf_output_repo_name: str
+    """The name of the Hugging Face repository to upload the fine-tuned model to."""
+
     learning_rate: float
     """
     Controls how quickly the model adapts to new information (too high may cause

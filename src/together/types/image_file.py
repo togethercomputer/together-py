@@ -1,15 +1,16 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal, Annotated, TypeAlias
 
+from .._utils import PropertyInfo
 from .._models import BaseModel
 from .image_data_b64 import ImageDataB64
 from .image_data_url import ImageDataURL
 
 __all__ = ["ImageFile", "Data"]
 
-Data: TypeAlias = Union[ImageDataB64, ImageDataURL]
+Data: TypeAlias = Annotated[Union[ImageDataB64, ImageDataURL], PropertyInfo(discriminator="type")]
 
 
 class ImageFile(BaseModel):
