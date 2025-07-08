@@ -30,7 +30,8 @@ class TestImages:
         image = client.images.create(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
-            guidance=0,
+            disable_safety_checker=True,
+            guidance_scale=0,
             height=0,
             image_loras=[
                 {
@@ -94,7 +95,8 @@ class TestAsyncImages:
         image = await async_client.images.create(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
-            guidance=0,
+            disable_safety_checker=True,
+            guidance_scale=0,
             height=0,
             image_loras=[
                 {
