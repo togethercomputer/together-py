@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Union
 from typing_extensions import Literal, Required, TypedDict
 
 from ..._types import FileTypes
 
-__all__ = ["TranslationCreateParamsBase", "TranslationCreateParamsNonStreaming"]
+__all__ = ["TranslationCreateParams"]
 
 
-class TranslationCreateParamsBase(TypedDict, total=False):
+class TranslationCreateParams(TypedDict, total=False):
     file: Required[FileTypes]
     """Audio file to translate"""
 
@@ -37,14 +36,3 @@ class TranslationCreateParamsBase(TypedDict, total=False):
 
     Only used when response_format is verbose_json.
     """
-
-
-class TranslationCreateParamsNonStreaming(TranslationCreateParamsBase, total=False):
-    pass
-
-
-class TranslationCreateParamsNonStreaming(TranslationCreateParamsBase, total=False):
-    pass
-
-
-TranslationCreateParams = Union[TranslationCreateParamsNonStreaming, TranslationCreateParamsNonStreaming]
