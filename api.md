@@ -159,7 +159,31 @@ from together.types import AudioFile, AudioSpeechStreamChunk
 
 Methods:
 
-- <code title="post /audio/speech">client.audio.<a href="./src/together/resources/audio.py">create</a>(\*\*<a href="src/together/types/audio_create_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="post /audio/speech">client.audio.<a href="./src/together/resources/audio/audio.py">create</a>(\*\*<a href="src/together/types/audio_create_params.py">params</a>) -> BinaryAPIResponse</code>
+
+## Transcriptions
+
+Types:
+
+```python
+from together.types.audio import TranscriptionCreateResponse
+```
+
+Methods:
+
+- <code title="post /audio/transcriptions">client.audio.transcriptions.<a href="./src/together/resources/audio/transcriptions.py">create</a>(\*\*<a href="src/together/types/audio/transcription_create_params.py">params</a>) -> <a href="./src/together/types/audio/transcription_create_response.py">TranscriptionCreateResponse</a></code>
+
+## Translations
+
+Types:
+
+```python
+from together.types.audio import TranslationCreateResponse
+```
+
+Methods:
+
+- <code title="post /audio/translations">client.audio.translations.<a href="./src/together/resources/audio/translations.py">create</a>(\*\*<a href="src/together/types/audio/translation_create_params.py">params</a>) -> <a href="./src/together/types/audio/translation_create_response.py">TranslationCreateResponse</a></code>
 
 # Models
 
