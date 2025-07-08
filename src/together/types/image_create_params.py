@@ -27,7 +27,10 @@ class ImageCreateParams(TypedDict, total=False):
     prompt: Required[str]
     """A description of the desired images. Maximum length varies by model."""
 
-    guidance: float
+    disable_safety_checker: bool
+    """If true, disables the safety checker for image generation."""
+
+    guidance_scale: float
     """Adjusts the alignment of the generated image with the input prompt.
 
     Higher values (e.g., 8-10) make the output more faithful to the prompt, while

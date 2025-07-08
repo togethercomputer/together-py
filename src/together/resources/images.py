@@ -56,7 +56,8 @@ class ImagesResource(SyncAPIResource):
             str,
         ],
         prompt: str,
-        guidance: float | NotGiven = NOT_GIVEN,
+        disable_safety_checker: bool | NotGiven = NOT_GIVEN,
+        guidance_scale: float | NotGiven = NOT_GIVEN,
         height: int | NotGiven = NOT_GIVEN,
         image_loras: Iterable[image_create_params.ImageLora] | NotGiven = NOT_GIVEN,
         image_url: str | NotGiven = NOT_GIVEN,
@@ -84,7 +85,9 @@ class ImagesResource(SyncAPIResource):
 
           prompt: A description of the desired images. Maximum length varies by model.
 
-          guidance: Adjusts the alignment of the generated image with the input prompt. Higher
+          disable_safety_checker: If true, disables the safety checker for image generation.
+
+          guidance_scale: Adjusts the alignment of the generated image with the input prompt. Higher
               values (e.g., 8-10) make the output more faithful to the prompt, while lower
               values (e.g., 1-5) encourage more creative freedom.
 
@@ -124,7 +127,8 @@ class ImagesResource(SyncAPIResource):
                 {
                     "model": model,
                     "prompt": prompt,
-                    "guidance": guidance,
+                    "disable_safety_checker": disable_safety_checker,
+                    "guidance_scale": guidance_scale,
                     "height": height,
                     "image_loras": image_loras,
                     "image_url": image_url,
@@ -177,7 +181,8 @@ class AsyncImagesResource(AsyncAPIResource):
             str,
         ],
         prompt: str,
-        guidance: float | NotGiven = NOT_GIVEN,
+        disable_safety_checker: bool | NotGiven = NOT_GIVEN,
+        guidance_scale: float | NotGiven = NOT_GIVEN,
         height: int | NotGiven = NOT_GIVEN,
         image_loras: Iterable[image_create_params.ImageLora] | NotGiven = NOT_GIVEN,
         image_url: str | NotGiven = NOT_GIVEN,
@@ -205,7 +210,9 @@ class AsyncImagesResource(AsyncAPIResource):
 
           prompt: A description of the desired images. Maximum length varies by model.
 
-          guidance: Adjusts the alignment of the generated image with the input prompt. Higher
+          disable_safety_checker: If true, disables the safety checker for image generation.
+
+          guidance_scale: Adjusts the alignment of the generated image with the input prompt. Higher
               values (e.g., 8-10) make the output more faithful to the prompt, while lower
               values (e.g., 1-5) encourage more creative freedom.
 
@@ -245,7 +252,8 @@ class AsyncImagesResource(AsyncAPIResource):
                 {
                     "model": model,
                     "prompt": prompt,
-                    "guidance": guidance,
+                    "disable_safety_checker": disable_safety_checker,
+                    "guidance_scale": guidance_scale,
                     "height": height,
                     "image_loras": image_loras,
                     "image_url": image_url,
