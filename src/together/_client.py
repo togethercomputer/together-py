@@ -36,19 +36,7 @@ from ._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .resources import (
-    jobs,
-    audio,
-    files,
-    images,
-    models,
-    batches,
-    hardware,
-    endpoints,
-    fine_tune,
-    embeddings,
-    completions,
-)
+from .resources import jobs, files, images, models, batches, hardware, endpoints, fine_tune, embeddings, completions
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -58,6 +46,7 @@ from ._base_client import (
     make_request_options,
 )
 from .resources.chat import chat
+from .resources.audio import audio
 from .types.rerank_response import RerankResponse
 from .resources.code_interpreter import code_interpreter
 
