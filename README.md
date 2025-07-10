@@ -1,6 +1,7 @@
 # Together Python API library
 
-[![PyPI version](<https://img.shields.io/pypi/v/together.svg?label=pypi%20(stable)>)](https://pypi.org/project/together/)
+<!-- prettier-ignore -->
+[![PyPI version](https://img.shields.io/pypi/v/together.svg?label=pypi%20(stable))](https://pypi.org/project/together/)
 
 The Together Python library provides convenient access to the Together REST API from any Python 3.8+
 application. The library includes type definitions for all request params and response fields,
