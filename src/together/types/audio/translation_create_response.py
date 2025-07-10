@@ -32,9 +32,6 @@ class AudioTranslationVerboseJsonResponseSegment(BaseModel):
     text: str
     """The text content of the segment"""
 
-    tokens: List[int]
-    """Array of token IDs for the segment"""
-
 
 class AudioTranslationVerboseJsonResponseWord(BaseModel):
     end: float
