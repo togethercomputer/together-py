@@ -7,7 +7,7 @@ from ..._models import BaseModel
 from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 
-__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall"]
+__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall", "Warning"]
 
 
 class ChoiceDeltaFunctionCall(BaseModel):
@@ -40,6 +40,10 @@ class Choice(BaseModel):
     seed: Optional[int] = None
 
 
+class Warning(BaseModel):
+    message: Optional[str] = None
+
+
 class ChatCompletionChunk(BaseModel):
     id: str
 
@@ -54,3 +58,5 @@ class ChatCompletionChunk(BaseModel):
     system_fingerprint: Optional[str] = None
 
     usage: Optional[ChatCompletionUsage] = None
+
+    warnings: Optional[List[Warning]] = None
