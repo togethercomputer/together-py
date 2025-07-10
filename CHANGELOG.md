@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.1.0-alpha.15 (2025-07-10)
+
+Full Changelog: [v0.1.0-alpha.14...v0.1.0-alpha.15](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.14...v0.1.0-alpha.15)
+
+### Features
+
+* **api:** adding audio APIs ([7d85bd7](https://github.com/togethercomputer/together-py/commit/7d85bd7b497dcca60e0ef2198dcdbe68239afba8))
+* **api:** api update ([fb4b686](https://github.com/togethercomputer/together-py/commit/fb4b6860a6418f69a841bcb466b3a6a83e38ce60))
+* **api:** api update ([74be086](https://github.com/togethercomputer/together-py/commit/74be0862b48ee083ea7e6bd9dff2713a24e98799))
+* **api:** api update ([5077f31](https://github.com/togethercomputer/together-py/commit/5077f31cbd79add55d1a3fba8cb20211d045dff6))
+* **api:** api update ([94a2b5e](https://github.com/togethercomputer/together-py/commit/94a2b5e82c7890fe835792876a936321c87e95c6))
+* **api:** api update ([2d73c2e](https://github.com/togethercomputer/together-py/commit/2d73c2e7014e57b29fb910cc22d5df4ec7daa6b2))
+* **api:** removed streaming from translation/transcription endpoints ([02af14a](https://github.com/togethercomputer/together-py/commit/02af14a746534eb8b136be72209134f9e8d12d75))
+
+
+### Bug Fixes
+
+* **ci:** correct conditional ([7ede6e3](https://github.com/togethercomputer/together-py/commit/7ede6e388052ea970aa97ddda230d42933f5f285))
+* **ci:** release-doctor — report correct token name ([3d04b80](https://github.com/togethercomputer/together-py/commit/3d04b80d5380864cb450c4fbd10d2ddcf154d132))
+* **parsing:** correctly handle nested discriminated unions ([d930701](https://github.com/togethercomputer/together-py/commit/d9307012a76a110e1d12284631f084e365d15d77))
+
+
+### Chores
+
+* **ci:** change upload type ([16f1b33](https://github.com/togethercomputer/together-py/commit/16f1b33fc4593056fcc9a3e9242e1cac75e29f80))
+* **ci:** only run for pushes and fork pull requests ([a8a34c0](https://github.com/togethercomputer/together-py/commit/a8a34c04a4b181eb17c49182e8dd6a59295d0f03))
+* **internal:** bump pinned h11 dep ([dbb7251](https://github.com/togethercomputer/together-py/commit/dbb725183f21b56bc41f347b43d58e7ea3afdddb))
+* **internal:** codegen related update ([74e55b0](https://github.com/togethercomputer/together-py/commit/74e55b0751c6a938e5a44ec3d4fd59099b01f5cd))
+* **package:** mark python 3.13 as supported ([b184004](https://github.com/togethercomputer/together-py/commit/b18400445b27608a0792a9a446af418f52c32b59))
+* **readme:** fix version rendering on pypi ([6f29b83](https://github.com/togethercomputer/together-py/commit/6f29b833185ad8013bc7aaacad18026a48d2c3ec))
+
 ## 0.1.0-alpha.14 (2025-06-23)
 
 Full Changelog: [v0.1.0-alpha.13...v0.1.0-alpha.14](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.13...v0.1.0-alpha.14)
