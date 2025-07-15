@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, cast
+from typing import Any, List, Union, Mapping, cast
 from typing_extensions import Literal
 
 import httpx
@@ -53,7 +53,8 @@ class TranscriptionsResource(SyncAPIResource):
         prompt: str | NotGiven = NOT_GIVEN,
         response_format: Literal["json", "verbose_json"] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
-        timestamp_granularities: Literal["segment", "word"] | NotGiven = NOT_GIVEN,
+        timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]]
+        | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -79,7 +80,8 @@ class TranscriptionsResource(SyncAPIResource):
           temperature: Sampling temperature between 0.0 and 1.0
 
           timestamp_granularities: Controls level of timestamp detail in verbose_json. Only used when
-              response_format is verbose_json.
+              response_format is verbose_json. Can be a single granularity or an array to get
+              multiple levels.
 
           extra_headers: Send extra headers
 
@@ -150,7 +152,8 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         prompt: str | NotGiven = NOT_GIVEN,
         response_format: Literal["json", "verbose_json"] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
-        timestamp_granularities: Literal["segment", "word"] | NotGiven = NOT_GIVEN,
+        timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]]
+        | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -176,7 +179,8 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
           temperature: Sampling temperature between 0.0 and 1.0
 
           timestamp_granularities: Controls level of timestamp detail in verbose_json. Only used when
-              response_format is verbose_json.
+              response_format is verbose_json. Can be a single granularity or an array to get
+              multiple levels.
 
           extra_headers: Send extra headers
 
