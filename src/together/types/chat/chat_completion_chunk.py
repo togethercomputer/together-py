@@ -41,7 +41,7 @@ class Choice(BaseModel):
 
 
 class Warning(BaseModel):
-    message: Optional[str] = None
+    message: str
 
 
 class ChatCompletionChunk(BaseModel):
