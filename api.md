@@ -24,7 +24,6 @@ from together.types.chat import (
     ChatCompletionStructuredMessageText,
     ChatCompletionStructuredMessageVideoURL,
     ChatCompletionUsage,
-    ChatCompletionWarnings,
 )
 ```
 
