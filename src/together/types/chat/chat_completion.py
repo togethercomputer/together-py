@@ -7,8 +7,9 @@ from ..._models import BaseModel
 from ..log_probs import LogProbs
 from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
+from .chat_completion_warning import ChatCompletionWarning
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall", "Warning"]
+__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall"]
 
 
 class ChoiceMessageFunctionCall(BaseModel):
@@ -41,10 +42,6 @@ class Choice(BaseModel):
     text: Optional[str] = None
 
 
-class Warning(BaseModel):
-    message: str
-
-
 class ChatCompletion(BaseModel):
     id: str
 
@@ -58,4 +55,4 @@ class ChatCompletion(BaseModel):
 
     usage: Optional[ChatCompletionUsage] = None
 
-    warnings: Optional[List[Warning]] = None
+    warnings: Optional[List[ChatCompletionWarning]] = None
