@@ -6,9 +6,8 @@ from typing_extensions import Literal
 from ..._models import BaseModel
 from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
-from .chat_completion_warnings import ChatCompletionWarnings
 
-__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall"]
+__all__ = ["ChatCompletionChunk", "Choice", "ChoiceDelta", "ChoiceDeltaFunctionCall", "Warning"]
 
 
 class ChoiceDeltaFunctionCall(BaseModel):
@@ -41,6 +40,10 @@ class Choice(BaseModel):
     seed: Optional[int] = None
 
 
+class Warning(BaseModel):
+    message: str
+
+
 class ChatCompletionChunk(BaseModel):
     id: str
 
@@ -56,4 +59,4 @@ class ChatCompletionChunk(BaseModel):
 
     usage: Optional[ChatCompletionUsage] = None
 
-    warnings: Optional[ChatCompletionWarnings] = None
+    warnings: Optional[List[Warning]] = None
