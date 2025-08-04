@@ -49,7 +49,7 @@ def test_simple_request():
     assert request["training_type"]["type"] == "Full"
     assert "batch_size" in request
     assert _MODEL_LIMITS.full_training is not None
-    assert request["batch_size"] == _MODEL_LIMITS.full_training.max_batch_size
+    assert request["batch_size"] == "max"
 
 
 def test_validation_file():
@@ -91,7 +91,7 @@ def test_lora_request():
     assert "lora_trainable_modules" in request["training_type"]
     assert request["training_type"]["lora_trainable_modules"] == "all-linear"
     assert "batch_size" in request
-    assert request["batch_size"] == _MODEL_LIMITS.lora_training.max_batch_size
+    assert request["batch_size"] == "max"
 
 
 def test_dpo_request_lora():
@@ -113,7 +113,7 @@ def test_dpo_request_lora():
     assert "lora_trainable_modules" in request["training_type"]
     assert request["training_type"]["lora_trainable_modules"] == "all-linear"
     assert "batch_size" in request
-    assert request["batch_size"] == _MODEL_LIMITS.lora_training.max_batch_size_dpo
+    assert request["batch_size"] == "max"
 
 
 def test_dpo_request():
@@ -129,7 +129,7 @@ def test_dpo_request():
     assert request["training_type"]["type"] == "Full"
     assert "batch_size" in request
     assert _MODEL_LIMITS.full_training is not None
-    assert request["batch_size"] == _MODEL_LIMITS.full_training.max_batch_size_dpo
+    assert request["batch_size"] == "max"
 
 
 def test_from_checkpoint_request():
