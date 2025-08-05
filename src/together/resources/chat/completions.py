@@ -72,6 +72,7 @@ class CompletionsResource(SyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -125,6 +126,10 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning_effort: Controls the level of reasoning effort the model should apply when generating
+              responses. Higher values may result in more thoughtful and detailed responses
+              but may take longer to generate.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -205,6 +210,7 @@ class CompletionsResource(SyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -261,6 +267,10 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning_effort: Controls the level of reasoning effort the model should apply when generating
+              responses. Higher values may result in more thoughtful and detailed responses
+              but may take longer to generate.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -337,6 +347,7 @@ class CompletionsResource(SyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -393,6 +404,10 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning_effort: Controls the level of reasoning effort the model should apply when generating
+              responses. Higher values may result in more thoughtful and detailed responses
+              but may take longer to generate.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -468,6 +483,7 @@ class CompletionsResource(SyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -502,6 +518,7 @@ class CompletionsResource(SyncAPIResource):
                     "min_p": min_p,
                     "n": n,
                     "presence_penalty": presence_penalty,
+                    "reasoning_effort": reasoning_effort,
                     "repetition_penalty": repetition_penalty,
                     "response_format": response_format,
                     "safety_model": safety_model,
@@ -572,6 +589,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -625,6 +643,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning_effort: Controls the level of reasoning effort the model should apply when generating
+              responses. Higher values may result in more thoughtful and detailed responses
+              but may take longer to generate.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -705,6 +727,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -761,6 +784,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning_effort: Controls the level of reasoning effort the model should apply when generating
+              responses. Higher values may result in more thoughtful and detailed responses
+              but may take longer to generate.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -837,6 +864,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -893,6 +921,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning_effort: Controls the level of reasoning effort the model should apply when generating
+              responses. Higher values may result in more thoughtful and detailed responses
+              but may take longer to generate.
 
           repetition_penalty: A number that controls the diversity of generated text by reducing the
               likelihood of repeated sequences. Higher values decrease repetition.
@@ -968,6 +1000,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         min_p: float | NotGiven = NOT_GIVEN,
         n: int | NotGiven = NOT_GIVEN,
         presence_penalty: float | NotGiven = NOT_GIVEN,
+        reasoning_effort: Literal["low", "medium", "high"] | NotGiven = NOT_GIVEN,
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         response_format: completion_create_params.ResponseFormat | NotGiven = NOT_GIVEN,
         safety_model: str | NotGiven = NOT_GIVEN,
@@ -1002,6 +1035,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
                     "min_p": min_p,
                     "n": n,
                     "presence_penalty": presence_penalty,
+                    "reasoning_effort": reasoning_effort,
                     "repetition_penalty": repetition_penalty,
                     "response_format": response_format,
                     "safety_model": safety_model,
