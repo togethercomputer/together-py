@@ -17,17 +17,13 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestSessions:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
-    @pytest.mark.skip(
-        reason="currently no good way to test endpoints defining callbacks, Prism mock server will fail trying to reach the provided callback url"
-    )
+    @pytest.mark.skip(reason="Prism doesn't support callbacks yet")
     @parametrize
     def test_method_list(self, client: Together) -> None:
         session = client.code_interpreter.sessions.list()
         assert_matches_type(SessionListResponse, session, path=["response"])
 
-    @pytest.mark.skip(
-        reason="currently no good way to test endpoints defining callbacks, Prism mock server will fail trying to reach the provided callback url"
-    )
+    @pytest.mark.skip(reason="Prism doesn't support callbacks yet")
     @parametrize
     def test_raw_response_list(self, client: Together) -> None:
         response = client.code_interpreter.sessions.with_raw_response.list()
@@ -37,9 +33,7 @@ class TestSessions:
         session = response.parse()
         assert_matches_type(SessionListResponse, session, path=["response"])
 
-    @pytest.mark.skip(
-        reason="currently no good way to test endpoints defining callbacks, Prism mock server will fail trying to reach the provided callback url"
-    )
+    @pytest.mark.skip(reason="Prism doesn't support callbacks yet")
     @parametrize
     def test_streaming_response_list(self, client: Together) -> None:
         with client.code_interpreter.sessions.with_streaming_response.list() as response:
@@ -57,17 +51,13 @@ class TestAsyncSessions:
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
 
-    @pytest.mark.skip(
-        reason="currently no good way to test endpoints defining callbacks, Prism mock server will fail trying to reach the provided callback url"
-    )
+    @pytest.mark.skip(reason="Prism doesn't support callbacks yet")
     @parametrize
     async def test_method_list(self, async_client: AsyncTogether) -> None:
         session = await async_client.code_interpreter.sessions.list()
         assert_matches_type(SessionListResponse, session, path=["response"])
 
-    @pytest.mark.skip(
-        reason="currently no good way to test endpoints defining callbacks, Prism mock server will fail trying to reach the provided callback url"
-    )
+    @pytest.mark.skip(reason="Prism doesn't support callbacks yet")
     @parametrize
     async def test_raw_response_list(self, async_client: AsyncTogether) -> None:
         response = await async_client.code_interpreter.sessions.with_raw_response.list()
@@ -77,9 +67,7 @@ class TestAsyncSessions:
         session = await response.parse()
         assert_matches_type(SessionListResponse, session, path=["response"])
 
-    @pytest.mark.skip(
-        reason="currently no good way to test endpoints defining callbacks, Prism mock server will fail trying to reach the provided callback url"
-    )
+    @pytest.mark.skip(reason="Prism doesn't support callbacks yet")
     @parametrize
     async def test_streaming_response_list(self, async_client: AsyncTogether) -> None:
         async with async_client.code_interpreter.sessions.with_streaming_response.list() as response:
