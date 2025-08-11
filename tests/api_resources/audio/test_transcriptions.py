@@ -20,14 +20,20 @@ class TestTranscriptions:
     @parametrize
     def test_method_create(self, client: Together) -> None:
         transcription = client.audio.transcriptions.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
         )
         assert_matches_type(TranscriptionCreateResponse, transcription, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         transcription = client.audio.transcriptions.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
             language="en",
             model="openai/whisper-large-v3",
             prompt="prompt",
@@ -40,7 +46,10 @@ class TestTranscriptions:
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.audio.transcriptions.with_raw_response.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
         )
 
         assert response.is_closed is True
@@ -51,7 +60,10 @@ class TestTranscriptions:
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.audio.transcriptions.with_streaming_response.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -70,14 +82,20 @@ class TestAsyncTranscriptions:
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         transcription = await async_client.audio.transcriptions.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
         )
         assert_matches_type(TranscriptionCreateResponse, transcription, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         transcription = await async_client.audio.transcriptions.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
             language="en",
             model="openai/whisper-large-v3",
             prompt="prompt",
@@ -90,7 +108,10 @@ class TestAsyncTranscriptions:
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.audio.transcriptions.with_raw_response.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
         )
 
         assert response.is_closed is True
@@ -101,7 +122,10 @@ class TestAsyncTranscriptions:
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.audio.transcriptions.with_streaming_response.create(
-            file=b"raw file contents",
+            file={
+                "data": b"raw file contents",
+                "type": "binary",
+            },
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
