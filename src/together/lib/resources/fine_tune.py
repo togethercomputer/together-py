@@ -51,12 +51,25 @@ def create_finetune_request(
     training_method: str = "sft",
     dpo_beta: float | None = None,
     from_checkpoint: str | None = None,
+    from_hf_model: str | None = None,
+    hf_model_revision: str | None = None,
 ) -> FineTuneCreateParams:
     if model is not None and from_checkpoint is not None:
         raise ValueError("You must specify either a model or a checkpoint to start a job from, not both")
 
     if model is None and from_checkpoint is None:
         raise ValueError("You must specify either a model or a checkpoint")
+
+    if from_checkpoint is not None and from_hf_model is not None:
+        raise ValueError(
+            "You must specify either a Hugging Face Hub model or a previous checkpoint from "
+            "Together to start a job from, not both"
+        )
+
+    if from_hf_model is not None and model is None:
+        raise ValueError(
+            "You must specify the base model to fine-tune a model from the Hugging Face Hub"
+        )
 
     model_or_checkpoint = model or from_checkpoint
 
@@ -175,6 +188,8 @@ def create_finetune_request(
         wandb_name=wandb_name,  # type: ignore
         training_method=training_method_cls,  # type: ignore
         from_checkpoint=from_checkpoint,  # type: ignore
+        from_hf_model=from_hf_model,  # type: ignore
+        hf_model_revision=hf_model_revision,  # type: ignore
     )
 
     return finetune_request
