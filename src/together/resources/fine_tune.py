@@ -58,7 +58,9 @@ class FineTuneResource(SyncAPIResource):
         training_file: str,
         batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
         from_checkpoint: str | NotGiven = NOT_GIVEN,
+        from_hf_model: str | NotGiven = NOT_GIVEN,
         hf_api_token: str | NotGiven = NOT_GIVEN,
+        hf_model_revision: str | NotGiven = NOT_GIVEN,
         hf_output_repo_name: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
@@ -101,7 +103,15 @@ class FineTuneResource(SyncAPIResource):
               `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
               final checkpoint will be used.
 
+          from_hf_model: The Hugging Face Hub repo to start training from. Should be as close as possible
+              to the base model (specified by the `model` argument) in terms of architecture
+              and size.
+
           hf_api_token: The API token for the Hugging Face Hub.
+
+          hf_model_revision: The revision of the Hugging Face Hub model to continue training from. E.g.,
+              hf_model_revision=main (default, used if the argument is not provided) or
+              hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).
 
           hf_output_repo_name: The name of the Hugging Face repository to upload the fine-tuned model to.
 
@@ -160,7 +170,9 @@ class FineTuneResource(SyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "from_checkpoint": from_checkpoint,
+                    "from_hf_model": from_hf_model,
                     "hf_api_token": hf_api_token,
+                    "hf_model_revision": hf_model_revision,
                     "hf_output_repo_name": hf_output_repo_name,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
@@ -430,7 +442,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
         training_file: str,
         batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
         from_checkpoint: str | NotGiven = NOT_GIVEN,
+        from_hf_model: str | NotGiven = NOT_GIVEN,
         hf_api_token: str | NotGiven = NOT_GIVEN,
+        hf_model_revision: str | NotGiven = NOT_GIVEN,
         hf_output_repo_name: str | NotGiven = NOT_GIVEN,
         learning_rate: float | NotGiven = NOT_GIVEN,
         lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
@@ -473,7 +487,15 @@ class AsyncFineTuneResource(AsyncAPIResource):
               `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
               final checkpoint will be used.
 
+          from_hf_model: The Hugging Face Hub repo to start training from. Should be as close as possible
+              to the base model (specified by the `model` argument) in terms of architecture
+              and size.
+
           hf_api_token: The API token for the Hugging Face Hub.
+
+          hf_model_revision: The revision of the Hugging Face Hub model to continue training from. E.g.,
+              hf_model_revision=main (default, used if the argument is not provided) or
+              hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).
 
           hf_output_repo_name: The name of the Hugging Face repository to upload the fine-tuned model to.
 
@@ -532,7 +554,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "training_file": training_file,
                     "batch_size": batch_size,
                     "from_checkpoint": from_checkpoint,
+                    "from_hf_model": from_hf_model,
                     "hf_api_token": hf_api_token,
+                    "hf_model_revision": hf_model_revision,
                     "hf_output_repo_name": hf_output_repo_name,
                     "learning_rate": learning_rate,
                     "lr_scheduler": lr_scheduler,
