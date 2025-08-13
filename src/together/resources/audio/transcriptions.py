@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from ..._types import NOT_GIVEN, Body, Query, Headers, NotGiven, FileTypes
 from ..._utils import extract_files, maybe_transform, deepcopy_minimal, async_maybe_transform
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
@@ -47,7 +47,7 @@ class TranscriptionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        file: transcription_create_params.File,
+        file: FileTypes,
         language: str | NotGiven = NOT_GIVEN,
         model: Literal["openai/whisper-large-v3"] | NotGiven = NOT_GIVEN,
         prompt: str | NotGiven = NOT_GIVEN,
@@ -66,8 +66,7 @@ class TranscriptionsResource(SyncAPIResource):
         Transcribes audio into text
 
         Args:
-          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+          file: Audio file to transcribe
 
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
@@ -103,7 +102,7 @@ class TranscriptionsResource(SyncAPIResource):
                 "timestamp_granularities": timestamp_granularities,
             }
         )
-        files = extract_files(cast(Mapping[str, object], body), paths=[["file", "data"]])
+        files = extract_files(cast(Mapping[str, object], body), paths=[["file"]])
         # It should be noted that the actual Content-Type header that will be
         # sent to the server will contain a `boundary` parameter, e.g.
         # multipart/form-data; boundary=---abc--
@@ -147,7 +146,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        file: transcription_create_params.File,
+        file: FileTypes,
         language: str | NotGiven = NOT_GIVEN,
         model: Literal["openai/whisper-large-v3"] | NotGiven = NOT_GIVEN,
         prompt: str | NotGiven = NOT_GIVEN,
@@ -166,8 +165,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         Transcribes audio into text
 
         Args:
-          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+          file: Audio file to transcribe
 
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
@@ -203,7 +201,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
                 "timestamp_granularities": timestamp_granularities,
             }
         )
-        files = extract_files(cast(Mapping[str, object], body), paths=[["file", "data"]])
+        files = extract_files(cast(Mapping[str, object], body), paths=[["file"]])
         # It should be noted that the actual Content-Type header that will be
         # sent to the server will contain a `boundary` parameter, e.g.
         # multipart/form-data; boundary=---abc--

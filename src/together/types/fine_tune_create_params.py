@@ -36,8 +36,22 @@ class FineTuneCreateParams(TypedDict, total=False):
     final checkpoint will be used.
     """
 
+    from_hf_model: str
+    """The Hugging Face Hub repo to start training from.
+
+    Should be as close as possible to the base model (specified by the `model`
+    argument) in terms of architecture and size.
+    """
+
     hf_api_token: str
     """The API token for the Hugging Face Hub."""
+
+    hf_model_revision: str
+    """The revision of the Hugging Face Hub model to continue training from.
+
+    E.g., hf_model_revision=main (default, used if the argument is not provided) or
+    hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).
+    """
 
     hf_output_repo_name: str
     """The name of the Hugging Face repository to upload the fine-tuned model to."""

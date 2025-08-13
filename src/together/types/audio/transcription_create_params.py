@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 from typing import List, Union
-from typing_extensions import Literal, Required, TypeAlias, TypedDict
+from typing_extensions import Literal, Required, TypedDict
 
 from ..._types import FileTypes
 
-__all__ = ["TranscriptionCreateParams", "File", "FileBinary", "FileURL"]
+__all__ = ["TranscriptionCreateParams"]
 
 
 class TranscriptionCreateParams(TypedDict, total=False):
-    file: Required[File]
-    """Audio file upload or public HTTP/HTTPS URL.
-
-    Supported formats .wav, .mp3, .m4a, .webm, .flac.
-    """
+    file: Required[FileTypes]
+    """Audio file to transcribe"""
 
     language: str
     """Optional ISO 639-1 language code.
@@ -41,20 +38,3 @@ class TranscriptionCreateParams(TypedDict, total=False):
     Only used when response_format is verbose_json. Can be a single granularity or
     an array to get multiple levels.
     """
-
-
-class FileBinary(TypedDict, total=False):
-    data: Required[FileTypes]
-    """Audio file to transcribe"""
-
-    type: Required[Literal["binary"]]
-
-
-class FileURL(TypedDict, total=False):
-    type: Required[Literal["url"]]
-
-    url: Required[str]
-    """Public HTTPS URL to audio file"""
-
-
-File: TypeAlias = Union[FileBinary, FileURL]
