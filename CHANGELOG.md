@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.1.0-alpha.16 (2025-08-21)
+
+Full Changelog: [v0.1.0-alpha.15...v0.1.0-alpha.16](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.15...v0.1.0-alpha.16)
+
+### Features
+
+* **api:** api update ([f0a8308](https://github.com/togethercomputer/together-py/commit/f0a8308e39499125e8cf899c784b4efa352ecee4))
+* **api:** api update ([376b1bc](https://github.com/togethercomputer/together-py/commit/376b1bc080925812a9f0163718bbb37abe79e4ae))
+* **api:** api update ([e90437f](https://github.com/togethercomputer/together-py/commit/e90437ffb404b6e68699d1e21871050939e868c4))
+* **api:** api update ([9363a0d](https://github.com/togethercomputer/together-py/commit/9363a0d7150866ff20e8a548af1fe25a581a590d))
+* **api:** api update ([64454cc](https://github.com/togethercomputer/together-py/commit/64454cc2ef08acb96ac25027ca4ed716f5d9aaf4))
+* **api:** api update ([891126e](https://github.com/togethercomputer/together-py/commit/891126ee0a7907eb0e38fd20ab269fe8f1fa9473))
+* **api:** manual updates ([5bddf93](https://github.com/togethercomputer/together-py/commit/5bddf93637359ac62ace63271060936ab7714aa0))
+* **api:** manual updates ([127ba9f](https://github.com/togethercomputer/together-py/commit/127ba9fe10bd8ebe8237faac28a4b6c567bcb9a7))
+* clean up environment call outs ([a8ae4ca](https://github.com/togethercomputer/together-py/commit/a8ae4ca28d68f51b03049df4fc46638ec1f2a1b0))
+* **client:** support file upload requests ([6e89024](https://github.com/togethercomputer/together-py/commit/6e8902404f65b5c3a4f74d796733e1afa8a4a60a))
+
+
+### Bug Fixes
+
+* **client:** don't send Content-Type header on GET requests ([0cad846](https://github.com/togethercomputer/together-py/commit/0cad846a3d5b702bb975914e640b7ab3ea5cfbb5))
+* **parsing:** ignore empty metadata ([4629c6d](https://github.com/togethercomputer/together-py/commit/4629c6d6364fddceffbb633285ded2d6655bd473))
+* **parsing:** parse extra field types ([81734d8](https://github.com/togethercomputer/together-py/commit/81734d82bf4259d644ee787b2aff8c86a6e0edb2))
+
+
+### Chores
+
+* **internal:** fix ruff target version ([5d6d8cb](https://github.com/togethercomputer/together-py/commit/5d6d8cb97f1c4e381ba69dc41183197788d8b93c))
+* **internal:** update comment in script ([4a51bbe](https://github.com/togethercomputer/together-py/commit/4a51bbe766b5dc7139ee86d3c5da4ecc42aeb7b0))
+* **internal:** update test skipping reason ([13f9c03](https://github.com/togethercomputer/together-py/commit/13f9c03e1b239df6181d5c8d51dec8c8c35a2ade))
+* **project:** add settings file for vscode ([d257e48](https://github.com/togethercomputer/together-py/commit/d257e48ca2cfa4e8e7696566f85d62879dee8af5))
+* update @stainless-api/prism-cli to v5.15.0 ([29dca11](https://github.com/togethercomputer/together-py/commit/29dca1155b33339041b63e83c803f8b5b0a99b62))
+* update github action ([44e1d3a](https://github.com/togethercomputer/together-py/commit/44e1d3afe46be6a1f8de963fe64690ab051b057a))
+
 ## 0.1.0-alpha.15 (2025-07-10)
 
 Full Changelog: [v0.1.0-alpha.14...v0.1.0-alpha.15](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.14...v0.1.0-alpha.15)
