@@ -102,6 +102,13 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     a model talking about new topics.
     """
 
+    reasoning_effort: Literal["low", "medium", "high"]
+    """
+    Controls the level of reasoning effort the model should apply when generating
+    responses. Higher values may result in more thoughtful and detailed responses
+    but may take longer to generate.
+    """
+
     repetition_penalty: float
     """
     A number that controls the diversity of generated text by reducing the

@@ -54,6 +54,7 @@ class TestCompletions:
             min_p=0,
             n=1,
             presence_penalty=0,
+            reasoning_effort="medium",
             repetition_penalty=0,
             response_format={
                 "schema": {"foo": "bar"},
@@ -155,6 +156,7 @@ class TestCompletions:
             min_p=0,
             n=1,
             presence_penalty=0,
+            reasoning_effort="medium",
             repetition_penalty=0,
             response_format={
                 "schema": {"foo": "bar"},
@@ -260,6 +262,7 @@ class TestAsyncCompletions:
             min_p=0,
             n=1,
             presence_penalty=0,
+            reasoning_effort="medium",
             repetition_penalty=0,
             response_format={
                 "schema": {"foo": "bar"},
@@ -361,6 +364,7 @@ class TestAsyncCompletions:
             min_p=0,
             n=1,
             presence_penalty=0,
+            reasoning_effort="medium",
             repetition_penalty=0,
             response_format={
                 "schema": {"foo": "bar"},

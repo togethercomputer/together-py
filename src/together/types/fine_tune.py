@@ -47,6 +47,10 @@ class FineTune(BaseModel):
 
     from_checkpoint: Optional[str] = None
 
+    from_hf_model: Optional[str] = None
+
+    hf_model_revision: Optional[str] = None
+
     job_id: Optional[str] = None
 
     learning_rate: Optional[float] = None

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import List, Union
 from typing_extensions import Literal, Required, TypedDict
 
 from ..._types import FileTypes
@@ -31,8 +32,9 @@ class TranslationCreateParams(TypedDict, total=False):
     temperature: float
     """Sampling temperature between 0.0 and 1.0"""
 
-    timestamp_granularities: Literal["segment", "word"]
+    timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]]
     """Controls level of timestamp detail in verbose_json.
 
-    Only used when response_format is verbose_json.
+    Only used when response_format is verbose_json. Can be a single granularity or
+    an array to get multiple levels.
     """

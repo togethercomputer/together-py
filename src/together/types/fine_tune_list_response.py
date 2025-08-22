@@ -52,6 +52,12 @@ class Data(BaseModel):
     from_checkpoint: Optional[str] = None
     """Checkpoint used to continue training"""
 
+    from_hf_model: Optional[str] = None
+    """Hugging Face Hub repo to start training from"""
+
+    hf_model_revision: Optional[str] = None
+    """The revision of the Hugging Face Hub model to continue training from"""
+
     learning_rate: Optional[float] = None
     """Learning rate used for training"""
 
