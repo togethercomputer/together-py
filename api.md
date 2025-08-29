@@ -259,3 +259,38 @@ Methods:
 - <code title="post /batches">client.batches.<a href="./src/together/resources/batches.py">create</a>(\*\*<a href="src/together/types/batch_create_params.py">params</a>) -> <a href="./src/together/types/batch_create_response.py">BatchCreateResponse</a></code>
 - <code title="get /batches/{id}">client.batches.<a href="./src/together/resources/batches.py">retrieve</a>(id) -> <a href="./src/together/types/batch_retrieve_response.py">BatchRetrieveResponse</a></code>
 - <code title="get /batches">client.batches.<a href="./src/together/resources/batches.py">list</a>() -> <a href="./src/together/types/batch_list_response.py">BatchListResponse</a></code>
+
+# Evaluation
+
+Types:
+
+```python
+from together.types import (
+    EvaluationJudgeModelConfig,
+    EvaluationModelRequest,
+    EvaluationCreateResponse,
+    EvaluationRetrieveResponse,
+    EvaluationGetStatusResponse,
+    EvaluationUpdateStatusResponse,
+)
+```
+
+Methods:
+
+- <code title="post /evaluation">client.evaluation.<a href="./src/together/resources/evaluation.py">create</a>(\*\*<a href="src/together/types/evaluation_create_params.py">params</a>) -> <a href="./src/together/types/evaluation_create_response.py">EvaluationCreateResponse</a></code>
+- <code title="get /evaluation/{id}">client.evaluation.<a href="./src/together/resources/evaluation.py">retrieve</a>(id) -> <a href="./src/together/types/evaluation_retrieve_response.py">EvaluationRetrieveResponse</a></code>
+- <code title="get /evaluation/{id}/status">client.evaluation.<a href="./src/together/resources/evaluation.py">get_status</a>(id) -> <a href="./src/together/types/evaluation_get_status_response.py">EvaluationGetStatusResponse</a></code>
+- <code title="post /evaluation/{id}/update">client.evaluation.<a href="./src/together/resources/evaluation.py">update_status</a>(id, \*\*<a href="src/together/types/evaluation_update_status_params.py">params</a>) -> <a href="./src/together/types/evaluation_update_status_response.py">EvaluationUpdateStatusResponse</a></code>
+
+# Evaluations
+
+Types:
+
+```python
+from together.types import EvaluationListResponse, EvaluationGetAllowedModelsResponse
+```
+
+Methods:
+
+- <code title="get /evaluations">client.evaluations.<a href="./src/together/resources/evaluations.py">list</a>(\*\*<a href="src/together/types/evaluation_list_params.py">params</a>) -> <a href="./src/together/types/evaluation_list_response.py">EvaluationListResponse</a></code>
+- <code title="get /evaluations/model-list">client.evaluations.<a href="./src/together/resources/evaluations.py">get_allowed_models</a>() -> <a href="./src/together/types/evaluation_get_allowed_models_response.py">EvaluationGetAllowedModelsResponse</a></code>
