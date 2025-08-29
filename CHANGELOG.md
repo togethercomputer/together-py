@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0-alpha.17 (2025-08-29)
+
+Full Changelog: [v0.1.0-alpha.16...v0.1.0-alpha.17](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.16...v0.1.0-alpha.17)
+
+### Features
+
+* **api:** add evals api to config ([a4c2938](https://github.com/togethercomputer/together-py/commit/a4c2938a7d9cd9e61c1510210cd62367c1f46bea))
+
+
+### Bug Fixes
+
+* avoid newer type syntax ([8723398](https://github.com/togethercomputer/together-py/commit/8723398a6f3e7143e999abe2a7d3aec5dae9d6c1))
+
+
+### Chores
+
+* **internal:** change ci workflow machines ([7e0823d](https://github.com/togethercomputer/together-py/commit/7e0823d056c11ab3b348376f684c40fd1083be92))
+
 ## 0.1.0-alpha.16 (2025-08-21)
 
 Full Changelog: [v0.1.0-alpha.15...v0.1.0-alpha.16](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.15...v0.1.0-alpha.16)
