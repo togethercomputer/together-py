@@ -42,7 +42,7 @@ chat_completion = client.chat.completions.create(
             "content": "Say this is a test!",
         }
     ],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 )
 print(chat_completion.choices)
 ```
@@ -74,7 +74,7 @@ async def main() -> None:
                 "content": "Say this is a test!",
             }
         ],
-        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     )
     print(chat_completion.choices)
 
@@ -115,7 +115,7 @@ async def main() -> None:
                     "content": "Say this is a test!",
                 }
             ],
-            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         )
         print(chat_completion.choices)
 
@@ -139,7 +139,7 @@ stream = client.chat.completions.create(
             "content": "Say this is a test",
         }
     ],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     stream=True,
 )
 for chat_completion in stream:
@@ -160,7 +160,7 @@ stream = await client.chat.completions.create(
             "content": "Say this is a test",
         }
     ],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     stream=True,
 )
 async for chat_completion in stream:
@@ -240,7 +240,7 @@ try:
                 "content": "Say this is a test",
             }
         ],
-        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     )
 except together.APIConnectionError as e:
     print("The server could not be reached")
@@ -291,7 +291,7 @@ client.with_options(max_retries=5).chat.completions.create(
             "content": "Say this is a test",
         }
     ],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 )
 ```
 
@@ -322,7 +322,7 @@ client.with_options(timeout=5.0).chat.completions.create(
             "content": "Say this is a test",
         }
     ],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 )
 ```
 
@@ -369,7 +369,7 @@ response = client.chat.completions.with_raw_response.create(
         "role": "user",
         "content": "Say this is a test",
     }],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 )
 print(response.headers.get('X-My-Header'))
 
@@ -395,7 +395,7 @@ with client.chat.completions.with_streaming_response.create(
             "content": "Say this is a test",
         }
     ],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 ) as response:
     print(response.headers.get("X-My-Header"))
 

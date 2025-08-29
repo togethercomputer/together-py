@@ -88,6 +88,14 @@ from .embeddings import (
     EmbeddingsResourceWithStreamingResponse,
     AsyncEmbeddingsResourceWithStreamingResponse,
 )
+from .evaluation import (
+    EvaluationResource,
+    AsyncEvaluationResource,
+    EvaluationResourceWithRawResponse,
+    AsyncEvaluationResourceWithRawResponse,
+    EvaluationResourceWithStreamingResponse,
+    AsyncEvaluationResourceWithStreamingResponse,
+)
 from .completions import (
     CompletionsResource,
     AsyncCompletionsResource,
@@ -95,6 +103,14 @@ from .completions import (
     AsyncCompletionsResourceWithRawResponse,
     CompletionsResourceWithStreamingResponse,
     AsyncCompletionsResourceWithStreamingResponse,
+)
+from .evaluations import (
+    EvaluationsResource,
+    AsyncEvaluationsResource,
+    EvaluationsResourceWithRawResponse,
+    AsyncEvaluationsResourceWithRawResponse,
+    EvaluationsResourceWithStreamingResponse,
+    AsyncEvaluationsResourceWithStreamingResponse,
 )
 from .code_interpreter import (
     CodeInterpreterResource,
@@ -184,4 +200,16 @@ __all__ = [
     "AsyncBatchesResourceWithRawResponse",
     "BatchesResourceWithStreamingResponse",
     "AsyncBatchesResourceWithStreamingResponse",
+    "EvaluationResource",
+    "AsyncEvaluationResource",
+    "EvaluationResourceWithRawResponse",
+    "AsyncEvaluationResourceWithRawResponse",
+    "EvaluationResourceWithStreamingResponse",
+    "AsyncEvaluationResourceWithStreamingResponse",
+    "EvaluationsResource",
+    "AsyncEvaluationsResource",
+    "EvaluationsResourceWithRawResponse",
+    "AsyncEvaluationsResourceWithRawResponse",
+    "EvaluationsResourceWithStreamingResponse",
+    "AsyncEvaluationsResourceWithStreamingResponse",
 ]

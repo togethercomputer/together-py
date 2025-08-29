@@ -36,7 +36,20 @@ from ._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .resources import jobs, files, images, models, batches, hardware, endpoints, fine_tune, embeddings, completions
+from .resources import (
+    jobs,
+    files,
+    images,
+    models,
+    batches,
+    hardware,
+    endpoints,
+    fine_tune,
+    embeddings,
+    evaluation,
+    completions,
+    evaluations,
+)
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -76,6 +89,8 @@ class Together(SyncAPIClient):
     endpoints: endpoints.EndpointsResource
     hardware: hardware.HardwareResource
     batches: batches.BatchesResource
+    evaluation: evaluation.EvaluationResource
+    evaluations: evaluations.EvaluationsResource
     with_raw_response: TogetherWithRawResponse
     with_streaming_response: TogetherWithStreamedResponse
 
@@ -148,6 +163,8 @@ class Together(SyncAPIClient):
         self.endpoints = endpoints.EndpointsResource(self)
         self.hardware = hardware.HardwareResource(self)
         self.batches = batches.BatchesResource(self)
+        self.evaluation = evaluation.EvaluationResource(self)
+        self.evaluations = evaluations.EvaluationsResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
         self.with_streaming_response = TogetherWithStreamedResponse(self)
 
@@ -332,6 +349,8 @@ class AsyncTogether(AsyncAPIClient):
     endpoints: endpoints.AsyncEndpointsResource
     hardware: hardware.AsyncHardwareResource
     batches: batches.AsyncBatchesResource
+    evaluation: evaluation.AsyncEvaluationResource
+    evaluations: evaluations.AsyncEvaluationsResource
     with_raw_response: AsyncTogetherWithRawResponse
     with_streaming_response: AsyncTogetherWithStreamedResponse
 
@@ -404,6 +423,8 @@ class AsyncTogether(AsyncAPIClient):
         self.endpoints = endpoints.AsyncEndpointsResource(self)
         self.hardware = hardware.AsyncHardwareResource(self)
         self.batches = batches.AsyncBatchesResource(self)
+        self.evaluation = evaluation.AsyncEvaluationResource(self)
+        self.evaluations = evaluations.AsyncEvaluationsResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
 
@@ -589,6 +610,8 @@ class TogetherWithRawResponse:
         self.endpoints = endpoints.EndpointsResourceWithRawResponse(client.endpoints)
         self.hardware = hardware.HardwareResourceWithRawResponse(client.hardware)
         self.batches = batches.BatchesResourceWithRawResponse(client.batches)
+        self.evaluation = evaluation.EvaluationResourceWithRawResponse(client.evaluation)
+        self.evaluations = evaluations.EvaluationsResourceWithRawResponse(client.evaluations)
 
         self.rerank = to_raw_response_wrapper(
             client.rerank,
@@ -610,6 +633,8 @@ class AsyncTogetherWithRawResponse:
         self.endpoints = endpoints.AsyncEndpointsResourceWithRawResponse(client.endpoints)
         self.hardware = hardware.AsyncHardwareResourceWithRawResponse(client.hardware)
         self.batches = batches.AsyncBatchesResourceWithRawResponse(client.batches)
+        self.evaluation = evaluation.AsyncEvaluationResourceWithRawResponse(client.evaluation)
+        self.evaluations = evaluations.AsyncEvaluationsResourceWithRawResponse(client.evaluations)
 
         self.rerank = async_to_raw_response_wrapper(
             client.rerank,
@@ -631,6 +656,8 @@ class TogetherWithStreamedResponse:
         self.endpoints = endpoints.EndpointsResourceWithStreamingResponse(client.endpoints)
         self.hardware = hardware.HardwareResourceWithStreamingResponse(client.hardware)
         self.batches = batches.BatchesResourceWithStreamingResponse(client.batches)
+        self.evaluation = evaluation.EvaluationResourceWithStreamingResponse(client.evaluation)
+        self.evaluations = evaluations.EvaluationsResourceWithStreamingResponse(client.evaluations)
 
         self.rerank = to_streamed_response_wrapper(
             client.rerank,
@@ -654,6 +681,8 @@ class AsyncTogetherWithStreamedResponse:
         self.endpoints = endpoints.AsyncEndpointsResourceWithStreamingResponse(client.endpoints)
         self.hardware = hardware.AsyncHardwareResourceWithStreamingResponse(client.hardware)
         self.batches = batches.AsyncBatchesResourceWithStreamingResponse(client.batches)
+        self.evaluation = evaluation.AsyncEvaluationResourceWithStreamingResponse(client.evaluation)
+        self.evaluations = evaluations.AsyncEvaluationsResourceWithStreamingResponse(client.evaluations)
 
         self.rerank = async_to_streamed_response_wrapper(
             client.rerank,
