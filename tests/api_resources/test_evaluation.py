@@ -22,6 +22,7 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestEvaluation:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled")    
     @parametrize
     def test_method_create(self, client: Together) -> None:
         evaluation = client.evaluation.create(
@@ -38,6 +39,7 @@ class TestEvaluation:
         )
         assert_matches_type(EvaluationCreateResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         evaluation = client.evaluation.create(
@@ -55,6 +57,7 @@ class TestEvaluation:
         )
         assert_matches_type(EvaluationCreateResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.evaluation.with_raw_response.create(
@@ -75,6 +78,7 @@ class TestEvaluation:
         evaluation = response.parse()
         assert_matches_type(EvaluationCreateResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.evaluation.with_streaming_response.create(
@@ -97,6 +101,7 @@ class TestEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
         evaluation = client.evaluation.retrieve(
@@ -104,6 +109,7 @@ class TestEvaluation:
         )
         assert_matches_type(EvaluationRetrieveResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
         response = client.evaluation.with_raw_response.retrieve(
@@ -115,6 +121,7 @@ class TestEvaluation:
         evaluation = response.parse()
         assert_matches_type(EvaluationRetrieveResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
         with client.evaluation.with_streaming_response.retrieve(
@@ -128,6 +135,7 @@ class TestEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_path_params_retrieve(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
@@ -135,6 +143,7 @@ class TestEvaluation:
                 "",
             )
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_method_get_status(self, client: Together) -> None:
         evaluation = client.evaluation.get_status(
@@ -142,6 +151,7 @@ class TestEvaluation:
         )
         assert_matches_type(EvaluationGetStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_raw_response_get_status(self, client: Together) -> None:
         response = client.evaluation.with_raw_response.get_status(
@@ -153,6 +163,7 @@ class TestEvaluation:
         evaluation = response.parse()
         assert_matches_type(EvaluationGetStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_streaming_response_get_status(self, client: Together) -> None:
         with client.evaluation.with_streaming_response.get_status(
@@ -166,6 +177,7 @@ class TestEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_path_params_get_status(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
@@ -173,6 +185,7 @@ class TestEvaluation:
                 "",
             )
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_method_update_status(self, client: Together) -> None:
         evaluation = client.evaluation.update_status(
@@ -181,6 +194,7 @@ class TestEvaluation:
         )
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_method_update_status_with_all_params(self, client: Together) -> None:
         evaluation = client.evaluation.update_status(
@@ -191,6 +205,7 @@ class TestEvaluation:
         )
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_raw_response_update_status(self, client: Together) -> None:
         response = client.evaluation.with_raw_response.update_status(
@@ -203,6 +218,7 @@ class TestEvaluation:
         evaluation = response.parse()
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_streaming_response_update_status(self, client: Together) -> None:
         with client.evaluation.with_streaming_response.update_status(
@@ -217,6 +233,7 @@ class TestEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     def test_path_params_update_status(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
@@ -231,6 +248,7 @@ class TestAsyncEvaluation:
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         evaluation = await async_client.evaluation.create(
@@ -247,6 +265,7 @@ class TestAsyncEvaluation:
         )
         assert_matches_type(EvaluationCreateResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         evaluation = await async_client.evaluation.create(
@@ -264,6 +283,7 @@ class TestAsyncEvaluation:
         )
         assert_matches_type(EvaluationCreateResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.evaluation.with_raw_response.create(
@@ -284,6 +304,7 @@ class TestAsyncEvaluation:
         evaluation = await response.parse()
         assert_matches_type(EvaluationCreateResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.evaluation.with_streaming_response.create(
@@ -306,6 +327,7 @@ class TestAsyncEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
         evaluation = await async_client.evaluation.retrieve(
@@ -313,6 +335,7 @@ class TestAsyncEvaluation:
         )
         assert_matches_type(EvaluationRetrieveResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
         response = await async_client.evaluation.with_raw_response.retrieve(
@@ -324,6 +347,7 @@ class TestAsyncEvaluation:
         evaluation = await response.parse()
         assert_matches_type(EvaluationRetrieveResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
         async with async_client.evaluation.with_streaming_response.retrieve(
@@ -337,6 +361,7 @@ class TestAsyncEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_path_params_retrieve(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
@@ -344,6 +369,7 @@ class TestAsyncEvaluation:
                 "",
             )
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_method_get_status(self, async_client: AsyncTogether) -> None:
         evaluation = await async_client.evaluation.get_status(
@@ -351,6 +377,7 @@ class TestAsyncEvaluation:
         )
         assert_matches_type(EvaluationGetStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_raw_response_get_status(self, async_client: AsyncTogether) -> None:
         response = await async_client.evaluation.with_raw_response.get_status(
@@ -362,6 +389,7 @@ class TestAsyncEvaluation:
         evaluation = await response.parse()
         assert_matches_type(EvaluationGetStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_streaming_response_get_status(self, async_client: AsyncTogether) -> None:
         async with async_client.evaluation.with_streaming_response.get_status(
@@ -375,6 +403,7 @@ class TestAsyncEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_path_params_get_status(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
@@ -382,6 +411,7 @@ class TestAsyncEvaluation:
                 "",
             )
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_method_update_status(self, async_client: AsyncTogether) -> None:
         evaluation = await async_client.evaluation.update_status(
@@ -390,6 +420,7 @@ class TestAsyncEvaluation:
         )
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_method_update_status_with_all_params(self, async_client: AsyncTogether) -> None:
         evaluation = await async_client.evaluation.update_status(
@@ -400,6 +431,7 @@ class TestAsyncEvaluation:
         )
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_raw_response_update_status(self, async_client: AsyncTogether) -> None:
         response = await async_client.evaluation.with_raw_response.update_status(
@@ -412,6 +444,7 @@ class TestAsyncEvaluation:
         evaluation = await response.parse()
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_streaming_response_update_status(self, async_client: AsyncTogether) -> None:
         async with async_client.evaluation.with_streaming_response.update_status(
@@ -426,6 +459,7 @@ class TestAsyncEvaluation:
 
         assert cast(Any, response.is_closed) is True
 
+    @pytest.mark.skip(reason="Prism tests are disabled") 
     @parametrize
     async def test_path_params_update_status(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
