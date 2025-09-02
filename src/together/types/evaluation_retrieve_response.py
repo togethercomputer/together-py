@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Union, Optional
+from typing import Dict, List, Union, Optional
 from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
@@ -13,6 +13,7 @@ __all__ = [
     "Results",
     "ResultsEvaluationClassifyResults",
     "ResultsEvaluationScoreResults",
+    "ResultsEvaluationScoreResultsAggregatedScores",
     "ResultsEvaluationCompareResults",
     "ResultsError",
     "StatusUpdate",
@@ -39,9 +40,16 @@ class ResultsEvaluationClassifyResults(BaseModel):
     """Data File ID"""
 
 
+class ResultsEvaluationScoreResultsAggregatedScores(BaseModel):
+    mean_score: Optional[float] = None
+
+    pass_percentage: Optional[float] = None
+
+    std_score: Optional[float] = None
+
+
 class ResultsEvaluationScoreResults(BaseModel):
-    aggregated_scores: Optional[object] = None
-    """Aggregated score statistics"""
+    aggregated_scores: Optional[ResultsEvaluationScoreResultsAggregatedScores] = None
 
     failed_samples: Optional[float] = None
     """number of failed samples generated from model"""
@@ -109,7 +117,7 @@ class EvaluationRetrieveResponse(BaseModel):
     owner_id: Optional[str] = None
     """ID of the job owner (admin only)"""
 
-    parameters: Optional[object] = None
+    parameters: Optional[Dict[str, object]] = None
     """The parameters used for this evaluation"""
 
     results: Optional[Results] = None
