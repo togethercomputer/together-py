@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Union, Optional
+from typing import Dict, List, Union, Optional
 from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
@@ -14,6 +14,7 @@ __all__ = [
     "EvaluationListResponseItemResults",
     "EvaluationListResponseItemResultsEvaluationClassifyResults",
     "EvaluationListResponseItemResultsEvaluationScoreResults",
+    "EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores",
     "EvaluationListResponseItemResultsEvaluationCompareResults",
     "EvaluationListResponseItemResultsError",
     "EvaluationListResponseItemStatusUpdate",
@@ -40,9 +41,16 @@ class EvaluationListResponseItemResultsEvaluationClassifyResults(BaseModel):
     """Data File ID"""
 
 
+class EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores(BaseModel):
+    mean_score: Optional[float] = None
+
+    pass_percentage: Optional[float] = None
+
+    std_score: Optional[float] = None
+
+
 class EvaluationListResponseItemResultsEvaluationScoreResults(BaseModel):
-    aggregated_scores: Optional[object] = None
-    """Aggregated score statistics"""
+    aggregated_scores: Optional[EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores] = None
 
     failed_samples: Optional[float] = None
     """number of failed samples generated from model"""
@@ -114,7 +122,7 @@ class EvaluationListResponseItem(BaseModel):
     owner_id: Optional[str] = None
     """ID of the job owner (admin only)"""
 
-    parameters: Optional[object] = None
+    parameters: Optional[Dict[str, object]] = None
     """The parameters used for this evaluation"""
 
     results: Optional[EvaluationListResponseItemResults] = None

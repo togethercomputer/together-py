@@ -201,7 +201,14 @@ class TestEvaluation:
             id="id",
             status="completed",
             error="error",
-            results={},
+            results={
+                "generation_fail_count": 0,
+                "invalid_label_count": 0,
+                "judge_fail_count": 0,
+                "label_counts": '{"yes": 10, "no": 0}',
+                "pass_percentage": 10,
+                "result_file_id": "file-1234-aefd",
+            },
         )
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
@@ -427,7 +434,14 @@ class TestAsyncEvaluation:
             id="id",
             status="completed",
             error="error",
-            results={},
+            results={
+                "generation_fail_count": 0,
+                "invalid_label_count": 0,
+                "judge_fail_count": 0,
+                "label_counts": '{"yes": 10, "no": 0}',
+                "pass_percentage": 10,
+                "result_file_id": "file-1234-aefd",
+            },
         )
         assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
 
