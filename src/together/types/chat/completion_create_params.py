@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Union, Iterable, Optional
+from typing import Dict, Union, Iterable, Optional
 from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
+from ..._types import SequenceNotStr
 from ..tools_param import ToolsParam
 from ..tool_choice_param import ToolChoiceParam
 from .chat_completion_structured_message_text_param import ChatCompletionStructuredMessageTextParam
@@ -128,7 +129,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     seed: int
     """Seed value for reproducibility."""
 
-    stop: List[str]
+    stop: SequenceNotStr[str]
     """A list of string sequences that will truncate (stop) inference text output.
 
     For example, "</s>" will stop generation as soon as the model generates the
