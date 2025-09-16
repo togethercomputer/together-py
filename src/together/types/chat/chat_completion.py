@@ -25,6 +25,8 @@ class ChoiceMessage(BaseModel):
 
     function_call: Optional[ChoiceMessageFunctionCall] = None
 
+    reasoning: Optional[str] = None
+
     tool_calls: Optional[List[ToolChoice]] = None
 
 
