@@ -8,7 +8,7 @@ from typing_extensions import Literal
 import httpx
 
 from ..types import image_create_params
-from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -56,24 +56,24 @@ class ImagesResource(SyncAPIResource):
             str,
         ],
         prompt: str,
-        disable_safety_checker: bool | NotGiven = NOT_GIVEN,
-        guidance_scale: float | NotGiven = NOT_GIVEN,
-        height: int | NotGiven = NOT_GIVEN,
-        image_loras: Iterable[image_create_params.ImageLora] | NotGiven = NOT_GIVEN,
-        image_url: str | NotGiven = NOT_GIVEN,
-        n: int | NotGiven = NOT_GIVEN,
-        negative_prompt: str | NotGiven = NOT_GIVEN,
-        output_format: Literal["jpeg", "png"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["base64", "url"] | NotGiven = NOT_GIVEN,
-        seed: int | NotGiven = NOT_GIVEN,
-        steps: int | NotGiven = NOT_GIVEN,
-        width: int | NotGiven = NOT_GIVEN,
+        disable_safety_checker: bool | Omit = omit,
+        guidance_scale: float | Omit = omit,
+        height: int | Omit = omit,
+        image_loras: Iterable[image_create_params.ImageLora] | Omit = omit,
+        image_url: str | Omit = omit,
+        n: int | Omit = omit,
+        negative_prompt: str | Omit = omit,
+        output_format: Literal["jpeg", "png"] | Omit = omit,
+        response_format: Literal["base64", "url"] | Omit = omit,
+        seed: int | Omit = omit,
+        steps: int | Omit = omit,
+        width: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ImageFile:
         """
         Use an image model to generate an image for a given prompt.
@@ -181,24 +181,24 @@ class AsyncImagesResource(AsyncAPIResource):
             str,
         ],
         prompt: str,
-        disable_safety_checker: bool | NotGiven = NOT_GIVEN,
-        guidance_scale: float | NotGiven = NOT_GIVEN,
-        height: int | NotGiven = NOT_GIVEN,
-        image_loras: Iterable[image_create_params.ImageLora] | NotGiven = NOT_GIVEN,
-        image_url: str | NotGiven = NOT_GIVEN,
-        n: int | NotGiven = NOT_GIVEN,
-        negative_prompt: str | NotGiven = NOT_GIVEN,
-        output_format: Literal["jpeg", "png"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["base64", "url"] | NotGiven = NOT_GIVEN,
-        seed: int | NotGiven = NOT_GIVEN,
-        steps: int | NotGiven = NOT_GIVEN,
-        width: int | NotGiven = NOT_GIVEN,
+        disable_safety_checker: bool | Omit = omit,
+        guidance_scale: float | Omit = omit,
+        height: int | Omit = omit,
+        image_loras: Iterable[image_create_params.ImageLora] | Omit = omit,
+        image_url: str | Omit = omit,
+        n: int | Omit = omit,
+        negative_prompt: str | Omit = omit,
+        output_format: Literal["jpeg", "png"] | Omit = omit,
+        response_format: Literal["base64", "url"] | Omit = omit,
+        seed: int | Omit = omit,
+        steps: int | Omit = omit,
+        width: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ImageFile:
         """
         Use an image model to generate an image for a given prompt.

@@ -10,7 +10,7 @@ import httpx
 
 from ..lib import FileTypeError, check_file
 from ..types import FileType, FilePurpose, file_upload_params
-from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven, FileTypes
+from .._types import Body, Omit, Query, Headers, NotGiven, FileTypes, omit, not_given
 from .._utils import extract_files, maybe_transform, deepcopy_minimal, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -68,7 +68,7 @@ class FilesResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileRetrieveResponse:
         """
         List the metadata for a single uploaded data file.
@@ -100,7 +100,7 @@ class FilesResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileListResponse:
         """List the metadata for all uploaded data files."""
         return self._get(
@@ -120,7 +120,7 @@ class FilesResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileDeleteResponse:
         """
         Delete a previously uploaded data file.
@@ -175,7 +175,7 @@ class FilesResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> BinaryAPIResponse:
         """
         Get the contents of a single uploaded data file.
@@ -206,13 +206,13 @@ class FilesResource(SyncAPIResource):
         file: FileTypes,
         file_name: str,
         purpose: FilePurpose,
-        file_type: FileType | NotGiven = NOT_GIVEN,
+        file_type: FileType | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileUploadResponse:
         """
         Upload a file with specified purpose, file name, and file type.
@@ -287,7 +287,7 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileRetrieveResponse:
         """
         List the metadata for a single uploaded data file.
@@ -319,7 +319,7 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileListResponse:
         """List the metadata for all uploaded data files."""
         return await self._get(
@@ -339,7 +339,7 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileDeleteResponse:
         """
         Delete a previously uploaded data file.
@@ -394,7 +394,7 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncBinaryAPIResponse:
         """
         Get the contents of a single uploaded data file.
@@ -425,13 +425,13 @@ class AsyncFilesResource(AsyncAPIResource):
         file: FileTypes,
         file_name: str,
         purpose: FilePurpose,
-        file_type: FileType | NotGiven = NOT_GIVEN,
+        file_type: FileType | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileUploadResponse:
         """
         Upload a file with specified purpose, file name, and file type.

@@ -8,7 +8,7 @@ from typing_extensions import Literal, overload
 import httpx
 
 from ...types import audio_create_params
-from ..._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from ..._utils import required_args, maybe_transform, async_maybe_transform
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
@@ -81,17 +81,17 @@ class AudioResource(SyncAPIResource):
         model: Union[Literal["cartesia/sonic"], str],
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
+        stream: Literal[False] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> BinaryAPIResponse:
         """
         Generate audio from input text
@@ -137,16 +137,16 @@ class AudioResource(SyncAPIResource):
         stream: Literal[True],
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Stream[AudioSpeechStreamChunk]:
         """
         Generate audio from input text
@@ -192,16 +192,16 @@ class AudioResource(SyncAPIResource):
         stream: bool,
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> BinaryAPIResponse | Stream[AudioSpeechStreamChunk]:
         """
         Generate audio from input text
@@ -246,17 +246,17 @@ class AudioResource(SyncAPIResource):
         model: Union[Literal["cartesia/sonic"], str],
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
+        stream: Literal[False] | Literal[True] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> BinaryAPIResponse | Stream[AudioSpeechStreamChunk]:
         extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return self._post(
@@ -321,17 +321,17 @@ class AsyncAudioResource(AsyncAPIResource):
         model: Union[Literal["cartesia/sonic"], str],
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
+        stream: Literal[False] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncBinaryAPIResponse:
         """
         Generate audio from input text
@@ -377,16 +377,16 @@ class AsyncAudioResource(AsyncAPIResource):
         stream: Literal[True],
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncStream[AudioSpeechStreamChunk]:
         """
         Generate audio from input text
@@ -432,16 +432,16 @@ class AsyncAudioResource(AsyncAPIResource):
         stream: bool,
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncBinaryAPIResponse | AsyncStream[AudioSpeechStreamChunk]:
         """
         Generate audio from input text
@@ -486,17 +486,17 @@ class AsyncAudioResource(AsyncAPIResource):
         model: Union[Literal["cartesia/sonic"], str],
         voice: Union[Literal["laidback woman", "polite man", "storyteller lady", "friendly sidekick"], str],
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-        | NotGiven = NOT_GIVEN,
-        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | NotGiven = NOT_GIVEN,
-        response_format: Literal["mp3", "wav", "raw"] | NotGiven = NOT_GIVEN,
-        sample_rate: float | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
+        | Omit = omit,
+        response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
+        response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
+        sample_rate: float | Omit = omit,
+        stream: Literal[False] | Literal[True] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncBinaryAPIResponse | AsyncStream[AudioSpeechStreamChunk]:
         extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return await self._post(

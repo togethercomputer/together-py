@@ -9,7 +9,7 @@ from .lib import (
     FinetuneTrainingLimits,
     create_finetune_request,
 )
-from ._types import NOT_GIVEN, Omit, NoneType, NotGiven, Transport, ProxiesTypes
+from ._types import NOT_GIVEN, Omit, NoneType, NotGiven, Transport, ProxiesTypes, omit, not_given
 from ._utils import file_from_path
 from ._client import (
     Client,
@@ -54,7 +54,9 @@ __all__ = [
     "ProxiesTypes",
     "NotGiven",
     "NOT_GIVEN",
+    "not_given",
     "Omit",
+    "omit",
     "TogetherError",
     "APIError",
     "APIStatusError",
