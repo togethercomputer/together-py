@@ -8,7 +8,7 @@ from typing_extensions import Literal
 import httpx
 
 from ..types import fine_tune_create_params, fine_tune_download_params
-from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -56,35 +56,35 @@ class FineTuneResource(SyncAPIResource):
         *,
         model: str,
         training_file: str,
-        batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
-        from_checkpoint: str | NotGiven = NOT_GIVEN,
-        from_hf_model: str | NotGiven = NOT_GIVEN,
-        hf_api_token: str | NotGiven = NOT_GIVEN,
-        hf_model_revision: str | NotGiven = NOT_GIVEN,
-        hf_output_repo_name: str | NotGiven = NOT_GIVEN,
-        learning_rate: float | NotGiven = NOT_GIVEN,
-        lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
-        max_grad_norm: float | NotGiven = NOT_GIVEN,
-        n_checkpoints: int | NotGiven = NOT_GIVEN,
-        n_epochs: int | NotGiven = NOT_GIVEN,
-        n_evals: int | NotGiven = NOT_GIVEN,
-        suffix: str | NotGiven = NOT_GIVEN,
-        train_on_inputs: Union[bool, Literal["auto"]] | NotGiven = NOT_GIVEN,
-        training_method: fine_tune_create_params.TrainingMethod | NotGiven = NOT_GIVEN,
-        training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
-        validation_file: str | NotGiven = NOT_GIVEN,
-        wandb_api_key: str | NotGiven = NOT_GIVEN,
-        wandb_base_url: str | NotGiven = NOT_GIVEN,
-        wandb_name: str | NotGiven = NOT_GIVEN,
-        wandb_project_name: str | NotGiven = NOT_GIVEN,
-        warmup_ratio: float | NotGiven = NOT_GIVEN,
-        weight_decay: float | NotGiven = NOT_GIVEN,
+        batch_size: Union[int, Literal["max"]] | Omit = omit,
+        from_checkpoint: str | Omit = omit,
+        from_hf_model: str | Omit = omit,
+        hf_api_token: str | Omit = omit,
+        hf_model_revision: str | Omit = omit,
+        hf_output_repo_name: str | Omit = omit,
+        learning_rate: float | Omit = omit,
+        lr_scheduler: LrSchedulerParam | Omit = omit,
+        max_grad_norm: float | Omit = omit,
+        n_checkpoints: int | Omit = omit,
+        n_epochs: int | Omit = omit,
+        n_evals: int | Omit = omit,
+        suffix: str | Omit = omit,
+        train_on_inputs: Union[bool, Literal["auto"]] | Omit = omit,
+        training_method: fine_tune_create_params.TrainingMethod | Omit = omit,
+        training_type: fine_tune_create_params.TrainingType | Omit = omit,
+        validation_file: str | Omit = omit,
+        wandb_api_key: str | Omit = omit,
+        wandb_base_url: str | Omit = omit,
+        wandb_name: str | Omit = omit,
+        wandb_project_name: str | Omit = omit,
+        warmup_ratio: float | Omit = omit,
+        weight_decay: float | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneCreateResponse:
         """
         Create a fine-tuning job with the provided model and training data.
@@ -209,7 +209,7 @@ class FineTuneResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTune:
         """
         List the metadata for a single fine-tuning job.
@@ -241,7 +241,7 @@ class FineTuneResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneListResponse:
         """List the metadata for all fine-tuning jobs.
 
@@ -265,7 +265,7 @@ class FineTuneResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneCancelResponse:
         """Cancel a currently running fine-tuning job.
 
@@ -295,15 +295,15 @@ class FineTuneResource(SyncAPIResource):
         self,
         *,
         ft_id: str,
-        checkpoint: Literal["merged", "adapter"] | NotGiven = NOT_GIVEN,
-        checkpoint_step: int | NotGiven = NOT_GIVEN,
-        output: str | NotGiven = NOT_GIVEN,
+        checkpoint: Literal["merged", "adapter"] | Omit = omit,
+        checkpoint_step: int | Omit = omit,
+        output: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneDownloadResponse:
         """
         Download a compressed fine-tuned model or checkpoint to local disk.
@@ -357,7 +357,7 @@ class FineTuneResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneListEventsResponse:
         """
         List the events for a single fine-tuning job.
@@ -390,7 +390,7 @@ class FineTuneResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneRetrieveCheckpointsResponse:
         """
         List the checkpoints for a single fine-tuning job.
@@ -440,35 +440,35 @@ class AsyncFineTuneResource(AsyncAPIResource):
         *,
         model: str,
         training_file: str,
-        batch_size: Union[int, Literal["max"]] | NotGiven = NOT_GIVEN,
-        from_checkpoint: str | NotGiven = NOT_GIVEN,
-        from_hf_model: str | NotGiven = NOT_GIVEN,
-        hf_api_token: str | NotGiven = NOT_GIVEN,
-        hf_model_revision: str | NotGiven = NOT_GIVEN,
-        hf_output_repo_name: str | NotGiven = NOT_GIVEN,
-        learning_rate: float | NotGiven = NOT_GIVEN,
-        lr_scheduler: LrSchedulerParam | NotGiven = NOT_GIVEN,
-        max_grad_norm: float | NotGiven = NOT_GIVEN,
-        n_checkpoints: int | NotGiven = NOT_GIVEN,
-        n_epochs: int | NotGiven = NOT_GIVEN,
-        n_evals: int | NotGiven = NOT_GIVEN,
-        suffix: str | NotGiven = NOT_GIVEN,
-        train_on_inputs: Union[bool, Literal["auto"]] | NotGiven = NOT_GIVEN,
-        training_method: fine_tune_create_params.TrainingMethod | NotGiven = NOT_GIVEN,
-        training_type: fine_tune_create_params.TrainingType | NotGiven = NOT_GIVEN,
-        validation_file: str | NotGiven = NOT_GIVEN,
-        wandb_api_key: str | NotGiven = NOT_GIVEN,
-        wandb_base_url: str | NotGiven = NOT_GIVEN,
-        wandb_name: str | NotGiven = NOT_GIVEN,
-        wandb_project_name: str | NotGiven = NOT_GIVEN,
-        warmup_ratio: float | NotGiven = NOT_GIVEN,
-        weight_decay: float | NotGiven = NOT_GIVEN,
+        batch_size: Union[int, Literal["max"]] | Omit = omit,
+        from_checkpoint: str | Omit = omit,
+        from_hf_model: str | Omit = omit,
+        hf_api_token: str | Omit = omit,
+        hf_model_revision: str | Omit = omit,
+        hf_output_repo_name: str | Omit = omit,
+        learning_rate: float | Omit = omit,
+        lr_scheduler: LrSchedulerParam | Omit = omit,
+        max_grad_norm: float | Omit = omit,
+        n_checkpoints: int | Omit = omit,
+        n_epochs: int | Omit = omit,
+        n_evals: int | Omit = omit,
+        suffix: str | Omit = omit,
+        train_on_inputs: Union[bool, Literal["auto"]] | Omit = omit,
+        training_method: fine_tune_create_params.TrainingMethod | Omit = omit,
+        training_type: fine_tune_create_params.TrainingType | Omit = omit,
+        validation_file: str | Omit = omit,
+        wandb_api_key: str | Omit = omit,
+        wandb_base_url: str | Omit = omit,
+        wandb_name: str | Omit = omit,
+        wandb_project_name: str | Omit = omit,
+        warmup_ratio: float | Omit = omit,
+        weight_decay: float | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneCreateResponse:
         """
         Create a fine-tuning job with the provided model and training data.
@@ -593,7 +593,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTune:
         """
         List the metadata for a single fine-tuning job.
@@ -625,7 +625,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneListResponse:
         """List the metadata for all fine-tuning jobs.
 
@@ -649,7 +649,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneCancelResponse:
         """Cancel a currently running fine-tuning job.
 
@@ -679,15 +679,15 @@ class AsyncFineTuneResource(AsyncAPIResource):
         self,
         *,
         ft_id: str,
-        checkpoint: Literal["merged", "adapter"] | NotGiven = NOT_GIVEN,
-        checkpoint_step: int | NotGiven = NOT_GIVEN,
-        output: str | NotGiven = NOT_GIVEN,
+        checkpoint: Literal["merged", "adapter"] | Omit = omit,
+        checkpoint_step: int | Omit = omit,
+        output: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneDownloadResponse:
         """
         Download a compressed fine-tuned model or checkpoint to local disk.
@@ -741,7 +741,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneListEventsResponse:
         """
         List the events for a single fine-tuning job.
@@ -774,7 +774,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FineTuneRetrieveCheckpointsResponse:
         """
         List the checkpoints for a single fine-tuning job.

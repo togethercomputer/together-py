@@ -12,7 +12,6 @@ from . import _exceptions
 from ._qs import Querystring
 from .types import client_rerank_params
 from ._types import (
-    NOT_GIVEN,
     Body,
     Omit,
     Query,
@@ -23,6 +22,8 @@ from ._types import (
     ProxiesTypes,
     RequestOptions,
     SequenceNotStr,
+    omit,
+    not_given,
 )
 from ._utils import (
     is_given,
@@ -103,7 +104,7 @@ class Together(SyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: Union[float, Timeout, None, NotGiven] = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         max_retries: int = DEFAULT_MAX_RETRIES,
         default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -194,9 +195,9 @@ class Together(SyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: float | Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         http_client: httpx.Client | None = None,
-        max_retries: int | NotGiven = NOT_GIVEN,
+        max_retries: int | NotGiven = not_given,
         default_headers: Mapping[str, str] | None = None,
         set_default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -246,15 +247,15 @@ class Together(SyncAPIClient):
         documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
         model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
-        rank_fields: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
-        return_documents: bool | NotGiven = NOT_GIVEN,
-        top_n: int | NotGiven = NOT_GIVEN,
+        rank_fields: SequenceNotStr[str] | Omit = omit,
+        return_documents: bool | Omit = omit,
+        top_n: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RerankResponse:
         """
         Query a reranker model
@@ -363,7 +364,7 @@ class AsyncTogether(AsyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: Union[float, Timeout, None, NotGiven] = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         max_retries: int = DEFAULT_MAX_RETRIES,
         default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -454,9 +455,9 @@ class AsyncTogether(AsyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: float | Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         http_client: httpx.AsyncClient | None = None,
-        max_retries: int | NotGiven = NOT_GIVEN,
+        max_retries: int | NotGiven = not_given,
         default_headers: Mapping[str, str] | None = None,
         set_default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -506,15 +507,15 @@ class AsyncTogether(AsyncAPIClient):
         documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
         model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
-        rank_fields: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
-        return_documents: bool | NotGiven = NOT_GIVEN,
-        top_n: int | NotGiven = NOT_GIVEN,
+        rank_fields: SequenceNotStr[str] | Omit = omit,
+        return_documents: bool | Omit = omit,
+        top_n: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RerankResponse:
         """
         Query a reranker model

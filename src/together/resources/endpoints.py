@@ -8,7 +8,7 @@ from typing_extensions import Literal
 import httpx
 
 from ..types import endpoint_list_params, endpoint_create_params, endpoint_update_params
-from .._types import NOT_GIVEN, Body, Query, Headers, NoneType, NotGiven
+from .._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -54,17 +54,17 @@ class EndpointsResource(SyncAPIResource):
         autoscaling: AutoscalingParam,
         hardware: str,
         model: str,
-        disable_prompt_cache: bool | NotGiven = NOT_GIVEN,
-        disable_speculative_decoding: bool | NotGiven = NOT_GIVEN,
-        display_name: str | NotGiven = NOT_GIVEN,
-        inactive_timeout: Optional[int] | NotGiven = NOT_GIVEN,
-        state: Literal["STARTED", "STOPPED"] | NotGiven = NOT_GIVEN,
+        disable_prompt_cache: bool | Omit = omit,
+        disable_speculative_decoding: bool | Omit = omit,
+        display_name: str | Omit = omit,
+        inactive_timeout: Optional[int] | Omit = omit,
+        state: Literal["STARTED", "STOPPED"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointCreateResponse:
         """Creates a new dedicated endpoint for serving models.
 
@@ -129,7 +129,7 @@ class EndpointsResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointRetrieveResponse:
         """
         Retrieves details about a specific endpoint, including its current state,
@@ -158,16 +158,16 @@ class EndpointsResource(SyncAPIResource):
         self,
         endpoint_id: str,
         *,
-        autoscaling: AutoscalingParam | NotGiven = NOT_GIVEN,
-        display_name: str | NotGiven = NOT_GIVEN,
-        inactive_timeout: Optional[int] | NotGiven = NOT_GIVEN,
-        state: Literal["STARTED", "STOPPED"] | NotGiven = NOT_GIVEN,
+        autoscaling: AutoscalingParam | Omit = omit,
+        display_name: str | Omit = omit,
+        inactive_timeout: Optional[int] | Omit = omit,
+        state: Literal["STARTED", "STOPPED"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointUpdateResponse:
         """Updates an existing endpoint's configuration.
 
@@ -214,13 +214,13 @@ class EndpointsResource(SyncAPIResource):
     def list(
         self,
         *,
-        type: Literal["dedicated", "serverless"] | NotGiven = NOT_GIVEN,
+        type: Literal["dedicated", "serverless"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointListResponse:
         """Returns a list of all endpoints associated with your account.
 
@@ -259,7 +259,7 @@ class EndpointsResource(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> None:
         """Permanently deletes an endpoint.
 
@@ -312,17 +312,17 @@ class AsyncEndpointsResource(AsyncAPIResource):
         autoscaling: AutoscalingParam,
         hardware: str,
         model: str,
-        disable_prompt_cache: bool | NotGiven = NOT_GIVEN,
-        disable_speculative_decoding: bool | NotGiven = NOT_GIVEN,
-        display_name: str | NotGiven = NOT_GIVEN,
-        inactive_timeout: Optional[int] | NotGiven = NOT_GIVEN,
-        state: Literal["STARTED", "STOPPED"] | NotGiven = NOT_GIVEN,
+        disable_prompt_cache: bool | Omit = omit,
+        disable_speculative_decoding: bool | Omit = omit,
+        display_name: str | Omit = omit,
+        inactive_timeout: Optional[int] | Omit = omit,
+        state: Literal["STARTED", "STOPPED"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointCreateResponse:
         """Creates a new dedicated endpoint for serving models.
 
@@ -387,7 +387,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointRetrieveResponse:
         """
         Retrieves details about a specific endpoint, including its current state,
@@ -416,16 +416,16 @@ class AsyncEndpointsResource(AsyncAPIResource):
         self,
         endpoint_id: str,
         *,
-        autoscaling: AutoscalingParam | NotGiven = NOT_GIVEN,
-        display_name: str | NotGiven = NOT_GIVEN,
-        inactive_timeout: Optional[int] | NotGiven = NOT_GIVEN,
-        state: Literal["STARTED", "STOPPED"] | NotGiven = NOT_GIVEN,
+        autoscaling: AutoscalingParam | Omit = omit,
+        display_name: str | Omit = omit,
+        inactive_timeout: Optional[int] | Omit = omit,
+        state: Literal["STARTED", "STOPPED"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointUpdateResponse:
         """Updates an existing endpoint's configuration.
 
@@ -472,13 +472,13 @@ class AsyncEndpointsResource(AsyncAPIResource):
     async def list(
         self,
         *,
-        type: Literal["dedicated", "serverless"] | NotGiven = NOT_GIVEN,
+        type: Literal["dedicated", "serverless"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EndpointListResponse:
         """Returns a list of all endpoints associated with your account.
 
@@ -517,7 +517,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> None:
         """Permanently deletes an endpoint.
 
