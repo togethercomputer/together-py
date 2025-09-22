@@ -65,14 +65,14 @@ class TestBatches:
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
         batch = client.batches.retrieve(
-            "id",
+            "batch_job_abc123def456",
         )
         assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
         response = client.batches.with_raw_response.retrieve(
-            "id",
+            "batch_job_abc123def456",
         )
 
         assert response.is_closed is True
@@ -83,7 +83,7 @@ class TestBatches:
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
         with client.batches.with_streaming_response.retrieve(
-            "id",
+            "batch_job_abc123def456",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -179,14 +179,14 @@ class TestAsyncBatches:
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
         batch = await async_client.batches.retrieve(
-            "id",
+            "batch_job_abc123def456",
         )
         assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
         response = await async_client.batches.with_raw_response.retrieve(
-            "id",
+            "batch_job_abc123def456",
         )
 
         assert response.is_closed is True
@@ -197,7 +197,7 @@ class TestAsyncBatches:
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
         async with async_client.batches.with_streaming_response.retrieve(
-            "id",
+            "batch_job_abc123def456",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"

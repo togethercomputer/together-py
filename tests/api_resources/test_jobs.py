@@ -20,14 +20,14 @@ class TestJobs:
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
         job = client.jobs.retrieve(
-            "jobId",
+            "job-a15dad11-8d8e-4007-97c5-a211304de284",
         )
         assert_matches_type(JobRetrieveResponse, job, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
         response = client.jobs.with_raw_response.retrieve(
-            "jobId",
+            "job-a15dad11-8d8e-4007-97c5-a211304de284",
         )
 
         assert response.is_closed is True
@@ -38,7 +38,7 @@ class TestJobs:
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
         with client.jobs.with_streaming_response.retrieve(
-            "jobId",
+            "job-a15dad11-8d8e-4007-97c5-a211304de284",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -89,14 +89,14 @@ class TestAsyncJobs:
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
         job = await async_client.jobs.retrieve(
-            "jobId",
+            "job-a15dad11-8d8e-4007-97c5-a211304de284",
         )
         assert_matches_type(JobRetrieveResponse, job, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
         response = await async_client.jobs.with_raw_response.retrieve(
-            "jobId",
+            "job-a15dad11-8d8e-4007-97c5-a211304de284",
         )
 
         assert response.is_closed is True
@@ -107,7 +107,7 @@ class TestAsyncJobs:
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
         async with async_client.jobs.with_streaming_response.retrieve(
-            "jobId",
+            "job-a15dad11-8d8e-4007-97c5-a211304de284",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
