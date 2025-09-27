@@ -213,6 +213,16 @@ client.files.upload(
 )
 ```
 
+For larger files (>400MB), use the enhanced `upload_file()` method which supports files up to 25GB with automatic multipart upload:
+
+```python
+# Enhanced method for large files (up to 25GB)
+client.files.upload_file(
+    file=Path("/path/to/large_dataset.jsonl"),
+    purpose="fine-tune",
+)
+```
+
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
 
 ## Handling errors

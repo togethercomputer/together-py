@@ -29,6 +29,9 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
+from ..types.file_type import FileType
+from ..types.file_purpose import FilePurpose
+from ..lib.resources.files import UploadManager, AsyncUploadManager
 from ..types.file_list_response import FileListResponse
 from ..types.file_delete_response import FileDeleteResponse
 from ..types.file_retrieve_response import FileRetrieveResponse
