@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Union
+from typing import Dict, Union
 from typing_extensions import Literal, overload
 
 import httpx
 
 from ..types import completion_create_params
-from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven
+from .._types import NOT_GIVEN, Body, Query, Headers, NotGiven, SequenceNotStr
 from .._utils import required_args, maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -71,7 +71,7 @@ class CompletionsResource(SyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -184,7 +184,7 @@ class CompletionsResource(SyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
@@ -296,7 +296,7 @@ class CompletionsResource(SyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
@@ -407,7 +407,7 @@ class CompletionsResource(SyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -500,7 +500,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
@@ -613,7 +613,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
@@ -725,7 +725,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,
         top_p: float | NotGiven = NOT_GIVEN,
@@ -836,7 +836,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         repetition_penalty: float | NotGiven = NOT_GIVEN,
         safety_model: Union[Literal["Meta-Llama/Llama-Guard-7b"], str] | NotGiven = NOT_GIVEN,
         seed: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
+        stop: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
         temperature: float | NotGiven = NOT_GIVEN,
         top_k: int | NotGiven = NOT_GIVEN,

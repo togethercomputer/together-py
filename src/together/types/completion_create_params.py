@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Union
+from typing import Dict, Union
 from typing_extensions import Literal, Required, TypedDict
+
+from .._types import SequenceNotStr
 
 __all__ = ["CompletionCreateParamsBase", "CompletionCreateParamsNonStreaming", "CompletionCreateParamsStreaming"]
 
@@ -81,7 +83,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     seed: int
     """Seed value for reproducibility."""
 
-    stop: List[str]
+    stop: SequenceNotStr[str]
     """A list of string sequences that will truncate (stop) inference text output.
 
     For example, "</s>" will stop generation as soon as the model generates the

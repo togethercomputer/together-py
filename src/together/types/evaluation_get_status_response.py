@@ -12,6 +12,7 @@ __all__ = [
     "Results",
     "ResultsEvaluationClassifyResults",
     "ResultsEvaluationScoreResults",
+    "ResultsEvaluationScoreResultsAggregatedScores",
     "ResultsEvaluationCompareResults",
     "ResultsError",
 ]
@@ -37,9 +38,16 @@ class ResultsEvaluationClassifyResults(BaseModel):
     """Data File ID"""
 
 
+class ResultsEvaluationScoreResultsAggregatedScores(BaseModel):
+    mean_score: Optional[float] = None
+
+    pass_percentage: Optional[float] = None
+
+    std_score: Optional[float] = None
+
+
 class ResultsEvaluationScoreResults(BaseModel):
-    aggregated_scores: Optional[object] = None
-    """Aggregated score statistics"""
+    aggregated_scores: Optional[ResultsEvaluationScoreResultsAggregatedScores] = None
 
     failed_samples: Optional[float] = None
     """number of failed samples generated from model"""

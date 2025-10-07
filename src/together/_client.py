@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Union, Mapping, Iterable
+from typing import Any, Dict, Union, Mapping, Iterable
 from typing_extensions import Self, Literal, override
 
 import httpx
@@ -22,6 +22,7 @@ from ._types import (
     Transport,
     ProxiesTypes,
     RequestOptions,
+    SequenceNotStr,
 )
 from ._utils import (
     is_given,
@@ -242,10 +243,10 @@ class Together(SyncAPIClient):
     def rerank(
         self,
         *,
-        documents: Union[Iterable[Dict[str, object]], List[str]],
+        documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
         model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
-        rank_fields: List[str] | NotGiven = NOT_GIVEN,
+        rank_fields: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         return_documents: bool | NotGiven = NOT_GIVEN,
         top_n: int | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -502,10 +503,10 @@ class AsyncTogether(AsyncAPIClient):
     async def rerank(
         self,
         *,
-        documents: Union[Iterable[Dict[str, object]], List[str]],
+        documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
         model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
-        rank_fields: List[str] | NotGiven = NOT_GIVEN,
+        rank_fields: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
         return_documents: bool | NotGiven = NOT_GIVEN,
         top_n: int | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.

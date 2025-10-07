@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0-alpha.18 (2025-09-05)
+
+Full Changelog: [v0.1.0-alpha.17...v0.1.0-alpha.18](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.17...v0.1.0-alpha.18)
+
+### Features
+
+* **api:** api update ([4001cfe](https://github.com/togethercomputer/together-py/commit/4001cfedc1059220c6add12bdec35a39e3f21978))
+* improve future compat with pydantic v3 ([384e6b6](https://github.com/togethercomputer/together-py/commit/384e6b6a09e54cbfa19663fb2364833bff7efade))
+* **types:** replace List[str] with SequenceNotStr in params ([b5453b3](https://github.com/togethercomputer/together-py/commit/b5453b3733b752b791f4112afc3738c309dd4779))
+
+
+### Chores
+
+* **internal:** add Sequence related utils ([458cd63](https://github.com/togethercomputer/together-py/commit/458cd63de37a1c9a18a260b73a4db9bd488ed3d3))
+* **internal:** move mypy configurations to `pyproject.toml` file ([7faa161](https://github.com/togethercomputer/together-py/commit/7faa16182cafa4cde1c2e173dccd9570f3272405))
+* **tests:** simplify `get_platform` test ([44ee2e2](https://github.com/togethercomputer/together-py/commit/44ee2e2c21b7989e4db354238505ecdf676d60b4))
+
 ## 0.1.0-alpha.17 (2025-08-29)
 
 Full Changelog: [v0.1.0-alpha.16...v0.1.0-alpha.17](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.16...v0.1.0-alpha.17)

@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Union, Iterable
+from typing import Dict, Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
+
+from .._types import SequenceNotStr
 
 __all__ = ["ClientRerankParams"]
 
 
 class ClientRerankParams(TypedDict, total=False):
-    documents: Required[Union[Iterable[Dict[str, object]], List[str]]]
+    documents: Required[Union[Iterable[Dict[str, object]], SequenceNotStr[str]]]
     """List of documents, which can be either strings or objects."""
 
     model: Required[Union[Literal["Salesforce/Llama-Rank-v1"], str]]
@@ -21,7 +23,7 @@ class ClientRerankParams(TypedDict, total=False):
     query: Required[str]
     """The search query to be used for ranking."""
 
-    rank_fields: List[str]
+    rank_fields: SequenceNotStr[str]
     """List of keys in the JSON Object document to rank by.
 
     Defaults to use all supplied keys for ranking.

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import List, Union
+from typing import Union
 from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
+from .._types import SequenceNotStr
 from .evaluation_model_request_param import EvaluationModelRequestParam
 from .evaluation_judge_model_config_param import EvaluationJudgeModelConfigParam
 
@@ -38,10 +39,10 @@ class ParametersEvaluationClassifyParameters(TypedDict, total=False):
 
     judge: Required[EvaluationJudgeModelConfigParam]
 
-    labels: Required[List[str]]
+    labels: Required[SequenceNotStr[str]]
     """List of possible classification labels"""
 
-    pass_labels: Required[List[str]]
+    pass_labels: Required[SequenceNotStr[str]]
     """List of labels that are considered passing"""
 
     model_to_evaluate: ParametersEvaluationClassifyParametersModelToEvaluate

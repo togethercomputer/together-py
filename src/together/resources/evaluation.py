@@ -161,7 +161,7 @@ class EvaluationResource(SyncAPIResource):
         *,
         status: Literal["completed", "error", "running", "queued", "user_error", "inference_error"],
         error: str | NotGiven = NOT_GIVEN,
-        results: object | NotGiven = NOT_GIVEN,
+        results: evaluation_update_status_params.Results | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -176,8 +176,6 @@ class EvaluationResource(SyncAPIResource):
           status: The new status for the job
 
           error: Error message
-
-          results: Job results (required when status is 'completed')
 
           extra_headers: Send extra headers
 
@@ -341,7 +339,7 @@ class AsyncEvaluationResource(AsyncAPIResource):
         *,
         status: Literal["completed", "error", "running", "queued", "user_error", "inference_error"],
         error: str | NotGiven = NOT_GIVEN,
-        results: object | NotGiven = NOT_GIVEN,
+        results: evaluation_update_status_params.Results | NotGiven = NOT_GIVEN,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -356,8 +354,6 @@ class AsyncEvaluationResource(AsyncAPIResource):
           status: The new status for the job
 
           error: Error message
-
-          results: Job results (required when status is 'completed')
 
           extra_headers: Send extra headers
 
