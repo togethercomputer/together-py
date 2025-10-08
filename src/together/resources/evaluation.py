@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import evaluation_create_params, evaluation_update_status_params
+from ..types import evaluation_update_status_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -18,7 +18,6 @@ from .._response import (
     async_to_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..types.evaluation_create_response import EvaluationCreateResponse
 from ..types.evaluation_retrieve_response import EvaluationRetrieveResponse
 from ..types.evaluation_get_status_response import EvaluationGetStatusResponse
 from ..types.evaluation_update_status_response import EvaluationUpdateStatusResponse
@@ -45,49 +44,6 @@ class EvaluationResource(SyncAPIResource):
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
         return EvaluationResourceWithStreamingResponse(self)
-
-    def create(
-        self,
-        *,
-        parameters: evaluation_create_params.Parameters,
-        type: Literal["classify", "score", "compare"],
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvaluationCreateResponse:
-        """
-        Creates a new evaluation job for classify, score, or compare tasks
-
-        Args:
-          parameters: Type-specific parameters for the evaluation
-
-          type: The type of evaluation to perform
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return self._post(
-            "/evaluation",
-            body=maybe_transform(
-                {
-                    "parameters": parameters,
-                    "type": type,
-                },
-                evaluation_create_params.EvaluationCreateParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EvaluationCreateResponse,
-        )
 
     def retrieve(
         self,
@@ -224,49 +180,6 @@ class AsyncEvaluationResource(AsyncAPIResource):
         """
         return AsyncEvaluationResourceWithStreamingResponse(self)
 
-    async def create(
-        self,
-        *,
-        parameters: evaluation_create_params.Parameters,
-        type: Literal["classify", "score", "compare"],
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvaluationCreateResponse:
-        """
-        Creates a new evaluation job for classify, score, or compare tasks
-
-        Args:
-          parameters: Type-specific parameters for the evaluation
-
-          type: The type of evaluation to perform
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return await self._post(
-            "/evaluation",
-            body=await async_maybe_transform(
-                {
-                    "parameters": parameters,
-                    "type": type,
-                },
-                evaluation_create_params.EvaluationCreateParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EvaluationCreateResponse,
-        )
-
     async def retrieve(
         self,
         id: str,
@@ -386,9 +299,6 @@ class EvaluationResourceWithRawResponse:
     def __init__(self, evaluation: EvaluationResource) -> None:
         self._evaluation = evaluation
 
-        self.create = to_raw_response_wrapper(
-            evaluation.create,
-        )
         self.retrieve = to_raw_response_wrapper(
             evaluation.retrieve,
         )
@@ -404,9 +314,6 @@ class AsyncEvaluationResourceWithRawResponse:
     def __init__(self, evaluation: AsyncEvaluationResource) -> None:
         self._evaluation = evaluation
 
-        self.create = async_to_raw_response_wrapper(
-            evaluation.create,
-        )
         self.retrieve = async_to_raw_response_wrapper(
             evaluation.retrieve,
         )
@@ -422,9 +329,6 @@ class EvaluationResourceWithStreamingResponse:
     def __init__(self, evaluation: EvaluationResource) -> None:
         self._evaluation = evaluation
 
-        self.create = to_streamed_response_wrapper(
-            evaluation.create,
-        )
         self.retrieve = to_streamed_response_wrapper(
             evaluation.retrieve,
         )
@@ -440,9 +344,6 @@ class AsyncEvaluationResourceWithStreamingResponse:
     def __init__(self, evaluation: AsyncEvaluationResource) -> None:
         self._evaluation = evaluation
 
-        self.create = async_to_streamed_response_wrapper(
-            evaluation.create,
-        )
         self.retrieve = async_to_streamed_response_wrapper(
             evaluation.retrieve,
         )
