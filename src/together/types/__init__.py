@@ -75,8 +75,6 @@ from .evaluation_get_status_response import EvaluationGetStatusResponse as Evalu
 from .fine_tune_list_events_response import FineTuneListEventsResponse as FineTuneListEventsResponse
 from .linear_lr_scheduler_args_param import LinearLrSchedulerArgsParam as LinearLrSchedulerArgsParam
 from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams
-from .evaluation_update_status_params import EvaluationUpdateStatusParams as EvaluationUpdateStatusParams
-from .evaluation_update_status_response import EvaluationUpdateStatusResponse as EvaluationUpdateStatusResponse
 from .evaluation_get_allowed_models_response import (
     EvaluationGetAllowedModelsResponse as EvaluationGetAllowedModelsResponse,
 )

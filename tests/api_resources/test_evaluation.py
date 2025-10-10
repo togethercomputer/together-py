@@ -9,11 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types import (
-    EvaluationRetrieveResponse,
-    EvaluationGetStatusResponse,
-    EvaluationUpdateStatusResponse,
-)
+from together.types import EvaluationRetrieveResponse, EvaluationGetStatusResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -97,65 +93,6 @@ class TestEvaluation:
                 "",
             )
 
-    @parametrize
-    def test_method_update_status(self, client: Together) -> None:
-        evaluation = client.evaluation.update_status(
-            id="id",
-            status="completed",
-        )
-        assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-    @parametrize
-    def test_method_update_status_with_all_params(self, client: Together) -> None:
-        evaluation = client.evaluation.update_status(
-            id="id",
-            status="completed",
-            error="error",
-            results={
-                "generation_fail_count": 0,
-                "invalid_label_count": 0,
-                "judge_fail_count": 0,
-                "label_counts": '{"yes": 10, "no": 0}',
-                "pass_percentage": 10,
-                "result_file_id": "file-1234-aefd",
-            },
-        )
-        assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-    @parametrize
-    def test_raw_response_update_status(self, client: Together) -> None:
-        response = client.evaluation.with_raw_response.update_status(
-            id="id",
-            status="completed",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        evaluation = response.parse()
-        assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-    @parametrize
-    def test_streaming_response_update_status(self, client: Together) -> None:
-        with client.evaluation.with_streaming_response.update_status(
-            id="id",
-            status="completed",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            evaluation = response.parse()
-            assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    def test_path_params_update_status(self, client: Together) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            client.evaluation.with_raw_response.update_status(
-                id="",
-                status="completed",
-            )
-
 
 class TestAsyncEvaluation:
     parametrize = pytest.mark.parametrize(
@@ -236,63 +173,4 @@ class TestAsyncEvaluation:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.evaluation.with_raw_response.get_status(
                 "",
-            )
-
-    @parametrize
-    async def test_method_update_status(self, async_client: AsyncTogether) -> None:
-        evaluation = await async_client.evaluation.update_status(
-            id="id",
-            status="completed",
-        )
-        assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-    @parametrize
-    async def test_method_update_status_with_all_params(self, async_client: AsyncTogether) -> None:
-        evaluation = await async_client.evaluation.update_status(
-            id="id",
-            status="completed",
-            error="error",
-            results={
-                "generation_fail_count": 0,
-                "invalid_label_count": 0,
-                "judge_fail_count": 0,
-                "label_counts": '{"yes": 10, "no": 0}',
-                "pass_percentage": 10,
-                "result_file_id": "file-1234-aefd",
-            },
-        )
-        assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-    @parametrize
-    async def test_raw_response_update_status(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evaluation.with_raw_response.update_status(
-            id="id",
-            status="completed",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        evaluation = await response.parse()
-        assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-    @parametrize
-    async def test_streaming_response_update_status(self, async_client: AsyncTogether) -> None:
-        async with async_client.evaluation.with_streaming_response.update_status(
-            id="id",
-            status="completed",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            evaluation = await response.parse()
-            assert_matches_type(EvaluationUpdateStatusResponse, evaluation, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    async def test_path_params_update_status(self, async_client: AsyncTogether) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            await async_client.evaluation.with_raw_response.update_status(
-                id="",
-                status="completed",
             )
