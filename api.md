@@ -270,7 +270,6 @@ from together.types import (
     EvaluationModelRequest,
     EvaluationRetrieveResponse,
     EvaluationGetStatusResponse,
-    EvaluationUpdateStatusResponse,
 )
 ```
 
@@ -278,7 +277,6 @@ Methods:
 
 - <code title="get /evaluation/{id}">client.evaluation.<a href="./src/together/resources/evaluation.py">retrieve</a>(id) -> <a href="./src/together/types/evaluation_retrieve_response.py">EvaluationRetrieveResponse</a></code>
 - <code title="get /evaluation/{id}/status">client.evaluation.<a href="./src/together/resources/evaluation.py">get_status</a>(id) -> <a href="./src/together/types/evaluation_get_status_response.py">EvaluationGetStatusResponse</a></code>
-- <code title="post /evaluation/{id}/update">client.evaluation.<a href="./src/together/resources/evaluation.py">update_status</a>(id, \*\*<a href="src/together/types/evaluation_update_status_params.py">params</a>) -> <a href="./src/together/types/evaluation_update_status_response.py">EvaluationUpdateStatusResponse</a></code>
 
 # Evaluations
 
