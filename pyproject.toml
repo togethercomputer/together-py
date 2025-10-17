@@ -47,7 +47,7 @@ Homepage = "https://github.com/togethercomputer/together-py"
 Repository = "https://github.com/togethercomputer/together-py"
 
 [project.optional-dependencies]
-aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.8"]
+aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]
 
 [project.scripts]
 together = "together.lib.cli.cli:main"
