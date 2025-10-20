@@ -10,19 +10,6 @@ Methods:
 
 - <code title="post /rerank">client.<a href="./src/together/_client.py">rerank</a>(\*\*<a href="src/together/types/client_rerank_params.py">params</a>) -> <a href="./src/together/types/rerank_response.py">RerankResponse</a></code>
 
-# Videos
-
-Types:
-
-```python
-from together.types import VideoCreateResponse, VideoRetrieveResponse
-```
-
-Methods:
-
-- <code title="post /videos">client.videos.<a href="./src/together/resources/videos.py">create</a>(\*\*<a href="src/together/types/video_create_params.py">params</a>) -> <a href="./src/together/types/video_create_response.py">VideoCreateResponse</a></code>
-- <code title="get /videos/{id}">client.videos.<a href="./src/together/resources/videos.py">retrieve</a>(id) -> <a href="./src/together/types/video_retrieve_response.py">VideoRetrieveResponse</a></code>
-
 # Chat
 
 ## Completions
@@ -162,6 +149,19 @@ from together.types import ImageDataB64, ImageDataURL, ImageFile
 Methods:
 
 - <code title="post /images/generations">client.images.<a href="./src/together/resources/images.py">create</a>(\*\*<a href="src/together/types/image_create_params.py">params</a>) -> <a href="./src/together/types/image_file.py">ImageFile</a></code>
+
+# Videos
+
+Types:
+
+```python
+from together.types import VideoCreateResponse, VideoRetrieveResponse
+```
+
+Methods:
+
+- <code title="post /videos">client.videos.<a href="./src/together/resources/videos.py">create</a>(\*\*<a href="src/together/types/video_create_params.py">params</a>) -> <a href="./src/together/types/video_create_response.py">VideoCreateResponse</a></code>
+- <code title="get /videos/{id}">client.videos.<a href="./src/together/resources/videos.py">retrieve</a>(id) -> <a href="./src/together/types/video_retrieve_response.py">VideoRetrieveResponse</a></code>
 
 # Audio
 

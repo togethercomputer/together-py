@@ -122,12 +122,6 @@ from .code_interpreter import (
 )
 
 __all__ = [
-    "VideosResource",
-    "AsyncVideosResource",
-    "VideosResourceWithRawResponse",
-    "AsyncVideosResourceWithRawResponse",
-    "VideosResourceWithStreamingResponse",
-    "AsyncVideosResourceWithStreamingResponse",
     "ChatResource",
     "AsyncChatResource",
     "ChatResourceWithRawResponse",
@@ -170,6 +164,12 @@ __all__ = [
     "AsyncImagesResourceWithRawResponse",
     "ImagesResourceWithStreamingResponse",
     "AsyncImagesResourceWithStreamingResponse",
+    "VideosResource",
+    "AsyncVideosResource",
+    "VideosResourceWithRawResponse",
+    "AsyncVideosResourceWithRawResponse",
+    "VideosResourceWithStreamingResponse",
+    "AsyncVideosResourceWithStreamingResponse",
     "AudioResource",
     "AsyncAudioResource",
     "AudioResourceWithRawResponse",

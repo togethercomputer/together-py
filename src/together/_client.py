@@ -78,7 +78,6 @@ __all__ = [
 
 
 class Together(SyncAPIClient):
-    videos: videos.VideosResource
     chat: chat.ChatResource
     completions: completions.CompletionsResource
     embeddings: embeddings.EmbeddingsResource
@@ -86,6 +85,7 @@ class Together(SyncAPIClient):
     fine_tune: fine_tune.FineTuneResource
     code_interpreter: code_interpreter.CodeInterpreterResource
     images: images.ImagesResource
+    videos: videos.VideosResource
     audio: audio.AudioResource
     models: models.ModelsResource
     jobs: jobs.JobsResource
@@ -153,7 +153,6 @@ class Together(SyncAPIClient):
 
         self._default_stream_cls = Stream
 
-        self.videos = videos.VideosResource(self)
         self.chat = chat.ChatResource(self)
         self.completions = completions.CompletionsResource(self)
         self.embeddings = embeddings.EmbeddingsResource(self)
@@ -161,6 +160,7 @@ class Together(SyncAPIClient):
         self.fine_tune = fine_tune.FineTuneResource(self)
         self.code_interpreter = code_interpreter.CodeInterpreterResource(self)
         self.images = images.ImagesResource(self)
+        self.videos = videos.VideosResource(self)
         self.audio = audio.AudioResource(self)
         self.models = models.ModelsResource(self)
         self.jobs = jobs.JobsResource(self)
@@ -341,7 +341,6 @@ class Together(SyncAPIClient):
 
 
 class AsyncTogether(AsyncAPIClient):
-    videos: videos.AsyncVideosResource
     chat: chat.AsyncChatResource
     completions: completions.AsyncCompletionsResource
     embeddings: embeddings.AsyncEmbeddingsResource
@@ -349,6 +348,7 @@ class AsyncTogether(AsyncAPIClient):
     fine_tune: fine_tune.AsyncFineTuneResource
     code_interpreter: code_interpreter.AsyncCodeInterpreterResource
     images: images.AsyncImagesResource
+    videos: videos.AsyncVideosResource
     audio: audio.AsyncAudioResource
     models: models.AsyncModelsResource
     jobs: jobs.AsyncJobsResource
@@ -416,7 +416,6 @@ class AsyncTogether(AsyncAPIClient):
 
         self._default_stream_cls = AsyncStream
 
-        self.videos = videos.AsyncVideosResource(self)
         self.chat = chat.AsyncChatResource(self)
         self.completions = completions.AsyncCompletionsResource(self)
         self.embeddings = embeddings.AsyncEmbeddingsResource(self)
@@ -424,6 +423,7 @@ class AsyncTogether(AsyncAPIClient):
         self.fine_tune = fine_tune.AsyncFineTuneResource(self)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResource(self)
         self.images = images.AsyncImagesResource(self)
+        self.videos = videos.AsyncVideosResource(self)
         self.audio = audio.AsyncAudioResource(self)
         self.models = models.AsyncModelsResource(self)
         self.jobs = jobs.AsyncJobsResource(self)
@@ -605,7 +605,6 @@ class AsyncTogether(AsyncAPIClient):
 
 class TogetherWithRawResponse:
     def __init__(self, client: Together) -> None:
-        self.videos = videos.VideosResourceWithRawResponse(client.videos)
         self.chat = chat.ChatResourceWithRawResponse(client.chat)
         self.completions = completions.CompletionsResourceWithRawResponse(client.completions)
         self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
@@ -613,6 +612,7 @@ class TogetherWithRawResponse:
         self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
         self.code_interpreter = code_interpreter.CodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithRawResponse(client.images)
+        self.videos = videos.VideosResourceWithRawResponse(client.videos)
         self.audio = audio.AudioResourceWithRawResponse(client.audio)
         self.models = models.ModelsResourceWithRawResponse(client.models)
         self.jobs = jobs.JobsResourceWithRawResponse(client.jobs)
@@ -628,7 +628,6 @@ class TogetherWithRawResponse:
 
 class AsyncTogetherWithRawResponse:
     def __init__(self, client: AsyncTogether) -> None:
-        self.videos = videos.AsyncVideosResourceWithRawResponse(client.videos)
         self.chat = chat.AsyncChatResourceWithRawResponse(client.chat)
         self.completions = completions.AsyncCompletionsResourceWithRawResponse(client.completions)
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
@@ -636,6 +635,7 @@ class AsyncTogetherWithRawResponse:
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
+        self.videos = videos.AsyncVideosResourceWithRawResponse(client.videos)
         self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
         self.models = models.AsyncModelsResourceWithRawResponse(client.models)
         self.jobs = jobs.AsyncJobsResourceWithRawResponse(client.jobs)
@@ -651,7 +651,6 @@ class AsyncTogetherWithRawResponse:
 
 class TogetherWithStreamedResponse:
     def __init__(self, client: Together) -> None:
-        self.videos = videos.VideosResourceWithStreamingResponse(client.videos)
         self.chat = chat.ChatResourceWithStreamingResponse(client.chat)
         self.completions = completions.CompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
@@ -659,6 +658,7 @@ class TogetherWithStreamedResponse:
         self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
         self.code_interpreter = code_interpreter.CodeInterpreterResourceWithStreamingResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
+        self.videos = videos.VideosResourceWithStreamingResponse(client.videos)
         self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
         self.models = models.ModelsResourceWithStreamingResponse(client.models)
         self.jobs = jobs.JobsResourceWithStreamingResponse(client.jobs)
@@ -674,7 +674,6 @@ class TogetherWithStreamedResponse:
 
 class AsyncTogetherWithStreamedResponse:
     def __init__(self, client: AsyncTogether) -> None:
-        self.videos = videos.AsyncVideosResourceWithStreamingResponse(client.videos)
         self.chat = chat.AsyncChatResourceWithStreamingResponse(client.chat)
         self.completions = completions.AsyncCompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
@@ -684,6 +683,7 @@ class AsyncTogetherWithStreamedResponse:
             client.code_interpreter
         )
         self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
+        self.videos = videos.AsyncVideosResourceWithStreamingResponse(client.videos)
         self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
         self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
         self.jobs = jobs.AsyncJobsResourceWithStreamingResponse(client.jobs)
