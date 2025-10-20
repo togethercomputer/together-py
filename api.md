@@ -155,13 +155,13 @@ Methods:
 Types:
 
 ```python
-from together.types import VideoCreateResponse, VideoRetrieveResponse
+from together.types import VideoJob, VideoCreateResponse
 ```
 
 Methods:
 
 - <code title="post /videos">client.videos.<a href="./src/together/resources/videos.py">create</a>(\*\*<a href="src/together/types/video_create_params.py">params</a>) -> <a href="./src/together/types/video_create_response.py">VideoCreateResponse</a></code>
-- <code title="get /videos/{id}">client.videos.<a href="./src/together/resources/videos.py">retrieve</a>(id) -> <a href="./src/together/types/video_retrieve_response.py">VideoRetrieveResponse</a></code>
+- <code title="get /videos/{id}">client.videos.<a href="./src/together/resources/videos.py">retrieve</a>(id) -> <a href="./src/together/types/video_job.py">VideoJob</a></code>
 
 # Audio
 

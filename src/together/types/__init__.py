@@ -6,6 +6,7 @@ from .embedding import Embedding as Embedding
 from .file_type import FileType as FileType
 from .fine_tune import FineTune as FineTune
 from .log_probs import LogProbs as LogProbs
+from .video_job import VideoJob as VideoJob
 from .completion import Completion as Completion
 from .image_file import ImageFile as ImageFile
 from .autoscaling import Autoscaling as Autoscaling
@@ -55,7 +56,6 @@ from .batch_retrieve_response import BatchRetrieveResponse as BatchRetrieveRespo
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
 from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
-from .video_retrieve_response import VideoRetrieveResponse as VideoRetrieveResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .cosine_lr_scheduler_args import CosineLrSchedulerArgs as CosineLrSchedulerArgs
 from .endpoint_create_response import EndpointCreateResponse as EndpointCreateResponse

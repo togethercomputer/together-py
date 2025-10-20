@@ -5,7 +5,7 @@ from typing_extensions import Literal
 
 from .._models import BaseModel
 
-__all__ = ["VideoRetrieveResponse", "Error", "Outputs"]
+__all__ = ["VideoJob", "Error", "Outputs"]
 
 
 class Error(BaseModel):
@@ -22,7 +22,7 @@ class Outputs(BaseModel):
     """URL hosting the generated video"""
 
 
-class VideoRetrieveResponse(BaseModel):
+class VideoJob(BaseModel):
     id: str
     """Unique identifier for the video job."""
 
