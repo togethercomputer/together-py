@@ -48,6 +48,14 @@ from .models import (
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
 )
+from .videos import (
+    VideosResource,
+    AsyncVideosResource,
+    VideosResourceWithRawResponse,
+    AsyncVideosResourceWithRawResponse,
+    VideosResourceWithStreamingResponse,
+    AsyncVideosResourceWithStreamingResponse,
+)
 from .batches import (
     BatchesResource,
     AsyncBatchesResource,
@@ -122,6 +130,12 @@ from .code_interpreter import (
 )
 
 __all__ = [
+    "VideosResource",
+    "AsyncVideosResource",
+    "VideosResourceWithRawResponse",
+    "AsyncVideosResourceWithRawResponse",
+    "VideosResourceWithStreamingResponse",
+    "AsyncVideosResourceWithStreamingResponse",
     "ChatResource",
     "AsyncChatResource",
     "ChatResourceWithRawResponse",

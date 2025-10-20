@@ -43,6 +43,7 @@ from .resources import (
     files,
     images,
     models,
+    videos,
     batches,
     hardware,
     endpoints,
@@ -78,6 +79,7 @@ __all__ = [
 
 
 class Together(SyncAPIClient):
+    videos: videos.VideosResource
     chat: chat.ChatResource
     completions: completions.CompletionsResource
     embeddings: embeddings.EmbeddingsResource
@@ -136,6 +138,7 @@ class Together(SyncAPIClient):
 
         if base_url is None:
             base_url = os.environ.get("TOGETHER_BASE_URL")
+        self._base_url_overridden = base_url is not None
         if base_url is None:
             base_url = f"https://api.together.xyz/v1"
 
@@ -152,6 +155,7 @@ class Together(SyncAPIClient):
 
         self._default_stream_cls = Stream
 
+        self.videos = videos.VideosResource(self)
         self.chat = chat.ChatResource(self)
         self.completions = completions.CompletionsResource(self)
         self.embeddings = embeddings.EmbeddingsResource(self)
@@ -226,7 +230,7 @@ class Together(SyncAPIClient):
             params = set_default_query
 
         http_client = http_client or self._client
-        return self.__class__(
+        client = self.__class__(
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
@@ -236,6 +240,8 @@ class Together(SyncAPIClient):
             default_query=params,
             **_extra_kwargs,
         )
+        client._base_url_overridden = self._base_url_overridden or base_url is not None
+        return client
 
     # Alias for `copy` for nicer inline usage, e.g.
     # client.with_options(timeout=10).foo.create(...)
@@ -338,6 +344,7 @@ class Together(SyncAPIClient):
 
 
 class AsyncTogether(AsyncAPIClient):
+    videos: videos.AsyncVideosResource
     chat: chat.AsyncChatResource
     completions: completions.AsyncCompletionsResource
     embeddings: embeddings.AsyncEmbeddingsResource
@@ -396,6 +403,7 @@ class AsyncTogether(AsyncAPIClient):
 
         if base_url is None:
             base_url = os.environ.get("TOGETHER_BASE_URL")
+        self._base_url_overridden = base_url is not None
         if base_url is None:
             base_url = f"https://api.together.xyz/v1"
 
@@ -412,6 +420,7 @@ class AsyncTogether(AsyncAPIClient):
 
         self._default_stream_cls = AsyncStream
 
+        self.videos = videos.AsyncVideosResource(self)
         self.chat = chat.AsyncChatResource(self)
         self.completions = completions.AsyncCompletionsResource(self)
         self.embeddings = embeddings.AsyncEmbeddingsResource(self)
@@ -486,7 +495,7 @@ class AsyncTogether(AsyncAPIClient):
             params = set_default_query
 
         http_client = http_client or self._client
-        return self.__class__(
+        client = self.__class__(
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
@@ -496,6 +505,8 @@ class AsyncTogether(AsyncAPIClient):
             default_query=params,
             **_extra_kwargs,
         )
+        client._base_url_overridden = self._base_url_overridden or base_url is not None
+        return client
 
     # Alias for `copy` for nicer inline usage, e.g.
     # client.with_options(timeout=10).foo.create(...)
@@ -599,6 +610,7 @@ class AsyncTogether(AsyncAPIClient):
 
 class TogetherWithRawResponse:
     def __init__(self, client: Together) -> None:
+        self.videos = videos.VideosResourceWithRawResponse(client.videos)
         self.chat = chat.ChatResourceWithRawResponse(client.chat)
         self.completions = completions.CompletionsResourceWithRawResponse(client.completions)
         self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
@@ -622,6 +634,7 @@ class TogetherWithRawResponse:
 
 class AsyncTogetherWithRawResponse:
     def __init__(self, client: AsyncTogether) -> None:
+        self.videos = videos.AsyncVideosResourceWithRawResponse(client.videos)
         self.chat = chat.AsyncChatResourceWithRawResponse(client.chat)
         self.completions = completions.AsyncCompletionsResourceWithRawResponse(client.completions)
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
@@ -645,6 +658,7 @@ class AsyncTogetherWithRawResponse:
 
 class TogetherWithStreamedResponse:
     def __init__(self, client: Together) -> None:
+        self.videos = videos.VideosResourceWithStreamingResponse(client.videos)
         self.chat = chat.ChatResourceWithStreamingResponse(client.chat)
         self.completions = completions.CompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
@@ -668,6 +682,7 @@ class TogetherWithStreamedResponse:
 
 class AsyncTogetherWithStreamedResponse:
     def __init__(self, client: AsyncTogether) -> None:
+        self.videos = videos.AsyncVideosResourceWithStreamingResponse(client.videos)
         self.chat = chat.AsyncChatResourceWithStreamingResponse(client.chat)
         self.completions = completions.AsyncCompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)

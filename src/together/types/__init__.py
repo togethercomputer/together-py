@@ -35,6 +35,7 @@ from .model_list_response import ModelListResponse as ModelListResponse
 from .model_upload_params import ModelUploadParams as ModelUploadParams
 from .training_method_dpo import TrainingMethodDpo as TrainingMethodDpo
 from .training_method_sft import TrainingMethodSft as TrainingMethodSft
+from .video_create_params import VideoCreateParams as VideoCreateParams
 from .client_rerank_params import ClientRerankParams as ClientRerankParams
 from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
@@ -43,6 +44,7 @@ from .hardware_list_params import HardwareListParams as HardwareListParams
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .job_retrieve_response import JobRetrieveResponse as JobRetrieveResponse
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
+from .video_create_response import VideoCreateResponse as VideoCreateResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
 from .endpoint_list_response import EndpointListResponse as EndpointListResponse
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
@@ -53,6 +55,7 @@ from .batch_retrieve_response import BatchRetrieveResponse as BatchRetrieveRespo
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
 from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
+from .video_retrieve_response import VideoRetrieveResponse as VideoRetrieveResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .cosine_lr_scheduler_args import CosineLrSchedulerArgs as CosineLrSchedulerArgs
 from .endpoint_create_response import EndpointCreateResponse as EndpointCreateResponse
