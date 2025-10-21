@@ -19,10 +19,12 @@ from .image_data_url import ImageDataURL as ImageDataURL
 from .fine_tune_event import FineTuneEvent as FineTuneEvent
 from .rerank_response import RerankResponse as RerankResponse
 from .completion_chunk import CompletionChunk as CompletionChunk
+from .eval_list_params import EvalListParams as EvalListParams
 from .execute_response import ExecuteResponse as ExecuteResponse
 from .autoscaling_param import AutoscalingParam as AutoscalingParam
 from .job_list_response import JobListResponse as JobListResponse
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
+from .eval_list_response import EvalListResponse as EvalListResponse
 from .file_list_response import FileListResponse as FileListResponse
 from .file_upload_params import FileUploadParams as FileUploadParams
 from .full_training_type import FullTrainingType as FullTrainingType
@@ -49,7 +51,7 @@ from .video_create_response import VideoCreateResponse as VideoCreateResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
 from .endpoint_list_response import EndpointListResponse as EndpointListResponse
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
-from .evaluation_list_params import EvaluationListParams as EvaluationListParams
+from .eval_retrieve_response import EvalRetrieveResponse as EvalRetrieveResponse
 from .file_retrieve_response import FileRetrieveResponse as FileRetrieveResponse
 from .hardware_list_response import HardwareListResponse as HardwareListResponse
 from .batch_retrieve_response import BatchRetrieveResponse as BatchRetrieveResponse
@@ -60,7 +62,7 @@ from .completion_create_params import CompletionCreateParams as CompletionCreate
 from .cosine_lr_scheduler_args import CosineLrSchedulerArgs as CosineLrSchedulerArgs
 from .endpoint_create_response import EndpointCreateResponse as EndpointCreateResponse
 from .endpoint_update_response import EndpointUpdateResponse as EndpointUpdateResponse
-from .evaluation_list_response import EvaluationListResponse as EvaluationListResponse
+from .eval_get_status_response import EvalGetStatusResponse as EvalGetStatusResponse
 from .full_training_type_param import FullTrainingTypeParam as FullTrainingTypeParam
 from .linear_lr_scheduler_args import LinearLrSchedulerArgs as LinearLrSchedulerArgs
 from .audio_speech_stream_chunk import AudioSpeechStreamChunk as AudioSpeechStreamChunk
@@ -72,15 +74,11 @@ from .training_method_dpo_param import TrainingMethodDpoParam as TrainingMethodD
 from .training_method_sft_param import TrainingMethodSftParam as TrainingMethodSftParam
 from .endpoint_retrieve_response import EndpointRetrieveResponse as EndpointRetrieveResponse
 from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
-from .evaluation_retrieve_response import EvaluationRetrieveResponse as EvaluationRetrieveResponse
 from .cosine_lr_scheduler_args_param import CosineLrSchedulerArgsParam as CosineLrSchedulerArgsParam
-from .evaluation_get_status_response import EvaluationGetStatusResponse as EvaluationGetStatusResponse
 from .fine_tune_list_events_response import FineTuneListEventsResponse as FineTuneListEventsResponse
 from .linear_lr_scheduler_args_param import LinearLrSchedulerArgsParam as LinearLrSchedulerArgsParam
 from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams
-from .evaluation_get_allowed_models_response import (
-    EvaluationGetAllowedModelsResponse as EvaluationGetAllowedModelsResponse,
-)
+from .eval_get_allowed_models_response import EvalGetAllowedModelsResponse as EvalGetAllowedModelsResponse
 from .fine_tune_retrieve_checkpoints_response import (
     FineTuneRetrieveCheckpointsResponse as FineTuneRetrieveCheckpointsResponse,
 )

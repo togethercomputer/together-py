@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing_extensions import Literal, TypedDict
 
-__all__ = ["EvaluationListParams"]
+__all__ = ["EvalListParams"]
 
 
-class EvaluationListParams(TypedDict, total=False):
+class EvalListParams(TypedDict, total=False):
     limit: int
     """Maximum number of results to return (max 100)"""
 
