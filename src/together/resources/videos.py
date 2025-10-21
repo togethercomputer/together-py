@@ -8,7 +8,7 @@ from typing_extensions import Literal
 import httpx
 
 from ..types import video_create_params
-from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from .._types import Body, Omit, Query, Headers, NotGiven, SequenceNotStr, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -57,7 +57,7 @@ class VideosResource(SyncAPIResource):
         output_format: Literal["MP4", "WEBM"] | Omit = omit,
         output_quality: int | Omit = omit,
         prompt: str | Omit = omit,
-        reference_images: Iterable[object] | Omit = omit,
+        reference_images: SequenceNotStr[str] | Omit = omit,
         seconds: str | Omit = omit,
         seed: int | Omit = omit,
         steps: int | Omit = omit,
@@ -77,9 +77,7 @@ class VideosResource(SyncAPIResource):
 
           fps: Frames per second. Defaults to 24.
 
-          frame_images: Array of images to guide video generation, like keyframes. If size 1, starting
-              frame, if size 2, starting and ending frame, if more than 2 then frame must be
-              specified
+          frame_images: Array of images to guide video generation, similar to keyframes.
 
           guidance_scale: Controls how closely the video generation follows your prompt. Higher values
               make the model adhere more strictly to your text description, while lower values
@@ -95,7 +93,9 @@ class VideosResource(SyncAPIResource):
 
           prompt: Text prompt that describes the video to generate.
 
-          reference_images: TODO need to figure this out
+          reference_images: Unlike frame_images which constrain specific timeline positions, reference
+              images guide the general appearance that should appear consistently across the
+              video.
 
           seconds: Clip duration in seconds.
 
@@ -208,7 +208,7 @@ class AsyncVideosResource(AsyncAPIResource):
         output_format: Literal["MP4", "WEBM"] | Omit = omit,
         output_quality: int | Omit = omit,
         prompt: str | Omit = omit,
-        reference_images: Iterable[object] | Omit = omit,
+        reference_images: SequenceNotStr[str] | Omit = omit,
         seconds: str | Omit = omit,
         seed: int | Omit = omit,
         steps: int | Omit = omit,
@@ -228,9 +228,7 @@ class AsyncVideosResource(AsyncAPIResource):
 
           fps: Frames per second. Defaults to 24.
 
-          frame_images: Array of images to guide video generation, like keyframes. If size 1, starting
-              frame, if size 2, starting and ending frame, if more than 2 then frame must be
-              specified
+          frame_images: Array of images to guide video generation, similar to keyframes.
 
           guidance_scale: Controls how closely the video generation follows your prompt. Higher values
               make the model adhere more strictly to your text description, while lower values
@@ -246,7 +244,9 @@ class AsyncVideosResource(AsyncAPIResource):
 
           prompt: Text prompt that describes the video to generate.
 
-          reference_images: TODO need to figure this out
+          reference_images: Unlike frame_images which constrain specific timeline positions, reference
+              images guide the general appearance that should appear consistently across the
+              video.
 
           seconds: Clip duration in seconds.
 
