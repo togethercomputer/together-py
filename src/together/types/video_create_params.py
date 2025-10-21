@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
+from .._types import SequenceNotStr
+
 __all__ = ["VideoCreateParams", "FrameImage"]
 
 
@@ -16,11 +18,7 @@ class VideoCreateParams(TypedDict, total=False):
     """Frames per second. Defaults to 24."""
 
     frame_images: Iterable[FrameImage]
-    """Array of images to guide video generation, like keyframes.
-
-    If size 1, starting frame, if size 2, starting and ending frame, if more than 2
-    then frame must be specified
-    """
+    """Array of images to guide video generation, similar to keyframes."""
 
     guidance_scale: int
     """Controls how closely the video generation follows your prompt.
@@ -46,8 +44,12 @@ class VideoCreateParams(TypedDict, total=False):
     prompt: str
     """Text prompt that describes the video to generate."""
 
-    reference_images: Iterable[object]
-    """TODO need to figure this out"""
+    reference_images: SequenceNotStr[str]
+    """
+    Unlike frame_images which constrain specific timeline positions, reference
+    images guide the general appearance that should appear consistently across the
+    video.
+    """
 
     seconds: str
     """Clip duration in seconds."""
@@ -70,7 +72,15 @@ class VideoCreateParams(TypedDict, total=False):
 
 
 class FrameImage(TypedDict, total=False):
-    frame: Required[Union[float, Literal["first", "last"]]]
-
     input_image: Required[str]
-    """idk"""
+    """URL path to hosted image that is used for a frame"""
+
+    frame: Union[float, Literal["first", "last"]]
+    """Optional param to specify where to insert the frame.
+
+    If this is omitted, the following heuristics are applied:
+
+    - frame_images size is one, frame is first.
+    - If size is two, frames are first and last.
+    - If size is larger, frames are first, last and evenly spaced between.
+    """
