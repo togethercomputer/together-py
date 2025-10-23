@@ -270,6 +270,8 @@ class MessageChatCompletionToolMessageParam(TypedDict, total=False):
 
     tool_call_id: Required[str]
 
+    name: str
+
 
 class MessageChatCompletionFunctionMessageParam(TypedDict, total=False):
     content: Required[str]
