@@ -48,6 +48,7 @@ class TranscriptionsResource(SyncAPIResource):
         self,
         *,
         file: FileTypes,
+        diarize: bool | Omit = omit,
         language: str | Omit = omit,
         model: Literal["openai/whisper-large-v3"] | Omit = omit,
         prompt: str | Omit = omit,
@@ -66,6 +67,17 @@ class TranscriptionsResource(SyncAPIResource):
 
         Args:
           file: Audio file to transcribe
+
+          diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
+              for each word in the transcription. In the response, in the words array, you
+              will get the speaker id for each word. In addition, we also return the
+              speaker_segments array which contains the speaker id for each speaker segment
+              along with the start and end time of the segment along with all the words in the
+              segment.
+
+              For eg - ... "speaker_segments": [ "speaker_id": "SPEAKER_00", "start": 0,
+              "end": 30.02, "words": [ { "id": 0, "word": "Tijana", "start": 0, "end": 11.475,
+              "speaker_id": "SPEAKER_00" }, ...
 
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
@@ -93,6 +105,7 @@ class TranscriptionsResource(SyncAPIResource):
         body = deepcopy_minimal(
             {
                 "file": file,
+                "diarize": diarize,
                 "language": language,
                 "model": model,
                 "prompt": prompt,
@@ -146,6 +159,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         self,
         *,
         file: FileTypes,
+        diarize: bool | Omit = omit,
         language: str | Omit = omit,
         model: Literal["openai/whisper-large-v3"] | Omit = omit,
         prompt: str | Omit = omit,
@@ -164,6 +178,17 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
 
         Args:
           file: Audio file to transcribe
+
+          diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
+              for each word in the transcription. In the response, in the words array, you
+              will get the speaker id for each word. In addition, we also return the
+              speaker_segments array which contains the speaker id for each speaker segment
+              along with the start and end time of the segment along with all the words in the
+              segment.
+
+              For eg - ... "speaker_segments": [ "speaker_id": "SPEAKER_00", "start": 0,
+              "end": 30.02, "words": [ { "id": 0, "word": "Tijana", "start": 0, "end": 11.475,
+              "speaker_id": "SPEAKER_00" }, ...
 
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
@@ -191,6 +216,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         body = deepcopy_minimal(
             {
                 "file": file,
+                "diarize": diarize,
                 "language": language,
                 "model": model,
                 "prompt": prompt,
