@@ -29,8 +29,8 @@ class TestAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio = client.audio.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
         )
         assert audio.is_closed
         assert audio.json() == {"foo": "bar"}
@@ -43,8 +43,8 @@ class TestAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio = client.audio.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
             language="en",
             response_encoding="pcm_f32le",
             response_format="mp3",
@@ -63,8 +63,8 @@ class TestAudio:
 
         audio = client.audio.with_raw_response.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
         )
 
         assert audio.is_closed is True
@@ -78,8 +78,8 @@ class TestAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.audio.with_streaming_response.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
         ) as audio:
             assert not audio.is_closed
             assert audio.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -96,9 +96,9 @@ class TestAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio_stream = client.audio.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
         )
         audio_stream.response.close()
 
@@ -108,9 +108,9 @@ class TestAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio_stream = client.audio.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
             language="en",
             response_encoding="pcm_f32le",
             response_format="mp3",
@@ -125,9 +125,9 @@ class TestAudio:
 
         audio_stream = client.audio.with_raw_response.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
         )
 
         assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -140,9 +140,9 @@ class TestAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.audio.with_streaming_response.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
         ) as audio_stream:
             assert not audio_stream.is_closed
             assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -165,8 +165,8 @@ class TestAsyncAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio = await async_client.audio.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
         )
         assert audio.is_closed
         assert await audio.json() == {"foo": "bar"}
@@ -181,8 +181,8 @@ class TestAsyncAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio = await async_client.audio.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
             language="en",
             response_encoding="pcm_f32le",
             response_format="mp3",
@@ -201,8 +201,8 @@ class TestAsyncAudio:
 
         audio = await async_client.audio.with_raw_response.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
         )
 
         assert audio.is_closed is True
@@ -218,8 +218,8 @@ class TestAsyncAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.audio.with_streaming_response.create(
             input="input",
-            model="cartesia/sonic",
-            voice="laidback woman",
+            model="canopylabs/orpheus-3b-0.1-ft",
+            voice="voice",
         ) as audio:
             assert not audio.is_closed
             assert audio.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -236,9 +236,9 @@ class TestAsyncAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio_stream = await async_client.audio.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
         )
         await audio_stream.response.aclose()
 
@@ -250,9 +250,9 @@ class TestAsyncAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         audio_stream = await async_client.audio.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
             language="en",
             response_encoding="pcm_f32le",
             response_format="mp3",
@@ -267,9 +267,9 @@ class TestAsyncAudio:
 
         audio_stream = await async_client.audio.with_raw_response.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
         )
 
         assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -284,9 +284,9 @@ class TestAsyncAudio:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.audio.with_streaming_response.create(
             input="input",
-            model="cartesia/sonic",
+            model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
-            voice="laidback woman",
+            voice="voice",
         ) as audio_stream:
             assert not audio_stream.is_closed
             assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
