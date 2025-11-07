@@ -669,6 +669,9 @@ together models --help
 
 # List models
 together models list
+
+# Upload a model
+together models upload --model-name my-org/my-model --model-source s3-or-hugging-face
 ```
 
 ## Contributing

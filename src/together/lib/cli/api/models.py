@@ -110,12 +110,12 @@ def upload(
     ctx: click.Context,
     model_name: str,
     model_source: str,
-    model_type: str,
     hf_token: Optional[str],
     description: Optional[str],
     base_model: Optional[str],
     lora_model: Optional[str],
     json: bool,
+    model_type: Optional[str] = "model",
 ) -> None:
     """Upload a custom model or adapter from Hugging Face or S3"""
     client: Together = ctx.obj
@@ -134,14 +134,14 @@ def upload(
         click.echo(json_lib.dumps(response.model_dump(), indent=2))
     else:
         click.echo(f"Model upload job created successfully!")
-        if response.job_id:
-            click.echo(f"Job ID: {response.job_id}")
-        if response.model_name:
-            click.echo(f"Model Name: {response.model_name}")
-        if response.model_id:
-            click.echo(f"Model ID: {response.model_id}")
-        if response.model_source:
-            click.echo(f"Model Source: {response.model_source}")
+        if response.data.job_id:
+            click.echo(f"Job ID: {response.data.job_id}")
+        if response.data.x_model_name:
+            click.echo(f"Model Name: {response.data.x_model_name}")
+        if response.data.x_model_id:
+            click.echo(f"Model ID: {response.data.x_model_id}")
+        if response.data.x_model_source:
+            click.echo(f"Model Source: {response.data.x_model_source}")
         click.echo(f"Message: {response.message}")
 
 
