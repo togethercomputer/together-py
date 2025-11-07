@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Literal, TypeVar, Union
 import click
 
 from together import Together
-from together.error import InvalidRequestError
+from together._exceptions import APIError
 from together.types import DedicatedEndpoint, ListEndpoint
 
 
@@ -41,7 +41,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def print_api_error(
-    e: InvalidRequestError,
+    e: APIError,
 ) -> None:
     error_details = e.api_response.message
 

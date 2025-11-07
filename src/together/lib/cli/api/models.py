@@ -1,11 +1,14 @@
 import json as json_lib
-
+import httpx
 import click
 from tabulate import tabulate
 
+from typing import List, Optional
 from together import Together
-from together.types.models import ModelObject, ModelUploadResponse
-
+from together._response import APIResponse as APIResponse
+from together.types.model_upload_response import ModelUploadResponse
+from together.types.model_list_response import ModelListResponse
+from together._models import BaseModel 
 
 @click.group()
 @click.pass_context
@@ -26,16 +29,25 @@ def models(ctx: click.Context) -> None:
     help="Output in JSON format",
 )
 @click.pass_context
-def list(ctx: click.Context, type: str | None, json: bool) -> None:
+def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     """List models"""
     client: Together = ctx.obj
 
-    response = client.models.list(dedicated=(type == "dedicated"))
+
+    response = client.models.list()
+    models_list = response
+
+
+    if type == "dedicated":
+        dedicated_response = client.get(
+            "/autoscale/models",
+            cast_to=httpx.Response,
+        )
+        models_list = _filter_dedicated_models(response, dedicated_response)
 
     display_list = []
-
-    model: ModelObject
-    for model in response:
+    model: BaseModel
+    for model in models_list:
         display_list.append(
             {
                 "ID": model.id,
@@ -99,10 +111,10 @@ def upload(
     model_name: str,
     model_source: str,
     model_type: str,
-    hf_token: str | None,
-    description: str | None,
-    base_model: str | None,
-    lora_model: str | None,
+    hf_token: Optional[str],
+    description: Optional[str],
+    base_model: Optional[str],
+    lora_model: Optional[str],
     json: bool,
 ) -> None:
     """Upload a custom model or adapter from Hugging Face or S3"""
@@ -131,3 +143,28 @@ def upload(
         if response.model_source:
             click.echo(f"Model Source: {response.model_source}")
         click.echo(f"Message: {response.message}")
+
+
+def _filter_dedicated_models(
+    models: ModelListResponse,
+    dedicated_response: httpx.Response
+) -> ModelListResponse:
+    """
+    Filter models based on dedicated model response.
+
+    Args:
+    models (List[BaseModel]): List of all models
+    dedicated_response (APIResponse): Response from autoscale models endpoint
+
+    Returns:
+    List[BaseModel]: Filtered list of models
+    """
+    data = dedicated_response.json()
+    assert isinstance(data, List)
+
+    # Create a set of dedicated model names for efficient lookup
+    dedicated_model_names = {model["name"] for model in data}
+
+    # Filter models to only include those in dedicated_model_names
+    # Note: The model.id from ModelObject matches the name field in the autoscale response
+    return [model for model in models if model.id in dedicated_model_names]
