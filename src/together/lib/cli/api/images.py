@@ -1,16 +1,18 @@
 import base64
 import pathlib
+import requests
 
 import click
 from PIL import Image
 
 from together import Together
-from together.types.image_data_b64 import ImageDataB64
+from together.types import ImageResponse
+from together.types.images import ImageChoicesData
 
 
 @click.group()
 @click.pass_context
-def images(_ctx: click.Context) -> None:
+def images(ctx: click.Context) -> None:
     """Images generations API commands"""
     pass
 
@@ -52,7 +54,7 @@ def generate(
 
     client: Together = ctx.obj
 
-    response = client.images.create(
+    response = client.images.generate(
         prompt=prompt,
         model=model,
         steps=steps,
@@ -63,13 +65,29 @@ def generate(
         negative_prompt=negative_prompt,
     )
 
+    assert isinstance(response, ImageResponse)
+    assert isinstance(response.data, list)
+
     for i, choice in enumerate(response.data):
-        if isinstance(choice, ImageDataB64):
-            with open(f"{output}/{prefix}{choice.index}.png", "wb") as f:
-                f.write(base64.b64decode(choice.b64_json))
+        assert isinstance(choice, ImageChoicesData)
 
-            click.echo(f"Image [{i + 1}/{len(response.data)}] saved to {output}/{prefix}{choice.index}.png")
+        data = None
+        if choice.b64_json:
+            data = base64.b64decode(choice.b64_json)
+        elif choice.url:
+            data = requests.get(choice.url).content
 
-            if not no_show:
-                image = Image.open(f"{output}/{prefix}{choice.index}.png")
-                image.show()
+        if not data:
+            click.echo(f"Image [{i + 1}/{len(response.data)}] is empty")
+            continue
+
+        with open(f"{output}/{prefix}{choice.index}.png", "wb") as f:
+            f.write(data)
+
+        click.echo(
+            f"Image [{i + 1}/{len(response.data)}] saved to {output}/{prefix}{choice.index}.png"
+        )
+
+        if not no_show:
+            image = Image.open(f"{output}/{prefix}{choice.index}.png")
+            image.show()

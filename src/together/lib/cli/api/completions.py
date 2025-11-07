@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
-from typing import List, Literal
+from typing import List
 
 import click
 
 from together import Together
-
-from ...._types import NOT_GIVEN, NotGiven
-from ...._streaming import Stream
+from together.types import CompletionChunk
+from together.types.completions import CompletionChoicesChunk, CompletionResponse
 
 
 @click.command()
@@ -16,7 +15,9 @@ from ...._streaming import Stream
 @click.argument("prompt", type=str, required=True)
 @click.option("--model", type=str, required=True, help="Model name")
 @click.option("--max-tokens", type=int, help="Max tokens to generate")
-@click.option("--stop", type=str, multiple=True, help="List of strings to stop generation")
+@click.option(
+    "--stop", type=str, multiple=True, help="List of strings to stop generation"
+)
 @click.option("--temperature", type=float, help="Sampling temperature")
 @click.option("--top-p", type=int, help="Top p sampling")
 @click.option("--top-k", type=float, help="Top k sampling")
@@ -34,20 +35,20 @@ def completions(
     ctx: click.Context,
     prompt: str,
     model: str,
-    max_tokens: int | NotGiven = 512,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    presence_penalty: float | NotGiven = NOT_GIVEN,
-    frequency_penalty: float | NotGiven = NOT_GIVEN,
-    min_p: float | NotGiven = NOT_GIVEN,
-    no_stream: Literal[True, False] = False,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    echo: bool | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    safety_model: str | NotGiven = NOT_GIVEN,
+    max_tokens: int | None = 512,
+    stop: List[str] | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    top_k: int | None = None,
+    repetition_penalty: float | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    min_p: float | None = None,
+    no_stream: bool = False,
+    logprobs: int | None = None,
+    echo: bool | None = None,
+    n: int | None = None,
+    safety_model: str | None = None,
     raw: bool = False,
 ) -> None:
     """Generate text completions"""
@@ -72,23 +73,25 @@ def completions(
         safety_model=safety_model,
     )
 
-    if isinstance(response, Stream):
+    if not no_stream:
         for chunk in response:
+            # assertions for type checking
+            assert isinstance(chunk, CompletionChunk)
+            assert chunk.choices
+
             if raw:
-                click.echo(f"{json.dumps(chunk.model_dump())}")
+                click.echo(f"{json.dumps(chunk.model_dump(exclude_none=True))}")
                 continue
 
-            dumped = chunk.model_dump()
+            should_print_header = len(chunk.choices) > 1
+            for stream_choice in sorted(chunk.choices, key=lambda c: c.index):  # type: ignore
+                # assertions for type checking
+                assert isinstance(stream_choice, CompletionChoicesChunk)
+                assert stream_choice.delta
 
-            # todo: use automatic typing once choice.index is added to the model
-            # and stream_choice.delta.content is added to the model
-            choices = dumped["choices"]
-
-            should_print_header = len(choices) > 1
-            for stream_choice in sorted(choices, key=lambda c: c["index"]):
                 if should_print_header:
                     click.echo(f"\n===== Completion {stream_choice.index} =====\n")
-                click.echo(f"{stream_choice['delta']['content']}", nl=False)
+                click.echo(f"{stream_choice.delta.content}", nl=False)
 
                 if should_print_header:
                     click.echo("\n")
@@ -96,8 +99,14 @@ def completions(
         # new line after stream ends
         click.echo("\n")
     else:
+        # assertions for type checking
+        assert isinstance(response, CompletionResponse)
+        assert isinstance(response.choices, list)
+
         if raw:
-            click.echo(f"{json.dumps(response.model_dump(), indent=4)}")
+            click.echo(
+                f"{json.dumps(response.model_dump(exclude_none=True), indent=4)}"
+            )
             return
 
         should_print_header = len(response.choices) > 1
@@ -106,5 +115,5 @@ def completions(
                 click.echo(f"===== Completion {i} =====")
             click.echo(choice.text)
 
-            if should_print_header or not (choice.text is not None and choice.text.endswith("\n")):
+            if should_print_header or not choice.text.endswith("\n"):
                 click.echo("\n")

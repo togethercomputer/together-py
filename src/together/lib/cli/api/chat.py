@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import cmd
 import json
-from typing import List, Tuple, Literal, cast
-from typing_extensions import override
+from typing import List, Tuple
 
 import click
 
 from together import Together
-
-from ...._types import NOT_GIVEN, NotGiven
-from ...._streaming import Stream
-from ....types.chat import completion_create_params
+from together.types.chat_completions import (
+    ChatCompletionChoicesChunk,
+    ChatCompletionChunk,
+    ChatCompletionResponse,
+)
 
 
 class ChatShell(cmd.Cmd):
@@ -22,17 +22,17 @@ class ChatShell(cmd.Cmd):
         self,
         client: Together,
         model: str,
-        max_tokens: int | NotGiven = NOT_GIVEN,
-        stop: List[str] | NotGiven = NOT_GIVEN,
-        temperature: float | NotGiven = NOT_GIVEN,
-        top_p: float | NotGiven = NOT_GIVEN,
-        top_k: int | NotGiven = NOT_GIVEN,
-        repetition_penalty: float | NotGiven = NOT_GIVEN,
-        presence_penalty: float | NotGiven = NOT_GIVEN,
-        frequency_penalty: float | NotGiven = NOT_GIVEN,
-        min_p: float | NotGiven = NOT_GIVEN,
-        safety_model: str | NotGiven = NOT_GIVEN,
-        system_message: str | NotGiven = NOT_GIVEN,
+        max_tokens: int | None = None,
+        stop: List[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        top_k: int | None = None,
+        repetition_penalty: float | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        min_p: float | None = None,
+        safety_model: str | None = None,
+        system_message: str | None = None,
     ) -> None:
         super().__init__()
         self.client = client
@@ -49,11 +49,12 @@ class ChatShell(cmd.Cmd):
         self.safety_model = safety_model
         self.system_message = system_message
 
-        self.messages: List[completion_create_params.Message] = (
-            [{"role": "system", "content": self.system_message}] if self.system_message else []
+        self.messages = (
+            [{"role": "system", "content": self.system_message}]
+            if self.system_message
+            else []
         )
 
-    @override
     def precmd(self, line: str) -> str:
         if line.startswith("/"):
             return line[1:]
@@ -80,6 +81,11 @@ class ChatShell(cmd.Cmd):
             safety_model=self.safety_model,
             stream=True,
         ):
+            # assertions for type checking
+            assert isinstance(chunk, ChatCompletionChunk)
+            assert chunk.choices
+            assert chunk.choices[0].delta
+
             token = chunk.choices[0].delta.content
 
             click.echo(token, nl=False)
@@ -90,10 +96,14 @@ class ChatShell(cmd.Cmd):
 
         self.messages.append({"role": "assistant", "content": output})
 
-    def do_reset(self, _arg: str) -> None:
-        self.messages = [{"role": "system", "content": self.system_message}] if self.system_message else []
+    def do_reset(self, arg: str) -> None:
+        self.messages = (
+            [{"role": "system", "content": self.system_message}]
+            if self.system_message
+            else []
+        )
 
-    def do_exit(self, _arg: str) -> bool:
+    def do_exit(self, arg: str) -> bool:
         return True
 
 
@@ -101,7 +111,9 @@ class ChatShell(cmd.Cmd):
 @click.pass_context
 @click.option("--model", type=str, required=True, help="Model name")
 @click.option("--max-tokens", type=int, help="Max tokens to generate")
-@click.option("--stop", type=str, multiple=True, help="List of strings to stop generation")
+@click.option(
+    "--stop", type=str, multiple=True, help="List of strings to stop generation"
+)
 @click.option("--temperature", type=float, help="Sampling temperature")
 @click.option("--top-p", type=int, help="Top p sampling")
 @click.option("--top-k", type=float, help="Top k sampling")
@@ -114,17 +126,17 @@ class ChatShell(cmd.Cmd):
 def interactive(
     ctx: click.Context,
     model: str,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    presence_penalty: float | NotGiven = NOT_GIVEN,
-    frequency_penalty: float | NotGiven = NOT_GIVEN,
-    min_p: float | NotGiven = NOT_GIVEN,
-    safety_model: str | NotGiven = NOT_GIVEN,
-    system_message: str | NotGiven = NOT_GIVEN,
+    max_tokens: int | None = None,
+    stop: List[str] | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    top_k: int | None = None,
+    repetition_penalty: float | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    min_p: float | None = None,
+    safety_model: str | None = None,
+    system_message: str | None = None,
 ) -> None:
     """Interactive chat shell"""
     client: Together = ctx.obj
@@ -157,13 +169,17 @@ def interactive(
 )
 @click.option("--model", type=str, required=True, help="Model name")
 @click.option("--max-tokens", type=int, help="Max tokens to generate")
-@click.option("--stop", type=str, multiple=True, help="List of strings to stop generation")
+@click.option(
+    "--stop", type=str, multiple=True, help="List of strings to stop generation"
+)
 @click.option("--temperature", type=float, help="Sampling temperature")
 @click.option("--top-p", type=int, help="Top p sampling")
 @click.option("--top-k", type=float, help="Top k sampling")
 @click.option("--repetition-penalty", type=float, help="Repetition penalty")
 @click.option("--presence-penalty", type=float, help="Presence penalty sampling method")
-@click.option("--frequency-penalty", type=float, help="Frequency penalty sampling method")
+@click.option(
+    "--frequency-penalty", type=float, help="Frequency penalty sampling method"
+)
 @click.option("--min-p", type=float, help="Min p sampling")
 @click.option("--no-stream", is_flag=True, help="Disable streaming")
 @click.option("--logprobs", type=int, help="Return logprobs. Only works with --raw.")
@@ -175,29 +191,26 @@ def chat(
     ctx: click.Context,
     message: List[Tuple[str, str]],
     model: str,
-    max_tokens: int | NotGiven = NOT_GIVEN,
-    stop: List[str] | NotGiven = NOT_GIVEN,
-    temperature: float | NotGiven = NOT_GIVEN,
-    top_p: float | NotGiven = NOT_GIVEN,
-    top_k: int | NotGiven = NOT_GIVEN,
-    repetition_penalty: float | NotGiven = NOT_GIVEN,
-    presence_penalty: float | NotGiven = NOT_GIVEN,
-    frequency_penalty: float | NotGiven = NOT_GIVEN,
-    min_p: float | NotGiven = NOT_GIVEN,
+    max_tokens: int | None = None,
+    stop: List[str] | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    top_k: int | None = None,
+    repetition_penalty: float | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    min_p: float | None = None,
     no_stream: bool = False,
-    logprobs: int | NotGiven = NOT_GIVEN,
-    echo: bool | NotGiven = NOT_GIVEN,
-    n: int | NotGiven = NOT_GIVEN,
-    safety_model: str | NotGiven = NOT_GIVEN,
+    logprobs: int | None = None,
+    echo: bool | None = None,
+    n: int | None = None,
+    safety_model: str | None = None,
     raw: bool = False,
 ) -> None:
     """Generate chat completions from messages"""
     client: Together = ctx.obj
 
-    messages: List[completion_create_params.Message] = []
-
-    for msg in message:
-        messages.append({"role": cast(Literal["system", "user", "assistant"], msg[0]), "content": msg[1]})  # type: ignore
+    messages = [{"role": msg[0], "content": msg[1]} for msg in message]
 
     response = client.chat.completions.create(
         model=model,
@@ -218,14 +231,21 @@ def chat(
         safety_model=safety_model,
     )
 
-    if isinstance(response, Stream):
+    if not no_stream:
         for chunk in response:
+            # assertions for type checking
+            assert isinstance(chunk, ChatCompletionChunk)
+            assert chunk.choices
+
             if raw:
-                click.echo(f"{json.dumps(chunk.model_dump())}")
+                click.echo(f"{json.dumps(chunk.model_dump(exclude_none=True))}")
                 continue
 
             should_print_header = len(chunk.choices) > 1
             for stream_choice in sorted(chunk.choices, key=lambda c: c.index):  # type: ignore
+                assert isinstance(stream_choice, ChatCompletionChoicesChunk)
+                assert stream_choice.delta
+
                 if should_print_header:
                     click.echo(f"\n===== Completion {stream_choice.index} =====\n")
                 click.echo(f"{stream_choice.delta.content}", nl=False)
@@ -236,8 +256,14 @@ def chat(
         # new line after stream ends
         click.echo("\n")
     else:
+        # assertions for type checking
+        assert isinstance(response, ChatCompletionResponse)
+        assert isinstance(response.choices, list)
+
         if raw:
-            click.echo(f"{json.dumps(response.model_dump(), indent=4)}")
+            click.echo(
+                f"{json.dumps(response.model_dump(exclude_none=True), indent=4)}"
+            )
             return
 
         should_print_header = len(response.choices) > 1
