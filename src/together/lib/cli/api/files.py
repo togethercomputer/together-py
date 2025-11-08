@@ -75,17 +75,17 @@ def list(ctx: click.Context) -> None:
     click.echo(table)
 
 
-# @files.command()
-# @click.pass_context
-# @click.argument("id", type=str, required=True)
-# def retrieve(ctx: click.Context, id: str) -> None:
-#     """Upload file"""
+@files.command()
+@click.pass_context
+@click.argument("id", type=str, required=True)
+def retrieve(ctx: click.Context, id: str) -> None:
+    """Upload file"""
 
-#     client: Together = ctx.obj
+    client: Together = ctx.obj
 
-#     response = client.files.retrieve(id=id)
+    response = client.files.retrieve(id=id)
 
-#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 # @files.command()
