@@ -88,18 +88,24 @@ def retrieve(ctx: click.Context, id: str) -> None:
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
-# @files.command()
-# @click.pass_context
-# @click.argument("id", type=str, required=True)
-# @click.option("--output", type=str, default=None, help="Output filename")
-# def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
-#     """Retrieve file content and output to file"""
+@files.command()
+@click.pass_context
+@click.argument("id", type=str, required=True)
+@click.option("--output", type=str, default=None, help="Output filename")
+def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
+    """Retrieve file content and output to file"""
 
-#     client: Together = ctx.obj
+    client: Together = ctx.obj
 
-#     response = client.files.retrieve_content(id=id, output=output)
+    response = client.files.content(id=id)
 
-#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    if output:
+        with open(output, "wb") as f:
+            f.write(response.read())
+        click.echo(f"File saved to {output}")
+
+    else:
+        click.echo(response.read())
 
 
 # @files.command()
