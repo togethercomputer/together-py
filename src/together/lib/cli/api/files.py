@@ -9,7 +9,7 @@ from tabulate import tabulate
 from together import Together
 from together.types import FilePurpose
 # from together.utils import check_file, convert_bytes, convert_unix_timestamp
-from ...utils import convert_bytes, convert_unix_timestamp
+from ...utils import check_file, convert_bytes, convert_unix_timestamp
 
 
 @click.group()
@@ -121,18 +121,18 @@ def delete(ctx: click.Context, id: str) -> None:
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
-# @files.command()
-# @click.pass_context
-# @click.argument(
-#     "file",
-#     type=click.Path(
-#         exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False
-#     ),
-#     required=True,
-# )
-# def check(ctx: click.Context, file: pathlib.Path) -> None:
-#     """Check file for issues"""
+@files.command()
+@click.pass_context
+@click.argument(
+    "file",
+    type=click.Path(
+        exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False
+    ),
+    required=True,
+)
+def check(ctx: click.Context, file: pathlib.Path) -> None:
+    """Check file for issues"""
 
-#     report = check_file(file)
+    report = check_file(file)
 
-#     click.echo(json.dumps(report, indent=4))
+    click.echo(json.dumps(report, indent=4))
