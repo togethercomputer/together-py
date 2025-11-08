@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, cast
 
 import click
 
 import together
 from together._version import __version__
-from together._constants import DEFAULT_TIMEOUT, DEFAULT_MAX_RETRIES
+from together._constants import DEFAULT_TIMEOUT
 # from together.lib.cli.api.endpoints import endpoints
 # from together.lib.cli.api.evaluation import evaluation
 from together.lib.cli.api.files import files
@@ -39,7 +39,7 @@ def print_version(ctx: click.Context, params: Any, value: Any) -> None:
 @click.option(
     "--max-retries",
     type=int,
-    help=f"Maximum number of HTTP retries. Defaults to {DEFAULT_MAX_RETRIES}.",
+    help=f"Maximum number of HTTP retries.",
 )
 @click.option(
     "--version",
@@ -55,13 +55,13 @@ def main(
     api_key: str | None,
     base_url: str | None,
     timeout: int | None,
-    max_retries: int | None,
     debug: bool | None,
+    max_retries: int | None,
 ) -> None:
     """This is a sample CLI tool."""
     together.log = "debug" if debug else None
     ctx.obj = together.Together(
-        # api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
+        api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries if max_retries is not None else 0
     )
 
 

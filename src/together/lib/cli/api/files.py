@@ -108,17 +108,17 @@ def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
         click.echo(response.read())
 
 
-# @files.command()
-# @click.pass_context
-# @click.argument("id", type=str, required=True)
-# def delete(ctx: click.Context, id: str) -> None:
-#     """Delete remote file"""
+@files.command()
+@click.pass_context
+@click.argument("id", type=str, required=True)
+def delete(ctx: click.Context, id: str) -> None:
+    """Delete remote file"""
 
-#     client: Together = ctx.obj
+    client: Together = ctx.obj
 
-#     response = client.files.delete(id=id)
+    response = client.files.delete(id=id)
 
-#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 # @files.command()
