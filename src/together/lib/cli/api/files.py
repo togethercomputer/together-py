@@ -1,6 +1,7 @@
 import json
 import pathlib
 from textwrap import wrap
+from typing import get_args
 
 import click
 from tabulate import tabulate
@@ -18,34 +19,34 @@ def files(ctx: click.Context) -> None:
     pass
 
 
-# @files.command()
-# @click.pass_context
-# @click.argument(
-#     "file",
-#     type=click.Path(
-#         exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False
-#     ),
-#     required=True,
-# )
-# @click.option(
-#     "--purpose",
-#     type=str,
-#     default=FilePurpose.FineTune.value,
-#     help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tunes`.",
-# )
-# @click.option(
-#     "--check/--no-check",
-#     default=True,
-#     help="Whether to check the file before uploading.",
-# )
-# def upload(ctx: click.Context, file: pathlib.Path, purpose: str, check: bool) -> None:
-#     """Upload file"""
+@files.command()
+@click.pass_context
+@click.argument(
+    "file",
+    type=click.Path(
+        exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False
+    ),
+    required=True,
+)
+@click.option(
+    "--purpose",
+    type=click.Choice(get_args(FilePurpose)),
+    default="fine-tune",
+    help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tunes`.",
+)
+@click.option(
+    "--check/--no-check",
+    default=True,
+    help="Whether to check the file before uploading.",
+)
+def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: bool) -> None:
+    """Upload file"""
 
-#     client: Together = ctx.obj
+    client: Together = ctx.obj
 
-#     response = client.files.upload(file=file, purpose=purpose, check=check)
+    response = client.files.upload_file(file, purpose=purpose, check=check)
 
-#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 @files.command()
