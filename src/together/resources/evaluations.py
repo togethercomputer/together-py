@@ -19,6 +19,8 @@ from .._response import (
 )
 from .._base_client import make_request_options
 from ..types.evaluation_list_response import EvaluationListResponse
+from ..types.evaluation_retrieve_response import EvaluationRetrieveResponse
+from ..types.evaluation_get_status_response import EvaluationGetStatusResponse
 from ..types.evaluation_get_allowed_models_response import EvaluationGetAllowedModelsResponse
 
 __all__ = ["EvaluationsResource", "AsyncEvaluationsResource"]
@@ -43,6 +45,39 @@ class EvaluationsResource(SyncAPIResource):
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
         return EvaluationsResourceWithStreamingResponse(self)
+
+    def retrieve(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvaluationRetrieveResponse:
+        """
+        Get details of a specific evaluation job
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            f"/evaluation/{id}",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvaluationRetrieveResponse,
+        )
 
     def list(
         self,
@@ -109,6 +144,39 @@ class EvaluationsResource(SyncAPIResource):
             cast_to=EvaluationGetAllowedModelsResponse,
         )
 
+    def get_status(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvaluationGetStatusResponse:
+        """
+        Get the status and results of a specific evaluation job
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            f"/evaluation/{id}/status",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvaluationGetStatusResponse,
+        )
+
 
 class AsyncEvaluationsResource(AsyncAPIResource):
     @cached_property
@@ -129,6 +197,39 @@ class AsyncEvaluationsResource(AsyncAPIResource):
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
         return AsyncEvaluationsResourceWithStreamingResponse(self)
+
+    async def retrieve(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvaluationRetrieveResponse:
+        """
+        Get details of a specific evaluation job
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            f"/evaluation/{id}",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvaluationRetrieveResponse,
+        )
 
     async def list(
         self,
@@ -195,16 +296,55 @@ class AsyncEvaluationsResource(AsyncAPIResource):
             cast_to=EvaluationGetAllowedModelsResponse,
         )
 
+    async def get_status(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvaluationGetStatusResponse:
+        """
+        Get the status and results of a specific evaluation job
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            f"/evaluation/{id}/status",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvaluationGetStatusResponse,
+        )
+
 
 class EvaluationsResourceWithRawResponse:
     def __init__(self, evaluations: EvaluationsResource) -> None:
         self._evaluations = evaluations
 
+        self.retrieve = to_raw_response_wrapper(
+            evaluations.retrieve,
+        )
         self.list = to_raw_response_wrapper(
             evaluations.list,
         )
         self.get_allowed_models = to_raw_response_wrapper(
             evaluations.get_allowed_models,
+        )
+        self.get_status = to_raw_response_wrapper(
+            evaluations.get_status,
         )
 
 
@@ -212,11 +352,17 @@ class AsyncEvaluationsResourceWithRawResponse:
     def __init__(self, evaluations: AsyncEvaluationsResource) -> None:
         self._evaluations = evaluations
 
+        self.retrieve = async_to_raw_response_wrapper(
+            evaluations.retrieve,
+        )
         self.list = async_to_raw_response_wrapper(
             evaluations.list,
         )
         self.get_allowed_models = async_to_raw_response_wrapper(
             evaluations.get_allowed_models,
+        )
+        self.get_status = async_to_raw_response_wrapper(
+            evaluations.get_status,
         )
 
 
@@ -224,11 +370,17 @@ class EvaluationsResourceWithStreamingResponse:
     def __init__(self, evaluations: EvaluationsResource) -> None:
         self._evaluations = evaluations
 
+        self.retrieve = to_streamed_response_wrapper(
+            evaluations.retrieve,
+        )
         self.list = to_streamed_response_wrapper(
             evaluations.list,
         )
         self.get_allowed_models = to_streamed_response_wrapper(
             evaluations.get_allowed_models,
+        )
+        self.get_status = to_streamed_response_wrapper(
+            evaluations.get_status,
         )
 
 
@@ -236,9 +388,15 @@ class AsyncEvaluationsResourceWithStreamingResponse:
     def __init__(self, evaluations: AsyncEvaluationsResource) -> None:
         self._evaluations = evaluations
 
+        self.retrieve = async_to_streamed_response_wrapper(
+            evaluations.retrieve,
+        )
         self.list = async_to_streamed_response_wrapper(
             evaluations.list,
         )
         self.get_allowed_models = async_to_streamed_response_wrapper(
             evaluations.get_allowed_models,
+        )
+        self.get_status = async_to_streamed_response_wrapper(
+            evaluations.get_status,
         )
