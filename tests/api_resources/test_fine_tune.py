@@ -14,6 +14,7 @@ from together.types import (
     FineTuneListResponse,
     FineTuneCancelResponse,
     FineTuneCreateResponse,
+    FineTuneDeleteResponse,
     FineTuneDownloadResponse,
     FineTuneListEventsResponse,
     FineTuneRetrieveCheckpointsResponse,
@@ -158,6 +159,48 @@ class TestFineTune:
             assert_matches_type(FineTuneListResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_delete(self, client: Together) -> None:
+        fine_tune = client.fine_tune.delete(
+            id="id",
+            force=True,
+        )
+        assert_matches_type(FineTuneDeleteResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_raw_response_delete(self, client: Together) -> None:
+        response = client.fine_tune.with_raw_response.delete(
+            id="id",
+            force=True,
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tune = response.parse()
+        assert_matches_type(FineTuneDeleteResponse, fine_tune, path=["response"])
+
+    @parametrize
+    def test_streaming_response_delete(self, client: Together) -> None:
+        with client.fine_tune.with_streaming_response.delete(
+            id="id",
+            force=True,
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tune = response.parse()
+            assert_matches_type(FineTuneDeleteResponse, fine_tune, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_delete(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.fine_tune.with_raw_response.delete(
+                id="",
+                force=True,
+            )
 
     @parametrize
     def test_method_cancel(self, client: Together) -> None:
@@ -453,6 +496,48 @@ class TestAsyncFineTune:
             assert_matches_type(FineTuneListResponse, fine_tune, path=["response"])
 
         assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_delete(self, async_client: AsyncTogether) -> None:
+        fine_tune = await async_client.fine_tune.delete(
+            id="id",
+            force=True,
+        )
+        assert_matches_type(FineTuneDeleteResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_raw_response_delete(self, async_client: AsyncTogether) -> None:
+        response = await async_client.fine_tune.with_raw_response.delete(
+            id="id",
+            force=True,
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tune = await response.parse()
+        assert_matches_type(FineTuneDeleteResponse, fine_tune, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_delete(self, async_client: AsyncTogether) -> None:
+        async with async_client.fine_tune.with_streaming_response.delete(
+            id="id",
+            force=True,
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tune = await response.parse()
+            assert_matches_type(FineTuneDeleteResponse, fine_tune, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_delete(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.fine_tune.with_raw_response.delete(
+                id="",
+                force=True,
+            )
 
     @parametrize
     async def test_method_cancel(self, async_client: AsyncTogether) -> None:
