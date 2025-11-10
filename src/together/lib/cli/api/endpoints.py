@@ -10,6 +10,7 @@ import click
 
 from together import Together, omit
 from together._exceptions import APIError
+from together.lib.utils.serializer import datetime_serializer
 from together.types import DedicatedEndpoint
 from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
 
@@ -247,19 +248,19 @@ def create(
 #         print_endpoint(endpoint)
 
 
-# @endpoints.command()
-# @click.option("--model", help="Filter hardware options by model")
-# @click.option("--json", is_flag=True, help="Print output in JSON format")
-# @click.option(
-#     "--available",
-#     is_flag=True,
-#     help="Print only available hardware options (can only be used if model is passed in)",
-# )
-# @click.pass_obj
-# @handle_api_errors
-# def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
-#     """List all available hardware options, optionally filtered by model."""
-#     fetch_and_print_hardware_options(client, model, json, available)
+@endpoints.command()
+@click.option("--model", help="Filter hardware options by model")
+@click.option("--json", is_flag=True, help="Print output in JSON format")
+@click.option(
+    "--available",
+    is_flag=True,
+    help="Print only available hardware options (can only be used if model is passed in)",
+)
+@click.pass_obj
+@handle_api_errors
+def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
+    """List all available hardware options, optionally filtered by model."""
+    fetch_and_print_hardware_options(client, model, json, available)
 
 
 def fetch_and_print_hardware_options(
@@ -281,7 +282,7 @@ def fetch_and_print_hardware_options(
 
     if print_json:
         json_output = [hardware.model_dump() for hardware in hardware_options.data]
-        click.echo(json.dumps(json_output, indent=2))
+        click.echo(json.dumps(json_output, default=datetime_serializer, indent=2))
     else:
         for hardware in hardware_options.data:
             click.echo(f"  {hardware.id}", err=True)

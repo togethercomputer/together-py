@@ -23,6 +23,7 @@ from together import APIError, DownloadError, Together
 from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
 from together.lib.utils.fine_tune import get_model_limits, create_finetune_request
 from together.lib.utils import log_warn
+from together.lib.utils.serializer import datetime_serializer
 from together.lib.utils.tools import finetune_price_to_dollars
 from together._types import NOT_GIVEN, NotGiven
 from together.types import FullTrainingType, LoRaTrainingType
@@ -441,11 +442,6 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     response = client.fine_tune.cancel(fine_tune_id)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
-
-def datetime_serializer(obj: Any) -> str:
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 @fine_tuning.command()
 @click.pass_context
