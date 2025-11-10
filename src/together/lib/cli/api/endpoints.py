@@ -287,27 +287,27 @@ def fetch_and_print_hardware_options(
             click.echo(f"  {hardware.id}", err=True)
 
 
-# @endpoints.command()
-# @click.argument("endpoint-id", required=True)
-# @click.option(
-#     "--wait", is_flag=True, default=True, help="Wait for the endpoint to stop"
-# )
-# @click.pass_obj
-# @handle_api_errors
-# def stop(client: Together, endpoint_id: str, wait: bool) -> None:
-#     """Stop a dedicated inference endpoint."""
-#     client.endpoints.update(endpoint_id, state="STOPPED")
-#     click.echo("Successfully marked endpoint as stopping", err=True)
+@endpoints.command()
+@click.argument("endpoint-id", required=True)
+@click.option(
+    "--wait", is_flag=True, default=True, help="Wait for the endpoint to stop"
+)
+@click.pass_obj
+@handle_api_errors
+def stop(client: Together, endpoint_id: str, wait: bool) -> None:
+    """Stop a dedicated inference endpoint."""
+    client.endpoints.update(endpoint_id, state="STOPPED")
+    click.echo("Successfully marked endpoint as stopping", err=True)
 
-#     if wait:
-#         import time
+    if wait:
+        import time
 
-#         click.echo("Waiting for endpoint to stop...", err=True)
-#         while client.endpoints.get(endpoint_id).state != "STOPPED":
-#             time.sleep(1)
-#         click.echo("Endpoint stopped", err=True)
+        click.echo("Waiting for endpoint to stop...", err=True)
+        while client.endpoints.retrieve(endpoint_id).state != "STOPPED":
+            time.sleep(1)
+        click.echo("Endpoint stopped", err=True)
 
-#     click.echo(endpoint_id)
+    click.echo(endpoint_id)
 
 
 @endpoints.command()
