@@ -232,20 +232,20 @@ def create(
     click.echo(response.id)
 
 
-# @endpoints.command()
-# @click.argument("endpoint-id", required=True)
-# @click.option("--json", is_flag=True, help="Print output in JSON format")
-# @click.pass_obj
-# @handle_api_errors
-# def get(client: Together, endpoint_id: str, json: bool) -> None:
-#     """Get a dedicated inference endpoint."""
-#     endpoint = client.endpoints.get(endpoint_id)
-#     if json:
-#         import json as json_lib
+@endpoints.command()
+@click.argument("endpoint-id", required=True)
+@click.option("--json", is_flag=True, help="Print output in JSON format")
+@click.pass_obj
+@handle_api_errors
+def get(client: Together, endpoint_id: str, json: bool) -> None:
+    """Get a dedicated inference endpoint."""
+    endpoint = client.endpoints.retrieve(endpoint_id)
+    if json:
+        import json as json_lib
 
-#         click.echo(json_lib.dumps(endpoint.model_dump(), indent=2))
-#     else:
-#         print_endpoint(endpoint)
+        click.echo(json_lib.dumps(endpoint.model_dump(), indent=2, default=datetime_serializer))
+    else:
+        print_endpoint(endpoint)
 
 
 @endpoints.command()
