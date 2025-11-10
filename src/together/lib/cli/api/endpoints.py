@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import Literal, cast
 import json
 import sys
 from functools import wraps
@@ -11,10 +11,11 @@ import click
 from together import Together, omit
 from together._exceptions import APIError
 from together.types import DedicatedEndpoint
+from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
 
 
 def print_endpoint(
-    endpoint: DedicatedEndpoint,
+    endpoint: DedicatedEndpoint | DedicatedEndpointListItem
 ) -> None:
     """Print endpoint details in a Docker-like format or JSON."""
 
@@ -22,12 +23,13 @@ def print_endpoint(
     click.echo(f"ID:\t\t{endpoint.id}")
     click.echo(f"Name:\t\t{endpoint.name}")
 
-    click.echo(f"Display Name:\t{endpoint.display_name}")
-    click.echo(f"Hardware:\t{endpoint.hardware}")
-    click.echo(
-        f"Autoscaling:\tMin={endpoint.autoscaling.min_replicas}, "
-        f"Max={endpoint.autoscaling.max_replicas}"
-    )
+    if isinstance(endpoint, DedicatedEndpoint):
+        click.echo(f"Display Name:\t{endpoint.display_name}")
+        click.echo(f"Hardware:\t{endpoint.hardware}")
+        click.echo(
+            f"Autoscaling:\tMin={endpoint.autoscaling.min_replicas}, "
+            f"Max={endpoint.autoscaling.max_replicas}"
+        )
 
     click.echo(f"Model:\t\t{endpoint.model}")
     click.echo(f"Type:\t\t{endpoint.type}")
@@ -342,55 +344,55 @@ def fetch_and_print_hardware_options(
 #     click.echo(endpoint_id)
 
 
-# @endpoints.command()
-# @click.option("--json", is_flag=True, help="Print output in JSON format")
-# @click.option(
-#     "--type",
-#     type=click.Choice(["dedicated", "serverless"]),
-#     help="Filter by endpoint type",
-# )
-# @click.option(
-#     "--mine",
-#     type=click.BOOL,
-#     default=None,
-#     help="true (only mine), default=all",
-# )
-# @click.option(
-#     "--usage-type",
-#     type=click.Choice(["on-demand", "reserved"]),
-#     help="Filter by endpoint usage type",
-# )
-# @click.pass_obj
-# @handle_api_errors
-# def list(
-#     client: Together,
-#     json: bool,
-#     type: Literal["dedicated", "serverless"] | None,
-#     usage_type: Literal["on-demand", "reserved"] | None,
-#     mine: bool | None,
-# ) -> None:
-#     """List all inference endpoints (includes both dedicated and serverless endpoints)."""
-#     endpoints: List[ListEndpoint] = client.endpoints.list(
-#         type=type, usage_type=usage_type, mine=mine
-#     )
+@endpoints.command()
+@click.option("--json", is_flag=True, help="Print output in JSON format")
+@click.option(
+    "--type",
+    type=click.Choice(["dedicated", "serverless"]),
+    help="Filter by endpoint type",
+)
+@click.option(
+    "--mine",
+    type=click.BOOL,
+    default=None,
+    help="true (only mine), default=all",
+)
+@click.option(
+    "--usage-type",
+    type=click.Choice(["on-demand", "reserved"]),
+    help="Filter by endpoint usage type",
+)
+@click.pass_obj
+@handle_api_errors
+def list(
+    client: Together,
+    json: bool,
+    type: Literal["dedicated", "serverless"] | None,
+    usage_type: Literal["on-demand", "reserved"] | None,
+    mine: bool | None,
+) -> None:
+    """List all inference endpoints (includes both dedicated and serverless endpoints)."""
+    endpoints = client.endpoints.list(
+        type=type or omit #, usage_type=usage_type, mine=mine
+    )
 
-#     if not endpoints:
-#         click.echo("No dedicated endpoints found", err=True)
-#         return
+    if not endpoints:
+        click.echo("No dedicated endpoints found", err=True)
+        return
 
-#     click.echo("Endpoints:", err=True)
-#     if json:
-#         import json as json_lib
+    click.echo("Endpoints:", err=True)
+    if json:
+        import json as json_lib
 
-#         click.echo(
-#             json_lib.dumps([endpoint.model_dump() for endpoint in endpoints], indent=2)
-#         )
-#     else:
-#         for endpoint in endpoints:
-#             print_endpoint(
-#                 endpoint,
-#             )
-#             click.echo()
+        click.echo(
+            json_lib.dumps([endpoint.model_dump() for endpoint in endpoints.data], indent=2)
+        )
+    else:
+        for endpoint in endpoints.data:
+            print_endpoint(
+                endpoint,
+            )
+            click.echo()
 
 
 # @endpoints.command()
