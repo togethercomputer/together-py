@@ -310,27 +310,27 @@ def fetch_and_print_hardware_options(
 #     click.echo(endpoint_id)
 
 
-# @endpoints.command()
-# @click.argument("endpoint-id", required=True)
-# @click.option(
-#     "--wait", is_flag=True, default=True, help="Wait for the endpoint to start"
-# )
-# @click.pass_obj
-# @handle_api_errors
-# def start(client: Together, endpoint_id: str, wait: bool) -> None:
-#     """Start a dedicated inference endpoint."""
-#     client.endpoints.update(endpoint_id, state="STARTED")
-#     click.echo("Successfully marked endpoint as starting", err=True)
+@endpoints.command()
+@click.argument("endpoint-id", required=True)
+@click.option(
+    "--wait", is_flag=True, default=True, help="Wait for the endpoint to start"
+)
+@click.pass_obj
+@handle_api_errors
+def start(client: Together, endpoint_id: str, wait: bool) -> None:
+    """Start a dedicated inference endpoint."""
+    client.endpoints.update(endpoint_id, state="STARTED")
+    click.echo("Successfully marked endpoint as starting", err=True)
 
-#     if wait:
-#         import time
+    if wait:
+        import time
 
-#         click.echo("Waiting for endpoint to start...", err=True)
-#         while client.endpoints.get(endpoint_id).state != "STARTED":
-#             time.sleep(1)
-#         click.echo("Endpoint started", err=True)
+        click.echo("Waiting for endpoint to start...", err=True)
+        while client.endpoints.retrieve(endpoint_id).state != "STARTED":
+            time.sleep(1)
+        click.echo("Endpoint started", err=True)
 
-#     click.echo(endpoint_id)
+    click.echo(endpoint_id)
 
 
 @endpoints.command()
