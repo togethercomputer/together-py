@@ -10,10 +10,8 @@ import pytest
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types import (
+    DedicatedEndpoint,
     EndpointListResponse,
-    EndpointCreateResponse,
-    EndpointUpdateResponse,
-    EndpointRetrieveResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -32,7 +30,7 @@ class TestEndpoints:
             hardware="1x_nvidia_a100_80gb_sxm",
             model="meta-llama/Llama-3-8b-chat-hf",
         )
-        assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -49,7 +47,7 @@ class TestEndpoints:
             inactive_timeout=60,
             state="STARTED",
         )
-        assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -65,7 +63,7 @@ class TestEndpoints:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         endpoint = response.parse()
-        assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -81,7 +79,7 @@ class TestEndpoints:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             endpoint = response.parse()
-            assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+            assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -90,7 +88,7 @@ class TestEndpoints:
         endpoint = client.endpoints.retrieve(
             "endpoint-d23901de-ef8f-44bf-b3e7-de9c1ca8f2d7",
         )
-        assert_matches_type(EndpointRetrieveResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -101,7 +99,7 @@ class TestEndpoints:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         endpoint = response.parse()
-        assert_matches_type(EndpointRetrieveResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -112,7 +110,7 @@ class TestEndpoints:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             endpoint = response.parse()
-            assert_matches_type(EndpointRetrieveResponse, endpoint, path=["response"])
+            assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -128,7 +126,7 @@ class TestEndpoints:
         endpoint = client.endpoints.update(
             endpoint_id="endpoint-d23901de-ef8f-44bf-b3e7-de9c1ca8f2d7",
         )
-        assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_method_update_with_all_params(self, client: Together) -> None:
@@ -142,7 +140,7 @@ class TestEndpoints:
             inactive_timeout=60,
             state="STARTED",
         )
-        assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_raw_response_update(self, client: Together) -> None:
@@ -153,7 +151,7 @@ class TestEndpoints:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         endpoint = response.parse()
-        assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     def test_streaming_response_update(self, client: Together) -> None:
@@ -164,7 +162,7 @@ class TestEndpoints:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             endpoint = response.parse()
-            assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+            assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -261,7 +259,7 @@ class TestAsyncEndpoints:
             hardware="1x_nvidia_a100_80gb_sxm",
             model="meta-llama/Llama-3-8b-chat-hf",
         )
-        assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -278,7 +276,7 @@ class TestAsyncEndpoints:
             inactive_timeout=60,
             state="STARTED",
         )
-        assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -294,7 +292,7 @@ class TestAsyncEndpoints:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         endpoint = await response.parse()
-        assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -310,7 +308,7 @@ class TestAsyncEndpoints:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             endpoint = await response.parse()
-            assert_matches_type(EndpointCreateResponse, endpoint, path=["response"])
+            assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -319,7 +317,7 @@ class TestAsyncEndpoints:
         endpoint = await async_client.endpoints.retrieve(
             "endpoint-d23901de-ef8f-44bf-b3e7-de9c1ca8f2d7",
         )
-        assert_matches_type(EndpointRetrieveResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -330,7 +328,7 @@ class TestAsyncEndpoints:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         endpoint = await response.parse()
-        assert_matches_type(EndpointRetrieveResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -341,7 +339,7 @@ class TestAsyncEndpoints:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             endpoint = await response.parse()
-            assert_matches_type(EndpointRetrieveResponse, endpoint, path=["response"])
+            assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -357,7 +355,7 @@ class TestAsyncEndpoints:
         endpoint = await async_client.endpoints.update(
             endpoint_id="endpoint-d23901de-ef8f-44bf-b3e7-de9c1ca8f2d7",
         )
-        assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -371,7 +369,7 @@ class TestAsyncEndpoints:
             inactive_timeout=60,
             state="STARTED",
         )
-        assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
@@ -382,7 +380,7 @@ class TestAsyncEndpoints:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         endpoint = await response.parse()
-        assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+        assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
     @parametrize
     async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
@@ -393,7 +391,7 @@ class TestAsyncEndpoints:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             endpoint = await response.parse()
-            assert_matches_type(EndpointUpdateResponse, endpoint, path=["response"])
+            assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
