@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Literal, Any
+from textwrap import wrap
 from rich import print as rprint
 import click
 from click.core import ParameterSource  # type: ignore[attr-defined]
+from tabulate import tabulate
 
 from together import Together
 from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
 from together.lib.utils.fine_tune import get_model_limits, create_finetune_request
 from together.lib.utils import log_warn
+from together.lib.utils.tools import finetune_price_to_dollars
 
 
 _CONFIRMATION_MESSAGE = (
@@ -364,36 +368,36 @@ def create(
 
 
 
-# @fine_tuning.command()
-# @click.pass_context
-# def list(ctx: click.Context) -> None:
-#     """List fine-tuning jobs"""
-#     client: Together = ctx.obj
+@fine_tuning.command()
+@click.pass_context
+def list(ctx: click.Context) -> None:
+    """List fine-tuning jobs"""
+    client: Together = ctx.obj
 
-#     response = client.fine_tuning.list()
+    response = client.fine_tune.list()
 
-#     response.data = response.data or []
+    response.data = response.data or []
 
-#     # Use a default datetime for None values to make sure the key function always returns a comparable value
-#     epoch_start = datetime.fromtimestamp(0, tz=timezone.utc)
-#     response.data.sort(key=lambda x: parse_timestamp(x.created_at or "") or epoch_start)
+    # Use a default datetime for None values to make sure the key function always returns a comparable value
+    epoch_start = datetime.fromtimestamp(0, tz=timezone.utc)
+    response.data.sort(key=lambda x: x.created_at or epoch_start)
 
-#     display_list = []
-#     for i in response.data:
-#         display_list.append(
-#             {
-#                 "Fine-tune ID": i.id,
-#                 "Model Output Name": "\n".join(wrap(i.output_name or "", width=30)),
-#                 "Status": i.status,
-#                 "Created At": i.created_at,
-#                 "Price": f"""${
-#                     finetune_price_to_dollars(float(str(i.total_price)))
-#                 }""",  # convert to string for mypy typing
-#             }
-#         )
-#     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
+    display_list = []
+    for i in response.data:
+        display_list.append(
+            {
+                "Fine-tune ID": i.id,
+                "Model Output Name": "\n".join(wrap(i.x_model_output_name or "", width=30)),
+                "Status": i.status,
+                "Created At": i.created_at,
+                "Price": f"""${
+                    finetune_price_to_dollars(float(str(i.total_price)))
+                }""",  # convert to string for mypy typing
+            }
+        )
+    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
 
-#     click.echo(table)
+    click.echo(table)
 
 
 # @fine_tuning.command()
