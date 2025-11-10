@@ -57,6 +57,7 @@ from .hardware_list_response import HardwareListResponse as HardwareListResponse
 from .batch_retrieve_response import BatchRetrieveResponse as BatchRetrieveResponse
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
 from .fine_tune_create_params import FineTuneCreateParams as FineTuneCreateParams
+from .fine_tune_delete_params import FineTuneDeleteParams as FineTuneDeleteParams
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .cosine_lr_scheduler_args import CosineLrSchedulerArgs as CosineLrSchedulerArgs
@@ -68,6 +69,7 @@ from .linear_lr_scheduler_args import LinearLrSchedulerArgs as LinearLrScheduler
 from .audio_speech_stream_chunk import AudioSpeechStreamChunk as AudioSpeechStreamChunk
 from .fine_tune_cancel_response import FineTuneCancelResponse as FineTuneCancelResponse
 from .fine_tune_create_response import FineTuneCreateResponse as FineTuneCreateResponse
+from .fine_tune_delete_response import FineTuneDeleteResponse as FineTuneDeleteResponse
 from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloadParams
 from .lo_ra_training_type_param import LoRaTrainingTypeParam as LoRaTrainingTypeParam
 from .training_method_dpo_param import TrainingMethodDpoParam as TrainingMethodDpoParam

@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import fine_tune_create_params, fine_tune_download_params
+from ..types import fine_tune_create_params, fine_tune_delete_params, fine_tune_download_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -24,6 +24,7 @@ from ..types.lr_scheduler_param import LrSchedulerParam
 from ..types.fine_tune_list_response import FineTuneListResponse
 from ..types.fine_tune_cancel_response import FineTuneCancelResponse
 from ..types.fine_tune_create_response import FineTuneCreateResponse
+from ..types.fine_tune_delete_response import FineTuneDeleteResponse
 from ..types.fine_tune_download_response import FineTuneDownloadResponse
 from ..types.fine_tune_list_events_response import FineTuneListEventsResponse
 from ..types.fine_tune_retrieve_checkpoints_response import FineTuneRetrieveCheckpointsResponse
@@ -254,6 +255,44 @@ class FineTuneResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=FineTuneListResponse,
+        )
+
+    def delete(
+        self,
+        id: str,
+        *,
+        force: bool,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneDeleteResponse:
+        """
+        Delete a fine-tuning job.
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._delete(
+            f"/fine-tunes/{id}",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"force": force}, fine_tune_delete_params.FineTuneDeleteParams),
+            ),
+            cast_to=FineTuneDeleteResponse,
         )
 
     def cancel(
@@ -640,6 +679,44 @@ class AsyncFineTuneResource(AsyncAPIResource):
             cast_to=FineTuneListResponse,
         )
 
+    async def delete(
+        self,
+        id: str,
+        *,
+        force: bool,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneDeleteResponse:
+        """
+        Delete a fine-tuning job.
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._delete(
+            f"/fine-tunes/{id}",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform({"force": force}, fine_tune_delete_params.FineTuneDeleteParams),
+            ),
+            cast_to=FineTuneDeleteResponse,
+        )
+
     async def cancel(
         self,
         id: str,
@@ -812,6 +889,9 @@ class FineTuneResourceWithRawResponse:
         self.list = to_raw_response_wrapper(
             fine_tune.list,
         )
+        self.delete = to_raw_response_wrapper(
+            fine_tune.delete,
+        )
         self.cancel = to_raw_response_wrapper(
             fine_tune.cancel,
         )
@@ -838,6 +918,9 @@ class AsyncFineTuneResourceWithRawResponse:
         )
         self.list = async_to_raw_response_wrapper(
             fine_tune.list,
+        )
+        self.delete = async_to_raw_response_wrapper(
+            fine_tune.delete,
         )
         self.cancel = async_to_raw_response_wrapper(
             fine_tune.cancel,
@@ -866,6 +949,9 @@ class FineTuneResourceWithStreamingResponse:
         self.list = to_streamed_response_wrapper(
             fine_tune.list,
         )
+        self.delete = to_streamed_response_wrapper(
+            fine_tune.delete,
+        )
         self.cancel = to_streamed_response_wrapper(
             fine_tune.cancel,
         )
@@ -892,6 +978,9 @@ class AsyncFineTuneResourceWithStreamingResponse:
         )
         self.list = async_to_streamed_response_wrapper(
             fine_tune.list,
+        )
+        self.delete = async_to_streamed_response_wrapper(
+            fine_tune.delete,
         )
         self.cancel = async_to_streamed_response_wrapper(
             fine_tune.cancel,
