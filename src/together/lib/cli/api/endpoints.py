@@ -333,15 +333,15 @@ def fetch_and_print_hardware_options(
 #     click.echo(endpoint_id)
 
 
-# @endpoints.command()
-# @click.argument("endpoint-id", required=True)
-# @click.pass_obj
-# @handle_api_errors
-# def delete(client: Together, endpoint_id: str) -> None:
-#     """Delete a dedicated inference endpoint."""
-#     client.endpoints.delete(endpoint_id)
-#     click.echo("Successfully deleted endpoint", err=True)
-#     click.echo(endpoint_id)
+@endpoints.command()
+@click.argument("endpoint-id", required=True)
+@click.pass_obj
+@handle_api_errors
+def delete(client: Together, endpoint_id: str) -> None:
+    """Delete a dedicated inference endpoint."""
+    client.endpoints.delete(endpoint_id)
+    click.echo("Successfully deleted endpoint", err=True)
+    click.echo(endpoint_id)
 
 
 @endpoints.command()
