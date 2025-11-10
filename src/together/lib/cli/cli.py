@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, cast
+from typing import Any
 
 import click
 
@@ -11,7 +11,7 @@ from together._constants import DEFAULT_TIMEOUT
 # from together.lib.cli.api.endpoints import endpoints
 # from together.lib.cli.api.evaluation import evaluation
 from together.lib.cli.api.files import files
-# from together.lib.cli.api.finetune import fine_tuning
+from together.lib.cli.api.finetune import fine_tuning
 from together.lib.cli.api.models import models
 
 
@@ -66,7 +66,7 @@ def main(
 
 
 main.add_command(files)
-# main.add_command(fine_tuning)
+main.add_command(fine_tuning)
 main.add_command(models)
 # main.add_command(endpoints)
 # main.add_command(evaluation)

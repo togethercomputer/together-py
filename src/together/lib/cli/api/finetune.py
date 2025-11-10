@@ -1,30 +1,14 @@
 from __future__ import annotations
 
-import json
-import re
-from datetime import datetime, timezone
-from textwrap import wrap
-from typing import Any, Literal
-
+from typing import Literal, Any
+from rich import print as rprint
 import click
 from click.core import ParameterSource  # type: ignore[attr-defined]
-from rich import print as rprint
-from tabulate import tabulate
 
 from together import Together
-from together.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
-from together.types.finetune import (
-    DownloadCheckpointType,
-    FinetuneEventType,
-    FinetuneTrainingLimits,
-)
-from together.utils import (
-    finetune_price_to_dollars,
-    format_timestamp,
-    log_warn,
-    log_warn_once,
-    parse_timestamp,
-)
+from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
+from together.lib.utils.fine_tune import get_model_limits, create_finetune_request
+from together.lib.utils import log_warn
 
 
 _CONFIRMATION_MESSAGE = (
@@ -37,15 +21,15 @@ _CONFIRMATION_MESSAGE = (
 )
 
 
-class DownloadCheckpointTypeChoice(click.Choice):
-    def __init__(self) -> None:
-        super().__init__([ct.value for ct in DownloadCheckpointType])
+# class DownloadCheckpointTypeChoice(click.Choice):
+#     def __init__(self) -> None:
+#         super().__init__([ct.value for ct in DownloadCheckpointType])
 
-    def convert(
-        self, value: str, param: click.Parameter | None, ctx: click.Context | None
-    ) -> DownloadCheckpointType:
-        value = super().convert(value, param, ctx)
-        return DownloadCheckpointType(value)
+#     def convert(
+#         self, value: str, param: click.Parameter | None, ctx: click.Context | None
+#     ) -> DownloadCheckpointType:
+#         value = super().convert(value, param, ctx)
+#         return DownloadCheckpointType(value)
 
 
 @click.group(name="fine-tuning")
@@ -230,7 +214,7 @@ def create(
     ctx: click.Context,
     training_file: str,
     validation_file: str,
-    model: str,
+    model: str | None,
     n_epochs: int,
     n_evals: int,
     n_checkpoints: int,
@@ -242,26 +226,26 @@ def create(
     warmup_ratio: float,
     max_grad_norm: float,
     weight_decay: float,
-    lora: bool,
-    lora_r: int,
-    lora_dropout: float,
-    lora_alpha: float,
-    lora_trainable_modules: str,
-    suffix: str,
-    wandb_api_key: str,
-    wandb_base_url: str,
-    wandb_project_name: str,
-    wandb_name: str,
-    confirm: bool,
-    train_on_inputs: bool | Literal["auto"],
-    training_method: str,
+    lora: bool | None,
+    lora_r: int | None,
+    lora_dropout: float | None,
+    lora_alpha: float | None,
+    lora_trainable_modules: str | None,
+    suffix: str | None,
+    wandb_api_key: str | None,
+    wandb_base_url: str | None,
+    wandb_project_name: str | None,
+    wandb_name: str | None,
+    confirm: bool | None,
+    train_on_inputs: bool | Literal["auto"] | None,
+    training_method: str | None,
     dpo_beta: float | None,
-    dpo_normalize_logratios_by_length: bool,
+    dpo_normalize_logratios_by_length: bool | None,
     rpo_alpha: float | None,
     simpo_gamma: float | None,
-    from_checkpoint: str,
-    from_hf_model: str,
-    hf_model_revision: str,
+    from_checkpoint: str | None,
+    from_hf_model: str | None,
+    hf_model_revision: str | None,
     hf_api_token: str | None,
     hf_output_repo_name: str | None,
 ) -> None:
@@ -313,7 +297,11 @@ def create(
     if from_checkpoint is not None:
         model_name = from_checkpoint.split(":")[0]
 
-    model_limits: FinetuneTrainingLimits = client.fine_tuning.get_model_limits(
+    if model_name is None:
+        raise click.BadParameter("You must specify a model or a checkpoint")
+
+    model_limits = get_model_limits(
+        client,
         model=model_name,
     )
 
@@ -347,7 +335,7 @@ def create(
                     f"You set LoRA parameter `{param}` for a full fine-tuning job. "
                     f"Please change the job type with --lora or remove `{param}` from the arguments"
                 )
-
+    
     if n_evals <= 0 and validation_file:
         log_warn(
             "Warning: You have specified a validation file but the number of evaluation loops is set to 0. No evaluations will be performed."
@@ -358,215 +346,218 @@ def create(
         )
 
     if confirm or click.confirm(_CONFIRMATION_MESSAGE, default=True, show_default=True):
-        response = client.fine_tuning.create(
+        params = create_finetune_request(
+            model_limits=model_limits,
             **training_args,
-            verbose=True,
         )
+        rprint("Submitting a fine-tuning job with the following parameters:", params)
+        response = client.fine_tune.create(**params)
+
 
         report_string = f"Successfully submitted a fine-tuning job {response.id}"
-        if response.created_at is not None:
-            created_time = datetime.strptime(
-                response.created_at, "%Y-%m-%dT%H:%M:%S.%f%z"
-            )
-            # created_at reports UTC time, we use .astimezone() to convert to local time
-            formatted_time = created_time.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
-            report_string += f" at {formatted_time}"
-        rprint(report_string)
+        # created_at reports UTC time, we use .astimezone() to convert to local time
+        formatted_time = response.created_at.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
+        report_string += f" at {formatted_time}"
+        print(report_string)
     else:
         click.echo("No confirmation received, stopping job launch")
 
 
-@fine_tuning.command()
-@click.pass_context
-def list(ctx: click.Context) -> None:
-    """List fine-tuning jobs"""
-    client: Together = ctx.obj
 
-    response = client.fine_tuning.list()
+# @fine_tuning.command()
+# @click.pass_context
+# def list(ctx: click.Context) -> None:
+#     """List fine-tuning jobs"""
+#     client: Together = ctx.obj
 
-    response.data = response.data or []
+#     response = client.fine_tuning.list()
 
-    # Use a default datetime for None values to make sure the key function always returns a comparable value
-    epoch_start = datetime.fromtimestamp(0, tz=timezone.utc)
-    response.data.sort(key=lambda x: parse_timestamp(x.created_at or "") or epoch_start)
+#     response.data = response.data or []
 
-    display_list = []
-    for i in response.data:
-        display_list.append(
-            {
-                "Fine-tune ID": i.id,
-                "Model Output Name": "\n".join(wrap(i.output_name or "", width=30)),
-                "Status": i.status,
-                "Created At": i.created_at,
-                "Price": f"""${
-                    finetune_price_to_dollars(float(str(i.total_price)))
-                }""",  # convert to string for mypy typing
-            }
-        )
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
+#     # Use a default datetime for None values to make sure the key function always returns a comparable value
+#     epoch_start = datetime.fromtimestamp(0, tz=timezone.utc)
+#     response.data.sort(key=lambda x: parse_timestamp(x.created_at or "") or epoch_start)
 
-    click.echo(table)
+#     display_list = []
+#     for i in response.data:
+#         display_list.append(
+#             {
+#                 "Fine-tune ID": i.id,
+#                 "Model Output Name": "\n".join(wrap(i.output_name or "", width=30)),
+#                 "Status": i.status,
+#                 "Created At": i.created_at,
+#                 "Price": f"""${
+#                     finetune_price_to_dollars(float(str(i.total_price)))
+#                 }""",  # convert to string for mypy typing
+#             }
+#         )
+#     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
 
-
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
-    """Retrieve fine-tuning job details"""
-    client: Together = ctx.obj
-
-    response = client.fine_tuning.retrieve(fine_tune_id)
-
-    # remove events from response for cleaner output
-    response.events = None
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+#     click.echo(table)
 
 
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option(
-    "--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job"
-)
-def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
-    """Cancel fine-tuning job"""
-    client: Together = ctx.obj
-    if not quiet:
-        confirm_response = input(
-            "You will be billed for any completed training steps upon cancellation. "
-            f"Do you want to cancel job {fine_tune_id}? [y/N]"
-        )
-        if "y" not in confirm_response.lower():
-            click.echo({"status": "Cancel not submitted"})
-            return
-    response = client.fine_tuning.cancel(fine_tune_id)
+# @fine_tuning.command()
+# @click.pass_context
+# @click.argument("fine_tune_id", type=str, required=True)
+# def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
+#     """Retrieve fine-tuning job details"""
+#     client: Together = ctx.obj
 
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+#     response = client.fine_tuning.retrieve(fine_tune_id)
+
+#     # remove events from response for cleaner output
+#     response.events = None
+
+#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-def list_events(ctx: click.Context, fine_tune_id: str) -> None:
-    """List fine-tuning events"""
-    client: Together = ctx.obj
+# @fine_tuning.command()
+# @click.pass_context
+# @click.argument("fine_tune_id", type=str, required=True)
+# @click.option(
+#     "--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job"
+# )
+# def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
+#     """Cancel fine-tuning job"""
+#     client: Together = ctx.obj
+#     if not quiet:
+#         confirm_response = input(
+#             "You will be billed for any completed training steps upon cancellation. "
+#             f"Do you want to cancel job {fine_tune_id}? [y/N]"
+#         )
+#         if "y" not in confirm_response.lower():
+#             click.echo({"status": "Cancel not submitted"})
+#             return
+#     response = client.fine_tuning.cancel(fine_tune_id)
 
-    response = client.fine_tuning.list_events(fine_tune_id)
-
-    response.data = response.data or []
-
-    display_list = []
-    for i in response.data:
-        display_list.append(
-            {
-                "Message": "\n".join(wrap(i.message or "", width=50)),
-                "Type": i.type,
-                "Created At": parse_timestamp(i.created_at or ""),
-                "Hash": i.hash,
-            }
-        )
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
-
-    click.echo(table)
+#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
-    """List available checkpoints for a fine-tuning job"""
-    client: Together = ctx.obj
+# @fine_tuning.command()
+# @click.pass_context
+# @click.argument("fine_tune_id", type=str, required=True)
+# def list_events(ctx: click.Context, fine_tune_id: str) -> None:
+#     """List fine-tuning events"""
+#     client: Together = ctx.obj
 
-    checkpoints = client.fine_tuning.list_checkpoints(fine_tune_id)
+#     response = client.fine_tuning.list_events(fine_tune_id)
 
-    display_list = []
-    for checkpoint in checkpoints:
-        display_list.append(
-            {
-                "Type": checkpoint.type,
-                "Timestamp": format_timestamp(checkpoint.timestamp),
-                "Name": checkpoint.name,
-            }
-        )
+#     response.data = response.data or []
 
-    if display_list:
-        click.echo(f"Job {fine_tune_id} contains the following checkpoints:")
-        table = tabulate(display_list, headers="keys", tablefmt="grid")
-        click.echo(table)
-        click.echo("\nTo download a checkpoint, use `together fine-tuning download`")
-    else:
-        click.echo(f"No checkpoints found for job {fine_tune_id}")
+#     display_list = []
+#     for i in response.data:
+#         display_list.append(
+#             {
+#                 "Message": "\n".join(wrap(i.message or "", width=50)),
+#                 "Type": i.type,
+#                 "Created At": parse_timestamp(i.created_at or ""),
+#                 "Hash": i.hash,
+#             }
+#         )
+#     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
+
+#     click.echo(table)
 
 
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option(
-    "--output_dir",
-    "-o",
-    type=click.Path(exists=True, file_okay=False, resolve_path=True),
-    required=False,
-    default=None,
-    help="Output directory",
-)
-@click.option(
-    "--checkpoint-step",
-    "-s",
-    type=int,
-    required=False,
-    default=None,
-    help="Download fine-tuning checkpoint. Defaults to latest.",
-)
-@click.option(
-    "--checkpoint-type",
-    type=DownloadCheckpointTypeChoice(),
-    required=False,
-    default=DownloadCheckpointType.DEFAULT.value,
-    help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
-)
-def download(
-    ctx: click.Context,
-    fine_tune_id: str,
-    output_dir: str,
-    checkpoint_step: int | None,
-    checkpoint_type: DownloadCheckpointType,
-) -> None:
-    """Download fine-tuning checkpoint"""
-    client: Together = ctx.obj
+# @fine_tuning.command()
+# @click.pass_context
+# @click.argument("fine_tune_id", type=str, required=True)
+# def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
+#     """List available checkpoints for a fine-tuning job"""
+#     client: Together = ctx.obj
 
-    response = client.fine_tuning.download(
-        fine_tune_id,
-        output=output_dir,
-        checkpoint_step=checkpoint_step,
-        checkpoint_type=checkpoint_type,
-    )
+#     checkpoints = client.fine_tuning.list_checkpoints(fine_tune_id)
 
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+#     display_list = []
+#     for checkpoint in checkpoints:
+#         display_list.append(
+#             {
+#                 "Type": checkpoint.type,
+#                 "Timestamp": format_timestamp(checkpoint.timestamp),
+#                 "Name": checkpoint.name,
+#             }
+#         )
+
+#     if display_list:
+#         click.echo(f"Job {fine_tune_id} contains the following checkpoints:")
+#         table = tabulate(display_list, headers="keys", tablefmt="grid")
+#         click.echo(table)
+#         click.echo("\nTo download a checkpoint, use `together fine-tuning download`")
+#     else:
+#         click.echo(f"No checkpoints found for job {fine_tune_id}")
 
 
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--force", is_flag=True, help="Force deletion without confirmation")
-@click.option(
-    "--quiet", is_flag=True, help="Do not prompt for confirmation before deleting job"
-)
-def delete(
-    ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False
-) -> None:
-    """Delete fine-tuning job"""
-    client: Together = ctx.obj
+# @fine_tuning.command()
+# @click.pass_context
+# @click.argument("fine_tune_id", type=str, required=True)
+# @click.option(
+#     "--output_dir",
+#     "-o",
+#     type=click.Path(exists=True, file_okay=False, resolve_path=True),
+#     required=False,
+#     default=None,
+#     help="Output directory",
+# )
+# @click.option(
+#     "--checkpoint-step",
+#     "-s",
+#     type=int,
+#     required=False,
+#     default=None,
+#     help="Download fine-tuning checkpoint. Defaults to latest.",
+# )
+# @click.option(
+#     "--checkpoint-type",
+#     type=DownloadCheckpointTypeChoice(),
+#     required=False,
+#     default=DownloadCheckpointType.DEFAULT.value,
+#     help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
+# )
+# def download(
+#     ctx: click.Context,
+#     fine_tune_id: str,
+#     output_dir: str,
+#     checkpoint_step: int | None,
+#     checkpoint_type: DownloadCheckpointType,
+# ) -> None:
+#     """Download fine-tuning checkpoint"""
+#     client: Together = ctx.obj
 
-    if not quiet:
-        confirm_response = input(
-            f"Are you sure you want to delete fine-tuning job {fine_tune_id}? "
-            "This action cannot be undone. [y/N] "
-        )
-        if confirm_response.lower() != "y":
-            click.echo("Deletion cancelled")
-            return
+#     response = client.fine_tuning.download(
+#         fine_tune_id,
+#         output=output_dir,
+#         checkpoint_step=checkpoint_step,
+#         checkpoint_type=checkpoint_type,
+#     )
 
-    response = client.fine_tuning.delete(fine_tune_id, force=force)
+#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+
+# @fine_tuning.command()
+# @click.pass_context
+# @click.argument("fine_tune_id", type=str, required=True)
+# @click.option("--force", is_flag=True, help="Force deletion without confirmation")
+# @click.option(
+#     "--quiet", is_flag=True, help="Do not prompt for confirmation before deleting job"
+# )
+# def delete(
+#     ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False
+# ) -> None:
+#     """Delete fine-tuning job"""
+#     client: Together = ctx.obj
+
+#     if not quiet:
+#         confirm_response = input(
+#             f"Are you sure you want to delete fine-tuning job {fine_tune_id}? "
+#             "This action cannot be undone. [y/N] "
+#         )
+#         if confirm_response.lower() != "y":
+#             click.echo("Deletion cancelled")
+#             return
+
+#     response = client.fine_tuning.delete(fine_tune_id, force=force)
+
+#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+
+
+
