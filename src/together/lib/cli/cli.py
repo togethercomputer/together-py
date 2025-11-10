@@ -8,7 +8,7 @@ import click
 import together
 from together._version import __version__
 from together._constants import DEFAULT_TIMEOUT
-# from together.lib.cli.api.endpoints import endpoints
+from together.lib.cli.api.endpoints import endpoints
 # from together.lib.cli.api.evaluation import evaluation
 from together.lib.cli.api.files import files
 from together.lib.cli.api.finetune import fine_tuning
@@ -68,7 +68,7 @@ def main(
 main.add_command(files)
 main.add_command(fine_tuning)
 main.add_command(models)
-# main.add_command(endpoints)
+main.add_command(endpoints)
 # main.add_command(evaluation)
 
 if __name__ == "__main__":
