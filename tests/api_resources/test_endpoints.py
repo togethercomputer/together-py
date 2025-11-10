@@ -181,7 +181,9 @@ class TestEndpoints:
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
         endpoint = client.endpoints.list(
+            mine=True,
             type="dedicated",
+            usage_type="on-demand",
         )
         assert_matches_type(EndpointListResponse, endpoint, path=["response"])
 
@@ -410,7 +412,9 @@ class TestAsyncEndpoints:
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
         endpoint = await async_client.endpoints.list(
+            mine=True,
             type="dedicated",
+            usage_type="on-demand",
         )
         assert_matches_type(EndpointListResponse, endpoint, path=["response"])
 

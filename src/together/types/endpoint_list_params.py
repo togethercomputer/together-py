@@ -8,5 +8,11 @@ __all__ = ["EndpointListParams"]
 
 
 class EndpointListParams(TypedDict, total=False):
+    mine: bool
+    """If true, return only endpoints owned by the caller"""
+
     type: Literal["dedicated", "serverless"]
     """Filter endpoints by type"""
+
+    usage_type: Literal["on-demand", "reserved"]
+    """Filter endpoints by usage type"""
