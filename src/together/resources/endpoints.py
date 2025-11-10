@@ -20,10 +20,8 @@ from .._response import (
 )
 from .._base_client import make_request_options
 from ..types.autoscaling_param import AutoscalingParam
+from ..types.dedicated_endpoint import DedicatedEndpoint
 from ..types.endpoint_list_response import EndpointListResponse
-from ..types.endpoint_create_response import EndpointCreateResponse
-from ..types.endpoint_update_response import EndpointUpdateResponse
-from ..types.endpoint_retrieve_response import EndpointRetrieveResponse
 
 __all__ = ["EndpointsResource", "AsyncEndpointsResource"]
 
@@ -65,7 +63,7 @@ class EndpointsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointCreateResponse:
+    ) -> DedicatedEndpoint:
         """Creates a new dedicated endpoint for serving models.
 
         The endpoint will
@@ -117,7 +115,7 @@ class EndpointsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EndpointCreateResponse,
+            cast_to=DedicatedEndpoint,
         )
 
     def retrieve(
@@ -130,7 +128,7 @@ class EndpointsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointRetrieveResponse:
+    ) -> DedicatedEndpoint:
         """
         Retrieves details about a specific endpoint, including its current state,
         configuration, and scaling settings.
@@ -151,7 +149,7 @@ class EndpointsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EndpointRetrieveResponse,
+            cast_to=DedicatedEndpoint,
         )
 
     def update(
@@ -168,7 +166,7 @@ class EndpointsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointUpdateResponse:
+    ) -> DedicatedEndpoint:
         """Updates an existing endpoint's configuration.
 
         You can modify the display name,
@@ -208,7 +206,7 @@ class EndpointsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EndpointUpdateResponse,
+            cast_to=DedicatedEndpoint,
         )
 
     def list(
@@ -323,7 +321,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointCreateResponse:
+    ) -> DedicatedEndpoint:
         """Creates a new dedicated endpoint for serving models.
 
         The endpoint will
@@ -375,7 +373,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EndpointCreateResponse,
+            cast_to=DedicatedEndpoint,
         )
 
     async def retrieve(
@@ -388,7 +386,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointRetrieveResponse:
+    ) -> DedicatedEndpoint:
         """
         Retrieves details about a specific endpoint, including its current state,
         configuration, and scaling settings.
@@ -409,7 +407,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EndpointRetrieveResponse,
+            cast_to=DedicatedEndpoint,
         )
 
     async def update(
@@ -426,7 +424,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointUpdateResponse:
+    ) -> DedicatedEndpoint:
         """Updates an existing endpoint's configuration.
 
         You can modify the display name,
@@ -466,7 +464,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EndpointUpdateResponse,
+            cast_to=DedicatedEndpoint,
         )
 
     async def list(

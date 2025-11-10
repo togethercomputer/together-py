@@ -24,6 +24,7 @@ from .execute_response import ExecuteResponse as ExecuteResponse
 from .autoscaling_param import AutoscalingParam as AutoscalingParam
 from .job_list_response import JobListResponse as JobListResponse
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
+from .dedicated_endpoint import DedicatedEndpoint as DedicatedEndpoint
 from .eval_list_response import EvalListResponse as EvalListResponse
 from .file_list_response import FileListResponse as FileListResponse
 from .file_upload_params import FileUploadParams as FileUploadParams
@@ -61,8 +62,6 @@ from .fine_tune_delete_params import FineTuneDeleteParams as FineTuneDeleteParam
 from .fine_tune_list_response import FineTuneListResponse as FineTuneListResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .cosine_lr_scheduler_args import CosineLrSchedulerArgs as CosineLrSchedulerArgs
-from .endpoint_create_response import EndpointCreateResponse as EndpointCreateResponse
-from .endpoint_update_response import EndpointUpdateResponse as EndpointUpdateResponse
 from .eval_get_status_response import EvalGetStatusResponse as EvalGetStatusResponse
 from .full_training_type_param import FullTrainingTypeParam as FullTrainingTypeParam
 from .linear_lr_scheduler_args import LinearLrSchedulerArgs as LinearLrSchedulerArgs
@@ -74,7 +73,6 @@ from .fine_tune_download_params import FineTuneDownloadParams as FineTuneDownloa
 from .lo_ra_training_type_param import LoRaTrainingTypeParam as LoRaTrainingTypeParam
 from .training_method_dpo_param import TrainingMethodDpoParam as TrainingMethodDpoParam
 from .training_method_sft_param import TrainingMethodSftParam as TrainingMethodSftParam
-from .endpoint_retrieve_response import EndpointRetrieveResponse as EndpointRetrieveResponse
 from .fine_tune_download_response import FineTuneDownloadResponse as FineTuneDownloadResponse
 from .cosine_lr_scheduler_args_param import CosineLrSchedulerArgsParam as CosineLrSchedulerArgsParam
 from .fine_tune_list_events_response import FineTuneListEventsResponse as FineTuneListEventsResponse

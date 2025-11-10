@@ -6,10 +6,10 @@ from typing_extensions import Literal
 from .._models import BaseModel
 from .autoscaling import Autoscaling
 
-__all__ = ["EndpointCreateResponse"]
+__all__ = ["DedicatedEndpoint"]
 
 
-class EndpointCreateResponse(BaseModel):
+class DedicatedEndpoint(BaseModel):
     id: str
     """Unique identifier for the endpoint"""
 
