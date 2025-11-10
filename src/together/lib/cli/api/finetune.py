@@ -441,30 +441,30 @@ def datetime_serializer(obj: Any) -> str:
         return obj.isoformat()
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
-# @fine_tuning.command()
-# @click.pass_context
-# @click.argument("fine_tune_id", type=str, required=True)
-# def list_events(ctx: click.Context, fine_tune_id: str) -> None:
-#     """List fine-tuning events"""
-#     client: Together = ctx.obj
+@fine_tuning.command()
+@click.pass_context
+@click.argument("fine_tune_id", type=str, required=True)
+def list_events(ctx: click.Context, fine_tune_id: str) -> None:
+    """List fine-tuning events"""
+    client: Together = ctx.obj
 
-#     response = client.fine_tuning.list_events(fine_tune_id)
+    response = client.fine_tune.list_events(fine_tune_id)
 
-#     response.data = response.data or []
+    response.data = response.data or []
 
-#     display_list = []
-#     for i in response.data:
-#         display_list.append(
-#             {
-#                 "Message": "\n".join(wrap(i.message or "", width=50)),
-#                 "Type": i.type,
-#                 "Created At": parse_timestamp(i.created_at or ""),
-#                 "Hash": i.hash,
-#             }
-#         )
-#     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
+    display_list = []
+    for i in response.data:
+        display_list.append(
+            {
+                "Message": "\n".join(wrap(i.message or "", width=50)),
+                "Type": i.type,
+                "Created At": i.created_at,
+                "Hash": i.hash,
+            }
+        )
+    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
 
-#     click.echo(table)
+    click.echo(table)
 
 
 # @fine_tuning.command()
