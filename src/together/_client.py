@@ -12,7 +12,6 @@ from . import _exceptions
 from ._qs import Querystring
 from .types import client_rerank_params
 from ._types import (
-    NOT_GIVEN,
     Body,
     Omit,
     Query,
@@ -23,6 +22,8 @@ from ._types import (
     ProxiesTypes,
     RequestOptions,
     SequenceNotStr,
+    omit,
+    not_given,
 )
 from ._utils import (
     is_given,
@@ -39,17 +40,17 @@ from ._response import (
 )
 from .resources import (
     jobs,
+    evals,
     files,
     images,
     models,
+    videos,
     batches,
     hardware,
     endpoints,
     fine_tune,
     embeddings,
-    evaluation,
     completions,
-    evaluations,
 )
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
@@ -84,14 +85,14 @@ class Together(SyncAPIClient):
     fine_tune: fine_tune.FineTuneResource
     code_interpreter: code_interpreter.CodeInterpreterResource
     images: images.ImagesResource
+    videos: videos.VideosResource
     audio: audio.AudioResource
     models: models.ModelsResource
     jobs: jobs.JobsResource
     endpoints: endpoints.EndpointsResource
     hardware: hardware.HardwareResource
     batches: batches.BatchesResource
-    evaluation: evaluation.EvaluationResource
-    evaluations: evaluations.EvaluationsResource
+    evals: evals.EvalsResource
     with_raw_response: TogetherWithRawResponse
     with_streaming_response: TogetherWithStreamedResponse
 
@@ -103,7 +104,7 @@ class Together(SyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: Union[float, Timeout, None, NotGiven] = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         max_retries: int = DEFAULT_MAX_RETRIES,
         default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -135,6 +136,7 @@ class Together(SyncAPIClient):
 
         if base_url is None:
             base_url = os.environ.get("TOGETHER_BASE_URL")
+        self._base_url_overridden = base_url is not None
         if base_url is None:
             base_url = f"https://api.together.xyz/v1"
 
@@ -158,14 +160,14 @@ class Together(SyncAPIClient):
         self.fine_tune = fine_tune.FineTuneResource(self)
         self.code_interpreter = code_interpreter.CodeInterpreterResource(self)
         self.images = images.ImagesResource(self)
+        self.videos = videos.VideosResource(self)
         self.audio = audio.AudioResource(self)
         self.models = models.ModelsResource(self)
         self.jobs = jobs.JobsResource(self)
         self.endpoints = endpoints.EndpointsResource(self)
         self.hardware = hardware.HardwareResource(self)
         self.batches = batches.BatchesResource(self)
-        self.evaluation = evaluation.EvaluationResource(self)
-        self.evaluations = evaluations.EvaluationsResource(self)
+        self.evals = evals.EvalsResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
         self.with_streaming_response = TogetherWithStreamedResponse(self)
 
@@ -194,9 +196,9 @@ class Together(SyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: float | Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         http_client: httpx.Client | None = None,
-        max_retries: int | NotGiven = NOT_GIVEN,
+        max_retries: int | NotGiven = not_given,
         default_headers: Mapping[str, str] | None = None,
         set_default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -225,7 +227,7 @@ class Together(SyncAPIClient):
             params = set_default_query
 
         http_client = http_client or self._client
-        return self.__class__(
+        client = self.__class__(
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
@@ -235,6 +237,8 @@ class Together(SyncAPIClient):
             default_query=params,
             **_extra_kwargs,
         )
+        client._base_url_overridden = self._base_url_overridden or base_url is not None
+        return client
 
     # Alias for `copy` for nicer inline usage, e.g.
     # client.with_options(timeout=10).foo.create(...)
@@ -246,15 +250,15 @@ class Together(SyncAPIClient):
         documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
         model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
-        rank_fields: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
-        return_documents: bool | NotGiven = NOT_GIVEN,
-        top_n: int | NotGiven = NOT_GIVEN,
+        rank_fields: SequenceNotStr[str] | Omit = omit,
+        return_documents: bool | Omit = omit,
+        top_n: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RerankResponse:
         """
         Query a reranker model
@@ -344,14 +348,14 @@ class AsyncTogether(AsyncAPIClient):
     fine_tune: fine_tune.AsyncFineTuneResource
     code_interpreter: code_interpreter.AsyncCodeInterpreterResource
     images: images.AsyncImagesResource
+    videos: videos.AsyncVideosResource
     audio: audio.AsyncAudioResource
     models: models.AsyncModelsResource
     jobs: jobs.AsyncJobsResource
     endpoints: endpoints.AsyncEndpointsResource
     hardware: hardware.AsyncHardwareResource
     batches: batches.AsyncBatchesResource
-    evaluation: evaluation.AsyncEvaluationResource
-    evaluations: evaluations.AsyncEvaluationsResource
+    evals: evals.AsyncEvalsResource
     with_raw_response: AsyncTogetherWithRawResponse
     with_streaming_response: AsyncTogetherWithStreamedResponse
 
@@ -363,7 +367,7 @@ class AsyncTogether(AsyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: Union[float, Timeout, None, NotGiven] = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         max_retries: int = DEFAULT_MAX_RETRIES,
         default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -395,6 +399,7 @@ class AsyncTogether(AsyncAPIClient):
 
         if base_url is None:
             base_url = os.environ.get("TOGETHER_BASE_URL")
+        self._base_url_overridden = base_url is not None
         if base_url is None:
             base_url = f"https://api.together.xyz/v1"
 
@@ -418,14 +423,14 @@ class AsyncTogether(AsyncAPIClient):
         self.fine_tune = fine_tune.AsyncFineTuneResource(self)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResource(self)
         self.images = images.AsyncImagesResource(self)
+        self.videos = videos.AsyncVideosResource(self)
         self.audio = audio.AsyncAudioResource(self)
         self.models = models.AsyncModelsResource(self)
         self.jobs = jobs.AsyncJobsResource(self)
         self.endpoints = endpoints.AsyncEndpointsResource(self)
         self.hardware = hardware.AsyncHardwareResource(self)
         self.batches = batches.AsyncBatchesResource(self)
-        self.evaluation = evaluation.AsyncEvaluationResource(self)
-        self.evaluations = evaluations.AsyncEvaluationsResource(self)
+        self.evals = evals.AsyncEvalsResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
         self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
 
@@ -454,9 +459,9 @@ class AsyncTogether(AsyncAPIClient):
         *,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-        timeout: float | Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | Timeout | None | NotGiven = not_given,
         http_client: httpx.AsyncClient | None = None,
-        max_retries: int | NotGiven = NOT_GIVEN,
+        max_retries: int | NotGiven = not_given,
         default_headers: Mapping[str, str] | None = None,
         set_default_headers: Mapping[str, str] | None = None,
         default_query: Mapping[str, object] | None = None,
@@ -485,7 +490,7 @@ class AsyncTogether(AsyncAPIClient):
             params = set_default_query
 
         http_client = http_client or self._client
-        return self.__class__(
+        client = self.__class__(
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
@@ -495,6 +500,8 @@ class AsyncTogether(AsyncAPIClient):
             default_query=params,
             **_extra_kwargs,
         )
+        client._base_url_overridden = self._base_url_overridden or base_url is not None
+        return client
 
     # Alias for `copy` for nicer inline usage, e.g.
     # client.with_options(timeout=10).foo.create(...)
@@ -506,15 +513,15 @@ class AsyncTogether(AsyncAPIClient):
         documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
         model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
         query: str,
-        rank_fields: SequenceNotStr[str] | NotGiven = NOT_GIVEN,
-        return_documents: bool | NotGiven = NOT_GIVEN,
-        top_n: int | NotGiven = NOT_GIVEN,
+        rank_fields: SequenceNotStr[str] | Omit = omit,
+        return_documents: bool | Omit = omit,
+        top_n: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RerankResponse:
         """
         Query a reranker model
@@ -605,14 +612,14 @@ class TogetherWithRawResponse:
         self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
         self.code_interpreter = code_interpreter.CodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithRawResponse(client.images)
+        self.videos = videos.VideosResourceWithRawResponse(client.videos)
         self.audio = audio.AudioResourceWithRawResponse(client.audio)
         self.models = models.ModelsResourceWithRawResponse(client.models)
         self.jobs = jobs.JobsResourceWithRawResponse(client.jobs)
         self.endpoints = endpoints.EndpointsResourceWithRawResponse(client.endpoints)
         self.hardware = hardware.HardwareResourceWithRawResponse(client.hardware)
         self.batches = batches.BatchesResourceWithRawResponse(client.batches)
-        self.evaluation = evaluation.EvaluationResourceWithRawResponse(client.evaluation)
-        self.evaluations = evaluations.EvaluationsResourceWithRawResponse(client.evaluations)
+        self.evals = evals.EvalsResourceWithRawResponse(client.evals)
 
         self.rerank = to_raw_response_wrapper(
             client.rerank,
@@ -628,14 +635,14 @@ class AsyncTogetherWithRawResponse:
         self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
+        self.videos = videos.AsyncVideosResourceWithRawResponse(client.videos)
         self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
         self.models = models.AsyncModelsResourceWithRawResponse(client.models)
         self.jobs = jobs.AsyncJobsResourceWithRawResponse(client.jobs)
         self.endpoints = endpoints.AsyncEndpointsResourceWithRawResponse(client.endpoints)
         self.hardware = hardware.AsyncHardwareResourceWithRawResponse(client.hardware)
         self.batches = batches.AsyncBatchesResourceWithRawResponse(client.batches)
-        self.evaluation = evaluation.AsyncEvaluationResourceWithRawResponse(client.evaluation)
-        self.evaluations = evaluations.AsyncEvaluationsResourceWithRawResponse(client.evaluations)
+        self.evals = evals.AsyncEvalsResourceWithRawResponse(client.evals)
 
         self.rerank = async_to_raw_response_wrapper(
             client.rerank,
@@ -651,14 +658,14 @@ class TogetherWithStreamedResponse:
         self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
         self.code_interpreter = code_interpreter.CodeInterpreterResourceWithStreamingResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
+        self.videos = videos.VideosResourceWithStreamingResponse(client.videos)
         self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
         self.models = models.ModelsResourceWithStreamingResponse(client.models)
         self.jobs = jobs.JobsResourceWithStreamingResponse(client.jobs)
         self.endpoints = endpoints.EndpointsResourceWithStreamingResponse(client.endpoints)
         self.hardware = hardware.HardwareResourceWithStreamingResponse(client.hardware)
         self.batches = batches.BatchesResourceWithStreamingResponse(client.batches)
-        self.evaluation = evaluation.EvaluationResourceWithStreamingResponse(client.evaluation)
-        self.evaluations = evaluations.EvaluationsResourceWithStreamingResponse(client.evaluations)
+        self.evals = evals.EvalsResourceWithStreamingResponse(client.evals)
 
         self.rerank = to_streamed_response_wrapper(
             client.rerank,
@@ -676,14 +683,14 @@ class AsyncTogetherWithStreamedResponse:
             client.code_interpreter
         )
         self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
+        self.videos = videos.AsyncVideosResourceWithStreamingResponse(client.videos)
         self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
         self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
         self.jobs = jobs.AsyncJobsResourceWithStreamingResponse(client.jobs)
         self.endpoints = endpoints.AsyncEndpointsResourceWithStreamingResponse(client.endpoints)
         self.hardware = hardware.AsyncHardwareResourceWithStreamingResponse(client.hardware)
         self.batches = batches.AsyncBatchesResourceWithStreamingResponse(client.batches)
-        self.evaluation = evaluation.AsyncEvaluationResourceWithStreamingResponse(client.evaluation)
-        self.evaluations = evaluations.AsyncEvaluationsResourceWithStreamingResponse(client.evaluations)
+        self.evals = evals.AsyncEvalsResourceWithStreamingResponse(client.evals)
 
         self.rerank = async_to_streamed_response_wrapper(
             client.rerank,

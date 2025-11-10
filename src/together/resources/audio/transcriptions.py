@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..._types import NOT_GIVEN, Body, Query, Headers, NotGiven, FileTypes
+from ..._types import Body, Omit, Query, Headers, NotGiven, FileTypes, omit, not_given
 from ..._utils import extract_files, maybe_transform, deepcopy_minimal, async_maybe_transform
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
@@ -48,25 +48,36 @@ class TranscriptionsResource(SyncAPIResource):
         self,
         *,
         file: FileTypes,
-        language: str | NotGiven = NOT_GIVEN,
-        model: Literal["openai/whisper-large-v3"] | NotGiven = NOT_GIVEN,
-        prompt: str | NotGiven = NOT_GIVEN,
-        response_format: Literal["json", "verbose_json"] | NotGiven = NOT_GIVEN,
-        temperature: float | NotGiven = NOT_GIVEN,
-        timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]]
-        | NotGiven = NOT_GIVEN,
+        diarize: bool | Omit = omit,
+        language: str | Omit = omit,
+        model: Literal["openai/whisper-large-v3"] | Omit = omit,
+        prompt: str | Omit = omit,
+        response_format: Literal["json", "verbose_json"] | Omit = omit,
+        temperature: float | Omit = omit,
+        timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> TranscriptionCreateResponse:
         """
         Transcribes audio into text
 
         Args:
           file: Audio file to transcribe
+
+          diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
+              for each word in the transcription. In the response, in the words array, you
+              will get the speaker id for each word. In addition, we also return the
+              speaker_segments array which contains the speaker id for each speaker segment
+              along with the start and end time of the segment along with all the words in the
+              segment.
+
+              For eg - ... "speaker_segments": [ "speaker_id": "SPEAKER_00", "start": 0,
+              "end": 30.02, "words": [ { "id": 0, "word": "Tijana", "start": 0, "end": 11.475,
+              "speaker_id": "SPEAKER_00" }, ...
 
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
@@ -94,6 +105,7 @@ class TranscriptionsResource(SyncAPIResource):
         body = deepcopy_minimal(
             {
                 "file": file,
+                "diarize": diarize,
                 "language": language,
                 "model": model,
                 "prompt": prompt,
@@ -147,25 +159,36 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         self,
         *,
         file: FileTypes,
-        language: str | NotGiven = NOT_GIVEN,
-        model: Literal["openai/whisper-large-v3"] | NotGiven = NOT_GIVEN,
-        prompt: str | NotGiven = NOT_GIVEN,
-        response_format: Literal["json", "verbose_json"] | NotGiven = NOT_GIVEN,
-        temperature: float | NotGiven = NOT_GIVEN,
-        timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]]
-        | NotGiven = NOT_GIVEN,
+        diarize: bool | Omit = omit,
+        language: str | Omit = omit,
+        model: Literal["openai/whisper-large-v3"] | Omit = omit,
+        prompt: str | Omit = omit,
+        response_format: Literal["json", "verbose_json"] | Omit = omit,
+        temperature: float | Omit = omit,
+        timestamp_granularities: Union[Literal["segment", "word"], List[Literal["segment", "word"]]] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> TranscriptionCreateResponse:
         """
         Transcribes audio into text
 
         Args:
           file: Audio file to transcribe
+
+          diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
+              for each word in the transcription. In the response, in the words array, you
+              will get the speaker id for each word. In addition, we also return the
+              speaker_segments array which contains the speaker id for each speaker segment
+              along with the start and end time of the segment along with all the words in the
+              segment.
+
+              For eg - ... "speaker_segments": [ "speaker_id": "SPEAKER_00", "start": 0,
+              "end": 30.02, "words": [ { "id": 0, "word": "Tijana", "start": 0, "end": 11.475,
+              "speaker_id": "SPEAKER_00" }, ...
 
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
@@ -193,6 +216,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         body = deepcopy_minimal(
             {
                 "file": file,
+                "diarize": diarize,
                 "language": language,
                 "model": model,
                 "prompt": prompt,

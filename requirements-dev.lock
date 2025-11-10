@@ -58,7 +58,7 @@ httpx==0.28.1
     # via httpx-aiohttp
     # via respx
     # via together
-httpx-aiohttp==0.1.8
+httpx-aiohttp==0.1.9
     # via together
 idna==3.4
     # via anyio
@@ -98,9 +98,9 @@ pyarrow==16.1.0
     # via together
 pyarrow-stubs==10.0.1.7
     # via together
-pydantic==2.10.3
+pydantic==2.11.9
     # via together
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via pydantic
 pygments==2.18.0
     # via rich
@@ -150,6 +150,9 @@ typing-extensions==4.12.2
     # via together
 urllib3==2.4.0
     # via types-requests
+    # via typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 virtualenv==20.24.5
     # via nox
 yarl==1.20.1

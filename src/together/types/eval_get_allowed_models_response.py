@@ -6,8 +6,8 @@ from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["EvaluationGetAllowedModelsResponse"]
+__all__ = ["EvalGetAllowedModelsResponse"]
 
 
-class EvaluationGetAllowedModelsResponse(BaseModel):
+class EvalGetAllowedModelsResponse(BaseModel):
     x_model_list: Optional[List[str]] = FieldInfo(alias="model_list", default=None)

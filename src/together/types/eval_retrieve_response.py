@@ -9,19 +9,18 @@ from pydantic import Field as FieldInfo
 from .._models import BaseModel
 
 __all__ = [
-    "EvaluationListResponse",
-    "EvaluationListResponseItem",
-    "EvaluationListResponseItemResults",
-    "EvaluationListResponseItemResultsEvaluationClassifyResults",
-    "EvaluationListResponseItemResultsEvaluationScoreResults",
-    "EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores",
-    "EvaluationListResponseItemResultsEvaluationCompareResults",
-    "EvaluationListResponseItemResultsError",
-    "EvaluationListResponseItemStatusUpdate",
+    "EvalRetrieveResponse",
+    "Results",
+    "ResultsEvaluationClassifyResults",
+    "ResultsEvaluationScoreResults",
+    "ResultsEvaluationScoreResultsAggregatedScores",
+    "ResultsEvaluationCompareResults",
+    "ResultsError",
+    "StatusUpdate",
 ]
 
 
-class EvaluationListResponseItemResultsEvaluationClassifyResults(BaseModel):
+class ResultsEvaluationClassifyResults(BaseModel):
     generation_fail_count: Optional[float] = None
     """Number of failed generations."""
 
@@ -41,7 +40,7 @@ class EvaluationListResponseItemResultsEvaluationClassifyResults(BaseModel):
     """Data File ID"""
 
 
-class EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores(BaseModel):
+class ResultsEvaluationScoreResultsAggregatedScores(BaseModel):
     mean_score: Optional[float] = None
 
     pass_percentage: Optional[float] = None
@@ -49,8 +48,8 @@ class EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores(Ba
     std_score: Optional[float] = None
 
 
-class EvaluationListResponseItemResultsEvaluationScoreResults(BaseModel):
-    aggregated_scores: Optional[EvaluationListResponseItemResultsEvaluationScoreResultsAggregatedScores] = None
+class ResultsEvaluationScoreResults(BaseModel):
+    aggregated_scores: Optional[ResultsEvaluationScoreResultsAggregatedScores] = None
 
     failed_samples: Optional[float] = None
     """number of failed samples generated from model"""
@@ -68,7 +67,7 @@ class EvaluationListResponseItemResultsEvaluationScoreResults(BaseModel):
     """Data File ID"""
 
 
-class EvaluationListResponseItemResultsEvaluationCompareResults(BaseModel):
+class ResultsEvaluationCompareResults(BaseModel):
     a_wins: Optional[int] = FieldInfo(alias="A_wins", default=None)
     """Number of times model A won"""
 
@@ -91,20 +90,16 @@ class EvaluationListResponseItemResultsEvaluationCompareResults(BaseModel):
     """Number of ties"""
 
 
-class EvaluationListResponseItemResultsError(BaseModel):
+class ResultsError(BaseModel):
     error: Optional[str] = None
 
 
-EvaluationListResponseItemResults: TypeAlias = Union[
-    EvaluationListResponseItemResultsEvaluationClassifyResults,
-    EvaluationListResponseItemResultsEvaluationScoreResults,
-    EvaluationListResponseItemResultsEvaluationCompareResults,
-    EvaluationListResponseItemResultsError,
-    None,
+Results: TypeAlias = Union[
+    ResultsEvaluationClassifyResults, ResultsEvaluationScoreResults, ResultsEvaluationCompareResults, ResultsError, None
 ]
 
 
-class EvaluationListResponseItemStatusUpdate(BaseModel):
+class StatusUpdate(BaseModel):
     message: Optional[str] = None
     """Additional message for this update"""
 
@@ -115,7 +110,7 @@ class EvaluationListResponseItemStatusUpdate(BaseModel):
     """When this update occurred"""
 
 
-class EvaluationListResponseItem(BaseModel):
+class EvalRetrieveResponse(BaseModel):
     created_at: Optional[datetime] = None
     """When the job was created"""
 
@@ -125,13 +120,13 @@ class EvaluationListResponseItem(BaseModel):
     parameters: Optional[Dict[str, object]] = None
     """The parameters used for this evaluation"""
 
-    results: Optional[EvaluationListResponseItemResults] = None
+    results: Optional[Results] = None
     """Results of the evaluation (when completed)"""
 
     status: Optional[Literal["pending", "queued", "running", "completed", "error", "user_error"]] = None
     """Current status of the job"""
 
-    status_updates: Optional[List[EvaluationListResponseItemStatusUpdate]] = None
+    status_updates: Optional[List[StatusUpdate]] = None
     """History of status updates (admin only)"""
 
     type: Optional[Literal["classify", "score", "compare"]] = None
@@ -142,6 +137,3 @@ class EvaluationListResponseItem(BaseModel):
 
     workflow_id: Optional[str] = None
     """The evaluation job ID"""
-
-
-EvaluationListResponse: TypeAlias = List[EvaluationListResponseItem]

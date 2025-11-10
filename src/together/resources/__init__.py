@@ -24,6 +24,14 @@ from .audio import (
     AudioResourceWithStreamingResponse,
     AsyncAudioResourceWithStreamingResponse,
 )
+from .evals import (
+    EvalsResource,
+    AsyncEvalsResource,
+    EvalsResourceWithRawResponse,
+    AsyncEvalsResourceWithRawResponse,
+    EvalsResourceWithStreamingResponse,
+    AsyncEvalsResourceWithStreamingResponse,
+)
 from .files import (
     FilesResource,
     AsyncFilesResource,
@@ -47,6 +55,14 @@ from .models import (
     AsyncModelsResourceWithRawResponse,
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
+)
+from .videos import (
+    VideosResource,
+    AsyncVideosResource,
+    VideosResourceWithRawResponse,
+    AsyncVideosResourceWithRawResponse,
+    VideosResourceWithStreamingResponse,
+    AsyncVideosResourceWithStreamingResponse,
 )
 from .batches import (
     BatchesResource,
@@ -88,14 +104,6 @@ from .embeddings import (
     EmbeddingsResourceWithStreamingResponse,
     AsyncEmbeddingsResourceWithStreamingResponse,
 )
-from .evaluation import (
-    EvaluationResource,
-    AsyncEvaluationResource,
-    EvaluationResourceWithRawResponse,
-    AsyncEvaluationResourceWithRawResponse,
-    EvaluationResourceWithStreamingResponse,
-    AsyncEvaluationResourceWithStreamingResponse,
-)
 from .completions import (
     CompletionsResource,
     AsyncCompletionsResource,
@@ -103,14 +111,6 @@ from .completions import (
     AsyncCompletionsResourceWithRawResponse,
     CompletionsResourceWithStreamingResponse,
     AsyncCompletionsResourceWithStreamingResponse,
-)
-from .evaluations import (
-    EvaluationsResource,
-    AsyncEvaluationsResource,
-    EvaluationsResourceWithRawResponse,
-    AsyncEvaluationsResourceWithRawResponse,
-    EvaluationsResourceWithStreamingResponse,
-    AsyncEvaluationsResourceWithStreamingResponse,
 )
 from .code_interpreter import (
     CodeInterpreterResource,
@@ -164,6 +164,12 @@ __all__ = [
     "AsyncImagesResourceWithRawResponse",
     "ImagesResourceWithStreamingResponse",
     "AsyncImagesResourceWithStreamingResponse",
+    "VideosResource",
+    "AsyncVideosResource",
+    "VideosResourceWithRawResponse",
+    "AsyncVideosResourceWithRawResponse",
+    "VideosResourceWithStreamingResponse",
+    "AsyncVideosResourceWithStreamingResponse",
     "AudioResource",
     "AsyncAudioResource",
     "AudioResourceWithRawResponse",
@@ -200,16 +206,10 @@ __all__ = [
     "AsyncBatchesResourceWithRawResponse",
     "BatchesResourceWithStreamingResponse",
     "AsyncBatchesResourceWithStreamingResponse",
-    "EvaluationResource",
-    "AsyncEvaluationResource",
-    "EvaluationResourceWithRawResponse",
-    "AsyncEvaluationResourceWithRawResponse",
-    "EvaluationResourceWithStreamingResponse",
-    "AsyncEvaluationResourceWithStreamingResponse",
-    "EvaluationsResource",
-    "AsyncEvaluationsResource",
-    "EvaluationsResourceWithRawResponse",
-    "AsyncEvaluationsResourceWithRawResponse",
-    "EvaluationsResourceWithStreamingResponse",
-    "AsyncEvaluationsResourceWithStreamingResponse",
+    "EvalsResource",
+    "AsyncEvalsResource",
+    "EvalsResourceWithRawResponse",
+    "AsyncEvalsResourceWithRawResponse",
+    "EvalsResourceWithStreamingResponse",
+    "AsyncEvalsResourceWithStreamingResponse",
 ]

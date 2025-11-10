@@ -28,6 +28,7 @@ class TestTranscriptions:
     def test_method_create_with_all_params(self, client: Together) -> None:
         transcription = client.audio.transcriptions.create(
             file=b"raw file contents",
+            diarize=True,
             language="en",
             model="openai/whisper-large-v3",
             prompt="prompt",
@@ -78,6 +79,7 @@ class TestAsyncTranscriptions:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         transcription = await async_client.audio.transcriptions.create(
             file=b"raw file contents",
+            diarize=True,
             language="en",
             model="openai/whisper-large-v3",
             prompt="prompt",

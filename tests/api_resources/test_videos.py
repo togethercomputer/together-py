@@ -1,0 +1,212 @@
+# File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+from __future__ import annotations
+
+import os
+from typing import Any, cast
+
+import pytest
+
+from together import Together, AsyncTogether
+from tests.utils import assert_matches_type
+from together.types import VideoJob, VideoCreateResponse
+
+base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+
+class TestVideos:
+    parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
+
+    @parametrize
+    def test_method_create(self, client: Together) -> None:
+        video = client.videos.create(
+            model="model",
+        )
+        assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+    @parametrize
+    def test_method_create_with_all_params(self, client: Together) -> None:
+        video = client.videos.create(
+            model="model",
+            fps=0,
+            frame_images=[
+                {
+                    "input_image": "input_image",
+                    "frame": 0,
+                }
+            ],
+            guidance_scale=0,
+            height=0,
+            negative_prompt="negative_prompt",
+            output_format="MP4",
+            output_quality=0,
+            prompt="x",
+            reference_images=["string"],
+            seconds="seconds",
+            seed=0,
+            steps=10,
+            width=0,
+        )
+        assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+    @parametrize
+    def test_raw_response_create(self, client: Together) -> None:
+        response = client.videos.with_raw_response.create(
+            model="model",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        video = response.parse()
+        assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+    @parametrize
+    def test_streaming_response_create(self, client: Together) -> None:
+        with client.videos.with_streaming_response.create(
+            model="model",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            video = response.parse()
+            assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_retrieve(self, client: Together) -> None:
+        video = client.videos.retrieve(
+            "id",
+        )
+        assert_matches_type(VideoJob, video, path=["response"])
+
+    @parametrize
+    def test_raw_response_retrieve(self, client: Together) -> None:
+        response = client.videos.with_raw_response.retrieve(
+            "id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        video = response.parse()
+        assert_matches_type(VideoJob, video, path=["response"])
+
+    @parametrize
+    def test_streaming_response_retrieve(self, client: Together) -> None:
+        with client.videos.with_streaming_response.retrieve(
+            "id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            video = response.parse()
+            assert_matches_type(VideoJob, video, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_retrieve(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.videos.with_raw_response.retrieve(
+                "",
+            )
+
+
+class TestAsyncVideos:
+    parametrize = pytest.mark.parametrize(
+        "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
+    )
+
+    @parametrize
+    async def test_method_create(self, async_client: AsyncTogether) -> None:
+        video = await async_client.videos.create(
+            model="model",
+        )
+        assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+    @parametrize
+    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
+        video = await async_client.videos.create(
+            model="model",
+            fps=0,
+            frame_images=[
+                {
+                    "input_image": "input_image",
+                    "frame": 0,
+                }
+            ],
+            guidance_scale=0,
+            height=0,
+            negative_prompt="negative_prompt",
+            output_format="MP4",
+            output_quality=0,
+            prompt="x",
+            reference_images=["string"],
+            seconds="seconds",
+            seed=0,
+            steps=10,
+            width=0,
+        )
+        assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+    @parametrize
+    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
+        response = await async_client.videos.with_raw_response.create(
+            model="model",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        video = await response.parse()
+        assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
+        async with async_client.videos.with_streaming_response.create(
+            model="model",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            video = await response.parse()
+            assert_matches_type(VideoCreateResponse, video, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
+        video = await async_client.videos.retrieve(
+            "id",
+        )
+        assert_matches_type(VideoJob, video, path=["response"])
+
+    @parametrize
+    async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
+        response = await async_client.videos.with_raw_response.retrieve(
+            "id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        video = await response.parse()
+        assert_matches_type(VideoJob, video, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
+        async with async_client.videos.with_streaming_response.retrieve(
+            "id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            video = await response.parse()
+            assert_matches_type(VideoJob, video, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_retrieve(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.videos.with_raw_response.retrieve(
+                "",
+            )

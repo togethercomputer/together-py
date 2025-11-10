@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.1.0-alpha.19 (2025-11-10)
+
+Full Changelog: [v0.1.0-alpha.18...v0.1.0-alpha.19](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.18...v0.1.0-alpha.19)
+
+### ⚠ BREAKING CHANGES
+
+* **api:** The default max retries for api calls has changed from 5 to 2. This may result in more frequent non-200 responses.
+
+### Features
+
+* **api:** Add fine_tune.delete API ([bc935ae](https://github.com/togethercomputer/together-py/commit/bc935ae8fb20e008a8581fe9532c2f2dba052cc5))
+* **api:** Add Video APIs ([0e4b013](https://github.com/togethercomputer/together-py/commit/0e4b013607b6c8837772b94e7abe04ff5cf0a945))
+* **api:** api update ([bede2e9](https://github.com/togethercomputer/together-py/commit/bede2e9c93d11fc015326a480791a2a477fe3f5f))
+* **api:** api update ([fc55c21](https://github.com/togethercomputer/together-py/commit/fc55c21ebe3a874c7df3247c949d93f47eee15a1))
+* **api:** api update ([27a68fe](https://github.com/togethercomputer/together-py/commit/27a68feb1d4abb65b1bbc8268c0e2cc6639843ea))
+* **api:** api update ([4c03db5](https://github.com/togethercomputer/together-py/commit/4c03db5279ec649d74509de37826fe15f70c4ccb))
+* **api:** api update ([828c879](https://github.com/togethercomputer/together-py/commit/828c8790ba68175880fc8899e6f4d3343fb77efc))
+* **api:** api update ([5225475](https://github.com/togethercomputer/together-py/commit/5225475f361176f3b5a8cc0375490cb6bab8578f))
+* **api:** api update ([23cc181](https://github.com/togethercomputer/together-py/commit/23cc181522f5921905b8fe5cbf244dff7fd9a848))
+* **api:** api update ([8777e19](https://github.com/togethercomputer/together-py/commit/8777e197d81964b6d0eae39f5ff390c5862aece4))
+* **api:** Change the default max retries from 5 to 2 ([f4948c0](https://github.com/togethercomputer/together-py/commit/f4948c0f88558047ad39cf039c545ee73cd2bf59))
+* **api:** manual updates ([ab62050](https://github.com/togethercomputer/together-py/commit/ab620506058c338e19e564dfab3e8344d673813e))
+* **api:** manual updates ([a129515](https://github.com/togethercomputer/together-py/commit/a1295156330d815c0749cf14d1dd84339292c2c6))
+* **api:** manual updates ([f51d284](https://github.com/togethercomputer/together-py/commit/f51d284e2aa3592574ec4416d526bf581574ebe6))
+* **api:** manual updates ([cd3c514](https://github.com/togethercomputer/together-py/commit/cd3c514e7572d5ad0b889fb5dff97c4901854715))
+* **api:** Rename evaluation sdks to evals ([9163ca7](https://github.com/togethercomputer/together-py/commit/9163ca78c42c421c5de732bb54cd30578aeb3e77))
+
+
+### Bug Fixes
+
+* **client:** close streams without requiring full consumption ([298c565](https://github.com/togethercomputer/together-py/commit/298c565cec79e666da10c7b64af7eb3964f62668))
+* compat with Python 3.14 ([274f25d](https://github.com/togethercomputer/together-py/commit/274f25de691bfb4ec0bc2b4a7626c647e87996b8))
+
+
+### Chores
+
+* bump `httpx-aiohttp` version to 0.1.9 ([18e2050](https://github.com/togethercomputer/together-py/commit/18e2050b0de8bc897c9b818553b84d0685a03ba5))
+* do not install brew dependencies in ./scripts/bootstrap by default ([af4299a](https://github.com/togethercomputer/together-py/commit/af4299aa1f5cc9eba0183267d51e9ff5e49e1e98))
+* improve example values ([0855619](https://github.com/togethercomputer/together-py/commit/08556197407d5323431ed040dd58c46b657ff993))
+* **internal/tests:** avoid race condition with implicit client cleanup ([cc6a071](https://github.com/togethercomputer/together-py/commit/cc6a0712fc81aeefae07a4149ffc493e18811b01))
+* **internal:** detect missing future annotations with ruff ([d33b041](https://github.com/togethercomputer/together-py/commit/d33b0419d5db8a5ba094821bcbcc94785e7ff829))
+* **internal:** grammar fix (it's -&gt; its) ([57b735a](https://github.com/togethercomputer/together-py/commit/57b735a920469e0fb6b1f10e2477327e81bf17d7))
+* **internal:** update pydantic dependency ([9a64a83](https://github.com/togethercomputer/together-py/commit/9a64a8387f90ef99c31276640b7af1f6e0a50bf7))
+* **package:** drop Python 3.8 support ([94fabac](https://github.com/togethercomputer/together-py/commit/94fabacaf4c872ab77dc530990b80aba8214f4f6))
+* **types:** change optional parameter type from NotGiven to Omit ([8384a79](https://github.com/togethercomputer/together-py/commit/8384a7900df0798a5c29bf827576735ca258d06b))
+
 ## 0.1.0-alpha.18 (2025-09-05)
 
 Full Changelog: [v0.1.0-alpha.17...v0.1.0-alpha.18](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.17...v0.1.0-alpha.18)

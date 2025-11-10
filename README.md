@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 [![PyPI version](https://img.shields.io/pypi/v/together.svg?label=pypi%20(stable))](https://pypi.org/project/together/)
 
-The Together Python library provides convenient access to the Together REST API from any Python 3.8+
+The Together Python library provides convenient access to the Together REST API from any Python 3.9+
 application. The library includes type definitions for all request params and response fields,
 and offers both synchronous and asynchronous clients powered by [httpx](https://github.com/encode/httpx).
 
@@ -268,7 +268,7 @@ Error codes are as follows:
 
 ### Retries
 
-Certain errors are automatically retried 5 times by default, with a short exponential backoff.
+Certain errors are automatically retried 2 times by default, with a short exponential backoff.
 Connection errors (for example, due to a network connectivity problem), 408 Request Timeout, 409 Conflict,
 429 Rate Limit, and >=500 Internal errors are all retried by default.
 
@@ -605,7 +605,7 @@ print(together.__version__)
 
 ## Requirements
 
-Python 3.8 or higher.
+Python 3.9 or higher.
 
 ## Contributing
 

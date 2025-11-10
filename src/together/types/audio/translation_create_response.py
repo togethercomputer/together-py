@@ -43,6 +43,9 @@ class AudioTranslationVerboseJsonResponseWord(BaseModel):
     word: str
     """The word"""
 
+    speaker_id: Optional[str] = None
+    """The speaker id for the word (only when diarize is enabled)"""
+
 
 class AudioTranslationVerboseJsonResponse(BaseModel):
     duration: float

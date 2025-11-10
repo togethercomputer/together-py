@@ -8,7 +8,7 @@ from pydantic import Field as FieldInfo
 from .._models import BaseModel
 
 __all__ = [
-    "EvaluationGetStatusResponse",
+    "EvalGetStatusResponse",
     "Results",
     "ResultsEvaluationClassifyResults",
     "ResultsEvaluationScoreResults",
@@ -97,7 +97,7 @@ Results: TypeAlias = Union[
 ]
 
 
-class EvaluationGetStatusResponse(BaseModel):
+class EvalGetStatusResponse(BaseModel):
     results: Optional[Results] = None
 
     status: Optional[Literal["pending", "queued", "running", "completed", "error", "user_error"]] = None
