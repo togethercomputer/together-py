@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import json
 from datetime import datetime, timezone
 from typing import Literal, Any
 from textwrap import wrap
@@ -400,19 +400,19 @@ def list(ctx: click.Context) -> None:
     click.echo(table)
 
 
-# @fine_tuning.command()
-# @click.pass_context
-# @click.argument("fine_tune_id", type=str, required=True)
-# def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
-#     """Retrieve fine-tuning job details"""
-#     client: Together = ctx.obj
+@fine_tuning.command()
+@click.pass_context
+@click.argument("fine_tune_id", type=str, required=True)
+def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
+    """Retrieve fine-tuning job details"""
+    client: Together = ctx.obj
 
-#     response = client.fine_tuning.retrieve(fine_tune_id)
+    response = client.fine_tune.retrieve(fine_tune_id)
 
-#     # remove events from response for cleaner output
-#     response.events = None
+    # remove events from response for cleaner output
+    response.events = None
 
-#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 # @fine_tuning.command()
