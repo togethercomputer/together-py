@@ -659,6 +659,9 @@ together fine-tuning cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # Download fine-tuned model weights
 together fine-tuning download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# Delete fine-tuned model weights
+together fine-tuning delete ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 ```
 
 ### Models
