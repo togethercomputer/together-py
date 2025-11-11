@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Annotated, TypedDict
+
+from .._utils import PropertyInfo
 
 __all__ = ["EvalListParams"]
 
 
 class EvalListParams(TypedDict, total=False):
     limit: int
-    """Maximum number of results to return (max 100)"""
 
-    status: Literal["pending", "queued", "running", "completed", "error", "user_error"]
-    """Filter by job status"""
+    status: str
+
+    user_id: Annotated[str, PropertyInfo(alias="userId")]
+    """Admin users can specify a user ID to filter jobs.
+
+    Pass empty string to get all jobs.
+    """
