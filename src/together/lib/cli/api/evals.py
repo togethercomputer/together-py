@@ -538,14 +538,14 @@ def retrieve(ctx: click.Context, evaluation_id: str) -> None:
     click.echo(json.dumps(response.model_dump(exclude_none=True), default=datetime_serializer, indent=4))
 
 
-# @evaluation.command()
-# @click.pass_context
-# @click.argument("evaluation_id", type=str, required=True)
-# def status(ctx: click.Context, evaluation_id: str) -> None:
-#     """Get the status and results of a specific evaluation job"""
+@evals.command()
+@click.pass_context
+@click.argument("evaluation_id", type=str, required=True)
+def status(ctx: click.Context, evaluation_id: str) -> None:
+    """Get the status and results of a specific evaluation job"""
 
-#     client: Together = ctx.obj
+    client: Together = ctx.obj
 
-#     response = client.evaluation.status(evaluation_id=evaluation_id)
+    response = client.evals.status(evaluation_id)
 
-    # click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
