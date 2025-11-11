@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing_extensions import Literal
+
 import httpx
 
-from ..types import eval_list_params, eval_get_allowed_models_params
+from ..types import eval_list_params, eval_create_params, eval_update_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -16,10 +18,11 @@ from .._response import (
     async_to_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
+from ..types.evaluation_job import EvaluationJob
 from ..types.eval_list_response import EvalListResponse
-from ..types.eval_retrieve_response import EvalRetrieveResponse
-from ..types.eval_get_status_response import EvalGetStatusResponse
-from ..types.eval_get_allowed_models_response import EvalGetAllowedModelsResponse
+from ..types.eval_create_response import EvalCreateResponse
+from ..types.eval_status_response import EvalStatusResponse
+from ..types.eval_update_response import EvalUpdateResponse
 
 __all__ = ["EvalsResource", "AsyncEvalsResource"]
 
@@ -44,6 +47,49 @@ class EvalsResource(SyncAPIResource):
         """
         return EvalsResourceWithStreamingResponse(self)
 
+    def create(
+        self,
+        *,
+        parameters: eval_create_params.Parameters,
+        type: Literal["classify", "score", "compare"],
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvalCreateResponse:
+        """
+        Create an evaluation job
+
+        Args:
+          parameters: Type-specific parameters for the evaluation
+
+          type: The type of evaluation to perform
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/evaluation",
+            body=maybe_transform(
+                {
+                    "parameters": parameters,
+                    "type": type,
+                },
+                eval_create_params.EvalCreateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvalCreateResponse,
+        )
+
     def retrieve(
         self,
         id: str,
@@ -54,7 +100,7 @@ class EvalsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalRetrieveResponse:
+    ) -> EvaluationJob:
         """
         Get evaluation job details
 
@@ -74,7 +120,56 @@ class EvalsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EvalRetrieveResponse,
+            cast_to=EvaluationJob,
+        )
+
+    def update(
+        self,
+        id: str,
+        *,
+        error: str | Omit = omit,
+        results: object | Omit = omit,
+        status: Literal["completed", "error", "user_error", "running", "queued", "pending"] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvalUpdateResponse:
+        """
+        Update evaluation job status and results
+
+        Args:
+          error: Error message when status is 'error' or 'user_error'
+
+          results: The results of the evaluation job. The concrete structure depends on the type of
+              evaluation job
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._post(
+            f"/evaluation/{id}/update",
+            body=maybe_transform(
+                {
+                    "error": error,
+                    "results": results,
+                    "status": status,
+                },
+                eval_update_params.EvalUpdateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvalUpdateResponse,
         )
 
     def list(
@@ -90,9 +185,8 @@ class EvalsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalListResponse:
-        """Get all evaluation jobs.
-
-        Deprecated! Please use /evaluation
+        """
+        Get all evaluation jobs
 
         Args:
           user_id: Admin users can specify a user ID to filter jobs. Pass empty string to get all
@@ -107,7 +201,7 @@ class EvalsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._get(
-            "/evaluations",
+            "/evaluation",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -125,44 +219,7 @@ class EvalsResource(SyncAPIResource):
             cast_to=EvalListResponse,
         )
 
-    def get_allowed_models(
-        self,
-        *,
-        model_source: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalGetAllowedModelsResponse:
-        """
-        Get model list
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return self._get(
-            "/evaluations/model-list",
-            options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=maybe_transform(
-                    {"model_source": model_source}, eval_get_allowed_models_params.EvalGetAllowedModelsParams
-                ),
-            ),
-            cast_to=EvalGetAllowedModelsResponse,
-        )
-
-    def get_status(
+    def status(
         self,
         id: str,
         *,
@@ -172,7 +229,7 @@ class EvalsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalGetStatusResponse:
+    ) -> EvalStatusResponse:
         """
         Get evaluation job status and results
 
@@ -192,7 +249,7 @@ class EvalsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EvalGetStatusResponse,
+            cast_to=EvalStatusResponse,
         )
 
 
@@ -216,6 +273,49 @@ class AsyncEvalsResource(AsyncAPIResource):
         """
         return AsyncEvalsResourceWithStreamingResponse(self)
 
+    async def create(
+        self,
+        *,
+        parameters: eval_create_params.Parameters,
+        type: Literal["classify", "score", "compare"],
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvalCreateResponse:
+        """
+        Create an evaluation job
+
+        Args:
+          parameters: Type-specific parameters for the evaluation
+
+          type: The type of evaluation to perform
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/evaluation",
+            body=await async_maybe_transform(
+                {
+                    "parameters": parameters,
+                    "type": type,
+                },
+                eval_create_params.EvalCreateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvalCreateResponse,
+        )
+
     async def retrieve(
         self,
         id: str,
@@ -226,7 +326,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalRetrieveResponse:
+    ) -> EvaluationJob:
         """
         Get evaluation job details
 
@@ -246,7 +346,56 @@ class AsyncEvalsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EvalRetrieveResponse,
+            cast_to=EvaluationJob,
+        )
+
+    async def update(
+        self,
+        id: str,
+        *,
+        error: str | Omit = omit,
+        results: object | Omit = omit,
+        status: Literal["completed", "error", "user_error", "running", "queued", "pending"] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EvalUpdateResponse:
+        """
+        Update evaluation job status and results
+
+        Args:
+          error: Error message when status is 'error' or 'user_error'
+
+          results: The results of the evaluation job. The concrete structure depends on the type of
+              evaluation job
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._post(
+            f"/evaluation/{id}/update",
+            body=await async_maybe_transform(
+                {
+                    "error": error,
+                    "results": results,
+                    "status": status,
+                },
+                eval_update_params.EvalUpdateParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EvalUpdateResponse,
         )
 
     async def list(
@@ -262,9 +411,8 @@ class AsyncEvalsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalListResponse:
-        """Get all evaluation jobs.
-
-        Deprecated! Please use /evaluation
+        """
+        Get all evaluation jobs
 
         Args:
           user_id: Admin users can specify a user ID to filter jobs. Pass empty string to get all
@@ -279,7 +427,7 @@ class AsyncEvalsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._get(
-            "/evaluations",
+            "/evaluation",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -297,44 +445,7 @@ class AsyncEvalsResource(AsyncAPIResource):
             cast_to=EvalListResponse,
         )
 
-    async def get_allowed_models(
-        self,
-        *,
-        model_source: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalGetAllowedModelsResponse:
-        """
-        Get model list
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return await self._get(
-            "/evaluations/model-list",
-            options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=await async_maybe_transform(
-                    {"model_source": model_source}, eval_get_allowed_models_params.EvalGetAllowedModelsParams
-                ),
-            ),
-            cast_to=EvalGetAllowedModelsResponse,
-        )
-
-    async def get_status(
+    async def status(
         self,
         id: str,
         *,
@@ -344,7 +455,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalGetStatusResponse:
+    ) -> EvalStatusResponse:
         """
         Get evaluation job status and results
 
@@ -364,7 +475,7 @@ class AsyncEvalsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=EvalGetStatusResponse,
+            cast_to=EvalStatusResponse,
         )
 
 
@@ -372,17 +483,20 @@ class EvalsResourceWithRawResponse:
     def __init__(self, evals: EvalsResource) -> None:
         self._evals = evals
 
+        self.create = to_raw_response_wrapper(
+            evals.create,
+        )
         self.retrieve = to_raw_response_wrapper(
             evals.retrieve,
+        )
+        self.update = to_raw_response_wrapper(
+            evals.update,
         )
         self.list = to_raw_response_wrapper(
             evals.list,
         )
-        self.get_allowed_models = to_raw_response_wrapper(
-            evals.get_allowed_models,
-        )
-        self.get_status = to_raw_response_wrapper(
-            evals.get_status,
+        self.status = to_raw_response_wrapper(
+            evals.status,
         )
 
 
@@ -390,17 +504,20 @@ class AsyncEvalsResourceWithRawResponse:
     def __init__(self, evals: AsyncEvalsResource) -> None:
         self._evals = evals
 
+        self.create = async_to_raw_response_wrapper(
+            evals.create,
+        )
         self.retrieve = async_to_raw_response_wrapper(
             evals.retrieve,
+        )
+        self.update = async_to_raw_response_wrapper(
+            evals.update,
         )
         self.list = async_to_raw_response_wrapper(
             evals.list,
         )
-        self.get_allowed_models = async_to_raw_response_wrapper(
-            evals.get_allowed_models,
-        )
-        self.get_status = async_to_raw_response_wrapper(
-            evals.get_status,
+        self.status = async_to_raw_response_wrapper(
+            evals.status,
         )
 
 
@@ -408,17 +525,20 @@ class EvalsResourceWithStreamingResponse:
     def __init__(self, evals: EvalsResource) -> None:
         self._evals = evals
 
+        self.create = to_streamed_response_wrapper(
+            evals.create,
+        )
         self.retrieve = to_streamed_response_wrapper(
             evals.retrieve,
+        )
+        self.update = to_streamed_response_wrapper(
+            evals.update,
         )
         self.list = to_streamed_response_wrapper(
             evals.list,
         )
-        self.get_allowed_models = to_streamed_response_wrapper(
-            evals.get_allowed_models,
-        )
-        self.get_status = to_streamed_response_wrapper(
-            evals.get_status,
+        self.status = to_streamed_response_wrapper(
+            evals.status,
         )
 
 
@@ -426,15 +546,18 @@ class AsyncEvalsResourceWithStreamingResponse:
     def __init__(self, evals: AsyncEvalsResource) -> None:
         self._evals = evals
 
+        self.create = async_to_streamed_response_wrapper(
+            evals.create,
+        )
         self.retrieve = async_to_streamed_response_wrapper(
             evals.retrieve,
+        )
+        self.update = async_to_streamed_response_wrapper(
+            evals.update,
         )
         self.list = async_to_streamed_response_wrapper(
             evals.list,
         )
-        self.get_allowed_models = async_to_streamed_response_wrapper(
-            evals.get_allowed_models,
-        )
-        self.get_status = async_to_streamed_response_wrapper(
-            evals.get_status,
+        self.status = async_to_streamed_response_wrapper(
+            evals.status,
         )
