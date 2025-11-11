@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.21 (2025-11-11)
+
+Full Changelog: [v0.1.0-alpha.20...v0.1.0-alpha.21](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.20...v0.1.0-alpha.21)
+
+### Features
+
+* **api:** api update ([c80ecd4](https://github.com/togethercomputer/together-py/commit/c80ecd47aa3324017c3674f9e3fd34ab11685047))
+* **api:** api update ([e61ccab](https://github.com/togethercomputer/together-py/commit/e61ccab3e3e81c33149c2ce72d8ea85b364ce9b3))
+* **api:** api update ([2468e28](https://github.com/togethercomputer/together-py/commit/2468e287f223e58aa0d851817895785ca1cef13b))
+* **api:** Update Eval APIs ([c222457](https://github.com/togethercomputer/together-py/commit/c222457e71f6a9db507c407f08d828ff24e352b1))
+
+
+### Bug Fixes
+
+* **compat:** update signatures of `model_dump` and `model_dump_json` for Pydantic v1 ([f3a2627](https://github.com/togethercomputer/together-py/commit/f3a2627c19b2249d88daa2f9a37eb3b5492c3b52))
+
 ## 0.1.0-alpha.20 (2025-11-10)
 
 Full Changelog: [v0.1.0-alpha.19...v0.1.0-alpha.20](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.19...v0.1.0-alpha.20)

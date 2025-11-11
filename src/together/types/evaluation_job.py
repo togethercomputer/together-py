@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Union, Optional
+from typing import Dict, List, Union, Optional
+from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
 from pydantic import Field as FieldInfo
@@ -8,13 +9,14 @@ from pydantic import Field as FieldInfo
 from .._models import BaseModel
 
 __all__ = [
-    "EvalGetStatusResponse",
+    "EvaluationJob",
     "Results",
     "ResultsEvaluationClassifyResults",
     "ResultsEvaluationScoreResults",
     "ResultsEvaluationScoreResultsAggregatedScores",
     "ResultsEvaluationCompareResults",
     "ResultsError",
+    "StatusUpdate",
 ]
 
 
@@ -97,7 +99,41 @@ Results: TypeAlias = Union[
 ]
 
 
-class EvalGetStatusResponse(BaseModel):
+class StatusUpdate(BaseModel):
+    message: Optional[str] = None
+    """Additional message for this update"""
+
+    status: Optional[str] = None
+    """The status at this update"""
+
+    timestamp: Optional[datetime] = None
+    """When this update occurred"""
+
+
+class EvaluationJob(BaseModel):
+    created_at: Optional[datetime] = None
+    """When the job was created"""
+
+    owner_id: Optional[str] = None
+    """ID of the job owner (admin only)"""
+
+    parameters: Optional[Dict[str, object]] = None
+    """The parameters used for this evaluation"""
+
     results: Optional[Results] = None
+    """Results of the evaluation (when completed)"""
 
     status: Optional[Literal["pending", "queued", "running", "completed", "error", "user_error"]] = None
+    """Current status of the job"""
+
+    status_updates: Optional[List[StatusUpdate]] = None
+    """History of status updates (admin only)"""
+
+    type: Optional[Literal["classify", "score", "compare"]] = None
+    """The type of evaluation"""
+
+    updated_at: Optional[datetime] = None
+    """When the job was last updated"""
+
+    workflow_id: Optional[str] = None
+    """The evaluation job ID"""

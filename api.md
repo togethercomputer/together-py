@@ -275,18 +275,18 @@ Types:
 
 ```python
 from together.types import (
-    EvaluationJudgeModelConfig,
-    EvaluationModelRequest,
-    EvalRetrieveResponse,
+    EvaluationJob,
+    EvalCreateResponse,
+    EvalUpdateResponse,
     EvalListResponse,
-    EvalGetAllowedModelsResponse,
-    EvalGetStatusResponse,
+    EvalStatusResponse,
 )
 ```
 
 Methods:
 
-- <code title="get /evaluation/{id}">client.evals.<a href="./src/together/resources/evals.py">retrieve</a>(id) -> <a href="./src/together/types/eval_retrieve_response.py">EvalRetrieveResponse</a></code>
-- <code title="get /evaluations">client.evals.<a href="./src/together/resources/evals.py">list</a>(\*\*<a href="src/together/types/eval_list_params.py">params</a>) -> <a href="./src/together/types/eval_list_response.py">EvalListResponse</a></code>
-- <code title="get /evaluations/model-list">client.evals.<a href="./src/together/resources/evals.py">get_allowed_models</a>() -> <a href="./src/together/types/eval_get_allowed_models_response.py">EvalGetAllowedModelsResponse</a></code>
-- <code title="get /evaluation/{id}/status">client.evals.<a href="./src/together/resources/evals.py">get_status</a>(id) -> <a href="./src/together/types/eval_get_status_response.py">EvalGetStatusResponse</a></code>
+- <code title="post /evaluation">client.evals.<a href="./src/together/resources/evals.py">create</a>(\*\*<a href="src/together/types/eval_create_params.py">params</a>) -> <a href="./src/together/types/eval_create_response.py">EvalCreateResponse</a></code>
+- <code title="get /evaluation/{id}">client.evals.<a href="./src/together/resources/evals.py">retrieve</a>(id) -> <a href="./src/together/types/evaluation_job.py">EvaluationJob</a></code>
+- <code title="post /evaluation/{id}/update">client.evals.<a href="./src/together/resources/evals.py">update</a>(id, \*\*<a href="src/together/types/eval_update_params.py">params</a>) -> <a href="./src/together/types/eval_update_response.py">EvalUpdateResponse</a></code>
+- <code title="get /evaluation">client.evals.<a href="./src/together/resources/evals.py">list</a>(\*\*<a href="src/together/types/eval_list_params.py">params</a>) -> <a href="./src/together/types/eval_list_response.py">EvalListResponse</a></code>
+- <code title="get /evaluation/{id}/status">client.evals.<a href="./src/together/resources/evals.py">status</a>(id) -> <a href="./src/together/types/eval_status_response.py">EvalStatusResponse</a></code>
