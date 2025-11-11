@@ -288,5 +288,5 @@ Methods:
 
 - <code title="get /evaluation/{id}">client.evals.<a href="./src/together/resources/evals.py">retrieve</a>(id) -> <a href="./src/together/types/eval_retrieve_response.py">EvalRetrieveResponse</a></code>
 - <code title="get /evaluations">client.evals.<a href="./src/together/resources/evals.py">list</a>(\*\*<a href="src/together/types/eval_list_params.py">params</a>) -> <a href="./src/together/types/eval_list_response.py">EvalListResponse</a></code>
-- <code title="get /evaluations/model-list">client.evals.<a href="./src/together/resources/evals.py">get_allowed_models</a>() -> <a href="./src/together/types/eval_get_allowed_models_response.py">EvalGetAllowedModelsResponse</a></code>
+- <code title="get /evaluations/model-list">client.evals.<a href="./src/together/resources/evals.py">get_allowed_models</a>(\*\*<a href="src/together/types/eval_get_allowed_models_params.py">params</a>) -> <a href="./src/together/types/eval_get_allowed_models_response.py">EvalGetAllowedModelsResponse</a></code>
 - <code title="get /evaluation/{id}/status">client.evals.<a href="./src/together/resources/evals.py">get_status</a>(id) -> <a href="./src/together/types/eval_get_status_response.py">EvalGetStatusResponse</a></code>

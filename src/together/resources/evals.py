@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from typing_extensions import Literal
-
 import httpx
 
-from ..types import eval_list_params
+from ..types import eval_list_params, eval_get_allowed_models_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -58,7 +56,7 @@ class EvalsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalRetrieveResponse:
         """
-        Get details of a specific evaluation job
+        Get evaluation job details
 
         Args:
           extra_headers: Send extra headers
@@ -83,7 +81,8 @@ class EvalsResource(SyncAPIResource):
         self,
         *,
         limit: int | Omit = omit,
-        status: Literal["pending", "queued", "running", "completed", "error", "user_error"] | Omit = omit,
+        status: str | Omit = omit,
+        user_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -91,13 +90,13 @@ class EvalsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalListResponse:
-        """
-        Get a list of evaluation jobs with optional filtering
+        """Get all evaluation jobs.
+
+        Deprecated! Please use /evaluation
 
         Args:
-          limit: Maximum number of results to return (max 100)
-
-          status: Filter by job status
+          user_id: Admin users can specify a user ID to filter jobs. Pass empty string to get all
+              jobs.
 
           extra_headers: Send extra headers
 
@@ -118,6 +117,7 @@ class EvalsResource(SyncAPIResource):
                     {
                         "limit": limit,
                         "status": status,
+                        "user_id": user_id,
                     },
                     eval_list_params.EvalListParams,
                 ),
@@ -128,6 +128,7 @@ class EvalsResource(SyncAPIResource):
     def get_allowed_models(
         self,
         *,
+        model_source: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -135,11 +136,28 @@ class EvalsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalGetAllowedModelsResponse:
-        """Get the list of models that are allowed for evaluation"""
+        """
+        Get model list
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
         return self._get(
             "/evaluations/model-list",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {"model_source": model_source}, eval_get_allowed_models_params.EvalGetAllowedModelsParams
+                ),
             ),
             cast_to=EvalGetAllowedModelsResponse,
         )
@@ -156,7 +174,7 @@ class EvalsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalGetStatusResponse:
         """
-        Get the status and results of a specific evaluation job
+        Get evaluation job status and results
 
         Args:
           extra_headers: Send extra headers
@@ -210,7 +228,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalRetrieveResponse:
         """
-        Get details of a specific evaluation job
+        Get evaluation job details
 
         Args:
           extra_headers: Send extra headers
@@ -235,7 +253,8 @@ class AsyncEvalsResource(AsyncAPIResource):
         self,
         *,
         limit: int | Omit = omit,
-        status: Literal["pending", "queued", "running", "completed", "error", "user_error"] | Omit = omit,
+        status: str | Omit = omit,
+        user_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -243,13 +262,13 @@ class AsyncEvalsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalListResponse:
-        """
-        Get a list of evaluation jobs with optional filtering
+        """Get all evaluation jobs.
+
+        Deprecated! Please use /evaluation
 
         Args:
-          limit: Maximum number of results to return (max 100)
-
-          status: Filter by job status
+          user_id: Admin users can specify a user ID to filter jobs. Pass empty string to get all
+              jobs.
 
           extra_headers: Send extra headers
 
@@ -270,6 +289,7 @@ class AsyncEvalsResource(AsyncAPIResource):
                     {
                         "limit": limit,
                         "status": status,
+                        "user_id": user_id,
                     },
                     eval_list_params.EvalListParams,
                 ),
@@ -280,6 +300,7 @@ class AsyncEvalsResource(AsyncAPIResource):
     async def get_allowed_models(
         self,
         *,
+        model_source: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -287,11 +308,28 @@ class AsyncEvalsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalGetAllowedModelsResponse:
-        """Get the list of models that are allowed for evaluation"""
+        """
+        Get model list
+
+        Args:
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
         return await self._get(
             "/evaluations/model-list",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {"model_source": model_source}, eval_get_allowed_models_params.EvalGetAllowedModelsParams
+                ),
             ),
             cast_to=EvalGetAllowedModelsResponse,
         )
@@ -308,7 +346,7 @@ class AsyncEvalsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> EvalGetStatusResponse:
         """
-        Get the status and results of a specific evaluation job
+        Get evaluation job status and results
 
         Args:
           extra_headers: Send extra headers

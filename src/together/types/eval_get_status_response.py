@@ -14,7 +14,6 @@ __all__ = [
     "ResultsEvaluationScoreResults",
     "ResultsEvaluationScoreResultsAggregatedScores",
     "ResultsEvaluationCompareResults",
-    "ResultsError",
 ]
 
 
@@ -88,16 +87,14 @@ class ResultsEvaluationCompareResults(BaseModel):
     """Number of ties"""
 
 
-class ResultsError(BaseModel):
-    error: Optional[str] = None
-
-
 Results: TypeAlias = Union[
-    ResultsEvaluationClassifyResults, ResultsEvaluationScoreResults, ResultsEvaluationCompareResults, ResultsError, None
+    ResultsEvaluationClassifyResults, ResultsEvaluationScoreResults, ResultsEvaluationCompareResults
 ]
 
 
 class EvalGetStatusResponse(BaseModel):
     results: Optional[Results] = None
+    """The results of the evaluation job"""
 
-    status: Optional[Literal["pending", "queued", "running", "completed", "error", "user_error"]] = None
+    status: Optional[Literal["completed", "error", "user_error", "running", "queued", "pending"]] = None
+    """The status of the evaluation job"""

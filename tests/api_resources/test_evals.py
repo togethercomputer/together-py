@@ -68,8 +68,9 @@ class TestEvals:
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
         eval = client.evals.list(
-            limit=1,
-            status="pending",
+            limit=0,
+            status="status",
+            user_id="userId",
         )
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
@@ -96,6 +97,13 @@ class TestEvals:
     @parametrize
     def test_method_get_allowed_models(self, client: Together) -> None:
         eval = client.evals.get_allowed_models()
+        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
+
+    @parametrize
+    def test_method_get_allowed_models_with_all_params(self, client: Together) -> None:
+        eval = client.evals.get_allowed_models(
+            model_source="model_source",
+        )
         assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
 
     @parametrize
@@ -208,8 +216,9 @@ class TestAsyncEvals:
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
         eval = await async_client.evals.list(
-            limit=1,
-            status="pending",
+            limit=0,
+            status="status",
+            user_id="userId",
         )
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
@@ -236,6 +245,13 @@ class TestAsyncEvals:
     @parametrize
     async def test_method_get_allowed_models(self, async_client: AsyncTogether) -> None:
         eval = await async_client.evals.get_allowed_models()
+        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_method_get_allowed_models_with_all_params(self, async_client: AsyncTogether) -> None:
+        eval = await async_client.evals.get_allowed_models(
+            model_source="model_source",
+        )
         assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
 
     @parametrize
