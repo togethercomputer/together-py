@@ -10,6 +10,7 @@ import click
 
 from together import Together, omit
 from together._exceptions import APIError
+from together.lib.resources.endpoints import list_avzones
 from together.lib.utils.serializer import datetime_serializer
 from together.types import DedicatedEndpoint
 from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
@@ -468,23 +469,23 @@ def update(
     click.echo(endpoint_id)
 
 
-# @endpoints.command()
-# @click.option("--json", is_flag=True, help="Print output in JSON format")
-# @click.pass_obj
-# @handle_api_errors
-# def availability_zones(client: Together, json: bool) -> None:
-#     """List all availability zones."""
-#     avzones = client.endpoints.list_avzones()
+@endpoints.command()
+@click.option("--json", is_flag=True, help="Print output in JSON format")
+@click.pass_obj
+@handle_api_errors
+def availability_zones(client: Together, json: bool) -> None:
+    """List all availability zones."""
+    avzones = list_avzones(client)
 
-#     if not avzones:
-#         click.echo("No availability zones found", err=True)
-#         return
+    if not avzones:
+        click.echo("No availability zones found", err=True)
+        return
 
-#     if json:
-#         import json as json_lib
+    if json:
+        import json as json_lib
 
-#         click.echo(json_lib.dumps({"avzones": avzones}, indent=2))
-#     else:
-#         click.echo("Available zones:", err=True)
-#         for availability_zone in sorted(avzones):
-#             click.echo(f"  {availability_zone}")
+        click.echo(json_lib.dumps({"avzones": avzones}, indent=2))
+    else:
+        click.echo("Available zones:", err=True)
+        for availability_zone in sorted(avzones):
+            click.echo(f"  {availability_zone}")
