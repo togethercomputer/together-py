@@ -8,6 +8,7 @@ import json
 
 from together import APIError, Together, TogetherError
 from together._types import omit
+from together.lib.utils.serializer import datetime_serializer
 from together.types.eval_create_params import Parameters, ParametersEvaluationClassifyParameters, ParametersEvaluationClassifyParametersModelToEvaluate, ParametersEvaluationCompareParameters, ParametersEvaluationCompareParametersModelAEvaluationModelRequest, ParametersEvaluationCompareParametersModelBEvaluationModelRequest, ParametersEvaluationScoreParameters, ParametersEvaluationScoreParametersModelToEvaluate
 
 
@@ -524,17 +525,17 @@ def list(ctx: click.Context, status: Literal["pending", "queued", "running", "co
     click.echo(table)
 
 
-# @evaluation.command()
-# @click.pass_context
-# @click.argument("evaluation_id", type=str, required=True)
-# def retrieve(ctx: click.Context, evaluation_id: str) -> None:
-#     """Get details of a specific evaluation job"""
+@evals.command()
+@click.pass_context
+@click.argument("evaluation_id", type=str, required=True)
+def retrieve(ctx: click.Context, evaluation_id: str) -> None:
+    """Get details of a specific evaluation job"""
 
-#     client: Together = ctx.obj
+    client: Together = ctx.obj
 
-#     response = client.evaluation.retrieve(evaluation_id=evaluation_id)
+    response = client.evals.retrieve(evaluation_id)
 
-#     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), default=datetime_serializer, indent=4))
 
 
 # @evaluation.command()
