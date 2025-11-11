@@ -1,34 +1,25 @@
 from __future__ import annotations
 import json
-import stat
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, Any, Tuple, Union
+from typing import Literal, Any, Union
 from textwrap import wrap
-import httpx
 from rich import print as rprint
 import re
 import click
-import uuid
-import os
-import tempfile
 from click.core import ParameterSource  # type: ignore[attr-defined]
-from functools import partial
-from filelock import FileLock
 from tabulate import tabulate
-from tqdm import tqdm
 
-from together import APIError, DownloadError, Together
+from together import Together
+from together._utils import is_given
 from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
+from together.lib.resources.files import DownloadManager
 from together.lib.utils.fine_tune import get_model_limits, create_finetune_request
 from together.lib.utils import log_warn
 from together.lib.utils.serializer import datetime_serializer
 from together.lib.utils.tools import finetune_price_to_dollars
 from together._types import NOT_GIVEN, NotGiven
 from together.types import FullTrainingType, LoRaTrainingType
-
-DOWNLOAD_BLOCK_SIZE = 10 * 1024 * 1024  # 10 MB
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
@@ -40,8 +31,6 @@ _CONFIRMATION_MESSAGE = (
 )
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
-
-
 
 @click.group(name="fine-tuning")
 @click.pass_context
@@ -518,7 +507,7 @@ def list_events(ctx: click.Context, fine_tune_id: str) -> None:
 )
 @click.option(
     "--checkpoint-type",
-    type=click.Choice(["merged", "adapter"]),
+    type=click.Choice(["merged", "adapter", "default"]),
     required=False,
     default="merged",
     help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
@@ -565,75 +554,25 @@ def download(
 
     remote_name = ft_job.x_model_output_name
 
-    url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint=model_output_path"
 
+    url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={checkpoint_type}"
     output: Path | None = None
     if isinstance(output_dir, str):
         output = Path(output_dir)
 
-    # pre-fetch remote file name and file size
-    file_path, file_size = _get_file_metadata(
-        client,
-        url,
-        output or Path.cwd(),
-        remote_name,
+    file_path, file_size = DownloadManager(client).download(
+        url=url,
+        output=output,
+        remote_name=remote_name,
+        fetch_metadata=True,
     )
 
-    with client.fine_tune.with_streaming_response.download(
-        ft_id=fine_tune_id,
-        checkpoint_step=checkpoint_step,
-        checkpoint=checkpoint_type,
-
-        # This param is not actually used...
-        output="",
-    ) as response:
-        temp_file_manager = partial(
-            tempfile.NamedTemporaryFile, mode="wb", dir=file_path.parent, delete=False
-        )
-
-        # Prevent parallel downloads of the same file with a lock.
-        lock_path = Path(file_path.as_posix() + ".lock")
-
-        try:
-            response.http_response.raise_for_status()
-        except Exception as e:
-            os.remove(lock_path)
-            raise APIError(
-                "Error downloading file", response.http_request,
-                body=e.args
-            ) from e
-
-        with FileLock(lock_path.as_posix()):
-            with temp_file_manager() as temp_file:
-                with tqdm(
-                    total=file_size,
-                    unit="B",
-                    unit_scale=True,
-                    desc=f"Downloading file {file_path.name}",
-                    # disable=bool(DISABLE_TQDM),
-                ) as pbar:
-                    for chunk in response.iter_bytes(DOWNLOAD_BLOCK_SIZE):
-                        pbar.update(len(chunk))
-                        temp_file.write(chunk)
-            # Raise exception if remote file size does not match downloaded file size
-            if os.stat(temp_file.name).st_size != file_size:
-                DownloadError(
-                    f"Downloaded file size `{pbar.n}` bytes does not match "
-                    f"remote file size `{file_size}` bytes."
-                )
-
-            # Moves temp file to output file path
-            chmod_and_replace(Path(temp_file.name), file_path)
-
-        os.remove(lock_path)
-
-        click.echo(json.dumps({
-            "object": "local",
-            "id": fine_tune_id,
-            "filename": file_path.name,
-            "size": file_size
-        }, indent=4))
-
+    click.echo(json.dumps({
+        "object": "local",
+        "id": fine_tune_id,
+        "filename": file_path,
+        "size": file_size
+    }, indent=4))
 
 @fine_tuning.command()
 @click.pass_context
@@ -660,114 +599,3 @@ def delete(
     response = client.fine_tune.delete(fine_tune_id, force=force)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
-
-
-
-
-def _get_file_metadata(
-    client: Together,
-    url: str,
-    output: Path,
-    remote_name: str | None = None,
-) -> Tuple[Path, int]:
-    """
-    gets remote file head and parses out file name and file size
-    """
-
-    response = client.get(
-        url,
-        cast_to=httpx.Response,
-        options={
-          "headers": {"Range": "bytes=0-1"},
-        },
-    )
-
-    try:
-        response.raise_for_status()
-    except Exception as e:
-        raise APIError(
-            "Error fetching file metadata", response.request,
-            body=e.args
-        ) from e
-
-    headers = response.headers
-
-    assert isinstance(headers, httpx.Headers)
-
-    file_path = _prepare_output(
-        headers=headers,
-        output=output,
-        remote_name=remote_name,
-    )
-
-    file_size = _get_file_size(headers)
-
-    return file_path, file_size
-
-def _get_file_size(
-    headers: httpx.Headers,
-) -> int:
-    """
-    Extracts file size from header
-    """
-    total_size_in_bytes = 0
-
-    parts = headers.get("Content-Range", "").split(" ")
-
-    if len(parts) == 2:
-        range_parts = parts[1].split("/")
-
-        if len(range_parts) == 2:
-            total_size_in_bytes = int(range_parts[1])
-
-    return total_size_in_bytes
-
-
-def _prepare_output(
-    headers: httpx.Headers,
-    output: Path,
-    remote_name: str | None = None,
-    step: int = -1,
-) -> Path:
-    """
-    Generates output file name from remote name and headers
-    """
-    content_type = str(headers.get("content-type"))
-
-    assert remote_name, (
-        "No model name found in fine_tune object. "
-        "Please specify an `output` file name."
-    )
-
-    if step > 0:
-        remote_name += f"-checkpoint-{step}"
-
-    if "x-tar" in content_type.lower():
-        remote_name += ".tar.gz"
-
-    else:
-        remote_name += ".tar.zst"
-
-    return output.joinpath(Path(remote_name))
-
-def chmod_and_replace(src: Path, dst: Path) -> None:
-    """Set correct permission before moving a blob from tmp directory to cache dir.
-
-    Do not take into account the `umask` from the process as there is no convenient way
-    to get it that is thread-safe.
-    """
-
-    # Get umask by creating a temporary file in the cache folder.
-    tmp_file = dst.parent / f"tmp_{uuid.uuid4()}"
-
-    try:
-        tmp_file.touch()
-
-        cache_dir_mode = Path(tmp_file).stat().st_mode
-
-        os.chmod(src.as_posix(), stat.S_IMODE(cache_dir_mode))
-
-    finally:
-        tmp_file.unlink()
-
-    shutil.move(src.as_posix(), dst.as_posix())
