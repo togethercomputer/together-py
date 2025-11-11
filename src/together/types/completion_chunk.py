@@ -33,6 +33,8 @@ class ChoiceDelta(BaseModel):
 
     function_call: Optional[ChoiceDeltaFunctionCall] = None
 
+    reasoning: Optional[str] = None
+
     token_id: Optional[int] = None
 
     tool_calls: Optional[List[ToolChoice]] = None
