@@ -10,10 +10,11 @@ import pytest
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types import (
+    EvaluationJob,
     EvalListResponse,
-    EvalRetrieveResponse,
-    EvalGetStatusResponse,
-    EvalGetAllowedModelsResponse,
+    EvalCreateResponse,
+    EvalStatusResponse,
+    EvalUpdateResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -23,11 +24,86 @@ class TestEvals:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
+    def test_method_create(self, client: Together) -> None:
+        eval = client.evals.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+            },
+            type="classify",
+        )
+        assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+    @parametrize
+    def test_method_create_with_all_params(self, client: Together) -> None:
+        eval = client.evals.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+                "model_to_evaluate": "string",
+            },
+            type="classify",
+        )
+        assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+    @parametrize
+    def test_raw_response_create(self, client: Together) -> None:
+        response = client.evals.with_raw_response.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+            },
+            type="classify",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        eval = response.parse()
+        assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+    @parametrize
+    def test_streaming_response_create(self, client: Together) -> None:
+        with client.evals.with_streaming_response.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+            },
+            type="classify",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            eval = response.parse()
+            assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
     def test_method_retrieve(self, client: Together) -> None:
         eval = client.evals.retrieve(
             "id",
         )
-        assert_matches_type(EvalRetrieveResponse, eval, path=["response"])
+        assert_matches_type(EvaluationJob, eval, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -38,7 +114,7 @@ class TestEvals:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         eval = response.parse()
-        assert_matches_type(EvalRetrieveResponse, eval, path=["response"])
+        assert_matches_type(EvaluationJob, eval, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -49,7 +125,7 @@ class TestEvals:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             eval = response.parse()
-            assert_matches_type(EvalRetrieveResponse, eval, path=["response"])
+            assert_matches_type(EvaluationJob, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -58,6 +134,54 @@ class TestEvals:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.evals.with_raw_response.retrieve(
                 "",
+            )
+
+    @parametrize
+    def test_method_update(self, client: Together) -> None:
+        eval = client.evals.update(
+            id="id",
+        )
+        assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+    @parametrize
+    def test_method_update_with_all_params(self, client: Together) -> None:
+        eval = client.evals.update(
+            id="id",
+            error="error",
+            results={},
+            status="completed",
+        )
+        assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+    @parametrize
+    def test_raw_response_update(self, client: Together) -> None:
+        response = client.evals.with_raw_response.update(
+            id="id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        eval = response.parse()
+        assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+    @parametrize
+    def test_streaming_response_update(self, client: Together) -> None:
+        with client.evals.with_streaming_response.update(
+            id="id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            eval = response.parse()
+            assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_update(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.evals.with_raw_response.update(
+                id="",
             )
 
     @parametrize
@@ -95,72 +219,40 @@ class TestEvals:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    def test_method_get_allowed_models(self, client: Together) -> None:
-        eval = client.evals.get_allowed_models()
-        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-    @parametrize
-    def test_method_get_allowed_models_with_all_params(self, client: Together) -> None:
-        eval = client.evals.get_allowed_models(
-            model_source="model_source",
-        )
-        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-    @parametrize
-    def test_raw_response_get_allowed_models(self, client: Together) -> None:
-        response = client.evals.with_raw_response.get_allowed_models()
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        eval = response.parse()
-        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-    @parametrize
-    def test_streaming_response_get_allowed_models(self, client: Together) -> None:
-        with client.evals.with_streaming_response.get_allowed_models() as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            eval = response.parse()
-            assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    def test_method_get_status(self, client: Together) -> None:
-        eval = client.evals.get_status(
+    def test_method_status(self, client: Together) -> None:
+        eval = client.evals.status(
             "id",
         )
-        assert_matches_type(EvalGetStatusResponse, eval, path=["response"])
+        assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
     @parametrize
-    def test_raw_response_get_status(self, client: Together) -> None:
-        response = client.evals.with_raw_response.get_status(
+    def test_raw_response_status(self, client: Together) -> None:
+        response = client.evals.with_raw_response.status(
             "id",
         )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         eval = response.parse()
-        assert_matches_type(EvalGetStatusResponse, eval, path=["response"])
+        assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
     @parametrize
-    def test_streaming_response_get_status(self, client: Together) -> None:
-        with client.evals.with_streaming_response.get_status(
+    def test_streaming_response_status(self, client: Together) -> None:
+        with client.evals.with_streaming_response.status(
             "id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             eval = response.parse()
-            assert_matches_type(EvalGetStatusResponse, eval, path=["response"])
+            assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    def test_path_params_get_status(self, client: Together) -> None:
+    def test_path_params_status(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            client.evals.with_raw_response.get_status(
+            client.evals.with_raw_response.status(
                 "",
             )
 
@@ -171,11 +263,86 @@ class TestAsyncEvals:
     )
 
     @parametrize
+    async def test_method_create(self, async_client: AsyncTogether) -> None:
+        eval = await async_client.evals.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+            },
+            type="classify",
+        )
+        assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
+        eval = await async_client.evals.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+                "model_to_evaluate": "string",
+            },
+            type="classify",
+        )
+        assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
+        response = await async_client.evals.with_raw_response.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+            },
+            type="classify",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        eval = await response.parse()
+        assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
+        async with async_client.evals.with_streaming_response.create(
+            parameters={
+                "input_data_file_path": "file-1234-aefd",
+                "judge": {
+                    "model_name": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "system_template": "Imagine you are a helpful assistant",
+                },
+                "labels": ["yes", "no"],
+                "pass_labels": ["yes"],
+            },
+            type="classify",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            eval = await response.parse()
+            assert_matches_type(EvalCreateResponse, eval, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
         eval = await async_client.evals.retrieve(
             "id",
         )
-        assert_matches_type(EvalRetrieveResponse, eval, path=["response"])
+        assert_matches_type(EvaluationJob, eval, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -186,7 +353,7 @@ class TestAsyncEvals:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         eval = await response.parse()
-        assert_matches_type(EvalRetrieveResponse, eval, path=["response"])
+        assert_matches_type(EvaluationJob, eval, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -197,7 +364,7 @@ class TestAsyncEvals:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             eval = await response.parse()
-            assert_matches_type(EvalRetrieveResponse, eval, path=["response"])
+            assert_matches_type(EvaluationJob, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -206,6 +373,54 @@ class TestAsyncEvals:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.evals.with_raw_response.retrieve(
                 "",
+            )
+
+    @parametrize
+    async def test_method_update(self, async_client: AsyncTogether) -> None:
+        eval = await async_client.evals.update(
+            id="id",
+        )
+        assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
+        eval = await async_client.evals.update(
+            id="id",
+            error="error",
+            results={},
+            status="completed",
+        )
+        assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
+        response = await async_client.evals.with_raw_response.update(
+            id="id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        eval = await response.parse()
+        assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
+        async with async_client.evals.with_streaming_response.update(
+            id="id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            eval = await response.parse()
+            assert_matches_type(EvalUpdateResponse, eval, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_update(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.evals.with_raw_response.update(
+                id="",
             )
 
     @parametrize
@@ -243,71 +458,39 @@ class TestAsyncEvals:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    async def test_method_get_allowed_models(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.get_allowed_models()
-        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-    @parametrize
-    async def test_method_get_allowed_models_with_all_params(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.get_allowed_models(
-            model_source="model_source",
-        )
-        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-    @parametrize
-    async def test_raw_response_get_allowed_models(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evals.with_raw_response.get_allowed_models()
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        eval = await response.parse()
-        assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-    @parametrize
-    async def test_streaming_response_get_allowed_models(self, async_client: AsyncTogether) -> None:
-        async with async_client.evals.with_streaming_response.get_allowed_models() as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            eval = await response.parse()
-            assert_matches_type(EvalGetAllowedModelsResponse, eval, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    async def test_method_get_status(self, async_client: AsyncTogether) -> None:
-        eval = await async_client.evals.get_status(
+    async def test_method_status(self, async_client: AsyncTogether) -> None:
+        eval = await async_client.evals.status(
             "id",
         )
-        assert_matches_type(EvalGetStatusResponse, eval, path=["response"])
+        assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
     @parametrize
-    async def test_raw_response_get_status(self, async_client: AsyncTogether) -> None:
-        response = await async_client.evals.with_raw_response.get_status(
+    async def test_raw_response_status(self, async_client: AsyncTogether) -> None:
+        response = await async_client.evals.with_raw_response.status(
             "id",
         )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         eval = await response.parse()
-        assert_matches_type(EvalGetStatusResponse, eval, path=["response"])
+        assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
     @parametrize
-    async def test_streaming_response_get_status(self, async_client: AsyncTogether) -> None:
-        async with async_client.evals.with_streaming_response.get_status(
+    async def test_streaming_response_status(self, async_client: AsyncTogether) -> None:
+        async with async_client.evals.with_streaming_response.status(
             "id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             eval = await response.parse()
-            assert_matches_type(EvalGetStatusResponse, eval, path=["response"])
+            assert_matches_type(EvalStatusResponse, eval, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    async def test_path_params_get_status(self, async_client: AsyncTogether) -> None:
+    async def test_path_params_status(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
-            await async_client.evals.with_raw_response.get_status(
+            await async_client.evals.with_raw_response.status(
                 "",
             )
