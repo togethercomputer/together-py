@@ -387,7 +387,7 @@ def list(
         import json as json_lib
 
         click.echo(
-            json_lib.dumps([endpoint.model_dump() for endpoint in endpoints.data], indent=2)
+            json_lib.dumps([endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2)
         )
     else:
         for endpoint in endpoints.data:
