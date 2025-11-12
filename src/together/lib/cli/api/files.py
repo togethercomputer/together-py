@@ -1,7 +1,7 @@
 import json
 import pathlib
-from textwrap import wrap
 from typing import get_args
+from textwrap import wrap
 
 import click
 from tabulate import tabulate
@@ -102,7 +102,7 @@ def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
         click.echo(f"File saved to {output}")
 
     else:
-        click.echo(response.read())
+        click.echo(response.read().decode("utf-8"))
 
 
 @files.command()
@@ -125,7 +125,7 @@ def delete(ctx: click.Context, id: str) -> None:
     type=click.Path(exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False),
     required=True,
 )
-def check(ctx: click.Context, file: pathlib.Path) -> None:
+def check(_ctx: click.Context, file: pathlib.Path) -> None:
     """Check file for issues"""
 
     report = check_file(file)

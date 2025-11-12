@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from typing import Literal, cast
-import json
 import sys
+import json
+from typing import Any, Dict, Literal, TypeVar, Callable, cast
 from functools import wraps
-from typing import Any, Callable, Dict, TypeVar
 
 import click
 
 from together import Together, omit
-from together._exceptions import APIError
-from together.lib.resources.endpoints import list_avzones
-from together.lib.utils.serializer import datetime_serializer
 from together.types import DedicatedEndpoint
+from together._exceptions import APIError
+from together.lib.utils.serializer import datetime_serializer
+from together.lib.resources.endpoints import list_avzones
 from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
 
 
@@ -349,8 +348,8 @@ def list(
     client: Together,
     json: bool,
     type: Literal["dedicated", "serverless"] | None,
-    usage_type: Literal["on-demand", "reserved"] | None,
-    mine: bool | None,
+    _usage_type: Literal["on-demand", "reserved"] | None,
+    _mine: bool | None,
 ) -> None:
     """List all inference endpoints (includes both dedicated and serverless endpoints)."""
     endpoints = client.endpoints.list(

@@ -1,24 +1,24 @@
 from __future__ import annotations
-from typing import List, Literal, Any, Dict
+
+from typing import Any, Dict, List, Literal
 from typing_extensions import Union, TypeAlias
 
-from click.core import ParameterSource  # type: ignore[attr-defined]
 from rich import print as rprint
 
-from together import BaseModel, Together
-from together.lib.utils import log_warn_once
+from together import Together, BaseModel
 
 # from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
 from together.types import (
-    CosineLrSchedulerArgsParam,
+    LrSchedulerParam,
     FineTuneCreateParams,
     FullTrainingTypeParam,
-    LinearLrSchedulerArgsParam,
     LoRaTrainingTypeParam,
-    LrSchedulerParam,
     TrainingMethodDpoParam,
     TrainingMethodSftParam,
+    CosineLrSchedulerArgsParam,
+    LinearLrSchedulerArgsParam,
 )
+from together.lib.utils import log_warn_once
 
 TrainingMethod: TypeAlias = Union[TrainingMethodSftParam, TrainingMethodDpoParam]
 

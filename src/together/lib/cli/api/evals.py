@@ -1,23 +1,22 @@
-from functools import wraps
 import sys
-from typing import Any, Callable, Dict, Literal, Optional, TypeVar, Union, cast
+import json
+from typing import Any, Dict, Union, Literal, TypeVar, Callable, Optional, cast
+from functools import wraps
 
 import click
 from tabulate import tabulate
-import json
 
 from together import APIError, Together, TogetherError
 from together._types import omit
 from together.lib.utils.serializer import datetime_serializer
 from together.types.eval_create_params import (
-    Parameters,
-    ParametersEvaluationClassifyParameters,
-    ParametersEvaluationClassifyParametersModelToEvaluate,
+    ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,
+    ParametersEvaluationClassifyParameters,
+    ParametersEvaluationScoreParametersModelToEvaluate,
+    ParametersEvaluationClassifyParametersModelToEvaluate,
     ParametersEvaluationCompareParametersModelAEvaluationModelRequest,
     ParametersEvaluationCompareParametersModelBEvaluationModelRequest,
-    ParametersEvaluationScoreParameters,
-    ParametersEvaluationScoreParametersModelToEvaluate,
 )
 
 

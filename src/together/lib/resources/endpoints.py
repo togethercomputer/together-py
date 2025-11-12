@@ -1,5 +1,7 @@
-import httpx
 from typing import List
+
+import httpx
+
 from together import Together
 
 

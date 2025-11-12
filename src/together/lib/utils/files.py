@@ -1,24 +1,23 @@
 from __future__ import annotations
 
-import json
 import os
 import csv
+import json
+from typing import Any, Dict, List
 from pathlib import Path
 from traceback import format_exc
-from typing import Any, Dict, List
 
-
+from together.types import FilePurpose
 from together.lib.constants import (
-    MAX_FILE_SIZE_GB,
     MIN_SAMPLES,
     NUM_BYTES_IN_GB,
+    MAX_FILE_SIZE_GB,
     PARQUET_EXPECTED_COLUMNS,
-    JSONL_REQUIRED_COLUMNS_MAP,
     REQUIRED_COLUMNS_MESSAGE,
+    JSONL_REQUIRED_COLUMNS_MAP,
     POSSIBLE_ROLES_CONVERSATION,
     DatasetFormat,
 )
-from together.types import FilePurpose
 
 
 class InvalidFileFormatError(ValueError):
@@ -564,10 +563,10 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
     try:
         # Pyarrow is optional as it's large (~80MB) and isn't compatible with older systems.
         from pyarrow import ArrowInvalid, parquet
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
             "pyarrow is not installed and is required to use parquet files. Please install it via `pip install together[pyarrow]`"
-        )
+        ) from e
 
     report_dict: Dict[str, Any] = {}
     if purpose == "eval":

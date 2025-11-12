@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from gettext import gettext as _
 from typing import Literal
+from gettext import gettext as _
 
 import click
 

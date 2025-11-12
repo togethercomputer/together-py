@@ -1,14 +1,15 @@
 import json as json_lib
-import httpx
+from typing import List, Optional
+
 import click
+import httpx
 from tabulate import tabulate
 
-from typing import List, Optional
 from together import Together
-from together._response import APIResponse as APIResponse
-from together.types.model_upload_response import ModelUploadResponse
-from together.types.model_list_response import ModelListResponse
 from together._models import BaseModel
+from together._response import APIResponse as APIResponse
+from together.types.model_list_response import ModelListResponse
+from together.types.model_upload_response import ModelUploadResponse
 
 
 @click.group()

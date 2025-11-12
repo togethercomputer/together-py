@@ -1,24 +1,26 @@
 from __future__ import annotations
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Literal, Any, Union
-from textwrap import wrap
-from rich import print as rprint
+
 import re
+import json
+from typing import Any, Union, Literal
+from pathlib import Path
+from datetime import datetime, timezone
+from textwrap import wrap
+
 import click
-from click.core import ParameterSource  # type: ignore[attr-defined]
+from rich import print as rprint
 from tabulate import tabulate
+from click.core import ParameterSource  # type: ignore[attr-defined]
 
 from together import Together
-from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
-from together.lib.resources.files import DownloadManager
-from together.lib.resources.fine_tune import get_model_limits, create_finetune_request
-from together.lib.utils import log_warn
-from together.lib.utils.serializer import datetime_serializer
-from together.lib.utils.tools import finetune_price_to_dollars
-from together._types import NOT_GIVEN, NotGiven
 from together.types import FullTrainingType, LoRaTrainingType
+from together._types import NOT_GIVEN, NotGiven
+from together.lib.utils import log_warn
+from together.lib.utils.tools import finetune_price_to_dollars
+from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
+from together.lib.resources.files import DownloadManager
+from together.lib.utils.serializer import datetime_serializer
+from together.lib.resources.fine_tune import get_model_limits, create_finetune_request
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
@@ -339,7 +341,7 @@ def create(
         # created_at reports UTC time, we use .astimezone() to convert to local time
         formatted_time = response.created_at.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
         report_string += f" at {formatted_time}"
-        print(report_string)
+        click.echo(report_string)
     else:
         click.echo("No confirmation received, stopping job launch")
 

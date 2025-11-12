@@ -8,14 +8,14 @@ import click
 import together
 from together._version import __version__
 from together._constants import DEFAULT_TIMEOUT
-from together.lib.cli.api.endpoints import endpoints
-from together.lib.cli.api.files import files
-from together.lib.cli.api.finetune import fine_tuning
-from together.lib.cli.api.models import models
 from together.lib.cli.api.evals import evals
+from together.lib.cli.api.files import files
+from together.lib.cli.api.models import models
+from together.lib.cli.api.finetune import fine_tuning
+from together.lib.cli.api.endpoints import endpoints
 
 
-def print_version(ctx: click.Context, params: Any, value: Any) -> None:
+def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
     if not value or ctx.resilient_parsing:
         return
     click.echo(f"Version {__version__}")

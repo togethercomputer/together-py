@@ -1,6 +1,7 @@
 from __future__ import annotations
-from datetime import datetime
+
 from typing import Any
+from datetime import datetime
 
 
 def datetime_serializer(obj: Any) -> str:
