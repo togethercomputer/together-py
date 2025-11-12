@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.23 (2025-11-12)
+
+Full Changelog: [v0.1.0-alpha.22...v0.1.0-alpha.23](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.22...v0.1.0-alpha.23)
+
+### Features
+
+* **api:** Add endpoints.list_avzones ([9492e97](https://github.com/togethercomputer/together-py/commit/9492e9766862834c7e905d545e205f730a5feb14))
+
 ## 0.1.0-alpha.22 (2025-11-12)
 
 Full Changelog: [v0.1.0-alpha.21...v0.1.0-alpha.22](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.21...v0.1.0-alpha.22)
