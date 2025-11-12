@@ -8,7 +8,8 @@ from together import Together
 from together._response import APIResponse as APIResponse
 from together.types.model_upload_response import ModelUploadResponse
 from together.types.model_list_response import ModelListResponse
-from together._models import BaseModel 
+from together._models import BaseModel
+
 
 @click.group()
 @click.pass_context
@@ -33,10 +34,8 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     """List models"""
     client: Together = ctx.obj
 
-
     response = client.models.list()
     models_list = response
-
 
     if type == "dedicated":
         dedicated_response = client.get(
@@ -145,10 +144,7 @@ def upload(
         click.echo(f"Message: {response.message}")
 
 
-def _filter_dedicated_models(
-    models: ModelListResponse,
-    dedicated_response: httpx.Response
-) -> ModelListResponse:
+def _filter_dedicated_models(models: ModelListResponse, dedicated_response: httpx.Response) -> ModelListResponse:
     """
     Filter models based on dedicated model response.
 

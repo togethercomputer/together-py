@@ -16,9 +16,7 @@ from together.types import DedicatedEndpoint
 from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
 
 
-def print_endpoint(
-    endpoint: DedicatedEndpoint | DedicatedEndpointListItem
-) -> None:
+def print_endpoint(endpoint: DedicatedEndpoint | DedicatedEndpointListItem) -> None:
     """Print endpoint details in a Docker-like format or JSON."""
 
     # Print header info
@@ -28,10 +26,7 @@ def print_endpoint(
     if isinstance(endpoint, DedicatedEndpoint):
         click.echo(f"Display Name:\t{endpoint.display_name}")
         click.echo(f"Hardware:\t{endpoint.hardware}")
-        click.echo(
-            f"Autoscaling:\tMin={endpoint.autoscaling.min_replicas}, "
-            f"Max={endpoint.autoscaling.max_replicas}"
-        )
+        click.echo(f"Autoscaling:\tMin={endpoint.autoscaling.min_replicas}, Max={endpoint.autoscaling.max_replicas}")
 
     click.echo(f"Model:\t\t{endpoint.model}")
     click.echo(f"Type:\t\t{endpoint.type}")
@@ -43,15 +38,10 @@ def print_endpoint(
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def print_api_error(
-    e: APIError
-) -> None:
+def print_api_error(e: APIError) -> None:
     error_details = cast(Dict[str, Any], e.body)["error"]["message"]
 
-    if error_details and (
-        "credentials" in error_details.lower()
-        or "authentication" in error_details.lower()
-    ):
+    if error_details and ("credentials" in error_details.lower() or "authentication" in error_details.lower()):
         click.echo("Error: Invalid API key or authentication failed", err=True)
     else:
         click.echo(f"Error: {error_details}", err=True)
@@ -187,16 +177,12 @@ def create(
             disable_speculative_decoding=no_speculative_decoding or omit,
             state="STOPPED" if no_auto_start else "STARTED",
             inactive_timeout=inactive_timeout,
-            extra_query={
-                "availability_zone": availability_zone
-            }
+            extra_query={"availability_zone": availability_zone},
         )
     except APIError as e:
         print_api_error(e)
         if "check the hardware api" in str(e.args[0]).lower() or "invalid hardware provided" in str(e.args[0]).lower():
-            fetch_and_print_hardware_options(
-                client=client, model=model, print_json=False, available=True
-            )
+            fetch_and_print_hardware_options(client=client, model=model, print_json=False, available=True)
 
         sys.exit(1)
 
@@ -264,9 +250,7 @@ def hardware(client: Together, model: str | None, json: bool, available: bool) -
     fetch_and_print_hardware_options(client, model, json, available)
 
 
-def fetch_and_print_hardware_options(
-    client: Together, model: str | None, print_json: bool, available: bool
-) -> None:
+def fetch_and_print_hardware_options(client: Together, model: str | None, print_json: bool, available: bool) -> None:
     """Print hardware options for a model."""
 
     message = "Available hardware options:" if available else "All hardware options:"
@@ -277,8 +261,7 @@ def fetch_and_print_hardware_options(
         hardware_options.data = [
             hardware
             for hardware in hardware_options.data
-            if hardware.availability is not None
-            and hardware.availability.status == "available"
+            if hardware.availability is not None and hardware.availability.status == "available"
         ]
 
     if print_json:
@@ -291,9 +274,7 @@ def fetch_and_print_hardware_options(
 
 @endpoints.command()
 @click.argument("endpoint-id", required=True)
-@click.option(
-    "--wait", is_flag=True, default=True, help="Wait for the endpoint to stop"
-)
+@click.option("--wait", is_flag=True, default=True, help="Wait for the endpoint to stop")
 @click.pass_obj
 @handle_api_errors
 def stop(client: Together, endpoint_id: str, wait: bool) -> None:
@@ -314,9 +295,7 @@ def stop(client: Together, endpoint_id: str, wait: bool) -> None:
 
 @endpoints.command()
 @click.argument("endpoint-id", required=True)
-@click.option(
-    "--wait", is_flag=True, default=True, help="Wait for the endpoint to start"
-)
+@click.option("--wait", is_flag=True, default=True, help="Wait for the endpoint to start")
 @click.pass_obj
 @handle_api_errors
 def start(client: Together, endpoint_id: str, wait: bool) -> None:
@@ -375,7 +354,7 @@ def list(
 ) -> None:
     """List all inference endpoints (includes both dedicated and serverless endpoints)."""
     endpoints = client.endpoints.list(
-        type=type or omit #, usage_type=usage_type, mine=mine
+        type=type or omit  # , usage_type=usage_type, mine=mine
     )
 
     if not endpoints:
@@ -387,7 +366,9 @@ def list(
         import json as json_lib
 
         click.echo(
-            json_lib.dumps([endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2)
+            json_lib.dumps(
+                [endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2
+            )
         )
     else:
         for endpoint in endpoints.data:

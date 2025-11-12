@@ -13,7 +13,7 @@ from tabulate import tabulate
 from together import Together
 from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
 from together.lib.resources.files import DownloadManager
-from together.lib.resources .fine_tune import get_model_limits, create_finetune_request
+from together.lib.resources.fine_tune import get_model_limits, create_finetune_request
 from together.lib.utils import log_warn
 from together.lib.utils.serializer import datetime_serializer
 from together.lib.utils.tools import finetune_price_to_dollars
@@ -30,6 +30,7 @@ _CONFIRMATION_MESSAGE = (
 )
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
+
 
 @click.group(name="fine-tuning")
 @click.pass_context
@@ -48,19 +49,11 @@ def fine_tuning(ctx: click.Context) -> None:
     help="Training file ID from Files API",
 )
 @click.option("--model", "-m", type=str, help="Base model name")
-@click.option(
-    "--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for"
-)
-@click.option(
-    "--validation-file", type=str, default="", help="Validation file ID from Files API"
-)
+@click.option("--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for")
+@click.option("--validation-file", type=str, default="", help="Validation file ID from Files API")
 @click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
-@click.option(
-    "--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save"
-)
-@click.option(
-    "--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size"
-)
+@click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
+@click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
 @click.option("--learning-rate", "-lr", type=float, default=1e-5, help="Learning rate")
 @click.option(
     "--lr-scheduler-type",
@@ -129,18 +122,14 @@ def fine_tuning(ctx: click.Context) -> None:
     "--dpo-normalize-logratios-by-length",
     type=bool,
     default=False,
-    help=(
-        "Whether to normalize logratios by sample length "
-        "(only used when '--training-method' is 'dpo')"
-    ),
+    help=("Whether to normalize logratios by sample length (only used when '--training-method' is 'dpo')"),
 )
 @click.option(
     "--rpo-alpha",
     type=float,
     default=None,
     help=(
-        "RPO alpha parameter of DPO training to include NLL in the loss "
-        "(only used when '--training-method' is 'dpo')"
+        "RPO alpha parameter of DPO training to include NLL in the loss (only used when '--training-method' is 'dpo')"
     ),
 )
 @click.option(
@@ -306,9 +295,7 @@ def create(
 
     if lora:
         if model_limits.lora_training is None:
-            raise click.BadParameter(
-                f"LoRA fine-tuning is not supported for the model `{model}`"
-            )
+            raise click.BadParameter(f"LoRA fine-tuning is not supported for the model `{model}`")
         default_values = {
             "lora_r": model_limits.lora_training.max_rank,
             "learning_rate": 1e-3,
@@ -323,9 +310,7 @@ def create(
             training_args["lora_alpha"] = training_args["lora_r"] * 2
     else:
         if model_limits.full_training is None:
-            raise click.BadParameter(
-                f"Full fine-tuning is not supported for the model `{model}`"
-            )
+            raise click.BadParameter(f"Full fine-tuning is not supported for the model `{model}`")
 
         for param in ["lora_r", "lora_dropout", "lora_alpha", "lora_trainable_modules"]:
             param_source = ctx.get_parameter_source(param)  # type: ignore[attr-defined]
@@ -334,15 +319,13 @@ def create(
                     f"You set LoRA parameter `{param}` for a full fine-tuning job. "
                     f"Please change the job type with --lora or remove `{param}` from the arguments"
                 )
-    
+
     if n_evals <= 0 and validation_file:
         log_warn(
             "Warning: You have specified a validation file but the number of evaluation loops is set to 0. No evaluations will be performed."
         )
     elif n_evals > 0 and not validation_file:
-        raise click.BadParameter(
-            "You have specified a number of evaluation loops but no validation file."
-        )
+        raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
     if confirm or click.confirm(_CONFIRMATION_MESSAGE, default=True, show_default=True):
         params = create_finetune_request(
@@ -352,7 +335,6 @@ def create(
         rprint("Submitting a fine-tuning job with the following parameters:", params)
         response = client.fine_tune.create(**params)
 
-
         report_string = f"Successfully submitted a fine-tuning job {response.id}"
         # created_at reports UTC time, we use .astimezone() to convert to local time
         formatted_time = response.created_at.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
@@ -360,7 +342,6 @@ def create(
         print(report_string)
     else:
         click.echo("No confirmation received, stopping job launch")
-
 
 
 @fine_tuning.command()
@@ -413,9 +394,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
 @fine_tuning.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
-@click.option(
-    "--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job"
-)
+@click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
 def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     """Cancel fine-tuning job"""
     client: Together = ctx.obj
@@ -430,6 +409,7 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     response = client.fine_tune.cancel(fine_tune_id)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
+
 
 @fine_tuning.command()
 @click.pass_context
@@ -522,22 +502,20 @@ def download(
     client: Together = ctx.obj
 
     if re.match(_FT_JOB_WITH_STEP_REGEX, fine_tune_id) is not None:
-            if checkpoint_step is NOT_GIVEN:
-                checkpoint_step = int(fine_tune_id.split(":")[1])
-                fine_tune_id = fine_tune_id.split(":")[0]
-            else:
-                raise ValueError(
-                    "Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, but `checkpoint_step` "
-                    "was also set. Remove one of the step specifiers to proceed."
-                )
+        if checkpoint_step is NOT_GIVEN:
+            checkpoint_step = int(fine_tune_id.split(":")[1])
+            fine_tune_id = fine_tune_id.split(":")[0]
+        else:
+            raise ValueError(
+                "Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, but `checkpoint_step` "
+                "was also set. Remove one of the step specifiers to proceed."
+            )
 
     ft_job = client.fine_tune.retrieve(fine_tune_id)
 
     if isinstance(ft_job.training_type, FullTrainingType):
         if checkpoint_type != "default":
-            raise ValueError(
-                "Only DEFAULT checkpoint type is allowed for FullTrainingType"
-            )
+            raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
         checkpoint_type = "model_output_path"
     elif isinstance(ft_job.training_type, LoRaTrainingType):
         if checkpoint_type == "default":
@@ -547,12 +525,9 @@ def download(
             "merged",
             "adapter",
         }:
-            raise ValueError(
-                f"Invalid checkpoint type for LoRATrainingType: {checkpoint_type}"
-            )
+            raise ValueError(f"Invalid checkpoint type for LoRATrainingType: {checkpoint_type}")
 
     remote_name = ft_job.x_model_output_name
-
 
     url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={checkpoint_type}"
     output: Path | None = None
@@ -566,30 +541,21 @@ def download(
         fetch_metadata=True,
     )
 
-    click.echo(json.dumps({
-        "object": "local",
-        "id": fine_tune_id,
-        "filename": file_path,
-        "size": file_size
-    }, indent=4))
+    click.echo(json.dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}, indent=4))
+
 
 @fine_tuning.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--force", is_flag=True, help="Force deletion without confirmation")
-@click.option(
-    "--quiet", is_flag=True, help="Do not prompt for confirmation before deleting job"
-)
-def delete(
-    ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False
-) -> None:
+@click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before deleting job")
+def delete(ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False) -> None:
     """Delete fine-tuning job"""
     client: Together = ctx.obj
 
     if not quiet:
         confirm_response = input(
-            f"Are you sure you want to delete fine-tuning job {fine_tune_id}? "
-            "This action cannot be undone. [y/N] "
+            f"Are you sure you want to delete fine-tuning job {fine_tune_id}? This action cannot be undone. [y/N] "
         )
         if confirm_response.lower() != "y":
             click.echo("Deletion cancelled")

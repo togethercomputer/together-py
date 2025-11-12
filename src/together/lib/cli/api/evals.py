@@ -9,19 +9,23 @@ import json
 from together import APIError, Together, TogetherError
 from together._types import omit
 from together.lib.utils.serializer import datetime_serializer
-from together.types.eval_create_params import Parameters, ParametersEvaluationClassifyParameters, ParametersEvaluationClassifyParametersModelToEvaluate, ParametersEvaluationCompareParameters, ParametersEvaluationCompareParametersModelAEvaluationModelRequest, ParametersEvaluationCompareParametersModelBEvaluationModelRequest, ParametersEvaluationScoreParameters, ParametersEvaluationScoreParametersModelToEvaluate
+from together.types.eval_create_params import (
+    Parameters,
+    ParametersEvaluationClassifyParameters,
+    ParametersEvaluationClassifyParametersModelToEvaluate,
+    ParametersEvaluationCompareParameters,
+    ParametersEvaluationCompareParametersModelAEvaluationModelRequest,
+    ParametersEvaluationCompareParametersModelBEvaluationModelRequest,
+    ParametersEvaluationScoreParameters,
+    ParametersEvaluationScoreParametersModelToEvaluate,
+)
 
 
-def print_api_error(
-    e: Union[APIError, TogetherError]
-) -> None:
+def print_api_error(e: Union[APIError, TogetherError]) -> None:
     if isinstance(e, APIError):
         error_details = cast(Dict[str, Any], e.body)["error"]["message"]
 
-        if error_details and (
-            "credentials" in error_details.lower()
-            or "authentication" in error_details.lower()
-        ):
+        if error_details and ("credentials" in error_details.lower() or "authentication" in error_details.lower()):
             click.echo("Error: Invalid API key or authentication failed", err=True)
         else:
             click.echo(f"Error: {error_details}", err=True)
@@ -29,7 +33,10 @@ def print_api_error(
     click.echo(f"Error: {e}", err=True)
     return
 
+
 F = TypeVar("F", bound=Callable[..., Any])
+
+
 def handle_api_errors(f: F) -> F:
     """Decorator to handle common API errors in CLI commands."""
 
@@ -48,6 +55,7 @@ def handle_api_errors(f: F) -> F:
             sys.exit(1)
 
     return wrapper  # type: ignore
+
 
 @click.group()
 @click.pass_context
@@ -349,13 +357,9 @@ def create(
             "input_template": model_to_evaluate_input_template,
         }
         if model_to_evaluate_external_api_token:
-            model_to_evaluate_final["external_api_token"] = (
-                model_to_evaluate_external_api_token
-            )
+            model_to_evaluate_final["external_api_token"] = model_to_evaluate_external_api_token
         if model_to_evaluate_external_base_url:
-            model_to_evaluate_final["external_base_url"] = (
-                model_to_evaluate_external_base_url
-            )
+            model_to_evaluate_final["external_base_url"] = model_to_evaluate_external_base_url
 
     # Build model-a configuration
     model_a_final: Union[Dict[str, Any], None, str] = None
@@ -439,7 +443,7 @@ def create(
                 labels=labels_list or [],
                 pass_labels=pass_labels_list or [],
                 model_to_evaluate=cast(ParametersEvaluationClassifyParametersModelToEvaluate, model_to_evaluate_final),
-            )
+            ),
         )
     elif type == "score":
         if max_score is None or min_score is None or pass_threshold is None:
@@ -459,7 +463,7 @@ def create(
                 min_score=min_score,
                 pass_threshold=pass_threshold,
                 model_to_evaluate=cast(ParametersEvaluationScoreParametersModelToEvaluate, model_to_evaluate_final),
-            )
+            ),
         )
     elif type == "compare":
         response = client.evals.create(
@@ -472,11 +476,10 @@ def create(
                 },
                 model_a=cast(ParametersEvaluationCompareParametersModelAEvaluationModelRequest, model_a_final),
                 model_b=cast(ParametersEvaluationCompareParametersModelBEvaluationModelRequest, model_b_final),
-            )
+            ),
         )
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
-
 
 
 @evals.command()
@@ -491,7 +494,11 @@ def create(
     type=int,
     help="Limit number of results (max 100).",
 )
-def list(ctx: click.Context, status: Literal["pending", "queued", "running", "completed", "error", "user_error"], limit: Optional[int]) -> None:
+def list(
+    ctx: click.Context,
+    status: Literal["pending", "queued", "running", "completed", "error", "user_error"],
+    limit: Optional[int],
+) -> None:
     """List evals"""
 
     client: Together = ctx.obj

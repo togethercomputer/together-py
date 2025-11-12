@@ -121,8 +121,7 @@ def _check_conversation_type(messages: List[Dict[str, str | bool]], idx: int) ->
         )
     if len(messages) == 0:
         raise InvalidFileFormatError(
-            message=f"Invalid format on line {idx + 1} of the input file. "
-            f"The `messages` column must not be empty.",
+            message=f"Invalid format on line {idx + 1} of the input file. The `messages` column must not be empty.",
             line_number=idx + 1,
             error_source="key_value",
         )
@@ -151,9 +150,7 @@ def _check_conversation_type(messages: List[Dict[str, str | bool]], idx: int) ->
                 )
 
 
-def _check_conversation_roles(
-    require_assistant_role: bool, assistant_role_exists: bool, idx: int
-) -> None:
+def _check_conversation_roles(require_assistant_role: bool, assistant_role_exists: bool, idx: int) -> None:
     """Check that the conversation has correct roles.
 
     Args:
@@ -199,9 +196,7 @@ def _check_message_weight(message: Dict[str, str | bool], idx: int) -> None:
             )
 
 
-def _check_message_role(
-    message: Dict[str, str | bool], previous_role: str | None, idx: int
-) -> str | bool:
+def _check_message_role(message: Dict[str, str | bool], previous_role: str | None, idx: int) -> str | bool:
     """Check that the message has correct roles.
 
     Args:
@@ -232,9 +227,7 @@ def _check_message_role(
     return message["role"]
 
 
-def validate_messages(
-    messages: List[Dict[str, str | bool]], idx: int, require_assistant_role: bool = True
-) -> None:
+def validate_messages(messages: List[Dict[str, str | bool]], idx: int, require_assistant_role: bool = True) -> None:
     """Validate the messages column.
 
     Args:
@@ -373,14 +366,11 @@ def _check_utf8(file: Path) -> Dict[str, Any]:
     return report_dict
 
 
-def _check_samples_count(
-    file: Path, report_dict: Dict[str, Any], idx: int
-) -> Dict[str, Any]:
+def _check_samples_count(file: Path, report_dict: Dict[str, Any], idx: int) -> Dict[str, Any]:
     if idx + 1 < MIN_SAMPLES:
         report_dict["has_min_samples"] = False
         report_dict["message"] = (
-            f"Processing {file} resulted in only {idx + 1} samples. "
-            f"Our minimum is {MIN_SAMPLES} samples. "
+            f"Processing {file} resulted in only {idx + 1} samples. Our minimum is {MIN_SAMPLES} samples. "
         )
         report_dict["is_check_passed"] = False
     else:
@@ -401,11 +391,10 @@ def _check_csv(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
         Dict[str, Any]: A dictionary with the results of the check.
     """
     report_dict: Dict[str, Any] = {}
-    if purpose != 'eval':
+    if purpose != "eval":
         report_dict["is_check_passed"] = False
         report_dict["message"] = (
-            f"CSV files are not supported for {purpose}. "
-            "Only JSONL and Parquet files are supported."
+            f"CSV files are not supported for {purpose}. Only JSONL and Parquet files are supported."
         )
         return report_dict
 
@@ -446,14 +435,9 @@ def _check_csv(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
         except ValueError:
             report_dict["load_csv"] = False
             if idx < 0:
-                report_dict["message"] = (
-                    "Unable to decode file. "
-                    "File may be empty or in an unsupported format. "
-                )
+                report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
             else:
-                report_dict["message"] = (
-                    f"Error parsing the CSV file. Unexpected format on line {idx + 1}."
-                )
+                report_dict["message"] = f"Error parsing the CSV file. Unexpected format on line {idx + 1}."
             report_dict["is_check_passed"] = False
 
     return report_dict
@@ -483,13 +467,10 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                         error_source="line_type",
                     )
                 # In evals, we don't check the format of the dataset.
-                if purpose != 'eval':
+                if purpose != "eval":
                     current_format = None
                     for possible_format in JSONL_REQUIRED_COLUMNS_MAP:
-                        if all(
-                            column in json_line
-                            for column in JSONL_REQUIRED_COLUMNS_MAP[possible_format]
-                        ):
+                        if all(column in json_line for column in JSONL_REQUIRED_COLUMNS_MAP[possible_format]):
                             if current_format is None:
                                 current_format = possible_format
                             elif current_format != possible_format:
@@ -502,10 +483,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
 
                             # Check that there are no extra columns
                             for column in json_line:
-                                if (
-                                    column
-                                    not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]
-                                ):
+                                if column not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]:
                                     raise InvalidFileFormatError(
                                         message=f'Found extra column "{column}" in the line {idx + 1}.',
                                         line_number=idx + 1,
@@ -524,10 +502,8 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                     if current_format == DatasetFormat.PREFERENCE_OPENAI:
                         validate_preference_openai(json_line, idx)
                     elif current_format == DatasetFormat.CONVERSATION:
-                        message_column = JSONL_REQUIRED_COLUMNS_MAP[
-                            DatasetFormat.CONVERSATION
-                        ][0]
-                        require_assistant = purpose != 'eval'
+                        message_column = JSONL_REQUIRED_COLUMNS_MAP[DatasetFormat.CONVERSATION][0]
+                        require_assistant = purpose != "eval"
                         validate_messages(
                             json_line[message_column],
                             idx,
@@ -570,14 +546,9 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
         except ValueError:
             report_dict["load_json"] = False
             if idx < 0:
-                report_dict["message"] = (
-                    "Unable to decode file. "
-                    "File may be empty or in an unsupported format. "
-                )
+                report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
             else:
-                report_dict["message"] = (
-                    f"Error parsing json payload. Unexpected format on line {idx + 1}."
-                )
+                report_dict["message"] = f"Error parsing json payload. Unexpected format on line {idx + 1}."
             report_dict["is_check_passed"] = False
 
     if "text_field" not in report_dict:
@@ -599,11 +570,10 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
         )
 
     report_dict: Dict[str, Any] = {}
-    if purpose == 'eval':
+    if purpose == "eval":
         report_dict["is_check_passed"] = False
         report_dict["message"] = (
-            f"Parquet files are not supported for {purpose}. "
-            "Only JSONL and CSV files are supported."
+            f"Parquet files are not supported for {purpose}. Only JSONL and CSV files are supported."
         )
         return report_dict
 
@@ -619,9 +589,7 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
 
     column_names = table.schema.names
     if "input_ids" not in column_names:
-        report_dict["load_parquet"] = (
-            f"Parquet file {file} does not contain the `input_ids` column."
-        )
+        report_dict["load_parquet"] = f"Parquet file {file} does not contain the `input_ids` column."
         report_dict["is_check_passed"] = False
         return report_dict
 
@@ -639,8 +607,7 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
     if num_samples < MIN_SAMPLES:
         report_dict["has_min_samples"] = False
         report_dict["message"] = (
-            f"Processing {file} resulted in only {num_samples} samples. "
-            f"Our minimum is {MIN_SAMPLES} samples. "
+            f"Processing {file} resulted in only {num_samples} samples. Our minimum is {MIN_SAMPLES} samples. "
         )
         report_dict["is_check_passed"] = False
         return report_dict
