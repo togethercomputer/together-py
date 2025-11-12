@@ -18,7 +18,7 @@ from together.lib.cli.api.evals import evals
 def print_version(ctx: click.Context, params: Any, value: Any) -> None:
     if not value or ctx.resilient_parsing:
         return
-    click.echo(f"Version {together.version}")
+    click.echo(f"Version {__version__}")
     ctx.exit()
 
 
