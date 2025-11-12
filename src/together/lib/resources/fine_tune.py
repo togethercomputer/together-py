@@ -6,8 +6,6 @@ from typing_extensions import Union, TypeAlias
 from rich import print as rprint
 
 from together import Together
-from together.lib.types.fine_tune import FinetuneTrainingLimits
-
 from together.types import (
     LrSchedulerParam,
     FineTuneCreateParams,
@@ -19,6 +17,7 @@ from together.types import (
     LinearLrSchedulerArgsParam,
 )
 from together.lib.utils import log_warn_once
+from together.lib.types.fine_tune import FinetuneTrainingLimits
 
 TrainingMethod: TypeAlias = Union[TrainingMethodSftParam, TrainingMethodDpoParam]
 
@@ -28,6 +27,7 @@ AVAILABLE_TRAINING_METHODS = {
     "sft",
     "dpo",
 }
+
 
 def create_finetune_request(
     model_limits: FinetuneTrainingLimits,

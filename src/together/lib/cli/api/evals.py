@@ -10,12 +10,12 @@ from together import APIError, Together, TogetherError
 from together._types import omit
 from together.lib.utils.serializer import datetime_serializer
 from together.types.eval_create_params import (
-    ParametersEvaluationClassifyParametersJudge,
-    ParametersEvaluationCompareParametersJudge,
     ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,
     ParametersEvaluationClassifyParameters,
     ParametersEvaluationScoreParametersJudge,
+    ParametersEvaluationCompareParametersJudge,
+    ParametersEvaluationClassifyParametersJudge,
     ParametersEvaluationScoreParametersModelToEvaluate,
     ParametersEvaluationClassifyParametersModelToEvaluate,
     ParametersEvaluationCompareParametersModelAEvaluationModelRequest,
@@ -278,7 +278,7 @@ def create(
     ctx: click.Context,
     type: Literal["classify", "score", "compare"],
     judge_model: str,
-    judge_model_source: str,
+    judge_model_source: Literal["serverless", "dedicated", "external"],
     judge_system_template: str,
     judge_external_api_token: Optional[str],
     judge_external_base_url: Optional[str],
@@ -433,15 +433,16 @@ def create(
         if model_b_external_base_url:
             model_b_final["external_base_url"] = model_b_external_base_url
 
+    judge_config = _build_judge(
+        type, judge_model, judge_model_source, judge_system_template, judge_external_api_token, judge_external_base_url
+    )
+
     if type == "classify":
         response = client.evals.create(
             type=type,
             parameters=ParametersEvaluationClassifyParameters(
                 input_data_file_path=input_data_file_path,
-                judge=ParametersEvaluationClassifyParametersJudge(
-                    model_name=judge_model,
-                    system_template=judge_system_template,
-                ),
+                judge=judge_config,
                 labels=labels_list or [],
                 pass_labels=pass_labels_list or [],
                 model_to_evaluate=cast(ParametersEvaluationClassifyParametersModelToEvaluate, model_to_evaluate_final),
@@ -450,14 +451,12 @@ def create(
     elif type == "score":
         if max_score is None or min_score is None or pass_threshold is None:
             raise TogetherError("max_score, min_score, and pass_threshold are required for score type")
+
         response = client.evals.create(
             type="score",
             parameters=ParametersEvaluationScoreParameters(
                 input_data_file_path=input_data_file_path,
-                judge=ParametersEvaluationScoreParametersJudge(
-                    model_name=judge_model,
-                    system_template=judge_system_template,
-                ),
+                judge=judge_config,
                 max_score=max_score,
                 min_score=min_score,
                 pass_threshold=pass_threshold,
@@ -469,10 +468,7 @@ def create(
             type=type,
             parameters=ParametersEvaluationCompareParameters(
                 input_data_file_path=input_data_file_path,
-                judge=ParametersEvaluationCompareParametersJudge(
-                    model_name=judge_model,
-                    system_template=judge_system_template,
-                ),
+                judge=judge_config,
                 model_a=cast(ParametersEvaluationCompareParametersModelAEvaluationModelRequest, model_a_final),
                 model_b=cast(ParametersEvaluationCompareParametersModelBEvaluationModelRequest, model_b_final),
             ),
@@ -555,3 +551,38 @@ def status(ctx: click.Context, evaluation_id: str) -> None:
     response = client.evals.status(evaluation_id)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+
+
+def _build_judge(
+    type: Literal["classify", "score", "compare"],
+    judge_model: str,
+    judge_model_source: Literal["serverless", "dedicated", "external"],
+    judge_system_template: str,
+    judge_external_api_token: Optional[str],
+    judge_external_base_url: Optional[str],
+) -> ParametersEvaluationClassifyParametersJudge:
+    if type == "classify":
+        judge_config = ParametersEvaluationClassifyParametersJudge(
+            model=judge_model,
+            model_source=judge_model_source,
+            system_template=judge_system_template,
+        )
+    elif type == "score":
+        judge_config = ParametersEvaluationScoreParametersJudge(
+            model=judge_model,
+            model_source=judge_model_source,
+            system_template=judge_system_template,
+        )
+    elif type == "compare":
+        judge_config = ParametersEvaluationCompareParametersJudge(
+            model=judge_model,
+            model_source=judge_model_source,
+            system_template=judge_system_template,
+        )
+
+    if judge_external_api_token:
+        judge_config["external_api_token"] = judge_external_api_token
+    if judge_external_base_url:
+        judge_config["external_base_url"] = judge_external_base_url
+
+    return judge_config

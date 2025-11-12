@@ -1,13 +1,15 @@
+from typing import List
+from typing_extensions import TypeAlias
+
+from together import Together
 from together._models import BaseModel
 from together.types.model_list_response import ModelListResponse
-from typing_extensions import TypeAlias
-from together import Together
-from typing import List
 
 
 class DedicatedModel(BaseModel):
     name: str
     id: str
+
 
 ModelList: TypeAlias = List[DedicatedModel]
 
@@ -23,10 +25,7 @@ def filter_by_dedicated_models(client: Together, models: ModelListResponse) -> M
     Returns:
     List[BaseModel]: Filtered list of models
     """
-    dedicated_models = client.get(
-        "/autoscale/models",
-        cast_to=ModelList
-    )
+    dedicated_models = client.get("/autoscale/models", cast_to=ModelList)
 
     # Create a set of dedicated model names for efficient lookup
     dedicated_model_names = {model.name for model in dedicated_models}

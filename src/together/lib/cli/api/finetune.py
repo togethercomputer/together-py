@@ -304,7 +304,7 @@ def create(
         }
 
         for arg in default_values:
-            arg_source = ctx.get_parameter_source("arg") 
+            arg_source = ctx.get_parameter_source("arg")
             if arg_source == ParameterSource.DEFAULT:
                 training_args[str(arg)] = default_values[str(arg_source)]
 

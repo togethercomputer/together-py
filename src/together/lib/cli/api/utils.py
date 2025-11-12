@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing_extensions import override
 from typing import Literal
 from gettext import gettext as _
+from typing_extensions import override
 
 import click
 
