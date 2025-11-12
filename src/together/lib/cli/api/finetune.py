@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import json
-from typing import Any, Union, Literal
+from typing import Any, Dict, List, Union, Literal
 from pathlib import Path
 from datetime import datetime, timezone
 from textwrap import wrap
@@ -304,9 +304,9 @@ def create(
         }
 
         for arg in default_values:
-            arg_source = ctx.get_parameter_source("arg")  # type: ignore[attr-defined]
+            arg_source = ctx.get_parameter_source("arg") 
             if arg_source == ParameterSource.DEFAULT:
-                training_args[arg] = default_values[arg_source]
+                training_args[str(arg)] = default_values[str(arg_source)]
 
         if ctx.get_parameter_source("lora_alpha") == ParameterSource.DEFAULT:  # type: ignore[attr-defined]
             training_args["lora_alpha"] = training_args["lora_r"] * 2
@@ -360,7 +360,7 @@ def list(ctx: click.Context) -> None:
     epoch_start = datetime.fromtimestamp(0, tz=timezone.utc)
     response.data.sort(key=lambda x: x.created_at or epoch_start)
 
-    display_list = []
+    display_list: List[Dict[str, Any]] = []
     for i in response.data:
         display_list.append(
             {
@@ -424,7 +424,7 @@ def list_events(ctx: click.Context, fine_tune_id: str) -> None:
 
     response.data = response.data or []
 
-    display_list = []
+    display_list: List[Dict[str, Any]] = []
     for i in response.data:
         display_list.append(
             {
@@ -515,13 +515,14 @@ def download(
 
     ft_job = client.fine_tune.retrieve(fine_tune_id)
 
+    loosely_typed_checkpoint_type: str | NotGiven = checkpoint_type
     if isinstance(ft_job.training_type, FullTrainingType):
         if checkpoint_type != "default":
             raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
-        checkpoint_type = "model_output_path"
+        loosely_typed_checkpoint_type = "model_output_path"
     elif isinstance(ft_job.training_type, LoRaTrainingType):
         if checkpoint_type == "default":
-            checkpoint_type = "merged"
+            loosely_typed_checkpoint_type = "merged"
 
         if checkpoint_type not in {
             "merged",
@@ -531,7 +532,7 @@ def download(
 
     remote_name = ft_job.x_model_output_name
 
-    url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={checkpoint_type}"
+    url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={loosely_typed_checkpoint_type}"
     output: Path | None = None
     if isinstance(output_dir, str):
         output = Path(output_dir)

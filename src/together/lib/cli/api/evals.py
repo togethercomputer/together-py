@@ -1,6 +1,6 @@
 import sys
 import json
-from typing import Any, Dict, Union, Literal, TypeVar, Callable, Optional, cast
+from typing import Any, Dict, List, Union, Literal, TypeVar, Callable, Optional, cast
 from functools import wraps
 
 import click
@@ -10,9 +10,12 @@ from together import APIError, Together, TogetherError
 from together._types import omit
 from together.lib.utils.serializer import datetime_serializer
 from together.types.eval_create_params import (
+    ParametersEvaluationClassifyParametersJudge,
+    ParametersEvaluationCompareParametersJudge,
     ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,
     ParametersEvaluationClassifyParameters,
+    ParametersEvaluationScoreParametersJudge,
     ParametersEvaluationScoreParametersModelToEvaluate,
     ParametersEvaluationClassifyParametersModelToEvaluate,
     ParametersEvaluationCompareParametersModelAEvaluationModelRequest,
@@ -435,10 +438,10 @@ def create(
             type=type,
             parameters=ParametersEvaluationClassifyParameters(
                 input_data_file_path=input_data_file_path,
-                judge={
-                    "model_name": judge_model,
-                    "system_template": judge_system_template,
-                },
+                judge=ParametersEvaluationClassifyParametersJudge(
+                    model_name=judge_model,
+                    system_template=judge_system_template,
+                ),
                 labels=labels_list or [],
                 pass_labels=pass_labels_list or [],
                 model_to_evaluate=cast(ParametersEvaluationClassifyParametersModelToEvaluate, model_to_evaluate_final),
@@ -451,13 +454,10 @@ def create(
             type="score",
             parameters=ParametersEvaluationScoreParameters(
                 input_data_file_path=input_data_file_path,
-                judge={
-                    "model": judge_model,
-                    "model_source": judge_model_source,
-                    "external_api_token": judge_external_api_token or omit,
-                    "external_base_url": judge_external_base_url or omit,
-                    "system_template": judge_system_template,
-                },
+                judge=ParametersEvaluationScoreParametersJudge(
+                    model_name=judge_model,
+                    system_template=judge_system_template,
+                ),
                 max_score=max_score,
                 min_score=min_score,
                 pass_threshold=pass_threshold,
@@ -469,10 +469,10 @@ def create(
             type=type,
             parameters=ParametersEvaluationCompareParameters(
                 input_data_file_path=input_data_file_path,
-                judge={
-                    "model_name": judge_model,
-                    "system_template": judge_system_template,
-                },
+                judge=ParametersEvaluationCompareParametersJudge(
+                    model_name=judge_model,
+                    system_template=judge_system_template,
+                ),
                 model_a=cast(ParametersEvaluationCompareParametersModelAEvaluationModelRequest, model_a_final),
                 model_b=cast(ParametersEvaluationCompareParametersModelBEvaluationModelRequest, model_b_final),
             ),
@@ -504,7 +504,7 @@ def list(
 
     response = client.evals.list(status=status or omit, limit=limit or omit)
 
-    display_list = []
+    display_list: List[Dict[str, Any]] = []
     for job in response:
         if job.parameters:
             model = job.parameters.get("model_to_evaluate", "")

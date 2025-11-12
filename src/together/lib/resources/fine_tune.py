@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, Literal
 from typing_extensions import Union, TypeAlias
 
 from rich import print as rprint
 
-from together import Together, BaseModel
+from together import Together
+from together.lib.types.fine_tune import FinetuneTrainingLimits
 
-# from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
 from together.types import (
     LrSchedulerParam,
     FineTuneCreateParams,
@@ -29,33 +29,8 @@ AVAILABLE_TRAINING_METHODS = {
     "dpo",
 }
 
-
-class FullTrainingModelLimits(BaseModel):
-    max_batch_size: int
-    max_batch_size_dpo: int
-    min_batch_size: int
-
-
-class LoRaTrainingModelLimits(BaseModel):
-    max_batch_size: int
-    max_batch_size_dpo: int
-    min_batch_size: int
-    max_rank: int
-    target_modules: List[str]
-
-
-class FineTuneModelLimits(BaseModel):
-    model_name: str
-    full_training: Union[FullTrainingModelLimits, None] = None
-    lora_training: Union[LoRaTrainingModelLimits, None] = None
-    max_num_epochs: int
-    max_num_evals: int
-    max_learning_rate: float
-    min_learning_rate: float
-
-
 def create_finetune_request(
-    model_limits: FineTuneModelLimits,
+    model_limits: FinetuneTrainingLimits,
     training_file: str,
     model: str | None = None,
     n_epochs: int = 1,
@@ -272,7 +247,7 @@ def create_finetune_request(
     return finetune_request
 
 
-def get_model_limits(client: Together, model: str) -> FineTuneModelLimits:
+def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
     """
     Requests training limits for a specific model
 
@@ -285,7 +260,7 @@ def get_model_limits(client: Together, model: str) -> FineTuneModelLimits:
 
     response = client.get(
         "/fine-tunes/models/limits",
-        cast_to=FineTuneModelLimits,
+        cast_to=FinetuneTrainingLimits,
         options={
             "params": {"model_name": model},
         },

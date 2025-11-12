@@ -55,7 +55,7 @@ def main(
     max_retries: int | None,
 ) -> None:
     """This is a sample CLI tool."""
-    together.log = "debug" if debug else None
+    os.environ.setdefault("TOGETHER_LOG", "debug" if debug else "info")
     ctx.obj = together.Together(
         api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries if max_retries is not None else 0
     )

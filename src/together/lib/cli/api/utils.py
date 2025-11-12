@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing_extensions import override
 from typing import Literal
 from gettext import gettext as _
 
@@ -10,6 +11,7 @@ class AutoIntParamType(click.ParamType):
     name = "integer_or_max"
     _number_class = int
 
+    @override
     def convert(
         self, value: str, param: click.Parameter | None, ctx: click.Context | None
     ) -> int | Literal["max"] | None:
@@ -28,6 +30,7 @@ class AutoIntParamType(click.ParamType):
 class BooleanWithAutoParamType(click.ParamType):
     name = "boolean_or_auto"
 
+    @override
     def convert(
         self, value: str, param: click.Parameter | None, ctx: click.Context | None
     ) -> bool | Literal["auto"] | None:

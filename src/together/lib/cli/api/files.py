@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import get_args
+from typing import Any, Dict, List, get_args
 from textwrap import wrap
 
 import click
@@ -56,7 +56,7 @@ def list(ctx: click.Context) -> None:
 
     response = client.files.list()
 
-    display_list = []
+    display_list: List[Dict[str, Any]] = []
     for i in response.data or []:
         display_list.append(
             {

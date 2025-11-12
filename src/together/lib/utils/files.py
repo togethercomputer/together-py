@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import csv
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 from pathlib import Path
 from traceback import format_exc
 
@@ -111,13 +111,13 @@ def _check_conversation_type(messages: List[Dict[str, str | bool]], idx: int) ->
     Raises:
         InvalidFileFormatError: If the conversation type is invalid.
     """
-    if not isinstance(messages, list):
-        raise InvalidFileFormatError(
-            message=f"Invalid format on line {idx + 1} of the input file. "
-            f"The `messages` column must be a list. Found {type(messages)}",
-            line_number=idx + 1,
-            error_source="key_value",
-        )
+    # if not isinstance(messages, list):
+    #     raise InvalidFileFormatError(
+    #         message=f"Invalid format on line {idx + 1} of the input file. "
+    #         f"The `messages` column must be a list. Found {type(messages)}",
+    #         line_number=idx + 1,
+    #         error_source="key_value",
+    #     )
     if len(messages) == 0:
         raise InvalidFileFormatError(
             message=f"Invalid format on line {idx + 1} of the input file. The `messages` column must not be empty.",
@@ -126,13 +126,13 @@ def _check_conversation_type(messages: List[Dict[str, str | bool]], idx: int) ->
         )
 
     for message in messages:
-        if not isinstance(message, dict):
-            raise InvalidFileFormatError(
-                message=f"Invalid format on line {idx + 1} of the input file. "
-                f"The `messages` column must be a list of dicts. Found {type(message)}",
-                line_number=idx + 1,
-                error_source="key_value",
-            )
+        # if not isinstance(message, dict):
+        #     raise InvalidFileFormatError(
+        #         message=f"Invalid format on line {idx + 1} of the input file. "
+        #         f"The `messages` column must be a list of dicts. Found {type(message)}",
+        #         line_number=idx + 1,
+        #         error_source="key_value",
+        #     )
 
         for column in REQUIRED_COLUMNS_MESSAGE:
             if column not in message:
@@ -195,7 +195,7 @@ def _check_message_weight(message: Dict[str, str | bool], idx: int) -> None:
             )
 
 
-def _check_message_role(message: Dict[str, str | bool], previous_role: str | None, idx: int) -> str | bool:
+def _check_message_role(message: Dict[str, str | bool], previous_role: str | bool | None, idx: int) -> str | bool:
     """Check that the message has correct roles.
 
     Args:
@@ -276,7 +276,7 @@ def validate_preference_openai(example: Dict[str, Any], idx: int = 0) -> None:
             error_source="key_value",
         )
 
-    validate_messages(example["input"]["messages"], idx, require_assistant_role=False)
+    validate_messages(cast(List[Dict[str, str | bool]], example["input"]["messages"]), idx, require_assistant_role=False)
 
     if example["input"]["messages"][-1]["role"] == "assistant":
         raise InvalidFileFormatError(
@@ -481,7 +481,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                                 )
 
                             # Check that there are no extra columns
-                            for column in json_line:
+                            for column in cast(List[str], json_line.keys()):
                                 if column not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]:
                                     raise InvalidFileFormatError(
                                         message=f'Found extra column "{column}" in the line {idx + 1}.',
@@ -499,12 +499,12 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                             error_source="format",
                         )
                     if current_format == DatasetFormat.PREFERENCE_OPENAI:
-                        validate_preference_openai(json_line, idx)
+                        validate_preference_openai(cast(Dict[str, Any], json_line), idx)
                     elif current_format == DatasetFormat.CONVERSATION:
                         message_column = JSONL_REQUIRED_COLUMNS_MAP[DatasetFormat.CONVERSATION][0]
                         require_assistant = purpose != "eval"
                         validate_messages(
-                            json_line[message_column],
+                            cast(List[Dict[str, str | bool]], json_line[message_column]),
                             idx,
                             require_assistant_role=require_assistant,
                         )
@@ -513,22 +513,21 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                             if not isinstance(json_line[column], str):
                                 raise InvalidFileFormatError(
                                     message=f'Invalid value type for "{column}" key on line {idx + 1}. '
-                                    f"Expected string. Found {type(json_line[column])}.",
+                                    f"Expected string. Found {type(cast(Any, json_line[column]))}.",
                                     line_number=idx + 1,
                                     error_source="key_value",
                                 )
 
                     if dataset_format is None:
                         dataset_format = current_format
-                    elif current_format is not None:
-                        if current_format != dataset_format:
-                            raise InvalidFileFormatError(
-                                message="All samples in the dataset must have the same dataset format. "
-                                f"Got {dataset_format} for the first line and {current_format} "
-                                f"for the line {idx + 1}.",
-                                line_number=idx + 1,
-                                error_source="format",
-                            )
+                    elif current_format != dataset_format:
+                        raise InvalidFileFormatError(
+                            message="All samples in the dataset must have the same dataset format. "
+                            f"Got {dataset_format} for the first line and {current_format} "
+                            f"for the line {idx + 1}.",
+                            line_number=idx + 1,
+                            error_source="format",
+                        )
 
             report_dict.update(_check_samples_count(file, report_dict, idx))
 

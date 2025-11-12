@@ -1,14 +1,13 @@
 import json as json_lib
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import click
-import httpx
 from tabulate import tabulate
 
-from together import Together
+from together import Together, omit
 from together._models import BaseModel
 from together._response import APIResponse as APIResponse
-from together.types.model_list_response import ModelListResponse
+from together.lib.resources.models import filter_by_dedicated_models
 from together.types.model_upload_response import ModelUploadResponse
 
 
@@ -39,13 +38,9 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     models_list = response
 
     if type == "dedicated":
-        dedicated_response = client.get(
-            "/autoscale/models",
-            cast_to=httpx.Response,
-        )
-        models_list = _filter_dedicated_models(response, dedicated_response)
+        models_list = filter_by_dedicated_models(client, models_list)
 
-    display_list = []
+    display_list: List[Dict[str, Any]] = []
     model: BaseModel
     for model in models_list:
         display_list.append(
@@ -56,8 +51,8 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
                 "Type": model.type,
                 "Context Length": model.context_length,
                 "License": model.license,
-                "Input per 1M token": model.pricing.input,
-                "Output per 1M token": model.pricing.output,
+                "Input per 1M token": model.pricing.input if model.pricing else None,
+                "Output per 1M token": model.pricing.output if model.pricing else None,
             }
         )
 
@@ -115,7 +110,7 @@ def upload(
     base_model: Optional[str],
     lora_model: Optional[str],
     json: bool,
-    model_type: Optional[str] = "model",
+    model_type: Optional[Literal["model", "adapter"]] = "model",
 ) -> None:
     """Upload a custom model or adapter from Hugging Face or S3"""
     client: Together = ctx.obj
@@ -123,11 +118,11 @@ def upload(
     response: ModelUploadResponse = client.models.upload(
         model_name=model_name,
         model_source=model_source,
-        model_type=model_type,
-        hf_token=hf_token,
-        description=description,
-        base_model=base_model,
-        lora_model=lora_model,
+        model_type=model_type or omit,
+        hf_token=hf_token or omit,
+        description=description or omit,
+        base_model=base_model or omit,
+        lora_model=lora_model or omit,
     )
 
     if json:
@@ -143,25 +138,3 @@ def upload(
         if response.data.x_model_source:
             click.echo(f"Model Source: {response.data.x_model_source}")
         click.echo(f"Message: {response.message}")
-
-
-def _filter_dedicated_models(models: ModelListResponse, dedicated_response: httpx.Response) -> ModelListResponse:
-    """
-    Filter models based on dedicated model response.
-
-    Args:
-    models (List[BaseModel]): List of all models
-    dedicated_response (APIResponse): Response from autoscale models endpoint
-
-    Returns:
-    List[BaseModel]: Filtered list of models
-    """
-    data = dedicated_response.json()
-    assert isinstance(data, List)
-
-    # Create a set of dedicated model names for efficient lookup
-    dedicated_model_names = {model["name"] for model in data}
-
-    # Filter models to only include those in dedicated_model_names
-    # Note: The model.id from ModelObject matches the name field in the autoscale response
-    return [model for model in models if model.id in dedicated_model_names]
