@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.22 (2025-11-12)
+
+Full Changelog: [v0.1.0-alpha.21...v0.1.0-alpha.22](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.21...v0.1.0-alpha.22)
+
+### Features
+
+* **api:** api update ([360eb81](https://github.com/togethercomputer/together-py/commit/360eb813c52d05ed12aa2778a07232707036c69d))
+
 ## 0.1.0-alpha.21 (2025-11-11)
 
 Full Changelog: [v0.1.0-alpha.20...v0.1.0-alpha.21](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.20...v0.1.0-alpha.21)
