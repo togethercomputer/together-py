@@ -22,6 +22,7 @@ from .._base_client import make_request_options
 from ..types.autoscaling_param import AutoscalingParam
 from ..types.dedicated_endpoint import DedicatedEndpoint
 from ..types.endpoint_list_response import EndpointListResponse
+from ..types.endpoint_list_avzones_response import EndpointListAvzonesResponse
 
 __all__ = ["EndpointsResource", "AsyncEndpointsResource"]
 
@@ -296,6 +297,25 @@ class EndpointsResource(SyncAPIResource):
             cast_to=NoneType,
         )
 
+    def list_avzones(
+        self,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointListAvzonesResponse:
+        """List all available availability zones."""
+        return self._get(
+            "/clusters/availability-zones",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EndpointListAvzonesResponse,
+        )
+
 
 class AsyncEndpointsResource(AsyncAPIResource):
     @cached_property
@@ -567,6 +587,25 @@ class AsyncEndpointsResource(AsyncAPIResource):
             cast_to=NoneType,
         )
 
+    async def list_avzones(
+        self,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointListAvzonesResponse:
+        """List all available availability zones."""
+        return await self._get(
+            "/clusters/availability-zones",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=EndpointListAvzonesResponse,
+        )
+
 
 class EndpointsResourceWithRawResponse:
     def __init__(self, endpoints: EndpointsResource) -> None:
@@ -586,6 +625,9 @@ class EndpointsResourceWithRawResponse:
         )
         self.delete = to_raw_response_wrapper(
             endpoints.delete,
+        )
+        self.list_avzones = to_raw_response_wrapper(
+            endpoints.list_avzones,
         )
 
 
@@ -608,6 +650,9 @@ class AsyncEndpointsResourceWithRawResponse:
         self.delete = async_to_raw_response_wrapper(
             endpoints.delete,
         )
+        self.list_avzones = async_to_raw_response_wrapper(
+            endpoints.list_avzones,
+        )
 
 
 class EndpointsResourceWithStreamingResponse:
@@ -629,6 +674,9 @@ class EndpointsResourceWithStreamingResponse:
         self.delete = to_streamed_response_wrapper(
             endpoints.delete,
         )
+        self.list_avzones = to_streamed_response_wrapper(
+            endpoints.list_avzones,
+        )
 
 
 class AsyncEndpointsResourceWithStreamingResponse:
@@ -649,4 +697,7 @@ class AsyncEndpointsResourceWithStreamingResponse:
         )
         self.delete = async_to_streamed_response_wrapper(
             endpoints.delete,
+        )
+        self.list_avzones = async_to_streamed_response_wrapper(
+            endpoints.list_avzones,
         )
