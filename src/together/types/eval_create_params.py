@@ -36,11 +36,20 @@ class EvalCreateParams(TypedDict, total=False):
 
 
 class ParametersEvaluationClassifyParametersJudge(TypedDict, total=False):
-    model_name: Required[str]
+    model: Required[str]
     """Name of the judge model"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the judge model."""
 
     system_template: Required[str]
     """System prompt template for the judge"""
+
+    external_api_token: str
+    """Bearer/API token for external judge models."""
+
+    external_base_url: str
+    """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
 
 class ParametersEvaluationClassifyParametersModelToEvaluateEvaluationModelRequest(TypedDict, total=False):
@@ -50,14 +59,23 @@ class ParametersEvaluationClassifyParametersModelToEvaluateEvaluationModelReques
     max_tokens: Required[int]
     """Maximum number of tokens to generate"""
 
-    model_name: Required[str]
+    model: Required[str]
     """Name of the model to evaluate"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the model."""
 
     system_template: Required[str]
     """System prompt template"""
 
     temperature: Required[float]
     """Sampling temperature"""
+
+    external_api_token: str
+    """Bearer/API token for external models."""
+
+    external_base_url: str
+    """Base URL for external models. Must be OpenAI-compatible base URL"""
 
 
 ParametersEvaluationClassifyParametersModelToEvaluate: TypeAlias = Union[
@@ -82,11 +100,20 @@ class ParametersEvaluationClassifyParameters(TypedDict, total=False):
 
 
 class ParametersEvaluationScoreParametersJudge(TypedDict, total=False):
-    model_name: Required[str]
+    model: Required[str]
     """Name of the judge model"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the judge model."""
 
     system_template: Required[str]
     """System prompt template for the judge"""
+
+    external_api_token: str
+    """Bearer/API token for external judge models."""
+
+    external_base_url: str
+    """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
 
 class ParametersEvaluationScoreParametersModelToEvaluateEvaluationModelRequest(TypedDict, total=False):
@@ -96,14 +123,23 @@ class ParametersEvaluationScoreParametersModelToEvaluateEvaluationModelRequest(T
     max_tokens: Required[int]
     """Maximum number of tokens to generate"""
 
-    model_name: Required[str]
+    model: Required[str]
     """Name of the model to evaluate"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the model."""
 
     system_template: Required[str]
     """System prompt template"""
 
     temperature: Required[float]
     """Sampling temperature"""
+
+    external_api_token: str
+    """Bearer/API token for external models."""
+
+    external_base_url: str
+    """Base URL for external models. Must be OpenAI-compatible base URL"""
 
 
 ParametersEvaluationScoreParametersModelToEvaluate: TypeAlias = Union[
@@ -131,11 +167,20 @@ class ParametersEvaluationScoreParameters(TypedDict, total=False):
 
 
 class ParametersEvaluationCompareParametersJudge(TypedDict, total=False):
-    model_name: Required[str]
+    model: Required[str]
     """Name of the judge model"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the judge model."""
 
     system_template: Required[str]
     """System prompt template for the judge"""
+
+    external_api_token: str
+    """Bearer/API token for external judge models."""
+
+    external_base_url: str
+    """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
 
 class ParametersEvaluationCompareParametersModelAEvaluationModelRequest(TypedDict, total=False):
@@ -145,14 +190,23 @@ class ParametersEvaluationCompareParametersModelAEvaluationModelRequest(TypedDic
     max_tokens: Required[int]
     """Maximum number of tokens to generate"""
 
-    model_name: Required[str]
+    model: Required[str]
     """Name of the model to evaluate"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the model."""
 
     system_template: Required[str]
     """System prompt template"""
 
     temperature: Required[float]
     """Sampling temperature"""
+
+    external_api_token: str
+    """Bearer/API token for external models."""
+
+    external_base_url: str
+    """Base URL for external models. Must be OpenAI-compatible base URL"""
 
 
 ParametersEvaluationCompareParametersModelA: TypeAlias = Union[
@@ -167,14 +221,23 @@ class ParametersEvaluationCompareParametersModelBEvaluationModelRequest(TypedDic
     max_tokens: Required[int]
     """Maximum number of tokens to generate"""
 
-    model_name: Required[str]
+    model: Required[str]
     """Name of the model to evaluate"""
+
+    model_source: Required[Literal["serverless", "dedicated", "external"]]
+    """Source of the model."""
 
     system_template: Required[str]
     """System prompt template"""
 
     temperature: Required[float]
     """Sampling temperature"""
+
+    external_api_token: str
+    """Bearer/API token for external models."""
+
+    external_base_url: str
+    """Base URL for external models. Must be OpenAI-compatible base URL"""
 
 
 ParametersEvaluationCompareParametersModelB: TypeAlias = Union[
