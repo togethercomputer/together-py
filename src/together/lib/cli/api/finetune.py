@@ -11,10 +11,9 @@ from click.core import ParameterSource  # type: ignore[attr-defined]
 from tabulate import tabulate
 
 from together import Together
-from together._utils import is_given
 from together.lib.cli.api.utils import BOOL_WITH_AUTO, INT_WITH_MAX
 from together.lib.resources.files import DownloadManager
-from together.lib.utils.fine_tune import get_model_limits, create_finetune_request
+from together.lib.resources .fine_tune import get_model_limits, create_finetune_request
 from together.lib.utils import log_warn
 from together.lib.utils.serializer import datetime_serializer
 from together.lib.utils.tools import finetune_price_to_dollars

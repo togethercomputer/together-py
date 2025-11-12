@@ -43,7 +43,7 @@ def check_file(
     if not isinstance(file, Path):
         file = Path(file)
 
-    report_dict = {
+    report_dict: Dict[str, Any] = {
         "is_check_passed": True,
         "message": "Checks passed",
         "found": None,
@@ -65,11 +65,11 @@ def check_file(
     else:
         report_dict["found"] = True
 
-    file_size = os.stat(file).st_size
+    file_size = os.stat(file.as_posix()).st_size
 
     if file_size > MAX_FILE_SIZE_GB * NUM_BYTES_IN_GB:
         report_dict["message"] = (
-            f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB ,3)} GB."
+            f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB, 3)} GB."
         )
         report_dict["is_check_passed"] = False
     elif file_size == 0:
@@ -92,8 +92,7 @@ def check_file(
         data_report_dict = _check_csv(file, purpose)
     else:
         report_dict["filetype"] = (
-            f"Unknown extension of file {file}. "
-            "Only files with extensions .jsonl and .parquet are supported."
+            f"Unknown extension of file {file}. Only files with extensions .jsonl, .parquet, and .csv are supported."
         )
         report_dict["is_check_passed"] = False
 
