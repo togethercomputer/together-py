@@ -177,7 +177,7 @@ def create(
             disable_speculative_decoding=no_speculative_decoding or omit,
             state="STOPPED" if no_auto_start else "STARTED",
             inactive_timeout=inactive_timeout,
-            extra_query={"availability_zone": availability_zone},
+            extra_query={"availability_zone": availability_zone or omit},
         )
     except APIError as e:
         print_api_error(e)
