@@ -99,14 +99,14 @@ def create_finetune_request(
         lora_r = lora_r if lora_r is not None else model_limits.lora_training.max_rank
         lora_alpha = lora_alpha if lora_alpha is not None else lora_r * 2
         training_type = LoRaTrainingTypeParam(
-            **not_none_kwargs(
-                type="Lora",
-                lora_r=lora_r,
-                lora_alpha=int(lora_alpha),
-                lora_dropout=lora_dropout,
-                lora_trainable_modules=lora_trainable_modules,
-            )
+            type="Lora",
+            lora_r=lora_r,
+            lora_alpha=int(lora_alpha),
         )
+        if lora_dropout is not None:
+            training_type["lora_dropout"] = lora_dropout
+        if lora_trainable_modules is not None:
+            training_type["lora_trainable_modules"] = lora_trainable_modules
 
         max_batch_size = model_limits.lora_training.max_batch_size
         min_batch_size = model_limits.lora_training.min_batch_size
@@ -205,44 +205,61 @@ def create_finetune_request(
             dpo_reference_free = False
 
         training_method_cls = TrainingMethodDpoParam(
-            **not_none_kwargs(
                 method="dpo",
-                dpo_beta=dpo_beta,
                 dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length,
                 dpo_reference_free=dpo_reference_free,
-                rpo_alpha=rpo_alpha,
-                simpo_gamma=simpo_gamma,
-            )
         )
+        if dpo_beta is not None:
+            training_method_cls["dpo_beta"] = dpo_beta
+        if rpo_alpha is not None:
+            training_method_cls["rpo_alpha"] = rpo_alpha
+        if simpo_gamma is not None:
+            training_method_cls["simpo_gamma"] = simpo_gamma
+
+    if model_or_checkpoint is None:
+        raise ValueError("model or checkpoint is required")
 
     finetune_request = FineTuneCreateParams(
-        **not_none_kwargs(
-            model=model,
-            training_file=training_file,
-            validation_file=validation_file,
-            n_epochs=n_epochs,
-            n_evals=n_evals,
-            n_checkpoints=n_checkpoints,
-            batch_size=batch_size,
-            learning_rate=learning_rate,
-            lr_scheduler=lr_scheduler,
-            warmup_ratio=warmup_ratio,
-            max_grad_norm=max_grad_norm,
-            weight_decay=weight_decay,
-            training_type=training_type,
-            suffix=suffix,
-            wandb_key=wandb_api_key,
-            wandb_base_url=wandb_base_url,
-            wandb_project_name=wandb_project_name,
-            wandb_name=wandb_name,
-            training_method=training_method_cls,
-            from_checkpoint=from_checkpoint,
-            from_hf_model=from_hf_model,
-            hf_model_revision=hf_model_revision,
-            hf_api_token=hf_api_token,
-            hf_output_repo_name=hf_output_repo_name,
-        )
+        model=model_or_checkpoint,
+        training_file=training_file,
+        n_epochs=n_epochs,
+        batch_size=batch_size,
+        lr_scheduler=lr_scheduler,
+        warmup_ratio=warmup_ratio,
+        max_grad_norm=max_grad_norm,
+        weight_decay=weight_decay,
+        training_type=training_type,
     )
+    if validation_file is not None:
+        finetune_request["validation_file"] = validation_file
+    if n_evals is not None:
+        finetune_request["n_evals"] = n_evals
+    if n_checkpoints is not None:
+        finetune_request["n_checkpoints"] = n_checkpoints
+    if learning_rate is not None:
+        finetune_request["learning_rate"] = learning_rate
+    if suffix is not None:
+        finetune_request["suffix"] = suffix
+    if wandb_api_key is not None:
+        finetune_request["wandb_api_key"] = wandb_api_key
+    if wandb_base_url is not None:
+        finetune_request["wandb_base_url"] = wandb_base_url
+    if wandb_project_name is not None:
+        finetune_request["wandb_project_name"] = wandb_project_name
+    if wandb_name is not None:
+        finetune_request["wandb_name"] = wandb_name
+    if training_method_cls is not None:
+        finetune_request["training_method"] = training_method_cls
+    if from_checkpoint is not None:
+        finetune_request["from_checkpoint"] = from_checkpoint
+    if from_hf_model is not None:
+        finetune_request["from_hf_model"] = from_hf_model
+    if hf_model_revision is not None:
+        finetune_request["hf_model_revision"] = hf_model_revision
+    if hf_api_token is not None:
+        finetune_request["hf_api_token"] = hf_api_token
+    if hf_output_repo_name is not None:
+        finetune_request["hf_output_repo_name"] = hf_output_repo_name
 
     return finetune_request
 

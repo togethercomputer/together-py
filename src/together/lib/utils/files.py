@@ -276,8 +276,9 @@ def validate_preference_openai(example: Dict[str, Any], idx: int = 0) -> None:
             error_source="key_value",
         )
 
+    messages: List[Dict[str, str | bool]] = cast(Any, example["input"]["messages"])
     validate_messages(
-        cast(List[Dict[str, str | bool]], example["input"]["messages"]), idx, require_assistant_role=False
+        messages, idx, require_assistant_role=False
     )
 
     if example["input"]["messages"][-1]["role"] == "assistant":
@@ -505,8 +506,9 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                     elif current_format == DatasetFormat.CONVERSATION:
                         message_column = JSONL_REQUIRED_COLUMNS_MAP[DatasetFormat.CONVERSATION][0]
                         require_assistant = purpose != "eval"
+                        message: List[Dict[str, str | bool]] = cast(Any, json_line[message_column])
                         validate_messages(
-                            cast(List[Dict[str, str | bool]], json_line[message_column]),
+                            message,
                             idx,
                             require_assistant_role=require_assistant,
                         )
