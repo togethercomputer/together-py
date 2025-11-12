@@ -1,8 +1,11 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List
-from typing_extensions import TypeAlias
+
+from .._models import BaseModel
 
 __all__ = ["EndpointListAvzonesResponse"]
 
-EndpointListAvzonesResponse: TypeAlias = List[str]
+
+class EndpointListAvzonesResponse(BaseModel):
+    avzones: List[str]
