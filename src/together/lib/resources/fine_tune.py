@@ -216,11 +216,8 @@ def create_finetune_request(
         if simpo_gamma is not None:
             training_method_cls["simpo_gamma"] = simpo_gamma
 
-    if model_or_checkpoint is None:
-        raise ValueError("model or checkpoint is required")
-
     finetune_request = FineTuneCreateParams(
-        model=model_or_checkpoint,
+        model=model or "",
         training_file=training_file,
         n_epochs=n_epochs,
         batch_size=batch_size,

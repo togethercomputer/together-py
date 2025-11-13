@@ -126,13 +126,13 @@ def _check_conversation_type(messages: List[Dict[str, str | bool]], idx: int) ->
         )
 
     for message in messages:
-        # if not isinstance(message, dict):
-        #     raise InvalidFileFormatError(
-        #         message=f"Invalid format on line {idx + 1} of the input file. "
-        #         f"The `messages` column must be a list of dicts. Found {type(message)}",
-        #         line_number=idx + 1,
-        #         error_source="key_value",
-        #     )
+        if not isinstance(cast(Any, message), dict):
+            raise InvalidFileFormatError(
+                message=f"Invalid format on line {idx + 1} of the input file. "
+                f"The `messages` column must be a list of dicts. Found {type(message)}",
+                line_number=idx + 1,
+                error_source="key_value",
+            )
 
         for column in REQUIRED_COLUMNS_MESSAGE:
             if column not in message:
