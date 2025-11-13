@@ -347,12 +347,14 @@ def list(
     client: Together,
     json: bool,
     type: Literal["dedicated", "serverless"] | None,
-    _usage_type: Literal["on-demand", "reserved"] | None,
-    _mine: bool | None,
+    usage_type: Literal["on-demand", "reserved"] | None,
+    mine: bool | None,
 ) -> None:
     """List all inference endpoints (includes both dedicated and serverless endpoints)."""
     endpoints = client.endpoints.list(
-        type=type or omit  # , usage_type=usage_type, mine=mine
+        type=type or omit,
+        usage_type=usage_type or omit,
+        mine=mine if mine is not None else omit,
     )
 
     if not endpoints:
