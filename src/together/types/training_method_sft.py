@@ -9,7 +9,7 @@ __all__ = ["TrainingMethodSft"]
 
 
 class TrainingMethodSft(BaseModel):
-    method: Literal["sft"]
+    method: Literal["sft"] = "sft"
 
     train_on_inputs: Union[bool, Literal["auto"]]
     """

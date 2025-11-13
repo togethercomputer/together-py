@@ -1,24 +1,25 @@
 import json
 import pathlib
-from typing import Any, List
+from typing import Any, Dict, List, get_args
 from textwrap import wrap
 
 import click
 from tabulate import tabulate
 
 from together import Together
+from together.types import FilePurpose
 
+# from together.utils import check_file, convert_bytes, convert_unix_timestamp
 from ...utils import check_file, convert_bytes, convert_unix_timestamp
 
 
 @click.group()
 @click.pass_context
-def files(_ctx: click.Context) -> None:
+def files(ctx: click.Context) -> None:
     """File API commands"""
     pass
 
 
-# TODO: Implement upload command
 @files.command()
 @click.pass_context
 @click.argument(
@@ -28,21 +29,21 @@ def files(_ctx: click.Context) -> None:
 )
 @click.option(
     "--purpose",
-    type=str,
+    type=click.Choice(get_args(FilePurpose)),
     default="fine-tune",
-    help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tune`.",
+    help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tunes`.",
 )
 @click.option(
     "--check/--no-check",
     default=True,
     help="Whether to check the file before uploading.",
 )
-def upload(ctx: click.Context, file: pathlib.Path, purpose: str, check: bool) -> None:
+def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: bool) -> None:
     """Upload file"""
 
     client: Together = ctx.obj
 
-    response = client.files.upload_file(file=file, purpose=purpose, check=check)
+    response = client.files.upload_file(file, purpose=purpose, check=check)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
@@ -55,7 +56,7 @@ def list(ctx: click.Context) -> None:
 
     response = client.files.list()
 
-    display_list: List[dict[str, Any]] = []
+    display_list: List[Dict[str, Any]] = []
     for i in response.data or []:
         display_list.append(
             {
@@ -81,24 +82,27 @@ def retrieve(ctx: click.Context, id: str) -> None:
 
     response = client.files.retrieve(id=id)
 
-    click.echo(json.dumps(response.model_dump(), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 @files.command()
 @click.pass_context
 @click.argument("id", type=str, required=True)
 @click.option("--output", type=str, default=None, help="Output filename")
-def retrieve_content(ctx: click.Context, id: str, output_path: str) -> None:
+def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
     """Retrieve file content and output to file"""
 
     client: Together = ctx.obj
 
     response = client.files.content(id=id)
 
-    if output_path:
-        response.write_to_file(output_path)
+    if output:
+        with open(output, "wb") as f:
+            f.write(response.read())
+        click.echo(f"File saved to {output}")
 
-    click.echo(json.dumps(response.json, indent=4))
+    else:
+        click.echo(response.read().decode("utf-8"))
 
 
 @files.command()
@@ -111,7 +115,7 @@ def delete(ctx: click.Context, id: str) -> None:
 
     response = client.files.delete(id=id)
 
-    click.echo(json.dumps(response.model_dump(), indent=4))
+    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
 
 @files.command()

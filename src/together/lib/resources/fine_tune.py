@@ -1,19 +1,27 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Dict, Literal
+from typing_extensions import Union, TypeAlias
 
-from ..utils import log_warn_once
-from ..types.fine_tune import (
-    FinetuneTrainingLimits,
+from rich import print as rprint
+
+from together import Together
+from together.types import (
+    LrSchedulerParam,
+    FineTuneCreateParams,
+    FullTrainingTypeParam,
+    LoRaTrainingTypeParam,
+    TrainingMethodDpoParam,
+    TrainingMethodSftParam,
+    CosineLrSchedulerArgsParam,
+    LinearLrSchedulerArgsParam,
 )
-from ...types.lr_scheduler_param import LrSchedulerParam
-from ...types.fine_tune_create_params import TrainingType, TrainingMethod, FineTuneCreateParams
-from ...types.full_training_type_param import FullTrainingTypeParam
-from ...types.lo_ra_training_type_param import LoRaTrainingTypeParam
-from ...types.training_method_dpo_param import TrainingMethodDpoParam
-from ...types.training_method_sft_param import TrainingMethodSftParam
-from ...types.cosine_lr_scheduler_args_param import CosineLrSchedulerArgsParam
-from ...types.linear_lr_scheduler_args_param import LinearLrSchedulerArgsParam
+from together.lib.utils import log_warn_once
+from together.lib.types.fine_tune import FinetuneTrainingLimits
+
+TrainingMethod: TypeAlias = Union[TrainingMethodSftParam, TrainingMethodDpoParam]
+
+TrainingType: TypeAlias = Union[FullTrainingTypeParam, LoRaTrainingTypeParam]
 
 AVAILABLE_TRAINING_METHODS = {
     "sft",
@@ -31,16 +39,16 @@ def create_finetune_request(
     n_checkpoints: int | None = 1,
     batch_size: int | Literal["max"] = "max",
     learning_rate: float | None = 0.00001,
-    lr_scheduler_type: Literal["linear", "cosine"] = "linear",
-    min_lr_ratio: float | None = 0.0,
+    lr_scheduler_type: Literal["linear", "cosine"] = "cosine",
+    min_lr_ratio: float = 0.0,
     scheduler_num_cycles: float = 0.5,
     warmup_ratio: float | None = None,
     max_grad_norm: float = 1.0,
-    weight_decay: float | None = 0.0,
+    weight_decay: float = 0.0,
     lora: bool = False,
     lora_r: int | None = None,
     lora_dropout: float | None = 0,
-    lora_alpha: int | None = None,
+    lora_alpha: float | None = None,
     lora_trainable_modules: str | None = "all-linear",
     suffix: str | None = None,
     wandb_api_key: str | None = None,
@@ -50,13 +58,29 @@ def create_finetune_request(
     train_on_inputs: bool | Literal["auto"] | None = None,
     training_method: str = "sft",
     dpo_beta: float | None = None,
+    dpo_normalize_logratios_by_length: bool = False,
+    rpo_alpha: float | None = None,
+    simpo_gamma: float | None = None,
     from_checkpoint: str | None = None,
+    from_hf_model: str | None = None,
+    hf_model_revision: str | None = None,
+    hf_api_token: str | None = None,
+    hf_output_repo_name: str | None = None,
 ) -> FineTuneCreateParams:
     if model is not None and from_checkpoint is not None:
         raise ValueError("You must specify either a model or a checkpoint to start a job from, not both")
 
     if model is None and from_checkpoint is None:
         raise ValueError("You must specify either a model or a checkpoint")
+
+    if from_checkpoint is not None and from_hf_model is not None:
+        raise ValueError(
+            "You must specify either a Hugging Face Hub model or a previous checkpoint from "
+            "Together to start a job from, not both"
+        )
+
+    if from_hf_model is not None and model is None:
+        raise ValueError("You must specify the base model to fine-tune a model from the Hugging Face Hub")
 
     model_or_checkpoint = model or from_checkpoint
 
@@ -67,15 +91,22 @@ def create_finetune_request(
     if lora:
         if model_limits.lora_training is None:
             raise ValueError(f"LoRA adapters are not supported for the selected model ({model_or_checkpoint}).")
+
+        if lora_dropout is not None:
+            if not 0 <= lora_dropout < 1.0:
+                raise ValueError("LoRA dropout must be in [0, 1) range.")
+
         lora_r = lora_r if lora_r is not None else model_limits.lora_training.max_rank
         lora_alpha = lora_alpha if lora_alpha is not None else lora_r * 2
         training_type = LoRaTrainingTypeParam(
             type="Lora",
             lora_r=lora_r,
-            lora_alpha=lora_alpha,
-            lora_dropout=lora_dropout,  # type: ignore
-            lora_trainable_modules=lora_trainable_modules,  # type: ignore
+            lora_alpha=int(lora_alpha),
         )
+        if lora_dropout is not None:
+            training_type["lora_dropout"] = lora_dropout
+        if lora_trainable_modules is not None:
+            training_type["lora_trainable_modules"] = lora_trainable_modules
 
         max_batch_size = model_limits.lora_training.max_batch_size
         min_batch_size = model_limits.lora_training.min_batch_size
@@ -108,13 +139,13 @@ def create_finetune_request(
     if warmup_ratio > 1 or warmup_ratio < 0:
         raise ValueError(f"Warmup ratio should be between 0 and 1 (got {warmup_ratio})")
 
-    if min_lr_ratio is not None and (min_lr_ratio > 1 or min_lr_ratio < 0):
+    if min_lr_ratio > 1 or min_lr_ratio < 0:
         raise ValueError(f"Min learning rate ratio should be between 0 and 1 (got {min_lr_ratio})")
 
     if max_grad_norm < 0:
         raise ValueError(f"Max gradient norm should be non-negative (got {max_grad_norm})")
 
-    if weight_decay is not None and (weight_decay < 0):
+    if weight_decay < 0:
         raise ValueError(f"Weight decay should be non-negative (got {weight_decay})")
 
     if training_method not in AVAILABLE_TRAINING_METHODS:
@@ -129,6 +160,19 @@ def create_finetune_request(
 
     if dpo_beta is not None and training_method != "dpo":
         raise ValueError("dpo_beta is only supported for DPO training")
+    if dpo_normalize_logratios_by_length and training_method != "dpo":
+        raise ValueError("dpo_normalize_logratios_by_length=True is only supported for DPO training")
+    if rpo_alpha is not None:
+        if training_method != "dpo":
+            raise ValueError("rpo_alpha is only supported for DPO training")
+        if not rpo_alpha >= 0.0:
+            raise ValueError(f"rpo_alpha should be non-negative (got {rpo_alpha})")
+
+    if simpo_gamma is not None:
+        if training_method != "dpo":
+            raise ValueError("simpo_gamma is only supported for DPO training")
+        if not simpo_gamma >= 0.0:
+            raise ValueError(f"simpo_gamma should be non-negative (got {simpo_gamma})")
 
     lr_scheduler: LrSchedulerParam
     if lr_scheduler_type == "cosine":
@@ -137,44 +181,107 @@ def create_finetune_request(
 
         lr_scheduler = LrSchedulerParam(
             lr_scheduler_type="cosine",
-            lr_scheduler_args=CosineLrSchedulerArgsParam(
-                min_lr_ratio=min_lr_ratio,  # type: ignore
-                num_cycles=scheduler_num_cycles,
-            ),
+            lr_scheduler_args=CosineLrSchedulerArgsParam(min_lr_ratio=min_lr_ratio, num_cycles=scheduler_num_cycles),
         )
     else:
         lr_scheduler = LrSchedulerParam(
             lr_scheduler_type="linear",
-            lr_scheduler_args=LinearLrSchedulerArgsParam(min_lr_ratio=min_lr_ratio),  # type: ignore
+            lr_scheduler_args=LinearLrSchedulerArgsParam(min_lr_ratio=min_lr_ratio),
         )
 
-    training_method_cls: TrainingMethod
+    training_method_cls: TrainingMethod | None = None
     if training_method == "sft":
-        training_method_cls = TrainingMethodSftParam(method="sft", train_on_inputs=train_on_inputs)  # type: ignore
+        training_method_cls = TrainingMethodSftParam(method="sft", train_on_inputs=train_on_inputs or "auto")
     elif training_method == "dpo":
-        training_method_cls = TrainingMethodDpoParam(method="dpo", dpo_beta=dpo_beta)  # type: ignore
+        if simpo_gamma is not None and simpo_gamma > 0:
+            dpo_reference_free = True
+            dpo_normalize_logratios_by_length = True
+            rprint(
+                f"Parameter simpo_gamma was set to {simpo_gamma}. "
+                "SimPO training detected. Reference logits will not be used "
+                "and length normalization of log-probabilities will be enabled."
+            )
+        else:
+            dpo_reference_free = False
+
+        training_method_cls = TrainingMethodDpoParam(
+                method="dpo",
+                dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length,
+                dpo_reference_free=dpo_reference_free,
+        )
+        if dpo_beta is not None:
+            training_method_cls["dpo_beta"] = dpo_beta
+        if rpo_alpha is not None:
+            training_method_cls["rpo_alpha"] = rpo_alpha
+        if simpo_gamma is not None:
+            training_method_cls["simpo_gamma"] = simpo_gamma
 
     finetune_request = FineTuneCreateParams(
-        model=model,  # type: ignore
+        model=model or "",
         training_file=training_file,
-        validation_file=validation_file,  # type: ignore
         n_epochs=n_epochs,
-        n_evals=n_evals,  # type: ignore
-        n_checkpoints=n_checkpoints,  # type: ignore
         batch_size=batch_size,
-        learning_rate=learning_rate,  # type: ignore
         lr_scheduler=lr_scheduler,
         warmup_ratio=warmup_ratio,
         max_grad_norm=max_grad_norm,
-        weight_decay=weight_decay,  # type: ignore
+        weight_decay=weight_decay,
         training_type=training_type,
-        suffix=suffix,  # type: ignore
-        wandb_key=wandb_api_key,
-        wandb_base_url=wandb_base_url,  # type: ignore
-        wandb_project_name=wandb_project_name,  # type: ignore
-        wandb_name=wandb_name,  # type: ignore
-        training_method=training_method_cls,  # type: ignore
-        from_checkpoint=from_checkpoint,  # type: ignore
     )
+    if validation_file is not None:
+        finetune_request["validation_file"] = validation_file
+    if n_evals is not None:
+        finetune_request["n_evals"] = n_evals
+    if n_checkpoints is not None:
+        finetune_request["n_checkpoints"] = n_checkpoints
+    if learning_rate is not None:
+        finetune_request["learning_rate"] = learning_rate
+    if suffix is not None:
+        finetune_request["suffix"] = suffix
+    if wandb_api_key is not None:
+        finetune_request["wandb_api_key"] = wandb_api_key
+    if wandb_base_url is not None:
+        finetune_request["wandb_base_url"] = wandb_base_url
+    if wandb_project_name is not None:
+        finetune_request["wandb_project_name"] = wandb_project_name
+    if wandb_name is not None:
+        finetune_request["wandb_name"] = wandb_name
+    if training_method_cls is not None:
+        finetune_request["training_method"] = training_method_cls
+    if from_checkpoint is not None:
+        finetune_request["from_checkpoint"] = from_checkpoint
+    if from_hf_model is not None:
+        finetune_request["from_hf_model"] = from_hf_model
+    if hf_model_revision is not None:
+        finetune_request["hf_model_revision"] = hf_model_revision
+    if hf_api_token is not None:
+        finetune_request["hf_api_token"] = hf_api_token
+    if hf_output_repo_name is not None:
+        finetune_request["hf_output_repo_name"] = hf_output_repo_name
 
     return finetune_request
+
+
+def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
+    """
+    Requests training limits for a specific model
+
+    Args:
+        model_name (str): Name of the model to get limits for
+
+    Returns:
+    FinetuneTrainingLimits: Object containing training limits for the model
+    """
+
+    response = client.get(
+        "/fine-tunes/models/limits",
+        cast_to=FinetuneTrainingLimits,
+        options={
+            "params": {"model_name": model},
+        },
+    )
+
+    return response
+
+
+def not_none_kwargs(**kwargs: Any) -> Dict[str, Any]:
+    return {k: v for k, v in kwargs.items() if v is not None}

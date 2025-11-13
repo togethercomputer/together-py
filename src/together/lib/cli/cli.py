@@ -7,13 +7,12 @@ import click
 
 import together
 from together._version import __version__
-from together._constants import DEFAULT_TIMEOUT, DEFAULT_MAX_RETRIES
-from together.lib.cli.api.chat import chat, interactive
+from together._constants import DEFAULT_TIMEOUT
+from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
-from together.lib.cli.api.images import images
 from together.lib.cli.api.models import models
 from together.lib.cli.api.finetune import fine_tuning
-from together.lib.cli.api.completions import completions
+from together.lib.cli.api.endpoints import endpoints
 
 
 def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
@@ -36,7 +35,7 @@ def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
 @click.option(
     "--max-retries",
     type=int,
-    help=f"Maximum number of HTTP retries. Defaults to {DEFAULT_MAX_RETRIES}.",
+    help=f"Maximum number of HTTP retries.",
 )
 @click.option(
     "--version",
@@ -46,26 +45,27 @@ def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
     is_eager=True,
     help="Print version",
 )
+@click.option("--debug", help="Debug mode", is_flag=True)
 def main(
     ctx: click.Context,
     api_key: str | None,
     base_url: str | None,
     timeout: int | None,
+    debug: bool | None,
     max_retries: int | None,
 ) -> None:
     """This is a sample CLI tool."""
+    os.environ.setdefault("TOGETHER_LOG", "debug" if debug else "info")
     ctx.obj = together.Together(
-        api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries or DEFAULT_MAX_RETRIES
+        api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries if max_retries is not None else 0
     )
 
 
-main.add_command(chat)
-main.add_command(interactive)
-main.add_command(completions)
-main.add_command(images)
 main.add_command(files)
 main.add_command(fine_tuning)
 main.add_command(models)
+main.add_command(endpoints)
+main.add_command(evals)
 
 if __name__ == "__main__":
     main()

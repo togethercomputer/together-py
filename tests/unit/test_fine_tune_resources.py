@@ -139,7 +139,7 @@ def test_from_checkpoint_request():
         from_checkpoint=_FROM_CHECKPOINT,
     )
 
-    assert request["model"] is None
+    assert request["model"] == ""
     assert "from_checkpoint" in request
     assert request["from_checkpoint"] == _FROM_CHECKPOINT
 

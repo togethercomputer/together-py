@@ -1,5 +1,6 @@
+import csv
 import json
-from typing import Dict, List
+from typing import Any, Dict, List
 from pathlib import Path
 
 from together.lib.utils.files import check_file
@@ -170,14 +171,22 @@ def test_check_jsonl_missing_required_field(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
-    assert "Error parsing file. Could not detect a format for the line 2" in report["message"]
+    assert (
+        "Error parsing file. Could not detect a format for the line 2"
+        in report["message"]
+    )
 
 
 def test_check_jsonl_inconsistent_dataset_format(tmp_path: Path):
     # Create a JSONL file with inconsistent dataset formats
     file = tmp_path / "inconsistent_format.jsonl"
     content = [
-        {"messages": [{"role": "user", "content": "Hi"}]},
+        {
+            "messages": [
+                {"role": "user", "content": "Hi"},
+                {"role": "assistant", "content": "Hi! How can I help you?"},
+            ]
+        },
         {"text": "How are you?"},  # Missing 'messages'
     ]
     with file.open("w") as f:
@@ -186,7 +195,10 @@ def test_check_jsonl_inconsistent_dataset_format(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
-    assert "All samples in the dataset must have the same dataset format" in report["message"]
+    assert (
+        "All samples in the dataset must have the same dataset format"
+        in report["message"]
+    )
 
 
 def test_check_jsonl_invalid_role(tmp_path: Path):
@@ -199,7 +211,7 @@ def test_check_jsonl_invalid_role(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
-    assert "Found invalid role `invalid_role`" in report["message"]
+    assert "Invalid role `invalid_role` in conversation" in report["message"]
 
 
 def test_check_jsonl_non_alternating_roles(tmp_path: Path):
@@ -220,6 +232,22 @@ def test_check_jsonl_non_alternating_roles(tmp_path: Path):
 
     assert not report["is_check_passed"]
     assert "Invalid role turns" in report["message"]
+
+
+def test_check_jsonl_assistant_role_exists(tmp_path: Path):
+    # Create a JSONL file with no assistant role
+    file = tmp_path / "assistant_role_exists.jsonl"
+    content = [{"messages": [{"role": "user", "content": "Hi"}]}]
+    with file.open("w") as f:
+        f.write("\n".join(json.dumps(item) for item in content))
+
+    report = check_file(file)
+
+    assert not report["is_check_passed"]
+    assert (
+        "At least one message with the assistant role must be present"
+        in report["message"]
+    )
 
 
 def test_check_jsonl_invalid_value_type(tmp_path: Path):
@@ -249,7 +277,7 @@ def test_check_jsonl_missing_field_in_conversation(tmp_path: Path):
 
     report = check_file(file)
     assert not report["is_check_passed"]
-    assert "Field `content` is missing for a turn" in report["message"]
+    assert "Missing required column `content`" in report["message"]
 
 
 def test_check_jsonl_wrong_turn_type(tmp_path: Path):
@@ -268,7 +296,10 @@ def test_check_jsonl_wrong_turn_type(tmp_path: Path):
 
     report = check_file(file)
     assert not report["is_check_passed"]
-    assert "Invalid format on line 1 of the input file. Expected a dictionary" in report["message"]
+    assert (
+        "Invalid format on line 1 of the input file. The `messages` column must be a list of dicts."
+        in report["message"]
+    )
 
 
 def test_check_jsonl_extra_column(tmp_path: Path):
@@ -284,13 +315,13 @@ def test_check_jsonl_extra_column(tmp_path: Path):
 
 def test_check_jsonl_empty_messages(tmp_path: Path):
     file = tmp_path / "empty_messages.jsonl"
-    content: List[Dict[str, List[Dict[str, str]]]] = [{"messages": []}]
+    content: List[Dict[str, Any]] = [{"messages": []}]
     with file.open("w") as f:
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
     assert not report["is_check_passed"]
-    assert "Expected a non-empty list of messages. Found empty list" in report["message"]
+    assert "The `messages` column must not be empty" in report["message"]
 
 
 def test_check_jsonl_valid_weights_all_messages(tmp_path: Path):
@@ -380,3 +411,64 @@ def test_check_jsonl_invalid_weight(tmp_path: Path):
     report = check_file(file)
     assert not report["is_check_passed"]
     assert "Weight must be either 0 or 1" in report["message"]
+
+
+def test_check_csv_valid_general(tmp_path: Path):
+    # Create a valid CSV file
+    file = tmp_path / "valid.csv"
+    with open(file, "w") as f:
+        writer = csv.DictWriter(f, fieldnames=["text"])
+        writer.writeheader()
+        writer.writerow({"text": "Hello, world!"})
+        writer.writerow({"text": "How are you?"})
+
+    report = check_file(file, purpose="eval")
+    assert report["is_check_passed"]
+    assert report["utf8"]
+    assert report["num_samples"] == 2
+    assert report["has_min_samples"]
+
+
+def test_check_csv_empty_file(tmp_path: Path):
+    # Create an empty CSV file
+    file = tmp_path / "empty.csv"
+    file.touch()
+
+    report = check_file(file, purpose="eval")
+
+    assert not report["is_check_passed"]
+    assert report["message"] == "File is empty"
+    assert report["file_size"] == 0
+
+
+def test_check_csv_valid_completion(tmp_path: Path):
+    # Create a valid CSV file with conversational format
+    file = tmp_path / "valid_completion.csv"
+
+    with open(file, "w") as f:
+        writer = csv.DictWriter(f, fieldnames=["prompt", "completion"])
+        writer.writeheader()
+        writer.writerow(
+            {
+                "prompt": "Translate the following sentence.",
+                "completion": "Hello, world!",
+            }
+        )
+
+    report = check_file(file, purpose="eval")
+    assert report["is_check_passed"]
+    assert report["utf8"]
+    assert report["num_samples"] == 1
+    assert report["has_min_samples"]
+
+
+def test_check_csv_invalid_column(tmp_path: Path):
+    # Create a CSV file with an invalid column
+    file = tmp_path / "invalid_column.csv"
+    with open(file, "w") as f:
+        writer = csv.DictWriter(f, fieldnames=["asfg"])
+        writer.writeheader()
+
+    report = check_file(file)
+
+    assert not report["is_check_passed"]

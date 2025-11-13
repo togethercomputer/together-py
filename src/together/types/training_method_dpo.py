@@ -9,7 +9,7 @@ __all__ = ["TrainingMethodDpo"]
 
 
 class TrainingMethodDpo(BaseModel):
-    method: Literal["dpo"]
+    method: Literal["dpo"] = "dpo"
 
     dpo_beta: Optional[float] = None
 
