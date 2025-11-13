@@ -72,3 +72,18 @@ def convert_unix_timestamp(timestamp: int) -> str:
     iso_format = dt_object.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     return iso_format
+
+def format_timestamp(timestamp_str: str) -> str:
+    """Format timestamp to a readable date string.
+
+    Args:
+        timestamp: A timestamp string
+
+    Returns:
+        str: Formatted timestamp string (MM/DD/YYYY, HH:MM AM/PM)
+    """
+    try:
+        timestamp = parse_timestamp(timestamp_str)
+        return timestamp.strftime("%m/%d/%Y, %I:%M %p")
+    except ValueError:
+        return ""
