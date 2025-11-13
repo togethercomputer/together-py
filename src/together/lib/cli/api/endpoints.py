@@ -333,7 +333,6 @@ def delete(client: Together, endpoint_id: str) -> None:
 @click.option(
     "--mine",
     type=click.BOOL,
-    is_flag=True,
     default=None,
     help="true (only mine), default=all",
 )
