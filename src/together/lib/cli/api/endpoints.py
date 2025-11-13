@@ -414,34 +414,32 @@ def update(
         click.echo("Error: At least one update option must be specified", err=True)
         sys.exit(1)
 
-    # If only one of min/max replicas is specified, we need both for the update
-    if (min_replicas is None) != (max_replicas is None):
-        click.echo(
-            "Error: Both --min-replicas and --max-replicas must be specified together",
-            err=True,
-        )
-        sys.exit(1)
-
     # Build kwargs for the update
     kwargs: Dict[str, Any] = {}
     if display_name is not None:
         kwargs["display_name"] = display_name
-    if min_replicas is not None and max_replicas is not None:
-        kwargs["autoscaling"] = {
-            "min_replicas": min_replicas,
-            "max_replicas": max_replicas,
-        }
+
+    if min_replicas is not None or max_replicas is not None:
+        kwargs["autoscaling"] = {}
+        if min_replicas is not None:
+            kwargs["autoscaling"]["min_replicas"] = min_replicas
+        if max_replicas is not None:
+            kwargs["autoscaling"]["max_replicas"] = max_replicas
+
+    if inactive_timeout is not None:
+        kwargs["inactive_timeout"] = inactive_timeout
     if inactive_timeout is not None:
         kwargs["inactive_timeout"] = inactive_timeout
 
-    _response = client.endpoints.update(endpoint_id, **kwargs)
+    client.endpoints.update(endpoint_id, **kwargs)
 
     # Print what was updated
     click.echo("Updated endpoint configuration:", err=True)
     if display_name:
         click.echo(f"  Display name: {display_name}", err=True)
-    if min_replicas is not None and max_replicas is not None:
+    if min_replicas:
         click.echo(f"  Min replicas: {min_replicas}", err=True)
+    if max_replicas:
         click.echo(f"  Max replicas: {max_replicas}", err=True)
     if inactive_timeout is not None:
         click.echo(f"  Inactive timeout: {inactive_timeout} minutes", err=True)
