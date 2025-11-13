@@ -354,7 +354,7 @@ def list(
     endpoints = client.endpoints.list(
         type=type or omit,
         usage_type=usage_type or omit,
-        mine=mine or omit,
+        mine=mine if mine is not None else omit,
     )
 
     if not endpoints:
