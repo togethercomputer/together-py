@@ -428,8 +428,6 @@ def update(
 
     if inactive_timeout is not None:
         kwargs["inactive_timeout"] = inactive_timeout
-    if inactive_timeout is not None:
-        kwargs["inactive_timeout"] = inactive_timeout
 
     client.endpoints.update(endpoint_id, **kwargs)
 
