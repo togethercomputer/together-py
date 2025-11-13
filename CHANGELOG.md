@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.25 (2025-11-13)
+
+Full Changelog: [v0.1.0-alpha.24...v0.1.0-alpha.25](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.24...v0.1.0-alpha.25)
+
+### Bug Fixes
+
+* Add CLI support for endpoings list --mine and --usage-type ([54b81f1](https://github.com/togethercomputer/together-py/commit/54b81f11597b7f94e4c9db613ab6f08b016ebfbf))
+* Remove unnecessary logic require endpoints cli to have both min/max replicas provided together ([12a5fc1](https://github.com/togethercomputer/together-py/commit/12a5fc1f6cb5e692a2da9d5f4c01b2162d641191))
+
 ## 0.1.0-alpha.24 (2025-11-12)
 
 Full Changelog: [v0.1.0-alpha.23...v0.1.0-alpha.24](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.23...v0.1.0-alpha.24)
