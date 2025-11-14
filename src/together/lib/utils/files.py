@@ -277,9 +277,7 @@ def validate_preference_openai(example: Dict[str, Any], idx: int = 0) -> None:
         )
 
     messages: List[Dict[str, str | bool]] = cast(Any, example["input"]["messages"])
-    validate_messages(
-        messages, idx, require_assistant_role=False
-    )
+    validate_messages(messages, idx, require_assistant_role=False)
 
     if example["input"]["messages"][-1]["role"] == "assistant":
         raise InvalidFileFormatError(

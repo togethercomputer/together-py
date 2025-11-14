@@ -4,7 +4,7 @@ from typing import List
 
 from .._models import BaseModel
 
-__all__ = ["FineTuneRetrieveCheckpointsResponse", "Data"]
+__all__ = ["FineTuningListCheckpointsResponse", "Data"]
 
 
 class Data(BaseModel):
@@ -17,5 +17,5 @@ class Data(BaseModel):
     step: int
 
 
-class FineTuneRetrieveCheckpointsResponse(BaseModel):
+class FineTuningListCheckpointsResponse(BaseModel):
     data: List[Data]

@@ -83,7 +83,7 @@ def _prepare_output(
 
     content_type = str(headers.get("content-type"))
 
-    assert remote_name, "No model name found in fine_tune object. Please specify an `output` file name."
+    assert remote_name, "No model name found in fine_tuning object. Please specify an `output` file name."
 
     if step > 0:
         remote_name += f"-checkpoint-{step}"

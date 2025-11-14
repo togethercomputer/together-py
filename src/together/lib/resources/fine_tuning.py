@@ -8,16 +8,16 @@ from rich import print as rprint
 from together import Together
 from together.types import (
     LrSchedulerParam,
-    FineTuneCreateParams,
     FullTrainingTypeParam,
     LoRaTrainingTypeParam,
+    FineTuningCreateParams,
     TrainingMethodDpoParam,
     TrainingMethodSftParam,
     CosineLrSchedulerArgsParam,
     LinearLrSchedulerArgsParam,
 )
 from together.lib.utils import log_warn_once
-from together.lib.types.fine_tune import FinetuneTrainingLimits
+from together.lib.types.fine_tuning import FinetuneTrainingLimits
 
 TrainingMethod: TypeAlias = Union[TrainingMethodSftParam, TrainingMethodDpoParam]
 
@@ -29,7 +29,7 @@ AVAILABLE_TRAINING_METHODS = {
 }
 
 
-def create_finetune_request(
+def create_fine_tuning_request(
     model_limits: FinetuneTrainingLimits,
     training_file: str,
     model: str | None = None,
@@ -66,7 +66,7 @@ def create_finetune_request(
     hf_model_revision: str | None = None,
     hf_api_token: str | None = None,
     hf_output_repo_name: str | None = None,
-) -> FineTuneCreateParams:
+) -> FineTuningCreateParams:
     if model is not None and from_checkpoint is not None:
         raise ValueError("You must specify either a model or a checkpoint to start a job from, not both")
 
@@ -205,9 +205,9 @@ def create_finetune_request(
             dpo_reference_free = False
 
         training_method_cls = TrainingMethodDpoParam(
-                method="dpo",
-                dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length,
-                dpo_reference_free=dpo_reference_free,
+            method="dpo",
+            dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length,
+            dpo_reference_free=dpo_reference_free,
         )
         if dpo_beta is not None:
             training_method_cls["dpo_beta"] = dpo_beta
@@ -216,7 +216,7 @@ def create_finetune_request(
         if simpo_gamma is not None:
             training_method_cls["simpo_gamma"] = simpo_gamma
 
-    finetune_request = FineTuneCreateParams(
+    finetune_request = FineTuningCreateParams(
         model=model or "",
         training_file=training_file,
         n_epochs=n_epochs,

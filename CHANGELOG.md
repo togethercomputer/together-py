@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-alpha.26 (2025-11-14)
+
+Full Changelog: [v0.1.0-alpha.25...v0.1.0-alpha.26](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.25...v0.1.0-alpha.26)
+
+### ⚠ BREAKING CHANGES
+
+* **api:** Access to the api for listing checkpoints has changed its name to `list_checkpoints`
+* **api:** Access to fine tuning APIs namespace has changed from `fine_tune` to `fine_tuning`
+
+### Features
+
+* **api:** Add audio.voices.list sdk ([f81ec92](https://github.com/togethercomputer/together-py/commit/f81ec926febfd802d31c98e32b98cdb2ec87926c))
+
+
+### Styles
+
+* **api:** Change fine tuning method `retrieve_checkpoints` to `list_checkpoints` ([131ebfe](https://github.com/togethercomputer/together-py/commit/131ebfe73729265f057a183e5fa2e3b86890e01f))
+* **api:** Change fine tuning namespace to `fine_tuning` ([52288c9](https://github.com/togethercomputer/together-py/commit/52288c97f8a5aedcf07e7f5afa96fb775ed5d1fc))
+
 ## 0.1.0-alpha.25 (2025-11-13)
 
 Full Changelog: [v0.1.0-alpha.24...v0.1.0-alpha.25](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.24...v0.1.0-alpha.25)

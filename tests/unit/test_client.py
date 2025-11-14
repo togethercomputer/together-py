@@ -105,6 +105,6 @@ class TestTogether:
         Test initializing fine_tuning
         """
 
-        assert sync_together_instance.fine_tune is not None
+        assert sync_together_instance.fine_tuning is not None
 
-        assert isinstance(sync_together_instance.fine_tune._client, Together)
+        assert isinstance(sync_together_instance.fine_tuning._client, Together)

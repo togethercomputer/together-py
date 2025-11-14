@@ -14,14 +14,14 @@ from .lo_ra_training_type import LoRaTrainingType
 from .training_method_dpo import TrainingMethodDpo
 from .training_method_sft import TrainingMethodSft
 
-__all__ = ["FineTuneCancelResponse", "TrainingMethod", "TrainingType"]
+__all__ = ["FineTuningCancelResponse", "TrainingMethod", "TrainingType"]
 
 TrainingMethod: TypeAlias = Union[TrainingMethodSft, TrainingMethodDpo]
 
 TrainingType: TypeAlias = Union[FullTrainingType, LoRaTrainingType]
 
 
-class FineTuneCancelResponse(BaseModel):
+class FineTuningCancelResponse(BaseModel):
     id: str
     """Unique identifier for the fine-tune job"""
 

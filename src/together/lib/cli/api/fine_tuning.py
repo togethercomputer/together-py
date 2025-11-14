@@ -20,7 +20,7 @@ from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
 from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
-from together.lib.resources.fine_tune import get_model_limits, create_finetune_request
+from together.lib.resources.fine_tuning import get_model_limits, create_fine_tuning_request
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
@@ -330,12 +330,12 @@ def create(
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
     if confirm or click.confirm(_CONFIRMATION_MESSAGE, default=True, show_default=True):
-        params = create_finetune_request(
+        params = create_fine_tuning_request(
             model_limits=model_limits,
             **training_args,
         )
         rprint("Submitting a fine-tuning job with the following parameters:", params)
-        response = client.fine_tune.create(**params)
+        response = client.fine_tuning.create(**params)
 
         report_string = f"Successfully submitted a fine-tuning job {response.id}"
         # created_at reports UTC time, we use .astimezone() to convert to local time
@@ -352,7 +352,7 @@ def list(ctx: click.Context) -> None:
     """List fine-tuning jobs"""
     client: Together = ctx.obj
 
-    response = client.fine_tune.list()
+    response = client.fine_tuning.list()
 
     response.data = response.data or []
 
@@ -385,7 +385,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     """Retrieve fine-tuning job details"""
     client: Together = ctx.obj
 
-    response = client.fine_tune.retrieve(fine_tune_id)
+    response = client.fine_tuning.retrieve(fine_tune_id)
 
     # remove events from response for cleaner output
     response.events = None
@@ -408,7 +408,7 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
         if "y" not in confirm_response.lower():
             click.echo({"status": "Cancel not submitted"})
             return
-    response = client.fine_tune.cancel(fine_tune_id)
+    response = client.fine_tuning.cancel(fine_tune_id)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
 
@@ -420,7 +420,7 @@ def list_events(ctx: click.Context, fine_tune_id: str) -> None:
     """List fine-tuning events"""
     client: Together = ctx.obj
 
-    response = client.fine_tune.list_events(fine_tune_id)
+    response = client.fine_tuning.list_events(fine_tune_id)
 
     response.data = response.data or []
 
@@ -442,16 +442,18 @@ def list_events(ctx: click.Context, fine_tune_id: str) -> None:
 @fine_tuning.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
-def retrieve_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
+def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
     """List available checkpoints for a fine-tuning job"""
     client: Together = ctx.obj
 
-    checkpoints = client.fine_tune.retrieve_checkpoints(fine_tune_id)
+    checkpoints = client.fine_tuning.list_checkpoints(fine_tune_id)
 
     display_list: List[Dict[str, Any]] = []
     for checkpoint in checkpoints.data:
         name = (
-            f"{fine_tune_id}:{checkpoint.step}" if "intermediate" in checkpoint.checkpoint_type.lower() else fine_tune_id
+            f"{fine_tune_id}:{checkpoint.step}"
+            if "intermediate" in checkpoint.checkpoint_type.lower()
+            else fine_tune_id
         )
         display_list.append(
             {
@@ -516,7 +518,7 @@ def download(
                 "was also set. Remove one of the step specifiers to proceed."
             )
 
-    ft_job = client.fine_tune.retrieve(fine_tune_id)
+    ft_job = client.fine_tuning.retrieve(fine_tune_id)
 
     loosely_typed_checkpoint_type: str | NotGiven = checkpoint_type
     if isinstance(ft_job.training_type, FullTrainingType):
@@ -567,6 +569,6 @@ def delete(ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bo
             click.echo("Deletion cancelled")
             return
 
-    response = client.fine_tune.delete(fine_tune_id, force=force)
+    response = client.fine_tuning.delete(fine_tune_id, force=force)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))

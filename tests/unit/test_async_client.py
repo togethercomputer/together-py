@@ -102,9 +102,9 @@ class TestAsyncTogether:
 
     def test_fine_tuning_initialized(self, async_together_instance: AsyncTogether):
         """
-        Test initializing fine_tune
+        Test initializing fine_tuning
         """
 
-        assert async_together_instance.fine_tune is not None
+        assert async_together_instance.fine_tuning is not None
 
-        assert isinstance(async_together_instance.fine_tune._client, AsyncTogether)
+        assert isinstance(async_together_instance.fine_tuning._client, AsyncTogether)
