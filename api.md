@@ -278,7 +278,12 @@ Methods:
 Types:
 
 ```python
-from together.types import BatchCreateResponse, BatchRetrieveResponse, BatchListResponse
+from together.types import (
+    BatchCreateResponse,
+    BatchRetrieveResponse,
+    BatchListResponse,
+    BatchCancelResponse,
+)
 ```
 
 Methods:
@@ -286,6 +291,7 @@ Methods:
 - <code title="post /batches">client.batches.<a href="./src/together/resources/batches.py">create</a>(\*\*<a href="src/together/types/batch_create_params.py">params</a>) -> <a href="./src/together/types/batch_create_response.py">BatchCreateResponse</a></code>
 - <code title="get /batches/{id}">client.batches.<a href="./src/together/resources/batches.py">retrieve</a>(id) -> <a href="./src/together/types/batch_retrieve_response.py">BatchRetrieveResponse</a></code>
 - <code title="get /batches">client.batches.<a href="./src/together/resources/batches.py">list</a>() -> <a href="./src/together/types/batch_list_response.py">BatchListResponse</a></code>
+- <code title="post /batches/{id}/cancel">client.batches.<a href="./src/together/resources/batches.py">cancel</a>(id) -> <a href="./src/together/types/batch_cancel_response.py">BatchCancelResponse</a></code>
 
 # Evals
 
