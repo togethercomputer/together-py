@@ -5,10 +5,10 @@ from typing_extensions import Literal
 
 from .._models import BaseModel
 
-__all__ = ["FineTuneDownloadResponse"]
+__all__ = ["FineTuningDownloadResponse"]
 
 
-class FineTuneDownloadResponse(BaseModel):
+class FineTuningDownloadResponse(BaseModel):
     id: Optional[str] = None
 
     checkpoint_step: Optional[int] = None

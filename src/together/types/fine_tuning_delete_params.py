@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-__all__ = ["FineTuneDeleteParams"]
+__all__ = ["FineTuningDeleteParams"]
 
 
-class FineTuneDeleteParams(TypedDict, total=False):
+class FineTuningDeleteParams(TypedDict, total=False):
     force: Required[bool]

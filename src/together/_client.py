@@ -48,9 +48,9 @@ from .resources import (
     batches,
     hardware,
     endpoints,
-    fine_tune,
     embeddings,
     completions,
+    fine_tuning,
 )
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
@@ -82,7 +82,7 @@ class Together(SyncAPIClient):
     completions: completions.CompletionsResource
     embeddings: embeddings.EmbeddingsResource
     files: files.FilesResource
-    fine_tune: fine_tune.FineTuneResource
+    fine_tuning: fine_tuning.FineTuningResource
     code_interpreter: code_interpreter.CodeInterpreterResource
     images: images.ImagesResource
     videos: videos.VideosResource
@@ -157,7 +157,7 @@ class Together(SyncAPIClient):
         self.completions = completions.CompletionsResource(self)
         self.embeddings = embeddings.EmbeddingsResource(self)
         self.files = files.FilesResource(self)
-        self.fine_tune = fine_tune.FineTuneResource(self)
+        self.fine_tuning = fine_tuning.FineTuningResource(self)
         self.code_interpreter = code_interpreter.CodeInterpreterResource(self)
         self.images = images.ImagesResource(self)
         self.videos = videos.VideosResource(self)
@@ -345,7 +345,7 @@ class AsyncTogether(AsyncAPIClient):
     completions: completions.AsyncCompletionsResource
     embeddings: embeddings.AsyncEmbeddingsResource
     files: files.AsyncFilesResource
-    fine_tune: fine_tune.AsyncFineTuneResource
+    fine_tuning: fine_tuning.AsyncFineTuningResource
     code_interpreter: code_interpreter.AsyncCodeInterpreterResource
     images: images.AsyncImagesResource
     videos: videos.AsyncVideosResource
@@ -420,7 +420,7 @@ class AsyncTogether(AsyncAPIClient):
         self.completions = completions.AsyncCompletionsResource(self)
         self.embeddings = embeddings.AsyncEmbeddingsResource(self)
         self.files = files.AsyncFilesResource(self)
-        self.fine_tune = fine_tune.AsyncFineTuneResource(self)
+        self.fine_tuning = fine_tuning.AsyncFineTuningResource(self)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResource(self)
         self.images = images.AsyncImagesResource(self)
         self.videos = videos.AsyncVideosResource(self)
@@ -609,7 +609,7 @@ class TogetherWithRawResponse:
         self.completions = completions.CompletionsResourceWithRawResponse(client.completions)
         self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
         self.files = files.FilesResourceWithRawResponse(client.files)
-        self.fine_tune = fine_tune.FineTuneResourceWithRawResponse(client.fine_tune)
+        self.fine_tuning = fine_tuning.FineTuningResourceWithRawResponse(client.fine_tuning)
         self.code_interpreter = code_interpreter.CodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithRawResponse(client.images)
         self.videos = videos.VideosResourceWithRawResponse(client.videos)
@@ -632,7 +632,7 @@ class AsyncTogetherWithRawResponse:
         self.completions = completions.AsyncCompletionsResourceWithRawResponse(client.completions)
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
         self.files = files.AsyncFilesResourceWithRawResponse(client.files)
-        self.fine_tune = fine_tune.AsyncFineTuneResourceWithRawResponse(client.fine_tune)
+        self.fine_tuning = fine_tuning.AsyncFineTuningResourceWithRawResponse(client.fine_tuning)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithRawResponse(client.code_interpreter)
         self.images = images.AsyncImagesResourceWithRawResponse(client.images)
         self.videos = videos.AsyncVideosResourceWithRawResponse(client.videos)
@@ -655,7 +655,7 @@ class TogetherWithStreamedResponse:
         self.completions = completions.CompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
         self.files = files.FilesResourceWithStreamingResponse(client.files)
-        self.fine_tune = fine_tune.FineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.fine_tuning = fine_tuning.FineTuningResourceWithStreamingResponse(client.fine_tuning)
         self.code_interpreter = code_interpreter.CodeInterpreterResourceWithStreamingResponse(client.code_interpreter)
         self.images = images.ImagesResourceWithStreamingResponse(client.images)
         self.videos = videos.VideosResourceWithStreamingResponse(client.videos)
@@ -678,7 +678,7 @@ class AsyncTogetherWithStreamedResponse:
         self.completions = completions.AsyncCompletionsResourceWithStreamingResponse(client.completions)
         self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
         self.files = files.AsyncFilesResourceWithStreamingResponse(client.files)
-        self.fine_tune = fine_tune.AsyncFineTuneResourceWithStreamingResponse(client.fine_tune)
+        self.fine_tuning = fine_tuning.AsyncFineTuningResourceWithStreamingResponse(client.fine_tuning)
         self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithStreamingResponse(
             client.code_interpreter
         )

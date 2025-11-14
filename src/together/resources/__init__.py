@@ -88,14 +88,6 @@ from .endpoints import (
     EndpointsResourceWithStreamingResponse,
     AsyncEndpointsResourceWithStreamingResponse,
 )
-from .fine_tune import (
-    FineTuneResource,
-    AsyncFineTuneResource,
-    FineTuneResourceWithRawResponse,
-    AsyncFineTuneResourceWithRawResponse,
-    FineTuneResourceWithStreamingResponse,
-    AsyncFineTuneResourceWithStreamingResponse,
-)
 from .embeddings import (
     EmbeddingsResource,
     AsyncEmbeddingsResource,
@@ -111,6 +103,14 @@ from .completions import (
     AsyncCompletionsResourceWithRawResponse,
     CompletionsResourceWithStreamingResponse,
     AsyncCompletionsResourceWithStreamingResponse,
+)
+from .fine_tuning import (
+    FineTuningResource,
+    AsyncFineTuningResource,
+    FineTuningResourceWithRawResponse,
+    AsyncFineTuningResourceWithRawResponse,
+    FineTuningResourceWithStreamingResponse,
+    AsyncFineTuningResourceWithStreamingResponse,
 )
 from .code_interpreter import (
     CodeInterpreterResource,
@@ -146,12 +146,12 @@ __all__ = [
     "AsyncFilesResourceWithRawResponse",
     "FilesResourceWithStreamingResponse",
     "AsyncFilesResourceWithStreamingResponse",
-    "FineTuneResource",
-    "AsyncFineTuneResource",
-    "FineTuneResourceWithRawResponse",
-    "AsyncFineTuneResourceWithRawResponse",
-    "FineTuneResourceWithStreamingResponse",
-    "AsyncFineTuneResourceWithStreamingResponse",
+    "FineTuningResource",
+    "AsyncFineTuningResource",
+    "FineTuningResourceWithRawResponse",
+    "AsyncFineTuningResourceWithRawResponse",
+    "FineTuningResourceWithStreamingResponse",
+    "AsyncFineTuningResourceWithStreamingResponse",
     "CodeInterpreterResource",
     "AsyncCodeInterpreterResource",
     "CodeInterpreterResourceWithRawResponse",
