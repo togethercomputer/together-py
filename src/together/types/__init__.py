@@ -51,6 +51,7 @@ from .eval_update_response import EvalUpdateResponse as EvalUpdateResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .file_upload_response import FileUploadResponse as FileUploadResponse
 from .hardware_list_params import HardwareListParams as HardwareListParams
+from .batch_cancel_response import BatchCancelResponse as BatchCancelResponse
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .job_retrieve_response import JobRetrieveResponse as JobRetrieveResponse
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
