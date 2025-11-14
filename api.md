@@ -100,8 +100,8 @@ from together.types import (
     FineTuningDeleteResponse,
     FineTuningCancelResponse,
     FineTuningDownloadResponse,
+    FineTuningListCheckpointsResponse,
     FineTuningListEventsResponse,
-    FineTuningRetrieveCheckpointsResponse,
 )
 ```
 
@@ -113,8 +113,8 @@ Methods:
 - <code title="delete /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">delete</a>(id, \*\*<a href="src/together/types/fine_tuning_delete_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_delete_response.py">FineTuningDeleteResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">cancel</a>(id) -> <a href="./src/together/types/fine_tuning_cancel_response.py">FineTuningCancelResponse</a></code>
 - <code title="get /finetune/download">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">download</a>(\*\*<a href="src/together/types/fine_tuning_download_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_download_response.py">FineTuningDownloadResponse</a></code>
+- <code title="get /fine-tunes/{id}/checkpoints">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_checkpoints</a>(id) -> <a href="./src/together/types/fine_tuning_list_checkpoints_response.py">FineTuningListCheckpointsResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_events</a>(id) -> <a href="./src/together/types/fine_tuning_list_events_response.py">FineTuningListEventsResponse</a></code>
-- <code title="get /fine-tunes/{id}/checkpoints">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve_checkpoints</a>(id) -> <a href="./src/together/types/fine_tuning_retrieve_checkpoints_response.py">FineTuningRetrieveCheckpointsResponse</a></code>
 
 # CodeInterpreter
 

@@ -83,6 +83,6 @@ from .endpoint_list_avzones_response import EndpointListAvzonesResponse as Endpo
 from .linear_lr_scheduler_args_param import LinearLrSchedulerArgsParam as LinearLrSchedulerArgsParam
 from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams
 from .fine_tuning_list_events_response import FineTuningListEventsResponse as FineTuningListEventsResponse
-from .fine_tuning_retrieve_checkpoints_response import (
-    FineTuningRetrieveCheckpointsResponse as FineTuningRetrieveCheckpointsResponse,
+from .fine_tuning_list_checkpoints_response import (
+    FineTuningListCheckpointsResponse as FineTuningListCheckpointsResponse,
 )
