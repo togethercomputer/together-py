@@ -2,7 +2,7 @@ from .error import (
     DownloadError,
     FileTypeError,
 )
-from .fine_tune import (
+from .fine_tuning import (
     FinetuneTrainingLimits,
 )
 

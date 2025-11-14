@@ -654,6 +654,9 @@ together fine-tuning retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 # List fine-tune job events
 together fine-tuning list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
+# List fine-tune checkpoints
+together fine-tuning list-checkpoints ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
 # Cancel running job
 together fine-tuning cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 

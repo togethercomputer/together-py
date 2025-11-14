@@ -1,11 +1,11 @@
 import pytest
 
-from together.lib.types.fine_tune import (
+from together.lib.types.fine_tuning import (
     FinetuneTrainingLimits,
     FinetuneFullTrainingLimits,
     FinetuneLoraTrainingLimits,
 )
-from together.lib.resources.fine_tune import create_finetune_request
+from together.lib.resources.fine_tuning import create_fine_tuning_request
 
 _MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference"
 _TRAINING_FILE = "file-7dbce5e9-7993-4520-9f3e-a7ece6c39d84"
@@ -31,7 +31,7 @@ _MODEL_LIMITS = FinetuneTrainingLimits(
 
 
 def test_simple_request():
-    request = create_finetune_request(
+    request = create_fine_tuning_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -53,7 +53,7 @@ def test_simple_request():
 
 
 def test_validation_file():
-    request = create_finetune_request(
+    request = create_fine_tuning_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -67,14 +67,14 @@ def test_validation_file():
 
 def test_no_training_file():
     with pytest.raises(TypeError, match="missing 1 required positional argument: 'training_file'"):
-        _ = create_finetune_request(  # type: ignore
+        _ = create_fine_tuning_request(  # type: ignore
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
         )
 
 
 def test_lora_request():
-    request = create_finetune_request(
+    request = create_fine_tuning_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -95,7 +95,7 @@ def test_lora_request():
 
 
 def test_dpo_request_lora():
-    request = create_finetune_request(
+    request = create_fine_tuning_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -117,7 +117,7 @@ def test_dpo_request_lora():
 
 
 def test_dpo_request():
-    request = create_finetune_request(
+    request = create_fine_tuning_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -133,7 +133,7 @@ def test_dpo_request():
 
 
 def test_from_checkpoint_request():
-    request = create_finetune_request(
+    request = create_fine_tuning_request(
         model_limits=_MODEL_LIMITS,
         training_file=_TRAINING_FILE,
         from_checkpoint=_FROM_CHECKPOINT,
@@ -149,7 +149,7 @@ def test_both_from_checkpoint_model_name():
         ValueError,
         match="You must specify either a model or a checkpoint to start a job from, not both",
     ):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -159,7 +159,7 @@ def test_both_from_checkpoint_model_name():
 
 def test_no_from_checkpoint_no_model_name():
     with pytest.raises(ValueError, match="You must specify either a model or a checkpoint"):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             training_file=_TRAINING_FILE,
         )
@@ -178,7 +178,7 @@ def test_batch_size_limit(batch_size: int, use_lora: bool):
             f"Requested batch size of {batch_size} is higher that the maximum allowed value of {max_batch_size}"
         )
         with pytest.raises(ValueError, match=error_message):
-            _ = create_finetune_request(
+            _ = create_fine_tuning_request(
                 model_limits=_MODEL_LIMITS,
                 model=_MODEL_NAME,
                 training_file=_TRAINING_FILE,
@@ -191,7 +191,7 @@ def test_batch_size_limit(batch_size: int, use_lora: bool):
             f"Requested batch size of {batch_size} is lower that the minimum allowed value of {min_batch_size}"
         )
         with pytest.raises(ValueError, match=error_message):
-            _ = create_finetune_request(
+            _ = create_fine_tuning_request(
                 model_limits=_MODEL_LIMITS,
                 model=_MODEL_NAME,
                 training_file=_TRAINING_FILE,
@@ -202,7 +202,7 @@ def test_batch_size_limit(batch_size: int, use_lora: bool):
 
 def test_non_lora_model():
     with pytest.raises(ValueError, match="LoRA adapters are not supported for the selected model."):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=FinetuneTrainingLimits(
                 max_num_epochs=20,
                 max_learning_rate=1.0,
@@ -222,7 +222,7 @@ def test_non_lora_model():
 
 def test_non_full_model():
     with pytest.raises(ValueError, match="Full training is not supported for the selected model."):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=FinetuneTrainingLimits(
                 max_num_epochs=20,
                 max_learning_rate=1.0,
@@ -245,7 +245,7 @@ def test_non_full_model():
 @pytest.mark.parametrize("warmup_ratio", [-1.0, 2.0])
 def test_bad_warmup(warmup_ratio: float):
     with pytest.raises(ValueError, match="Warmup ratio should be between 0 and 1"):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -256,7 +256,7 @@ def test_bad_warmup(warmup_ratio: float):
 @pytest.mark.parametrize("min_lr_ratio", [-1.0, 2.0])
 def test_bad_min_lr_ratio(min_lr_ratio: float):
     with pytest.raises(ValueError, match="Min learning rate ratio should be between 0 and 1"):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -267,7 +267,7 @@ def test_bad_min_lr_ratio(min_lr_ratio: float):
 @pytest.mark.parametrize("max_grad_norm", [-1.0, -0.01])
 def test_bad_max_grad_norm(max_grad_norm: float):
     with pytest.raises(ValueError, match="Max gradient norm should be non-negative"):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -278,7 +278,7 @@ def test_bad_max_grad_norm(max_grad_norm: float):
 @pytest.mark.parametrize("weight_decay", [-1.0, -0.01])
 def test_bad_weight_decay(weight_decay: float):
     with pytest.raises(ValueError, match="Weight decay should be non-negative"):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -288,7 +288,7 @@ def test_bad_weight_decay(weight_decay: float):
 
 def test_bad_training_method():
     with pytest.raises(ValueError, match="training_method must be one of .*"):
-        _ = create_finetune_request(
+        _ = create_fine_tuning_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,

@@ -11,8 +11,8 @@ from together._constants import DEFAULT_TIMEOUT
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
 from together.lib.cli.api.models import models
-from together.lib.cli.api.finetune import fine_tuning
 from together.lib.cli.api.endpoints import endpoints
+from together.lib.cli.api.fine_tuning import fine_tuning
 
 
 def print_version(ctx: click.Context, _params: Any, value: Any) -> None:

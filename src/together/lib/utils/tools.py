@@ -73,6 +73,7 @@ def convert_unix_timestamp(timestamp: int) -> str:
 
     return iso_format
 
+
 def format_timestamp(timestamp_str: str) -> str:
     """Format timestamp to a readable date string.
 

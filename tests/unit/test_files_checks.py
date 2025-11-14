@@ -171,10 +171,7 @@ def test_check_jsonl_missing_required_field(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
-    assert (
-        "Error parsing file. Could not detect a format for the line 2"
-        in report["message"]
-    )
+    assert "Error parsing file. Could not detect a format for the line 2" in report["message"]
 
 
 def test_check_jsonl_inconsistent_dataset_format(tmp_path: Path):
@@ -195,10 +192,7 @@ def test_check_jsonl_inconsistent_dataset_format(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
-    assert (
-        "All samples in the dataset must have the same dataset format"
-        in report["message"]
-    )
+    assert "All samples in the dataset must have the same dataset format" in report["message"]
 
 
 def test_check_jsonl_invalid_role(tmp_path: Path):
@@ -244,10 +238,7 @@ def test_check_jsonl_assistant_role_exists(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
-    assert (
-        "At least one message with the assistant role must be present"
-        in report["message"]
-    )
+    assert "At least one message with the assistant role must be present" in report["message"]
 
 
 def test_check_jsonl_invalid_value_type(tmp_path: Path):
