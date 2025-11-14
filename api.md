@@ -177,6 +177,18 @@ Methods:
 
 - <code title="post /audio/speech">client.audio.<a href="./src/together/resources/audio/audio.py">create</a>(\*\*<a href="src/together/types/audio_create_params.py">params</a>) -> BinaryAPIResponse</code>
 
+## Voices
+
+Types:
+
+```python
+from together.types.audio import VoiceListResponse
+```
+
+Methods:
+
+- <code title="get /voices">client.audio.voices.<a href="./src/together/resources/audio/voices.py">list</a>() -> <a href="./src/together/types/audio/voice_list_response.py">VoiceListResponse</a></code>
+
 ## Transcriptions
 
 Types:

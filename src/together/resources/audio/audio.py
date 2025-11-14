@@ -7,6 +7,14 @@ from typing_extensions import Literal, overload
 
 import httpx
 
+from .voices import (
+    VoicesResource,
+    AsyncVoicesResource,
+    VoicesResourceWithRawResponse,
+    AsyncVoicesResourceWithRawResponse,
+    VoicesResourceWithStreamingResponse,
+    AsyncVoicesResourceWithStreamingResponse,
+)
 from ...types import audio_create_params
 from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from ..._utils import required_args, maybe_transform, async_maybe_transform
@@ -46,6 +54,10 @@ __all__ = ["AudioResource", "AsyncAudioResource"]
 
 
 class AudioResource(SyncAPIResource):
+    @cached_property
+    def voices(self) -> VoicesResource:
+        return VoicesResource(self._client)
+
     @cached_property
     def transcriptions(self) -> TranscriptionsResource:
         return TranscriptionsResource(self._client)
@@ -322,6 +334,10 @@ class AudioResource(SyncAPIResource):
 
 
 class AsyncAudioResource(AsyncAPIResource):
+    @cached_property
+    def voices(self) -> AsyncVoicesResource:
+        return AsyncVoicesResource(self._client)
+
     @cached_property
     def transcriptions(self) -> AsyncTranscriptionsResource:
         return AsyncTranscriptionsResource(self._client)
@@ -607,6 +623,10 @@ class AudioResourceWithRawResponse:
         )
 
     @cached_property
+    def voices(self) -> VoicesResourceWithRawResponse:
+        return VoicesResourceWithRawResponse(self._audio.voices)
+
+    @cached_property
     def transcriptions(self) -> TranscriptionsResourceWithRawResponse:
         return TranscriptionsResourceWithRawResponse(self._audio.transcriptions)
 
@@ -623,6 +643,10 @@ class AsyncAudioResourceWithRawResponse:
             audio.create,
             AsyncBinaryAPIResponse,
         )
+
+    @cached_property
+    def voices(self) -> AsyncVoicesResourceWithRawResponse:
+        return AsyncVoicesResourceWithRawResponse(self._audio.voices)
 
     @cached_property
     def transcriptions(self) -> AsyncTranscriptionsResourceWithRawResponse:
@@ -643,6 +667,10 @@ class AudioResourceWithStreamingResponse:
         )
 
     @cached_property
+    def voices(self) -> VoicesResourceWithStreamingResponse:
+        return VoicesResourceWithStreamingResponse(self._audio.voices)
+
+    @cached_property
     def transcriptions(self) -> TranscriptionsResourceWithStreamingResponse:
         return TranscriptionsResourceWithStreamingResponse(self._audio.transcriptions)
 
@@ -659,6 +687,10 @@ class AsyncAudioResourceWithStreamingResponse:
             audio.create,
             AsyncStreamedBinaryAPIResponse,
         )
+
+    @cached_property
+    def voices(self) -> AsyncVoicesResourceWithStreamingResponse:
+        return AsyncVoicesResourceWithStreamingResponse(self._audio.voices)
 
     @cached_property
     def transcriptions(self) -> AsyncTranscriptionsResourceWithStreamingResponse:
