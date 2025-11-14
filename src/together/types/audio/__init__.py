@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .voice_list_response import VoiceListResponse as VoiceListResponse
 from .translation_create_params import TranslationCreateParams as TranslationCreateParams
 from .transcription_create_params import TranscriptionCreateParams as TranscriptionCreateParams
 from .translation_create_response import TranslationCreateResponse as TranslationCreateResponse
