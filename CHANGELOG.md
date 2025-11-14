@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.27 (2025-11-14)
+
+Full Changelog: [v0.1.0-alpha.26...v0.1.0-alpha.27](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.26...v0.1.0-alpha.27)
+
+### Features
+
+* **api:** Add batches.cancel API ([c0e615b](https://github.com/togethercomputer/together-py/commit/c0e615bada270d973e662a263cd23a35eb19b171))
+
 ## 0.1.0-alpha.26 (2025-11-14)
 
 Full Changelog: [v0.1.0-alpha.25...v0.1.0-alpha.26](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.25...v0.1.0-alpha.26)
