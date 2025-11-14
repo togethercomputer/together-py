@@ -14,7 +14,7 @@ from .lo_ra_training_type import LoRaTrainingType
 from .training_method_dpo import TrainingMethodDpo
 from .training_method_sft import TrainingMethodSft
 
-__all__ = ["FineTuneListResponse", "Data", "DataTrainingMethod", "DataTrainingType"]
+__all__ = ["FineTuningListResponse", "Data", "DataTrainingMethod", "DataTrainingType"]
 
 DataTrainingMethod: TypeAlias = Union[TrainingMethodSft, TrainingMethodDpo]
 
@@ -121,5 +121,5 @@ class Data(BaseModel):
     """Weight decay value used"""
 
 
-class FineTuneListResponse(BaseModel):
+class FineTuningListResponse(BaseModel):
     data: List[Data]

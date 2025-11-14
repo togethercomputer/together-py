@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["FineTuneDownloadParams"]
+__all__ = ["FineTuningDownloadParams"]
 
 
-class FineTuneDownloadParams(TypedDict, total=False):
+class FineTuningDownloadParams(TypedDict, total=False):
     ft_id: Required[str]
     """Fine-tune ID to download. A string that starts with `ft-`."""
 

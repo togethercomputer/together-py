@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import fine_tune_create_params, fine_tune_delete_params, fine_tune_download_params
+from ..types import fine_tuning_create_params, fine_tuning_delete_params, fine_tuning_download_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -21,36 +21,36 @@ from .._response import (
 from .._base_client import make_request_options
 from ..types.fine_tune import FineTune
 from ..types.lr_scheduler_param import LrSchedulerParam
-from ..types.fine_tune_list_response import FineTuneListResponse
-from ..types.fine_tune_cancel_response import FineTuneCancelResponse
-from ..types.fine_tune_create_response import FineTuneCreateResponse
-from ..types.fine_tune_delete_response import FineTuneDeleteResponse
-from ..types.fine_tune_download_response import FineTuneDownloadResponse
-from ..types.fine_tune_list_events_response import FineTuneListEventsResponse
-from ..types.fine_tune_retrieve_checkpoints_response import FineTuneRetrieveCheckpointsResponse
+from ..types.fine_tuning_list_response import FineTuningListResponse
+from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
+from ..types.fine_tuning_create_response import FineTuningCreateResponse
+from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
+from ..types.fine_tuning_download_response import FineTuningDownloadResponse
+from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
+from ..types.fine_tuning_retrieve_checkpoints_response import FineTuningRetrieveCheckpointsResponse
 
-__all__ = ["FineTuneResource", "AsyncFineTuneResource"]
+__all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
 
-class FineTuneResource(SyncAPIResource):
+class FineTuningResource(SyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> FineTuneResourceWithRawResponse:
+    def with_raw_response(self) -> FineTuningResourceWithRawResponse:
         """
         This property can be used as a prefix for any HTTP method call to return
         the raw response object instead of the parsed content.
 
         For more information, see https://www.github.com/togethercomputer/together-py#accessing-raw-response-data-eg-headers
         """
-        return FineTuneResourceWithRawResponse(self)
+        return FineTuningResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> FineTuneResourceWithStreamingResponse:
+    def with_streaming_response(self) -> FineTuningResourceWithStreamingResponse:
         """
         An alternative to `.with_raw_response` that doesn't eagerly read the response body.
 
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
-        return FineTuneResourceWithStreamingResponse(self)
+        return FineTuningResourceWithStreamingResponse(self)
 
     def create(
         self,
@@ -71,8 +71,8 @@ class FineTuneResource(SyncAPIResource):
         n_evals: int | Omit = omit,
         suffix: str | Omit = omit,
         train_on_inputs: Union[bool, Literal["auto"]] | Omit = omit,
-        training_method: fine_tune_create_params.TrainingMethod | Omit = omit,
-        training_type: fine_tune_create_params.TrainingType | Omit = omit,
+        training_method: fine_tuning_create_params.TrainingMethod | Omit = omit,
+        training_type: fine_tuning_create_params.TrainingType | Omit = omit,
         validation_file: str | Omit = omit,
         wandb_api_key: str | Omit = omit,
         wandb_base_url: str | Omit = omit,
@@ -86,7 +86,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneCreateResponse:
+    ) -> FineTuningCreateResponse:
         """
         Create a fine-tuning job with the provided model and training data.
 
@@ -193,12 +193,12 @@ class FineTuneResource(SyncAPIResource):
                     "warmup_ratio": warmup_ratio,
                     "weight_decay": weight_decay,
                 },
-                fine_tune_create_params.FineTuneCreateParams,
+                fine_tuning_create_params.FineTuningCreateParams,
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCreateResponse,
+            cast_to=FineTuningCreateResponse,
         )
 
     def retrieve(
@@ -243,7 +243,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneListResponse:
+    ) -> FineTuningListResponse:
         """List the metadata for all fine-tuning jobs.
 
         Returns a list of
@@ -254,7 +254,7 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneListResponse,
+            cast_to=FineTuningListResponse,
         )
 
     def delete(
@@ -268,7 +268,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneDeleteResponse:
+    ) -> FineTuningDeleteResponse:
         """
         Delete a fine-tuning job.
 
@@ -290,9 +290,9 @@ class FineTuneResource(SyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=maybe_transform({"force": force}, fine_tune_delete_params.FineTuneDeleteParams),
+                query=maybe_transform({"force": force}, fine_tuning_delete_params.FineTuningDeleteParams),
             ),
-            cast_to=FineTuneDeleteResponse,
+            cast_to=FineTuningDeleteResponse,
         )
 
     def cancel(
@@ -305,7 +305,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneCancelResponse:
+    ) -> FineTuningCancelResponse:
         """Cancel a currently running fine-tuning job.
 
         Returns a FinetuneResponseTruncated
@@ -327,7 +327,7 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCancelResponse,
+            cast_to=FineTuningCancelResponse,
         )
 
     def download(
@@ -343,7 +343,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneDownloadResponse:
+    ) -> FineTuningDownloadResponse:
         """
         Download a compressed fine-tuned model or checkpoint to local disk.
 
@@ -381,10 +381,10 @@ class FineTuneResource(SyncAPIResource):
                         "checkpoint_step": checkpoint_step,
                         "output": output,
                     },
-                    fine_tune_download_params.FineTuneDownloadParams,
+                    fine_tuning_download_params.FineTuningDownloadParams,
                 ),
             ),
-            cast_to=FineTuneDownloadResponse,
+            cast_to=FineTuningDownloadResponse,
         )
 
     def list_events(
@@ -397,7 +397,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneListEventsResponse:
+    ) -> FineTuningListEventsResponse:
         """
         List the events for a single fine-tuning job.
 
@@ -417,7 +417,7 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneListEventsResponse,
+            cast_to=FineTuningListEventsResponse,
         )
 
     def retrieve_checkpoints(
@@ -430,7 +430,7 @@ class FineTuneResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneRetrieveCheckpointsResponse:
+    ) -> FineTuningRetrieveCheckpointsResponse:
         """
         List the checkpoints for a single fine-tuning job.
 
@@ -450,29 +450,29 @@ class FineTuneResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneRetrieveCheckpointsResponse,
+            cast_to=FineTuningRetrieveCheckpointsResponse,
         )
 
 
-class AsyncFineTuneResource(AsyncAPIResource):
+class AsyncFineTuningResource(AsyncAPIResource):
     @cached_property
-    def with_raw_response(self) -> AsyncFineTuneResourceWithRawResponse:
+    def with_raw_response(self) -> AsyncFineTuningResourceWithRawResponse:
         """
         This property can be used as a prefix for any HTTP method call to return
         the raw response object instead of the parsed content.
 
         For more information, see https://www.github.com/togethercomputer/together-py#accessing-raw-response-data-eg-headers
         """
-        return AsyncFineTuneResourceWithRawResponse(self)
+        return AsyncFineTuningResourceWithRawResponse(self)
 
     @cached_property
-    def with_streaming_response(self) -> AsyncFineTuneResourceWithStreamingResponse:
+    def with_streaming_response(self) -> AsyncFineTuningResourceWithStreamingResponse:
         """
         An alternative to `.with_raw_response` that doesn't eagerly read the response body.
 
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
-        return AsyncFineTuneResourceWithStreamingResponse(self)
+        return AsyncFineTuningResourceWithStreamingResponse(self)
 
     async def create(
         self,
@@ -493,8 +493,8 @@ class AsyncFineTuneResource(AsyncAPIResource):
         n_evals: int | Omit = omit,
         suffix: str | Omit = omit,
         train_on_inputs: Union[bool, Literal["auto"]] | Omit = omit,
-        training_method: fine_tune_create_params.TrainingMethod | Omit = omit,
-        training_type: fine_tune_create_params.TrainingType | Omit = omit,
+        training_method: fine_tuning_create_params.TrainingMethod | Omit = omit,
+        training_type: fine_tuning_create_params.TrainingType | Omit = omit,
         validation_file: str | Omit = omit,
         wandb_api_key: str | Omit = omit,
         wandb_base_url: str | Omit = omit,
@@ -508,7 +508,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneCreateResponse:
+    ) -> FineTuningCreateResponse:
         """
         Create a fine-tuning job with the provided model and training data.
 
@@ -615,12 +615,12 @@ class AsyncFineTuneResource(AsyncAPIResource):
                     "warmup_ratio": warmup_ratio,
                     "weight_decay": weight_decay,
                 },
-                fine_tune_create_params.FineTuneCreateParams,
+                fine_tuning_create_params.FineTuningCreateParams,
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCreateResponse,
+            cast_to=FineTuningCreateResponse,
         )
 
     async def retrieve(
@@ -665,7 +665,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneListResponse:
+    ) -> FineTuningListResponse:
         """List the metadata for all fine-tuning jobs.
 
         Returns a list of
@@ -676,7 +676,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneListResponse,
+            cast_to=FineTuningListResponse,
         )
 
     async def delete(
@@ -690,7 +690,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneDeleteResponse:
+    ) -> FineTuningDeleteResponse:
         """
         Delete a fine-tuning job.
 
@@ -712,9 +712,9 @@ class AsyncFineTuneResource(AsyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=await async_maybe_transform({"force": force}, fine_tune_delete_params.FineTuneDeleteParams),
+                query=await async_maybe_transform({"force": force}, fine_tuning_delete_params.FineTuningDeleteParams),
             ),
-            cast_to=FineTuneDeleteResponse,
+            cast_to=FineTuningDeleteResponse,
         )
 
     async def cancel(
@@ -727,7 +727,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneCancelResponse:
+    ) -> FineTuningCancelResponse:
         """Cancel a currently running fine-tuning job.
 
         Returns a FinetuneResponseTruncated
@@ -749,7 +749,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneCancelResponse,
+            cast_to=FineTuningCancelResponse,
         )
 
     async def download(
@@ -765,7 +765,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneDownloadResponse:
+    ) -> FineTuningDownloadResponse:
         """
         Download a compressed fine-tuned model or checkpoint to local disk.
 
@@ -803,10 +803,10 @@ class AsyncFineTuneResource(AsyncAPIResource):
                         "checkpoint_step": checkpoint_step,
                         "output": output,
                     },
-                    fine_tune_download_params.FineTuneDownloadParams,
+                    fine_tuning_download_params.FineTuningDownloadParams,
                 ),
             ),
-            cast_to=FineTuneDownloadResponse,
+            cast_to=FineTuningDownloadResponse,
         )
 
     async def list_events(
@@ -819,7 +819,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneListEventsResponse:
+    ) -> FineTuningListEventsResponse:
         """
         List the events for a single fine-tuning job.
 
@@ -839,7 +839,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneListEventsResponse,
+            cast_to=FineTuningListEventsResponse,
         )
 
     async def retrieve_checkpoints(
@@ -852,7 +852,7 @@ class AsyncFineTuneResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneRetrieveCheckpointsResponse:
+    ) -> FineTuningRetrieveCheckpointsResponse:
         """
         List the checkpoints for a single fine-tuning job.
 
@@ -872,125 +872,125 @@ class AsyncFineTuneResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTuneRetrieveCheckpointsResponse,
+            cast_to=FineTuningRetrieveCheckpointsResponse,
         )
 
 
-class FineTuneResourceWithRawResponse:
-    def __init__(self, fine_tune: FineTuneResource) -> None:
-        self._fine_tune = fine_tune
+class FineTuningResourceWithRawResponse:
+    def __init__(self, fine_tuning: FineTuningResource) -> None:
+        self._fine_tuning = fine_tuning
 
         self.create = to_raw_response_wrapper(
-            fine_tune.create,
+            fine_tuning.create,
         )
         self.retrieve = to_raw_response_wrapper(
-            fine_tune.retrieve,
+            fine_tuning.retrieve,
         )
         self.list = to_raw_response_wrapper(
-            fine_tune.list,
+            fine_tuning.list,
         )
         self.delete = to_raw_response_wrapper(
-            fine_tune.delete,
+            fine_tuning.delete,
         )
         self.cancel = to_raw_response_wrapper(
-            fine_tune.cancel,
+            fine_tuning.cancel,
         )
         self.download = to_raw_response_wrapper(
-            fine_tune.download,
+            fine_tuning.download,
         )
         self.list_events = to_raw_response_wrapper(
-            fine_tune.list_events,
+            fine_tuning.list_events,
         )
         self.retrieve_checkpoints = to_raw_response_wrapper(
-            fine_tune.retrieve_checkpoints,
+            fine_tuning.retrieve_checkpoints,
         )
 
 
-class AsyncFineTuneResourceWithRawResponse:
-    def __init__(self, fine_tune: AsyncFineTuneResource) -> None:
-        self._fine_tune = fine_tune
+class AsyncFineTuningResourceWithRawResponse:
+    def __init__(self, fine_tuning: AsyncFineTuningResource) -> None:
+        self._fine_tuning = fine_tuning
 
         self.create = async_to_raw_response_wrapper(
-            fine_tune.create,
+            fine_tuning.create,
         )
         self.retrieve = async_to_raw_response_wrapper(
-            fine_tune.retrieve,
+            fine_tuning.retrieve,
         )
         self.list = async_to_raw_response_wrapper(
-            fine_tune.list,
+            fine_tuning.list,
         )
         self.delete = async_to_raw_response_wrapper(
-            fine_tune.delete,
+            fine_tuning.delete,
         )
         self.cancel = async_to_raw_response_wrapper(
-            fine_tune.cancel,
+            fine_tuning.cancel,
         )
         self.download = async_to_raw_response_wrapper(
-            fine_tune.download,
+            fine_tuning.download,
         )
         self.list_events = async_to_raw_response_wrapper(
-            fine_tune.list_events,
+            fine_tuning.list_events,
         )
         self.retrieve_checkpoints = async_to_raw_response_wrapper(
-            fine_tune.retrieve_checkpoints,
+            fine_tuning.retrieve_checkpoints,
         )
 
 
-class FineTuneResourceWithStreamingResponse:
-    def __init__(self, fine_tune: FineTuneResource) -> None:
-        self._fine_tune = fine_tune
+class FineTuningResourceWithStreamingResponse:
+    def __init__(self, fine_tuning: FineTuningResource) -> None:
+        self._fine_tuning = fine_tuning
 
         self.create = to_streamed_response_wrapper(
-            fine_tune.create,
+            fine_tuning.create,
         )
         self.retrieve = to_streamed_response_wrapper(
-            fine_tune.retrieve,
+            fine_tuning.retrieve,
         )
         self.list = to_streamed_response_wrapper(
-            fine_tune.list,
+            fine_tuning.list,
         )
         self.delete = to_streamed_response_wrapper(
-            fine_tune.delete,
+            fine_tuning.delete,
         )
         self.cancel = to_streamed_response_wrapper(
-            fine_tune.cancel,
+            fine_tuning.cancel,
         )
         self.download = to_streamed_response_wrapper(
-            fine_tune.download,
+            fine_tuning.download,
         )
         self.list_events = to_streamed_response_wrapper(
-            fine_tune.list_events,
+            fine_tuning.list_events,
         )
         self.retrieve_checkpoints = to_streamed_response_wrapper(
-            fine_tune.retrieve_checkpoints,
+            fine_tuning.retrieve_checkpoints,
         )
 
 
-class AsyncFineTuneResourceWithStreamingResponse:
-    def __init__(self, fine_tune: AsyncFineTuneResource) -> None:
-        self._fine_tune = fine_tune
+class AsyncFineTuningResourceWithStreamingResponse:
+    def __init__(self, fine_tuning: AsyncFineTuningResource) -> None:
+        self._fine_tuning = fine_tuning
 
         self.create = async_to_streamed_response_wrapper(
-            fine_tune.create,
+            fine_tuning.create,
         )
         self.retrieve = async_to_streamed_response_wrapper(
-            fine_tune.retrieve,
+            fine_tuning.retrieve,
         )
         self.list = async_to_streamed_response_wrapper(
-            fine_tune.list,
+            fine_tuning.list,
         )
         self.delete = async_to_streamed_response_wrapper(
-            fine_tune.delete,
+            fine_tuning.delete,
         )
         self.cancel = async_to_streamed_response_wrapper(
-            fine_tune.cancel,
+            fine_tuning.cancel,
         )
         self.download = async_to_streamed_response_wrapper(
-            fine_tune.download,
+            fine_tuning.download,
         )
         self.list_events = async_to_streamed_response_wrapper(
-            fine_tune.list_events,
+            fine_tuning.list_events,
         )
         self.retrieve_checkpoints = async_to_streamed_response_wrapper(
-            fine_tune.retrieve_checkpoints,
+            fine_tuning.retrieve_checkpoints,
         )

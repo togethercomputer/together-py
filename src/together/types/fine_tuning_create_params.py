@@ -11,10 +11,10 @@ from .lo_ra_training_type_param import LoRaTrainingTypeParam
 from .training_method_dpo_param import TrainingMethodDpoParam
 from .training_method_sft_param import TrainingMethodSftParam
 
-__all__ = ["FineTuneCreateParams", "TrainingMethod", "TrainingType"]
+__all__ = ["FineTuningCreateParams", "TrainingMethod", "TrainingType"]
 
 
-class FineTuneCreateParams(TypedDict, total=False):
+class FineTuningCreateParams(TypedDict, total=False):
     model: Required[str]
     """Name of the base model to run fine-tune job on"""
 
