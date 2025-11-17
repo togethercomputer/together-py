@@ -13,10 +13,18 @@ from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._response import (
+    BinaryAPIResponse,
+    AsyncBinaryAPIResponse,
+    StreamedBinaryAPIResponse,
+    AsyncStreamedBinaryAPIResponse,
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
+    to_custom_raw_response_wrapper,
     async_to_streamed_response_wrapper,
+    to_custom_streamed_response_wrapper,
+    async_to_custom_raw_response_wrapper,
+    async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
 from ..types.fine_tune import FineTune
@@ -25,7 +33,6 @@ from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_create_response import FineTuningCreateResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
-from ..types.fine_tuning_download_response import FineTuningDownloadResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
@@ -334,18 +341,17 @@ class FineTuningResource(SyncAPIResource):
         self,
         *,
         ft_id: str,
-        checkpoint: Literal["merged", "adapter"] | Omit = omit,
+        checkpoint: Literal["merged", "adapter", "model_output_path"] | Omit = omit,
         checkpoint_step: int | Omit = omit,
-        output: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuningDownloadResponse:
+    ) -> BinaryAPIResponse:
         """
-        Download a compressed fine-tuned model or checkpoint to local disk.
+        Download a compressed fine-tuned model or checkpoint.
 
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
@@ -356,9 +362,6 @@ class FineTuningResource(SyncAPIResource):
           checkpoint_step: Specifies step number for checkpoint to download. Ignores `checkpoint` value if
               set.
 
-          output: Specifies output file name for downloaded model. Defaults to
-              `$PWD/{model_name}.{extension}`.
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -367,6 +370,7 @@ class FineTuningResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return self._get(
             "/finetune/download",
             options=make_request_options(
@@ -379,12 +383,11 @@ class FineTuningResource(SyncAPIResource):
                         "ft_id": ft_id,
                         "checkpoint": checkpoint,
                         "checkpoint_step": checkpoint_step,
-                        "output": output,
                     },
                     fine_tuning_download_params.FineTuningDownloadParams,
                 ),
             ),
-            cast_to=FineTuningDownloadResponse,
+            cast_to=BinaryAPIResponse,
         )
 
     def list_checkpoints(
@@ -756,18 +759,17 @@ class AsyncFineTuningResource(AsyncAPIResource):
         self,
         *,
         ft_id: str,
-        checkpoint: Literal["merged", "adapter"] | Omit = omit,
+        checkpoint: Literal["merged", "adapter", "model_output_path"] | Omit = omit,
         checkpoint_step: int | Omit = omit,
-        output: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuningDownloadResponse:
+    ) -> AsyncBinaryAPIResponse:
         """
-        Download a compressed fine-tuned model or checkpoint to local disk.
+        Download a compressed fine-tuned model or checkpoint.
 
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
@@ -778,9 +780,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
           checkpoint_step: Specifies step number for checkpoint to download. Ignores `checkpoint` value if
               set.
 
-          output: Specifies output file name for downloaded model. Defaults to
-              `$PWD/{model_name}.{extension}`.
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -789,6 +788,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        extra_headers = {"Accept": "application/octet-stream", **(extra_headers or {})}
         return await self._get(
             "/finetune/download",
             options=make_request_options(
@@ -801,12 +801,11 @@ class AsyncFineTuningResource(AsyncAPIResource):
                         "ft_id": ft_id,
                         "checkpoint": checkpoint,
                         "checkpoint_step": checkpoint_step,
-                        "output": output,
                     },
                     fine_tuning_download_params.FineTuningDownloadParams,
                 ),
             ),
-            cast_to=FineTuningDownloadResponse,
+            cast_to=AsyncBinaryAPIResponse,
         )
 
     async def list_checkpoints(
@@ -895,8 +894,9 @@ class FineTuningResourceWithRawResponse:
         self.cancel = to_raw_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = to_raw_response_wrapper(
+        self.download = to_custom_raw_response_wrapper(
             fine_tuning.download,
+            BinaryAPIResponse,
         )
         self.list_checkpoints = to_raw_response_wrapper(
             fine_tuning.list_checkpoints,
@@ -925,8 +925,9 @@ class AsyncFineTuningResourceWithRawResponse:
         self.cancel = async_to_raw_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = async_to_raw_response_wrapper(
+        self.download = async_to_custom_raw_response_wrapper(
             fine_tuning.download,
+            AsyncBinaryAPIResponse,
         )
         self.list_checkpoints = async_to_raw_response_wrapper(
             fine_tuning.list_checkpoints,
@@ -955,8 +956,9 @@ class FineTuningResourceWithStreamingResponse:
         self.cancel = to_streamed_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = to_streamed_response_wrapper(
+        self.download = to_custom_streamed_response_wrapper(
             fine_tuning.download,
+            StreamedBinaryAPIResponse,
         )
         self.list_checkpoints = to_streamed_response_wrapper(
             fine_tuning.list_checkpoints,
@@ -985,8 +987,9 @@ class AsyncFineTuningResourceWithStreamingResponse:
         self.cancel = async_to_streamed_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = async_to_streamed_response_wrapper(
+        self.download = async_to_custom_streamed_response_wrapper(
             fine_tuning.download,
+            AsyncStreamedBinaryAPIResponse,
         )
         self.list_checkpoints = async_to_streamed_response_wrapper(
             fine_tuning.list_checkpoints,
