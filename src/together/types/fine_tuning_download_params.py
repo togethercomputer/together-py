@@ -11,7 +11,7 @@ class FineTuningDownloadParams(TypedDict, total=False):
     ft_id: Required[str]
     """Fine-tune ID to download. A string that starts with `ft-`."""
 
-    checkpoint: Literal["merged", "adapter"]
+    checkpoint: Literal["merged", "adapter", "model_output_path"]
     """Specifies checkpoint type to download - `merged` vs `adapter`.
 
     This field is required if the checkpoint_step is not set.
@@ -21,10 +21,4 @@ class FineTuningDownloadParams(TypedDict, total=False):
     """Specifies step number for checkpoint to download.
 
     Ignores `checkpoint` value if set.
-    """
-
-    output: str
-    """Specifies output file name for downloaded model.
-
-    Defaults to `$PWD/{model_name}.{extension}`.
     """
