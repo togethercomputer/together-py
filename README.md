@@ -208,10 +208,8 @@ from together import Together
 
 client = Together()
 
-client.files.upload(
+client.audio.transcriptions.create(
     file=Path("/path/to/file"),
-    file_name="dataset.csv",
-    purpose="fine-tune",
 )
 ```
 
