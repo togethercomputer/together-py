@@ -43,7 +43,7 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: 
 
     client: Together = ctx.obj
 
-    response = client.files.upload(file, purpose=purpose, check=check)
+    response = client.files.upload(file=file, purpose=purpose, check=check)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 

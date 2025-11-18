@@ -210,6 +210,7 @@ client = Together()
 
 client.files.upload(
     file=Path("/path/to/file"),
+    purpose="fine-tune",
 )
 ```
 
