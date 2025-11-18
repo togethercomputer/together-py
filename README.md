@@ -208,7 +208,7 @@ from together import Together
 
 client = Together()
 
-client.audio.transcriptions.create(
+client.files.upload(
     file=Path("/path/to/file"),
 )
 ```

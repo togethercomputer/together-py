@@ -6,7 +6,7 @@ import pytest
 
 from together import Together
 from together.types import (
-    FileUploadResponse,
+    FileRetrieveResponse,
 )
 
 
@@ -19,7 +19,7 @@ class TestTogetherFiles:
         TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
         return Together(api_key=TOGETHER_API_KEY)
 
-    def test_file_upload_file(
+    def test_file_upload(
         self,
         sync_together_client: Together,
         tmp_path: Path,
@@ -34,12 +34,12 @@ class TestTogetherFiles:
             f.write("\n".join(json.dumps(item) for item in content))
 
         # Test run method
-        response = files.upload_file(
+        response = files.upload(
             file,
         )
 
         # Verify the response
-        assert isinstance(response, FileUploadResponse)
+        assert isinstance(response, FileRetrieveResponse)
         assert response.filename == "valid.jsonl"
         assert response.file_type == "jsonl"
         assert response.line_count == 0

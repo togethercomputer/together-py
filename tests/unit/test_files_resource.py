@@ -8,11 +8,11 @@ from pytest_mock import MockerFixture
 
 from together import Together
 from together.types import (
-    FileUploadResponse,
+    FileRetrieveResponse,
 )
 
 
-def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
+def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     # Mock the API requestor
 
     content = [{"text": "Hello, world!"}, {"text": "How are you?"}]
@@ -52,13 +52,13 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
         f.write(content_str)
 
     # Test run method
-    response = files.upload_file(
+    response = files.upload(
         file,
         purpose="fine-tune",
     )
 
     # Verify the response
-    assert isinstance(response, FileUploadResponse)
+    assert isinstance(response, FileRetrieveResponse)
     assert response.filename == "valid.jsonl"
     assert response.bytes == len(content_bytes)
     assert response.created_at == 1234567890
