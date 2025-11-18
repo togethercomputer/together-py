@@ -265,15 +265,11 @@ class UploadManager(SyncAPIResource):
         file_id = response.headers.get("X-Together-File-Id")
 
         if not redirect_url or not file_id:
-            # Mock server scenario - return mock values for testing
-            if response.status_code == 200:
-                return "https://mock-upload-url.com", "mock-file-id"
-            else:
-                raise APIStatusError(
-                    f"Missing required headers in response. Location: {redirect_url}, File-Id: {file_id}",
-                    response=response,
-                    body=response.content.decode() if hasattr(response, "content") else "",
-                )
+            raise APIStatusError(
+                f"Missing required headers in response. Location: {redirect_url}, File-Id: {file_id}",
+                response=response,
+                body=response.content.decode() if hasattr(response, "content") else "",
+            )
 
         return redirect_url, file_id
 
@@ -389,7 +385,7 @@ class MultipartUploadManager(SyncAPIResource):
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
 
-        part_size, num_parts = self._calculate_parts(file_size)
+        part_size, num_parts = _calculate_parts(file_size)
         file_type = self._get_file_type(file)
         upload_info = None
 
@@ -425,23 +421,6 @@ class MultipartUploadManager(SyncAPIResource):
             raise ValueError(
                 f"Unsupported file extension: '{file.suffix}'. Supported extensions: .jsonl, .parquet, .csv"
             )
-
-    def _calculate_parts(self, file_size: int) -> Tuple[int, int]:
-        """Calculate optimal part size and count"""
-        min_part_size = MIN_PART_SIZE_MB * 1024 * 1024  # 5MB
-        target_part_size = TARGET_PART_SIZE_MB * 1024 * 1024  # 100MB
-
-        if file_size <= target_part_size:
-            return file_size, 1
-
-        num_parts = min(MAX_MULTIPART_PARTS, math.ceil(file_size / target_part_size))
-        part_size = math.ceil(file_size / num_parts)
-
-        if part_size < min_part_size:
-            part_size = min_part_size
-            num_parts = math.ceil(file_size / part_size)
-
-        return part_size, num_parts
 
     def _initiate_upload(
         self,
@@ -764,7 +743,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
 
-        part_size, num_parts = self._calculate_parts(file_size)
+        part_size, num_parts = _calculate_parts(file_size)
         file_type = self._get_file_type(file)
         upload_info = None
 
@@ -787,23 +766,6 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
                 if upload_id and file_id:
                     await self._abort_upload(url, upload_id, file_id)
             raise e
-
-    def _calculate_parts(self, file_size: int) -> Tuple[int, int]:
-        """Calculate optimal part size and count"""
-        min_part_size = MIN_PART_SIZE_MB * 1024 * 1024  # 5MB
-        target_part_size = TARGET_PART_SIZE_MB * 1024 * 1024  # 100MB
-
-        if file_size <= target_part_size:
-            return file_size, 1
-
-        num_parts = min(MAX_MULTIPART_PARTS, math.ceil(file_size / target_part_size))
-        part_size = math.ceil(file_size / num_parts)
-
-        if part_size < min_part_size:
-            part_size = min_part_size
-            num_parts = math.ceil(file_size / part_size)
-
-        return part_size, num_parts
 
     def _get_file_type(self, file: Path) -> str:
         """Get file type from extension"""
@@ -973,3 +935,21 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
             body=payload,
             options={"headers": {"Content-Type": "application/json"}},
         )
+
+
+def _calculate_parts(file_size: int) -> Tuple[int, int]:
+    """Calculate optimal part size and count"""
+    min_part_size = MIN_PART_SIZE_MB * 1024 * 1024  # 5MB
+    target_part_size = TARGET_PART_SIZE_MB * 1024 * 1024  # 100MB
+
+    if file_size <= target_part_size:
+        return file_size, 1
+
+    num_parts = min(MAX_MULTIPART_PARTS, math.ceil(file_size / target_part_size))
+    part_size = math.ceil(file_size / num_parts)
+
+    if part_size < min_part_size:
+        part_size = min_part_size
+        num_parts = math.ceil(file_size / part_size)
+
+    return part_size, num_parts
