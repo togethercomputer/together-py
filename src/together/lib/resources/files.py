@@ -521,7 +521,7 @@ class MultipartUploadManager(SyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
-        
+
         part_headers = part_info.get("Headers", {})
 
         response = self._client._client.put(
@@ -901,7 +901,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
-            
+
         part_headers = part_info.get("Headers", {})
 
         with httpx.Client() as client:

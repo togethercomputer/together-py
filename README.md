@@ -210,15 +210,6 @@ client = Together()
 
 client.files.upload(
     file=Path("/path/to/file"),
-)
-```
-
-For larger files (>400MB), use the enhanced `upload_file()` method which supports files up to 25GB with automatic multipart upload:
-
-```python
-# Enhanced method for large files (up to 25GB)
-client.files.upload_file(
-    file=Path("/path/to/large_dataset.jsonl"),
     purpose="fine-tune",
 )
 ```
