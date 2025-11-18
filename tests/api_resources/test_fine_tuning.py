@@ -5,7 +5,9 @@ from __future__ import annotations
 import os
 from typing import Any, cast
 
+import httpx
 import pytest
+from respx import MockRouter
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
@@ -15,9 +17,14 @@ from together.types import (
     FineTuningCancelResponse,
     FineTuningCreateResponse,
     FineTuningDeleteResponse,
-    FineTuningDownloadResponse,
     FineTuningListEventsResponse,
     FineTuningListCheckpointsResponse,
+)
+from together._response import (
+    BinaryAPIResponse,
+    AsyncBinaryAPIResponse,
+    StreamedBinaryAPIResponse,
+    AsyncStreamedBinaryAPIResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -241,45 +248,60 @@ class TestFineTuning:
             )
 
     @parametrize
-    def test_method_download(self, client: Together) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    def test_method_download(self, client: Together, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = client.fine_tuning.download(
             ft_id="ft_id",
         )
-        assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+        assert fine_tuning.is_closed
+        assert fine_tuning.json() == {"foo": "bar"}
+        assert cast(Any, fine_tuning.is_closed) is True
+        assert isinstance(fine_tuning, BinaryAPIResponse)
 
     @parametrize
-    def test_method_download_with_all_params(self, client: Together) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    def test_method_download_with_all_params(self, client: Together, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = client.fine_tuning.download(
             ft_id="ft_id",
             checkpoint="merged",
             checkpoint_step=0,
-            output="output",
         )
-        assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+        assert fine_tuning.is_closed
+        assert fine_tuning.json() == {"foo": "bar"}
+        assert cast(Any, fine_tuning.is_closed) is True
+        assert isinstance(fine_tuning, BinaryAPIResponse)
 
     @parametrize
-    def test_raw_response_download(self, client: Together) -> None:
-        response = client.fine_tuning.with_raw_response.download(
+    @pytest.mark.respx(base_url=base_url)
+    def test_raw_response_download(self, client: Together, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+
+        fine_tuning = client.fine_tuning.with_raw_response.download(
             ft_id="ft_id",
         )
 
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        fine_tuning = response.parse()
-        assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+        assert fine_tuning.is_closed is True
+        assert fine_tuning.http_request.headers.get("X-Stainless-Lang") == "python"
+        assert fine_tuning.json() == {"foo": "bar"}
+        assert isinstance(fine_tuning, BinaryAPIResponse)
 
     @parametrize
-    def test_streaming_response_download(self, client: Together) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    def test_streaming_response_download(self, client: Together, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         with client.fine_tuning.with_streaming_response.download(
             ft_id="ft_id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        ) as fine_tuning:
+            assert not fine_tuning.is_closed
+            assert fine_tuning.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            fine_tuning = response.parse()
-            assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+            assert fine_tuning.json() == {"foo": "bar"}
+            assert cast(Any, fine_tuning.is_closed) is True
+            assert isinstance(fine_tuning, StreamedBinaryAPIResponse)
 
-        assert cast(Any, response.is_closed) is True
+        assert cast(Any, fine_tuning.is_closed) is True
 
     @parametrize
     def test_method_list_checkpoints(self, client: Together) -> None:
@@ -578,45 +600,60 @@ class TestAsyncFineTuning:
             )
 
     @parametrize
-    async def test_method_download(self, async_client: AsyncTogether) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    async def test_method_download(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = await async_client.fine_tuning.download(
             ft_id="ft_id",
         )
-        assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+        assert fine_tuning.is_closed
+        assert await fine_tuning.json() == {"foo": "bar"}
+        assert cast(Any, fine_tuning.is_closed) is True
+        assert isinstance(fine_tuning, AsyncBinaryAPIResponse)
 
     @parametrize
-    async def test_method_download_with_all_params(self, async_client: AsyncTogether) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    async def test_method_download_with_all_params(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         fine_tuning = await async_client.fine_tuning.download(
             ft_id="ft_id",
             checkpoint="merged",
             checkpoint_step=0,
-            output="output",
         )
-        assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+        assert fine_tuning.is_closed
+        assert await fine_tuning.json() == {"foo": "bar"}
+        assert cast(Any, fine_tuning.is_closed) is True
+        assert isinstance(fine_tuning, AsyncBinaryAPIResponse)
 
     @parametrize
-    async def test_raw_response_download(self, async_client: AsyncTogether) -> None:
-        response = await async_client.fine_tuning.with_raw_response.download(
+    @pytest.mark.respx(base_url=base_url)
+    async def test_raw_response_download(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
+
+        fine_tuning = await async_client.fine_tuning.with_raw_response.download(
             ft_id="ft_id",
         )
 
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        fine_tuning = await response.parse()
-        assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+        assert fine_tuning.is_closed is True
+        assert fine_tuning.http_request.headers.get("X-Stainless-Lang") == "python"
+        assert await fine_tuning.json() == {"foo": "bar"}
+        assert isinstance(fine_tuning, AsyncBinaryAPIResponse)
 
     @parametrize
-    async def test_streaming_response_download(self, async_client: AsyncTogether) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    async def test_streaming_response_download(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+        respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
         async with async_client.fine_tuning.with_streaming_response.download(
             ft_id="ft_id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        ) as fine_tuning:
+            assert not fine_tuning.is_closed
+            assert fine_tuning.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            fine_tuning = await response.parse()
-            assert_matches_type(FineTuningDownloadResponse, fine_tuning, path=["response"])
+            assert await fine_tuning.json() == {"foo": "bar"}
+            assert cast(Any, fine_tuning.is_closed) is True
+            assert isinstance(fine_tuning, AsyncStreamedBinaryAPIResponse)
 
-        assert cast(Any, response.is_closed) is True
+        assert cast(Any, fine_tuning.is_closed) is True
 
     @parametrize
     async def test_method_list_checkpoints(self, async_client: AsyncTogether) -> None:

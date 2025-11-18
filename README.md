@@ -210,7 +210,6 @@ client = Together()
 
 client.files.upload(
     file=Path("/path/to/file"),
-    file_name="dataset.csv",
     purpose="fine-tune",
 )
 ```

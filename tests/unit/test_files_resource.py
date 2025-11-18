@@ -8,11 +8,11 @@ from pytest_mock import MockerFixture
 
 from together import Together
 from together.types import (
-    FileUploadResponse,
+    FileRetrieveResponse,
 )
 
 
-def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
+def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     # Mock the API requestor
 
     content = [{"text": "Hello, world!"}, {"text": "How are you?"}]
@@ -22,7 +22,24 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
     mock_request = mocker.MagicMock()
     mock_request.headers = {}  # response.request headers have to be set otherwise it will confuse the framework and not parse the response into an object
 
-    mock_send_response = Response(
+    # Mock response 1: POST /files (get presigned URL)
+    mock_presigned_response = Response(
+        status_code=302,
+        headers={
+            "Location": "https://mock-presigned-url.com",
+            "X-Together-File-Id": "file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
+        },
+        request=mock_request,
+    )
+
+    # Mock response 2: PUT to presigned URL (upload file)
+    mock_upload_response = Response(
+        status_code=200,
+        request=mock_request,
+    )
+
+    # Mock response 3: POST /files/{file_id}/preprocess (finalize)
+    mock_finalize_response = Response(
         status_code=200,
         json={
             "id": "file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
@@ -39,7 +56,7 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
     )
 
     mock_send_requestor = mocker.MagicMock()
-    mock_send_requestor.side_effect = [mock_send_response]
+    mock_send_requestor.side_effect = [mock_presigned_response, mock_upload_response, mock_finalize_response]
 
     # Mock the post method directly on the client
     client = Together(api_key="fake_api_key")
@@ -52,13 +69,13 @@ def test_file_upload_file(mocker: MockerFixture, tmp_path: Path):
         f.write(content_str)
 
     # Test run method
-    response = files.upload_file(
+    response = files.upload(
         file,
         purpose="fine-tune",
     )
 
     # Verify the response
-    assert isinstance(response, FileUploadResponse)
+    assert isinstance(response, FileRetrieveResponse)
     assert response.filename == "valid.jsonl"
     assert response.bytes == len(content_bytes)
     assert response.created_at == 1234567890

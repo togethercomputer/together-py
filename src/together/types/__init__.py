@@ -30,7 +30,6 @@ from .eval_create_params import EvalCreateParams as EvalCreateParams
 from .eval_list_response import EvalListResponse as EvalListResponse
 from .eval_update_params import EvalUpdateParams as EvalUpdateParams
 from .file_list_response import FileListResponse as FileListResponse
-from .file_upload_params import FileUploadParams as FileUploadParams
 from .full_training_type import FullTrainingType as FullTrainingType
 from .lr_scheduler_param import LrSchedulerParam as LrSchedulerParam
 from .audio_create_params import AudioCreateParams as AudioCreateParams
@@ -49,7 +48,6 @@ from .eval_create_response import EvalCreateResponse as EvalCreateResponse
 from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .eval_update_response import EvalUpdateResponse as EvalUpdateResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
-from .file_upload_response import FileUploadResponse as FileUploadResponse
 from .hardware_list_params import HardwareListParams as HardwareListParams
 from .batch_cancel_response import BatchCancelResponse as BatchCancelResponse
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
@@ -78,7 +76,6 @@ from .fine_tuning_cancel_response import FineTuningCancelResponse as FineTuningC
 from .fine_tuning_create_response import FineTuningCreateResponse as FineTuningCreateResponse
 from .fine_tuning_delete_response import FineTuningDeleteResponse as FineTuningDeleteResponse
 from .fine_tuning_download_params import FineTuningDownloadParams as FineTuningDownloadParams
-from .fine_tuning_download_response import FineTuningDownloadResponse as FineTuningDownloadResponse
 from .cosine_lr_scheduler_args_param import CosineLrSchedulerArgsParam as CosineLrSchedulerArgsParam
 from .endpoint_list_avzones_response import EndpointListAvzonesResponse as EndpointListAvzonesResponse
 from .linear_lr_scheduler_args_param import LinearLrSchedulerArgsParam as LinearLrSchedulerArgsParam

@@ -68,7 +68,6 @@ from together.types import (
     FileRetrieveResponse,
     FileListResponse,
     FileDeleteResponse,
-    FileUploadResponse,
 )
 ```
 
@@ -78,7 +77,6 @@ Methods:
 - <code title="get /files">client.files.<a href="./src/together/resources/files.py">list</a>() -> <a href="./src/together/types/file_list_response.py">FileListResponse</a></code>
 - <code title="delete /files/{id}">client.files.<a href="./src/together/resources/files.py">delete</a>(id) -> <a href="./src/together/types/file_delete_response.py">FileDeleteResponse</a></code>
 - <code title="get /files/{id}/content">client.files.<a href="./src/together/resources/files.py">content</a>(id) -> BinaryAPIResponse</code>
-- <code title="post /files/upload">client.files.<a href="./src/together/resources/files.py">upload</a>(\*\*<a href="src/together/types/file_upload_params.py">params</a>) -> <a href="./src/together/types/file_upload_response.py">FileUploadResponse</a></code>
 
 # FineTuning
 
@@ -99,7 +97,6 @@ from together.types import (
     FineTuningListResponse,
     FineTuningDeleteResponse,
     FineTuningCancelResponse,
-    FineTuningDownloadResponse,
     FineTuningListCheckpointsResponse,
     FineTuningListEventsResponse,
 )
@@ -112,7 +109,7 @@ Methods:
 - <code title="get /fine-tunes">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list</a>() -> <a href="./src/together/types/fine_tuning_list_response.py">FineTuningListResponse</a></code>
 - <code title="delete /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">delete</a>(id, \*\*<a href="src/together/types/fine_tuning_delete_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_delete_response.py">FineTuningDeleteResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">cancel</a>(id) -> <a href="./src/together/types/fine_tuning_cancel_response.py">FineTuningCancelResponse</a></code>
-- <code title="get /finetune/download">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">download</a>(\*\*<a href="src/together/types/fine_tuning_download_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_download_response.py">FineTuningDownloadResponse</a></code>
+- <code title="get /finetune/download">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">download</a>(\*\*<a href="src/together/types/fine_tuning_download_params.py">params</a>) -> BinaryAPIResponse</code>
 - <code title="get /fine-tunes/{id}/checkpoints">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_checkpoints</a>(id) -> <a href="./src/together/types/fine_tuning_list_checkpoints_response.py">FineTuningListCheckpointsResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_events</a>(id) -> <a href="./src/together/types/fine_tuning_list_events_response.py">FineTuningListEventsResponse</a></code>
 

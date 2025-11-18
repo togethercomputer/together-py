@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.28 (2025-11-18)
+
+Full Changelog: [v0.1.0-alpha.27...v0.1.0-alpha.28](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.27...v0.1.0-alpha.28)
+
+### Features
+
+* **api:** api update ([c854d7d](https://github.com/togethercomputer/together-py/commit/c854d7d032e64c4d7068ceffa3af38824b4a9e25))
+* **api:** file upload method signature and functionality match previ… ([#174](https://github.com/togethercomputer/together-py/issues/174)) ([e2a19ca](https://github.com/togethercomputer/together-py/commit/e2a19ca87c3e6698155cfa9874f588c1906f3744))
+
+
+### Chores
+
+* **api:** Remove auto-generated files upload API to support custom coded version ([d6c9c59](https://github.com/togethercomputer/together-py/commit/d6c9c59b9549fa29401ea2016c6b97869d0ec21b))
+
 ## 0.1.0-alpha.27 (2025-11-14)
 
 Full Changelog: [v0.1.0-alpha.26...v0.1.0-alpha.27](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.26...v0.1.0-alpha.27)

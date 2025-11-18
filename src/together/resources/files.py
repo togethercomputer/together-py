@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 from pprint import pformat
-from typing import Mapping, cast, get_args
+from typing import cast, get_args
 from pathlib import Path
 
 import httpx
 
-from ..lib import FileTypeError, check_file
-from ..types import FileType, FilePurpose, file_upload_params
-from .._types import Body, Omit, Query, Headers, NotGiven, FileTypes, omit, not_given
-from .._utils import extract_files, maybe_transform, deepcopy_minimal, async_maybe_transform
+from together.types import FilePurpose
+
+from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
+from ..types import FilePurpose
+from .._types import Body, Query, Headers, NotGiven, not_given
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._response import (
@@ -29,11 +30,9 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..types.file_type import FileType
-from ..types.file_purpose import FilePurpose
+from ..lib.resources.files import UploadManager, AsyncUploadManager
 from ..types.file_list_response import FileListResponse
 from ..types.file_delete_response import FileDeleteResponse
-from ..types.file_upload_response import FileUploadResponse
 from ..types.file_retrieve_response import FileRetrieveResponse
 
 __all__ = ["FilesResource", "AsyncFilesResource"]
@@ -144,13 +143,13 @@ class FilesResource(SyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    def upload_file(
+    def upload(
         self,
         file: Path | str,
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileUploadResponse:
+    ) -> FileRetrieveResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -164,7 +163,20 @@ class FilesResource(SyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        return self.upload(file=file, purpose=purpose, file_name=file.name)
+        upload_manager = UploadManager(self._client)
+        result = upload_manager.upload("/files", file, purpose)
+
+        return FileRetrieveResponse(
+            id=result.id,
+            bytes=result.bytes,
+            created_at=result.created_at,
+            filename=result.filename,
+            FileType=result.file_type,
+            LineCount=result.line_count,
+            object=result.object,
+            Processed=result.processed,
+            purpose=result.purpose,
+        )
 
     def content(
         self,
@@ -198,63 +210,6 @@ class FilesResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=BinaryAPIResponse,
-        )
-
-    def upload(
-        self,
-        *,
-        file: FileTypes,
-        file_name: str,
-        purpose: FilePurpose,
-        file_type: FileType | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FileUploadResponse:
-        """
-        Upload a file with specified purpose, file name, and file type.
-
-        Args:
-          file: The content of the file being uploaded
-
-          file_name: The name of the file being uploaded
-
-          purpose: The purpose of the file
-
-          file_type: The type of the file
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        body = deepcopy_minimal(
-            {
-                "file": file,
-                "file_name": file_name,
-                "purpose": purpose,
-                "file_type": file_type,
-            }
-        )
-        files = extract_files(cast(Mapping[str, object], body), paths=[["file"]])
-        # It should be noted that the actual Content-Type header that will be
-        # sent to the server will contain a `boundary` parameter, e.g.
-        # multipart/form-data; boundary=---abc--
-        extra_headers = {"Content-Type": "multipart/form-data", **(extra_headers or {})}
-        return self._post(
-            "/files/upload",
-            body=maybe_transform(body, file_upload_params.FileUploadParams),
-            files=files,
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=FileUploadResponse,
         )
 
 
@@ -363,13 +318,13 @@ class AsyncFilesResource(AsyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    async def upload_file(
+    async def upload(
         self,
         file: Path | str,
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileUploadResponse:
+    ) -> FileRetrieveResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -383,7 +338,20 @@ class AsyncFilesResource(AsyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        return await self.upload(file=file, purpose=purpose, file_name=file.name)
+        upload_manager = AsyncUploadManager(self._client)
+        result = await upload_manager.upload("/files", file, purpose)
+
+        return FileRetrieveResponse(
+            id=result.id,
+            bytes=result.bytes,
+            created_at=result.created_at,
+            filename=result.filename,
+            FileType=result.file_type,
+            LineCount=result.line_count,
+            object=result.object,
+            Processed=result.processed,
+            purpose=result.purpose,
+        )
 
     async def content(
         self,
@@ -419,63 +387,6 @@ class AsyncFilesResource(AsyncAPIResource):
             cast_to=AsyncBinaryAPIResponse,
         )
 
-    async def upload(
-        self,
-        *,
-        file: FileTypes,
-        file_name: str,
-        purpose: FilePurpose,
-        file_type: FileType | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FileUploadResponse:
-        """
-        Upload a file with specified purpose, file name, and file type.
-
-        Args:
-          file: The content of the file being uploaded
-
-          file_name: The name of the file being uploaded
-
-          purpose: The purpose of the file
-
-          file_type: The type of the file
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        body = deepcopy_minimal(
-            {
-                "file": file,
-                "file_name": file_name,
-                "purpose": purpose,
-                "file_type": file_type,
-            }
-        )
-        files = extract_files(cast(Mapping[str, object], body), paths=[["file"]])
-        # It should be noted that the actual Content-Type header that will be
-        # sent to the server will contain a `boundary` parameter, e.g.
-        # multipart/form-data; boundary=---abc--
-        extra_headers = {"Content-Type": "multipart/form-data", **(extra_headers or {})}
-        return await self._post(
-            "/files/upload",
-            body=await async_maybe_transform(body, file_upload_params.FileUploadParams),
-            files=files,
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=FileUploadResponse,
-        )
-
 
 class FilesResourceWithRawResponse:
     def __init__(self, files: FilesResource) -> None:
@@ -493,9 +404,6 @@ class FilesResourceWithRawResponse:
         self.content = to_custom_raw_response_wrapper(
             files.content,
             BinaryAPIResponse,
-        )
-        self.upload = to_raw_response_wrapper(
-            files.upload,
         )
 
 
@@ -516,9 +424,6 @@ class AsyncFilesResourceWithRawResponse:
             files.content,
             AsyncBinaryAPIResponse,
         )
-        self.upload = async_to_raw_response_wrapper(
-            files.upload,
-        )
 
 
 class FilesResourceWithStreamingResponse:
@@ -538,9 +443,6 @@ class FilesResourceWithStreamingResponse:
             files.content,
             StreamedBinaryAPIResponse,
         )
-        self.upload = to_streamed_response_wrapper(
-            files.upload,
-        )
 
 
 class AsyncFilesResourceWithStreamingResponse:
@@ -559,7 +461,4 @@ class AsyncFilesResourceWithStreamingResponse:
         self.content = async_to_custom_streamed_response_wrapper(
             files.content,
             AsyncStreamedBinaryAPIResponse,
-        )
-        self.upload = async_to_streamed_response_wrapper(
-            files.upload,
         )
