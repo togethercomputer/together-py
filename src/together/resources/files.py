@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from pprint import pformat
-from typing import Mapping, cast, get_args
+from typing import cast, get_args
 from pathlib import Path
+
 import httpx
-from ..lib import FileTypeError, check_file
+
+from together.types import FilePurpose
+
+from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
 from .._types import Body, Query, Headers, NotGiven, not_given
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -137,13 +141,13 @@ class FilesResource(SyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    def upload_file(
+    def upload(
         self,
         file: Path | str,
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileUploadResponse:
+    ) -> FileRetrieveResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -157,7 +161,20 @@ class FilesResource(SyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        return self.upload(file=file, purpose=purpose, file_name=file.name)
+        upload_manager = UploadManager(self._client)
+        result = upload_manager.upload("/files", file, purpose)
+
+        return FileRetrieveResponse(
+            id=result.id,
+            bytes=result.bytes,
+            created_at=result.created_at,
+            filename=result.filename,
+            FileType=result.file_type,
+            LineCount=result.line_count,
+            object=result.object,
+            Processed=result.processed,
+            purpose=result.purpose,
+        )
 
     def content(
         self,
@@ -299,13 +316,13 @@ class AsyncFilesResource(AsyncAPIResource):
             cast_to=FileDeleteResponse,
         )
 
-    async def upload_file(
+    async def upload(
         self,
         file: Path | str,
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileUploadResponse:
+    ) -> FileRetrieveResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -319,7 +336,20 @@ class AsyncFilesResource(AsyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        return await self.upload(file=file, purpose=purpose, file_name=file.name)
+        upload_manager = AsyncUploadManager(self._client)
+        result = await upload_manager.upload("/files", file, purpose)
+
+        return FileRetrieveResponse(
+            id=result.id,
+            bytes=result.bytes,
+            created_at=result.created_at,
+            filename=result.filename,
+            FileType=result.file_type,
+            LineCount=result.line_count,
+            object=result.object,
+            Processed=result.processed,
+            purpose=result.purpose,
+        )
 
     async def content(
         self,

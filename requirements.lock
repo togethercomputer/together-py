@@ -35,6 +35,8 @@ distro==1.8.0
     # via together
 exceptiongroup==1.2.2
     # via anyio
+filelock==3.19.1
+    # via together
 frozenlist==1.7.0
     # via aiohttp
     # via aiosignal
@@ -88,9 +90,10 @@ typing-extensions==4.12.2
     # via pydantic
     # via pydantic-core
     # via together
-urllib3==2.4.0
-    # via types-requests
-yarl==1.20.1
     # via typing-inspection
 typing-inspection==0.4.1
     # via pydantic
+urllib3==2.4.0
+    # via types-requests
+yarl==1.20.1
+    # via aiohttp
