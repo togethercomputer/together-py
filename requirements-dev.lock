@@ -45,7 +45,8 @@ exceptiongroup==1.2.2
     # via pytest
 execnet==2.1.1
     # via pytest-xdist
-filelock==3.12.4
+filelock==3.19.1
+    # via together
     # via virtualenv
 frozenlist==1.7.0
     # via aiohttp
@@ -148,11 +149,11 @@ typing-extensions==4.12.2
     # via pydantic-core
     # via pyright
     # via together
-urllib3==2.4.0
-    # via types-requests
     # via typing-inspection
 typing-inspection==0.4.1
     # via pydantic
+urllib3==2.4.0
+    # via types-requests
 virtualenv==20.24.5
     # via nox
 yarl==1.20.1
