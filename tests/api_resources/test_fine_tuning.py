@@ -15,7 +15,6 @@ from together.types import (
     FineTune,
     FineTuningListResponse,
     FineTuningCancelResponse,
-    FineTuningCreateResponse,
     FineTuningDeleteResponse,
     FineTuningListEventsResponse,
     FineTuningListCheckpointsResponse,
@@ -32,77 +31,6 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 class TestFineTuning:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
-
-    @parametrize
-    def test_method_create(self, client: Together) -> None:
-        fine_tuning = client.fine_tuning.create(
-            model="model",
-            training_file="training_file",
-        )
-        assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    def test_method_create_with_all_params(self, client: Together) -> None:
-        fine_tuning = client.fine_tuning.create(
-            model="model",
-            training_file="training_file",
-            batch_size=0,
-            from_checkpoint="from_checkpoint",
-            from_hf_model="from_hf_model",
-            hf_api_token="hf_api_token",
-            hf_model_revision="hf_model_revision",
-            hf_output_repo_name="hf_output_repo_name",
-            learning_rate=0,
-            lr_scheduler={
-                "lr_scheduler_type": "linear",
-                "lr_scheduler_args": {"min_lr_ratio": 0},
-            },
-            max_grad_norm=0,
-            n_checkpoints=0,
-            n_epochs=0,
-            n_evals=0,
-            suffix="suffix",
-            train_on_inputs=True,
-            training_method={
-                "method": "sft",
-                "train_on_inputs": True,
-            },
-            training_type={"type": "Full"},
-            validation_file="validation_file",
-            wandb_api_key="wandb_api_key",
-            wandb_base_url="wandb_base_url",
-            wandb_name="wandb_name",
-            wandb_project_name="wandb_project_name",
-            warmup_ratio=0,
-            weight_decay=0,
-        )
-        assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    def test_raw_response_create(self, client: Together) -> None:
-        response = client.fine_tuning.with_raw_response.create(
-            model="model",
-            training_file="training_file",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        fine_tuning = response.parse()
-        assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    def test_streaming_response_create(self, client: Together) -> None:
-        with client.fine_tuning.with_streaming_response.create(
-            model="model",
-            training_file="training_file",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            fine_tuning = response.parse()
-            assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
@@ -384,77 +312,6 @@ class TestAsyncFineTuning:
     parametrize = pytest.mark.parametrize(
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
-
-    @parametrize
-    async def test_method_create(self, async_client: AsyncTogether) -> None:
-        fine_tuning = await async_client.fine_tuning.create(
-            model="model",
-            training_file="training_file",
-        )
-        assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
-        fine_tuning = await async_client.fine_tuning.create(
-            model="model",
-            training_file="training_file",
-            batch_size=0,
-            from_checkpoint="from_checkpoint",
-            from_hf_model="from_hf_model",
-            hf_api_token="hf_api_token",
-            hf_model_revision="hf_model_revision",
-            hf_output_repo_name="hf_output_repo_name",
-            learning_rate=0,
-            lr_scheduler={
-                "lr_scheduler_type": "linear",
-                "lr_scheduler_args": {"min_lr_ratio": 0},
-            },
-            max_grad_norm=0,
-            n_checkpoints=0,
-            n_epochs=0,
-            n_evals=0,
-            suffix="suffix",
-            train_on_inputs=True,
-            training_method={
-                "method": "sft",
-                "train_on_inputs": True,
-            },
-            training_type={"type": "Full"},
-            validation_file="validation_file",
-            wandb_api_key="wandb_api_key",
-            wandb_base_url="wandb_base_url",
-            wandb_name="wandb_name",
-            wandb_project_name="wandb_project_name",
-            warmup_ratio=0,
-            weight_decay=0,
-        )
-        assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
-        response = await async_client.fine_tuning.with_raw_response.create(
-            model="model",
-            training_file="training_file",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        fine_tuning = await response.parse()
-        assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-    @parametrize
-    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
-        async with async_client.fine_tuning.with_streaming_response.create(
-            model="model",
-            training_file="training_file",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            fine_tuning = await response.parse()
-            assert_matches_type(FineTuningCreateResponse, fine_tuning, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
