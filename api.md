@@ -93,7 +93,6 @@ from together.types import (
     LrScheduler,
     TrainingMethodDpo,
     TrainingMethodSft,
-    FineTuningCreateResponse,
     FineTuningListResponse,
     FineTuningDeleteResponse,
     FineTuningCancelResponse,
@@ -104,7 +103,6 @@ from together.types import (
 
 Methods:
 
-- <code title="post /fine-tunes">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">create</a>(\*\*<a href="src/together/types/fine_tuning_create_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_create_response.py">FineTuningCreateResponse</a></code>
 - <code title="get /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve</a>(id) -> <a href="./src/together/types/fine_tune.py">FineTune</a></code>
 - <code title="get /fine-tunes">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list</a>() -> <a href="./src/together/types/fine_tuning_list_response.py">FineTuningListResponse</a></code>
 - <code title="delete /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">delete</a>(id, \*\*<a href="src/together/types/fine_tuning_delete_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_delete_response.py">FineTuningDeleteResponse</a></code>
