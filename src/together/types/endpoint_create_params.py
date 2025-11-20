@@ -20,6 +20,9 @@ class EndpointCreateParams(TypedDict, total=False):
     model: Required[str]
     """The model to deploy on this endpoint"""
 
+    availability_zone: str
+    """Create the endpoint in a specified availability zone (e.g., us-central-4b)"""
+
     disable_prompt_cache: bool
     """Whether to disable the prompt cache for this endpoint"""
 
