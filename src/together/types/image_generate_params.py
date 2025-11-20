@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["ImageCreateParams", "ImageLora"]
+__all__ = ["ImageGenerateParams", "ImageLora"]
 
 
-class ImageCreateParams(TypedDict, total=False):
+class ImageGenerateParams(TypedDict, total=False):
     model: Required[
         Union[
             Literal[

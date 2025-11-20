@@ -18,16 +18,16 @@ class TestImages:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    def test_method_create(self, client: Together) -> None:
-        image = client.images.create(
+    def test_method_generate(self, client: Together) -> None:
+        image = client.images.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
         assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
-    def test_method_create_with_all_params(self, client: Together) -> None:
-        image = client.images.create(
+    def test_method_generate_with_all_params(self, client: Together) -> None:
+        image = client.images.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
             disable_safety_checker=True,
@@ -51,8 +51,8 @@ class TestImages:
         assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
-    def test_raw_response_create(self, client: Together) -> None:
-        response = client.images.with_raw_response.create(
+    def test_raw_response_generate(self, client: Together) -> None:
+        response = client.images.with_raw_response.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
@@ -63,8 +63,8 @@ class TestImages:
         assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
-    def test_streaming_response_create(self, client: Together) -> None:
-        with client.images.with_streaming_response.create(
+    def test_streaming_response_generate(self, client: Together) -> None:
+        with client.images.with_streaming_response.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         ) as response:
@@ -83,16 +83,16 @@ class TestAsyncImages:
     )
 
     @parametrize
-    async def test_method_create(self, async_client: AsyncTogether) -> None:
-        image = await async_client.images.create(
+    async def test_method_generate(self, async_client: AsyncTogether) -> None:
+        image = await async_client.images.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
         assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
-    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
-        image = await async_client.images.create(
+    async def test_method_generate_with_all_params(self, async_client: AsyncTogether) -> None:
+        image = await async_client.images.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
             disable_safety_checker=True,
@@ -116,8 +116,8 @@ class TestAsyncImages:
         assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
-    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
-        response = await async_client.images.with_raw_response.create(
+    async def test_raw_response_generate(self, async_client: AsyncTogether) -> None:
+        response = await async_client.images.with_raw_response.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         )
@@ -128,8 +128,8 @@ class TestAsyncImages:
         assert_matches_type(ImageFile, image, path=["response"])
 
     @parametrize
-    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
-        async with async_client.images.with_streaming_response.create(
+    async def test_streaming_response_generate(self, async_client: AsyncTogether) -> None:
+        async with async_client.images.with_streaming_response.generate(
             model="black-forest-labs/FLUX.1-schnell",
             prompt="cat floating in space, cinematic",
         ) as response:
