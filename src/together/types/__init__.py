@@ -34,7 +34,6 @@ from .full_training_type import FullTrainingType as FullTrainingType
 from .audio_create_params import AudioCreateParams as AudioCreateParams
 from .batch_create_params import BatchCreateParams as BatchCreateParams
 from .batch_list_response import BatchListResponse as BatchListResponse
-from .image_create_params import ImageCreateParams as ImageCreateParams
 from .lo_ra_training_type import LoRaTrainingType as LoRaTrainingType
 from .model_list_response import ModelListResponse as ModelListResponse
 from .model_upload_params import ModelUploadParams as ModelUploadParams
@@ -50,6 +49,7 @@ from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .hardware_list_params import HardwareListParams as HardwareListParams
 from .batch_cancel_response import BatchCancelResponse as BatchCancelResponse
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
+from .image_generate_params import ImageGenerateParams as ImageGenerateParams
 from .job_retrieve_response import JobRetrieveResponse as JobRetrieveResponse
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
 from .video_create_response import VideoCreateResponse as VideoCreateResponse

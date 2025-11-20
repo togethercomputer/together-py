@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import image_create_params
+from ..types import image_generate_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -44,7 +44,7 @@ class ImagesResource(SyncAPIResource):
         """
         return ImagesResourceWithStreamingResponse(self)
 
-    def create(
+    def generate(
         self,
         *,
         model: Union[
@@ -59,7 +59,7 @@ class ImagesResource(SyncAPIResource):
         disable_safety_checker: bool | Omit = omit,
         guidance_scale: float | Omit = omit,
         height: int | Omit = omit,
-        image_loras: Iterable[image_create_params.ImageLora] | Omit = omit,
+        image_loras: Iterable[image_generate_params.ImageLora] | Omit = omit,
         image_url: str | Omit = omit,
         n: int | Omit = omit,
         negative_prompt: str | Omit = omit,
@@ -140,7 +140,7 @@ class ImagesResource(SyncAPIResource):
                     "steps": steps,
                     "width": width,
                 },
-                image_create_params.ImageCreateParams,
+                image_generate_params.ImageGenerateParams,
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -169,7 +169,7 @@ class AsyncImagesResource(AsyncAPIResource):
         """
         return AsyncImagesResourceWithStreamingResponse(self)
 
-    async def create(
+    async def generate(
         self,
         *,
         model: Union[
@@ -184,7 +184,7 @@ class AsyncImagesResource(AsyncAPIResource):
         disable_safety_checker: bool | Omit = omit,
         guidance_scale: float | Omit = omit,
         height: int | Omit = omit,
-        image_loras: Iterable[image_create_params.ImageLora] | Omit = omit,
+        image_loras: Iterable[image_generate_params.ImageLora] | Omit = omit,
         image_url: str | Omit = omit,
         n: int | Omit = omit,
         negative_prompt: str | Omit = omit,
@@ -265,7 +265,7 @@ class AsyncImagesResource(AsyncAPIResource):
                     "steps": steps,
                     "width": width,
                 },
-                image_create_params.ImageCreateParams,
+                image_generate_params.ImageGenerateParams,
             ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -278,8 +278,8 @@ class ImagesResourceWithRawResponse:
     def __init__(self, images: ImagesResource) -> None:
         self._images = images
 
-        self.create = to_raw_response_wrapper(
-            images.create,
+        self.generate = to_raw_response_wrapper(
+            images.generate,
         )
 
 
@@ -287,8 +287,8 @@ class AsyncImagesResourceWithRawResponse:
     def __init__(self, images: AsyncImagesResource) -> None:
         self._images = images
 
-        self.create = async_to_raw_response_wrapper(
-            images.create,
+        self.generate = async_to_raw_response_wrapper(
+            images.generate,
         )
 
 
@@ -296,8 +296,8 @@ class ImagesResourceWithStreamingResponse:
     def __init__(self, images: ImagesResource) -> None:
         self._images = images
 
-        self.create = to_streamed_response_wrapper(
-            images.create,
+        self.generate = to_streamed_response_wrapper(
+            images.generate,
         )
 
 
@@ -305,6 +305,6 @@ class AsyncImagesResourceWithStreamingResponse:
     def __init__(self, images: AsyncImagesResource) -> None:
         self._images = images
 
-        self.create = async_to_streamed_response_wrapper(
-            images.create,
+        self.generate = async_to_streamed_response_wrapper(
+            images.generate,
         )
