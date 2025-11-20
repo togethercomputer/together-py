@@ -9,17 +9,17 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types import RerankResponse
+from together.types import RerankCreateResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
-class TestClient:
+class TestRerank:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    def test_method_rerank(self, client: Together) -> None:
-        client_ = client.rerank(
+    def test_method_create(self, client: Together) -> None:
+        rerank = client.rerank.create(
             documents=[
                 {
                     "title": "bar",
@@ -41,11 +41,11 @@ class TestClient:
             model="Salesforce/Llama-Rank-V1",
             query="What animals can I find near Peru?",
         )
-        assert_matches_type(RerankResponse, client_, path=["response"])
+        assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
     @parametrize
-    def test_method_rerank_with_all_params(self, client: Together) -> None:
-        client_ = client.rerank(
+    def test_method_create_with_all_params(self, client: Together) -> None:
+        rerank = client.rerank.create(
             documents=[
                 {
                     "title": "bar",
@@ -70,11 +70,11 @@ class TestClient:
             return_documents=True,
             top_n=2,
         )
-        assert_matches_type(RerankResponse, client_, path=["response"])
+        assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
     @parametrize
-    def test_raw_response_rerank(self, client: Together) -> None:
-        response = client.with_raw_response.rerank(
+    def test_raw_response_create(self, client: Together) -> None:
+        response = client.rerank.with_raw_response.create(
             documents=[
                 {
                     "title": "bar",
@@ -99,12 +99,12 @@ class TestClient:
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        client_ = response.parse()
-        assert_matches_type(RerankResponse, client_, path=["response"])
+        rerank = response.parse()
+        assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
     @parametrize
-    def test_streaming_response_rerank(self, client: Together) -> None:
-        with client.with_streaming_response.rerank(
+    def test_streaming_response_create(self, client: Together) -> None:
+        with client.rerank.with_streaming_response.create(
             documents=[
                 {
                     "title": "bar",
@@ -129,20 +129,20 @@ class TestClient:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            client_ = response.parse()
-            assert_matches_type(RerankResponse, client_, path=["response"])
+            rerank = response.parse()
+            assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
 
-class TestAsyncClient:
+class TestAsyncRerank:
     parametrize = pytest.mark.parametrize(
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
 
     @parametrize
-    async def test_method_rerank(self, async_client: AsyncTogether) -> None:
-        client = await async_client.rerank(
+    async def test_method_create(self, async_client: AsyncTogether) -> None:
+        rerank = await async_client.rerank.create(
             documents=[
                 {
                     "title": "bar",
@@ -164,11 +164,11 @@ class TestAsyncClient:
             model="Salesforce/Llama-Rank-V1",
             query="What animals can I find near Peru?",
         )
-        assert_matches_type(RerankResponse, client, path=["response"])
+        assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
     @parametrize
-    async def test_method_rerank_with_all_params(self, async_client: AsyncTogether) -> None:
-        client = await async_client.rerank(
+    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
+        rerank = await async_client.rerank.create(
             documents=[
                 {
                     "title": "bar",
@@ -193,11 +193,11 @@ class TestAsyncClient:
             return_documents=True,
             top_n=2,
         )
-        assert_matches_type(RerankResponse, client, path=["response"])
+        assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
     @parametrize
-    async def test_raw_response_rerank(self, async_client: AsyncTogether) -> None:
-        response = await async_client.with_raw_response.rerank(
+    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
+        response = await async_client.rerank.with_raw_response.create(
             documents=[
                 {
                     "title": "bar",
@@ -222,12 +222,12 @@ class TestAsyncClient:
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        client = await response.parse()
-        assert_matches_type(RerankResponse, client, path=["response"])
+        rerank = await response.parse()
+        assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
     @parametrize
-    async def test_streaming_response_rerank(self, async_client: AsyncTogether) -> None:
-        async with async_client.with_streaming_response.rerank(
+    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
+        async with async_client.rerank.with_streaming_response.create(
             documents=[
                 {
                     "title": "bar",
@@ -252,7 +252,7 @@ class TestAsyncClient:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            client = await response.parse()
-            assert_matches_type(RerankResponse, client, path=["response"])
+            rerank = await response.parse()
+            assert_matches_type(RerankCreateResponse, rerank, path=["response"])
 
         assert cast(Any, response.is_closed) is True
