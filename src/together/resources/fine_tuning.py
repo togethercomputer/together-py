@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import fine_tuning_delete_params, fine_tuning_download_params
+from ..types import fine_tuning_delete_params, fine_tuning_content_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -185,7 +185,7 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FineTuningCancelResponse,
         )
 
-    def download(
+    def content(
         self,
         *,
         ft_id: str,
@@ -232,7 +232,7 @@ class FineTuningResource(SyncAPIResource):
                         "checkpoint": checkpoint,
                         "checkpoint_step": checkpoint_step,
                     },
-                    fine_tuning_download_params.FineTuningDownloadParams,
+                    fine_tuning_content_params.FineTuningContentParams,
                 ),
             ),
             cast_to=BinaryAPIResponse,
@@ -454,7 +454,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FineTuningCancelResponse,
         )
 
-    async def download(
+    async def content(
         self,
         *,
         ft_id: str,
@@ -501,7 +501,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                         "checkpoint": checkpoint,
                         "checkpoint_step": checkpoint_step,
                     },
-                    fine_tuning_download_params.FineTuningDownloadParams,
+                    fine_tuning_content_params.FineTuningContentParams,
                 ),
             ),
             cast_to=AsyncBinaryAPIResponse,
@@ -590,8 +590,8 @@ class FineTuningResourceWithRawResponse:
         self.cancel = to_raw_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = to_custom_raw_response_wrapper(
-            fine_tuning.download,
+        self.content = to_custom_raw_response_wrapper(
+            fine_tuning.content,
             BinaryAPIResponse,
         )
         self.list_checkpoints = to_raw_response_wrapper(
@@ -618,8 +618,8 @@ class AsyncFineTuningResourceWithRawResponse:
         self.cancel = async_to_raw_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = async_to_custom_raw_response_wrapper(
-            fine_tuning.download,
+        self.content = async_to_custom_raw_response_wrapper(
+            fine_tuning.content,
             AsyncBinaryAPIResponse,
         )
         self.list_checkpoints = async_to_raw_response_wrapper(
@@ -646,8 +646,8 @@ class FineTuningResourceWithStreamingResponse:
         self.cancel = to_streamed_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = to_custom_streamed_response_wrapper(
-            fine_tuning.download,
+        self.content = to_custom_streamed_response_wrapper(
+            fine_tuning.content,
             StreamedBinaryAPIResponse,
         )
         self.list_checkpoints = to_streamed_response_wrapper(
@@ -674,8 +674,8 @@ class AsyncFineTuningResourceWithStreamingResponse:
         self.cancel = async_to_streamed_response_wrapper(
             fine_tuning.cancel,
         )
-        self.download = async_to_custom_streamed_response_wrapper(
-            fine_tuning.download,
+        self.content = async_to_custom_streamed_response_wrapper(
+            fine_tuning.content,
             AsyncStreamedBinaryAPIResponse,
         )
         self.list_checkpoints = async_to_streamed_response_wrapper(
