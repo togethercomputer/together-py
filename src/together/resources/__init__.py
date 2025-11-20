@@ -56,6 +56,14 @@ from .models import (
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
 )
+from .rerank import (
+    RerankResource,
+    AsyncRerankResource,
+    RerankResourceWithRawResponse,
+    AsyncRerankResourceWithRawResponse,
+    RerankResourceWithStreamingResponse,
+    AsyncRerankResourceWithStreamingResponse,
+)
 from .videos import (
     VideosResource,
     AsyncVideosResource,
@@ -200,6 +208,12 @@ __all__ = [
     "AsyncHardwareResourceWithRawResponse",
     "HardwareResourceWithStreamingResponse",
     "AsyncHardwareResourceWithStreamingResponse",
+    "RerankResource",
+    "AsyncRerankResource",
+    "RerankResourceWithRawResponse",
+    "AsyncRerankResourceWithRawResponse",
+    "RerankResourceWithStreamingResponse",
+    "AsyncRerankResourceWithStreamingResponse",
     "BatchesResource",
     "AsyncBatchesResource",
     "BatchesResourceWithRawResponse",

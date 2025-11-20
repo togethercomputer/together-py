@@ -3,47 +3,31 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Union, Mapping, Iterable
-from typing_extensions import Self, Literal, override
+from typing import Any, Mapping
+from typing_extensions import Self, override
 
 import httpx
 
 from . import _exceptions
 from ._qs import Querystring
-from .types import client_rerank_params
 from ._types import (
-    Body,
     Omit,
-    Query,
-    Headers,
     Timeout,
     NotGiven,
     Transport,
     ProxiesTypes,
     RequestOptions,
-    SequenceNotStr,
-    omit,
     not_given,
 )
-from ._utils import (
-    is_given,
-    maybe_transform,
-    get_async_library,
-    async_maybe_transform,
-)
+from ._utils import is_given, get_async_library
 from ._version import __version__
-from ._response import (
-    to_raw_response_wrapper,
-    to_streamed_response_wrapper,
-    async_to_raw_response_wrapper,
-    async_to_streamed_response_wrapper,
-)
 from .resources import (
     jobs,
     evals,
     files,
     images,
     models,
+    rerank,
     videos,
     batches,
     hardware,
@@ -58,11 +42,9 @@ from ._base_client import (
     DEFAULT_MAX_RETRIES,
     SyncAPIClient,
     AsyncAPIClient,
-    make_request_options,
 )
 from .resources.chat import chat
 from .resources.audio import audio
-from .types.rerank_response import RerankResponse
 from .resources.code_interpreter import code_interpreter
 
 __all__ = [
@@ -91,6 +73,7 @@ class Together(SyncAPIClient):
     jobs: jobs.JobsResource
     endpoints: endpoints.EndpointsResource
     hardware: hardware.HardwareResource
+    rerank: rerank.RerankResource
     batches: batches.BatchesResource
     evals: evals.EvalsResource
     with_raw_response: TogetherWithRawResponse
@@ -166,6 +149,7 @@ class Together(SyncAPIClient):
         self.jobs = jobs.JobsResource(self)
         self.endpoints = endpoints.EndpointsResource(self)
         self.hardware = hardware.HardwareResource(self)
+        self.rerank = rerank.RerankResource(self)
         self.batches = batches.BatchesResource(self)
         self.evals = evals.EvalsResource(self)
         self.with_raw_response = TogetherWithRawResponse(self)
@@ -244,68 +228,6 @@ class Together(SyncAPIClient):
     # client.with_options(timeout=10).foo.create(...)
     with_options = copy
 
-    def rerank(
-        self,
-        *,
-        documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
-        model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
-        query: str,
-        rank_fields: SequenceNotStr[str] | Omit = omit,
-        return_documents: bool | Omit = omit,
-        top_n: int | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RerankResponse:
-        """
-        Query a reranker model
-
-        Args:
-          documents: List of documents, which can be either strings or objects.
-
-          model: The model to be used for the rerank request.
-
-              [See all of Together AI's rerank models](https://docs.together.ai/docs/serverless-models#rerank-models)
-
-          query: The search query to be used for ranking.
-
-          rank_fields: List of keys in the JSON Object document to rank by. Defaults to use all
-              supplied keys for ranking.
-
-          return_documents: Whether to return supplied documents with the response.
-
-          top_n: The number of top results to return.
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return self.post(
-            "/rerank",
-            body=maybe_transform(
-                {
-                    "documents": documents,
-                    "model": model,
-                    "query": query,
-                    "rank_fields": rank_fields,
-                    "return_documents": return_documents,
-                    "top_n": top_n,
-                },
-                client_rerank_params.ClientRerankParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=RerankResponse,
-        )
-
     @override
     def _make_status_error(
         self,
@@ -354,6 +276,7 @@ class AsyncTogether(AsyncAPIClient):
     jobs: jobs.AsyncJobsResource
     endpoints: endpoints.AsyncEndpointsResource
     hardware: hardware.AsyncHardwareResource
+    rerank: rerank.AsyncRerankResource
     batches: batches.AsyncBatchesResource
     evals: evals.AsyncEvalsResource
     with_raw_response: AsyncTogetherWithRawResponse
@@ -429,6 +352,7 @@ class AsyncTogether(AsyncAPIClient):
         self.jobs = jobs.AsyncJobsResource(self)
         self.endpoints = endpoints.AsyncEndpointsResource(self)
         self.hardware = hardware.AsyncHardwareResource(self)
+        self.rerank = rerank.AsyncRerankResource(self)
         self.batches = batches.AsyncBatchesResource(self)
         self.evals = evals.AsyncEvalsResource(self)
         self.with_raw_response = AsyncTogetherWithRawResponse(self)
@@ -507,68 +431,6 @@ class AsyncTogether(AsyncAPIClient):
     # client.with_options(timeout=10).foo.create(...)
     with_options = copy
 
-    async def rerank(
-        self,
-        *,
-        documents: Union[Iterable[Dict[str, object]], SequenceNotStr[str]],
-        model: Union[Literal["Salesforce/Llama-Rank-v1"], str],
-        query: str,
-        rank_fields: SequenceNotStr[str] | Omit = omit,
-        return_documents: bool | Omit = omit,
-        top_n: int | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RerankResponse:
-        """
-        Query a reranker model
-
-        Args:
-          documents: List of documents, which can be either strings or objects.
-
-          model: The model to be used for the rerank request.
-
-              [See all of Together AI's rerank models](https://docs.together.ai/docs/serverless-models#rerank-models)
-
-          query: The search query to be used for ranking.
-
-          rank_fields: List of keys in the JSON Object document to rank by. Defaults to use all
-              supplied keys for ranking.
-
-          return_documents: Whether to return supplied documents with the response.
-
-          top_n: The number of top results to return.
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return await self.post(
-            "/rerank",
-            body=await async_maybe_transform(
-                {
-                    "documents": documents,
-                    "model": model,
-                    "query": query,
-                    "rank_fields": rank_fields,
-                    "return_documents": return_documents,
-                    "top_n": top_n,
-                },
-                client_rerank_params.ClientRerankParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=RerankResponse,
-        )
-
     @override
     def _make_status_error(
         self,
@@ -618,12 +480,9 @@ class TogetherWithRawResponse:
         self.jobs = jobs.JobsResourceWithRawResponse(client.jobs)
         self.endpoints = endpoints.EndpointsResourceWithRawResponse(client.endpoints)
         self.hardware = hardware.HardwareResourceWithRawResponse(client.hardware)
+        self.rerank = rerank.RerankResourceWithRawResponse(client.rerank)
         self.batches = batches.BatchesResourceWithRawResponse(client.batches)
         self.evals = evals.EvalsResourceWithRawResponse(client.evals)
-
-        self.rerank = to_raw_response_wrapper(
-            client.rerank,
-        )
 
 
 class AsyncTogetherWithRawResponse:
@@ -641,12 +500,9 @@ class AsyncTogetherWithRawResponse:
         self.jobs = jobs.AsyncJobsResourceWithRawResponse(client.jobs)
         self.endpoints = endpoints.AsyncEndpointsResourceWithRawResponse(client.endpoints)
         self.hardware = hardware.AsyncHardwareResourceWithRawResponse(client.hardware)
+        self.rerank = rerank.AsyncRerankResourceWithRawResponse(client.rerank)
         self.batches = batches.AsyncBatchesResourceWithRawResponse(client.batches)
         self.evals = evals.AsyncEvalsResourceWithRawResponse(client.evals)
-
-        self.rerank = async_to_raw_response_wrapper(
-            client.rerank,
-        )
 
 
 class TogetherWithStreamedResponse:
@@ -664,12 +520,9 @@ class TogetherWithStreamedResponse:
         self.jobs = jobs.JobsResourceWithStreamingResponse(client.jobs)
         self.endpoints = endpoints.EndpointsResourceWithStreamingResponse(client.endpoints)
         self.hardware = hardware.HardwareResourceWithStreamingResponse(client.hardware)
+        self.rerank = rerank.RerankResourceWithStreamingResponse(client.rerank)
         self.batches = batches.BatchesResourceWithStreamingResponse(client.batches)
         self.evals = evals.EvalsResourceWithStreamingResponse(client.evals)
-
-        self.rerank = to_streamed_response_wrapper(
-            client.rerank,
-        )
 
 
 class AsyncTogetherWithStreamedResponse:
@@ -689,12 +542,9 @@ class AsyncTogetherWithStreamedResponse:
         self.jobs = jobs.AsyncJobsResourceWithStreamingResponse(client.jobs)
         self.endpoints = endpoints.AsyncEndpointsResourceWithStreamingResponse(client.endpoints)
         self.hardware = hardware.AsyncHardwareResourceWithStreamingResponse(client.hardware)
+        self.rerank = rerank.AsyncRerankResourceWithStreamingResponse(client.rerank)
         self.batches = batches.AsyncBatchesResourceWithStreamingResponse(client.batches)
         self.evals = evals.AsyncEvalsResourceWithStreamingResponse(client.evals)
-
-        self.rerank = async_to_streamed_response_wrapper(
-            client.rerank,
-        )
 
 
 Client = Together

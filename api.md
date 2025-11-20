@@ -1,15 +1,3 @@
-# Together
-
-Types:
-
-```python
-from together.types import RerankResponse
-```
-
-Methods:
-
-- <code title="post /rerank">client.<a href="./src/together/_client.py">rerank</a>(\*\*<a href="src/together/types/client_rerank_params.py">params</a>) -> <a href="./src/together/types/rerank_response.py">RerankResponse</a></code>
-
 # Chat
 
 ## Completions
@@ -267,6 +255,18 @@ from together.types import HardwareListResponse
 Methods:
 
 - <code title="get /hardware">client.hardware.<a href="./src/together/resources/hardware.py">list</a>(\*\*<a href="src/together/types/hardware_list_params.py">params</a>) -> <a href="./src/together/types/hardware_list_response.py">HardwareListResponse</a></code>
+
+# Rerank
+
+Types:
+
+```python
+from together.types import RerankCreateResponse
+```
+
+Methods:
+
+- <code title="post /rerank">client.rerank.<a href="./src/together/resources/rerank.py">create</a>(\*\*<a href="src/together/types/rerank_create_params.py">params</a>) -> <a href="./src/together/types/rerank_create_response.py">RerankCreateResponse</a></code>
 
 # Batches
 

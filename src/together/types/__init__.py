@@ -18,7 +18,6 @@ from .evaluation_job import EvaluationJob as EvaluationJob
 from .image_data_b64 import ImageDataB64 as ImageDataB64
 from .image_data_url import ImageDataURL as ImageDataURL
 from .fine_tune_event import FineTuneEvent as FineTuneEvent
-from .rerank_response import RerankResponse as RerankResponse
 from .completion_chunk import CompletionChunk as CompletionChunk
 from .eval_list_params import EvalListParams as EvalListParams
 from .execute_response import ExecuteResponse as ExecuteResponse
@@ -40,13 +39,13 @@ from .model_upload_params import ModelUploadParams as ModelUploadParams
 from .training_method_dpo import TrainingMethodDpo as TrainingMethodDpo
 from .training_method_sft import TrainingMethodSft as TrainingMethodSft
 from .video_create_params import VideoCreateParams as VideoCreateParams
-from .client_rerank_params import ClientRerankParams as ClientRerankParams
 from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .eval_create_response import EvalCreateResponse as EvalCreateResponse
 from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .eval_update_response import EvalUpdateResponse as EvalUpdateResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .hardware_list_params import HardwareListParams as HardwareListParams
+from .rerank_create_params import RerankCreateParams as RerankCreateParams
 from .batch_cancel_response import BatchCancelResponse as BatchCancelResponse
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
@@ -58,6 +57,7 @@ from .endpoint_list_response import EndpointListResponse as EndpointListResponse
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
 from .file_retrieve_response import FileRetrieveResponse as FileRetrieveResponse
 from .hardware_list_response import HardwareListResponse as HardwareListResponse
+from .rerank_create_response import RerankCreateResponse as RerankCreateResponse
 from .batch_retrieve_response import BatchRetrieveResponse as BatchRetrieveResponse
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
