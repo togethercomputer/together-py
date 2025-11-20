@@ -177,9 +177,9 @@ class TestFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_method_download(self, client: Together, respx_mock: MockRouter) -> None:
+    def test_method_content(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        fine_tuning = client.fine_tuning.download(
+        fine_tuning = client.fine_tuning.content(
             ft_id="ft_id",
         )
         assert fine_tuning.is_closed
@@ -189,9 +189,9 @@ class TestFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_method_download_with_all_params(self, client: Together, respx_mock: MockRouter) -> None:
+    def test_method_content_with_all_params(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        fine_tuning = client.fine_tuning.download(
+        fine_tuning = client.fine_tuning.content(
             ft_id="ft_id",
             checkpoint="merged",
             checkpoint_step=0,
@@ -203,10 +203,10 @@ class TestFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_raw_response_download(self, client: Together, respx_mock: MockRouter) -> None:
+    def test_raw_response_content(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
-        fine_tuning = client.fine_tuning.with_raw_response.download(
+        fine_tuning = client.fine_tuning.with_raw_response.content(
             ft_id="ft_id",
         )
 
@@ -217,9 +217,9 @@ class TestFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    def test_streaming_response_download(self, client: Together, respx_mock: MockRouter) -> None:
+    def test_streaming_response_content(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        with client.fine_tuning.with_streaming_response.download(
+        with client.fine_tuning.with_streaming_response.content(
             ft_id="ft_id",
         ) as fine_tuning:
             assert not fine_tuning.is_closed
@@ -458,9 +458,9 @@ class TestAsyncFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_method_download(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+    async def test_method_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        fine_tuning = await async_client.fine_tuning.download(
+        fine_tuning = await async_client.fine_tuning.content(
             ft_id="ft_id",
         )
         assert fine_tuning.is_closed
@@ -470,9 +470,9 @@ class TestAsyncFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_method_download_with_all_params(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+    async def test_method_content_with_all_params(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        fine_tuning = await async_client.fine_tuning.download(
+        fine_tuning = await async_client.fine_tuning.content(
             ft_id="ft_id",
             checkpoint="merged",
             checkpoint_step=0,
@@ -484,10 +484,10 @@ class TestAsyncFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_raw_response_download(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+    async def test_raw_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
-        fine_tuning = await async_client.fine_tuning.with_raw_response.download(
+        fine_tuning = await async_client.fine_tuning.with_raw_response.content(
             ft_id="ft_id",
         )
 
@@ -498,9 +498,9 @@ class TestAsyncFineTuning:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_streaming_response_download(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+    async def test_streaming_response_content(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.get("/finetune/download").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        async with async_client.fine_tuning.with_streaming_response.download(
+        async with async_client.fine_tuning.with_streaming_response.content(
             ft_id="ft_id",
         ) as fine_tuning:
             assert not fine_tuning.is_closed
