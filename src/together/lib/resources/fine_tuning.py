@@ -7,7 +7,7 @@ from rich import print as rprint
 from together.lib.utils import log_warn_once
 
 if TYPE_CHECKING:
-    from together import Together
+    from together import Together, AsyncTogether
 from together.lib.types.fine_tuning import (
     TrainingType,
     FinetuneRequest,
@@ -248,6 +248,28 @@ def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
     """
 
     response = client.get(
+        "/fine-tunes/models/limits",
+        cast_to=FinetuneTrainingLimits,
+        options={
+            "params": {"model_name": model},
+        },
+    )
+
+    return response
+
+
+async def async_get_model_limits(client: AsyncTogether, model: str) -> FinetuneTrainingLimits:
+    """
+    Requests training limits for a specific model
+
+    Args:
+        model_name (str): Name of the model to get limits for
+
+    Returns:
+    FinetuneTrainingLimits: Object containing training limits for the model
+    """
+
+    response = await client.get(
         "/fine-tunes/models/limits",
         cast_to=FinetuneTrainingLimits,
         options={
