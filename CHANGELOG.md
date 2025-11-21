@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.0-alpha.2 (2025-11-21)
+
+Full Changelog: [v2.0.0-alpha.1...v2.0.0-alpha.2](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.1...v2.0.0-alpha.2)
+
+### ⚠ BREAKING CHANGES
+
+* **api:** Change call signature for `audio.create` to `audio.speech.create` to match spec with python library and add space for future APIs
+
+### Features
+
+* **api:** api update ([9d5e1a2](https://github.com/togethercomputer/together-py/commit/9d5e1a2a8fe09f01ac9ed984361139064d42a2d8))
+* **api:** Change TTS call signature ([251c911](https://github.com/togethercomputer/together-py/commit/251c911e4b6562fb1751ae2a880e7ff6bb2e7bd2))
+
 ## 2.0.0-alpha.1 (2025-11-21)
 
 Full Changelog: [v0.1.0-alpha.28...v2.0.0-alpha.1](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.28...v2.0.0-alpha.1)

@@ -20,28 +20,28 @@ from together._response import (
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
-class TestAudio:
+class TestSpeech:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio = client.audio.create(
+        speech = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
         )
-        assert audio.is_closed
-        assert audio.json() == {"foo": "bar"}
-        assert cast(Any, audio.is_closed) is True
-        assert isinstance(audio, BinaryAPIResponse)
+        assert speech.is_closed
+        assert speech.json() == {"foo": "bar"}
+        assert cast(Any, speech.is_closed) is True
+        assert isinstance(speech, BinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_with_all_params_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio = client.audio.create(
+        speech = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
@@ -51,62 +51,62 @@ class TestAudio:
             sample_rate=0,
             stream=False,
         )
-        assert audio.is_closed
-        assert audio.json() == {"foo": "bar"}
-        assert cast(Any, audio.is_closed) is True
-        assert isinstance(audio, BinaryAPIResponse)
+        assert speech.is_closed
+        assert speech.json() == {"foo": "bar"}
+        assert cast(Any, speech.is_closed) is True
+        assert isinstance(speech, BinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
-        audio = client.audio.with_raw_response.create(
+        speech = client.audio.speech.with_raw_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
         )
 
-        assert audio.is_closed is True
-        assert audio.http_request.headers.get("X-Stainless-Lang") == "python"
-        assert audio.json() == {"foo": "bar"}
-        assert isinstance(audio, BinaryAPIResponse)
+        assert speech.is_closed is True
+        assert speech.http_request.headers.get("X-Stainless-Lang") == "python"
+        assert speech.json() == {"foo": "bar"}
+        assert isinstance(speech, BinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_create_overload_1(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        with client.audio.with_streaming_response.create(
+        with client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
-        ) as audio:
-            assert not audio.is_closed
-            assert audio.http_request.headers.get("X-Stainless-Lang") == "python"
+        ) as speech:
+            assert not speech.is_closed
+            assert speech.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            assert audio.json() == {"foo": "bar"}
-            assert cast(Any, audio.is_closed) is True
-            assert isinstance(audio, StreamedBinaryAPIResponse)
+            assert speech.json() == {"foo": "bar"}
+            assert cast(Any, speech.is_closed) is True
+            assert isinstance(speech, StreamedBinaryAPIResponse)
 
-        assert cast(Any, audio.is_closed) is True
+        assert cast(Any, speech.is_closed) is True
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio_stream = client.audio.create(
+        speech_stream = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
             voice="voice",
         )
-        audio_stream.response.close()
+        speech_stream.response.close()
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_method_create_with_all_params_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio_stream = client.audio.create(
+        speech_stream = client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
@@ -116,45 +116,45 @@ class TestAudio:
             response_format="mp3",
             sample_rate=0,
         )
-        audio_stream.response.close()
+        speech_stream.response.close()
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_raw_response_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
-        audio_stream = client.audio.with_raw_response.create(
+        speech_stream = client.audio.speech.with_raw_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
             voice="voice",
         )
 
-        assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
-        assert audio_stream.json() == {"foo": "bar"}
-        assert isinstance(audio_stream, BinaryAPIResponse)
+        assert speech_stream.http_request.headers.get("X-Stainless-Lang") == "python"
+        assert speech_stream.json() == {"foo": "bar"}
+        assert isinstance(speech_stream, BinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     def test_streaming_response_create_overload_2(self, client: Together, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        with client.audio.with_streaming_response.create(
+        with client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
             voice="voice",
-        ) as audio_stream:
-            assert not audio_stream.is_closed
-            assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
+        ) as speech_stream:
+            assert not speech_stream.is_closed
+            assert speech_stream.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            assert audio_stream.json() == {"foo": "bar"}
-            assert cast(Any, audio_stream.is_closed) is True
-            assert isinstance(audio_stream, StreamedBinaryAPIResponse)
+            assert speech_stream.json() == {"foo": "bar"}
+            assert cast(Any, speech_stream.is_closed) is True
+            assert isinstance(speech_stream, StreamedBinaryAPIResponse)
 
-        assert cast(Any, audio_stream.is_closed) is True
+        assert cast(Any, speech_stream.is_closed) is True
 
 
-class TestAsyncAudio:
+class TestAsyncSpeech:
     parametrize = pytest.mark.parametrize(
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
@@ -163,15 +163,15 @@ class TestAsyncAudio:
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_overload_1(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio = await async_client.audio.create(
+        speech = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
         )
-        assert audio.is_closed
-        assert await audio.json() == {"foo": "bar"}
-        assert cast(Any, audio.is_closed) is True
-        assert isinstance(audio, AsyncBinaryAPIResponse)
+        assert speech.is_closed
+        assert await speech.json() == {"foo": "bar"}
+        assert cast(Any, speech.is_closed) is True
+        assert isinstance(speech, AsyncBinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -179,7 +179,7 @@ class TestAsyncAudio:
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio = await async_client.audio.create(
+        speech = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
@@ -189,26 +189,26 @@ class TestAsyncAudio:
             sample_rate=0,
             stream=False,
         )
-        assert audio.is_closed
-        assert await audio.json() == {"foo": "bar"}
-        assert cast(Any, audio.is_closed) is True
-        assert isinstance(audio, AsyncBinaryAPIResponse)
+        assert speech.is_closed
+        assert await speech.json() == {"foo": "bar"}
+        assert cast(Any, speech.is_closed) is True
+        assert isinstance(speech, AsyncBinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_create_overload_1(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
-        audio = await async_client.audio.with_raw_response.create(
+        speech = await async_client.audio.speech.with_raw_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
         )
 
-        assert audio.is_closed is True
-        assert audio.http_request.headers.get("X-Stainless-Lang") == "python"
-        assert await audio.json() == {"foo": "bar"}
-        assert isinstance(audio, AsyncBinaryAPIResponse)
+        assert speech.is_closed is True
+        assert speech.http_request.headers.get("X-Stainless-Lang") == "python"
+        assert await speech.json() == {"foo": "bar"}
+        assert isinstance(speech, AsyncBinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -216,31 +216,31 @@ class TestAsyncAudio:
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        async with async_client.audio.with_streaming_response.create(
+        async with async_client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             voice="voice",
-        ) as audio:
-            assert not audio.is_closed
-            assert audio.http_request.headers.get("X-Stainless-Lang") == "python"
+        ) as speech:
+            assert not speech.is_closed
+            assert speech.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            assert await audio.json() == {"foo": "bar"}
-            assert cast(Any, audio.is_closed) is True
-            assert isinstance(audio, AsyncStreamedBinaryAPIResponse)
+            assert await speech.json() == {"foo": "bar"}
+            assert cast(Any, speech.is_closed) is True
+            assert isinstance(speech, AsyncStreamedBinaryAPIResponse)
 
-        assert cast(Any, audio.is_closed) is True
+        assert cast(Any, speech.is_closed) is True
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_method_create_overload_2(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio_stream = await async_client.audio.create(
+        speech_stream = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
             voice="voice",
         )
-        await audio_stream.response.aclose()
+        await speech_stream.response.aclose()
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -248,7 +248,7 @@ class TestAsyncAudio:
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        audio_stream = await async_client.audio.create(
+        speech_stream = await async_client.audio.speech.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
@@ -258,23 +258,23 @@ class TestAsyncAudio:
             response_format="mp3",
             sample_rate=0,
         )
-        await audio_stream.response.aclose()
+        await speech_stream.response.aclose()
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
     async def test_raw_response_create_overload_2(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
 
-        audio_stream = await async_client.audio.with_raw_response.create(
+        speech_stream = await async_client.audio.speech.with_raw_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
             voice="voice",
         )
 
-        assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
-        assert await audio_stream.json() == {"foo": "bar"}
-        assert isinstance(audio_stream, AsyncBinaryAPIResponse)
+        assert speech_stream.http_request.headers.get("X-Stainless-Lang") == "python"
+        assert await speech_stream.json() == {"foo": "bar"}
+        assert isinstance(speech_stream, AsyncBinaryAPIResponse)
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -282,17 +282,17 @@ class TestAsyncAudio:
         self, async_client: AsyncTogether, respx_mock: MockRouter
     ) -> None:
         respx_mock.post("/audio/speech").mock(return_value=httpx.Response(200, json={"foo": "bar"}))
-        async with async_client.audio.with_streaming_response.create(
+        async with async_client.audio.speech.with_streaming_response.create(
             input="input",
             model="canopylabs/orpheus-3b-0.1-ft",
             stream=True,
             voice="voice",
-        ) as audio_stream:
-            assert not audio_stream.is_closed
-            assert audio_stream.http_request.headers.get("X-Stainless-Lang") == "python"
+        ) as speech_stream:
+            assert not speech_stream.is_closed
+            assert speech_stream.http_request.headers.get("X-Stainless-Lang") == "python"
 
-            assert await audio_stream.json() == {"foo": "bar"}
-            assert cast(Any, audio_stream.is_closed) is True
-            assert isinstance(audio_stream, AsyncStreamedBinaryAPIResponse)
+            assert await speech_stream.json() == {"foo": "bar"}
+            assert cast(Any, speech_stream.is_closed) is True
+            assert isinstance(speech_stream, AsyncStreamedBinaryAPIResponse)
 
-        assert cast(Any, audio_stream.is_closed) is True
+        assert cast(Any, speech_stream.is_closed) is True

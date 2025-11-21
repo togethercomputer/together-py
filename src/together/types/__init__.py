@@ -30,7 +30,6 @@ from .eval_list_response import EvalListResponse as EvalListResponse
 from .eval_update_params import EvalUpdateParams as EvalUpdateParams
 from .file_list_response import FileListResponse as FileListResponse
 from .full_training_type import FullTrainingType as FullTrainingType
-from .audio_create_params import AudioCreateParams as AudioCreateParams
 from .batch_create_params import BatchCreateParams as BatchCreateParams
 from .batch_list_response import BatchListResponse as BatchListResponse
 from .lo_ra_training_type import LoRaTrainingType as LoRaTrainingType

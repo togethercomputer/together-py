@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Union
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["AudioCreateParamsBase", "AudioCreateParamsNonStreaming", "AudioCreateParamsStreaming"]
+__all__ = ["SpeechCreateParamsBase", "SpeechCreateParamsNonStreaming", "SpeechCreateParamsStreaming"]
 
 
-class AudioCreateParamsBase(TypedDict, total=False):
+class SpeechCreateParamsBase(TypedDict, total=False):
     input: Required[str]
     """Input text to generate the audio for"""
 
@@ -46,7 +46,7 @@ class AudioCreateParamsBase(TypedDict, total=False):
     the only supported format is raw.
     """
 
-    sample_rate: float
+    sample_rate: int
     """Sampling rate to use for the output audio.
 
     The default sampling rate for canopylabs/orpheus-3b-0.1-ft and
@@ -54,7 +54,7 @@ class AudioCreateParamsBase(TypedDict, total=False):
     """
 
 
-class AudioCreateParamsNonStreaming(AudioCreateParamsBase, total=False):
+class SpeechCreateParamsNonStreaming(SpeechCreateParamsBase, total=False):
     stream: Literal[False]
     """
     If true, output is streamed for several characters at a time instead of waiting
@@ -63,7 +63,7 @@ class AudioCreateParamsNonStreaming(AudioCreateParamsBase, total=False):
     """
 
 
-class AudioCreateParamsStreaming(AudioCreateParamsBase):
+class SpeechCreateParamsStreaming(SpeechCreateParamsBase):
     stream: Required[Literal[True]]
     """
     If true, output is streamed for several characters at a time instead of waiting
@@ -72,4 +72,4 @@ class AudioCreateParamsStreaming(AudioCreateParamsBase):
     """
 
 
-AudioCreateParams = Union[AudioCreateParamsNonStreaming, AudioCreateParamsStreaming]
+SpeechCreateParams = Union[SpeechCreateParamsNonStreaming, SpeechCreateParamsStreaming]
