@@ -156,9 +156,11 @@ Types:
 from together.types import AudioFile, AudioSpeechStreamChunk
 ```
 
+## Speech
+
 Methods:
 
-- <code title="post /audio/speech">client.audio.<a href="./src/together/resources/audio/audio.py">create</a>(\*\*<a href="src/together/types/audio_create_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="post /audio/speech">client.audio.speech.<a href="./src/together/resources/audio/speech.py">create</a>(\*\*<a href="src/together/types/audio/speech_create_params.py">params</a>) -> BinaryAPIResponse</code>
 
 ## Voices
 
