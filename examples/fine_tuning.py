@@ -26,5 +26,5 @@ for e in model_events.data:
     print(e)
 
 # download the model
-downloaded = client.fine_tuning.download(ft_id=fine_tune_id)
+downloaded = client.fine_tuning.content(ft_id=fine_tune_id)
 print(downloaded)
