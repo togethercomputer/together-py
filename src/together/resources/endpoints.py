@@ -53,6 +53,7 @@ class EndpointsResource(SyncAPIResource):
         autoscaling: AutoscalingParam,
         hardware: str,
         model: str,
+        availability_zone: str | Omit = omit,
         disable_prompt_cache: bool | Omit = omit,
         disable_speculative_decoding: bool | Omit = omit,
         display_name: str | Omit = omit,
@@ -77,6 +78,8 @@ class EndpointsResource(SyncAPIResource):
           hardware: The hardware configuration to use for this endpoint
 
           model: The model to deploy on this endpoint
+
+          availability_zone: Create the endpoint in a specified availability zone (e.g., us-central-4b)
 
           disable_prompt_cache: Whether to disable the prompt cache for this endpoint
 
@@ -105,6 +108,7 @@ class EndpointsResource(SyncAPIResource):
                     "autoscaling": autoscaling,
                     "hardware": hardware,
                     "model": model,
+                    "availability_zone": availability_zone,
                     "disable_prompt_cache": disable_prompt_cache,
                     "disable_speculative_decoding": disable_speculative_decoding,
                     "display_name": display_name,
@@ -343,6 +347,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         autoscaling: AutoscalingParam,
         hardware: str,
         model: str,
+        availability_zone: str | Omit = omit,
         disable_prompt_cache: bool | Omit = omit,
         disable_speculative_decoding: bool | Omit = omit,
         display_name: str | Omit = omit,
@@ -367,6 +372,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
           hardware: The hardware configuration to use for this endpoint
 
           model: The model to deploy on this endpoint
+
+          availability_zone: Create the endpoint in a specified availability zone (e.g., us-central-4b)
 
           disable_prompt_cache: Whether to disable the prompt cache for this endpoint
 
@@ -395,6 +402,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
                     "autoscaling": autoscaling,
                     "hardware": hardware,
                     "model": model,
+                    "availability_zone": availability_zone,
                     "disable_prompt_cache": disable_prompt_cache,
                     "disable_speculative_decoding": disable_speculative_decoding,
                     "display_name": display_name,

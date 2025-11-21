@@ -7,10 +7,10 @@ from typing_extensions import Literal, Required, TypedDict
 
 from .._types import SequenceNotStr
 
-__all__ = ["ClientRerankParams"]
+__all__ = ["RerankCreateParams"]
 
 
-class ClientRerankParams(TypedDict, total=False):
+class RerankCreateParams(TypedDict, total=False):
     documents: Required[Union[Iterable[Dict[str, object]], SequenceNotStr[str]]]
     """List of documents, which can be either strings or objects."""
 

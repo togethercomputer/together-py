@@ -6,7 +6,7 @@ from typing_extensions import Literal
 from .._models import BaseModel
 from .chat.chat_completion_usage import ChatCompletionUsage
 
-__all__ = ["RerankResponse", "Result", "ResultDocument"]
+__all__ = ["RerankCreateResponse", "Result", "ResultDocument"]
 
 
 class ResultDocument(BaseModel):
@@ -21,7 +21,7 @@ class Result(BaseModel):
     relevance_score: float
 
 
-class RerankResponse(BaseModel):
+class RerankCreateResponse(BaseModel):
     model: str
     """The model to be used for the rerank request."""
 

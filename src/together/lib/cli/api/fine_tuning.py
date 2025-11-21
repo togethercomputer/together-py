@@ -20,7 +20,7 @@ from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
 from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
-from together.lib.resources.fine_tuning import get_model_limits, create_fine_tuning_request
+from together.lib.resources.fine_tuning import get_model_limits
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
@@ -287,13 +287,7 @@ def create(
     if from_checkpoint is not None:
         model_name = from_checkpoint.split(":")[0]
 
-    if model_name is None:
-        raise click.BadParameter("You must specify a model or a checkpoint")
-
-    model_limits = get_model_limits(
-        client,
-        model=model_name,
-    )
+    model_limits = get_model_limits(client, str(model_name))
 
     if lora:
         if model_limits.lora_training is None:
@@ -304,9 +298,9 @@ def create(
         }
 
         for arg in default_values:
-            arg_source = ctx.get_parameter_source("arg")
+            arg_source = ctx.get_parameter_source("arg")  # type: ignore[attr-defined]
             if arg_source == ParameterSource.DEFAULT:
-                training_args[str(arg)] = default_values[str(arg_source)]
+                training_args[arg] = default_values[str(arg_source)]
 
         if ctx.get_parameter_source("lora_alpha") == ParameterSource.DEFAULT:  # type: ignore[attr-defined]
             training_args["lora_alpha"] = training_args["lora_r"] * 2
@@ -330,18 +324,16 @@ def create(
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
     if confirm or click.confirm(_CONFIRMATION_MESSAGE, default=True, show_default=True):
-        params = create_fine_tuning_request(
-            model_limits=model_limits,
+        response = client.fine_tuning.create(
             **training_args,
+            verbose=True,
         )
-        rprint("Submitting a fine-tuning job with the following parameters:", params)
-        response = client.fine_tuning.create(**params)
 
         report_string = f"Successfully submitted a fine-tuning job {response.id}"
         # created_at reports UTC time, we use .astimezone() to convert to local time
         formatted_time = response.created_at.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
         report_string += f" at {formatted_time}"
-        click.echo(report_string)
+        rprint(report_string)
     else:
         click.echo("No confirmation received, stopping job launch")
 

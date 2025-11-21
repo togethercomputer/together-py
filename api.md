@@ -1,15 +1,3 @@
-# Together
-
-Types:
-
-```python
-from together.types import RerankResponse
-```
-
-Methods:
-
-- <code title="post /rerank">client.<a href="./src/together/_client.py">rerank</a>(\*\*<a href="src/together/types/client_rerank_params.py">params</a>) -> <a href="./src/together/types/rerank_response.py">RerankResponse</a></code>
-
 # Chat
 
 ## Completions
@@ -93,7 +81,6 @@ from together.types import (
     LrScheduler,
     TrainingMethodDpo,
     TrainingMethodSft,
-    FineTuningCreateResponse,
     FineTuningListResponse,
     FineTuningDeleteResponse,
     FineTuningCancelResponse,
@@ -104,12 +91,11 @@ from together.types import (
 
 Methods:
 
-- <code title="post /fine-tunes">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">create</a>(\*\*<a href="src/together/types/fine_tuning_create_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_create_response.py">FineTuningCreateResponse</a></code>
 - <code title="get /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve</a>(id) -> <a href="./src/together/types/fine_tune.py">FineTune</a></code>
 - <code title="get /fine-tunes">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list</a>() -> <a href="./src/together/types/fine_tuning_list_response.py">FineTuningListResponse</a></code>
 - <code title="delete /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">delete</a>(id, \*\*<a href="src/together/types/fine_tuning_delete_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_delete_response.py">FineTuningDeleteResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">cancel</a>(id) -> <a href="./src/together/types/fine_tuning_cancel_response.py">FineTuningCancelResponse</a></code>
-- <code title="get /finetune/download">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">download</a>(\*\*<a href="src/together/types/fine_tuning_download_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="get /finetune/download">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">content</a>(\*\*<a href="src/together/types/fine_tuning_content_params.py">params</a>) -> BinaryAPIResponse</code>
 - <code title="get /fine-tunes/{id}/checkpoints">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_checkpoints</a>(id) -> <a href="./src/together/types/fine_tuning_list_checkpoints_response.py">FineTuningListCheckpointsResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_events</a>(id) -> <a href="./src/together/types/fine_tuning_list_events_response.py">FineTuningListEventsResponse</a></code>
 
@@ -147,7 +133,7 @@ from together.types import ImageDataB64, ImageDataURL, ImageFile
 
 Methods:
 
-- <code title="post /images/generations">client.images.<a href="./src/together/resources/images.py">create</a>(\*\*<a href="src/together/types/image_create_params.py">params</a>) -> <a href="./src/together/types/image_file.py">ImageFile</a></code>
+- <code title="post /images/generations">client.images.<a href="./src/together/resources/images.py">generate</a>(\*\*<a href="src/together/types/image_generate_params.py">params</a>) -> <a href="./src/together/types/image_file.py">ImageFile</a></code>
 
 # Videos
 
@@ -269,6 +255,18 @@ from together.types import HardwareListResponse
 Methods:
 
 - <code title="get /hardware">client.hardware.<a href="./src/together/resources/hardware.py">list</a>(\*\*<a href="src/together/types/hardware_list_params.py">params</a>) -> <a href="./src/together/types/hardware_list_response.py">HardwareListResponse</a></code>
+
+# Rerank
+
+Types:
+
+```python
+from together.types import RerankCreateResponse
+```
+
+Methods:
+
+- <code title="post /rerank">client.rerank.<a href="./src/together/resources/rerank.py">create</a>(\*\*<a href="src/together/types/rerank_create_params.py">params</a>) -> <a href="./src/together/types/rerank_create_response.py">RerankCreateResponse</a></code>
 
 # Batches
 
