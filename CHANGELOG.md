@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.0.0-alpha.1 (2025-11-21)
+
+Full Changelog: [v0.1.0-alpha.28...v2.0.0-alpha.1](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.28...v2.0.0-alpha.1)
+
+### ⚠ BREAKING CHANGES
+
+* **api:** Update method signature for reranking to `rerank.create()`
+* **api:** Change Fine Tuning method name from `download()` to `content()` to align with other namespaces
+* **api:** For the TS SDK the `images.create` is now `images.generate`
+
+### Features
+
+* **api:** api update ([921fa59](https://github.com/togethercomputer/together-py/commit/921fa591a5a9c70f96d457a7b59749dfdfb6d4d6))
+* **api:** Change fine tuning download method to `.create` ([aa27907](https://github.com/togethercomputer/together-py/commit/aa279076c524956e204cb68b7424048a4f93a17d))
+* **api:** Change image creation signature to `images.generate` ([a6e3ad7](https://github.com/togethercomputer/together-py/commit/a6e3ad792393be978b123c87707afe779ef8df34))
+* **api:** Change rerank method signature ([338c415](https://github.com/togethercomputer/together-py/commit/338c415d1cee04520413717ee821f47a64316211))
+* **api:** Port finetuning create code from together-python ([#176](https://github.com/togethercomputer/together-py/issues/176)) ([ef3bd52](https://github.com/togethercomputer/together-py/commit/ef3bd5245ee254269653ff8e6db1651cfcf89c6d))
+
+
+### Chores
+
+* **api:** Remove auto-generated fine_tuning.create method from Python SDK ([c533f29](https://github.com/togethercomputer/together-py/commit/c533f29e2b94d5d9ca97ed50c181dae0fc2dcd7b))
+* Fix examples ([35422cb](https://github.com/togethercomputer/together-py/commit/35422cb1eef730a04117d83c8df08442461f5ec1))
+
 ## 0.1.0-alpha.28 (2025-11-18)
 
 Full Changelog: [v0.1.0-alpha.27...v0.1.0-alpha.28](https://github.com/togethercomputer/together-py/compare/v0.1.0-alpha.27...v0.1.0-alpha.28)
