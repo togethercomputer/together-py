@@ -46,7 +46,7 @@ class SpeechCreateParamsBase(TypedDict, total=False):
     the only supported format is raw.
     """
 
-    sample_rate: float
+    sample_rate: int
     """Sampling rate to use for the output audio.
 
     The default sampling rate for canopylabs/orpheus-3b-0.1-ft and

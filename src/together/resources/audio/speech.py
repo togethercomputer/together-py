@@ -60,7 +60,7 @@ class SpeechResource(SyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         stream: Literal[False] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -128,7 +128,7 @@ class SpeechResource(SyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -195,7 +195,7 @@ class SpeechResource(SyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -261,7 +261,7 @@ class SpeechResource(SyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         stream: Literal[False] | Literal[True] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -328,7 +328,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         stream: Literal[False] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -396,7 +396,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -463,7 +463,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -529,7 +529,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
-        sample_rate: float | Omit = omit,
+        sample_rate: int | Omit = omit,
         stream: Literal[False] | Literal[True] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
