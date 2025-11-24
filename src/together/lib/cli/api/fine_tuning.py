@@ -343,12 +343,12 @@ def create(
             training_method=training_method,
         )
 
-        proceed = \
-            confirm or \
-            finetune_price_estimation_result.allowed_to_proceed or \
-            (
-                not finetune_price_estimation_result.allowed_to_proceed and \
-                click.confirm(
+        proceed = (
+            confirm
+            or finetune_price_estimation_result.allowed_to_proceed
+            or (
+                not finetune_price_estimation_result.allowed_to_proceed
+                and click.confirm(
                     click.style(
                         _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(
                             finetune_price_estimation_result.estimated_total_price
@@ -359,6 +359,7 @@ def create(
                     show_default=True,
                 )
             )
+        )
 
         if proceed:
             response = client.fine_tuning.create(

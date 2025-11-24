@@ -30,10 +30,10 @@ from .._base_client import make_request_options
 from ..types.fine_tune import FineTune
 from ..lib.types.fine_tuning import FinetuneResponse, FinetuneTrainingLimits, FinetunePriceEstimationResponse
 from ..lib.resources.fine_tuning import (
-    get_model_limits, 
+    get_model_limits,
     async_get_model_limits,
-    create_finetune_price_estimation_request,
     create_finetune_request,
+    create_finetune_price_estimation_request,
 )
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
@@ -229,7 +229,7 @@ class FineTuningResource(SyncAPIResource):
             hf_api_token=hf_api_token,
             hf_output_repo_name=hf_output_repo_name,
         )
-        
+
         price_estimation_result = self.estimate_price(
             training_file=training_file,
             validation_file=validation_file,
@@ -247,9 +247,9 @@ class FineTuningResource(SyncAPIResource):
             )
             if not price_estimation_result.allowed_to_proceed:
                 rprint(
-                    "[red]" + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price
-                    ) + "[/red]",
+                    "[red]"
+                    + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
+                    + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
@@ -274,7 +274,6 @@ class FineTuningResource(SyncAPIResource):
         Estimate the price of a fine-tuning job
         """
 
-        
         finetune_price_estimation_request = create_finetune_price_estimation_request(
             training_file=training_file,
             validation_file=validation_file,
@@ -736,9 +735,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
             )
             if not price_estimation_result.allowed_to_proceed:
                 rprint(
-                    "[red]" + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price
-                    ) + "[/red]",
+                    "[red]"
+                    + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
+                    + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
@@ -763,7 +762,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
         Estimate the price of a fine-tuning job
         """
 
-        
         finetune_price_estimation_request = create_finetune_price_estimation_request(
             training_file=training_file,
             validation_file=validation_file,
