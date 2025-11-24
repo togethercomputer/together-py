@@ -1558,9 +1558,6 @@ dependencies = [
     { name = "httpx" },
     { name = "pillow", version = "11.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "pillow", version = "12.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
-    { name = "pyarrow", version = "21.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
-    { name = "pyarrow", version = "22.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
-    { name = "pyarrow-stubs" },
     { name = "pydantic", version = "1.10.22", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-8-together-pydantic-v1'" },
     { name = "pydantic", version = "2.10.3", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-8-together-pydantic-v2' or extra != 'group-8-together-pydantic-v1'" },
     { name = "sniffio" },
@@ -1576,9 +1573,15 @@ aiohttp = [
     { name = "aiohttp" },
     { name = "httpx-aiohttp" },
 ]
+pyarrow = [
+    { name = "pyarrow", version = "21.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+    { name = "pyarrow", version = "22.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+    { name = "pyarrow-stubs" },
+]
 
 [package.dev-dependencies]
 dev = [
+    { name = "aiohttp" },
     { name = "dirty-equals" },
     { name = "importlib-metadata" },
     { name = "mypy" },
@@ -1609,8 +1612,8 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.23.0,<1" },
     { name = "httpx-aiohttp", marker = "extra == 'aiohttp'", specifier = ">=0.1.9" },
     { name = "pillow", specifier = ">=10.4.0" },
-    { name = "pyarrow", specifier = ">=16.1.0" },
-    { name = "pyarrow-stubs", specifier = ">=10.0.1.7" },
+    { name = "pyarrow", marker = "extra == 'pyarrow'", specifier = ">=16.1.0" },
+    { name = "pyarrow-stubs", marker = "extra == 'pyarrow'" },
     { name = "pydantic", specifier = ">=1.9.0,<3" },
     { name = "sniffio" },
     { name = "tabulate", specifier = ">=0.9.0" },
@@ -1619,10 +1622,11 @@ requires-dist = [
     { name = "types-tqdm", specifier = ">=4.67.0.20250516" },
     { name = "typing-extensions", specifier = ">=4.10,<5" },
 ]
-provides-extras = ["aiohttp"]
+provides-extras = ["aiohttp", "pyarrow"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "aiohttp", specifier = ">=3.12.13" },
     { name = "dirty-equals", specifier = ">=0.6.0" },
     { name = "importlib-metadata", specifier = ">=6.7.0" },
     { name = "mypy" },

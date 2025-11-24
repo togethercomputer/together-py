@@ -473,7 +473,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                         if all(column in json_line for column in JSONL_REQUIRED_COLUMNS_MAP[possible_format]):
                             if current_format is None:
                                 current_format = possible_format
-                            elif current_format != possible_format:
+                            elif current_format != possible_format: # type: ignore[unreachable]
                                 raise InvalidFileFormatError(
                                     message="Found multiple dataset formats in the input file. "
                                     f"Got {current_format} and {possible_format} on line {idx + 1}.",
@@ -522,7 +522,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
 
                     if dataset_format is None:
                         dataset_format = current_format
-                    elif current_format != dataset_format:
+                    elif current_format != dataset_format: # type: ignore[unreachable]
                         raise InvalidFileFormatError(
                             message="All samples in the dataset must have the same dataset format. "
                             f"Got {dataset_format} for the first line and {current_format} "
@@ -530,7 +530,6 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                             line_number=idx + 1,
                             error_source="format",
                         )
-
             report_dict.update(_check_samples_count(file, report_dict, idx))
 
             report_dict["load_json"] = True
@@ -578,7 +577,7 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
         return report_dict
 
     try:
-        table = parquet.read_table(str(file), memory_map=True)
+        table = parquet.read_table(str(file), memory_map=True)  # type: ignore[reportUnknownMemberType]
     except ArrowInvalid:
         report_dict["load_parquet"] = (
             f"An exception has occurred when loading the Parquet file {file}. Please check the file for corruption. "
