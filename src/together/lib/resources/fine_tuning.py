@@ -264,6 +264,7 @@ def create_finetune_price_estimation_request(
     else:
         raise ValueError(f"Invalid training method: {training_method}. Must be 'sft' or 'dpo'")
 
+    training_type_cls: FullTrainingType | LoRATrainingType
     if training_type == "full":
         training_type_cls = FullTrainingType(type="Full")
     elif training_type == "lora":
