@@ -250,6 +250,7 @@ def create_finetune_price_estimation_request(
     Create a fine-tune price estimation request
     """
 
+    training_method_cls: TrainingMethodSFT | TrainingMethodDPO
     if training_method == "sft":
         training_method_cls = TrainingMethodSFT(train_on_inputs="auto")
     elif training_method == "dpo":
