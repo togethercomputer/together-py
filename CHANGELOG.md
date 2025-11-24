@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.0-alpha.3 (2025-11-24)
+
+Full Changelog: [v2.0.0-alpha.2...v2.0.0-alpha.3](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.2...v2.0.0-alpha.3)
+
+### Features
+
+* **api:** update via SDK Studio ([79346e8](https://github.com/togethercomputer/together-py/commit/79346e8254761d5f8059d0451c0cd3af7fa96aac))
+
+
+### Chores
+
+* **internal:** codegen related update ([ae73675](https://github.com/togethercomputer/together-py/commit/ae73675ce207c9c5304f1b77d74800fae673d53f))
+
 ## 2.0.0-alpha.2 (2025-11-21)
 
 Full Changelog: [v2.0.0-alpha.1...v2.0.0-alpha.2](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.1...v2.0.0-alpha.2)
