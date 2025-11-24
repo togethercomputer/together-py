@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-alpha.4 (2025-11-24)
+
+Full Changelog: [v2.0.0-alpha.3...v2.0.0-alpha.4](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.3...v2.0.0-alpha.4)
+
+### Chores
+
+* Run bootstrap on codebase ([399a559](https://github.com/togethercomputer/together-py/commit/399a55971beaf5f42f6bacd426996f8049f36441))
+
 ## 2.0.0-alpha.3 (2025-11-24)
 
 Full Changelog: [v2.0.0-alpha.2...v2.0.0-alpha.3](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.2...v2.0.0-alpha.3)
