@@ -85,7 +85,7 @@ class FinetuneEvent(BaseModel):
     # created at datetime stamp
     created_at: Union[str, None] = None
     # event log level
-    level: Union[FinetuneEventLevels, None] = None
+    level: Union[FinetuneEventLevels, str, None] = None
     # event message string
     message: Union[str, None] = None
     # event type
@@ -120,7 +120,20 @@ class LoRATrainingType(BaseModel):
     type: Literal["Lora"] = "Lora"
 
 
-TrainingType: TypeAlias = Union[FullTrainingType, LoRATrainingType]
+class UnknownTrainingType(BaseModel):
+    """
+    Catch-all for unknown training types (forward compatibility).
+    Accepts any training type not explicitly defined above.
+    """
+
+    type: str
+
+
+TrainingType: TypeAlias = Union[
+    FullTrainingType,
+    LoRATrainingType,
+    UnknownTrainingType,
+]
 
 
 class FinetuneFullTrainingLimits(BaseModel):
@@ -162,8 +175,19 @@ class TrainingMethodDPO(BaseModel):
     rpo_alpha: Union[float, None] = None
     simpo_gamma: Union[float, None] = None
 
+class TrainingMethodUnknown(BaseModel):
+    """
+    Catch-all for unknown training methods (forward compatibility).
+    Accepts any training method not explicitly defined above.
+    """
 
-TrainingMethod: TypeAlias = Union[TrainingMethodSFT, TrainingMethodDPO]
+    method: str
+
+TrainingMethod: TypeAlias = Union[
+    TrainingMethodSFT,
+    TrainingMethodDPO,
+    TrainingMethodUnknown,
+]
 
 
 class FinetuneTrainingLimits(BaseModel):
@@ -198,8 +222,18 @@ class EmptyLRScheduler(BaseModel):
     lr_scheduler_type: Literal[""]
     lr_scheduler_args: None = None
 
+# Catch-all for unknown LR scheduler types (forward compatibility)
+class UnknownLRScheduler(BaseModel):
+    lr_scheduler_type: str
+    lr_scheduler_args: Optional[Any] = None
 
-FinetuneLRScheduler: TypeAlias = Union[LinearLRScheduler, CosineLRScheduler, EmptyLRScheduler]
+
+FinetuneLRScheduler: TypeAlias = Union[
+    LinearLRScheduler,
+    CosineLRScheduler,
+    EmptyLRScheduler,
+    UnknownLRScheduler,
+]
 
 
 class FinetuneResponse(BaseModel):
@@ -213,8 +247,8 @@ class FinetuneResponse(BaseModel):
     created_at: datetime
     """Creation timestamp of the fine-tune job"""
 
-    status: Optional[FinetuneJobStatus] = None
-    """Status of the fine-tune job"""
+    status: Optional[Union[FinetuneJobStatus, str]] = None
+    """Status of the fine-tune job (accepts known enum values or string for forward compatibility)"""
 
     updated_at: datetime
     """Last update timestamp of the fine-tune job"""
@@ -222,8 +256,8 @@ class FinetuneResponse(BaseModel):
     batch_size: Optional[int] = None
     """Batch size used for training"""
 
-    events: Optional[List[FinetuneEvent]] = None
-    """Events related to this fine-tune job"""
+    events: Optional[List[Union[FinetuneEvent, str]]] = None
+    """Events related to this fine-tune job (accepts known enum values or string for forward compatibility)"""
 
     from_checkpoint: Optional[str] = None
     """Checkpoint used to continue training"""
@@ -361,7 +395,7 @@ class FinetuneRequest(BaseModel):
     # training learning rate
     learning_rate: float
     # learning rate scheduler type and args
-    lr_scheduler: Union[LinearLRScheduler, CosineLRScheduler, None] = None
+    lr_scheduler: Union[FinetuneLRScheduler, None] = None
     # learning rate warmup ratio
     warmup_ratio: float
     # max gradient norm
@@ -387,7 +421,7 @@ class FinetuneRequest(BaseModel):
     # training type
     training_type: Union[TrainingType, None] = None
     # training method
-    training_method: Union[TrainingMethodSFT, TrainingMethodDPO] = Field(default_factory=TrainingMethodSFT)
+    training_method: TrainingMethod = Field(default_factory=TrainingMethodSFT)
     # from step
     from_checkpoint: Union[str, None] = None
     from_hf_model: Union[str, None] = None
