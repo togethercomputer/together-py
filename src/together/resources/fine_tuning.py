@@ -28,13 +28,20 @@ from .._response import (
 )
 from .._base_client import make_request_options
 from ..types.fine_tune import FineTune
-from ..lib.types.fine_tuning import FinetuneResponse, FinetuneTrainingLimits
-from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
+from ..lib.types.fine_tuning import FinetuneResponse, FinetuneTrainingLimits, FinetunePriceEstimationResponse
+from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request, create_finetune_price_estimation_request
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
+
+_CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS = (
+    "The estimated price of the fine-tuning job is {} which is significantly "
+    "greater than your current credit limit and balance. "
+    "It will likely fail due to insufficient funds. "
+    "Please proceed at your own risk."
+)
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
@@ -217,18 +224,66 @@ class FineTuningResource(SyncAPIResource):
             hf_api_token=hf_api_token,
             hf_output_repo_name=hf_output_repo_name,
         )
+        
+        price_estimation_result = self.estimate_price(
+            training_file=training_file,
+            validation_file=validation_file,
+            model=model,
+            n_epochs=n_epochs,
+            n_evals=n_evals,
+            training_type="lora" if lora else "full",
+            training_method=training_method,
+        )
 
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
+            if not price_estimation_result.allowed_to_proceed:
+                rprint(
+                    "[red]" + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price
+                    ) + "[/red]",
+                )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return self._client.post(
             "/fine-tunes",
             body=parameter_payload,
             cast_to=FinetuneResponse,
+        )
+
+    def estimate_price(
+        self,
+        *,
+        training_file: str,
+        validation_file: str | None = None,
+        model: str | None = None,
+        n_epochs: int = 1,
+        n_evals: int | None = 0,
+        training_type: str | None = "lora",
+        training_method: str | None = "sft",
+    ) -> FinetunePriceEstimationResponse:
+        """
+        Estimate the price of a fine-tuning job
+        """
+
+        
+        finetune_price_estimation_request = create_finetune_price_estimation_request(
+            training_file=training_file,
+            validation_file=validation_file,
+            model=model,
+            n_epochs=n_epochs,
+            n_evals=n_evals,
+            training_type=training_type,
+            training_method=training_method,
+        )
+        parameter_payload = finetune_price_estimation_request.model_dump(exclude_none=True)
+        return self._client.post(
+            "/fine-tunes/estimate-price",
+            body=parameter_payload,
+            cast_to=FinetunePriceEstimationResponse,
         )
 
     def retrieve(
@@ -659,17 +714,65 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
+        price_estimation_result = await self.estimate_price(
+            training_file=training_file,
+            validation_file=validation_file,
+            model=model,
+            n_epochs=n_epochs,
+            n_evals=n_evals,
+            training_type="lora" if lora else "full",
+            training_method=training_method,
+        )
+
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
+            if not price_estimation_result.allowed_to_proceed:
+                rprint(
+                    "[red]" + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price
+                    ) + "[/red]",
+                )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return await self._client.post(
             "/fine-tunes",
             body=parameter_payload,
             cast_to=FinetuneResponse,
+        )
+
+    async def estimate_price(
+        self,
+        *,
+        training_file: str,
+        validation_file: str | None = None,
+        model: str | None = None,
+        n_epochs: int = 1,
+        n_evals: int | None = 0,
+        training_type: str | None = "lora",
+        training_method: str | None = "sft",
+    ) -> FinetunePriceEstimationResponse:
+        """
+        Estimate the price of a fine-tuning job
+        """
+
+        
+        finetune_price_estimation_request = create_finetune_price_estimation_request(
+            training_file=training_file,
+            validation_file=validation_file,
+            model=model,
+            n_epochs=n_epochs,
+            n_evals=n_evals,
+            training_type=training_type,
+            training_method=training_method,
+        )
+        parameter_payload = finetune_price_estimation_request.model_dump(exclude_none=True)
+        return await self._client.post(
+            "/fine-tunes/estimate-price",
+            body=parameter_payload,
+            cast_to=FinetunePriceEstimationResponse,
         )
 
     async def retrieve(

@@ -395,3 +395,36 @@ class FinetuneRequest(BaseModel):
     # hf related fields
     hf_api_token: Union[str, None] = None
     hf_output_repo_name: Union[str, None] = None
+
+
+class FinetunePriceEstimationRequest(BaseModel):
+    """
+    Fine-tune price estimation request type
+    """
+
+    # training file ID
+    training_file: str
+    # validation file id
+    validation_file: Union[str, None] = None
+    # base model string
+    model: Union[str, None] = None
+    # number of epochs to train for
+    n_epochs: int
+    # number of evaluation loops to run
+    n_evals: Union[int, None] = None
+    # training type
+    training_type: Union[TrainingType, None] = None
+    # training method
+    training_method: Union[TrainingMethodSFT, TrainingMethodDPO] = Field(default_factory=TrainingMethodSFT)
+
+
+class FinetunePriceEstimationResponse(BaseModel):
+    """
+    Fine-tune price estimation request type
+    """
+
+    allowed_to_proceed: bool
+    estimated_train_token_count: int
+    estimated_eval_token_count: int
+    user_limit: float
+    estimated_total_price: float

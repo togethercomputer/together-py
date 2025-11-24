@@ -21,6 +21,7 @@ from together.lib.types.fine_tuning import (
     CosineLRSchedulerArgs,
     LinearLRSchedulerArgs,
     FinetuneTrainingLimits,
+    FinetunePriceEstimationRequest,
 )
 
 AVAILABLE_TRAINING_METHODS = {
@@ -234,6 +235,51 @@ def create_finetune_request(
     )
 
     return finetune_request
+
+
+def create_finetune_price_estimation_request(
+    training_file: str,
+    validation_file: str | None = None,
+    model: str | None = None,
+    n_epochs: int = 1,
+    n_evals: int | None = 0,
+    training_type: str | None = "lora",
+    training_method: str | None = "sft",
+) -> FinetunePriceEstimationRequest:
+    """
+    Create a fine-tune price estimation request
+    """
+
+    if training_method == "sft":
+        training_method_cls = TrainingMethodSFT(train_on_inputs="auto")
+    elif training_method == "dpo":
+        training_method_cls = TrainingMethodDPO(
+            dpo_beta=None,
+            dpo_normalize_logratios_by_length=False,
+            dpo_reference_free=False,
+            rpo_alpha=None,
+            simpo_gamma=None,
+        )
+    else:
+        raise ValueError(f"Invalid training method: {training_method}. Must be 'sft' or 'dpo'")
+
+    if training_type == "full":
+        training_type_cls = FullTrainingType(type="Full")
+    elif training_type == "lora":
+        # lora parameters do not matter for price estimation
+        training_type_cls = LoRATrainingType(type="Lora", lora_r=10, lora_alpha=10)
+    else:
+        raise ValueError(f"Invalid training type: {training_type}. Must be 'full' or 'lora'")
+
+    return FinetunePriceEstimationRequest(
+        training_file=training_file,
+        validation_file=validation_file,
+        model=model,
+        n_epochs=n_epochs,
+        n_evals=n_evals,
+        training_type=training_type_cls,
+        training_method=training_method_cls,
+    )
 
 
 def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
