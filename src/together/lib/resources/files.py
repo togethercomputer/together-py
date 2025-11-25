@@ -18,7 +18,7 @@ from tqdm import tqdm
 from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
-from ...types import FileType, FilePurpose, FileRetrieveResponse
+from ...types import FileType, FilePurpose, FileResponse
 from ..._types import RequestOptions
 from ..constants import (
     DISABLE_TQDM,
@@ -273,9 +273,9 @@ class UploadManager(SyncAPIResource):
 
         return redirect_url, file_id
 
-    def callback(self, url: str) -> FileRetrieveResponse:
+    def callback(self, url: str) -> FileResponse:
         response = self._client.post(
-            cast_to=FileRetrieveResponse,
+            cast_to=FileResponse,
             path=url,
         )
 
@@ -286,7 +286,7 @@ class UploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_size = os.stat(file.as_posix()).st_size
         file_size_gb = file_size / NUM_BYTES_IN_GB
 
@@ -306,7 +306,7 @@ class UploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_id = None
 
         redirect_url = None
@@ -357,7 +357,7 @@ class UploadManager(SyncAPIResource):
 
         response = self.callback(f"{url}/{file_id}/preprocess")
 
-        assert isinstance(response, FileRetrieveResponse)  # type: ignore
+        assert isinstance(response, FileResponse)  # type: ignore
 
         return response
 
@@ -374,7 +374,7 @@ class MultipartUploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Upload large file using multipart upload"""
 
         file_size = os.stat(file.as_posix()).st_size
@@ -551,7 +551,7 @@ class MultipartUploadManager(SyncAPIResource):
         upload_id: str,
         file_id: str,
         completed_parts: List[Dict[str, Any]],
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Complete the multipart upload"""
 
         payload = {
@@ -576,7 +576,7 @@ class MultipartUploadManager(SyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
-            return FileRetrieveResponse(**file_data)
+            return FileResponse(**file_data)
         else:
             raise APIStatusError(
                 f"Failed to complete multipart upload: {response.text}",
@@ -654,9 +654,9 @@ class AsyncUploadManager(AsyncAPIResource):
 
         return redirect_url, file_id
 
-    async def callback(self, url: str) -> FileRetrieveResponse:
+    async def callback(self, url: str) -> FileResponse:
         response = self._client.post(
-            cast_to=FileRetrieveResponse,
+            cast_to=FileResponse,
             path=url,
         )
 
@@ -667,7 +667,7 @@ class AsyncUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_size = os.stat(file.as_posix()).st_size
         file_size_gb = file_size / NUM_BYTES_IN_GB
 
@@ -687,7 +687,7 @@ class AsyncUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_id = None
 
         redirect_url = None
@@ -738,7 +738,7 @@ class AsyncUploadManager(AsyncAPIResource):
 
         response = await self.callback(f"{url}/{file_id}/preprocess")
 
-        assert isinstance(response, FileRetrieveResponse)  # type: ignore
+        assert isinstance(response, FileResponse)  # type: ignore
 
         return response
 
@@ -755,7 +755,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Upload large file using multipart upload via ThreadPoolExecutor"""
 
         file_size = os.stat(file.as_posix()).st_size
@@ -932,7 +932,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_id: str,
         file_id: str,
         completed_parts: List[Dict[str, Any]],
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Complete the multipart upload"""
 
         payload = {
@@ -957,7 +957,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
-            return FileRetrieveResponse(**file_data)
+            return FileResponse(**file_data)
         else:
             raise APIStatusError(
                 f"Failed to complete multipart upload: {response.text}",
