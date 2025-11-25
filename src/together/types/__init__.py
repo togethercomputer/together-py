@@ -27,7 +27,6 @@ from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
 from .dedicated_endpoint import DedicatedEndpoint as DedicatedEndpoint
 from .eval_create_params import EvalCreateParams as EvalCreateParams
 from .eval_list_response import EvalListResponse as EvalListResponse
-from .eval_update_params import EvalUpdateParams as EvalUpdateParams
 from .file_list_response import FileListResponse as FileListResponse
 from .full_training_type import FullTrainingType as FullTrainingType
 from .batch_create_params import BatchCreateParams as BatchCreateParams
@@ -41,7 +40,6 @@ from .video_create_params import VideoCreateParams as VideoCreateParams
 from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .eval_create_response import EvalCreateResponse as EvalCreateResponse
 from .eval_status_response import EvalStatusResponse as EvalStatusResponse
-from .eval_update_response import EvalUpdateResponse as EvalUpdateResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .hardware_list_params import HardwareListParams as HardwareListParams
 from .rerank_create_params import RerankCreateParams as RerankCreateParams

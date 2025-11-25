@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import eval_list_params, eval_create_params, eval_update_params
+from ..types import eval_list_params, eval_create_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -22,7 +22,6 @@ from ..types.evaluation_job import EvaluationJob
 from ..types.eval_list_response import EvalListResponse
 from ..types.eval_create_response import EvalCreateResponse
 from ..types.eval_status_response import EvalStatusResponse
-from ..types.eval_update_response import EvalUpdateResponse
 
 __all__ = ["EvalsResource", "AsyncEvalsResource"]
 
@@ -121,55 +120,6 @@ class EvalsResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=EvaluationJob,
-        )
-
-    def update(
-        self,
-        id: str,
-        *,
-        error: str | Omit = omit,
-        results: object | Omit = omit,
-        status: Literal["completed", "error", "user_error", "running", "queued", "pending"] | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalUpdateResponse:
-        """
-        Update evaluation job status and results
-
-        Args:
-          error: Error message when status is 'error' or 'user_error'
-
-          results: The results of the evaluation job. The concrete structure depends on the type of
-              evaluation job
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not id:
-            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        return self._post(
-            f"/evaluation/{id}/update",
-            body=maybe_transform(
-                {
-                    "error": error,
-                    "results": results,
-                    "status": status,
-                },
-                eval_update_params.EvalUpdateParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EvalUpdateResponse,
         )
 
     def list(
@@ -349,55 +299,6 @@ class AsyncEvalsResource(AsyncAPIResource):
             cast_to=EvaluationJob,
         )
 
-    async def update(
-        self,
-        id: str,
-        *,
-        error: str | Omit = omit,
-        results: object | Omit = omit,
-        status: Literal["completed", "error", "user_error", "running", "queued", "pending"] | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EvalUpdateResponse:
-        """
-        Update evaluation job status and results
-
-        Args:
-          error: Error message when status is 'error' or 'user_error'
-
-          results: The results of the evaluation job. The concrete structure depends on the type of
-              evaluation job
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not id:
-            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        return await self._post(
-            f"/evaluation/{id}/update",
-            body=await async_maybe_transform(
-                {
-                    "error": error,
-                    "results": results,
-                    "status": status,
-                },
-                eval_update_params.EvalUpdateParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EvalUpdateResponse,
-        )
-
     async def list(
         self,
         *,
@@ -489,9 +390,6 @@ class EvalsResourceWithRawResponse:
         self.retrieve = to_raw_response_wrapper(
             evals.retrieve,
         )
-        self.update = to_raw_response_wrapper(
-            evals.update,
-        )
         self.list = to_raw_response_wrapper(
             evals.list,
         )
@@ -509,9 +407,6 @@ class AsyncEvalsResourceWithRawResponse:
         )
         self.retrieve = async_to_raw_response_wrapper(
             evals.retrieve,
-        )
-        self.update = async_to_raw_response_wrapper(
-            evals.update,
         )
         self.list = async_to_raw_response_wrapper(
             evals.list,
@@ -531,9 +426,6 @@ class EvalsResourceWithStreamingResponse:
         self.retrieve = to_streamed_response_wrapper(
             evals.retrieve,
         )
-        self.update = to_streamed_response_wrapper(
-            evals.update,
-        )
         self.list = to_streamed_response_wrapper(
             evals.list,
         )
@@ -551,9 +443,6 @@ class AsyncEvalsResourceWithStreamingResponse:
         )
         self.retrieve = async_to_streamed_response_wrapper(
             evals.retrieve,
-        )
-        self.update = async_to_streamed_response_wrapper(
-            evals.update,
         )
         self.list = async_to_streamed_response_wrapper(
             evals.list,
