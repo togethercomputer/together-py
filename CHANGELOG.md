@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-alpha.6 (2025-11-25)
+
+Full Changelog: [v2.0.0-alpha.5...v2.0.0-alpha.6](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.5...v2.0.0-alpha.6)
+
+### Chores
+
+* **api:** Cleanup some exported types ([bf57f0d](https://github.com/togethercomputer/together-py/commit/bf57f0d49619651e96565d99a9291aa55873e4f0))
+* fix lint and type checks ([#186](https://github.com/togethercomputer/together-py/issues/186)) ([7184b72](https://github.com/togethercomputer/together-py/commit/7184b72f79aa2b255a0921f5fc4680e75f0d8847))
+
 ## 2.0.0-alpha.5 (2025-11-25)
 
 Full Changelog: [v2.0.0-alpha.4...v2.0.0-alpha.5](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.4...v2.0.0-alpha.5)
