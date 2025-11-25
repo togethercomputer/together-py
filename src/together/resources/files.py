@@ -148,7 +148,7 @@ class FilesResource(SyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -165,7 +165,7 @@ class FilesResource(SyncAPIResource):
         upload_manager = UploadManager(self._client)
         result = upload_manager.upload("/files", file, purpose)
 
-        return FileRetrieveResponse(
+        return FileResponse(
             id=result.id,
             bytes=result.bytes,
             created_at=result.created_at,
@@ -323,7 +323,7 @@ class AsyncFilesResource(AsyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -340,7 +340,7 @@ class AsyncFilesResource(AsyncAPIResource):
         upload_manager = AsyncUploadManager(self._client)
         result = await upload_manager.upload("/files", file, purpose)
 
-        return FileRetrieveResponse(
+        return FileResponse(
             id=result.id,
             bytes=result.bytes,
             created_at=result.created_at,

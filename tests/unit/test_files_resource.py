@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 
 from together import Together
 from together.types import (
-    FileRetrieveResponse,
+    FileResponse,
 )
 
 
@@ -75,7 +75,7 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     )
 
     # Verify the response
-    assert isinstance(response, FileRetrieveResponse)
+    assert isinstance(response, FileResponse)
     assert response.filename == "valid.jsonl"
     assert response.bytes == len(content_bytes)
     assert response.created_at == 1234567890

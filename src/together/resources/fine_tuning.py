@@ -27,7 +27,7 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..lib.types.fine_tuning import FinetuneTrainingLimits
+from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib, FinetuneTrainingLimits
 from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
 from ..types.fine_tuning_list_response import FineTuningListResponse
@@ -99,7 +99,7 @@ class FineTuningResource(SyncAPIResource):
         hf_model_revision: str | None = None,
         hf_api_token: str | None = None,
         hf_output_repo_name: str | None = None,
-    ) -> FinetuneResponse:
+    ) -> FinetuneResponseLib:
         """
         Method to initiate a fine-tuning job
 
@@ -228,7 +228,7 @@ class FineTuningResource(SyncAPIResource):
         return self._client.post(
             "/fine-tunes",
             body=parameter_payload,
-            cast_to=FinetuneResponse,
+            cast_to=FinetuneResponseLib,
         )
 
     def retrieve(
