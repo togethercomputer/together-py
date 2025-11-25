@@ -9,12 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types import (
-    BatchListResponse,
-    BatchCancelResponse,
-    BatchCreateResponse,
-    BatchRetrieveResponse,
-)
+from together.types import BatchJob, BatchListResponse, BatchCreateResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -72,7 +67,7 @@ class TestBatches:
         batch = client.batches.retrieve(
             "batch_job_abc123def456",
         )
-        assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -83,7 +78,7 @@ class TestBatches:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         batch = response.parse()
-        assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -94,7 +89,7 @@ class TestBatches:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             batch = response.parse()
-            assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
+            assert_matches_type(BatchJob, batch, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -135,7 +130,7 @@ class TestBatches:
         batch = client.batches.cancel(
             "batch_job_abc123def456",
         )
-        assert_matches_type(BatchCancelResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     def test_raw_response_cancel(self, client: Together) -> None:
@@ -146,7 +141,7 @@ class TestBatches:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         batch = response.parse()
-        assert_matches_type(BatchCancelResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     def test_streaming_response_cancel(self, client: Together) -> None:
@@ -157,7 +152,7 @@ class TestBatches:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             batch = response.parse()
-            assert_matches_type(BatchCancelResponse, batch, path=["response"])
+            assert_matches_type(BatchJob, batch, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -224,7 +219,7 @@ class TestAsyncBatches:
         batch = await async_client.batches.retrieve(
             "batch_job_abc123def456",
         )
-        assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -235,7 +230,7 @@ class TestAsyncBatches:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         batch = await response.parse()
-        assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -246,7 +241,7 @@ class TestAsyncBatches:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             batch = await response.parse()
-            assert_matches_type(BatchRetrieveResponse, batch, path=["response"])
+            assert_matches_type(BatchJob, batch, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -287,7 +282,7 @@ class TestAsyncBatches:
         batch = await async_client.batches.cancel(
             "batch_job_abc123def456",
         )
-        assert_matches_type(BatchCancelResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     async def test_raw_response_cancel(self, async_client: AsyncTogether) -> None:
@@ -298,7 +293,7 @@ class TestAsyncBatches:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         batch = await response.parse()
-        assert_matches_type(BatchCancelResponse, batch, path=["response"])
+        assert_matches_type(BatchJob, batch, path=["response"])
 
     @parametrize
     async def test_streaming_response_cancel(self, async_client: AsyncTogether) -> None:
@@ -309,7 +304,7 @@ class TestAsyncBatches:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             batch = await response.parse()
-            assert_matches_type(BatchCancelResponse, batch, path=["response"])
+            assert_matches_type(BatchJob, batch, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

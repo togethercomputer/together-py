@@ -3,10 +3,10 @@
 from typing import List
 
 from .._models import BaseModel
-from .fine_tune_event import FineTuneEvent
+from .finetune_event import FinetuneEvent
 
 __all__ = ["FineTuningListEventsResponse"]
 
 
 class FineTuningListEventsResponse(BaseModel):
-    data: List[FineTuneEvent]
+    data: List[FinetuneEvent]

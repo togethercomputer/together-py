@@ -1,45 +1,10 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
-from typing_extensions import Literal, TypeAlias
+from typing import List
+from typing_extensions import TypeAlias
 
-from .._models import BaseModel
+from .model_object import ModelObject
 
-__all__ = ["ModelListResponse", "ModelListResponseItem", "ModelListResponseItemPricing"]
+__all__ = ["ModelListResponse"]
 
-
-class ModelListResponseItemPricing(BaseModel):
-    base: float
-
-    finetune: float
-
-    hourly: float
-
-    input: float
-
-    output: float
-
-
-class ModelListResponseItem(BaseModel):
-    id: str
-
-    created: int
-
-    object: str
-
-    type: Literal["chat", "language", "code", "image", "embedding", "moderation", "rerank"]
-
-    context_length: Optional[int] = None
-
-    display_name: Optional[str] = None
-
-    license: Optional[str] = None
-
-    link: Optional[str] = None
-
-    organization: Optional[str] = None
-
-    pricing: Optional[ModelListResponseItemPricing] = None
-
-
-ModelListResponse: TypeAlias = List[ModelListResponseItem]
+ModelListResponse: TypeAlias = List[ModelObject]

@@ -13,13 +13,13 @@ from tabulate import tabulate
 from click.core import ParameterSource  # type: ignore[attr-defined]
 
 from together import Together
-from together.types import FullTrainingType, LoRaTrainingType
 from together._types import NOT_GIVEN, NotGiven
 from together.lib.utils import log_warn
 from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
 from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
+from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.resources.fine_tuning import get_model_limits
 
 _CONFIRMATION_MESSAGE = (
@@ -513,11 +513,11 @@ def download(
     ft_job = client.fine_tuning.retrieve(fine_tune_id)
 
     loosely_typed_checkpoint_type: str | NotGiven = checkpoint_type
-    if isinstance(ft_job.training_type, FullTrainingType):
+    if isinstance(ft_job.training_type, TrainingTypeFullTrainingType):
         if checkpoint_type != "default":
             raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
         loosely_typed_checkpoint_type = "model_output_path"
-    elif isinstance(ft_job.training_type, LoRaTrainingType):
+    elif isinstance(ft_job.training_type, TrainingTypeLoRaTrainingType):
         if checkpoint_type == "default":
             loosely_typed_checkpoint_type = "merged"
 

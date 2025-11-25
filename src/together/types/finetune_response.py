@@ -1,7 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union, Optional
-from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
 from pydantic import Field as FieldInfo
@@ -10,7 +9,7 @@ from .._models import BaseModel
 from .finetune_event import FinetuneEvent
 
 __all__ = [
-    "FineTuningCancelResponse",
+    "FinetuneResponse",
     "LrScheduler",
     "LrSchedulerLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
@@ -94,12 +93,8 @@ class TrainingTypeLoRaTrainingType(BaseModel):
 TrainingType: TypeAlias = Union[TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType]
 
 
-class FineTuningCancelResponse(BaseModel):
+class FinetuneResponse(BaseModel):
     id: str
-    """Unique identifier for the fine-tune job"""
-
-    created_at: datetime
-    """Creation timestamp of the fine-tune job"""
 
     status: Literal[
         "pending",
@@ -113,82 +108,70 @@ class FineTuningCancelResponse(BaseModel):
         "completed",
     ]
 
-    updated_at: datetime
-    """Last update timestamp of the fine-tune job"""
+    batch_size: Union[int, Literal["max"], None] = None
 
-    batch_size: Optional[int] = None
-    """Batch size used for training"""
+    created_at: Optional[str] = None
+
+    epochs_completed: Optional[int] = None
+
+    eval_steps: Optional[int] = None
 
     events: Optional[List[FinetuneEvent]] = None
-    """Events related to this fine-tune job"""
 
     from_checkpoint: Optional[str] = None
-    """Checkpoint used to continue training"""
 
     from_hf_model: Optional[str] = None
-    """Hugging Face Hub repo to start training from"""
 
     hf_model_revision: Optional[str] = None
-    """The revision of the Hugging Face Hub model to continue training from"""
+
+    job_id: Optional[str] = None
 
     learning_rate: Optional[float] = None
-    """Learning rate used for training"""
 
     lr_scheduler: Optional[LrScheduler] = None
-    """Learning rate scheduler configuration"""
 
     max_grad_norm: Optional[float] = None
-    """Maximum gradient norm for clipping"""
 
     model: Optional[str] = None
-    """Base model used for fine-tuning"""
 
     x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
 
+    x_model_output_path: Optional[str] = FieldInfo(alias="model_output_path", default=None)
+
     n_checkpoints: Optional[int] = None
-    """Number of checkpoints saved during training"""
 
     n_epochs: Optional[int] = None
-    """Number of training epochs"""
 
     n_evals: Optional[int] = None
-    """Number of evaluations during training"""
 
-    owner_address: Optional[str] = None
-    """Owner address information"""
+    param_count: Optional[int] = None
 
-    suffix: Optional[str] = None
-    """Suffix added to the fine-tuned model name"""
+    queue_depth: Optional[int] = None
 
     token_count: Optional[int] = None
-    """Count of tokens processed"""
 
     total_price: Optional[int] = None
-    """Total price for the fine-tuning job"""
+
+    train_on_inputs: Union[bool, Literal["auto"], None] = None
 
     training_file: Optional[str] = None
-    """File-ID of the training file"""
 
     training_method: Optional[TrainingMethod] = None
-    """Method of training used"""
 
     training_type: Optional[TrainingType] = None
-    """Type of training used (full or LoRA)"""
 
-    user_id: Optional[str] = None
-    """Identifier for the user who created the job"""
+    trainingfile_numlines: Optional[int] = None
+
+    trainingfile_size: Optional[int] = None
+
+    updated_at: Optional[str] = None
 
     validation_file: Optional[str] = None
-    """File-ID of the validation file"""
-
-    wandb_name: Optional[str] = None
-    """Weights & Biases run name"""
 
     wandb_project_name: Optional[str] = None
-    """Weights & Biases project name"""
+
+    wandb_url: Optional[str] = None
 
     warmup_ratio: Optional[float] = None
-    """Ratio of warmup steps"""
 
     weight_decay: Optional[float] = None
-    """Weight decay value used"""

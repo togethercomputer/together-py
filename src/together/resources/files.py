@@ -30,10 +30,9 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..lib.resources.files import UploadManager, AsyncUploadManager
-from ..types.file_list_response import FileListResponse
+from ..types.file_list import FileList
+from ..types.file_response import FileResponse
 from ..types.file_delete_response import FileDeleteResponse
-from ..types.file_retrieve_response import FileRetrieveResponse
 
 __all__ = ["FilesResource", "AsyncFilesResource"]
 
@@ -68,7 +67,7 @@ class FilesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """
         List the metadata for a single uploaded data file.
 
@@ -88,7 +87,7 @@ class FilesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FileRetrieveResponse,
+            cast_to=FileResponse,
         )
 
     def list(
@@ -100,14 +99,14 @@ class FilesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FileListResponse:
+    ) -> FileList:
         """List the metadata for all uploaded data files."""
         return self._get(
             "/files",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FileListResponse,
+            cast_to=FileList,
         )
 
     def delete(
@@ -149,7 +148,7 @@ class FilesResource(SyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -166,7 +165,7 @@ class FilesResource(SyncAPIResource):
         upload_manager = UploadManager(self._client)
         result = upload_manager.upload("/files", file, purpose)
 
-        return FileRetrieveResponse(
+        return FileResponse(
             id=result.id,
             bytes=result.bytes,
             created_at=result.created_at,
@@ -243,7 +242,7 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """
         List the metadata for a single uploaded data file.
 
@@ -263,7 +262,7 @@ class AsyncFilesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FileRetrieveResponse,
+            cast_to=FileResponse,
         )
 
     async def list(
@@ -275,14 +274,14 @@ class AsyncFilesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FileListResponse:
+    ) -> FileList:
         """List the metadata for all uploaded data files."""
         return await self._get(
             "/files",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FileListResponse,
+            cast_to=FileList,
         )
 
     async def delete(
@@ -324,7 +323,7 @@ class AsyncFilesResource(AsyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         if check:
             report_dict = check_file(file)
             if not report_dict["is_check_passed"]:
@@ -341,7 +340,7 @@ class AsyncFilesResource(AsyncAPIResource):
         upload_manager = AsyncUploadManager(self._client)
         result = await upload_manager.upload("/files", file, purpose)
 
-        return FileRetrieveResponse(
+        return FileResponse(
             id=result.id,
             bytes=result.bytes,
             created_at=result.created_at,
