@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 from typing_extensions import Self, override
 
 import httpx
@@ -20,22 +20,8 @@ from ._types import (
     not_given,
 )
 from ._utils import is_given, get_async_library
+from ._compat import cached_property
 from ._version import __version__
-from .resources import (
-    jobs,
-    evals,
-    files,
-    images,
-    models,
-    rerank,
-    videos,
-    batches,
-    hardware,
-    endpoints,
-    embeddings,
-    completions,
-    fine_tuning,
-)
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
@@ -43,9 +29,42 @@ from ._base_client import (
     SyncAPIClient,
     AsyncAPIClient,
 )
-from .resources.chat import chat
-from .resources.audio import audio
-from .resources.code_interpreter import code_interpreter
+
+if TYPE_CHECKING:
+    from .resources import (
+        chat,
+        jobs,
+        audio,
+        evals,
+        files,
+        images,
+        models,
+        rerank,
+        videos,
+        batches,
+        hardware,
+        endpoints,
+        embeddings,
+        completions,
+        fine_tuning,
+        code_interpreter,
+    )
+    from .resources.jobs import JobsResource, AsyncJobsResource
+    from .resources.evals import EvalsResource, AsyncEvalsResource
+    from .resources.files import FilesResource, AsyncFilesResource
+    from .resources.images import ImagesResource, AsyncImagesResource
+    from .resources.models import ModelsResource, AsyncModelsResource
+    from .resources.rerank import RerankResource, AsyncRerankResource
+    from .resources.videos import VideosResource, AsyncVideosResource
+    from .resources.batches import BatchesResource, AsyncBatchesResource
+    from .resources.hardware import HardwareResource, AsyncHardwareResource
+    from .resources.chat.chat import ChatResource, AsyncChatResource
+    from .resources.endpoints import EndpointsResource, AsyncEndpointsResource
+    from .resources.embeddings import EmbeddingsResource, AsyncEmbeddingsResource
+    from .resources.audio.audio import AudioResource, AsyncAudioResource
+    from .resources.completions import CompletionsResource, AsyncCompletionsResource
+    from .resources.fine_tuning import FineTuningResource, AsyncFineTuningResource
+    from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
 __all__ = [
     "Timeout",
@@ -60,25 +79,6 @@ __all__ = [
 
 
 class Together(SyncAPIClient):
-    chat: chat.ChatResource
-    completions: completions.CompletionsResource
-    embeddings: embeddings.EmbeddingsResource
-    files: files.FilesResource
-    fine_tuning: fine_tuning.FineTuningResource
-    code_interpreter: code_interpreter.CodeInterpreterResource
-    images: images.ImagesResource
-    videos: videos.VideosResource
-    audio: audio.AudioResource
-    models: models.ModelsResource
-    jobs: jobs.JobsResource
-    endpoints: endpoints.EndpointsResource
-    hardware: hardware.HardwareResource
-    rerank: rerank.RerankResource
-    batches: batches.BatchesResource
-    evals: evals.EvalsResource
-    with_raw_response: TogetherWithRawResponse
-    with_streaming_response: TogetherWithStreamedResponse
-
     # client options
     api_key: str
 
@@ -136,24 +136,109 @@ class Together(SyncAPIClient):
 
         self._default_stream_cls = Stream
 
-        self.chat = chat.ChatResource(self)
-        self.completions = completions.CompletionsResource(self)
-        self.embeddings = embeddings.EmbeddingsResource(self)
-        self.files = files.FilesResource(self)
-        self.fine_tuning = fine_tuning.FineTuningResource(self)
-        self.code_interpreter = code_interpreter.CodeInterpreterResource(self)
-        self.images = images.ImagesResource(self)
-        self.videos = videos.VideosResource(self)
-        self.audio = audio.AudioResource(self)
-        self.models = models.ModelsResource(self)
-        self.jobs = jobs.JobsResource(self)
-        self.endpoints = endpoints.EndpointsResource(self)
-        self.hardware = hardware.HardwareResource(self)
-        self.rerank = rerank.RerankResource(self)
-        self.batches = batches.BatchesResource(self)
-        self.evals = evals.EvalsResource(self)
-        self.with_raw_response = TogetherWithRawResponse(self)
-        self.with_streaming_response = TogetherWithStreamedResponse(self)
+    @cached_property
+    def chat(self) -> ChatResource:
+        from .resources.chat import ChatResource
+
+        return ChatResource(self)
+
+    @cached_property
+    def completions(self) -> CompletionsResource:
+        from .resources.completions import CompletionsResource
+
+        return CompletionsResource(self)
+
+    @cached_property
+    def embeddings(self) -> EmbeddingsResource:
+        from .resources.embeddings import EmbeddingsResource
+
+        return EmbeddingsResource(self)
+
+    @cached_property
+    def files(self) -> FilesResource:
+        from .resources.files import FilesResource
+
+        return FilesResource(self)
+
+    @cached_property
+    def fine_tuning(self) -> FineTuningResource:
+        from .resources.fine_tuning import FineTuningResource
+
+        return FineTuningResource(self)
+
+    @cached_property
+    def code_interpreter(self) -> CodeInterpreterResource:
+        from .resources.code_interpreter import CodeInterpreterResource
+
+        return CodeInterpreterResource(self)
+
+    @cached_property
+    def images(self) -> ImagesResource:
+        from .resources.images import ImagesResource
+
+        return ImagesResource(self)
+
+    @cached_property
+    def videos(self) -> VideosResource:
+        from .resources.videos import VideosResource
+
+        return VideosResource(self)
+
+    @cached_property
+    def audio(self) -> AudioResource:
+        from .resources.audio import AudioResource
+
+        return AudioResource(self)
+
+    @cached_property
+    def models(self) -> ModelsResource:
+        from .resources.models import ModelsResource
+
+        return ModelsResource(self)
+
+    @cached_property
+    def jobs(self) -> JobsResource:
+        from .resources.jobs import JobsResource
+
+        return JobsResource(self)
+
+    @cached_property
+    def endpoints(self) -> EndpointsResource:
+        from .resources.endpoints import EndpointsResource
+
+        return EndpointsResource(self)
+
+    @cached_property
+    def hardware(self) -> HardwareResource:
+        from .resources.hardware import HardwareResource
+
+        return HardwareResource(self)
+
+    @cached_property
+    def rerank(self) -> RerankResource:
+        from .resources.rerank import RerankResource
+
+        return RerankResource(self)
+
+    @cached_property
+    def batches(self) -> BatchesResource:
+        from .resources.batches import BatchesResource
+
+        return BatchesResource(self)
+
+    @cached_property
+    def evals(self) -> EvalsResource:
+        from .resources.evals import EvalsResource
+
+        return EvalsResource(self)
+
+    @cached_property
+    def with_raw_response(self) -> TogetherWithRawResponse:
+        return TogetherWithRawResponse(self)
+
+    @cached_property
+    def with_streaming_response(self) -> TogetherWithStreamedResponse:
+        return TogetherWithStreamedResponse(self)
 
     @property
     @override
@@ -263,25 +348,6 @@ class Together(SyncAPIClient):
 
 
 class AsyncTogether(AsyncAPIClient):
-    chat: chat.AsyncChatResource
-    completions: completions.AsyncCompletionsResource
-    embeddings: embeddings.AsyncEmbeddingsResource
-    files: files.AsyncFilesResource
-    fine_tuning: fine_tuning.AsyncFineTuningResource
-    code_interpreter: code_interpreter.AsyncCodeInterpreterResource
-    images: images.AsyncImagesResource
-    videos: videos.AsyncVideosResource
-    audio: audio.AsyncAudioResource
-    models: models.AsyncModelsResource
-    jobs: jobs.AsyncJobsResource
-    endpoints: endpoints.AsyncEndpointsResource
-    hardware: hardware.AsyncHardwareResource
-    rerank: rerank.AsyncRerankResource
-    batches: batches.AsyncBatchesResource
-    evals: evals.AsyncEvalsResource
-    with_raw_response: AsyncTogetherWithRawResponse
-    with_streaming_response: AsyncTogetherWithStreamedResponse
-
     # client options
     api_key: str
 
@@ -339,24 +405,109 @@ class AsyncTogether(AsyncAPIClient):
 
         self._default_stream_cls = AsyncStream
 
-        self.chat = chat.AsyncChatResource(self)
-        self.completions = completions.AsyncCompletionsResource(self)
-        self.embeddings = embeddings.AsyncEmbeddingsResource(self)
-        self.files = files.AsyncFilesResource(self)
-        self.fine_tuning = fine_tuning.AsyncFineTuningResource(self)
-        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResource(self)
-        self.images = images.AsyncImagesResource(self)
-        self.videos = videos.AsyncVideosResource(self)
-        self.audio = audio.AsyncAudioResource(self)
-        self.models = models.AsyncModelsResource(self)
-        self.jobs = jobs.AsyncJobsResource(self)
-        self.endpoints = endpoints.AsyncEndpointsResource(self)
-        self.hardware = hardware.AsyncHardwareResource(self)
-        self.rerank = rerank.AsyncRerankResource(self)
-        self.batches = batches.AsyncBatchesResource(self)
-        self.evals = evals.AsyncEvalsResource(self)
-        self.with_raw_response = AsyncTogetherWithRawResponse(self)
-        self.with_streaming_response = AsyncTogetherWithStreamedResponse(self)
+    @cached_property
+    def chat(self) -> AsyncChatResource:
+        from .resources.chat import AsyncChatResource
+
+        return AsyncChatResource(self)
+
+    @cached_property
+    def completions(self) -> AsyncCompletionsResource:
+        from .resources.completions import AsyncCompletionsResource
+
+        return AsyncCompletionsResource(self)
+
+    @cached_property
+    def embeddings(self) -> AsyncEmbeddingsResource:
+        from .resources.embeddings import AsyncEmbeddingsResource
+
+        return AsyncEmbeddingsResource(self)
+
+    @cached_property
+    def files(self) -> AsyncFilesResource:
+        from .resources.files import AsyncFilesResource
+
+        return AsyncFilesResource(self)
+
+    @cached_property
+    def fine_tuning(self) -> AsyncFineTuningResource:
+        from .resources.fine_tuning import AsyncFineTuningResource
+
+        return AsyncFineTuningResource(self)
+
+    @cached_property
+    def code_interpreter(self) -> AsyncCodeInterpreterResource:
+        from .resources.code_interpreter import AsyncCodeInterpreterResource
+
+        return AsyncCodeInterpreterResource(self)
+
+    @cached_property
+    def images(self) -> AsyncImagesResource:
+        from .resources.images import AsyncImagesResource
+
+        return AsyncImagesResource(self)
+
+    @cached_property
+    def videos(self) -> AsyncVideosResource:
+        from .resources.videos import AsyncVideosResource
+
+        return AsyncVideosResource(self)
+
+    @cached_property
+    def audio(self) -> AsyncAudioResource:
+        from .resources.audio import AsyncAudioResource
+
+        return AsyncAudioResource(self)
+
+    @cached_property
+    def models(self) -> AsyncModelsResource:
+        from .resources.models import AsyncModelsResource
+
+        return AsyncModelsResource(self)
+
+    @cached_property
+    def jobs(self) -> AsyncJobsResource:
+        from .resources.jobs import AsyncJobsResource
+
+        return AsyncJobsResource(self)
+
+    @cached_property
+    def endpoints(self) -> AsyncEndpointsResource:
+        from .resources.endpoints import AsyncEndpointsResource
+
+        return AsyncEndpointsResource(self)
+
+    @cached_property
+    def hardware(self) -> AsyncHardwareResource:
+        from .resources.hardware import AsyncHardwareResource
+
+        return AsyncHardwareResource(self)
+
+    @cached_property
+    def rerank(self) -> AsyncRerankResource:
+        from .resources.rerank import AsyncRerankResource
+
+        return AsyncRerankResource(self)
+
+    @cached_property
+    def batches(self) -> AsyncBatchesResource:
+        from .resources.batches import AsyncBatchesResource
+
+        return AsyncBatchesResource(self)
+
+    @cached_property
+    def evals(self) -> AsyncEvalsResource:
+        from .resources.evals import AsyncEvalsResource
+
+        return AsyncEvalsResource(self)
+
+    @cached_property
+    def with_raw_response(self) -> AsyncTogetherWithRawResponse:
+        return AsyncTogetherWithRawResponse(self)
+
+    @cached_property
+    def with_streaming_response(self) -> AsyncTogetherWithStreamedResponse:
+        return AsyncTogetherWithStreamedResponse(self)
 
     @property
     @override
@@ -466,85 +617,415 @@ class AsyncTogether(AsyncAPIClient):
 
 
 class TogetherWithRawResponse:
+    _client: Together
+
     def __init__(self, client: Together) -> None:
-        self.chat = chat.ChatResourceWithRawResponse(client.chat)
-        self.completions = completions.CompletionsResourceWithRawResponse(client.completions)
-        self.embeddings = embeddings.EmbeddingsResourceWithRawResponse(client.embeddings)
-        self.files = files.FilesResourceWithRawResponse(client.files)
-        self.fine_tuning = fine_tuning.FineTuningResourceWithRawResponse(client.fine_tuning)
-        self.code_interpreter = code_interpreter.CodeInterpreterResourceWithRawResponse(client.code_interpreter)
-        self.images = images.ImagesResourceWithRawResponse(client.images)
-        self.videos = videos.VideosResourceWithRawResponse(client.videos)
-        self.audio = audio.AudioResourceWithRawResponse(client.audio)
-        self.models = models.ModelsResourceWithRawResponse(client.models)
-        self.jobs = jobs.JobsResourceWithRawResponse(client.jobs)
-        self.endpoints = endpoints.EndpointsResourceWithRawResponse(client.endpoints)
-        self.hardware = hardware.HardwareResourceWithRawResponse(client.hardware)
-        self.rerank = rerank.RerankResourceWithRawResponse(client.rerank)
-        self.batches = batches.BatchesResourceWithRawResponse(client.batches)
-        self.evals = evals.EvalsResourceWithRawResponse(client.evals)
+        self._client = client
+
+    @cached_property
+    def chat(self) -> chat.ChatResourceWithRawResponse:
+        from .resources.chat import ChatResourceWithRawResponse
+
+        return ChatResourceWithRawResponse(self._client.chat)
+
+    @cached_property
+    def completions(self) -> completions.CompletionsResourceWithRawResponse:
+        from .resources.completions import CompletionsResourceWithRawResponse
+
+        return CompletionsResourceWithRawResponse(self._client.completions)
+
+    @cached_property
+    def embeddings(self) -> embeddings.EmbeddingsResourceWithRawResponse:
+        from .resources.embeddings import EmbeddingsResourceWithRawResponse
+
+        return EmbeddingsResourceWithRawResponse(self._client.embeddings)
+
+    @cached_property
+    def files(self) -> files.FilesResourceWithRawResponse:
+        from .resources.files import FilesResourceWithRawResponse
+
+        return FilesResourceWithRawResponse(self._client.files)
+
+    @cached_property
+    def fine_tuning(self) -> fine_tuning.FineTuningResourceWithRawResponse:
+        from .resources.fine_tuning import FineTuningResourceWithRawResponse
+
+        return FineTuningResourceWithRawResponse(self._client.fine_tuning)
+
+    @cached_property
+    def code_interpreter(self) -> code_interpreter.CodeInterpreterResourceWithRawResponse:
+        from .resources.code_interpreter import CodeInterpreterResourceWithRawResponse
+
+        return CodeInterpreterResourceWithRawResponse(self._client.code_interpreter)
+
+    @cached_property
+    def images(self) -> images.ImagesResourceWithRawResponse:
+        from .resources.images import ImagesResourceWithRawResponse
+
+        return ImagesResourceWithRawResponse(self._client.images)
+
+    @cached_property
+    def videos(self) -> videos.VideosResourceWithRawResponse:
+        from .resources.videos import VideosResourceWithRawResponse
+
+        return VideosResourceWithRawResponse(self._client.videos)
+
+    @cached_property
+    def audio(self) -> audio.AudioResourceWithRawResponse:
+        from .resources.audio import AudioResourceWithRawResponse
+
+        return AudioResourceWithRawResponse(self._client.audio)
+
+    @cached_property
+    def models(self) -> models.ModelsResourceWithRawResponse:
+        from .resources.models import ModelsResourceWithRawResponse
+
+        return ModelsResourceWithRawResponse(self._client.models)
+
+    @cached_property
+    def jobs(self) -> jobs.JobsResourceWithRawResponse:
+        from .resources.jobs import JobsResourceWithRawResponse
+
+        return JobsResourceWithRawResponse(self._client.jobs)
+
+    @cached_property
+    def endpoints(self) -> endpoints.EndpointsResourceWithRawResponse:
+        from .resources.endpoints import EndpointsResourceWithRawResponse
+
+        return EndpointsResourceWithRawResponse(self._client.endpoints)
+
+    @cached_property
+    def hardware(self) -> hardware.HardwareResourceWithRawResponse:
+        from .resources.hardware import HardwareResourceWithRawResponse
+
+        return HardwareResourceWithRawResponse(self._client.hardware)
+
+    @cached_property
+    def rerank(self) -> rerank.RerankResourceWithRawResponse:
+        from .resources.rerank import RerankResourceWithRawResponse
+
+        return RerankResourceWithRawResponse(self._client.rerank)
+
+    @cached_property
+    def batches(self) -> batches.BatchesResourceWithRawResponse:
+        from .resources.batches import BatchesResourceWithRawResponse
+
+        return BatchesResourceWithRawResponse(self._client.batches)
+
+    @cached_property
+    def evals(self) -> evals.EvalsResourceWithRawResponse:
+        from .resources.evals import EvalsResourceWithRawResponse
+
+        return EvalsResourceWithRawResponse(self._client.evals)
 
 
 class AsyncTogetherWithRawResponse:
+    _client: AsyncTogether
+
     def __init__(self, client: AsyncTogether) -> None:
-        self.chat = chat.AsyncChatResourceWithRawResponse(client.chat)
-        self.completions = completions.AsyncCompletionsResourceWithRawResponse(client.completions)
-        self.embeddings = embeddings.AsyncEmbeddingsResourceWithRawResponse(client.embeddings)
-        self.files = files.AsyncFilesResourceWithRawResponse(client.files)
-        self.fine_tuning = fine_tuning.AsyncFineTuningResourceWithRawResponse(client.fine_tuning)
-        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithRawResponse(client.code_interpreter)
-        self.images = images.AsyncImagesResourceWithRawResponse(client.images)
-        self.videos = videos.AsyncVideosResourceWithRawResponse(client.videos)
-        self.audio = audio.AsyncAudioResourceWithRawResponse(client.audio)
-        self.models = models.AsyncModelsResourceWithRawResponse(client.models)
-        self.jobs = jobs.AsyncJobsResourceWithRawResponse(client.jobs)
-        self.endpoints = endpoints.AsyncEndpointsResourceWithRawResponse(client.endpoints)
-        self.hardware = hardware.AsyncHardwareResourceWithRawResponse(client.hardware)
-        self.rerank = rerank.AsyncRerankResourceWithRawResponse(client.rerank)
-        self.batches = batches.AsyncBatchesResourceWithRawResponse(client.batches)
-        self.evals = evals.AsyncEvalsResourceWithRawResponse(client.evals)
+        self._client = client
+
+    @cached_property
+    def chat(self) -> chat.AsyncChatResourceWithRawResponse:
+        from .resources.chat import AsyncChatResourceWithRawResponse
+
+        return AsyncChatResourceWithRawResponse(self._client.chat)
+
+    @cached_property
+    def completions(self) -> completions.AsyncCompletionsResourceWithRawResponse:
+        from .resources.completions import AsyncCompletionsResourceWithRawResponse
+
+        return AsyncCompletionsResourceWithRawResponse(self._client.completions)
+
+    @cached_property
+    def embeddings(self) -> embeddings.AsyncEmbeddingsResourceWithRawResponse:
+        from .resources.embeddings import AsyncEmbeddingsResourceWithRawResponse
+
+        return AsyncEmbeddingsResourceWithRawResponse(self._client.embeddings)
+
+    @cached_property
+    def files(self) -> files.AsyncFilesResourceWithRawResponse:
+        from .resources.files import AsyncFilesResourceWithRawResponse
+
+        return AsyncFilesResourceWithRawResponse(self._client.files)
+
+    @cached_property
+    def fine_tuning(self) -> fine_tuning.AsyncFineTuningResourceWithRawResponse:
+        from .resources.fine_tuning import AsyncFineTuningResourceWithRawResponse
+
+        return AsyncFineTuningResourceWithRawResponse(self._client.fine_tuning)
+
+    @cached_property
+    def code_interpreter(self) -> code_interpreter.AsyncCodeInterpreterResourceWithRawResponse:
+        from .resources.code_interpreter import AsyncCodeInterpreterResourceWithRawResponse
+
+        return AsyncCodeInterpreterResourceWithRawResponse(self._client.code_interpreter)
+
+    @cached_property
+    def images(self) -> images.AsyncImagesResourceWithRawResponse:
+        from .resources.images import AsyncImagesResourceWithRawResponse
+
+        return AsyncImagesResourceWithRawResponse(self._client.images)
+
+    @cached_property
+    def videos(self) -> videos.AsyncVideosResourceWithRawResponse:
+        from .resources.videos import AsyncVideosResourceWithRawResponse
+
+        return AsyncVideosResourceWithRawResponse(self._client.videos)
+
+    @cached_property
+    def audio(self) -> audio.AsyncAudioResourceWithRawResponse:
+        from .resources.audio import AsyncAudioResourceWithRawResponse
+
+        return AsyncAudioResourceWithRawResponse(self._client.audio)
+
+    @cached_property
+    def models(self) -> models.AsyncModelsResourceWithRawResponse:
+        from .resources.models import AsyncModelsResourceWithRawResponse
+
+        return AsyncModelsResourceWithRawResponse(self._client.models)
+
+    @cached_property
+    def jobs(self) -> jobs.AsyncJobsResourceWithRawResponse:
+        from .resources.jobs import AsyncJobsResourceWithRawResponse
+
+        return AsyncJobsResourceWithRawResponse(self._client.jobs)
+
+    @cached_property
+    def endpoints(self) -> endpoints.AsyncEndpointsResourceWithRawResponse:
+        from .resources.endpoints import AsyncEndpointsResourceWithRawResponse
+
+        return AsyncEndpointsResourceWithRawResponse(self._client.endpoints)
+
+    @cached_property
+    def hardware(self) -> hardware.AsyncHardwareResourceWithRawResponse:
+        from .resources.hardware import AsyncHardwareResourceWithRawResponse
+
+        return AsyncHardwareResourceWithRawResponse(self._client.hardware)
+
+    @cached_property
+    def rerank(self) -> rerank.AsyncRerankResourceWithRawResponse:
+        from .resources.rerank import AsyncRerankResourceWithRawResponse
+
+        return AsyncRerankResourceWithRawResponse(self._client.rerank)
+
+    @cached_property
+    def batches(self) -> batches.AsyncBatchesResourceWithRawResponse:
+        from .resources.batches import AsyncBatchesResourceWithRawResponse
+
+        return AsyncBatchesResourceWithRawResponse(self._client.batches)
+
+    @cached_property
+    def evals(self) -> evals.AsyncEvalsResourceWithRawResponse:
+        from .resources.evals import AsyncEvalsResourceWithRawResponse
+
+        return AsyncEvalsResourceWithRawResponse(self._client.evals)
 
 
 class TogetherWithStreamedResponse:
+    _client: Together
+
     def __init__(self, client: Together) -> None:
-        self.chat = chat.ChatResourceWithStreamingResponse(client.chat)
-        self.completions = completions.CompletionsResourceWithStreamingResponse(client.completions)
-        self.embeddings = embeddings.EmbeddingsResourceWithStreamingResponse(client.embeddings)
-        self.files = files.FilesResourceWithStreamingResponse(client.files)
-        self.fine_tuning = fine_tuning.FineTuningResourceWithStreamingResponse(client.fine_tuning)
-        self.code_interpreter = code_interpreter.CodeInterpreterResourceWithStreamingResponse(client.code_interpreter)
-        self.images = images.ImagesResourceWithStreamingResponse(client.images)
-        self.videos = videos.VideosResourceWithStreamingResponse(client.videos)
-        self.audio = audio.AudioResourceWithStreamingResponse(client.audio)
-        self.models = models.ModelsResourceWithStreamingResponse(client.models)
-        self.jobs = jobs.JobsResourceWithStreamingResponse(client.jobs)
-        self.endpoints = endpoints.EndpointsResourceWithStreamingResponse(client.endpoints)
-        self.hardware = hardware.HardwareResourceWithStreamingResponse(client.hardware)
-        self.rerank = rerank.RerankResourceWithStreamingResponse(client.rerank)
-        self.batches = batches.BatchesResourceWithStreamingResponse(client.batches)
-        self.evals = evals.EvalsResourceWithStreamingResponse(client.evals)
+        self._client = client
+
+    @cached_property
+    def chat(self) -> chat.ChatResourceWithStreamingResponse:
+        from .resources.chat import ChatResourceWithStreamingResponse
+
+        return ChatResourceWithStreamingResponse(self._client.chat)
+
+    @cached_property
+    def completions(self) -> completions.CompletionsResourceWithStreamingResponse:
+        from .resources.completions import CompletionsResourceWithStreamingResponse
+
+        return CompletionsResourceWithStreamingResponse(self._client.completions)
+
+    @cached_property
+    def embeddings(self) -> embeddings.EmbeddingsResourceWithStreamingResponse:
+        from .resources.embeddings import EmbeddingsResourceWithStreamingResponse
+
+        return EmbeddingsResourceWithStreamingResponse(self._client.embeddings)
+
+    @cached_property
+    def files(self) -> files.FilesResourceWithStreamingResponse:
+        from .resources.files import FilesResourceWithStreamingResponse
+
+        return FilesResourceWithStreamingResponse(self._client.files)
+
+    @cached_property
+    def fine_tuning(self) -> fine_tuning.FineTuningResourceWithStreamingResponse:
+        from .resources.fine_tuning import FineTuningResourceWithStreamingResponse
+
+        return FineTuningResourceWithStreamingResponse(self._client.fine_tuning)
+
+    @cached_property
+    def code_interpreter(self) -> code_interpreter.CodeInterpreterResourceWithStreamingResponse:
+        from .resources.code_interpreter import CodeInterpreterResourceWithStreamingResponse
+
+        return CodeInterpreterResourceWithStreamingResponse(self._client.code_interpreter)
+
+    @cached_property
+    def images(self) -> images.ImagesResourceWithStreamingResponse:
+        from .resources.images import ImagesResourceWithStreamingResponse
+
+        return ImagesResourceWithStreamingResponse(self._client.images)
+
+    @cached_property
+    def videos(self) -> videos.VideosResourceWithStreamingResponse:
+        from .resources.videos import VideosResourceWithStreamingResponse
+
+        return VideosResourceWithStreamingResponse(self._client.videos)
+
+    @cached_property
+    def audio(self) -> audio.AudioResourceWithStreamingResponse:
+        from .resources.audio import AudioResourceWithStreamingResponse
+
+        return AudioResourceWithStreamingResponse(self._client.audio)
+
+    @cached_property
+    def models(self) -> models.ModelsResourceWithStreamingResponse:
+        from .resources.models import ModelsResourceWithStreamingResponse
+
+        return ModelsResourceWithStreamingResponse(self._client.models)
+
+    @cached_property
+    def jobs(self) -> jobs.JobsResourceWithStreamingResponse:
+        from .resources.jobs import JobsResourceWithStreamingResponse
+
+        return JobsResourceWithStreamingResponse(self._client.jobs)
+
+    @cached_property
+    def endpoints(self) -> endpoints.EndpointsResourceWithStreamingResponse:
+        from .resources.endpoints import EndpointsResourceWithStreamingResponse
+
+        return EndpointsResourceWithStreamingResponse(self._client.endpoints)
+
+    @cached_property
+    def hardware(self) -> hardware.HardwareResourceWithStreamingResponse:
+        from .resources.hardware import HardwareResourceWithStreamingResponse
+
+        return HardwareResourceWithStreamingResponse(self._client.hardware)
+
+    @cached_property
+    def rerank(self) -> rerank.RerankResourceWithStreamingResponse:
+        from .resources.rerank import RerankResourceWithStreamingResponse
+
+        return RerankResourceWithStreamingResponse(self._client.rerank)
+
+    @cached_property
+    def batches(self) -> batches.BatchesResourceWithStreamingResponse:
+        from .resources.batches import BatchesResourceWithStreamingResponse
+
+        return BatchesResourceWithStreamingResponse(self._client.batches)
+
+    @cached_property
+    def evals(self) -> evals.EvalsResourceWithStreamingResponse:
+        from .resources.evals import EvalsResourceWithStreamingResponse
+
+        return EvalsResourceWithStreamingResponse(self._client.evals)
 
 
 class AsyncTogetherWithStreamedResponse:
+    _client: AsyncTogether
+
     def __init__(self, client: AsyncTogether) -> None:
-        self.chat = chat.AsyncChatResourceWithStreamingResponse(client.chat)
-        self.completions = completions.AsyncCompletionsResourceWithStreamingResponse(client.completions)
-        self.embeddings = embeddings.AsyncEmbeddingsResourceWithStreamingResponse(client.embeddings)
-        self.files = files.AsyncFilesResourceWithStreamingResponse(client.files)
-        self.fine_tuning = fine_tuning.AsyncFineTuningResourceWithStreamingResponse(client.fine_tuning)
-        self.code_interpreter = code_interpreter.AsyncCodeInterpreterResourceWithStreamingResponse(
-            client.code_interpreter
-        )
-        self.images = images.AsyncImagesResourceWithStreamingResponse(client.images)
-        self.videos = videos.AsyncVideosResourceWithStreamingResponse(client.videos)
-        self.audio = audio.AsyncAudioResourceWithStreamingResponse(client.audio)
-        self.models = models.AsyncModelsResourceWithStreamingResponse(client.models)
-        self.jobs = jobs.AsyncJobsResourceWithStreamingResponse(client.jobs)
-        self.endpoints = endpoints.AsyncEndpointsResourceWithStreamingResponse(client.endpoints)
-        self.hardware = hardware.AsyncHardwareResourceWithStreamingResponse(client.hardware)
-        self.rerank = rerank.AsyncRerankResourceWithStreamingResponse(client.rerank)
-        self.batches = batches.AsyncBatchesResourceWithStreamingResponse(client.batches)
-        self.evals = evals.AsyncEvalsResourceWithStreamingResponse(client.evals)
+        self._client = client
+
+    @cached_property
+    def chat(self) -> chat.AsyncChatResourceWithStreamingResponse:
+        from .resources.chat import AsyncChatResourceWithStreamingResponse
+
+        return AsyncChatResourceWithStreamingResponse(self._client.chat)
+
+    @cached_property
+    def completions(self) -> completions.AsyncCompletionsResourceWithStreamingResponse:
+        from .resources.completions import AsyncCompletionsResourceWithStreamingResponse
+
+        return AsyncCompletionsResourceWithStreamingResponse(self._client.completions)
+
+    @cached_property
+    def embeddings(self) -> embeddings.AsyncEmbeddingsResourceWithStreamingResponse:
+        from .resources.embeddings import AsyncEmbeddingsResourceWithStreamingResponse
+
+        return AsyncEmbeddingsResourceWithStreamingResponse(self._client.embeddings)
+
+    @cached_property
+    def files(self) -> files.AsyncFilesResourceWithStreamingResponse:
+        from .resources.files import AsyncFilesResourceWithStreamingResponse
+
+        return AsyncFilesResourceWithStreamingResponse(self._client.files)
+
+    @cached_property
+    def fine_tuning(self) -> fine_tuning.AsyncFineTuningResourceWithStreamingResponse:
+        from .resources.fine_tuning import AsyncFineTuningResourceWithStreamingResponse
+
+        return AsyncFineTuningResourceWithStreamingResponse(self._client.fine_tuning)
+
+    @cached_property
+    def code_interpreter(self) -> code_interpreter.AsyncCodeInterpreterResourceWithStreamingResponse:
+        from .resources.code_interpreter import AsyncCodeInterpreterResourceWithStreamingResponse
+
+        return AsyncCodeInterpreterResourceWithStreamingResponse(self._client.code_interpreter)
+
+    @cached_property
+    def images(self) -> images.AsyncImagesResourceWithStreamingResponse:
+        from .resources.images import AsyncImagesResourceWithStreamingResponse
+
+        return AsyncImagesResourceWithStreamingResponse(self._client.images)
+
+    @cached_property
+    def videos(self) -> videos.AsyncVideosResourceWithStreamingResponse:
+        from .resources.videos import AsyncVideosResourceWithStreamingResponse
+
+        return AsyncVideosResourceWithStreamingResponse(self._client.videos)
+
+    @cached_property
+    def audio(self) -> audio.AsyncAudioResourceWithStreamingResponse:
+        from .resources.audio import AsyncAudioResourceWithStreamingResponse
+
+        return AsyncAudioResourceWithStreamingResponse(self._client.audio)
+
+    @cached_property
+    def models(self) -> models.AsyncModelsResourceWithStreamingResponse:
+        from .resources.models import AsyncModelsResourceWithStreamingResponse
+
+        return AsyncModelsResourceWithStreamingResponse(self._client.models)
+
+    @cached_property
+    def jobs(self) -> jobs.AsyncJobsResourceWithStreamingResponse:
+        from .resources.jobs import AsyncJobsResourceWithStreamingResponse
+
+        return AsyncJobsResourceWithStreamingResponse(self._client.jobs)
+
+    @cached_property
+    def endpoints(self) -> endpoints.AsyncEndpointsResourceWithStreamingResponse:
+        from .resources.endpoints import AsyncEndpointsResourceWithStreamingResponse
+
+        return AsyncEndpointsResourceWithStreamingResponse(self._client.endpoints)
+
+    @cached_property
+    def hardware(self) -> hardware.AsyncHardwareResourceWithStreamingResponse:
+        from .resources.hardware import AsyncHardwareResourceWithStreamingResponse
+
+        return AsyncHardwareResourceWithStreamingResponse(self._client.hardware)
+
+    @cached_property
+    def rerank(self) -> rerank.AsyncRerankResourceWithStreamingResponse:
+        from .resources.rerank import AsyncRerankResourceWithStreamingResponse
+
+        return AsyncRerankResourceWithStreamingResponse(self._client.rerank)
+
+    @cached_property
+    def batches(self) -> batches.AsyncBatchesResourceWithStreamingResponse:
+        from .resources.batches import AsyncBatchesResourceWithStreamingResponse
+
+        return AsyncBatchesResourceWithStreamingResponse(self._client.batches)
+
+    @cached_property
+    def evals(self) -> evals.AsyncEvalsResourceWithStreamingResponse:
+        from .resources.evals import AsyncEvalsResourceWithStreamingResponse
+
+        return AsyncEvalsResourceWithStreamingResponse(self._client.evals)
 
 
 Client = Together
