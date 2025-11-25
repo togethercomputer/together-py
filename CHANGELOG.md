@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0-alpha.5 (2025-11-25)
+
+Full Changelog: [v2.0.0-alpha.4...v2.0.0-alpha.5](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.4...v2.0.0-alpha.5)
+
+### Features
+
+* **api:** manual updates ([f1b27a5](https://github.com/togethercomputer/together-py/commit/f1b27a53efeb925b6b89d3f7636c4809814347d8))
+
+
+### Bug Fixes
+
+* uv v0.8.11 only has python 3.14rc, which causes issues with pydantic 2 ([981828a](https://github.com/togethercomputer/together-py/commit/981828a2f70db44845e6a1ae93d1906269d7ba5f))
+
+
+### Chores
+
+* **internal:** working around mypy ([7d080fc](https://github.com/togethercomputer/together-py/commit/7d080fc748da2cf3293ddfa5b74b23e47213c77f))
+
 ## 2.0.0-alpha.4 (2025-11-24)
 
 Full Changelog: [v2.0.0-alpha.3...v2.0.0-alpha.4](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.3...v2.0.0-alpha.4)

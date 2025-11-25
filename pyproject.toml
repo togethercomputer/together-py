@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.0.0-alpha.4"
+version = "2.0.0-alpha.5"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -83,7 +83,8 @@ pydantic-v1 = [
     "pydantic>=1.9.0,<2",
 ]
 pydantic-v2 = [
-    "pydantic>=2,<3",
+    "pydantic~=2.0 ; python_full_version < '3.14'",
+    "pydantic~=2.12 ; python_full_version >= '3.14'",
 ]
 
 [build-system]
