@@ -27,8 +27,8 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..types.fine_tune import FineTune
-from ..lib.types.fine_tuning import FinetuneResponse, FinetuneTrainingLimits
+from ..lib.types.fine_tuning import FinetuneTrainingLimits
+from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
@@ -241,7 +241,7 @@ class FineTuningResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTune:
+    ) -> FinetuneResponse:
         """
         List the metadata for a single fine-tuning job.
 
@@ -261,7 +261,7 @@ class FineTuningResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTune,
+            cast_to=FinetuneResponse,
         )
 
     def list(
@@ -682,7 +682,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTune:
+    ) -> FinetuneResponse:
         """
         List the metadata for a single fine-tuning job.
 
@@ -702,7 +702,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=FineTune,
+            cast_to=FinetuneResponse,
         )
 
     async def list(
