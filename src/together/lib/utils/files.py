@@ -7,9 +7,12 @@ from typing import Any, Dict, List, cast
 from pathlib import Path
 from traceback import format_exc
 
+from tqdm import tqdm
+
 from together.types import FilePurpose
 from together.lib.constants import (
     MIN_SAMPLES,
+    DISABLE_TQDM,
     NUM_BYTES_IN_GB,
     MAX_FILE_SIZE_GB,
     PARQUET_EXPECTED_COLUMNS,
@@ -356,8 +359,10 @@ def _check_utf8(file: Path) -> Dict[str, Any]:
     """
     report_dict: Dict[str, Any] = {}
     try:
+        # Dry-run UTF-8 decode by iterating through the file to avoid loading it entirely into memory
         with file.open(encoding="utf-8") as f:
-            f.read()
+            for _ in f:
+                pass
         report_dict["utf8"] = True
     except UnicodeDecodeError as e:
         report_dict["utf8"] = False
@@ -453,7 +458,12 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
     with file.open() as f:
         idx = -1
         try:
-            for idx, line in enumerate(f):
+            for idx, line in tqdm(
+                enumerate(f),
+                desc="Validating file",
+                unit=" lines",
+                disable=bool(DISABLE_TQDM),
+            ):
                 json_line = json.loads(line)
 
                 if not isinstance(json_line, dict):
@@ -473,7 +483,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                         if all(column in json_line for column in JSONL_REQUIRED_COLUMNS_MAP[possible_format]):
                             if current_format is None:
                                 current_format = possible_format
-                            elif current_format != possible_format: # type: ignore[unreachable]
+                            elif current_format != possible_format:  # type: ignore[unreachable]
                                 raise InvalidFileFormatError(
                                     message="Found multiple dataset formats in the input file. "
                                     f"Got {current_format} and {possible_format} on line {idx + 1}.",
@@ -522,7 +532,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
 
                     if dataset_format is None:
                         dataset_format = current_format
-                    elif current_format != dataset_format: # type: ignore[unreachable]
+                    elif current_format != dataset_format:  # type: ignore[unreachable]
                         raise InvalidFileFormatError(
                             message="All samples in the dataset must have the same dataset format. "
                             f"Got {dataset_format} for the first line and {current_format} "
