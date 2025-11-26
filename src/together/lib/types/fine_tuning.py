@@ -70,9 +70,6 @@ class FinetuneEventLevels(str, Enum):
     INFO = "Info"
     WARNING = "Warning"
     ERROR = "Error"
-    LEGACY_INFO = "info"
-    LEGACY_IWARNING = "warning"
-    LEGACY_IERROR = "error"
 
 
 class FinetuneEvent(BaseModel):
@@ -123,7 +120,7 @@ class LoRATrainingType(BaseModel):
 class UnknownTrainingType(BaseModel):
     """
     Catch-all for unknown training types (forward compatibility).
-    Accepts any training type not explicitly defined above.
+    Accepts any training type not explicitly defined.
     """
 
     type: str
@@ -175,10 +172,11 @@ class TrainingMethodDPO(BaseModel):
     rpo_alpha: Union[float, None] = None
     simpo_gamma: Union[float, None] = None
 
+
 class TrainingMethodUnknown(BaseModel):
     """
     Catch-all for unknown training methods (forward compatibility).
-    Accepts any training method not explicitly defined above.
+    Accepts any training method not explicitly defined.
     """
 
     method: str
