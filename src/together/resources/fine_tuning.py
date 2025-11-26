@@ -45,7 +45,7 @@ from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
-_CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS = (
+_WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "The estimated price of the fine-tuning job is {} which is significantly "
     "greater than your current credit limit and balance. "
     "It will likely fail due to insufficient funds. "
@@ -252,7 +252,7 @@ class FineTuningResource(SyncAPIResource):
             if not price_estimation_result.allowed_to_proceed:
                 rprint(
                     "[red]"
-                    + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
                     + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
@@ -740,7 +740,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             if not price_estimation_result.allowed_to_proceed:
                 rprint(
                     "[red]"
-                    + _CONFIRMATION_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
                     + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
