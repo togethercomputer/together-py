@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-alpha.7 (2025-11-26)
+
+Full Changelog: [v2.0.0-alpha.6...v2.0.0-alpha.7](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.6...v2.0.0-alpha.7)
+
+### Bug Fixes
+
+* include rich in package dependencies ([9c9c5fc](https://github.com/togethercomputer/together-py/commit/9c9c5fcc29183e1598418684391b480d4052c9b9))
+
 ## 2.0.0-alpha.6 (2025-11-25)
 
 Full Changelog: [v2.0.0-alpha.5...v2.0.0-alpha.6](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.5...v2.0.0-alpha.6)
