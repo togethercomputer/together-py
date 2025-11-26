@@ -5,6 +5,7 @@ import pytest
 from together.lib.types.fine_tuning import (
     FullTrainingType,
     LoRATrainingType,
+    TrainingMethodSFT,
     FinetuneTrainingLimits,
     FinetuneFullTrainingLimits,
     FinetuneLoraTrainingLimits,
@@ -320,6 +321,7 @@ def test_train_on_inputs_for_sft(train_on_inputs: Union[bool, Literal["auto"], N
         training_method="sft",
         train_on_inputs=train_on_inputs,
     )
+    assert isinstance(request.training_method, TrainingMethodSFT)
     assert request.training_method.method == "sft"
     if isinstance(train_on_inputs, bool):
         assert request.training_method.train_on_inputs is train_on_inputs
