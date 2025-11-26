@@ -7,18 +7,92 @@ from typing_extensions import Literal, TypeAlias
 from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
-from .lr_scheduler import LrScheduler
-from .fine_tune_event import FineTuneEvent
-from .full_training_type import FullTrainingType
-from .lo_ra_training_type import LoRaTrainingType
-from .training_method_dpo import TrainingMethodDpo
-from .training_method_sft import TrainingMethodSft
+from .finetune_event import FinetuneEvent
 
-__all__ = ["FineTuningListResponse", "Data", "DataTrainingMethod", "DataTrainingType"]
+__all__ = [
+    "FineTuningListResponse",
+    "Data",
+    "DataLrScheduler",
+    "DataLrSchedulerLrSchedulerArgs",
+    "DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
+    "DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "DataTrainingMethod",
+    "DataTrainingMethodTrainingMethodSft",
+    "DataTrainingMethodTrainingMethodDpo",
+    "DataTrainingType",
+    "DataTrainingTypeFullTrainingType",
+    "DataTrainingTypeLoRaTrainingType",
+]
 
-DataTrainingMethod: TypeAlias = Union[TrainingMethodSft, TrainingMethodDpo]
 
-DataTrainingType: TypeAlias = Union[FullTrainingType, LoRaTrainingType]
+class DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs(BaseModel):
+    min_lr_ratio: Optional[float] = None
+    """The ratio of the final learning rate to the peak learning rate"""
+
+
+class DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs(BaseModel):
+    min_lr_ratio: float
+    """The ratio of the final learning rate to the peak learning rate"""
+
+    num_cycles: float
+    """Number or fraction of cycles for the cosine learning rate scheduler"""
+
+
+DataLrSchedulerLrSchedulerArgs: TypeAlias = Union[
+    DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs, DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs
+]
+
+
+class DataLrScheduler(BaseModel):
+    lr_scheduler_type: Literal["linear", "cosine"]
+
+    lr_scheduler_args: Optional[DataLrSchedulerLrSchedulerArgs] = None
+
+
+class DataTrainingMethodTrainingMethodSft(BaseModel):
+    method: Literal["sft"]
+
+    train_on_inputs: Union[bool, Literal["auto"]]
+    """
+    Whether to mask the user messages in conversational data or prompts in
+    instruction data.
+    """
+
+
+class DataTrainingMethodTrainingMethodDpo(BaseModel):
+    method: Literal["dpo"]
+
+    dpo_beta: Optional[float] = None
+
+    dpo_normalize_logratios_by_length: Optional[bool] = None
+
+    dpo_reference_free: Optional[bool] = None
+
+    rpo_alpha: Optional[float] = None
+
+    simpo_gamma: Optional[float] = None
+
+
+DataTrainingMethod: TypeAlias = Union[DataTrainingMethodTrainingMethodSft, DataTrainingMethodTrainingMethodDpo]
+
+
+class DataTrainingTypeFullTrainingType(BaseModel):
+    type: Literal["Full"]
+
+
+class DataTrainingTypeLoRaTrainingType(BaseModel):
+    lora_alpha: int
+
+    lora_r: int
+
+    type: Literal["Lora"]
+
+    lora_dropout: Optional[float] = None
+
+    lora_trainable_modules: Optional[str] = None
+
+
+DataTrainingType: TypeAlias = Union[DataTrainingTypeFullTrainingType, DataTrainingTypeLoRaTrainingType]
 
 
 class Data(BaseModel):
@@ -46,7 +120,7 @@ class Data(BaseModel):
     batch_size: Optional[int] = None
     """Batch size used for training"""
 
-    events: Optional[List[FineTuneEvent]] = None
+    events: Optional[List[FinetuneEvent]] = None
     """Events related to this fine-tune job"""
 
     from_checkpoint: Optional[str] = None
@@ -61,7 +135,7 @@ class Data(BaseModel):
     learning_rate: Optional[float] = None
     """Learning rate used for training"""
 
-    lr_scheduler: Optional[LrScheduler] = None
+    lr_scheduler: Optional[DataLrScheduler] = None
     """Learning rate scheduler configuration"""
 
     max_grad_norm: Optional[float] = None

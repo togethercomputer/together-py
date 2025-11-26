@@ -8,10 +8,10 @@ from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["BatchRetrieveResponse"]
+__all__ = ["BatchJob"]
 
 
-class BatchRetrieveResponse(BaseModel):
+class BatchJob(BaseModel):
     id: Optional[str] = None
 
     completed_at: Optional[datetime] = None

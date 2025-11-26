@@ -16,10 +16,9 @@ from .._response import (
     async_to_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
+from ..types.batch_job import BatchJob
 from ..types.batch_list_response import BatchListResponse
-from ..types.batch_cancel_response import BatchCancelResponse
 from ..types.batch_create_response import BatchCreateResponse
-from ..types.batch_retrieve_response import BatchRetrieveResponse
 
 __all__ = ["BatchesResource", "AsyncBatchesResource"]
 
@@ -109,7 +108,7 @@ class BatchesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> BatchRetrieveResponse:
+    ) -> BatchJob:
         """
         Get details of a batch job by ID
 
@@ -129,7 +128,7 @@ class BatchesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=BatchRetrieveResponse,
+            cast_to=BatchJob,
         )
 
     def list(
@@ -161,7 +160,7 @@ class BatchesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> BatchCancelResponse:
+    ) -> BatchJob:
         """
         Cancel a batch job by ID
 
@@ -181,7 +180,7 @@ class BatchesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=BatchCancelResponse,
+            cast_to=BatchJob,
         )
 
 
@@ -270,7 +269,7 @@ class AsyncBatchesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> BatchRetrieveResponse:
+    ) -> BatchJob:
         """
         Get details of a batch job by ID
 
@@ -290,7 +289,7 @@ class AsyncBatchesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=BatchRetrieveResponse,
+            cast_to=BatchJob,
         )
 
     async def list(
@@ -322,7 +321,7 @@ class AsyncBatchesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> BatchCancelResponse:
+    ) -> BatchJob:
         """
         Cancel a batch job by ID
 
@@ -342,7 +341,7 @@ class AsyncBatchesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=BatchCancelResponse,
+            cast_to=BatchJob,
         )
 
 

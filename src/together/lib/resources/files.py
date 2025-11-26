@@ -11,14 +11,14 @@ import tempfile
 from typing import IO, Any, Dict, List, Tuple, cast
 from pathlib import Path
 from functools import partial
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 import httpx
 from tqdm import tqdm
 from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
-from ...types import FileType, FilePurpose, FileRetrieveResponse
+from ...types import FileType, FilePurpose, FileResponse
 from ..._types import RequestOptions
 from ..constants import (
     DISABLE_TQDM,
@@ -273,9 +273,9 @@ class UploadManager(SyncAPIResource):
 
         return redirect_url, file_id
 
-    def callback(self, url: str) -> FileRetrieveResponse:
+    def callback(self, url: str) -> FileResponse:
         response = self._client.post(
-            cast_to=FileRetrieveResponse,
+            cast_to=FileResponse,
             path=url,
         )
 
@@ -286,7 +286,7 @@ class UploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_size = os.stat(file.as_posix()).st_size
         file_size_gb = file_size / NUM_BYTES_IN_GB
 
@@ -306,7 +306,7 @@ class UploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_id = None
 
         redirect_url = None
@@ -357,7 +357,7 @@ class UploadManager(SyncAPIResource):
 
         response = self.callback(f"{url}/{file_id}/preprocess")
 
-        assert isinstance(response, FileRetrieveResponse)  # type: ignore
+        assert isinstance(response, FileResponse)  # type: ignore
 
         return response
 
@@ -374,7 +374,7 @@ class MultipartUploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Upload large file using multipart upload"""
 
         file_size = os.stat(file.as_posix()).st_size
@@ -463,6 +463,22 @@ class MultipartUploadManager(SyncAPIResource):
                 body=response.text,
             )
 
+    def _submit_part(
+        self,
+        executor: ThreadPoolExecutor,
+        file_handle: IO[bytes],
+        part_info: Dict[str, Any],
+        part_size: int,
+    ) -> Tuple[Future[str], int]:
+        """Submit a single part for upload and return its future and part number."""
+
+        part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
+        file_handle.seek((part_number - 1) * part_size)
+        part_data = file_handle.read(part_size)
+
+        future = executor.submit(self._upload_single_part, part_info, part_data)
+        return future, part_number
+
     def _upload_parts_concurrent(self, file: Path, upload_info: Dict[str, Any], part_size: int) -> List[Dict[str, Any]]:
         """Upload file parts concurrently with progress tracking"""
 
@@ -471,25 +487,32 @@ class MultipartUploadManager(SyncAPIResource):
 
         with ThreadPoolExecutor(max_workers=self.max_concurrent_parts) as executor:
             with tqdm(total=len(parts), desc="Uploading parts", unit="part", disable=bool(DISABLE_TQDM)) as pbar:
-                future_to_part: Dict[Any, int] = {}
-
                 with open(file, "rb") as f:
-                    for part_info in parts:
-                        part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
-                        f.seek((part_number - 1) * part_size)
-                        part_data = f.read(part_size)
+                    future_to_part: Dict[Future[str], int] = {}
+                    part_index = 0
 
-                        future = executor.submit(self._upload_single_part, part_info, part_data)
+                    while part_index < len(parts) and len(future_to_part) < self.max_concurrent_parts:
+                        part_info = parts[part_index]
+                        future, part_number = self._submit_part(executor, f, part_info, part_size)
                         future_to_part[future] = part_number
+                        part_index += 1
 
-                for future in as_completed(future_to_part):
-                    part_number = future_to_part[future]
-                    try:
-                        etag = future.result()
-                        completed_parts.append({"part_number": part_number, "etag": etag})
-                        pbar.update(1)
-                    except Exception as e:
-                        raise Exception(f"Failed to upload part {part_number}: {e}") from e
+                    while future_to_part:
+                        done_future = next(as_completed(future_to_part))
+                        part_number = future_to_part.pop(done_future)
+
+                        try:
+                            etag = done_future.result()
+                            completed_parts.append({"part_number": part_number, "etag": etag})
+                            pbar.update(1)
+                        except Exception as e:
+                            raise Exception(f"Failed to upload part {part_number}: {e}") from e
+
+                        if part_index < len(parts):
+                            part_info = parts[part_index]
+                            future, next_part_number = self._submit_part(executor, f, part_info, part_size)
+                            future_to_part[future] = next_part_number
+                            part_index += 1
 
         completed_parts.sort(key=lambda x: x["part_number"])
         return completed_parts
@@ -528,7 +551,7 @@ class MultipartUploadManager(SyncAPIResource):
         upload_id: str,
         file_id: str,
         completed_parts: List[Dict[str, Any]],
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Complete the multipart upload"""
 
         payload = {
@@ -553,7 +576,7 @@ class MultipartUploadManager(SyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
-            return FileRetrieveResponse(**file_data)
+            return FileResponse(**file_data)
         else:
             raise APIStatusError(
                 f"Failed to complete multipart upload: {response.text}",
@@ -631,9 +654,9 @@ class AsyncUploadManager(AsyncAPIResource):
 
         return redirect_url, file_id
 
-    async def callback(self, url: str) -> FileRetrieveResponse:
+    async def callback(self, url: str) -> FileResponse:
         response = self._client.post(
-            cast_to=FileRetrieveResponse,
+            cast_to=FileResponse,
             path=url,
         )
 
@@ -644,7 +667,7 @@ class AsyncUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_size = os.stat(file.as_posix()).st_size
         file_size_gb = file_size / NUM_BYTES_IN_GB
 
@@ -664,7 +687,7 @@ class AsyncUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         file_id = None
 
         redirect_url = None
@@ -715,7 +738,7 @@ class AsyncUploadManager(AsyncAPIResource):
 
         response = await self.callback(f"{url}/{file_id}/preprocess")
 
-        assert isinstance(response, FileRetrieveResponse)  # type: ignore
+        assert isinstance(response, FileResponse)  # type: ignore
 
         return response
 
@@ -732,7 +755,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Upload large file using multipart upload via ThreadPoolExecutor"""
 
         file_size = os.stat(file.as_posix()).st_size
@@ -834,25 +857,46 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
         with ThreadPoolExecutor(max_workers=self.max_concurrent_parts) as executor:
             with tqdm(total=len(parts), desc="Uploading parts", unit="part", disable=bool(DISABLE_TQDM)) as pbar:
-                # Submit all upload tasks
-                futures: List[Tuple[Any, int]] = []
                 with open(file, "rb") as f:
-                    for part_info in parts:
+                    future_to_part: Dict[asyncio.Future[str], int] = {}
+                    part_index = 0
+
+                    while part_index < len(parts) and len(future_to_part) < self.max_concurrent_parts:
+                        part_info = parts[part_index]
                         part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
                         f.seek((part_number - 1) * part_size)
                         part_data = f.read(part_size)
 
                         future = loop.run_in_executor(executor, self._upload_single_part_sync, part_info, part_data)
-                        futures.append((future, part_number))
+                        future_to_part[future] = part_number
+                        part_index += 1
 
-                # Collect results
-                for future, part_number in futures:
-                    try:
-                        etag = await future
-                        completed_parts.append({"part_number": part_number, "etag": etag})
-                        pbar.update(1)
-                    except Exception as e:
-                        raise Exception(f"Failed to upload part {part_number}: {e}") from e
+                    while future_to_part:
+                        done, _ = await asyncio.wait(
+                            tuple(future_to_part.keys()),
+                            return_when=asyncio.FIRST_COMPLETED,
+                        )
+
+                        for done_future in done:
+                            part_number = future_to_part.pop(done_future)
+
+                            try:
+                                etag = await done_future
+                                completed_parts.append({"part_number": part_number, "etag": etag})
+                                pbar.update(1)
+                            except Exception as e:
+                                raise Exception(f"Failed to upload part {part_number}: {e}") from e
+
+                            if part_index < len(parts):
+                                part_info = parts[part_index]
+                                next_part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
+                                f.seek((next_part_number - 1) * part_size)
+                                part_data = f.read(part_size)
+                                future = loop.run_in_executor(
+                                    executor, self._upload_single_part_sync, part_info, part_data
+                                )
+                                future_to_part[future] = next_part_number
+                                part_index += 1
 
         completed_parts.sort(key=lambda x: x["part_number"])
         return completed_parts
@@ -888,7 +932,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_id: str,
         file_id: str,
         completed_parts: List[Dict[str, Any]],
-    ) -> FileRetrieveResponse:
+    ) -> FileResponse:
         """Complete the multipart upload"""
 
         payload = {
@@ -913,7 +957,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
-            return FileRetrieveResponse(**file_data)
+            return FileResponse(**file_data)
         else:
             raise APIStatusError(
                 f"Failed to complete multipart upload: {response.text}",

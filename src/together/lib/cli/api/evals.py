@@ -491,8 +491,8 @@ def create(
 )
 def list(
     ctx: click.Context,
-    status: Literal["pending", "queued", "running", "completed", "error", "user_error"],
-    limit: Optional[int],
+    status: Union[Literal["pending", "queued", "running", "completed", "error", "user_error"], None],
+    limit: Union[int, None],
 ) -> None:
     """List evals"""
 

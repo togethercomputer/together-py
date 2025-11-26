@@ -1,5 +1,61 @@
 # Changelog
 
+## 2.0.0-alpha.7 (2025-11-26)
+
+Full Changelog: [v2.0.0-alpha.6...v2.0.0-alpha.7](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.6...v2.0.0-alpha.7)
+
+### Bug Fixes
+
+* include rich in package dependencies ([9c9c5fc](https://github.com/togethercomputer/together-py/commit/9c9c5fcc29183e1598418684391b480d4052c9b9))
+
+## 2.0.0-alpha.6 (2025-11-25)
+
+Full Changelog: [v2.0.0-alpha.5...v2.0.0-alpha.6](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.5...v2.0.0-alpha.6)
+
+### Chores
+
+* **api:** Cleanup some exported types ([bf57f0d](https://github.com/togethercomputer/together-py/commit/bf57f0d49619651e96565d99a9291aa55873e4f0))
+* fix lint and type checks ([#186](https://github.com/togethercomputer/together-py/issues/186)) ([7184b72](https://github.com/togethercomputer/together-py/commit/7184b72f79aa2b255a0921f5fc4680e75f0d8847))
+
+## 2.0.0-alpha.5 (2025-11-25)
+
+Full Changelog: [v2.0.0-alpha.4...v2.0.0-alpha.5](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.4...v2.0.0-alpha.5)
+
+### Features
+
+* **api:** manual updates ([f1b27a5](https://github.com/togethercomputer/together-py/commit/f1b27a53efeb925b6b89d3f7636c4809814347d8))
+
+
+### Bug Fixes
+
+* uv v0.8.11 only has python 3.14rc, which causes issues with pydantic 2 ([981828a](https://github.com/togethercomputer/together-py/commit/981828a2f70db44845e6a1ae93d1906269d7ba5f))
+
+
+### Chores
+
+* **internal:** working around mypy ([7d080fc](https://github.com/togethercomputer/together-py/commit/7d080fc748da2cf3293ddfa5b74b23e47213c77f))
+
+## 2.0.0-alpha.4 (2025-11-24)
+
+Full Changelog: [v2.0.0-alpha.3...v2.0.0-alpha.4](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.3...v2.0.0-alpha.4)
+
+### Chores
+
+* Run bootstrap on codebase ([399a559](https://github.com/togethercomputer/together-py/commit/399a55971beaf5f42f6bacd426996f8049f36441))
+
+## 2.0.0-alpha.3 (2025-11-24)
+
+Full Changelog: [v2.0.0-alpha.2...v2.0.0-alpha.3](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.2...v2.0.0-alpha.3)
+
+### Features
+
+* **api:** update via SDK Studio ([79346e8](https://github.com/togethercomputer/together-py/commit/79346e8254761d5f8059d0451c0cd3af7fa96aac))
+
+
+### Chores
+
+* **internal:** codegen related update ([ae73675](https://github.com/togethercomputer/together-py/commit/ae73675ce207c9c5304f1b77d74800fae673d53f))
+
 ## 2.0.0-alpha.2 (2025-11-21)
 
 Full Changelog: [v2.0.0-alpha.1...v2.0.0-alpha.2](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.1...v2.0.0-alpha.2)

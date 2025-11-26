@@ -50,19 +50,19 @@ Types:
 
 ```python
 from together.types import (
+    FileList,
     FileObject,
     FilePurpose,
+    FileResponse,
     FileType,
-    FileRetrieveResponse,
-    FileListResponse,
     FileDeleteResponse,
 )
 ```
 
 Methods:
 
-- <code title="get /files/{id}">client.files.<a href="./src/together/resources/files.py">retrieve</a>(id) -> <a href="./src/together/types/file_retrieve_response.py">FileRetrieveResponse</a></code>
-- <code title="get /files">client.files.<a href="./src/together/resources/files.py">list</a>() -> <a href="./src/together/types/file_list_response.py">FileListResponse</a></code>
+- <code title="get /files/{id}">client.files.<a href="./src/together/resources/files.py">retrieve</a>(id) -> <a href="./src/together/types/file_response.py">FileResponse</a></code>
+- <code title="get /files">client.files.<a href="./src/together/resources/files.py">list</a>() -> <a href="./src/together/types/file_list.py">FileList</a></code>
 - <code title="delete /files/{id}">client.files.<a href="./src/together/resources/files.py">delete</a>(id) -> <a href="./src/together/types/file_delete_response.py">FileDeleteResponse</a></code>
 - <code title="get /files/{id}/content">client.files.<a href="./src/together/resources/files.py">content</a>(id) -> BinaryAPIResponse</code>
 
@@ -72,15 +72,9 @@ Types:
 
 ```python
 from together.types import (
-    CosineLrSchedulerArgs,
-    FineTune,
-    FineTuneEvent,
-    FullTrainingType,
-    LinearLrSchedulerArgs,
-    LoRaTrainingType,
-    LrScheduler,
-    TrainingMethodDpo,
-    TrainingMethodSft,
+    FinetuneEvent,
+    FinetuneEventType,
+    FinetuneResponse,
     FineTuningListResponse,
     FineTuningDeleteResponse,
     FineTuningCancelResponse,
@@ -91,7 +85,7 @@ from together.types import (
 
 Methods:
 
-- <code title="get /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve</a>(id) -> <a href="./src/together/types/fine_tune.py">FineTune</a></code>
+- <code title="get /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve</a>(id) -> <a href="./src/together/types/finetune_response.py">FinetuneResponse</a></code>
 - <code title="get /fine-tunes">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list</a>() -> <a href="./src/together/types/fine_tuning_list_response.py">FineTuningListResponse</a></code>
 - <code title="delete /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">delete</a>(id, \*\*<a href="src/together/types/fine_tuning_delete_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_delete_response.py">FineTuningDeleteResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">cancel</a>(id) -> <a href="./src/together/types/fine_tuning_cancel_response.py">FineTuningCancelResponse</a></code>
@@ -203,7 +197,7 @@ Methods:
 Types:
 
 ```python
-from together.types import ModelListResponse, ModelUploadResponse
+from together.types import ModelObject, ModelListResponse, ModelUploadResponse
 ```
 
 Methods:
@@ -275,39 +269,27 @@ Methods:
 Types:
 
 ```python
-from together.types import (
-    BatchCreateResponse,
-    BatchRetrieveResponse,
-    BatchListResponse,
-    BatchCancelResponse,
-)
+from together.types import BatchJob, BatchCreateResponse, BatchListResponse
 ```
 
 Methods:
 
 - <code title="post /batches">client.batches.<a href="./src/together/resources/batches.py">create</a>(\*\*<a href="src/together/types/batch_create_params.py">params</a>) -> <a href="./src/together/types/batch_create_response.py">BatchCreateResponse</a></code>
-- <code title="get /batches/{id}">client.batches.<a href="./src/together/resources/batches.py">retrieve</a>(id) -> <a href="./src/together/types/batch_retrieve_response.py">BatchRetrieveResponse</a></code>
+- <code title="get /batches/{id}">client.batches.<a href="./src/together/resources/batches.py">retrieve</a>(id) -> <a href="./src/together/types/batch_job.py">BatchJob</a></code>
 - <code title="get /batches">client.batches.<a href="./src/together/resources/batches.py">list</a>() -> <a href="./src/together/types/batch_list_response.py">BatchListResponse</a></code>
-- <code title="post /batches/{id}/cancel">client.batches.<a href="./src/together/resources/batches.py">cancel</a>(id) -> <a href="./src/together/types/batch_cancel_response.py">BatchCancelResponse</a></code>
+- <code title="post /batches/{id}/cancel">client.batches.<a href="./src/together/resources/batches.py">cancel</a>(id) -> <a href="./src/together/types/batch_job.py">BatchJob</a></code>
 
 # Evals
 
 Types:
 
 ```python
-from together.types import (
-    EvaluationJob,
-    EvalCreateResponse,
-    EvalUpdateResponse,
-    EvalListResponse,
-    EvalStatusResponse,
-)
+from together.types import EvaluationJob, EvalCreateResponse, EvalListResponse, EvalStatusResponse
 ```
 
 Methods:
 
 - <code title="post /evaluation">client.evals.<a href="./src/together/resources/evals.py">create</a>(\*\*<a href="src/together/types/eval_create_params.py">params</a>) -> <a href="./src/together/types/eval_create_response.py">EvalCreateResponse</a></code>
 - <code title="get /evaluation/{id}">client.evals.<a href="./src/together/resources/evals.py">retrieve</a>(id) -> <a href="./src/together/types/evaluation_job.py">EvaluationJob</a></code>
-- <code title="post /evaluation/{id}/update">client.evals.<a href="./src/together/resources/evals.py">update</a>(id, \*\*<a href="src/together/types/eval_update_params.py">params</a>) -> <a href="./src/together/types/eval_update_response.py">EvalUpdateResponse</a></code>
 - <code title="get /evaluation">client.evals.<a href="./src/together/resources/evals.py">list</a>(\*\*<a href="src/together/types/eval_list_params.py">params</a>) -> <a href="./src/together/types/eval_list_response.py">EvalListResponse</a></code>
 - <code title="get /evaluation/{id}/status">client.evals.<a href="./src/together/resources/evals.py">status</a>(id) -> <a href="./src/together/types/eval_status_response.py">EvalStatusResponse</a></code>

@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.0.0-alpha.2"
+version = "2.0.0-alpha.7"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -15,10 +15,9 @@ dependencies = [
     "distro>=1.7.0, <2",
     "sniffio",
     "click>=8.1.7",
-    "pyarrow>=16.1.0",
+    "rich>=13.7.1",
     "tabulate>=0.9.0",
     "pillow>=10.4.0",
-    "pyarrow-stubs>=10.0.1.7",
     "types-tabulate>=0.9.0.20240106",
     "tqdm>=4.67.1",
     "types-tqdm>=4.67.0.20250516",
@@ -33,6 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Operating System :: OS Independent",
   "Operating System :: POSIX",
   "Operating System :: MacOS",
@@ -48,14 +48,24 @@ Repository = "https://github.com/togethercomputer/together-py"
 
 [project.optional-dependencies]
 aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]
+pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
 
 [project.scripts]
 together = "together.lib.cli.cli:main"
 
-[tool.rye]
+[tool.uv]
 managed = true
-# version pins are in requirements-dev.lock
-dev-dependencies = [
+required-version = ">=0.5.0"
+conflicts = [
+    [
+      { group = "pydantic-v1" },
+      { group = "pydantic-v2" },
+    ],
+]
+
+[dependency-groups]
+# version pins are in uv.lock
+dev = [
     "pyright==1.1.399",
     "mypy",
     "respx",
@@ -63,42 +73,20 @@ dev-dependencies = [
     "pytest-asyncio",
     "ruff",
     "time-machine",
-    "nox",
     "dirty-equals>=0.6.0",
     "importlib-metadata>=6.7.0",
     "rich>=13.7.1",
     "pytest-xdist>=3.6.1",
     "pytest-mock>=3.14.0",
+    "aiohttp>=3.12.13",
 ]
-
-[tool.rye.scripts]
-format = { chain = [
-  "format:ruff",
-  "format:docs",
-  "fix:ruff",
-  # run formatting again to fix any inconsistencies when imports are stripped
-  "format:ruff",
-]}
-"format:docs" = "python scripts/utils/ruffen-docs.py README.md api.md"
-"format:ruff" = "ruff format"
-
-"lint" = { chain = [
-  "check:ruff",
-  "typecheck",
-  "check:importable",
-]}
-"check:ruff" = "ruff check ."
-"fix:ruff" = "ruff check --fix ."
-
-"check:importable" = "python -c 'import together'"
-
-typecheck = { chain = [
-  "typecheck:pyright",
-  "typecheck:mypy"
-]}
-"typecheck:pyright" = "pyright"
-"typecheck:verify-types" = "pyright --verifytypes together --ignoreexternal"
-"typecheck:mypy" = "mypy . --no-warn-unreachable"
+pydantic-v1 = [
+    "pydantic>=1.9.0,<2",
+]
+pydantic-v2 = [
+    "pydantic~=2.0 ; python_full_version < '3.14'",
+    "pydantic~=2.12 ; python_full_version >= '3.14'",
+]
 
 [build-system]
 requires = ["hatchling==1.26.3", "hatch-fancy-pypi-readme"]
