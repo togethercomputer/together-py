@@ -99,6 +99,13 @@ class TestFineTuning:
     def test_method_delete(self, client: Together) -> None:
         fine_tuning = client.fine_tuning.delete(
             id="id",
+        )
+        assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_method_delete_with_all_params(self, client: Together) -> None:
+        fine_tuning = client.fine_tuning.delete(
+            id="id",
             force=True,
         )
         assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
@@ -107,7 +114,6 @@ class TestFineTuning:
     def test_raw_response_delete(self, client: Together) -> None:
         response = client.fine_tuning.with_raw_response.delete(
             id="id",
-            force=True,
         )
 
         assert response.is_closed is True
@@ -119,7 +125,6 @@ class TestFineTuning:
     def test_streaming_response_delete(self, client: Together) -> None:
         with client.fine_tuning.with_streaming_response.delete(
             id="id",
-            force=True,
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -134,7 +139,6 @@ class TestFineTuning:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.fine_tuning.with_raw_response.delete(
                 id="",
-                force=True,
             )
 
     @parametrize
@@ -380,6 +384,13 @@ class TestAsyncFineTuning:
     async def test_method_delete(self, async_client: AsyncTogether) -> None:
         fine_tuning = await async_client.fine_tuning.delete(
             id="id",
+        )
+        assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_method_delete_with_all_params(self, async_client: AsyncTogether) -> None:
+        fine_tuning = await async_client.fine_tuning.delete(
+            id="id",
             force=True,
         )
         assert_matches_type(FineTuningDeleteResponse, fine_tuning, path=["response"])
@@ -388,7 +399,6 @@ class TestAsyncFineTuning:
     async def test_raw_response_delete(self, async_client: AsyncTogether) -> None:
         response = await async_client.fine_tuning.with_raw_response.delete(
             id="id",
-            force=True,
         )
 
         assert response.is_closed is True
@@ -400,7 +410,6 @@ class TestAsyncFineTuning:
     async def test_streaming_response_delete(self, async_client: AsyncTogether) -> None:
         async with async_client.fine_tuning.with_streaming_response.delete(
             id="id",
-            force=True,
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -415,7 +424,6 @@ class TestAsyncFineTuning:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.fine_tuning.with_raw_response.delete(
                 id="",
-                force=True,
             )
 
     @parametrize

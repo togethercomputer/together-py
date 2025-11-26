@@ -116,7 +116,7 @@ class FineTuningResource(SyncAPIResource):
         self,
         id: str,
         *,
-        force: bool,
+        force: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -199,7 +199,7 @@ class FineTuningResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> BinaryAPIResponse:
         """
-        Download a compressed fine-tuned model or checkpoint.
+        Receive a compressed fine-tuned model or checkpoint.
 
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
@@ -385,7 +385,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         self,
         id: str,
         *,
-        force: bool,
+        force: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -468,7 +468,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncBinaryAPIResponse:
         """
-        Download a compressed fine-tuned model or checkpoint.
+        Receive a compressed fine-tuned model or checkpoint.
 
         Args:
           ft_id: Fine-tune ID to download. A string that starts with `ft-`.
