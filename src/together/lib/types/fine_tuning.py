@@ -197,31 +197,57 @@ class FinetuneTrainingLimits(BaseModel):
 
 
 class LinearLRSchedulerArgs(BaseModel):
+    """
+    Linear learning rate scheduler arguments
+    """
+
     min_lr_ratio: Union[float, None] = 0.0
 
 
 class CosineLRSchedulerArgs(BaseModel):
+    """
+    Cosine learning rate scheduler arguments
+    """
+
     min_lr_ratio: Union[float, None] = 0.0
     num_cycles: Union[float, None] = 0.5
 
 
 class LinearLRScheduler(BaseModel):
+    """
+    Linear learning rate scheduler
+    """
+
     lr_scheduler_type: Literal["linear"] = "linear"
     lr_scheduler_args: Union[LinearLRSchedulerArgs, None] = None
 
 
 class CosineLRScheduler(BaseModel):
+    """
+    Cosine learning rate scheduler
+    """
+
     lr_scheduler_type: Literal["cosine"] = "cosine"
     lr_scheduler_args: Union[CosineLRSchedulerArgs, None] = None
 
 
-# placeholder for old fine-tuning jobs with no lr_scheduler_type specified
 class EmptyLRScheduler(BaseModel):
+    """
+    Empty learning rate scheduler
+
+    Placeholder for old fine-tuning jobs with no lr_scheduler_type specified
+    """
+
     lr_scheduler_type: Literal[""]
     lr_scheduler_args: None = None
 
-# Catch-all for unknown LR scheduler types (forward compatibility)
 class UnknownLRScheduler(BaseModel):
+    """
+    Unknown learning rate scheduler
+
+    Catch-all for unknown LR scheduler types (forward compatibility)
+    """
+
     lr_scheduler_type: str
     lr_scheduler_args: Optional[Any] = None
 
