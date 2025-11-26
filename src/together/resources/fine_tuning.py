@@ -27,8 +27,8 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..types.fine_tune import FineTune
-from ..lib.types.fine_tuning import FinetuneResponse, FinetuneTrainingLimits, FinetunePriceEstimationResponse
+from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib, FinetuneTrainingLimits, FinetunePriceEstimationResponse
+from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import (
     get_model_limits,
     async_get_model_limits,
