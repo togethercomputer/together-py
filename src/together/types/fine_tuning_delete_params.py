@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing_extensions import Required, TypedDict
+from typing_extensions import TypedDict
 
 __all__ = ["FineTuningDeleteParams"]
 
 
 class FineTuningDeleteParams(TypedDict, total=False):
-    force: Required[bool]
+    force: bool

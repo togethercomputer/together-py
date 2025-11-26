@@ -20,7 +20,6 @@ from .._response import (
 )
 from .._base_client import make_request_options
 from ..types.video_job import VideoJob
-from ..types.video_create_response import VideoCreateResponse
 
 __all__ = ["VideosResource", "AsyncVideosResource"]
 
@@ -68,7 +67,7 @@ class VideosResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VideoCreateResponse:
+    ) -> VideoJob:
         """
         Create a video
 
@@ -139,7 +138,7 @@ class VideosResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VideoCreateResponse,
+            cast_to=VideoJob,
         )
 
     def retrieve(
@@ -219,7 +218,7 @@ class AsyncVideosResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VideoCreateResponse:
+    ) -> VideoJob:
         """
         Create a video
 
@@ -290,7 +289,7 @@ class AsyncVideosResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VideoCreateResponse,
+            cast_to=VideoJob,
         )
 
     async def retrieve(
