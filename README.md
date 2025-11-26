@@ -466,40 +466,6 @@ with Together() as client:
 
 ## Usage – CLI
 
-### Chat Completions
-
-```bash
-together chat.completions \
-  --message "system" "You are a helpful assistant named Together" \
-  --message "user" "What is your name?" \
-  --model mistralai/Mixtral-8x7B-Instruct-v0.1
-```
-
-The Chat Completions CLI enables streaming tokens to stdout by default. To disable streaming, use `--no-stream`.
-
-### Completions
-
-```bash
-together completions \
-  "Large language models are " \
-  --model mistralai/Mixtral-8x7B-v0.1 \
-  --max-tokens 512 \
-  --stop "."
-```
-
-The Completions CLI enables streaming tokens to stdout by default. To disable streaming, use `--no-stream`.
-
-### Image Generations
-
-```bash
-together images generate \
-  "space robots" \
-  --model stabilityai/stable-diffusion-xl-base-1.0 \
-  --n 4
-```
-
-The image is opened in the default image viewer by default. To disable this, use `--no-show`.
-
 ### Files
 
 ```bash
