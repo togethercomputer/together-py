@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.0.0-alpha.8 (2025-11-26)
+
+Full Changelog: [v2.0.0-alpha.7...v2.0.0-alpha.8](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.7...v2.0.0-alpha.8)
+
+### Features
+
+* **api:** api update ([49bb5d4](https://github.com/togethercomputer/together-py/commit/49bb5d4ba69ca118ecc34be2d69c4253665e2e81))
+* **api:** Fix internal references for VideoJob spec ([fb5e7bb](https://github.com/togethercomputer/together-py/commit/fb5e7bb3dbaa9427d291de7440c201529b6cf528))
+
+
+### Bug Fixes
+
+* Address incorrect logic for `endpoint [command] --wait false` logic ([31236a9](https://github.com/togethercomputer/together-py/commit/31236a9df29c22fe7444c2dbb0d4bfc518bc79aa))
+
+
+### Chores
+
+* Remove incorrect file upload docs ([5bb847e](https://github.com/togethercomputer/together-py/commit/5bb847e33b55e5d0978c742e86cf931a2c08f919))
+* Remove incorrect file upload docs ([bb97093](https://github.com/togethercomputer/together-py/commit/bb970938650b6f9580538528979221d142f74b6a))
+
 ## 2.0.0-alpha.7 (2025-11-26)
 
 Full Changelog: [v2.0.0-alpha.6...v2.0.0-alpha.7](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.6...v2.0.0-alpha.7)
