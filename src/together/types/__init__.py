@@ -7,6 +7,7 @@ from .embedding import Embedding as Embedding
 from .file_list import FileList as FileList
 from .file_type import FileType as FileType
 from .log_probs import LogProbs as LogProbs
+from .video_job import VideoJob as VideoJob
 from .completion import Completion as Completion
 from .image_file import ImageFile as ImageFile
 from .autoscaling import Autoscaling as Autoscaling
@@ -45,14 +46,12 @@ from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
 from .job_retrieve_response import JobRetrieveResponse as JobRetrieveResponse
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
-from .video_create_response import VideoCreateResponse as VideoCreateResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
 from .endpoint_list_response import EndpointListResponse as EndpointListResponse
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
 from .hardware_list_response import HardwareListResponse as HardwareListResponse
 from .rerank_create_response import RerankCreateResponse as RerankCreateResponse
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
-from .video_retrieve_response import VideoRetrieveResponse as VideoRetrieveResponse
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
 from .audio_speech_stream_chunk import AudioSpeechStreamChunk as AudioSpeechStreamChunk
 from .fine_tuning_delete_params import FineTuningDeleteParams as FineTuningDeleteParams
