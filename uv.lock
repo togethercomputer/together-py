@@ -1970,7 +1970,7 @@ wheels = [
 
 [[package]]
 name = "together"
-version = "2.0.0a5"
+version = "2.0.0a6"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -1984,6 +1984,7 @@ dependencies = [
     { name = "pillow", version = "12.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "pydantic", version = "1.10.24", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-8-together-pydantic-v1'" },
     { name = "pydantic", version = "2.12.4", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-8-together-pydantic-v2' or extra != 'group-8-together-pydantic-v1'" },
+    { name = "rich" },
     { name = "sniffio" },
     { name = "tabulate" },
     { name = "tqdm" },
@@ -2042,6 +2043,7 @@ requires-dist = [
     { name = "pyarrow", marker = "extra == 'pyarrow'", specifier = ">=16.1.0" },
     { name = "pyarrow-stubs", marker = "extra == 'pyarrow'", specifier = ">=10.0.1.7" },
     { name = "pydantic", specifier = ">=1.9.0,<3" },
+    { name = "rich", specifier = ">=13.7.1" },
     { name = "sniffio" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
