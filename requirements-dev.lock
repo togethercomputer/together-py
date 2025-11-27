@@ -76,7 +76,7 @@ multidict==6.7.0
     # via
     #   aiohttp
     #   yarl
-mypy==1.18.2
+mypy==1.17.0
 mypy-extensions==1.1.0
     # via mypy
 nodeenv==1.9.1
@@ -95,7 +95,7 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-pydantic==2.12.4
+pydantic==2.12.5
     # via together
 pydantic-core==2.41.5
     # via pydantic
