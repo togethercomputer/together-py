@@ -50,6 +50,8 @@ class TranscriptionsResource(SyncAPIResource):
         file: FileTypes,
         diarize: bool | Omit = omit,
         language: str | Omit = omit,
+        max_speakers: int | Omit = omit,
+        min_speakers: int | Omit = omit,
         model: Literal["openai/whisper-large-v3"] | Omit = omit,
         prompt: str | Omit = omit,
         response_format: Literal["json", "verbose_json"] | Omit = omit,
@@ -82,6 +84,12 @@ class TranscriptionsResource(SyncAPIResource):
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
 
+          max_speakers: Maximum number of speakers expected in the audio. Used to improve diarization
+              accuracy when the approximate number of speakers is known.
+
+          min_speakers: Minimum number of speakers expected in the audio. Used to improve diarization
+              accuracy when the approximate number of speakers is known.
+
           model: Model to use for transcription
 
           prompt: Optional text to bias decoding.
@@ -107,6 +115,8 @@ class TranscriptionsResource(SyncAPIResource):
                 "file": file,
                 "diarize": diarize,
                 "language": language,
+                "max_speakers": max_speakers,
+                "min_speakers": min_speakers,
                 "model": model,
                 "prompt": prompt,
                 "response_format": response_format,
@@ -161,6 +171,8 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         file: FileTypes,
         diarize: bool | Omit = omit,
         language: str | Omit = omit,
+        max_speakers: int | Omit = omit,
+        min_speakers: int | Omit = omit,
         model: Literal["openai/whisper-large-v3"] | Omit = omit,
         prompt: str | Omit = omit,
         response_format: Literal["json", "verbose_json"] | Omit = omit,
@@ -193,6 +205,12 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
           language: Optional ISO 639-1 language code. If `auto` is provided, language is
               auto-detected.
 
+          max_speakers: Maximum number of speakers expected in the audio. Used to improve diarization
+              accuracy when the approximate number of speakers is known.
+
+          min_speakers: Minimum number of speakers expected in the audio. Used to improve diarization
+              accuracy when the approximate number of speakers is known.
+
           model: Model to use for transcription
 
           prompt: Optional text to bias decoding.
@@ -218,6 +236,8 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
                 "file": file,
                 "diarize": diarize,
                 "language": language,
+                "max_speakers": max_speakers,
+                "min_speakers": min_speakers,
                 "model": model,
                 "prompt": prompt,
                 "response_format": response_format,
