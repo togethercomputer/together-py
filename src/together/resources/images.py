@@ -8,7 +8,7 @@ from typing_extensions import Literal
 import httpx
 
 from ..types import image_generate_params
-from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from .._types import Body, Omit, Query, Headers, NotGiven, SequenceNotStr, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
@@ -64,6 +64,7 @@ class ImagesResource(SyncAPIResource):
         n: int | Omit = omit,
         negative_prompt: str | Omit = omit,
         output_format: Literal["jpeg", "png"] | Omit = omit,
+        reference_images: SequenceNotStr[str] | Omit = omit,
         response_format: Literal["base64", "url"] | Omit = omit,
         seed: int | Omit = omit,
         steps: int | Omit = omit,
@@ -105,6 +106,10 @@ class ImagesResource(SyncAPIResource):
           output_format: The format of the image response. Can be either be `jpeg` or `png`. Defaults to
               `jpeg`.
 
+          reference_images: An array of image URLs that guide the overall appearance and style of the
+              generated image. These reference images influence the visual characteristics
+              consistently across the generation.
+
           response_format: Format of the image response. Can be either a base64 string or a URL.
 
           seed: Seed used for generation. Can be used to reproduce image generations.
@@ -135,6 +140,7 @@ class ImagesResource(SyncAPIResource):
                     "n": n,
                     "negative_prompt": negative_prompt,
                     "output_format": output_format,
+                    "reference_images": reference_images,
                     "response_format": response_format,
                     "seed": seed,
                     "steps": steps,
@@ -189,6 +195,7 @@ class AsyncImagesResource(AsyncAPIResource):
         n: int | Omit = omit,
         negative_prompt: str | Omit = omit,
         output_format: Literal["jpeg", "png"] | Omit = omit,
+        reference_images: SequenceNotStr[str] | Omit = omit,
         response_format: Literal["base64", "url"] | Omit = omit,
         seed: int | Omit = omit,
         steps: int | Omit = omit,
@@ -230,6 +237,10 @@ class AsyncImagesResource(AsyncAPIResource):
           output_format: The format of the image response. Can be either be `jpeg` or `png`. Defaults to
               `jpeg`.
 
+          reference_images: An array of image URLs that guide the overall appearance and style of the
+              generated image. These reference images influence the visual characteristics
+              consistently across the generation.
+
           response_format: Format of the image response. Can be either a base64 string or a URL.
 
           seed: Seed used for generation. Can be used to reproduce image generations.
@@ -260,6 +271,7 @@ class AsyncImagesResource(AsyncAPIResource):
                     "n": n,
                     "negative_prompt": negative_prompt,
                     "output_format": output_format,
+                    "reference_images": reference_images,
                     "response_format": response_format,
                     "seed": seed,
                     "steps": steps,
