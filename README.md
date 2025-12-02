@@ -98,6 +98,7 @@ pip install 'together[aiohttp] @ git+ssh://git@github.com/togethercomputer/toget
 Then you can enable it by instantiating the client with `http_client=DefaultAioHttpClient()`:
 
 ```python
+import os
 import asyncio
 from together import DefaultAioHttpClient
 from together import AsyncTogether
@@ -105,7 +106,7 @@ from together import AsyncTogether
 
 async def main() -> None:
     async with AsyncTogether(
-        api_key="My API Key",
+        api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
         http_client=DefaultAioHttpClient(),
     ) as client:
         chat_completion = await client.chat.completions.create(
