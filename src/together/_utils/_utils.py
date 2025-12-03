@@ -373,7 +373,7 @@ def get_required_header(headers: HeadersLike, header: str) -> str:
     lower_header = header.lower()
     if is_mapping_t(headers):
         # mypy doesn't understand the type narrowing here
-        for k, v in headers.items():  # type: ignore[misc, has-type]
+        for k, v in headers.items():  # type: ignore[misc, has-type, attr-defined]
             if k.lower() == lower_header and isinstance(v, str):  # type: ignore[has-type]
                 return v  # type: ignore[has-type]
 

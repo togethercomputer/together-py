@@ -34,6 +34,20 @@ class TranscriptionCreateParams(TypedDict, total=False):
     If `auto` is provided, language is auto-detected.
     """
 
+    max_speakers: int
+    """Maximum number of speakers expected in the audio.
+
+    Used to improve diarization accuracy when the approximate number of speakers is
+    known.
+    """
+
+    min_speakers: int
+    """Minimum number of speakers expected in the audio.
+
+    Used to improve diarization accuracy when the approximate number of speakers is
+    known.
+    """
+
     model: Literal["openai/whisper-large-v3"]
     """Model to use for transcription"""
 

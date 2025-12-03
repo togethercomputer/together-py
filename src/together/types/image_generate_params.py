@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Union, Iterable
 from typing_extensions import Literal, Required, TypedDict
 
+from .._types import SequenceNotStr
+
 __all__ = ["ImageGenerateParams", "ImageLora"]
 
 
@@ -59,6 +61,13 @@ class ImageGenerateParams(TypedDict, total=False):
     """The format of the image response.
 
     Can be either be `jpeg` or `png`. Defaults to `jpeg`.
+    """
+
+    reference_images: SequenceNotStr[str]
+    """
+    An array of image URLs that guide the overall appearance and style of the
+    generated image. These reference images influence the visual characteristics
+    consistently across the generation.
     """
 
     response_format: Literal["base64", "url"]
