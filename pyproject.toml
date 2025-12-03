@@ -55,7 +55,7 @@ together = "together.lib.cli.cli:main"
 
 [tool.uv]
 managed = true
-required-version = ">=0.5.0"
+required-version = ">=0.9"
 conflicts = [
     [
       { group = "pydantic-v1" },
