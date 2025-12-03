@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.0.0-alpha.9 (2025-12-03)
+
+Full Changelog: [v2.0.0-alpha.8...v2.0.0-alpha.9](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.8...v2.0.0-alpha.9)
+
+### Features
+
+* **api:** api update ([fa5e6f3](https://github.com/togethercomputer/together-py/commit/fa5e6f3eb27475ac2e377bbea9150d45bf4e141e))
+* **api:** api update ([236996f](https://github.com/togethercomputer/together-py/commit/236996f0eba5c0a33d2da59b438a830684e89192))
+
+
+### Bug Fixes
+
+* ensure streams are always closed ([db990c7](https://github.com/togethercomputer/together-py/commit/db990c744ebfffcfe48f52dc44b1ca7b47f1f79a))
+
+
+### Chores
+
+* bump required `uv` version ([1dfec56](https://github.com/togethercomputer/together-py/commit/1dfec5659c5a8e6c8abc7a1035d602a3e47ff67a))
+* **deps:** mypy 1.18.1 has a regression, pin to 1.17 ([2235b95](https://github.com/togethercomputer/together-py/commit/2235b95d3e8dc11c9edc308e2b4b69b1463d21cb))
+* **docs:** use environment variables for authentication in code snippets ([051c1b4](https://github.com/togethercomputer/together-py/commit/051c1b489cb80ded1ad60f6b8722512dd2efae3f))
+* fix internal type issues ([4a2b0f1](https://github.com/togethercomputer/together-py/commit/4a2b0f1cfebc013102e21d54318269a0fe037b7a))
+* update lockfile ([e93c953](https://github.com/togethercomputer/together-py/commit/e93c95338756fb37f279aec946d0c5f74cf22877))
+
 ## 2.0.0-alpha.8 (2025-11-26)
 
 Full Changelog: [v2.0.0-alpha.7...v2.0.0-alpha.8](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.7...v2.0.0-alpha.8)
