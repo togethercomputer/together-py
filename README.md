@@ -186,17 +186,15 @@ from together import Together
 
 client = Together()
 
-chat_completion = client.chat.completions.create(
-    messages=[
-        {
-            "content": "content",
-            "role": "system",
-        }
-    ],
-    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    response_format={},
+dedicated_endpoint = client.endpoints.create(
+    autoscaling={
+        "max_replicas": 5,
+        "min_replicas": 2,
+    },
+    hardware="1x_nvidia_a100_80gb_sxm",
+    model="meta-llama/Llama-3-8b-chat-hf",
 )
-print(chat_completion.response_format)
+print(dedicated_endpoint.autoscaling)
 ```
 
 ## File uploads
