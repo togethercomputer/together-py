@@ -136,6 +136,14 @@ class CompletionsResource(SyncAPIResource):
 
           response_format: An object specifying the format that the model must output.
 
+              Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+              Outputs which ensures the model will match your supplied JSON schema. Learn more
+              in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+              Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+              ensures the message the model generates is valid JSON. Using `json_schema` is
+              preferred for models that support it.
+
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
@@ -277,6 +285,14 @@ class CompletionsResource(SyncAPIResource):
 
           response_format: An object specifying the format that the model must output.
 
+              Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+              Outputs which ensures the model will match your supplied JSON schema. Learn more
+              in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+              Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+              ensures the message the model generates is valid JSON. Using `json_schema` is
+              preferred for models that support it.
+
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
@@ -413,6 +429,14 @@ class CompletionsResource(SyncAPIResource):
               likelihood of repeated sequences. Higher values decrease repetition.
 
           response_format: An object specifying the format that the model must output.
+
+              Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+              Outputs which ensures the model will match your supplied JSON schema. Learn more
+              in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+              Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+              ensures the message the model generates is valid JSON. Using `json_schema` is
+              preferred for models that support it.
 
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
@@ -653,6 +677,14 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           response_format: An object specifying the format that the model must output.
 
+              Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+              Outputs which ensures the model will match your supplied JSON schema. Learn more
+              in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+              Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+              ensures the message the model generates is valid JSON. Using `json_schema` is
+              preferred for models that support it.
+
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
@@ -794,6 +826,14 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           response_format: An object specifying the format that the model must output.
 
+              Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+              Outputs which ensures the model will match your supplied JSON schema. Learn more
+              in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+              Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+              ensures the message the model generates is valid JSON. Using `json_schema` is
+              preferred for models that support it.
+
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
               [here](https://docs.together.ai/docs/inference-models#moderation-models).
@@ -930,6 +970,14 @@ class AsyncCompletionsResource(AsyncAPIResource):
               likelihood of repeated sequences. Higher values decrease repetition.
 
           response_format: An object specifying the format that the model must output.
+
+              Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+              Outputs which ensures the model will match your supplied JSON schema. Learn more
+              in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+              Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+              ensures the message the model generates is valid JSON. Using `json_schema` is
+              preferred for models that support it.
 
           safety_model: The name of the moderation model used to validate tokens. Choose from the
               available moderation models found
