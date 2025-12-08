@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import fine_tuning_delete_params, fine_tuning_content_params
+from ..types import fine_tuning_delete_params, fine_tuning_content_params, fine_tuning_estimate_price_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -31,6 +31,7 @@ from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
+from ..types.fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
@@ -236,6 +237,69 @@ class FineTuningResource(SyncAPIResource):
                 ),
             ),
             cast_to=BinaryAPIResponse,
+        )
+
+    def estimate_price(
+        self,
+        *,
+        model: str,
+        training_file: str,
+        n_epochs: int | Omit = omit,
+        n_evals: int | Omit = omit,
+        training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
+        training_type: fine_tuning_estimate_price_params.TrainingType | Omit = omit,
+        validation_file: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuningEstimatePriceResponse:
+        """
+        Estimate the price of a fine-tuning job.
+
+        Args:
+          model: Name of the base model to run fine-tune job on
+
+          training_file: File-ID of a training file uploaded to the Together API
+
+          n_epochs: Number of complete passes through the training dataset (higher values may
+              improve results but increase cost and risk of overfitting)
+
+          n_evals: Number of evaluations to be run on a given validation set during training
+
+          training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
+              Preference Optimization.
+
+          validation_file: File-ID of a validation file uploaded to the Together API
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/fine-tunes/estimate-price",
+            body=maybe_transform(
+                {
+                    "model": model,
+                    "training_file": training_file,
+                    "n_epochs": n_epochs,
+                    "n_evals": n_evals,
+                    "training_method": training_method,
+                    "training_type": training_type,
+                    "validation_file": validation_file,
+                },
+                fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuningEstimatePriceResponse,
         )
 
     def list_checkpoints(
@@ -507,6 +571,69 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=AsyncBinaryAPIResponse,
         )
 
+    async def estimate_price(
+        self,
+        *,
+        model: str,
+        training_file: str,
+        n_epochs: int | Omit = omit,
+        n_evals: int | Omit = omit,
+        training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
+        training_type: fine_tuning_estimate_price_params.TrainingType | Omit = omit,
+        validation_file: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuningEstimatePriceResponse:
+        """
+        Estimate the price of a fine-tuning job.
+
+        Args:
+          model: Name of the base model to run fine-tune job on
+
+          training_file: File-ID of a training file uploaded to the Together API
+
+          n_epochs: Number of complete passes through the training dataset (higher values may
+              improve results but increase cost and risk of overfitting)
+
+          n_evals: Number of evaluations to be run on a given validation set during training
+
+          training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
+              Preference Optimization.
+
+          validation_file: File-ID of a validation file uploaded to the Together API
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/fine-tunes/estimate-price",
+            body=await async_maybe_transform(
+                {
+                    "model": model,
+                    "training_file": training_file,
+                    "n_epochs": n_epochs,
+                    "n_evals": n_evals,
+                    "training_method": training_method,
+                    "training_type": training_type,
+                    "validation_file": validation_file,
+                },
+                fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuningEstimatePriceResponse,
+        )
+
     async def list_checkpoints(
         self,
         id: str,
@@ -594,6 +721,9 @@ class FineTuningResourceWithRawResponse:
             fine_tuning.content,
             BinaryAPIResponse,
         )
+        self.estimate_price = to_raw_response_wrapper(
+            fine_tuning.estimate_price,
+        )
         self.list_checkpoints = to_raw_response_wrapper(
             fine_tuning.list_checkpoints,
         )
@@ -621,6 +751,9 @@ class AsyncFineTuningResourceWithRawResponse:
         self.content = async_to_custom_raw_response_wrapper(
             fine_tuning.content,
             AsyncBinaryAPIResponse,
+        )
+        self.estimate_price = async_to_raw_response_wrapper(
+            fine_tuning.estimate_price,
         )
         self.list_checkpoints = async_to_raw_response_wrapper(
             fine_tuning.list_checkpoints,
@@ -650,6 +783,9 @@ class FineTuningResourceWithStreamingResponse:
             fine_tuning.content,
             StreamedBinaryAPIResponse,
         )
+        self.estimate_price = to_streamed_response_wrapper(
+            fine_tuning.estimate_price,
+        )
         self.list_checkpoints = to_streamed_response_wrapper(
             fine_tuning.list_checkpoints,
         )
@@ -677,6 +813,9 @@ class AsyncFineTuningResourceWithStreamingResponse:
         self.content = async_to_custom_streamed_response_wrapper(
             fine_tuning.content,
             AsyncStreamedBinaryAPIResponse,
+        )
+        self.estimate_price = async_to_streamed_response_wrapper(
+            fine_tuning.estimate_price,
         )
         self.list_checkpoints = async_to_streamed_response_wrapper(
             fine_tuning.list_checkpoints,

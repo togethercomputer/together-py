@@ -17,6 +17,7 @@ from together.types import (
     FineTuningCancelResponse,
     FineTuningDeleteResponse,
     FineTuningListEventsResponse,
+    FineTuningEstimatePriceResponse,
     FineTuningListCheckpointsResponse,
 )
 from together._response import (
@@ -234,6 +235,56 @@ class TestFineTuning:
             assert isinstance(fine_tuning, StreamedBinaryAPIResponse)
 
         assert cast(Any, fine_tuning.is_closed) is True
+
+    @parametrize
+    def test_method_estimate_price(self, client: Together) -> None:
+        fine_tuning = client.fine_tuning.estimate_price(
+            model="model",
+            training_file="training_file",
+        )
+        assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_method_estimate_price_with_all_params(self, client: Together) -> None:
+        fine_tuning = client.fine_tuning.estimate_price(
+            model="model",
+            training_file="training_file",
+            n_epochs=0,
+            n_evals=0,
+            training_method={
+                "method": "sft",
+                "train_on_inputs": True,
+            },
+            training_type={"type": "Full"},
+            validation_file="validation_file",
+        )
+        assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_raw_response_estimate_price(self, client: Together) -> None:
+        response = client.fine_tuning.with_raw_response.estimate_price(
+            model="model",
+            training_file="training_file",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tuning = response.parse()
+        assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_streaming_response_estimate_price(self, client: Together) -> None:
+        with client.fine_tuning.with_streaming_response.estimate_price(
+            model="model",
+            training_file="training_file",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tuning = response.parse()
+            assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_method_list_checkpoints(self, client: Together) -> None:
@@ -519,6 +570,56 @@ class TestAsyncFineTuning:
             assert isinstance(fine_tuning, AsyncStreamedBinaryAPIResponse)
 
         assert cast(Any, fine_tuning.is_closed) is True
+
+    @parametrize
+    async def test_method_estimate_price(self, async_client: AsyncTogether) -> None:
+        fine_tuning = await async_client.fine_tuning.estimate_price(
+            model="model",
+            training_file="training_file",
+        )
+        assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_method_estimate_price_with_all_params(self, async_client: AsyncTogether) -> None:
+        fine_tuning = await async_client.fine_tuning.estimate_price(
+            model="model",
+            training_file="training_file",
+            n_epochs=0,
+            n_evals=0,
+            training_method={
+                "method": "sft",
+                "train_on_inputs": True,
+            },
+            training_type={"type": "Full"},
+            validation_file="validation_file",
+        )
+        assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_raw_response_estimate_price(self, async_client: AsyncTogether) -> None:
+        response = await async_client.fine_tuning.with_raw_response.estimate_price(
+            model="model",
+            training_file="training_file",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tuning = await response.parse()
+        assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_estimate_price(self, async_client: AsyncTogether) -> None:
+        async with async_client.fine_tuning.with_streaming_response.estimate_price(
+            model="model",
+            training_file="training_file",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tuning = await response.parse()
+            assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
 
     @parametrize
     async def test_method_list_checkpoints(self, async_client: AsyncTogether) -> None:
