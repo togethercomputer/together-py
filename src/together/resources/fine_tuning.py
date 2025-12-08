@@ -232,7 +232,7 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-        
+        training_type_cls: fine_tuning_estimate_price_params.TrainingType
         if isinstance(finetune_request.training_type, FullTrainingType):
             training_type_cls = fine_tuning_estimate_price_params.TrainingTypeFullTrainingType(
                 type="Full",
@@ -248,6 +248,7 @@ class FineTuningResource(SyncAPIResource):
         else:
             raise ValueError(f"Unknown training type: {finetune_request.training_type}")
 
+        training_method_cls: fine_tuning_estimate_price_params.TrainingMethod
         if isinstance(finetune_request.training_method, TrainingMethodSFT):
             training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodSft(
                 method="sft",
@@ -792,7 +793,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-        
+        training_type_cls: fine_tuning_estimate_price_params.TrainingType
         if isinstance(finetune_request.training_type, FullTrainingType):
             training_type_cls = fine_tuning_estimate_price_params.TrainingTypeFullTrainingType(
                 type="Full",
@@ -808,6 +809,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         else:
             raise ValueError(f"Unknown training type: {finetune_request.training_type}")
 
+        training_method_cls: fine_tuning_estimate_price_params.TrainingMethod
         if isinstance(finetune_request.training_method, TrainingMethodSFT):
             training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodSft(
                 method="sft",

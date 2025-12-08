@@ -332,6 +332,7 @@ def create(
     elif n_evals > 0 and not validation_file:
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
+    training_type_cls: pe_params.TrainingType
     if lora:
         training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
             lora_alpha=int(lora_alpha or 0),
@@ -345,6 +346,7 @@ def create(
             type="Full",
         )
 
+    training_method_cls: pe_params.TrainingMethod
     if training_method == "sft":
         training_method_cls = pe_params.TrainingMethodTrainingMethodSft(
             method="sft",
