@@ -10,11 +10,15 @@ __all__ = ["HardwareListResponse", "Data", "DataPricing", "DataSpecs", "DataAvai
 
 
 class DataPricing(BaseModel):
+    """Pricing details for using an endpoint"""
+
     cents_per_minute: float
     """Cost per minute of endpoint uptime in cents"""
 
 
 class DataSpecs(BaseModel):
+    """Detailed specifications of a hardware configuration"""
+
     gpu_count: int
     """Number of GPUs in this configuration"""
 
@@ -29,11 +33,15 @@ class DataSpecs(BaseModel):
 
 
 class DataAvailability(BaseModel):
+    """Indicates the current availability status of a hardware configuration"""
+
     status: Literal["available", "unavailable", "insufficient"]
     """The availability status of the hardware configuration"""
 
 
 class Data(BaseModel):
+    """Hardware configuration details with optional availability status"""
+
     id: str
     """Unique identifier for the hardware configuration"""
 

@@ -44,6 +44,8 @@ DataLrSchedulerLrSchedulerArgs: TypeAlias = Union[
 
 
 class DataLrScheduler(BaseModel):
+    """Learning rate scheduler configuration"""
+
     lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[DataLrSchedulerLrSchedulerArgs] = None
@@ -96,6 +98,10 @@ DataTrainingType: TypeAlias = Union[DataTrainingTypeFullTrainingType, DataTraini
 
 
 class Data(BaseModel):
+    """
+    A truncated version of the fine-tune response, used for POST /fine-tunes, GET /fine-tunes and POST /fine-tunes/{id}/cancel endpoints
+    """
+
     id: str
     """Unique identifier for the fine-tune job"""
 

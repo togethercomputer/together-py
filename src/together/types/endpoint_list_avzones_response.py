@@ -8,4 +8,6 @@ __all__ = ["EndpointListAvzonesResponse"]
 
 
 class EndpointListAvzonesResponse(BaseModel):
+    """List of unique availability zones"""
+
     avzones: List[str]

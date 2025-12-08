@@ -10,6 +10,8 @@ __all__ = ["EndpointListResponse", "Data"]
 
 
 class Data(BaseModel):
+    """Details about an endpoint when listed via the list endpoint"""
+
     id: str
     """Unique identifier for the endpoint"""
 

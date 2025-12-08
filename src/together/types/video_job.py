@@ -9,12 +9,18 @@ __all__ = ["VideoJob", "Error", "Outputs"]
 
 
 class Error(BaseModel):
+    """Error payload that explains why generation failed, if applicable."""
+
     message: str
 
     code: Optional[str] = None
 
 
 class Outputs(BaseModel):
+    """
+    Available upon completion, the outputs provides the cost charged and the hosted url to access the video
+    """
+
     cost: int
     """The cost of generated video charged to the owners account."""
 
@@ -23,6 +29,8 @@ class Outputs(BaseModel):
 
 
 class VideoJob(BaseModel):
+    """Structured information describing a generated video job."""
+
     id: str
     """Unique identifier for the video job."""
 

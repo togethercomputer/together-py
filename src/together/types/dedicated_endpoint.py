@@ -10,6 +10,8 @@ __all__ = ["DedicatedEndpoint"]
 
 
 class DedicatedEndpoint(BaseModel):
+    """Details about a dedicated endpoint deployment"""
+
     id: str
     """Unique identifier for the endpoint"""
 

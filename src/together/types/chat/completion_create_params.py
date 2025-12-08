@@ -311,11 +311,15 @@ FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
 
 
 class ResponseFormatText(TypedDict, total=False):
+    """Default response format. Used to generate text responses."""
+
     type: Required[Literal["text"]]
     """The type of response format being defined. Always `text`."""
 
 
 class ResponseFormatJsonSchemaJsonSchema(TypedDict, total=False):
+    """Structured Outputs configuration options, including a JSON Schema."""
+
     name: Required[str]
     """The name of the response format.
 
@@ -346,6 +350,12 @@ class ResponseFormatJsonSchemaJsonSchema(TypedDict, total=False):
 
 
 class ResponseFormatJsonSchema(TypedDict, total=False):
+    """JSON Schema response format.
+
+    Used to generate structured JSON responses.
+    Learn more about [Structured Outputs](https://docs.together.ai/docs/json-mode).
+    """
+
     json_schema: Required[ResponseFormatJsonSchemaJsonSchema]
     """Structured Outputs configuration options, including a JSON Schema."""
 
@@ -354,6 +364,14 @@ class ResponseFormatJsonSchema(TypedDict, total=False):
 
 
 class ResponseFormatJsonObject(TypedDict, total=False):
+    """JSON object response format.
+
+    An older method of generating JSON responses.
+    Using `json_schema` is recommended for models that support it. Note that the
+    model will not generate JSON without a system or user message instructing it
+    to do so.
+    """
+
     type: Required[Literal["json_object"]]
     """The type of response format being defined. Always `json_object`."""
 

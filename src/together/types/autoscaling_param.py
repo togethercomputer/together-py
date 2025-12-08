@@ -8,6 +8,8 @@ __all__ = ["AutoscalingParam"]
 
 
 class AutoscalingParam(TypedDict, total=False):
+    """Configuration for automatic scaling of replicas based on demand."""
+
     max_replicas: Required[int]
     """The maximum number of replicas to scale up to under load"""
 
