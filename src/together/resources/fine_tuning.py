@@ -30,6 +30,7 @@ from .._base_client import make_request_options
 from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib, FinetuneTrainingLimits
 from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
+from ..lib.types.fine_tuning import FullTrainingType, LoRATrainingType, TrainingMethodSFT, TrainingMethodDPO
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
@@ -39,6 +40,12 @@ from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpoi
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
+_WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
+    "The estimated price of the fine-tuning job is {} which is significantly "
+    "greater than your current credit limit and balance combined. "
+    "It will likely get cancelled due to insufficient funds. "
+    "Proceed at your own risk."
+)
 
 class FineTuningResource(SyncAPIResource):
     @cached_property
@@ -219,11 +226,67 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
+        
+        if isinstance(finetune_request.training_type, FullTrainingType):
+            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeFullTrainingType(
+                type="Full",
+            )
+        elif isinstance(finetune_request.training_type, LoRATrainingType):
+            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeLoRaTrainingType(
+                lora_alpha=finetune_request.training_type.lora_alpha,
+                lora_r=finetune_request.training_type.lora_r,
+                lora_dropout=finetune_request.training_type.lora_dropout,
+                lora_trainable_modules=finetune_request.training_type.lora_trainable_modules,
+                type="Lora",
+            )
+        else:
+            raise ValueError(f"Unknown training type: {finetune_request.training_type}")
+
+        if isinstance(finetune_request.training_method, TrainingMethodSFT):
+            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodSft(
+                method="sft",
+                train_on_inputs=finetune_request.training_method.train_on_inputs,
+            )
+        elif isinstance(finetune_request.training_method, TrainingMethodDPO):
+            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodDpo(
+                method="dpo",
+                dpo_beta=finetune_request.training_method.dpo_beta or 0,
+                dpo_normalize_logratios_by_length=finetune_request.training_method.dpo_normalize_logratios_by_length,
+                dpo_reference_free=finetune_request.training_method.dpo_reference_free,
+                rpo_alpha=finetune_request.training_method.rpo_alpha or 0,
+                simpo_gamma=finetune_request.training_method.simpo_gamma or 0,
+            )
+        else:
+            raise ValueError(f"Unknown training method: {finetune_request.training_method}")
+
+        if from_checkpoint is None and from_hf_model is None:
+            price_estimation_result = self.estimate_price(
+                training_file=training_file,
+                validation_file=validation_file or Omit(),
+                model=model or "",
+                n_epochs=finetune_request.n_epochs,
+                n_evals=finetune_request.n_evals or 0,
+                training_type=training_type_cls,
+                training_method=training_method_cls,
+            )
+            price_limit_passed = price_estimation_result.allowed_to_proceed
+        else:
+            # unsupported case
+            price_limit_passed = True
+
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
+            if not price_limit_passed:
+                rprint(
+                    "[red]"
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                    )
+                    + "[/red]",
+                )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return self._client.post(
@@ -723,11 +786,67 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
+        
+        if isinstance(finetune_request.training_type, FullTrainingType):
+            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeFullTrainingType(
+                type="Full",
+            )
+        elif isinstance(finetune_request.training_type, LoRATrainingType):
+            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeLoRaTrainingType(
+                lora_alpha=finetune_request.training_type.lora_alpha,
+                lora_r=finetune_request.training_type.lora_r,
+                lora_dropout=finetune_request.training_type.lora_dropout,
+                lora_trainable_modules=finetune_request.training_type.lora_trainable_modules,
+                type="Lora",
+            )
+        else:
+            raise ValueError(f"Unknown training type: {finetune_request.training_type}")
+
+        if isinstance(finetune_request.training_method, TrainingMethodSFT):
+            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodSft(
+                method="sft",
+                train_on_inputs=finetune_request.training_method.train_on_inputs,
+            )
+        elif isinstance(finetune_request.training_method, TrainingMethodDPO):
+            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodDpo(
+                method="dpo",
+                dpo_beta=finetune_request.training_method.dpo_beta or 0,
+                dpo_normalize_logratios_by_length=finetune_request.training_method.dpo_normalize_logratios_by_length,
+                dpo_reference_free=finetune_request.training_method.dpo_reference_free,
+                rpo_alpha=finetune_request.training_method.rpo_alpha or 0,
+                simpo_gamma=finetune_request.training_method.simpo_gamma or 0,
+            )
+        else:
+            raise ValueError(f"Unknown training method: {finetune_request.training_method}")
+
+        if from_checkpoint is None and from_hf_model is None:
+            price_estimation_result = await self.estimate_price(
+                training_file=training_file,
+                validation_file=validation_file or Omit(),
+                model=model or "",
+                n_epochs=finetune_request.n_epochs,
+                n_evals=finetune_request.n_evals or 0,
+                training_type=training_type_cls,
+                training_method=training_method_cls,
+            )
+            price_limit_passed = price_estimation_result.allowed_to_proceed
+        else:
+            # unsupported case
+            price_limit_passed = True
+
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
+            if not price_limit_passed:
+                rprint(
+                    "[red]"
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                    )
+                    + "[/red]",
+                )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return await self._client.post(

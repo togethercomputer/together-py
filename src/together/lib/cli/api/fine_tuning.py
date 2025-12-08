@@ -19,16 +19,25 @@ from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
 from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
+from together.types import fine_tuning_estimate_price_params as pe_params
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.resources.fine_tuning import get_model_limits
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
-    "The cost of your job will be determined by the model size, the number of tokens "
+    "The estimated price of this job is {price}. "
+    "The actual cost of your job will be determined by the model size, the number of tokens "
     "in the training file, the number of tokens in the validation file, the number of epochs, and "
-    "the number of evaluations. Visit https://www.together.ai/pricing to get a price estimate.\n"
+    "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
+    "{warning}"
     "You can pass `-y` or `--confirm` to your command to skip this message.\n\n"
     "Do you want to proceed?"
+)
+
+_WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
+    "The estimated price of this job is significantly greater than your current credit limit and balance combined. "
+    "It will likely get cancelled due to insufficient funds. "
+    "Consider increasing your credit limit at https://api.together.xyz/settings/profile\n"
 )
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
@@ -323,7 +332,60 @@ def create(
     elif n_evals > 0 and not validation_file:
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
-    if confirm or click.confirm(_CONFIRMATION_MESSAGE, default=True, show_default=True):
+    if lora:
+        training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
+            lora_alpha=int(lora_alpha or 0),
+            lora_r=lora_r or 0,
+            lora_dropout=lora_dropout or 0,
+            lora_trainable_modules=lora_trainable_modules or "all-linear",
+            type="Lora",
+        )
+    else:
+        training_type_cls = pe_params.TrainingTypeFullTrainingType(
+            type="Full",
+        )
+
+    if training_method == "sft":
+        training_method_cls = pe_params.TrainingMethodTrainingMethodSft(
+            method="sft",
+            train_on_inputs=train_on_inputs or "auto",
+        )
+    else:
+        training_method_cls = pe_params.TrainingMethodTrainingMethodDpo(
+            method="dpo",
+            dpo_beta=dpo_beta or 0,
+            dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length or False,
+            dpo_reference_free=False,
+            rpo_alpha=rpo_alpha or 0,
+            simpo_gamma=simpo_gamma or 0,
+        )
+
+    finetune_price_estimation_result = client.fine_tuning.estimate_price(
+        training_file=training_file,
+        validation_file=validation_file,
+        model=model or "",
+        n_epochs=n_epochs,
+        n_evals=n_evals,
+        training_type=training_type_cls,
+        training_method=training_method_cls,
+    )
+
+    price = click.style(
+        f"${finetune_price_estimation_result.estimated_total_price:.2f}",
+        bold=True,
+    )
+
+    if not finetune_price_estimation_result.allowed_to_proceed:
+        warning = click.style(_WARNING_MESSAGE_INSUFFICIENT_FUNDS, fg="red", bold=True)
+    else:
+        warning = ""
+
+    confirmation_message = _CONFIRMATION_MESSAGE.format(
+        price=price,
+        warning=warning,
+    )
+
+    if confirm or click.confirm(confirmation_message, default=True, show_default=True):
         response = client.fine_tuning.create(
             **training_args,
             verbose=True,
