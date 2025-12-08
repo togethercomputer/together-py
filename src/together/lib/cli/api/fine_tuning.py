@@ -13,13 +13,13 @@ from tabulate import tabulate
 from click.core import ParameterSource  # type: ignore[attr-defined]
 
 from together import Together
+from together.types import fine_tuning_estimate_price_params as pe_params
 from together._types import NOT_GIVEN, NotGiven
 from together.lib.utils import log_warn
 from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
 from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
-from together.types import fine_tuning_estimate_price_params as pe_params
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.resources.fine_tuning import get_model_limits
 

@@ -27,10 +27,16 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib, FinetuneTrainingLimits
+from ..lib.types.fine_tuning import (
+    FinetuneResponse as FinetuneResponseLib,
+    FullTrainingType,
+    LoRATrainingType,
+    TrainingMethodDPO,
+    TrainingMethodSFT,
+    FinetuneTrainingLimits,
+)
 from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
-from ..lib.types.fine_tuning import FullTrainingType, LoRATrainingType, TrainingMethodSFT, TrainingMethodDPO
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
