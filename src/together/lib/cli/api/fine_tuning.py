@@ -361,23 +361,27 @@ def create(
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
+    if from_checkpoint is None and from_hf_model is None:
+        finetune_price_estimation_result = client.fine_tuning.estimate_price(
+            training_file=training_file,
+            validation_file=validation_file,
+            model=model or "",
+            n_epochs=n_epochs,
+            n_evals=n_evals,
+            training_type=training_type_cls,
+            training_method=training_method_cls,
+        )
+        price_limit_passed = finetune_price_estimation_result.allowed_to_proceed
+        price = click.style(
+            f"${finetune_price_estimation_result.estimated_total_price:.2f}",
+            bold=True,
+        )
+    else:
+        # unsupported case
+        price_limit_passed = True
+        price = "N/A"
 
-    finetune_price_estimation_result = client.fine_tuning.estimate_price(
-        training_file=training_file,
-        validation_file=validation_file,
-        model=model or "",
-        n_epochs=n_epochs,
-        n_evals=n_evals,
-        training_type=training_type_cls,
-        training_method=training_method_cls,
-    )
-
-    price = click.style(
-        f"${finetune_price_estimation_result.estimated_total_price:.2f}",
-        bold=True,
-    )
-
-    if not finetune_price_estimation_result.allowed_to_proceed:
+    if not price_limit_passed:
         warning = click.style(_WARNING_MESSAGE_INSUFFICIENT_FUNDS, fg="red", bold=True)
     else:
         warning = ""
