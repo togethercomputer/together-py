@@ -361,7 +361,7 @@ def create(
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
-    if from_checkpoint is None and from_hf_model is None:
+    if from_hf_model is None:
         finetune_price_estimation_result = client.fine_tuning.estimate_price(
             training_file=training_file,
             validation_file=validation_file,
