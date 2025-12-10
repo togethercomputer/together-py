@@ -266,7 +266,7 @@ class FineTuningResource(SyncAPIResource):
         else:
             raise ValueError(f"Unknown training method: {finetune_request.training_method}")
 
-        if from_checkpoint is None and from_hf_model is None:
+        if from_hf_model is None:
             price_estimation_result = self.estimate_price(
                 training_file=training_file,
                 validation_file=validation_file or Omit(),
@@ -827,7 +827,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         else:
             raise ValueError(f"Unknown training method: {finetune_request.training_method}")
 
-        if from_checkpoint is None and from_hf_model is None:
+        if from_hf_model is None:
             price_estimation_result = await self.estimate_price(
                 training_file=training_file,
                 validation_file=validation_file or Omit(),
