@@ -242,8 +242,9 @@ class FineTuningResource(SyncAPIResource):
     def estimate_price(
         self,
         *,
-        model: str,
         training_file: str,
+        from_checkpoint: str | Omit = omit,
+        model: str | Omit = omit,
         n_epochs: int | Omit = omit,
         n_evals: int | Omit = omit,
         training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
@@ -260,9 +261,14 @@ class FineTuningResource(SyncAPIResource):
         Estimate the price of a fine-tuning job.
 
         Args:
-          model: Name of the base model to run fine-tune job on
-
           training_file: File-ID of a training file uploaded to the Together API
+
+          from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
+              Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
+              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
+              final checkpoint will be used.
+
+          model: Name of the base model to run fine-tune job on
 
           n_epochs: Number of complete passes through the training dataset (higher values may
               improve results but increase cost and risk of overfitting)
@@ -286,8 +292,9 @@ class FineTuningResource(SyncAPIResource):
             "/fine-tunes/estimate-price",
             body=maybe_transform(
                 {
-                    "model": model,
                     "training_file": training_file,
+                    "from_checkpoint": from_checkpoint,
+                    "model": model,
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
                     "training_method": training_method,
@@ -574,8 +581,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
     async def estimate_price(
         self,
         *,
-        model: str,
         training_file: str,
+        from_checkpoint: str | Omit = omit,
+        model: str | Omit = omit,
         n_epochs: int | Omit = omit,
         n_evals: int | Omit = omit,
         training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
@@ -592,9 +600,14 @@ class AsyncFineTuningResource(AsyncAPIResource):
         Estimate the price of a fine-tuning job.
 
         Args:
-          model: Name of the base model to run fine-tune job on
-
           training_file: File-ID of a training file uploaded to the Together API
+
+          from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
+              Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
+              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
+              final checkpoint will be used.
+
+          model: Name of the base model to run fine-tune job on
 
           n_epochs: Number of complete passes through the training dataset (higher values may
               improve results but increase cost and risk of overfitting)
@@ -618,8 +631,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
             "/fine-tunes/estimate-price",
             body=await async_maybe_transform(
                 {
-                    "model": model,
                     "training_file": training_file,
+                    "from_checkpoint": from_checkpoint,
+                    "model": model,
                     "n_epochs": n_epochs,
                     "n_evals": n_evals,
                     "training_method": training_method,

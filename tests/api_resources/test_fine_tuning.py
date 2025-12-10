@@ -239,7 +239,6 @@ class TestFineTuning:
     @parametrize
     def test_method_estimate_price(self, client: Together) -> None:
         fine_tuning = client.fine_tuning.estimate_price(
-            model="model",
             training_file="training_file",
         )
         assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
@@ -247,8 +246,9 @@ class TestFineTuning:
     @parametrize
     def test_method_estimate_price_with_all_params(self, client: Together) -> None:
         fine_tuning = client.fine_tuning.estimate_price(
-            model="model",
             training_file="training_file",
+            from_checkpoint="from_checkpoint",
+            model="model",
             n_epochs=0,
             n_evals=0,
             training_method={
@@ -263,7 +263,6 @@ class TestFineTuning:
     @parametrize
     def test_raw_response_estimate_price(self, client: Together) -> None:
         response = client.fine_tuning.with_raw_response.estimate_price(
-            model="model",
             training_file="training_file",
         )
 
@@ -275,7 +274,6 @@ class TestFineTuning:
     @parametrize
     def test_streaming_response_estimate_price(self, client: Together) -> None:
         with client.fine_tuning.with_streaming_response.estimate_price(
-            model="model",
             training_file="training_file",
         ) as response:
             assert not response.is_closed
@@ -574,7 +572,6 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_method_estimate_price(self, async_client: AsyncTogether) -> None:
         fine_tuning = await async_client.fine_tuning.estimate_price(
-            model="model",
             training_file="training_file",
         )
         assert_matches_type(FineTuningEstimatePriceResponse, fine_tuning, path=["response"])
@@ -582,8 +579,9 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_method_estimate_price_with_all_params(self, async_client: AsyncTogether) -> None:
         fine_tuning = await async_client.fine_tuning.estimate_price(
-            model="model",
             training_file="training_file",
+            from_checkpoint="from_checkpoint",
+            model="model",
             n_epochs=0,
             n_evals=0,
             training_method={
@@ -598,7 +596,6 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_raw_response_estimate_price(self, async_client: AsyncTogether) -> None:
         response = await async_client.fine_tuning.with_raw_response.estimate_price(
-            model="model",
             training_file="training_file",
         )
 
@@ -610,7 +607,6 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_streaming_response_estimate_price(self, async_client: AsyncTogether) -> None:
         async with async_client.fine_tuning.with_streaming_response.estimate_price(
-            model="model",
             training_file="training_file",
         ) as response:
             assert not response.is_closed
