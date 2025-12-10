@@ -36,7 +36,7 @@ _MODEL_LIMITS = FinetuneTrainingLimits(
 
 
 def test_simple_request():
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -53,7 +53,7 @@ def test_simple_request():
 
 
 def test_validation_file():
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -73,7 +73,7 @@ def test_no_training_file():
 
 
 def test_lora_request():
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -93,7 +93,7 @@ def test_lora_request():
 @pytest.mark.parametrize("lora_dropout", [-1, 0, 0.5, 1.0, 10.0])
 def test_lora_request_with_lora_dropout(lora_dropout: float):
     if 0 <= lora_dropout < 1:
-        request = create_finetune_request(
+        request, _, _ = create_finetune_request(
             model_limits=_MODEL_LIMITS,
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -117,7 +117,7 @@ def test_lora_request_with_lora_dropout(lora_dropout: float):
 
 
 def test_dpo_request_lora():
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -136,7 +136,7 @@ def test_dpo_request_lora():
 
 
 def test_dpo_request():
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,
@@ -150,7 +150,7 @@ def test_dpo_request():
 
 
 def test_from_checkpoint_request():
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         training_file=_TRAINING_FILE,
         from_checkpoint=_FROM_CHECKPOINT,
@@ -314,7 +314,7 @@ def test_bad_training_method():
 
 @pytest.mark.parametrize("train_on_inputs", [True, False, "auto", None])
 def test_train_on_inputs_for_sft(train_on_inputs: Union[bool, Literal["auto"], None]):
-    request = create_finetune_request(
+    request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
         model=_MODEL_NAME,
         training_file=_TRAINING_FILE,

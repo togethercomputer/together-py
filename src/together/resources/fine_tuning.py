@@ -29,14 +29,14 @@ from .._response import (
 from .._base_client import make_request_options
 from ..lib.types.fine_tuning import (
     FinetuneResponse as FinetuneResponseLib,
-    FullTrainingType,
-    LoRATrainingType,
-    TrainingMethodDPO,
-    TrainingMethodSFT,
     FinetuneTrainingLimits,
 )
 from ..types.finetune_response import FinetuneResponse
-from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
+from ..lib.resources.fine_tuning import (
+    get_model_limits,
+    async_get_model_limits,
+    create_finetune_request,
+)
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
@@ -193,7 +193,7 @@ class FineTuningResource(SyncAPIResource):
                 pass
             model_limits = get_model_limits(self._client, str(model_name))
 
-        finetune_request = create_finetune_request(
+        finetune_request, training_type_cls, training_method_cls = create_finetune_request(
             model_limits=model_limits,
             training_file=training_file,
             model=model,
@@ -232,61 +232,25 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-        training_type_cls: fine_tuning_estimate_price_params.TrainingType
-        if isinstance(finetune_request.training_type, FullTrainingType):
-            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeFullTrainingType(
-                type="Full",
-            )
-        elif isinstance(finetune_request.training_type, LoRATrainingType):
-            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeLoRaTrainingType(
-                lora_alpha=finetune_request.training_type.lora_alpha,
-                lora_r=finetune_request.training_type.lora_r,
-                lora_dropout=finetune_request.training_type.lora_dropout,
-                lora_trainable_modules=finetune_request.training_type.lora_trainable_modules,
-                type="Lora",
-            )
-        else:
-            raise ValueError(f"Unknown training type: {finetune_request.training_type}")
 
-        training_method_cls: fine_tuning_estimate_price_params.TrainingMethod
-        if isinstance(finetune_request.training_method, TrainingMethodSFT):
-            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodSft(
-                method="sft",
-                train_on_inputs=finetune_request.training_method.train_on_inputs,
-            )
-        elif isinstance(finetune_request.training_method, TrainingMethodDPO):
-            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodDpo(
-                method="dpo",
-                dpo_beta=finetune_request.training_method.dpo_beta or 0,
-                dpo_normalize_logratios_by_length=finetune_request.training_method.dpo_normalize_logratios_by_length,
-                dpo_reference_free=finetune_request.training_method.dpo_reference_free,
-                rpo_alpha=finetune_request.training_method.rpo_alpha or 0,
-                simpo_gamma=finetune_request.training_method.simpo_gamma or 0,
-            )
-        else:
-            raise ValueError(f"Unknown training method: {finetune_request.training_method}")
+        price_estimation_result = self.estimate_price(
+            training_file=training_file,
+            from_checkpoint=from_checkpoint or Omit(),
+            validation_file=validation_file or Omit(),
+            model=model or "",
+            n_epochs=finetune_request.n_epochs,
+            n_evals=finetune_request.n_evals or 0,
+            training_type=training_type_cls,
+            training_method=training_method_cls,
+        )
 
-        if from_hf_model is None:
-            price_estimation_result = self.estimate_price(
-                training_file=training_file,
-                validation_file=validation_file or Omit(),
-                model=model or "",
-                n_epochs=finetune_request.n_epochs,
-                n_evals=finetune_request.n_evals or 0,
-                training_type=training_type_cls,
-                training_method=training_method_cls,
-            )
-            price_limit_passed = price_estimation_result.allowed_to_proceed
-        else:
-            # unsupported case
-            price_limit_passed = True
 
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
-            if not price_limit_passed:
+            if not price_estimation_result.allowed_to_proceed:
                 rprint(
                     "[red]"
                     + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
@@ -761,7 +725,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                 pass
             model_limits = await async_get_model_limits(self._client, str(model_name))
 
-        finetune_request = create_finetune_request(
+        finetune_request, training_type_cls, training_method_cls = create_finetune_request(
             model_limits=model_limits,
             training_file=training_file,
             model=model,
@@ -800,61 +764,25 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-        training_type_cls: fine_tuning_estimate_price_params.TrainingType
-        if isinstance(finetune_request.training_type, FullTrainingType):
-            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeFullTrainingType(
-                type="Full",
-            )
-        elif isinstance(finetune_request.training_type, LoRATrainingType):
-            training_type_cls = fine_tuning_estimate_price_params.TrainingTypeLoRaTrainingType(
-                lora_alpha=finetune_request.training_type.lora_alpha,
-                lora_r=finetune_request.training_type.lora_r,
-                lora_dropout=finetune_request.training_type.lora_dropout,
-                lora_trainable_modules=finetune_request.training_type.lora_trainable_modules,
-                type="Lora",
-            )
-        else:
-            raise ValueError(f"Unknown training type: {finetune_request.training_type}")
 
-        training_method_cls: fine_tuning_estimate_price_params.TrainingMethod
-        if isinstance(finetune_request.training_method, TrainingMethodSFT):
-            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodSft(
-                method="sft",
-                train_on_inputs=finetune_request.training_method.train_on_inputs,
-            )
-        elif isinstance(finetune_request.training_method, TrainingMethodDPO):
-            training_method_cls = fine_tuning_estimate_price_params.TrainingMethodTrainingMethodDpo(
-                method="dpo",
-                dpo_beta=finetune_request.training_method.dpo_beta or 0,
-                dpo_normalize_logratios_by_length=finetune_request.training_method.dpo_normalize_logratios_by_length,
-                dpo_reference_free=finetune_request.training_method.dpo_reference_free,
-                rpo_alpha=finetune_request.training_method.rpo_alpha or 0,
-                simpo_gamma=finetune_request.training_method.simpo_gamma or 0,
-            )
-        else:
-            raise ValueError(f"Unknown training method: {finetune_request.training_method}")
+        price_estimation_result = await self.estimate_price(
+            training_file=training_file,
+            from_checkpoint=from_checkpoint or Omit(),
+            validation_file=validation_file or Omit(),
+            model=model or "",
+            n_epochs=finetune_request.n_epochs,
+            n_evals=finetune_request.n_evals or 0,
+            training_type=training_type_cls,
+            training_method=training_method_cls,
+        )
 
-        if from_hf_model is None:
-            price_estimation_result = await self.estimate_price(
-                training_file=training_file,
-                validation_file=validation_file or Omit(),
-                model=model or "",
-                n_epochs=finetune_request.n_epochs,
-                n_evals=finetune_request.n_evals or 0,
-                training_type=training_type_cls,
-                training_method=training_method_cls,
-            )
-            price_limit_passed = price_estimation_result.allowed_to_proceed
-        else:
-            # unsupported case
-            price_limit_passed = True
 
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
-            if not price_limit_passed:
+            if not price_estimation_result.allowed_to_proceed:
                 rprint(
                     "[red]"
                     + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
