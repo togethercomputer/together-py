@@ -14,10 +14,14 @@ class DataVoice(BaseModel):
 
 
 class Data(BaseModel):
+    """Represents a model with its available voices."""
+
     model: str
 
     voices: List[DataVoice]
 
 
 class VoiceListResponse(BaseModel):
+    """Response containing a list of models and their available voices."""
+
     data: List[Data]

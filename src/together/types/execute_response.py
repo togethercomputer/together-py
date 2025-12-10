@@ -22,12 +22,19 @@ __all__ = [
 
 
 class SuccessfulExecutionDataOutputStreamOutput(BaseModel):
+    """Outputs that were printed to stdout or stderr"""
+
     data: str
 
     type: Literal["stdout", "stderr"]
 
 
 class SuccessfulExecutionDataOutputError(BaseModel):
+    """Errors and exceptions that occurred.
+
+    If this output type is present, your code did not execute successfully.
+    """
+
     data: str
 
     type: Literal["error"]
