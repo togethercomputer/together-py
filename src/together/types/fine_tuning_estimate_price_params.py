@@ -17,11 +17,19 @@ __all__ = [
 
 
 class FineTuningEstimatePriceParams(TypedDict, total=False):
-    model: Required[str]
-    """Name of the base model to run fine-tune job on"""
-
     training_file: Required[str]
     """File-ID of a training file uploaded to the Together API"""
+
+    from_checkpoint: str
+    """The checkpoint identifier to continue training from a previous fine-tuning job.
+
+    Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
+    `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
+    final checkpoint will be used.
+    """
+
+    model: str
+    """Name of the base model to run fine-tune job on"""
 
     n_epochs: int
     """
