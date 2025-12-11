@@ -7,7 +7,6 @@ from tabulate import tabulate
 from together import Together, omit
 from together._models import BaseModel
 from together._response import APIResponse as APIResponse
-from together.lib.resources.models import filter_by_dedicated_models
 from together.types.model_upload_response import ModelUploadResponse
 
 
@@ -34,11 +33,7 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     """List models"""
     client: Together = ctx.obj
 
-    response = client.models.list()
-    models_list = response
-
-    if type == "dedicated":
-        models_list = filter_by_dedicated_models(client, models_list)
+    models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
 
     display_list: List[Dict[str, Any]] = []
     model: BaseModel
