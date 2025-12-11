@@ -204,7 +204,7 @@ from together.types import ModelObject, ModelListResponse, ModelUploadResponse
 
 Methods:
 
-- <code title="get /models">client.models.<a href="./src/together/resources/models.py">list</a>() -> <a href="./src/together/types/model_list_response.py">ModelListResponse</a></code>
+- <code title="get /models">client.models.<a href="./src/together/resources/models.py">list</a>(\*\*<a href="src/together/types/model_list_params.py">params</a>) -> <a href="./src/together/types/model_list_response.py">ModelListResponse</a></code>
 - <code title="post /models">client.models.<a href="./src/together/resources/models.py">upload</a>(\*\*<a href="src/together/types/model_upload_params.py">params</a>) -> <a href="./src/together/types/model_upload_response.py">ModelUploadResponse</a></code>
 
 # Jobs

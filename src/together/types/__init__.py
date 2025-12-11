@@ -26,6 +26,7 @@ from .execute_response import ExecuteResponse as ExecuteResponse
 from .autoscaling_param import AutoscalingParam as AutoscalingParam
 from .finetune_response import FinetuneResponse as FinetuneResponse
 from .job_list_response import JobListResponse as JobListResponse
+from .model_list_params import ModelListParams as ModelListParams
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
 from .dedicated_endpoint import DedicatedEndpoint as DedicatedEndpoint
 from .eval_create_params import EvalCreateParams as EvalCreateParams
