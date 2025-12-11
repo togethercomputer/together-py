@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import model_upload_params
+from ..types import model_list_params, model_upload_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -47,6 +47,7 @@ class ModelsResource(SyncAPIResource):
     def list(
         self,
         *,
+        dedicated: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -54,11 +55,28 @@ class ModelsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ModelListResponse:
-        """Lists all of Together's open-source models"""
+        """
+        Lists all of Together's open-source models
+
+        Args:
+          dedicated: Filter models to only return dedicated models
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
         return self._get(
             "/models",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"dedicated": dedicated}, model_list_params.ModelListParams),
             ),
             cast_to=ModelListResponse,
         )
@@ -152,6 +170,7 @@ class AsyncModelsResource(AsyncAPIResource):
     async def list(
         self,
         *,
+        dedicated: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -159,11 +178,28 @@ class AsyncModelsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ModelListResponse:
-        """Lists all of Together's open-source models"""
+        """
+        Lists all of Together's open-source models
+
+        Args:
+          dedicated: Filter models to only return dedicated models
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
         return await self._get(
             "/models",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform({"dedicated": dedicated}, model_list_params.ModelListParams),
             ),
             cast_to=ModelListResponse,
         )
