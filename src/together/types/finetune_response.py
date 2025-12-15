@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union, Optional
+from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
 from pydantic import Field as FieldInfo
@@ -121,7 +122,7 @@ class FinetuneResponse(BaseModel):
 
     batch_size: Union[int, Literal["max"], None] = None
 
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     epochs_completed: Optional[int] = None
 
@@ -178,7 +179,7 @@ class FinetuneResponse(BaseModel):
 
     trainingfile_size: Optional[int] = None
 
-    updated_at: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
     validation_file: Optional[str] = None
 
