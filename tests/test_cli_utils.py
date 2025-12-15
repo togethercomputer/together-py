@@ -1,13 +1,12 @@
+from typing import Union
 from datetime import datetime, timezone
-from pyexpat import model
 
 import pytest
-from typing import Union
 
 from together.lib.cli.api.utils import generate_progress_bar
 from together.lib.types.fine_tuning import (
-    FinetuneResponse,
     FinetuneProgress,
+    FinetuneResponse,
     FinetuneJobStatus,
 )
 

@@ -9,8 +9,8 @@ from textwrap import wrap
 
 import click
 from rich import print as rprint
-from rich.json import JSON
 from tabulate import tabulate
+from rich.json import JSON
 from click.core import ParameterSource  # type: ignore[attr-defined]
 
 from together import Together

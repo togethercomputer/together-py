@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import math
 import re
-from gettext import gettext as _
+import math
 from typing import Literal
+from gettext import gettext as _
 from datetime import datetime
 
 import click
 
-from together.lib.types.fine_tuning import FinetuneResponse, COMPLETED_STATUSES
+from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 
 _PROGRESS_BAR_WIDTH = 40
 
