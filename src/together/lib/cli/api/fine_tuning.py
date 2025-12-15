@@ -9,6 +9,7 @@ from textwrap import wrap
 
 import click
 from rich import print as rprint
+from rich.json import JSON
 from tabulate import tabulate
 from click.core import ParameterSource  # type: ignore[attr-defined]
 
@@ -17,7 +18,7 @@ from together.types import fine_tuning_estimate_price_params as pe_params
 from together._types import NOT_GIVEN, NotGiven
 from together.lib.utils import log_warn
 from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
-from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
+from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO, generate_progress_bar
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
@@ -425,6 +426,9 @@ def list(ctx: click.Context) -> None:
                 "Price": f"""${
                     finetune_price_to_dollars(float(str(i.total_price)))
                 }""",  # convert to string for mypy typing
+                "Progress": generate_progress_bar(
+                    i, datetime.now().astimezone(), use_rich=False
+                ),
             }
         )
     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
@@ -444,7 +448,15 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     # remove events from response for cleaner output
     response.events = None
 
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    rprint(JSON.from_data(response.model_dump(exclude_none=True)))
+    progress_text = generate_progress_bar(
+        response, datetime.now().astimezone(), use_rich=True
+    )
+    status = "Unknown"
+    if response.status is not None:
+        status = response.status.value
+    prefix = f"Status: [bold]{status}[/bold],"
+    rprint(f"{prefix} {progress_text}")
 
 
 @fine_tuning.command()

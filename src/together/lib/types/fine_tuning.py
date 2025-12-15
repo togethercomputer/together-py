@@ -25,6 +25,14 @@ class FinetuneJobStatus(str, Enum):
     STATUS_COMPLETED = "completed"
 
 
+COMPLETED_STATUSES = [
+    FinetuneJobStatus.STATUS_ERROR,
+    FinetuneJobStatus.STATUS_USER_ERROR,
+    FinetuneJobStatus.STATUS_COMPLETED,
+    FinetuneJobStatus.STATUS_CANCELLED,
+]
+
+
 class FinetuneEventType(str, Enum):
     """
     Fine-tune job event types
@@ -260,6 +268,15 @@ FinetuneLRScheduler: TypeAlias = Union[
 ]
 
 
+class FinetuneProgress(BaseModel):
+    """
+    Fine-tune job progress
+    """
+
+    estimate_available: bool = False
+    seconds_remaining: float = 0
+
+
 class FinetuneResponse(BaseModel):
     """
     Fine-tune API response type
@@ -392,6 +409,8 @@ class FinetuneResponse(BaseModel):
     training_file_num_lines: Optional[int] = Field(None, alias="TrainingFileNumLines")
     training_file_size: Optional[int] = Field(None, alias="TrainingFileSize")
     train_on_inputs: Union[StrictBool, Literal["auto"], None] = "auto"
+
+    progress: Union[FinetuneProgress, None] = None
 
     @classmethod
     def validate_training_type(cls, v: TrainingType) -> TrainingType:
