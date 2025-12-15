@@ -27,9 +27,16 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib, FinetuneTrainingLimits
+from ..lib.types.fine_tuning import (
+    FinetuneResponse as FinetuneResponseLib,
+    FinetuneTrainingLimits,
+)
 from ..types.finetune_response import FinetuneResponse
-from ..lib.resources.fine_tuning import get_model_limits, async_get_model_limits, create_finetune_request
+from ..lib.resources.fine_tuning import (
+    get_model_limits,
+    async_get_model_limits,
+    create_finetune_request,
+)
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
@@ -39,6 +46,12 @@ from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpoi
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
+_WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
+    "The estimated price of the fine-tuning job is {} which is significantly "
+    "greater than your current credit limit and balance combined. "
+    "It will likely get cancelled due to insufficient funds. "
+    "Proceed at your own risk."
+)
 
 class FineTuningResource(SyncAPIResource):
     @cached_property
@@ -180,7 +193,7 @@ class FineTuningResource(SyncAPIResource):
                 pass
             model_limits = get_model_limits(self._client, str(model_name))
 
-        finetune_request = create_finetune_request(
+        finetune_request, training_type_cls, training_method_cls = create_finetune_request(
             model_limits=model_limits,
             training_file=training_file,
             model=model,
@@ -219,11 +232,32 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
+
+        price_estimation_result = self.estimate_price(
+            training_file=training_file,
+            from_checkpoint=from_checkpoint or Omit(),
+            validation_file=validation_file or Omit(),
+            model=model or "",
+            n_epochs=finetune_request.n_epochs,
+            n_evals=finetune_request.n_evals or 0,
+            training_type=training_type_cls,
+            training_method=training_method_cls,
+        )
+
+
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
+            if not price_estimation_result.allowed_to_proceed:
+                rprint(
+                    "[red]"
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                    )
+                    + "[/red]",
+                )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return self._client.post(
@@ -691,7 +725,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                 pass
             model_limits = await async_get_model_limits(self._client, str(model_name))
 
-        finetune_request = create_finetune_request(
+        finetune_request, training_type_cls, training_method_cls = create_finetune_request(
             model_limits=model_limits,
             training_file=training_file,
             model=model,
@@ -730,11 +764,32 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
+
+        price_estimation_result = await self.estimate_price(
+            training_file=training_file,
+            from_checkpoint=from_checkpoint or Omit(),
+            validation_file=validation_file or Omit(),
+            model=model or "",
+            n_epochs=finetune_request.n_epochs,
+            n_evals=finetune_request.n_evals or 0,
+            training_type=training_type_cls,
+            training_method=training_method_cls,
+        )
+
+
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
+            if not price_estimation_result.allowed_to_proceed:
+                rprint(
+                    "[red]"
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                    )
+                    + "[/red]",
+                )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
         return await self._client.post(
