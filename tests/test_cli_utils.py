@@ -13,7 +13,7 @@ from together.lib.types.fine_tuning import (
 
 def create_finetune_response(
     status: FinetuneJobStatus = FinetuneJobStatus.STATUS_RUNNING,
-    updated_at: str = "2024-01-01T12:00:00Z",
+    updated_at: datetime = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
     progress: Union[FinetuneProgress, None] = None,
     job_id: str = "ft-test-123",
 ) -> FinetuneResponse:
@@ -36,6 +36,8 @@ def create_finetune_response(
         created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
         model_output_name="test_model",
         adapter_output_name="test_adapter",
+        TrainingFileNumLines=0,
+        TrainingFileSize=0,
     )
 
 
@@ -256,7 +258,7 @@ class TestGenerateProgressBarRichFormatting:
         ],
     )
     def test_rich_parameter_with_different_statuses(
-        self, use_rich, expected_completed, expected_running
+        self, use_rich: bool, expected_completed: str, expected_running: str
     ):
         """Test use_rich parameter works correctly with different job statuses."""
         current_time = datetime(2024, 1, 1, 12, 0, 10, tzinfo=timezone.utc)
@@ -363,7 +365,7 @@ class TestGenerateProgressBarCornerCases:
         """Test with different timezone for updated_at."""
         current_time = datetime(2024, 1, 1, 12, 0, 30, tzinfo=timezone.utc)
         finetune_job = create_finetune_response(
-            updated_at="2024-01-01T07:00:00-05:00",  # Same as 12:00:00 UTC (EST = UTC-5)
+            updated_at=datetime(2024, 1, 1, 7, 0, 0, tzinfo=timezone.utc),  # Same as 12:00:00 UTC (EST = UTC-5)
             progress=FinetuneProgress(estimate_available=True, seconds_remaining=60.0),
         )
 
@@ -389,7 +391,7 @@ class TestGenerateProgressBarCornerCases:
         """Test unusual case where current time appears before updated_at."""
         current_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         finetune_job = create_finetune_response(
-            updated_at="2024-01-01T12:00:30Z",  # In the "future"
+            updated_at=datetime(2024, 1, 1, 12, 0, 30, tzinfo=timezone.utc),  # In the "future"
             progress=FinetuneProgress(estimate_available=True, seconds_remaining=100.0),
         )
 

@@ -362,7 +362,7 @@ def create(
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
-    
+
     finetune_price_estimation_result = client.fine_tuning.estimate_price(
         training_file=training_file,
         validation_file=validation_file,
@@ -452,10 +452,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     progress_text = generate_progress_bar(
         response, datetime.now().astimezone(), use_rich=True
     )
-    status = "Unknown"
-    if response.status is not None:
-        status = response.status.value
-    prefix = f"Status: [bold]{status}[/bold],"
+    prefix = f"Status: [bold]{response.status}[/bold],"
     rprint(f"{prefix} {progress_text}")
 
 

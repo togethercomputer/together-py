@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import re
 import math
-from typing import Literal
+from typing import Union, Literal
 from gettext import gettext as _
 from datetime import datetime
 
 import click
 
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
+from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
+from together.types.fine_tuning_list_response import Data
 
 _PROGRESS_BAR_WIDTH = 40
 
@@ -90,7 +92,7 @@ def _human_readable_time(timedelta: float) -> str:
 
 
 def generate_progress_bar(
-    finetune_job: FinetuneResponse, current_time: datetime, use_rich: bool = False
+    finetune_job: Union[Data, FinetuneResponse, _FinetuneResponse], current_time: datetime, use_rich: bool = False
 ) -> str:
     """Generate a progress bar for a finetune job.
     Args:
@@ -104,9 +106,17 @@ def generate_progress_bar(
     if finetune_job.status in COMPLETED_STATUSES:
         progress = "Progress: [bold green]completed[/bold green]"
     elif finetune_job.updated_at is not None:
-        update_at = finetune_job.updated_at.astimezone()
+        updated_at_unknown_type = finetune_job.updated_at
+        if isinstance(updated_at_unknown_type, str):
+            # TODO: Retrieve Fine-tuning job function returns string instead of datetime
+            update_at = datetime.strptime(updated_at_unknown_type, "%Y-%m-%dT%H:%M:%S.%fZ")
+        elif isinstance(updated_at_unknown_type, datetime):
+            update_at = updated_at_unknown_type
+        else:
+            raise TypeError("Invalid type for updated_at")
+        update_at = update_at.astimezone()
 
-        if getattr(finetune_job, "progress", None) is not None:
+        if finetune_job.progress is not None:
             if current_time < update_at:
                 return progress
 
