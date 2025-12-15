@@ -29,16 +29,16 @@ from ..constants import (
     DOWNLOAD_BLOCK_SIZE,
     MAX_MULTIPART_PARTS,
     TARGET_PART_SIZE_MB,
-    MAX_CONCURRENT_PARTS,
-    MULTIPART_THRESHOLD_GB,
-    MULTIPART_UPLOAD_TIMEOUT,
-    MAX_DOWNLOAD_RETRIES,
     DOWNLOAD_RETRY_DELAY,
+    MAX_CONCURRENT_PARTS,
+    MAX_DOWNLOAD_RETRIES,
+    MULTIPART_THRESHOLD_GB,
     DOWNLOAD_MAX_RETRY_DELAY,
+    MULTIPART_UPLOAD_TIMEOUT,
 )
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ..types.error import DownloadError, FileTypeError
-from ..._exceptions import APIConnectionError, APIStatusError, AuthenticationError
+from ..._exceptions import APIStatusError, APIConnectionError, AuthenticationError
 
 log: logging.Logger = logging.getLogger(__name__)
 
