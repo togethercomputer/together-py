@@ -228,7 +228,6 @@ class DownloadManager(SyncAPIResource):
                                     stream=True,
                                     options=RequestOptions(
                                         headers={"Range": f"bytes={bytes_downloaded}-"},
-                                        timeout=1
                                     ),
                                 )
 
