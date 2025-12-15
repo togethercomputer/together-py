@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.0.0-alpha.10 (2025-12-15)
+
+Full Changelog: [v2.0.0-alpha.9...v2.0.0-alpha.10](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.9...v2.0.0-alpha.10)
+
+### Features
+
+* **api:** Add fine_tuning.estimate_price api ([1582cc4](https://github.com/togethercomputer/together-py/commit/1582cc498e17562a3a23ae5120dfff2d39ae1e41))
+* **api:** api update ([5341347](https://github.com/togethercomputer/together-py/commit/53413475daeeec382968407d47688cf7926f643c))
+* **api:** api update ([96fc9b3](https://github.com/togethercomputer/together-py/commit/96fc9b3b1218bcf0c8dd13a28b8eab5c9690c6fd))
+* **api:** api update ([e5cfa45](https://github.com/togethercomputer/together-py/commit/e5cfa45f476c77965a9249e9ae41b55b029abfaa))
+
+
+### Bug Fixes
+
+* **types:** allow pyright to infer TypedDict types within SequenceNotStr ([048f2b7](https://github.com/togethercomputer/together-py/commit/048f2b7d347aa2ab09a4b49c2770cbf15a70c3e4))
+
+
+### Chores
+
+* add missing docstrings ([a1c8329](https://github.com/togethercomputer/together-py/commit/a1c8329a0c2562bcdbd22c262eb7a995bfbd0deb))
+* **internal:** avoid using unstable Python versions in tests ([6268112](https://github.com/togethercomputer/together-py/commit/62681124a807a4f718e1711039242d2b9037e33b))
+* Update model list CLI to use api parameter for dedicated filtering ([#195](https://github.com/togethercomputer/together-py/issues/195)) ([95cc672](https://github.com/togethercomputer/together-py/commit/95cc672583e2a908f54dd557cd0f22465da26a4b))
+
 ## 2.0.0-alpha.9 (2025-12-03)
 
 Full Changelog: [v2.0.0-alpha.8...v2.0.0-alpha.9](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.8...v2.0.0-alpha.9)
