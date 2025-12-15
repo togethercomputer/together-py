@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import math
-from typing import Union, Literal
+from typing import List, Union, Literal
 from gettext import gettext as _
 from datetime import datetime
 
@@ -19,7 +19,7 @@ class AutoIntParamType(click.ParamType):
     name = "integer_or_max"
     _number_class = int
 
-    def convert(
+    def convert(  # pyright: ignore[reportImplicitOverride]
         self, value: str, param: click.Parameter | None, ctx: click.Context | None
     ) -> int | Literal["max"] | None:
         if value == "max":
@@ -39,7 +39,7 @@ class AutoIntParamType(click.ParamType):
 class BooleanWithAutoParamType(click.ParamType):
     name = "boolean_or_auto"
 
-    def convert(
+    def convert( # pyright: ignore[reportImplicitOverride]
         self, value: str, param: click.Parameter | None, ctx: click.Context | None
     ) -> bool | Literal["auto"] | None:
         if value == "auto":
@@ -80,7 +80,7 @@ def _human_readable_time(timedelta: float) -> str:
     ]
 
     total_seconds = int(timedelta)
-    parts = []
+    parts: List[str] = []
 
     for unit_seconds, unit_name in units:
         if total_seconds >= unit_seconds:
@@ -110,7 +110,7 @@ def generate_progress_bar(
         if isinstance(updated_at_unknown_type, str):
             # TODO: Retrieve Fine-tuning job function returns string instead of datetime
             update_at = datetime.strptime(updated_at_unknown_type, "%Y-%m-%dT%H:%M:%S.%fZ")
-        elif isinstance(updated_at_unknown_type, datetime):
+        elif isinstance(updated_at_unknown_type, datetime): # pyright: ignore[reportUnnecessaryIsInstance]
             update_at = updated_at_unknown_type
         else:
             raise TypeError("Invalid type for updated_at")
