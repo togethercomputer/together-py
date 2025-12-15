@@ -106,15 +106,7 @@ def generate_progress_bar(
     if finetune_job.status in COMPLETED_STATUSES:
         progress = "Progress: [bold green]completed[/bold green]"
     elif finetune_job.updated_at is not None:
-        updated_at_unknown_type = finetune_job.updated_at
-        if isinstance(updated_at_unknown_type, str):
-            # TODO: Retrieve Fine-tuning job function returns string instead of datetime
-            update_at = datetime.strptime(updated_at_unknown_type, "%Y-%m-%dT%H:%M:%S.%fZ")
-        elif isinstance(updated_at_unknown_type, datetime): # pyright: ignore[reportUnnecessaryIsInstance]
-            update_at = updated_at_unknown_type
-        else:
-            raise TypeError("Invalid type for updated_at")
-        update_at = update_at.astimezone()
+        update_at = finetune_job.updated_at.astimezone()
 
         if finetune_job.progress is not None:
             if current_time < update_at:

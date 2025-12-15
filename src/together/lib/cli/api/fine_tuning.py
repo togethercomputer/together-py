@@ -448,7 +448,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     # remove events from response for cleaner output
     response.events = None
 
-    rprint(JSON.from_data(response.model_dump(exclude_none=True)))
+    rprint(JSON.from_data(response.model_json_schema()))
     progress_text = generate_progress_bar(
         response, datetime.now().astimezone(), use_rich=True
     )
