@@ -16,6 +16,7 @@ __all__ = [
     "DataLrSchedulerLrSchedulerArgs",
     "DataLrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
     "DataLrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "DataProgress",
     "DataTrainingMethod",
     "DataTrainingMethodTrainingMethodSft",
     "DataTrainingMethodTrainingMethodDpo",
@@ -49,6 +50,16 @@ class DataLrScheduler(BaseModel):
     lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[DataLrSchedulerLrSchedulerArgs] = None
+
+
+class DataProgress(BaseModel):
+    """Progress information for the fine-tuning job"""
+
+    estimate_available: bool
+    """Whether time estimate is available"""
+
+    seconds_remaining: int
+    """Estimated time remaining in seconds for the fine-tuning job to next state"""
 
 
 class DataTrainingMethodTrainingMethodSft(BaseModel):
@@ -163,6 +174,9 @@ class Data(BaseModel):
 
     owner_address: Optional[str] = None
     """Owner address information"""
+
+    progress: Optional[DataProgress] = None
+    """Progress information for the fine-tuning job"""
 
     suffix: Optional[str] = None
     """Suffix added to the fine-tuned model name"""
