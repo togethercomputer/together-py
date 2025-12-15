@@ -6,6 +6,8 @@ __all__ = ["Autoscaling"]
 
 
 class Autoscaling(BaseModel):
+    """Configuration for automatic scaling of replicas based on demand."""
+
     max_replicas: int
     """The maximum number of replicas to scale up to under load"""
 

@@ -29,6 +29,10 @@ __all__ = [
     "FunctionCall",
     "FunctionCallName",
     "ResponseFormat",
+    "ResponseFormatText",
+    "ResponseFormatJsonSchema",
+    "ResponseFormatJsonSchemaJsonSchema",
+    "ResponseFormatJsonObject",
     "ToolChoice",
     "CompletionCreateParamsNonStreaming",
     "CompletionCreateParamsStreaming",
@@ -117,7 +121,16 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
     response_format: ResponseFormat
-    """An object specifying the format that the model must output."""
+    """An object specifying the format that the model must output.
+
+    Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured
+    Outputs which ensures the model will match your supplied JSON schema. Learn more
+    in the [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+
+    Setting to `{ "type": "json_object" }` enables the older JSON mode, which
+    ensures the message the model generates is valid JSON. Using `json_schema` is
+    preferred for models that support it.
+    """
 
     safety_model: str
     """The name of the moderation model used to validate tokens.
@@ -297,13 +310,73 @@ class FunctionCallName(TypedDict, total=False):
 FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
 
 
-class ResponseFormat(TypedDict, total=False):
+class ResponseFormatText(TypedDict, total=False):
+    """Default response format. Used to generate text responses."""
+
+    type: Required[Literal["text"]]
+    """The type of response format being defined. Always `text`."""
+
+
+class ResponseFormatJsonSchemaJsonSchema(TypedDict, total=False):
+    """Structured Outputs configuration options, including a JSON Schema."""
+
+    name: Required[str]
+    """The name of the response format.
+
+    Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length
+    of 64.
+    """
+
+    description: str
+    """
+    A description of what the response format is for, used by the model to determine
+    how to respond in the format.
+    """
+
     schema: Dict[str, object]
-    """The schema of the response format."""
+    """
+    The schema for the response format, described as a JSON Schema object. Learn how
+    to build JSON schemas [here](https://json-schema.org/).
+    """
 
-    type: str
-    """The type of the response format."""
+    strict: Optional[bool]
+    """
+    Whether to enable strict schema adherence when generating the output. If set to
+    true, the model will always follow the exact schema defined in the `schema`
+    field. Only a subset of JSON Schema is supported when `strict` is `true`. To
+    learn more, read the
+    [Structured Outputs guide](https://docs.together.ai/docs/json-mode).
+    """
 
+
+class ResponseFormatJsonSchema(TypedDict, total=False):
+    """JSON Schema response format.
+
+    Used to generate structured JSON responses.
+    Learn more about [Structured Outputs](https://docs.together.ai/docs/json-mode).
+    """
+
+    json_schema: Required[ResponseFormatJsonSchemaJsonSchema]
+    """Structured Outputs configuration options, including a JSON Schema."""
+
+    type: Required[Literal["json_schema"]]
+    """The type of response format being defined. Always `json_schema`."""
+
+
+class ResponseFormatJsonObject(TypedDict, total=False):
+    """JSON object response format.
+
+    An older method of generating JSON responses.
+    Using `json_schema` is recommended for models that support it. Note that the
+    model will not generate JSON without a system or user message instructing it
+    to do so.
+    """
+
+    type: Required[Literal["json_object"]]
+    """The type of response format being defined. Always `json_object`."""
+
+
+ResponseFormat: TypeAlias = Union[ResponseFormatText, ResponseFormatJsonSchema, ResponseFormatJsonObject]
 
 ToolChoice: TypeAlias = Union[str, ToolChoiceParam]
 

@@ -78,6 +78,7 @@ from together.types import (
     FineTuningListResponse,
     FineTuningDeleteResponse,
     FineTuningCancelResponse,
+    FineTuningEstimatePriceResponse,
     FineTuningListCheckpointsResponse,
     FineTuningListEventsResponse,
 )
@@ -90,6 +91,7 @@ Methods:
 - <code title="delete /fine-tunes/{id}">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">delete</a>(id, \*\*<a href="src/together/types/fine_tuning_delete_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_delete_response.py">FineTuningDeleteResponse</a></code>
 - <code title="post /fine-tunes/{id}/cancel">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">cancel</a>(id) -> <a href="./src/together/types/fine_tuning_cancel_response.py">FineTuningCancelResponse</a></code>
 - <code title="get /finetune/download">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">content</a>(\*\*<a href="src/together/types/fine_tuning_content_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="post /fine-tunes/estimate-price">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">estimate_price</a>(\*\*<a href="src/together/types/fine_tuning_estimate_price_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_estimate_price_response.py">FineTuningEstimatePriceResponse</a></code>
 - <code title="get /fine-tunes/{id}/checkpoints">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_checkpoints</a>(id) -> <a href="./src/together/types/fine_tuning_list_checkpoints_response.py">FineTuningListCheckpointsResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_events</a>(id) -> <a href="./src/together/types/fine_tuning_list_events_response.py">FineTuningListEventsResponse</a></code>
 
@@ -202,7 +204,7 @@ from together.types import ModelObject, ModelListResponse, ModelUploadResponse
 
 Methods:
 
-- <code title="get /models">client.models.<a href="./src/together/resources/models.py">list</a>() -> <a href="./src/together/types/model_list_response.py">ModelListResponse</a></code>
+- <code title="get /models">client.models.<a href="./src/together/resources/models.py">list</a>(\*\*<a href="src/together/types/model_list_params.py">params</a>) -> <a href="./src/together/types/model_list_response.py">ModelListResponse</a></code>
 - <code title="post /models">client.models.<a href="./src/together/resources/models.py">upload</a>(\*\*<a href="src/together/types/model_upload_params.py">params</a>) -> <a href="./src/together/types/model_upload_response.py">ModelUploadResponse</a></code>
 
 # Jobs

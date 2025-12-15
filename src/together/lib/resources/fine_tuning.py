@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 from rich import print as rprint
 
+from together.types import fine_tuning_estimate_price_params as pe_params
 from together.lib.utils import log_warn_once
 
 if TYPE_CHECKING:
@@ -66,7 +67,7 @@ def create_finetune_request(
     hf_model_revision: str | None = None,
     hf_api_token: str | None = None,
     hf_output_repo_name: str | None = None,
-) -> FinetuneRequest:
+) -> tuple[FinetuneRequest, pe_params.TrainingType, pe_params.TrainingMethod]:
     if model is not None and from_checkpoint is not None:
         raise ValueError("You must specify either a model or a checkpoint to start a job from, not both")
 
@@ -233,8 +234,46 @@ def create_finetune_request(
         hf_output_repo_name=hf_output_repo_name,
     )
 
-    return finetune_request
+    training_type_pe, training_method_pe = create_price_estimation_params(finetune_request)
 
+    return finetune_request, training_type_pe, training_method_pe
+
+def create_price_estimation_params(finetune_request: FinetuneRequest) -> tuple[pe_params.TrainingType, pe_params.TrainingMethod]:
+    training_type_cls: pe_params.TrainingType
+    if isinstance(finetune_request.training_type, FullTrainingType):
+        training_type_cls = pe_params.TrainingTypeFullTrainingType(
+            type="Full",
+        )
+    elif isinstance(finetune_request.training_type, LoRATrainingType):
+        training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
+            lora_alpha=finetune_request.training_type.lora_alpha,
+            lora_r=finetune_request.training_type.lora_r,
+            lora_dropout=finetune_request.training_type.lora_dropout,
+            lora_trainable_modules=finetune_request.training_type.lora_trainable_modules,
+            type="Lora",
+        )
+    else:
+        raise ValueError(f"Unknown training type: {finetune_request.training_type}")
+
+    training_method_cls: pe_params.TrainingMethod
+    if isinstance(finetune_request.training_method, TrainingMethodSFT):
+        training_method_cls = pe_params.TrainingMethodTrainingMethodSft(
+            method="sft",
+            train_on_inputs=finetune_request.training_method.train_on_inputs,
+        )
+    elif isinstance(finetune_request.training_method, TrainingMethodDPO):
+        training_method_cls = pe_params.TrainingMethodTrainingMethodDpo(
+            method="dpo",
+            dpo_beta=finetune_request.training_method.dpo_beta or 0,
+            dpo_normalize_logratios_by_length=finetune_request.training_method.dpo_normalize_logratios_by_length,
+            dpo_reference_free=finetune_request.training_method.dpo_reference_free,
+            rpo_alpha=finetune_request.training_method.rpo_alpha or 0,
+            simpo_gamma=finetune_request.training_method.simpo_gamma or 0,
+        )
+    else:
+        raise ValueError(f"Unknown training method: {finetune_request.training_method}")
+
+    return training_type_cls, training_method_cls
 
 def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
     """

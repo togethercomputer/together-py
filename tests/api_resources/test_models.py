@@ -23,6 +23,13 @@ class TestModels:
         assert_matches_type(ModelListResponse, model, path=["response"])
 
     @parametrize
+    def test_method_list_with_all_params(self, client: Together) -> None:
+        model = client.models.list(
+            dedicated=True,
+        )
+        assert_matches_type(ModelListResponse, model, path=["response"])
+
+    @parametrize
     def test_raw_response_list(self, client: Together) -> None:
         response = client.models.with_raw_response.list()
 
@@ -98,6 +105,13 @@ class TestAsyncModels:
     @parametrize
     async def test_method_list(self, async_client: AsyncTogether) -> None:
         model = await async_client.models.list()
+        assert_matches_type(ModelListResponse, model, path=["response"])
+
+    @parametrize
+    async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
+        model = await async_client.models.list(
+            dedicated=True,
+        )
         assert_matches_type(ModelListResponse, model, path=["response"])
 
     @parametrize
