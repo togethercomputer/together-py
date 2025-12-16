@@ -47,7 +47,7 @@ class TranscriptionsResource(SyncAPIResource):
     def create(
         self,
         *,
-        file: FileTypes,
+        file: Union[FileTypes, str],
         diarize: bool | Omit = omit,
         language: str | Omit = omit,
         max_speakers: int | Omit = omit,
@@ -68,7 +68,8 @@ class TranscriptionsResource(SyncAPIResource):
         Transcribes audio into text
 
         Args:
-          file: Audio file to transcribe
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
+              .webm, .flac.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you
@@ -168,7 +169,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        file: FileTypes,
+        file: Union[FileTypes, str],
         diarize: bool | Omit = omit,
         language: str | Omit = omit,
         max_speakers: int | Omit = omit,
@@ -189,7 +190,8 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         Transcribes audio into text
 
         Args:
-          file: Audio file to transcribe
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
+              .webm, .flac.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you

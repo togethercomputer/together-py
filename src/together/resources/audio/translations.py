@@ -47,7 +47,7 @@ class TranslationsResource(SyncAPIResource):
     def create(
         self,
         *,
-        file: FileTypes,
+        file: Union[FileTypes, str],
         language: str | Omit = omit,
         model: Literal["openai/whisper-large-v3"] | Omit = omit,
         prompt: str | Omit = omit,
@@ -65,7 +65,8 @@ class TranslationsResource(SyncAPIResource):
         Translates audio into English
 
         Args:
-          file: Audio file to translate
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
+              .webm, .flac.
 
           language: Target output language. Optional ISO 639-1 language code. If omitted, language
               is set to English.
@@ -145,7 +146,7 @@ class AsyncTranslationsResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        file: FileTypes,
+        file: Union[FileTypes, str],
         language: str | Omit = omit,
         model: Literal["openai/whisper-large-v3"] | Omit = omit,
         prompt: str | Omit = omit,
@@ -163,7 +164,8 @@ class AsyncTranslationsResource(AsyncAPIResource):
         Translates audio into English
 
         Args:
-          file: Audio file to translate
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
+              .webm, .flac.
 
           language: Target output language. Optional ISO 639-1 language code. If omitted, language
               is set to English.
