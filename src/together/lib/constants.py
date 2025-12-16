@@ -15,7 +15,7 @@ import enum
 DOWNLOAD_BLOCK_SIZE = 10 * 1024 * 1024  # 10 MB
 DISABLE_TQDM = False
 MAX_DOWNLOAD_RETRIES = 5  # Maximum retries for download failures
-DOWNLOAD_RETRY_DELAY = 1.0  # Initial retry delay in seconds
+DOWNLOAD_INITIAL_RETRY_DELAY = 1.0  # Initial retry delay in seconds
 DOWNLOAD_MAX_RETRY_DELAY = 30.0  # Maximum retry delay in seconds
 
 # Upload defaults
