@@ -29,7 +29,7 @@ from ..constants import (
     DOWNLOAD_BLOCK_SIZE,
     MAX_MULTIPART_PARTS,
     TARGET_PART_SIZE_MB,
-    DOWNLOAD_RETRY_DELAY,
+    DOWNLOAD_INITIAL_RETRY_DELAY,
     MAX_CONCURRENT_PARTS,
     MAX_DOWNLOAD_RETRIES,
     MULTIPART_THRESHOLD_GB,
@@ -205,7 +205,7 @@ class DownloadManager(SyncAPIResource):
                 # Download with retry logic
                 bytes_downloaded = 0
                 retry_count = 0
-                retry_delay = DOWNLOAD_RETRY_DELAY
+                retry_delay = DOWNLOAD_INITIAL_RETRY_DELAY
 
                 with tqdm(
                     total=file_size,
