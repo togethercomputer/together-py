@@ -1,4 +1,4 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 __title__ = "together"
-__version__ = "2.0.0-alpha.10"  # x-release-please-version
+__version__ = "2.0.0-alpha.11"  # x-release-please-version
