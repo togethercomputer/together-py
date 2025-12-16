@@ -218,8 +218,7 @@ class DownloadManager(SyncAPIResource):
                         try:
                             # If this is a retry, close the previous response and create a new one with Range header
                             if bytes_downloaded > 0:
-                                if 'response' in locals():
-                                    response.close()
+                                response.close()
 
                                 log.info(f"Resuming download from byte {bytes_downloaded}")
                                 response = self._client.get(
@@ -267,8 +266,7 @@ class DownloadManager(SyncAPIResource):
                             ) from e
 
                 # Close the response
-                if 'response' in locals():
-                    response.close()
+                response.close()
 
             # Raise exception if remote file size does not match downloaded file size
             if os.stat(temp_file.name).st_size != file_size:
