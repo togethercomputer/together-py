@@ -11,8 +11,11 @@ __all__ = ["TranscriptionCreateParams"]
 
 
 class TranscriptionCreateParams(TypedDict, total=False):
-    file: Required[FileTypes]
-    """Audio file to transcribe"""
+    file: Required[Union[FileTypes, str]]
+    """Audio file upload or public HTTP/HTTPS URL.
+
+    Supported formats .wav, .mp3, .m4a, .webm, .flac.
+    """
 
     diarize: bool
     """Whether to enable speaker diarization.

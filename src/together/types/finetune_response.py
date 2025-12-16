@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union, Optional
+from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
 from pydantic import Field as FieldInfo
@@ -14,6 +15,7 @@ __all__ = [
     "LrSchedulerLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "Progress",
     "TrainingMethod",
     "TrainingMethodTrainingMethodSft",
     "TrainingMethodTrainingMethodDpo",
@@ -45,6 +47,16 @@ class LrScheduler(BaseModel):
     lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
+
+
+class Progress(BaseModel):
+    """Progress information for a fine-tuning job"""
+
+    estimate_available: bool
+    """Whether time estimate is available"""
+
+    seconds_remaining: int
+    """Estimated time remaining in seconds for the fine-tuning job to next state"""
 
 
 class TrainingMethodTrainingMethodSft(BaseModel):
@@ -110,7 +122,7 @@ class FinetuneResponse(BaseModel):
 
     batch_size: Union[int, Literal["max"], None] = None
 
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     epochs_completed: Optional[int] = None
 
@@ -146,6 +158,9 @@ class FinetuneResponse(BaseModel):
 
     param_count: Optional[int] = None
 
+    progress: Optional[Progress] = None
+    """Progress information for a fine-tuning job"""
+
     queue_depth: Optional[int] = None
 
     token_count: Optional[int] = None
@@ -164,7 +179,7 @@ class FinetuneResponse(BaseModel):
 
     trainingfile_size: Optional[int] = None
 
-    updated_at: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
     validation_file: Optional[str] = None
 

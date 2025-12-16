@@ -11,8 +11,11 @@ __all__ = ["TranslationCreateParams"]
 
 
 class TranslationCreateParams(TypedDict, total=False):
-    file: Required[FileTypes]
-    """Audio file to translate"""
+    file: Required[Union[FileTypes, str]]
+    """Audio file upload or public HTTP/HTTPS URL.
+
+    Supported formats .wav, .mp3, .m4a, .webm, .flac.
+    """
 
     language: str
     """Target output language.

@@ -10,6 +10,7 @@ from textwrap import wrap
 import click
 from rich import print as rprint
 from tabulate import tabulate
+from rich.json import JSON
 from click.core import ParameterSource  # type: ignore[attr-defined]
 
 from together import Together
@@ -17,7 +18,7 @@ from together.types import fine_tuning_estimate_price_params as pe_params
 from together._types import NOT_GIVEN, NotGiven
 from together.lib.utils import log_warn
 from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
-from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO
+from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO, generate_progress_bar
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
@@ -361,7 +362,7 @@ def create(
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
-    
+
     finetune_price_estimation_result = client.fine_tuning.estimate_price(
         training_file=training_file,
         validation_file=validation_file,
@@ -425,6 +426,9 @@ def list(ctx: click.Context) -> None:
                 "Price": f"""${
                     finetune_price_to_dollars(float(str(i.total_price)))
                 }""",  # convert to string for mypy typing
+                "Progress": generate_progress_bar(
+                    i, datetime.now().astimezone(), use_rich=False
+                ),
             }
         )
     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
@@ -444,7 +448,12 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     # remove events from response for cleaner output
     response.events = None
 
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+    rprint(JSON.from_data(response.model_json_schema()))
+    progress_text = generate_progress_bar(
+        response, datetime.now().astimezone(), use_rich=True
+    )
+    prefix = f"Status: [bold]{response.status}[/bold],"
+    rprint(f"{prefix} {progress_text}")
 
 
 @fine_tuning.command()

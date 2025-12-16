@@ -15,6 +15,7 @@ __all__ = [
     "LrSchedulerLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "Progress",
     "TrainingMethod",
     "TrainingMethodTrainingMethodSft",
     "TrainingMethodTrainingMethodDpo",
@@ -48,6 +49,16 @@ class LrScheduler(BaseModel):
     lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
+
+
+class Progress(BaseModel):
+    """Progress information for the fine-tuning job"""
+
+    estimate_available: bool
+    """Whether time estimate is available"""
+
+    seconds_remaining: int
+    """Estimated time remaining in seconds for the fine-tuning job to next state"""
 
 
 class TrainingMethodTrainingMethodSft(BaseModel):
@@ -162,6 +173,9 @@ class FineTuningCancelResponse(BaseModel):
 
     owner_address: Optional[str] = None
     """Owner address information"""
+
+    progress: Optional[Progress] = None
+    """Progress information for the fine-tuning job"""
 
     suffix: Optional[str] = None
     """Suffix added to the fine-tuned model name"""

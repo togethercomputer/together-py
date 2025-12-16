@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.0-alpha.11 (2025-12-16)
+
+Full Changelog: [v2.0.0-alpha.10...v2.0.0-alpha.11](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.10...v2.0.0-alpha.11)
+
+### Features
+
+* **api:** api update ([17ad3ec](https://github.com/togethercomputer/together-py/commit/17ad3ec91a06a7e886252d4b688c3a9e217a3799))
+* **api:** api update ([ebc3414](https://github.com/togethercomputer/together-py/commit/ebc3414e28db0309fef5aeed456e242048b5d13c))
+* **files:** add support for string alternative to file upload type ([db59ed6](https://github.com/togethercomputer/together-py/commit/db59ed6235f2e18db100a72084c2fefc22354d15))
+
+
+### Chores
+
+* **internal:** add missing files argument to base client ([6977285](https://github.com/togethercomputer/together-py/commit/69772856908b8378c74eed382735523e91011d90))
+
 ## 2.0.0-alpha.10 (2025-12-15)
 
 Full Changelog: [v2.0.0-alpha.9...v2.0.0-alpha.10](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.9...v2.0.0-alpha.10)
