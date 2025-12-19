@@ -137,7 +137,7 @@ stream = client.chat.completions.create(
     messages=[
         {
             "role": "user",
-            "content": "Say this is a test",
+            "content": "Say this is a test!",
         }
     ],
     model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
@@ -158,7 +158,7 @@ stream = await client.chat.completions.create(
     messages=[
         {
             "role": "user",
-            "content": "Say this is a test",
+            "content": "Say this is a test!",
         }
     ],
     model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
