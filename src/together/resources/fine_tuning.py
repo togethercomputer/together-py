@@ -53,6 +53,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "Proceed at your own risk."
 )
 
+
 class FineTuningResource(SyncAPIResource):
     @cached_property
     def with_raw_response(self) -> FineTuningResourceWithRawResponse:
@@ -232,7 +233,6 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-
         price_estimation_result = self.estimate_price(
             training_file=training_file,
             from_checkpoint=from_checkpoint or Omit(),
@@ -244,7 +244,6 @@ class FineTuningResource(SyncAPIResource):
             training_method=training_method_cls,
         )
 
-
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
@@ -254,7 +253,7 @@ class FineTuningResource(SyncAPIResource):
                 rprint(
                     "[red]"
                     + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     + "[/red]",
                 )
@@ -764,7 +763,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-
         price_estimation_result = await self.estimate_price(
             training_file=training_file,
             from_checkpoint=from_checkpoint or Omit(),
@@ -776,7 +774,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
             training_method=training_method_cls,
         )
 
-
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
@@ -786,7 +783,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                 rprint(
                     "[red]"
                     + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     + "[/red]",
                 )

@@ -238,7 +238,10 @@ def create_finetune_request(
 
     return finetune_request, training_type_pe, training_method_pe
 
-def create_price_estimation_params(finetune_request: FinetuneRequest) -> tuple[pe_params.TrainingType, pe_params.TrainingMethod]:
+
+def create_price_estimation_params(
+    finetune_request: FinetuneRequest,
+) -> tuple[pe_params.TrainingType, pe_params.TrainingMethod]:
     training_type_cls: pe_params.TrainingType
     if isinstance(finetune_request.training_type, FullTrainingType):
         training_type_cls = pe_params.TrainingTypeFullTrainingType(
@@ -274,6 +277,7 @@ def create_price_estimation_params(finetune_request: FinetuneRequest) -> tuple[p
         raise ValueError(f"Unknown training method: {finetune_request.training_method}")
 
     return training_type_cls, training_method_cls
+
 
 def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
     """

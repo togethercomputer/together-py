@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "==> Running ruff"
-uv run ruff check .
+uv run ruff check . --fix
 
 echo "==> Running pyright"
 uv run pyright

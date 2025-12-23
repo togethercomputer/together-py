@@ -426,9 +426,7 @@ def list(ctx: click.Context) -> None:
                 "Price": f"""${
                     finetune_price_to_dollars(float(str(i.total_price)))
                 }""",  # convert to string for mypy typing
-                "Progress": generate_progress_bar(
-                    i, datetime.now().astimezone(), use_rich=False
-                ),
+                "Progress": generate_progress_bar(i, datetime.now().astimezone(), use_rich=False),
             }
         )
     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
@@ -449,9 +447,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     response.events = None
 
     rprint(JSON.from_data(response.model_json_schema()))
-    progress_text = generate_progress_bar(
-        response, datetime.now().astimezone(), use_rich=True
-    )
+    progress_text = generate_progress_bar(response, datetime.now().astimezone(), use_rich=True)
     prefix = f"Status: [bold]{response.status}[/bold],"
     rprint(f"{prefix} {progress_text}")
 
