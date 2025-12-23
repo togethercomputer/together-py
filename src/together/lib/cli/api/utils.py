@@ -28,9 +28,7 @@ class AutoIntParamType(click.ParamType):
             return int(value)
         except ValueError:
             self.fail(
-                _("{value!r} is not a valid {number_type}.").format(
-                    value=value, number_type=self.name
-                ),
+                _("{value!r} is not a valid {number_type}.").format(value=value, number_type=self.name),
                 param,
                 ctx,
             )
@@ -39,7 +37,7 @@ class AutoIntParamType(click.ParamType):
 class BooleanWithAutoParamType(click.ParamType):
     name = "boolean_or_auto"
 
-    def convert( # pyright: ignore[reportImplicitOverride]
+    def convert(  # pyright: ignore[reportImplicitOverride]
         self, value: str, param: click.Parameter | None, ctx: click.Context | None
     ) -> bool | Literal["auto"] | None:
         if value == "auto":
@@ -48,9 +46,7 @@ class BooleanWithAutoParamType(click.ParamType):
             return bool(value)
         except ValueError:
             self.fail(
-                _("{value!r} is not a valid {type}.").format(
-                    value=value, type=self.name
-                ),
+                _("{value!r} is not a valid {type}.").format(value=value, type=self.name),
                 param,
                 ctx,
             )
@@ -119,17 +115,13 @@ def generate_progress_bar(
                 return progress
 
             elapsed_time = (current_time - update_at).total_seconds()
-            ratio_filled = min(
-                elapsed_time / finetune_job.progress.seconds_remaining, 1.0
-            )
+            ratio_filled = min(elapsed_time / finetune_job.progress.seconds_remaining, 1.0)
             percentage = ratio_filled * 100
             filled = math.ceil(ratio_filled * _PROGRESS_BAR_WIDTH)
             bar = "█" * filled + "░" * (_PROGRESS_BAR_WIDTH - filled)
             time_left = "N/A"
             if finetune_job.progress.seconds_remaining > elapsed_time:
-                time_left = _human_readable_time(
-                    finetune_job.progress.seconds_remaining - elapsed_time
-                )
+                time_left = _human_readable_time(finetune_job.progress.seconds_remaining - elapsed_time)
             time_text = f"{time_left} left"
             progress = f"Progress: {bar} [bold]{percentage:>3.0f}%[/bold] [yellow]{time_text}[/yellow]"
 

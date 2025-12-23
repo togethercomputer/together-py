@@ -91,8 +91,7 @@ class TestGenerateProgressBarGeneral:
         # 60 seconds elapsed / 60 seconds remaining = 1.0 ratio = 100% progress
         # 1.0 * 40 = 40 filled bars
         assert (
-            result
-            == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
+            result == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
         )
 
     def test_progress_bar_near_completion(self):
@@ -107,8 +106,7 @@ class TestGenerateProgressBarGeneral:
         # 300 seconds elapsed / 30 seconds remaining = 10.0 ratio = 1000% progress
         # 10.0 * 40 = 400, ceil(400) = 400, but width is 40 so all filled
         assert (
-            result
-            == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
+            result == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
         )
 
     def test_progress_bar_contains_rich_formatting(self):
@@ -123,8 +121,7 @@ class TestGenerateProgressBarGeneral:
         # 30 seconds elapsed / 60 seconds remaining = 0.5 ratio = 50% progress
         # 0.5 * 40 = 20 filled bars
         assert (
-            result
-            == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ [bold] 50%[/bold] [yellow]30s left[/yellow]"
+            result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ [bold] 50%[/bold] [yellow]30s left[/yellow]"
         )
 
 
@@ -140,9 +137,7 @@ class TestGenerateProgressBarRichFormatting:
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=False)
 
-        assert (
-            result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░  50% 30s left"
-        )
+        assert result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░  50% 30s left"
 
     def test_rich_formatting_preserved_when_use_rich_true(self):
         """Test that rich formatting tags are preserved when use_rich=True."""
@@ -154,16 +149,13 @@ class TestGenerateProgressBarRichFormatting:
         result = generate_progress_bar(finetune_job, current_time, use_rich=True)
 
         assert (
-            result
-            == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ [bold] 50%[/bold] [yellow]30s left[/yellow]"
+            result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ [bold] 50%[/bold] [yellow]30s left[/yellow]"
         )
 
     def test_completed_status_formatting_removed(self):
         """Test that completed status formatting is removed when use_rich=False."""
         current_time = datetime(2024, 1, 1, 12, 0, 10, tzinfo=timezone.utc)
-        finetune_job = create_finetune_response(
-            status=FinetuneJobStatus.STATUS_COMPLETED, progress=None
-        )
+        finetune_job = create_finetune_response(status=FinetuneJobStatus.STATUS_COMPLETED, progress=None)
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=False)
 
@@ -187,9 +179,7 @@ class TestGenerateProgressBarRichFormatting:
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=False)
 
-        assert (
-            result == "Progress: ████████████████████████████████████████ 100% N/A left"
-        )
+        assert result == "Progress: ████████████████████████████████████████ 100% N/A left"
 
     def test_default_behavior_strips_formatting(self):
         """Test that rich formatting is removed by default (use_rich not specified)."""
@@ -200,9 +190,7 @@ class TestGenerateProgressBarRichFormatting:
 
         result = generate_progress_bar(finetune_job, current_time)
 
-        assert (
-            result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░  50% 30s left"
-        )
+        assert result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░  50% 30s left"
 
     def test_content_consistency_between_modes(self):
         """Test that use_rich=True and use_rich=False have same content, just different formatting."""
@@ -213,12 +201,8 @@ class TestGenerateProgressBarRichFormatting:
             progress=FinetuneProgress(estimate_available=True, seconds_remaining=60.0)
         )
 
-        result_with_rich = generate_progress_bar(
-            finetune_job, current_time, use_rich=True
-        )
-        result_without_rich = generate_progress_bar(
-            finetune_job, current_time, use_rich=False
-        )
+        result_with_rich = generate_progress_bar(finetune_job, current_time, use_rich=True)
+        result_without_rich = generate_progress_bar(finetune_job, current_time, use_rich=False)
 
         stripped_rich = re.sub(r"\[/?[^\]]+\]", "", result_with_rich)
         assert stripped_rich == result_without_rich
@@ -228,19 +212,13 @@ class TestGenerateProgressBarRichFormatting:
         current_time = datetime(2024, 1, 1, 12, 0, 10, tzinfo=timezone.utc)
 
         # Test with completed status (has [bold green] tags)
-        completed_job = create_finetune_response(
-            status=FinetuneJobStatus.STATUS_COMPLETED, progress=None
-        )
-        result_completed = generate_progress_bar(
-            completed_job, current_time, use_rich=False
-        )
+        completed_job = create_finetune_response(status=FinetuneJobStatus.STATUS_COMPLETED, progress=None)
+        result_completed = generate_progress_bar(completed_job, current_time, use_rich=False)
         assert result_completed == "Progress: completed"
 
         # Test with unavailable status (has [bold red] tags)
         unavailable_job = create_finetune_response(progress=None)
-        result_unavailable = generate_progress_bar(
-            unavailable_job, current_time, use_rich=False
-        )
+        result_unavailable = generate_progress_bar(unavailable_job, current_time, use_rich=False)
         assert result_unavailable == "Progress: unavailable"
 
     @pytest.mark.parametrize(
@@ -265,9 +243,7 @@ class TestGenerateProgressBarRichFormatting:
         current_time = datetime(2024, 1, 1, 12, 0, 10, tzinfo=timezone.utc)
 
         # Test completed status
-        completed_job = create_finetune_response(
-            status=FinetuneJobStatus.STATUS_COMPLETED, progress=None
-        )
+        completed_job = create_finetune_response(status=FinetuneJobStatus.STATUS_COMPLETED, progress=None)
         result = generate_progress_bar(completed_job, current_time, use_rich=use_rich)
         assert result == expected_completed
 
@@ -286,10 +262,7 @@ class TestGenerateProgressBarRichFormatting:
         )
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=False)
-        assert (
-            result
-            == "Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   1% 16min 30s left"
-        )
+        assert result == "Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   1% 16min 30s left"
 
     def test_progress_percentage_75_percent(self):
         """Test progress bar at 75% completion."""
@@ -299,9 +272,7 @@ class TestGenerateProgressBarRichFormatting:
         )
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=False)
-        assert (
-            result == "Progress: ██████████████████████████████░░░░░░░░░░  75% 15s left"
-        )
+        assert result == "Progress: ██████████████████████████████░░░░░░░░░░  75% 15s left"
 
 
 class TestGenerateProgressBarCornerCases:
@@ -328,17 +299,14 @@ class TestGenerateProgressBarCornerCases:
         result = generate_progress_bar(finetune_job, current_time, use_rich=True)
 
         assert (
-            result
-            == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
+            result == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
         )
 
     def test_very_large_remaining_time(self):
         """Test with very large remaining time (hours)."""
         current_time = datetime(2024, 1, 1, 12, 0, 30, tzinfo=timezone.utc)
         finetune_job = create_finetune_response(
-            progress=FinetuneProgress(
-                estimate_available=True, seconds_remaining=36000.0
-            )
+            progress=FinetuneProgress(estimate_available=True, seconds_remaining=36000.0)
         )
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=True)
@@ -358,8 +326,7 @@ class TestGenerateProgressBarCornerCases:
         result = generate_progress_bar(finetune_job, current_time, use_rich=True)
 
         assert (
-            result
-            == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
+            result == "Progress: ████████████████████████████████████████ [bold]100%[/bold] [yellow]N/A left[/yellow]"
         )
 
     def test_timezone_aware_datetime(self):
@@ -373,8 +340,7 @@ class TestGenerateProgressBarCornerCases:
         result = generate_progress_bar(finetune_job, current_time, use_rich=True)
 
         assert (
-            result
-            == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ [bold] 50%[/bold] [yellow]30s left[/yellow]"
+            result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ [bold] 50%[/bold] [yellow]30s left[/yellow]"
         )
 
     def test_estimate_unavailable_flag(self):
@@ -409,6 +375,4 @@ class TestGenerateProgressBarCornerCases:
 
         result = generate_progress_bar(finetune_job, current_time, use_rich=False)
 
-        assert (
-            result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░  50% 30s left"
-        )
+        assert result == "Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░  50% 30s left"

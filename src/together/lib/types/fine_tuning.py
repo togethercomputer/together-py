@@ -189,6 +189,7 @@ class TrainingMethodUnknown(BaseModel):
 
     method: str
 
+
 TrainingMethod: TypeAlias = Union[
     TrainingMethodSFT,
     TrainingMethodDPO,
@@ -248,6 +249,7 @@ class EmptyLRScheduler(BaseModel):
 
     lr_scheduler_type: Literal[""]
     lr_scheduler_args: None = None
+
 
 class UnknownLRScheduler(BaseModel):
     """
