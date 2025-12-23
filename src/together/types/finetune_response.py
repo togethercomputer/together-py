@@ -15,6 +15,7 @@ __all__ = [
     "LrSchedulerLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsLinearLrSchedulerArgs",
     "LrSchedulerLrSchedulerArgsCosineLrSchedulerArgs",
+    "MultimodalParams",
     "Progress",
     "TrainingMethod",
     "TrainingMethodTrainingMethodSft",
@@ -47,6 +48,14 @@ class LrScheduler(BaseModel):
     lr_scheduler_type: Literal["linear", "cosine"]
 
     lr_scheduler_args: Optional[LrSchedulerLrSchedulerArgs] = None
+
+
+class MultimodalParams(BaseModel):
+    train_vision: Optional[bool] = None
+    """Whether to train the vision encoder of the model.
+
+    Only available for multimodal models.
+    """
 
 
 class Progress(BaseModel):
@@ -149,6 +158,8 @@ class FinetuneResponse(BaseModel):
     x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
 
     x_model_output_path: Optional[str] = FieldInfo(alias="model_output_path", default=None)
+
+    multimodal_params: Optional[MultimodalParams] = None
 
     n_checkpoints: Optional[int] = None
 

@@ -249,6 +249,7 @@ class TestFineTuning:
             training_file="training_file",
             from_checkpoint="from_checkpoint",
             model="model",
+            multimodal_params={"train_vision": True},
             n_epochs=0,
             n_evals=0,
             training_method={
@@ -582,6 +583,7 @@ class TestAsyncFineTuning:
             training_file="training_file",
             from_checkpoint="from_checkpoint",
             model="model",
+            multimodal_params={"train_vision": True},
             n_epochs=0,
             n_evals=0,
             training_method={

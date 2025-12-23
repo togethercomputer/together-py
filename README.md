@@ -186,15 +186,11 @@ from together import Together
 
 client = Together()
 
-dedicated_endpoint = client.endpoints.create(
-    autoscaling={
-        "max_replicas": 5,
-        "min_replicas": 2,
-    },
-    hardware="1x_nvidia_a100_80gb_sxm",
-    model="meta-llama/Llama-3-8b-chat-hf",
+response = client.fine_tuning.estimate_price(
+    training_file="training_file",
+    multimodal_params={},
 )
-print(dedicated_endpoint.autoscaling)
+print(response.multimodal_params)
 ```
 
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
