@@ -31,7 +31,7 @@ from together.lib.constants import (
 #     "url": "data:image/jpeg;base64,..."
 #   }}
 # ]
-MessageContent = Union[str, list[dict[str, Any]]]
+MessageContent = Union[str, List[Dict[str, Any]]]
 
 
 class InvalidFileFormatError(ValueError):
@@ -273,7 +273,7 @@ def _check_message_content(message_content: str | int | MessageContent, role: st
     if isinstance(message_content, list):
         num_images = 0
         for item in message_content:
-            if not isinstance(item, dict):
+            if not isinstance(cast(Any, item), dict):
                 raise InvalidFileFormatError(
                     "The dataset is malformed, the `content` field must be a list of dicts.",
                     line_number=idx + 1,
@@ -310,7 +310,7 @@ def _check_message_content(message_content: str | int | MessageContent, role: st
                         error_source="key_value",
                     )
 
-                image_data = item["image_url"].get("url")
+                image_data = cast(Any, item["image_url"]).get("url")
                 if not image_data or not isinstance(image_data, str):
                     raise InvalidFileFormatError(
                         "The dataset is malformed, the `url` field must be present in the `image_url` field and be "
@@ -685,7 +685,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                     else:
                         for column in JSONL_REQUIRED_COLUMNS_MAP[current_format]:
                             role = "assistant" if column in {"completion"} else "user"
-                            _check_message_content(json_line[column], role=role, idx=idx)
+                            _check_message_content(cast(Any, json_line[column]), role=role, idx=idx)
 
                     if dataset_format is None:
                         dataset_format = current_format

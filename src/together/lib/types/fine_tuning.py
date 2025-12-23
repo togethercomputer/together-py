@@ -203,6 +203,7 @@ class FinetuneTrainingLimits(BaseModel):
     min_learning_rate: float
     full_training: Optional[FinetuneFullTrainingLimits] = None
     lora_training: Optional[FinetuneLoraTrainingLimits] = None
+    supports_vision: bool = False
 
 
 class LinearLRSchedulerArgs(BaseModel):
@@ -270,6 +271,14 @@ FinetuneLRScheduler: TypeAlias = Union[
 ]
 
 
+class FinetuneMultimodalParams(BaseModel):
+    """
+    Multimodal parameters
+    """
+
+    train_vision: bool = False
+
+
 class FinetuneProgress(BaseModel):
     """
     Fine-tune job progress
@@ -304,6 +313,9 @@ class FinetuneResponse(BaseModel):
 
     from_checkpoint: Optional[str] = None
     """Checkpoint used to continue training"""
+
+    multimodal_params: Optional[FinetuneMultimodalParams] = None
+    """Multimodal parameters"""
 
     from_hf_model: Optional[str] = None
     """Hugging Face Hub repo to start training from"""
@@ -469,6 +481,9 @@ class FinetuneRequest(BaseModel):
     training_method: TrainingMethod = Field(default_factory=TrainingMethodSFT)
     # from step
     from_checkpoint: Union[str, None] = None
+    # multimodal parameters
+    multimodal_params: Union[FinetuneMultimodalParams, None] = None
+    # hugging face related fields
     from_hf_model: Union[str, None] = None
     hf_model_revision: Union[str, None] = None
     # hf related fields

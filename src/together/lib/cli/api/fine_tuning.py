@@ -177,6 +177,12 @@ def fine_tuning(ctx: click.Context) -> None:
     "`auto` will automatically determine whether to mask the inputs based on the data format.",
 )
 @click.option(
+    "--train-vision",
+    type=bool,
+    default=False,
+    help="Whether to train the vision encoder. Only supported for multimodal models.",
+)
+@click.option(
     "--from-checkpoint",
     type=str,
     default=None,
@@ -231,6 +237,7 @@ def create(
     lora_dropout: float | None,
     lora_alpha: float | None,
     lora_trainable_modules: str | None,
+    train_vision: bool,
     suffix: str | None,
     wandb_api_key: str | None,
     wandb_base_url: str | None,
@@ -272,6 +279,7 @@ def create(
         lora_dropout=lora_dropout,
         lora_alpha=lora_alpha,
         lora_trainable_modules=lora_trainable_modules,
+        train_vision=train_vision,
         suffix=suffix,
         wandb_api_key=wandb_api_key,
         wandb_base_url=wandb_base_url,
@@ -362,6 +370,10 @@ def create(
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
+
+    if model_limits.supports_vision:
+        # Don't show price estimation for multimodal models yet
+        confirm = True
 
     finetune_price_estimation_result = client.fine_tuning.estimate_price(
         training_file=training_file,
