@@ -42,6 +42,39 @@ def test_check_jsonl_valid_instruction(tmp_path: Path):
     assert report["has_min_samples"]
 
 
+def test_check_jsonl_valid_instruction_multimodal(tmp_path: Path):
+    file = tmp_path / "valid_instruction_multimodal.jsonl"
+    content = [
+        {
+            "prompt": [
+                {
+                    "type": "text",
+                    "text": "What's the difference between these two images?",
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,..."},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,..."},
+                },
+            ],
+            "completion": "The first image is a cat, the second image is a dog.",
+        },
+    ]
+
+    with file.open("w") as f:
+        f.write("\n".join(json.dumps(item) for item in content))
+
+    report = check_file(file)
+
+    assert report["is_check_passed"]
+    assert report["utf8"]
+    assert report["num_samples"] == len(content)
+    assert report["has_min_samples"]
+
+
 def test_check_jsonl_valid_conversational_single_turn(tmp_path: Path):
     # Create a valid JSONL file with conversational format and 1 user-assistant turn pair
     file = tmp_path / "valid_conversational_single_turn.jsonl"
@@ -115,6 +148,48 @@ def test_check_jsonl_valid_conversational_multiple_turns(tmp_path: Path):
 
     report = check_file(file)
 
+    assert report["is_check_passed"]
+    assert report["utf8"]
+    assert report["num_samples"] == len(content)
+    assert report["has_min_samples"]
+
+
+def test_check_jsonl_valid_conversational_multimodal_single_turn(tmp_path: Path):
+    file = tmp_path / "valid_conversational_multimodal_single_turn.jsonl"
+    content = [
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "What's the difference between these two images?",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/jpeg;base64,..."},
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/jpeg;base64,..."},
+                        },
+                    ],
+                },
+                {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Hi there!"}],
+                },
+            ]
+        },
+    ]
+
+    with file.open("w") as f:
+        f.write("\n".join(json.dumps(item) for item in content))
+
+    report = check_file(file)
+
+    print(report)
     assert report["is_check_passed"]
     assert report["utf8"]
     assert report["num_samples"] == len(content)
@@ -402,6 +477,37 @@ def test_check_jsonl_invalid_weight(tmp_path: Path):
     report = check_file(file)
     assert not report["is_check_passed"]
     assert "Weight must be either 0 or 1" in report["message"]
+
+
+def test_check_jsonl_invalid_multimodal_content(tmp_path: Path):
+    file = tmp_path / "invalid_multimodal_content.jsonl"
+    content = [
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Hello"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "<malformed_base64_image>"},
+                        },
+                    ],
+                },
+                {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Hi there!"}],
+                },
+            ]
+        }
+    ]
+
+    with file.open("w") as f:
+        f.write("\n".join(json.dumps(item) for item in content))
+
+    report = check_file(file)
+    assert not report["is_check_passed"]
+    assert "field must be either a JPEG, PNG or WEBP" in report["message"]
 
 
 def test_check_csv_valid_general(tmp_path: Path):
