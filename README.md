@@ -186,11 +186,15 @@ from together import Together
 
 client = Together()
 
-response = client.fine_tuning.estimate_price(
-    training_file="training_file",
-    multimodal_params={},
+dedicated_endpoint = client.endpoints.create(
+    autoscaling={
+        "max_replicas": 5,
+        "min_replicas": 2,
+    },
+    hardware="1x_nvidia_a100_80gb_sxm",
+    model="meta-llama/Llama-3-8b-chat-hf",
 )
-print(response.multimodal_params)
+print(dedicated_endpoint.autoscaling)
 ```
 
 ## File uploads

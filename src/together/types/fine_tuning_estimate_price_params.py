@@ -7,7 +7,6 @@ from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 __all__ = [
     "FineTuningEstimatePriceParams",
-    "MultimodalParams",
     "TrainingMethod",
     "TrainingMethodTrainingMethodSft",
     "TrainingMethodTrainingMethodDpo",
@@ -32,8 +31,6 @@ class FineTuningEstimatePriceParams(TypedDict, total=False):
     model: str
     """Name of the base model to run fine-tune job on"""
 
-    multimodal_params: MultimodalParams
-
     n_epochs: int
     """
     Number of complete passes through the training dataset (higher values may
@@ -53,14 +50,6 @@ class FineTuningEstimatePriceParams(TypedDict, total=False):
 
     validation_file: str
     """File-ID of a validation file uploaded to the Together API"""
-
-
-class MultimodalParams(TypedDict, total=False):
-    train_vision: bool
-    """Whether to train the vision encoder of the model.
-
-    Only available for multimodal models.
-    """
 
 
 class TrainingMethodTrainingMethodSft(TypedDict, total=False):
