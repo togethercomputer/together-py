@@ -13,6 +13,7 @@ from together.types import FilePurpose
 from together.lib.constants import (
     MIN_SAMPLES,
     DISABLE_TQDM,
+    MAX_IMAGE_BYTES,
     NUM_BYTES_IN_GB,
     MAX_FILE_SIZE_GB,
     MAX_IMAGES_PER_EXAMPLE,
@@ -258,7 +259,7 @@ def _check_message_content(message_content: str | int | MessageContent, role: st
            ]
 
     Args:
-        message: The message to check.
+        message_content: The message content to check.
         role: The role of the message.
         idx: Line number in the file.
 
@@ -330,7 +331,7 @@ def _check_message_content(message_content: str | int | MessageContent, role: st
                 if len(image_data) > MAX_BASE64_IMAGE_LENGTH:
                     raise InvalidFileFormatError(
                         "The dataset is malformed, the `url` field must contain base64-encoded image "
-                        f"that is less than 10MB, found ~{len(image_data) * 3 // 4} bytes.",
+                        f"that is less than {MAX_IMAGE_BYTES // (1024**2)}MB, found ~{len(image_data) * 3 // 4} bytes.",
                         line_number=idx + 1,
                         error_source="key_value",
                     )
