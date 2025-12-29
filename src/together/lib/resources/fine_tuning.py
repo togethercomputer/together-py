@@ -22,6 +22,7 @@ from together.lib.types.fine_tuning import (
     CosineLRSchedulerArgs,
     LinearLRSchedulerArgs,
     FinetuneTrainingLimits,
+    FinetuneMultimodalParams,
 )
 
 AVAILABLE_TRAINING_METHODS = {
@@ -51,6 +52,7 @@ def create_finetune_request(
     lora_dropout: float | None = 0,
     lora_alpha: float | None = None,
     lora_trainable_modules: str | None = "all-linear",
+    train_vision: bool = False,
     suffix: str | None = None,
     wandb_api_key: str | None = None,
     wandb_base_url: str | None = None,
@@ -207,6 +209,13 @@ def create_finetune_request(
             simpo_gamma=simpo_gamma,
         )
 
+    if model_limits.supports_vision:
+        multimodal_params = FinetuneMultimodalParams(train_vision=train_vision)
+    elif not model_limits.supports_vision and train_vision:
+        raise ValueError(f"Vision encoder training is not supported for the non-multimodal model `{model}`")
+    else:
+        multimodal_params = None
+
     finetune_request = FinetuneRequest(
         model=model,
         training_file=training_file,
@@ -227,6 +236,7 @@ def create_finetune_request(
         wandb_project_name=wandb_project_name,
         wandb_name=wandb_name,
         training_method=training_method_cls,  # pyright: ignore[reportPossiblyUnboundVariable]
+        multimodal_params=multimodal_params,
         from_checkpoint=from_checkpoint,
         from_hf_model=from_hf_model,
         hf_model_revision=hf_model_revision,
