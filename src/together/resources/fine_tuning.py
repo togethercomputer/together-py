@@ -53,6 +53,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "Proceed at your own risk."
 )
 
+
 class FineTuningResource(SyncAPIResource):
     @cached_property
     def with_raw_response(self) -> FineTuningResourceWithRawResponse:
@@ -95,6 +96,7 @@ class FineTuningResource(SyncAPIResource):
         lora_dropout: float | None = 0,
         lora_alpha: float | None = None,
         lora_trainable_modules: str | None = "all-linear",
+        train_vision: bool = False,
         suffix: str | None = None,
         wandb_api_key: str | None = None,
         wandb_base_url: str | None = None,
@@ -140,6 +142,7 @@ class FineTuningResource(SyncAPIResource):
             lora_dropout (float, optional): Dropout rate for LoRA adapters. Defaults to 0.
             lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to 8.
             lora_trainable_modules (str, optional): Trainable modules for LoRA adapters. Defaults to "all-linear".
+            train_vision (bool, optional): Whether to train the vision encoder (Only for multimodal models). Defaults to False.
             suffix (str, optional): Up to 40 character suffix that will be added to your fine-tuned model name.
                 Defaults to None.
             wandb_api_key (str, optional): API key for Weights & Biases integration.
@@ -214,6 +217,7 @@ class FineTuningResource(SyncAPIResource):
             lora_dropout=lora_dropout,
             lora_alpha=lora_alpha,
             lora_trainable_modules=lora_trainable_modules,
+            train_vision=train_vision,
             suffix=suffix,
             wandb_api_key=wandb_api_key,
             wandb_base_url=wandb_base_url,
@@ -232,29 +236,32 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-
-        price_estimation_result = self.estimate_price(
-            training_file=training_file,
-            from_checkpoint=from_checkpoint or Omit(),
-            validation_file=validation_file or Omit(),
-            model=model or "",
-            n_epochs=finetune_request.n_epochs,
-            n_evals=finetune_request.n_evals or 0,
-            training_type=training_type_cls,
-            training_method=training_method_cls,
-        )
-
+        if not model_limits.supports_vision:
+            price_estimation_result = self.estimate_price(
+                training_file=training_file,
+                from_checkpoint=from_checkpoint or Omit(),
+                validation_file=validation_file or Omit(),
+                model=model or "",
+                n_epochs=finetune_request.n_epochs,
+                n_evals=finetune_request.n_evals or 0,
+                training_type=training_type_cls,
+                training_method=training_method_cls,
+            )
+            price_limit_passed = price_estimation_result.allowed_to_proceed
+        else:
+            # unsupported case
+            price_limit_passed = True
 
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
-            if not price_estimation_result.allowed_to_proceed:
+            if not price_limit_passed:
                 rprint(
                     "[red]"
                     + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     + "[/red]",
                 )
@@ -627,6 +634,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         lora_dropout: float | None = 0,
         lora_alpha: float | None = None,
         lora_trainable_modules: str | None = "all-linear",
+        train_vision: bool = False,
         suffix: str | None = None,
         wandb_api_key: str | None = None,
         wandb_base_url: str | None = None,
@@ -672,6 +680,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             lora_dropout (float, optional): Dropout rate for LoRA adapters. Defaults to 0.
             lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to 8.
             lora_trainable_modules (str, optional): Trainable modules for LoRA adapters. Defaults to "all-linear".
+            train_vision (bool, optional): Whether to train the vision encoder (Only for multimodal models). Defaults to False.
             suffix (str, optional): Up to 40 character suffix that will be added to your fine-tuned model name.
                 Defaults to None.
             wandb_api_key (str, optional): API key for Weights & Biases integration.
@@ -746,6 +755,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             lora_dropout=lora_dropout,
             lora_alpha=lora_alpha,
             lora_trainable_modules=lora_trainable_modules,
+            train_vision=train_vision,
             suffix=suffix,
             wandb_api_key=wandb_api_key,
             wandb_base_url=wandb_base_url,
@@ -764,7 +774,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-
         price_estimation_result = await self.estimate_price(
             training_file=training_file,
             from_checkpoint=from_checkpoint or Omit(),
@@ -776,7 +785,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
             training_method=training_method_cls,
         )
 
-
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
@@ -786,7 +794,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                 rprint(
                     "[red]"
                     + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price # pyright: ignore[reportPossiblyUnboundVariable]
+                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     + "[/red]",
                 )
