@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.0.0-alpha.12 (2026-01-05)
+
+Full Changelog: [v2.0.0-alpha.11...v2.0.0-alpha.12](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.11...v2.0.0-alpha.12)
+
+### Features
+
+* Support VLM finetuning ([e4428b3](https://github.com/togethercomputer/together-py/commit/e4428b3c86080286643b0e287ff02ac6b8cd3864))
+* VLM Support update ([97c74a3](https://github.com/togethercomputer/together-py/commit/97c74a38da1ea0a7717b0172f5cd65bb85bcaee4))
+
+
+### Bug Fixes
+
+* use async_to_httpx_files in patch method ([dc293e6](https://github.com/togethercomputer/together-py/commit/dc293e68b49cce5b0c8437e94152e369bb09b625))
+
+
+### Chores
+
+* **internal:** add `--fix` argument to lint script ([c29463d](https://github.com/togethercomputer/together-py/commit/c29463dbe8a18fa02bf436ae4cbdd6b59644e641))
+* **internal:** codegen related update ([f7499fc](https://github.com/togethercomputer/together-py/commit/f7499fcd931834fcd16210cd25e14dc5b328fb0e))
+
+
+### Documentation
+
+* add more examples ([a048344](https://github.com/togethercomputer/together-py/commit/a048344c0daeeab4d7fefd41d3554bde860dd9d5))
+
 ## 2.0.0-alpha.11 (2025-12-16)
 
 Full Changelog: [v2.0.0-alpha.10...v2.0.0-alpha.11](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.10...v2.0.0-alpha.11)
