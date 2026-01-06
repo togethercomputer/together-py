@@ -60,6 +60,10 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
     """
 
+    chat_template_kwargs: object
+
+    compliance: Literal["hipaa"]
+
     context_length_exceeded_behavior: Literal["truncate", "error"]
     """
     Defined the behavior of the API when max_tokens exceed the maximum context
