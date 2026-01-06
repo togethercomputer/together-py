@@ -1,5 +1,13 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
+from .beta import (
+    BetaResource,
+    AsyncBetaResource,
+    BetaResourceWithRawResponse,
+    AsyncBetaResourceWithRawResponse,
+    BetaResourceWithStreamingResponse,
+    AsyncBetaResourceWithStreamingResponse,
+)
 from .chat import (
     ChatResource,
     AsyncChatResource,
@@ -130,6 +138,12 @@ from .code_interpreter import (
 )
 
 __all__ = [
+    "BetaResource",
+    "AsyncBetaResource",
+    "BetaResourceWithRawResponse",
+    "AsyncBetaResourceWithRawResponse",
+    "BetaResourceWithStreamingResponse",
+    "AsyncBetaResourceWithStreamingResponse",
     "ChatResource",
     "AsyncChatResource",
     "ChatResourceWithRawResponse",

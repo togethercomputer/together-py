@@ -32,6 +32,7 @@ from ._base_client import (
 
 if TYPE_CHECKING:
     from .resources import (
+        beta,
         chat,
         jobs,
         audio,
@@ -58,6 +59,7 @@ if TYPE_CHECKING:
     from .resources.videos import VideosResource, AsyncVideosResource
     from .resources.batches import BatchesResource, AsyncBatchesResource
     from .resources.hardware import HardwareResource, AsyncHardwareResource
+    from .resources.beta.beta import BetaResource, AsyncBetaResource
     from .resources.chat.chat import ChatResource, AsyncChatResource
     from .resources.endpoints import EndpointsResource, AsyncEndpointsResource
     from .resources.embeddings import EmbeddingsResource, AsyncEmbeddingsResource
@@ -135,6 +137,12 @@ class Together(SyncAPIClient):
         )
 
         self._default_stream_cls = Stream
+
+    @cached_property
+    def beta(self) -> BetaResource:
+        from .resources.beta import BetaResource
+
+        return BetaResource(self)
 
     @cached_property
     def chat(self) -> ChatResource:
@@ -406,6 +414,12 @@ class AsyncTogether(AsyncAPIClient):
         self._default_stream_cls = AsyncStream
 
     @cached_property
+    def beta(self) -> AsyncBetaResource:
+        from .resources.beta import AsyncBetaResource
+
+        return AsyncBetaResource(self)
+
+    @cached_property
     def chat(self) -> AsyncChatResource:
         from .resources.chat import AsyncChatResource
 
@@ -623,6 +637,12 @@ class TogetherWithRawResponse:
         self._client = client
 
     @cached_property
+    def beta(self) -> beta.BetaResourceWithRawResponse:
+        from .resources.beta import BetaResourceWithRawResponse
+
+        return BetaResourceWithRawResponse(self._client.beta)
+
+    @cached_property
     def chat(self) -> chat.ChatResourceWithRawResponse:
         from .resources.chat import ChatResourceWithRawResponse
 
@@ -724,6 +744,12 @@ class AsyncTogetherWithRawResponse:
 
     def __init__(self, client: AsyncTogether) -> None:
         self._client = client
+
+    @cached_property
+    def beta(self) -> beta.AsyncBetaResourceWithRawResponse:
+        from .resources.beta import AsyncBetaResourceWithRawResponse
+
+        return AsyncBetaResourceWithRawResponse(self._client.beta)
 
     @cached_property
     def chat(self) -> chat.AsyncChatResourceWithRawResponse:
@@ -829,6 +855,12 @@ class TogetherWithStreamedResponse:
         self._client = client
 
     @cached_property
+    def beta(self) -> beta.BetaResourceWithStreamingResponse:
+        from .resources.beta import BetaResourceWithStreamingResponse
+
+        return BetaResourceWithStreamingResponse(self._client.beta)
+
+    @cached_property
     def chat(self) -> chat.ChatResourceWithStreamingResponse:
         from .resources.chat import ChatResourceWithStreamingResponse
 
@@ -930,6 +962,12 @@ class AsyncTogetherWithStreamedResponse:
 
     def __init__(self, client: AsyncTogether) -> None:
         self._client = client
+
+    @cached_property
+    def beta(self) -> beta.AsyncBetaResourceWithStreamingResponse:
+        from .resources.beta import AsyncBetaResourceWithStreamingResponse
+
+        return AsyncBetaResourceWithStreamingResponse(self._client.beta)
 
     @cached_property
     def chat(self) -> chat.AsyncChatResourceWithStreamingResponse:

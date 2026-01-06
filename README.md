@@ -186,15 +186,21 @@ from together import Together
 
 client = Together()
 
-dedicated_endpoint = client.endpoints.create(
-    autoscaling={
-        "max_replicas": 5,
-        "min_replicas": 2,
+cluster = client.beta.clusters.create(
+    billing_type="RESERVED",
+    cluster_name="cluster_name",
+    driver_version="CUDA_12_5_555",
+    duration_days=0,
+    gpu_type="H100_SXM",
+    num_gpus=0,
+    region="us-central-8",
+    shared_volume={
+        "region": "region",
+        "size_tib": 0,
+        "volume_name": "volume_name",
     },
-    hardware="1x_nvidia_a100_80gb_sxm",
-    model="meta-llama/Llama-3-8b-chat-hf",
 )
-print(dedicated_endpoint.autoscaling)
+print(cluster.shared_volume)
 ```
 
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
