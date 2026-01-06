@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import re
+import sys
 import math
-from typing import List, Union, Literal
+from typing import Any, List, Union, Literal, TypeVar, Callable
 from gettext import gettext as _
 from datetime import datetime
+from functools import wraps
 
 import click
 
+from together import APIError
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
 from together.types.fine_tuning_list_response import Data
@@ -129,3 +132,36 @@ def generate_progress_bar(
         return progress
 
     return re.sub(r"\[/?[^\]]+\]", "", progress)
+
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def handle_api_errors(prefix: str) -> Callable[[F], F]:
+    """Decorator to handle common API errors in CLI commands."""
+
+    prefix_styled = click.style(f"{prefix}: ", fg="blue")
+
+    def decorator(f: F) -> F:
+        @wraps(f)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return f(*args, **kwargs)
+            # User aborted the command
+            except click.Abort:
+                sys.exit(0)
+            except APIError as e:
+                click.echo(prefix_styled + click.style("Failed", fg="red"))
+                if e.body is not None:
+                    click.echo(prefix_styled + click.style(getattr(e.body, "message", str(e.body)), fg="red"))
+                else:
+                    click.echo(prefix_styled + click.style(str(e), fg="red"))
+                sys.exit(1)
+            except Exception as e:
+                click.echo(prefix_styled + click.style("Failed", fg="red"))
+                click.echo(prefix_styled + click.style(f"An unexpected error occurred - {str(e)}", fg="red"))
+                sys.exit(1)
+
+        return wrapper  # type: ignore
+
+    return decorator  # type: ignore

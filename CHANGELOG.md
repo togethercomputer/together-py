@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-alpha.14 (2026-01-06)
+
+Full Changelog: [v2.0.0-alpha.13...v2.0.0-alpha.14](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.13...v2.0.0-alpha.14)
+
+### Chores
+
+* Add Instant Clusters to OpenAPI spec ([2583943](https://github.com/togethercomputer/together-py/commit/25839431e9d7636e3cb2e1b14b8eaeeac179dda5))
+
 ## 2.0.0-alpha.13 (2026-01-06)
 
 Full Changelog: [v2.0.0-alpha.12...v2.0.0-alpha.13](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.12...v2.0.0-alpha.13)

@@ -11,6 +11,7 @@ from together._constants import DEFAULT_TIMEOUT
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
 from together.lib.cli.api.models import models
+from together.lib.cli.api.beta.beta import beta
 from together.lib.cli.api.endpoints import endpoints
 from together.lib.cli.api.fine_tuning import fine_tuning
 
@@ -66,6 +67,7 @@ main.add_command(fine_tuning)
 main.add_command(models)
 main.add_command(endpoints)
 main.add_command(evals)
+main.add_command(beta)
 
 if __name__ == "__main__":
     main()
