@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-alpha.13 (2026-01-06)
+
+Full Changelog: [v2.0.0-alpha.12...v2.0.0-alpha.13](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.12...v2.0.0-alpha.13)
+
+### Features
+
+* Add compliance and chat_template_kwargs to chat completions spec ([e6fed17](https://github.com/togethercomputer/together-py/commit/e6fed17708d9c58b30f7c46279fae8be3e143e8d))
+
 ## 2.0.0-alpha.12 (2026-01-05)
 
 Full Changelog: [v2.0.0-alpha.11...v2.0.0-alpha.12](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.11...v2.0.0-alpha.12)
