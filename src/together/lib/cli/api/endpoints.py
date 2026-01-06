@@ -8,6 +8,7 @@ from functools import wraps
 import click
 
 from together import Together, omit
+from together.lib.cli.api.prompt import promptValue
 from together.types import DedicatedEndpoint
 from together._exceptions import APIError
 from together.lib.utils.serializer import datetime_serializer
@@ -160,6 +161,10 @@ def create(
     }
 
     hardware_id = f"{gpu_count}x_{gpu_map[gpu]}"
+
+    options = client.hardware.list(model=model or omit)
+    hardware_select = promptValue([option.id for option in options.data])
+    print(hardware_select)
 
     try:
         response = client.endpoints.create(
