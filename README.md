@@ -634,6 +634,47 @@ together models list
 together models upload --model-name my-org/my-model --model-source s3-or-hugging-face
 ```
 
+### Clusters
+
+```bash
+# Help
+together beta clusters --help
+
+# Create a cluster
+together beta clusters create
+
+# List clusters
+together beta clusters list
+
+# Retrieve cluster details
+together beta clusters retrieve [cluster-id]
+
+# Update a cluster
+together beta clusters update [cluster-id]
+
+# Retrieve Together cluster configuration options such as regions, gpu types and drivers available
+together beta clusters list-regions
+```
+
+##### Cluster Storage
+
+```bash
+# Help
+together beta clusters storage --help
+
+# Create cluster storage volume
+together beta clusters storage create
+
+# List storage volumes
+together beta clusters storage list
+
+# Retrieve storage volume
+together beta clusters storage retrieve [storage-id]
+
+# Delete storage volume
+together beta clusters storage delete [storage-id]
+```
+
 ## Contributing
 
 See [the contributing documentation](./CONTRIBUTING.md).
