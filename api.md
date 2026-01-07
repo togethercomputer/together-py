@@ -1,5 +1,92 @@
 # Beta
 
+## Deployments
+
+Types:
+
+```python
+from together.types.beta import (
+    DeploymentCreateResponse,
+    DeploymentRetrieveResponse,
+    DeploymentUpdateResponse,
+    DeploymentListResponse,
+    DeploymentGetLogsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /deployments">client.beta.deployments.<a href="./src/together/resources/beta/deployments/deployments.py">create</a>(\*\*<a href="src/together/types/beta/deployment_create_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_create_response.py">DeploymentCreateResponse</a></code>
+- <code title="get /deployments/{id}">client.beta.deployments.<a href="./src/together/resources/beta/deployments/deployments.py">retrieve</a>(id) -> <a href="./src/together/types/beta/deployment_retrieve_response.py">DeploymentRetrieveResponse</a></code>
+- <code title="patch /deployments/{id}">client.beta.deployments.<a href="./src/together/resources/beta/deployments/deployments.py">update</a>(id, \*\*<a href="src/together/types/beta/deployment_update_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_update_response.py">DeploymentUpdateResponse</a></code>
+- <code title="get /deployments">client.beta.deployments.<a href="./src/together/resources/beta/deployments/deployments.py">list</a>() -> <a href="./src/together/types/beta/deployment_list_response.py">DeploymentListResponse</a></code>
+- <code title="delete /deployments/{id}">client.beta.deployments.<a href="./src/together/resources/beta/deployments/deployments.py">delete</a>(id) -> object</code>
+- <code title="get /deployments/{id}/logs">client.beta.deployments.<a href="./src/together/resources/beta/deployments/deployments.py">get_logs</a>(id, \*\*<a href="src/together/types/beta/deployment_get_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_get_logs_response.py">DeploymentGetLogsResponse</a></code>
+
+### ImageRepositories
+
+Types:
+
+```python
+from together.types.beta.deployments import (
+    ImageRepositoryListResponse,
+    ImageRepositoryRetrieveImagesResponse,
+)
+```
+
+Methods:
+
+- <code title="get /image-repositories">client.beta.deployments.image_repositories.<a href="./src/together/resources/beta/deployments/image_repositories.py">list</a>() -> <a href="./src/together/types/beta/deployments/image_repository_list_response.py">ImageRepositoryListResponse</a></code>
+- <code title="get /image-repositories/{id}/images">client.beta.deployments.image_repositories.<a href="./src/together/resources/beta/deployments/image_repositories.py">retrieve_images</a>(id) -> <a href="./src/together/types/beta/deployments/image_repository_retrieve_images_response.py">ImageRepositoryRetrieveImagesResponse</a></code>
+
+### Secrets
+
+Types:
+
+```python
+from together.types.beta.deployments import (
+    SecretCreateResponse,
+    SecretRetrieveResponse,
+    SecretUpdateResponse,
+    SecretListResponse,
+)
+```
+
+Methods:
+
+- <code title="post /secrets">client.beta.deployments.secrets.<a href="./src/together/resources/beta/deployments/secrets.py">create</a>(\*\*<a href="src/together/types/beta/deployments/secret_create_params.py">params</a>) -> <a href="./src/together/types/beta/deployments/secret_create_response.py">SecretCreateResponse</a></code>
+- <code title="get /secrets/{id}">client.beta.deployments.secrets.<a href="./src/together/resources/beta/deployments/secrets.py">retrieve</a>(id) -> <a href="./src/together/types/beta/deployments/secret_retrieve_response.py">SecretRetrieveResponse</a></code>
+- <code title="patch /secrets/{id}">client.beta.deployments.secrets.<a href="./src/together/resources/beta/deployments/secrets.py">update</a>(id, \*\*<a href="src/together/types/beta/deployments/secret_update_params.py">params</a>) -> <a href="./src/together/types/beta/deployments/secret_update_response.py">SecretUpdateResponse</a></code>
+- <code title="get /secrets">client.beta.deployments.secrets.<a href="./src/together/resources/beta/deployments/secrets.py">list</a>() -> <a href="./src/together/types/beta/deployments/secret_list_response.py">SecretListResponse</a></code>
+- <code title="delete /secrets/{id}">client.beta.deployments.secrets.<a href="./src/together/resources/beta/deployments/secrets.py">delete</a>(id) -> object</code>
+
+### Storage
+
+Methods:
+
+- <code title="get /storage/{filename}">client.beta.deployments.storage.<a href="./src/together/resources/beta/deployments/storage/storage.py">download</a>(filename) -> None</code>
+
+#### Volumes
+
+Types:
+
+```python
+from together.types.beta.deployments.storage import (
+    VolumeCreateResponse,
+    VolumeRetrieveResponse,
+    VolumeUpdateResponse,
+    VolumeListResponse,
+)
+```
+
+Methods:
+
+- <code title="post /storage/volumes">client.beta.deployments.storage.volumes.<a href="./src/together/resources/beta/deployments/storage/volumes.py">create</a>(\*\*<a href="src/together/types/beta/deployments/storage/volume_create_params.py">params</a>) -> <a href="./src/together/types/beta/deployments/storage/volume_create_response.py">VolumeCreateResponse</a></code>
+- <code title="get /storage/volumes/{id}">client.beta.deployments.storage.volumes.<a href="./src/together/resources/beta/deployments/storage/volumes.py">retrieve</a>(id) -> <a href="./src/together/types/beta/deployments/storage/volume_retrieve_response.py">VolumeRetrieveResponse</a></code>
+- <code title="patch /storage/volumes/{id}">client.beta.deployments.storage.volumes.<a href="./src/together/resources/beta/deployments/storage/volumes.py">update</a>(id, \*\*<a href="src/together/types/beta/deployments/storage/volume_update_params.py">params</a>) -> <a href="./src/together/types/beta/deployments/storage/volume_update_response.py">VolumeUpdateResponse</a></code>
+- <code title="get /storage/volumes">client.beta.deployments.storage.volumes.<a href="./src/together/resources/beta/deployments/storage/volumes.py">list</a>() -> <a href="./src/together/types/beta/deployments/storage/volume_list_response.py">VolumeListResponse</a></code>
+- <code title="delete /storage/volumes/{id}">client.beta.deployments.storage.volumes.<a href="./src/together/resources/beta/deployments/storage/volumes.py">delete</a>(id) -> object</code>
+
 ## Clusters
 
 Types:

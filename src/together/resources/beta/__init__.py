@@ -16,8 +16,22 @@ from .clusters import (
     ClustersResourceWithStreamingResponse,
     AsyncClustersResourceWithStreamingResponse,
 )
+from .deployments import (
+    DeploymentsResource,
+    AsyncDeploymentsResource,
+    DeploymentsResourceWithRawResponse,
+    AsyncDeploymentsResourceWithRawResponse,
+    DeploymentsResourceWithStreamingResponse,
+    AsyncDeploymentsResourceWithStreamingResponse,
+)
 
 __all__ = [
+    "DeploymentsResource",
+    "AsyncDeploymentsResource",
+    "DeploymentsResourceWithRawResponse",
+    "AsyncDeploymentsResourceWithRawResponse",
+    "DeploymentsResourceWithStreamingResponse",
+    "AsyncDeploymentsResourceWithStreamingResponse",
     "ClustersResource",
     "AsyncClustersResource",
     "ClustersResourceWithRawResponse",

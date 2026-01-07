@@ -12,11 +12,23 @@ from .clusters.clusters import (
     ClustersResourceWithStreamingResponse,
     AsyncClustersResourceWithStreamingResponse,
 )
+from .deployments.deployments import (
+    DeploymentsResource,
+    AsyncDeploymentsResource,
+    DeploymentsResourceWithRawResponse,
+    AsyncDeploymentsResourceWithRawResponse,
+    DeploymentsResourceWithStreamingResponse,
+    AsyncDeploymentsResourceWithStreamingResponse,
+)
 
 __all__ = ["BetaResource", "AsyncBetaResource"]
 
 
 class BetaResource(SyncAPIResource):
+    @cached_property
+    def deployments(self) -> DeploymentsResource:
+        return DeploymentsResource(self._client)
+
     @cached_property
     def clusters(self) -> ClustersResource:
         return ClustersResource(self._client)
@@ -42,6 +54,10 @@ class BetaResource(SyncAPIResource):
 
 
 class AsyncBetaResource(AsyncAPIResource):
+    @cached_property
+    def deployments(self) -> AsyncDeploymentsResource:
+        return AsyncDeploymentsResource(self._client)
+
     @cached_property
     def clusters(self) -> AsyncClustersResource:
         return AsyncClustersResource(self._client)
@@ -71,6 +87,10 @@ class BetaResourceWithRawResponse:
         self._beta = beta
 
     @cached_property
+    def deployments(self) -> DeploymentsResourceWithRawResponse:
+        return DeploymentsResourceWithRawResponse(self._beta.deployments)
+
+    @cached_property
     def clusters(self) -> ClustersResourceWithRawResponse:
         return ClustersResourceWithRawResponse(self._beta.clusters)
 
@@ -78,6 +98,10 @@ class BetaResourceWithRawResponse:
 class AsyncBetaResourceWithRawResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
+
+    @cached_property
+    def deployments(self) -> AsyncDeploymentsResourceWithRawResponse:
+        return AsyncDeploymentsResourceWithRawResponse(self._beta.deployments)
 
     @cached_property
     def clusters(self) -> AsyncClustersResourceWithRawResponse:
@@ -89,6 +113,10 @@ class BetaResourceWithStreamingResponse:
         self._beta = beta
 
     @cached_property
+    def deployments(self) -> DeploymentsResourceWithStreamingResponse:
+        return DeploymentsResourceWithStreamingResponse(self._beta.deployments)
+
+    @cached_property
     def clusters(self) -> ClustersResourceWithStreamingResponse:
         return ClustersResourceWithStreamingResponse(self._beta.clusters)
 
@@ -96,6 +124,10 @@ class BetaResourceWithStreamingResponse:
 class AsyncBetaResourceWithStreamingResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
+
+    @cached_property
+    def deployments(self) -> AsyncDeploymentsResourceWithStreamingResponse:
+        return AsyncDeploymentsResourceWithStreamingResponse(self._beta.deployments)
 
     @cached_property
     def clusters(self) -> AsyncClustersResourceWithStreamingResponse:

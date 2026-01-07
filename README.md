@@ -186,21 +186,12 @@ from together import Together
 
 client = Together()
 
-cluster = client.beta.clusters.create(
-    billing_type="RESERVED",
-    cluster_name="cluster_name",
-    driver_version="CUDA_12_5_555",
-    duration_days=0,
-    gpu_type="H100_SXM",
-    num_gpus=0,
-    region="us-central-8",
-    shared_volume={
-        "region": "region",
-        "size_tib": 0,
-        "volume_name": "volume_name",
-    },
+volume = client.beta.deployments.storage.volumes.create(
+    content={},
+    name="name",
+    type="readOnly",
 )
-print(cluster.shared_volume)
+print(volume.content)
 ```
 
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
