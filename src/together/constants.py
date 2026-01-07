@@ -1,6 +1,5 @@
 # Manually added to minimize breaking changes from V1
 from ._constants import (
-    DEFAULT_TIMEOUT,
     MAX_RETRY_DELAY as MAX_RETRY_DELAY,
     DEFAULT_MAX_RETRIES,
     INITIAL_RETRY_DELAY as INITIAL_RETRY_DELAY,
@@ -27,9 +26,9 @@ from .lib.constants import (
     DatasetFormat as DatasetFormat,
 )
 
-TIMEOUT_SECS = DEFAULT_TIMEOUT.connect if DEFAULT_TIMEOUT.connect else 600
+TIMEOUT_SECS = 600
 MAX_SESSION_LIFETIME_SECS = 180
 MAX_CONNECTION_RETRIES = 2
 MAX_RETRIES = DEFAULT_MAX_RETRIES
 
-BASE_URL = "https://api.together.ai/v1"
+BASE_URL = "https://api.together.xyz/v1"
