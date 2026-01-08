@@ -334,7 +334,7 @@ class TestGenerateProgressBarCornerCases:
         """Test with different timezone for updated_at."""
         current_time = datetime(2024, 1, 1, 12, 0, 30, tzinfo=timezone.utc)
         finetune_job = create_finetune_response(
-            updated_at=datetime(2024, 1, 1, 7, 0, 0, tzinfo=ZoneInfo("EST")),  # Same as 12:00:00 UTC (EST = UTC-5)
+            started_at=datetime(2024, 1, 1, 7, 0, 0, tzinfo=ZoneInfo("EST")),  # Same as 12:00:00 UTC (EST = UTC-5)
             progress=FinetuneProgress(estimate_available=True, seconds_remaining=60.0),
         )
 
@@ -359,7 +359,7 @@ class TestGenerateProgressBarCornerCases:
         """Test unusual case where current time appears before updated_at."""
         current_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         finetune_job = create_finetune_response(
-            updated_at=datetime(2024, 1, 1, 12, 0, 30, tzinfo=timezone.utc),  # In the "future"
+            started_at=datetime(2024, 1, 1, 12, 0, 30, tzinfo=timezone.utc),  # In the "future"
             progress=FinetuneProgress(estimate_available=True, seconds_remaining=100.0),
         )
 
