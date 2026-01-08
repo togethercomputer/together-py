@@ -174,6 +174,8 @@ class FinetuneResponse(BaseModel):
 
     queue_depth: Optional[int] = None
 
+    started_at: Optional[datetime] = None
+
     token_count: Optional[int] = None
 
     total_price: Optional[int] = None
