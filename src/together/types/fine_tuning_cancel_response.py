@@ -177,6 +177,9 @@ class FineTuningCancelResponse(BaseModel):
     progress: Optional[Progress] = None
     """Progress information for the fine-tuning job"""
 
+    started_at: Optional[datetime] = None
+    """Start timestamp of the current stage of the fine-tune job"""
+
     suffix: Optional[str] = None
     """Suffix added to the fine-tuned model name"""
 
