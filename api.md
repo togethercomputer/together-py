@@ -276,49 +276,18 @@ from together.types import (
     Autoscaling,
     DedicatedEndpoint,
     EndpointListResponse,
-    EndpointCreateClusterResponse,
-    EndpointDeleteClusterResponse,
     EndpointListAvzonesResponse,
-    EndpointListClustersResponse,
-    EndpointListRegionsResponse,
-    EndpointUpdateClusterResponse,
 )
 ```
 
 Methods:
 
-- <code title="post /endpoints">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">create</a>(\*\*<a href="src/together/types/endpoint_create_params.py">params</a>) -> <a href="./src/together/types/dedicated_endpoint.py">DedicatedEndpoint</a></code>
-- <code title="get /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">retrieve</a>(endpoint_id) -> <a href="./src/together/types/dedicated_endpoint.py">DedicatedEndpoint</a></code>
-- <code title="patch /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">update</a>(endpoint_id, \*\*<a href="src/together/types/endpoint_update_params.py">params</a>) -> <a href="./src/together/types/dedicated_endpoint.py">DedicatedEndpoint</a></code>
-- <code title="get /endpoints">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">list</a>(\*\*<a href="src/together/types/endpoint_list_params.py">params</a>) -> <a href="./src/together/types/endpoint_list_response.py">EndpointListResponse</a></code>
-- <code title="delete /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">delete</a>(endpoint_id) -> None</code>
-- <code title="post /clusters">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">create_cluster</a>(\*\*<a href="src/together/types/endpoint_create_cluster_params.py">params</a>) -> <a href="./src/together/types/endpoint_create_cluster_response.py">EndpointCreateClusterResponse</a></code>
-- <code title="delete /clusters/{cluster_id}">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">delete_cluster</a>(cluster_id) -> <a href="./src/together/types/endpoint_delete_cluster_response.py">EndpointDeleteClusterResponse</a></code>
-- <code title="get /clusters/availability-zones">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">list_avzones</a>() -> <a href="./src/together/types/endpoint_list_avzones_response.py">EndpointListAvzonesResponse</a></code>
-- <code title="get /clusters">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">list_clusters</a>() -> <a href="./src/together/types/endpoint_list_clusters_response.py">EndpointListClustersResponse</a></code>
-- <code title="get /clusters/regions">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">list_regions</a>() -> <a href="./src/together/types/endpoint_list_regions_response.py">EndpointListRegionsResponse</a></code>
-- <code title="get /clusters/{cluster_id}">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">retrieve_cluster</a>(cluster_id) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="put /clusters/{cluster_id}">client.endpoints.<a href="./src/together/resources/endpoints/endpoints.py">update_cluster</a>(cluster_id, \*\*<a href="src/together/types/endpoint_update_cluster_params.py">params</a>) -> <a href="./src/together/types/endpoint_update_cluster_response.py">EndpointUpdateClusterResponse</a></code>
-
-## Storages
-
-Types:
-
-```python
-from together.types.endpoints import (
-    StorageCreateSharedVolumeResponse,
-    StorageDeleteSharedVolumeResponse,
-    StorageListSharedVolumesResponse,
-)
-```
-
-Methods:
-
-- <code title="post /clusters/storages">client.endpoints.storages.<a href="./src/together/resources/endpoints/storages.py">create_shared_volume</a>(\*\*<a href="src/together/types/endpoints/storage_create_shared_volume_params.py">params</a>) -> <a href="./src/together/types/endpoints/storage_create_shared_volume_response.py">StorageCreateSharedVolumeResponse</a></code>
-- <code title="delete /clusters/storages/{volume_id}">client.endpoints.storages.<a href="./src/together/resources/endpoints/storages.py">delete_shared_volume</a>(volume_id) -> <a href="./src/together/types/endpoints/storage_delete_shared_volume_response.py">StorageDeleteSharedVolumeResponse</a></code>
-- <code title="get /clusters/storages">client.endpoints.storages.<a href="./src/together/resources/endpoints/storages.py">list_shared_volumes</a>() -> <a href="./src/together/types/endpoints/storage_list_shared_volumes_response.py">StorageListSharedVolumesResponse</a></code>
-- <code title="get /clusters/storages/{volume_id}">client.endpoints.storages.<a href="./src/together/resources/endpoints/storages.py">retrieve_shared_volume</a>(volume_id) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="put /clusters/storages">client.endpoints.storages.<a href="./src/together/resources/endpoints/storages.py">update_shared_volume</a>(\*\*<a href="src/together/types/endpoints/storage_update_shared_volume_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="post /endpoints">client.endpoints.<a href="./src/together/resources/endpoints.py">create</a>(\*\*<a href="src/together/types/endpoint_create_params.py">params</a>) -> <a href="./src/together/types/dedicated_endpoint.py">DedicatedEndpoint</a></code>
+- <code title="get /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints.py">retrieve</a>(endpoint_id) -> <a href="./src/together/types/dedicated_endpoint.py">DedicatedEndpoint</a></code>
+- <code title="patch /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints.py">update</a>(endpoint_id, \*\*<a href="src/together/types/endpoint_update_params.py">params</a>) -> <a href="./src/together/types/dedicated_endpoint.py">DedicatedEndpoint</a></code>
+- <code title="get /endpoints">client.endpoints.<a href="./src/together/resources/endpoints.py">list</a>(\*\*<a href="src/together/types/endpoint_list_params.py">params</a>) -> <a href="./src/together/types/endpoint_list_response.py">EndpointListResponse</a></code>
+- <code title="delete /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints.py">delete</a>(endpoint_id) -> None</code>
+- <code title="get /clusters/availability-zones">client.endpoints.<a href="./src/together/resources/endpoints.py">list_avzones</a>() -> <a href="./src/together/types/endpoint_list_avzones_response.py">EndpointListAvzonesResponse</a></code>
 
 # Hardware
 
