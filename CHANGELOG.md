@@ -6,7 +6,6 @@ Full Changelog: [v2.0.0-alpha.14...v2.0.0-alpha.15](https://github.com/togetherc
 
 ### Features
 
-* [wip] ([b54ca2b](https://github.com/togethercomputer/together-py/commit/b54ca2ba3123e157a1a5396dc7a9ec37ef018442))
 * Add started_at timestamp to fix time estimation ([92ce60d](https://github.com/togethercomputer/together-py/commit/92ce60dd081700c1ef804dc7ad581a4fcf5d81a0))
 
 
