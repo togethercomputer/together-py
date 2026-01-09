@@ -7,51 +7,27 @@ from typing_extensions import Literal
 
 import httpx
 
-from ...types import (
-    endpoint_list_params,
-    endpoint_create_params,
-    endpoint_update_params,
-    endpoint_create_cluster_params,
-    endpoint_update_cluster_params,
-)
-from ..._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
-from ..._utils import maybe_transform, async_maybe_transform
-from .storages import (
-    StoragesResource,
-    AsyncStoragesResource,
-    StoragesResourceWithRawResponse,
-    AsyncStoragesResourceWithRawResponse,
-    StoragesResourceWithStreamingResponse,
-    AsyncStoragesResourceWithStreamingResponse,
-)
-from ..._compat import cached_property
-from ..._resource import SyncAPIResource, AsyncAPIResource
-from ..._response import (
+from ..types import endpoint_list_params, endpoint_create_params, endpoint_update_params
+from .._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
+from .._utils import maybe_transform, async_maybe_transform
+from .._compat import cached_property
+from .._resource import SyncAPIResource, AsyncAPIResource
+from .._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ..._base_client import make_request_options
-from ...types.beta.cluster import Cluster
-from ...types.autoscaling_param import AutoscalingParam
-from ...types.dedicated_endpoint import DedicatedEndpoint
-from ...types.endpoint_list_response import EndpointListResponse
-from ...types.endpoint_list_avzones_response import EndpointListAvzonesResponse
-from ...types.endpoint_list_regions_response import EndpointListRegionsResponse
-from ...types.endpoint_list_clusters_response import EndpointListClustersResponse
-from ...types.endpoint_create_cluster_response import EndpointCreateClusterResponse
-from ...types.endpoint_delete_cluster_response import EndpointDeleteClusterResponse
-from ...types.endpoint_update_cluster_response import EndpointUpdateClusterResponse
+from .._base_client import make_request_options
+from ..types.autoscaling_param import AutoscalingParam
+from ..types.dedicated_endpoint import DedicatedEndpoint
+from ..types.endpoint_list_response import EndpointListResponse
+from ..types.endpoint_list_avzones_response import EndpointListAvzonesResponse
 
 __all__ = ["EndpointsResource", "AsyncEndpointsResource"]
 
 
 class EndpointsResource(SyncAPIResource):
-    @cached_property
-    def storages(self) -> StoragesResource:
-        return StoragesResource(self._client)
-
     @cached_property
     def with_raw_response(self) -> EndpointsResourceWithRawResponse:
         """
@@ -325,108 +301,6 @@ class EndpointsResource(SyncAPIResource):
             cast_to=NoneType,
         )
 
-    def create_cluster(
-        self,
-        *,
-        billing_type: Literal["RESERVED", "ON_DEMAND"],
-        cluster_name: str,
-        driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
-        duration_days: int,
-        gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
-        num_gpus: int,
-        region: Literal["us-central-8", "us-central-4"],
-        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
-        shared_volume: endpoint_create_cluster_params.SharedVolume | Omit = omit,
-        volume_id: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointCreateClusterResponse:
-        """
-        Create GPU Cluster
-
-        Args:
-          cluster_name: Name of the GPU cluster.
-
-          driver_version: NVIDIA driver version to use in the cluster.
-
-          duration_days: Duration in days to keep the cluster running.
-
-          gpu_type: Type of GPU to use in the cluster
-
-          num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
-              example, 8, 16 or 24
-
-          region: Region to create the GPU cluster in. Valid values are us-central-8 and
-              us-central-4.
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return self._post(
-            "/clusters",
-            body=maybe_transform(
-                {
-                    "billing_type": billing_type,
-                    "cluster_name": cluster_name,
-                    "driver_version": driver_version,
-                    "duration_days": duration_days,
-                    "gpu_type": gpu_type,
-                    "num_gpus": num_gpus,
-                    "region": region,
-                    "cluster_type": cluster_type,
-                    "shared_volume": shared_volume,
-                    "volume_id": volume_id,
-                },
-                endpoint_create_cluster_params.EndpointCreateClusterParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointCreateClusterResponse,
-        )
-
-    def delete_cluster(
-        self,
-        cluster_id: str,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointDeleteClusterResponse:
-        """
-        Delete GPU cluster by cluster ID
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not cluster_id:
-            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
-        return self._delete(
-            f"/clusters/{cluster_id}",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointDeleteClusterResponse,
-        )
-
     def list_avzones(
         self,
         *,
@@ -446,125 +320,8 @@ class EndpointsResource(SyncAPIResource):
             cast_to=EndpointListAvzonesResponse,
         )
 
-    def list_clusters(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListClustersResponse:
-        """List all GPU clusters."""
-        return self._get(
-            "/clusters",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointListClustersResponse,
-        )
-
-    def list_regions(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListRegionsResponse:
-        """List regions and corresponding supported driver versions"""
-        return self._get(
-            "/clusters/regions",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointListRegionsResponse,
-        )
-
-    def retrieve_cluster(
-        self,
-        cluster_id: str,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Cluster:
-        """
-        Get GPU cluster by cluster ID
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not cluster_id:
-            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
-        return self._get(
-            f"/clusters/{cluster_id}",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=Cluster,
-        )
-
-    def update_cluster(
-        self,
-        cluster_id: str,
-        *,
-        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
-        num_gpus: int | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointUpdateClusterResponse:
-        """
-        Update a GPU Cluster.
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not cluster_id:
-            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
-        return self._put(
-            f"/clusters/{cluster_id}",
-            body=maybe_transform(
-                {
-                    "cluster_type": cluster_type,
-                    "num_gpus": num_gpus,
-                },
-                endpoint_update_cluster_params.EndpointUpdateClusterParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointUpdateClusterResponse,
-        )
-
 
 class AsyncEndpointsResource(AsyncAPIResource):
-    @cached_property
-    def storages(self) -> AsyncStoragesResource:
-        return AsyncStoragesResource(self._client)
-
     @cached_property
     def with_raw_response(self) -> AsyncEndpointsResourceWithRawResponse:
         """
@@ -838,108 +595,6 @@ class AsyncEndpointsResource(AsyncAPIResource):
             cast_to=NoneType,
         )
 
-    async def create_cluster(
-        self,
-        *,
-        billing_type: Literal["RESERVED", "ON_DEMAND"],
-        cluster_name: str,
-        driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
-        duration_days: int,
-        gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
-        num_gpus: int,
-        region: Literal["us-central-8", "us-central-4"],
-        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
-        shared_volume: endpoint_create_cluster_params.SharedVolume | Omit = omit,
-        volume_id: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointCreateClusterResponse:
-        """
-        Create GPU Cluster
-
-        Args:
-          cluster_name: Name of the GPU cluster.
-
-          driver_version: NVIDIA driver version to use in the cluster.
-
-          duration_days: Duration in days to keep the cluster running.
-
-          gpu_type: Type of GPU to use in the cluster
-
-          num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
-              example, 8, 16 or 24
-
-          region: Region to create the GPU cluster in. Valid values are us-central-8 and
-              us-central-4.
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return await self._post(
-            "/clusters",
-            body=await async_maybe_transform(
-                {
-                    "billing_type": billing_type,
-                    "cluster_name": cluster_name,
-                    "driver_version": driver_version,
-                    "duration_days": duration_days,
-                    "gpu_type": gpu_type,
-                    "num_gpus": num_gpus,
-                    "region": region,
-                    "cluster_type": cluster_type,
-                    "shared_volume": shared_volume,
-                    "volume_id": volume_id,
-                },
-                endpoint_create_cluster_params.EndpointCreateClusterParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointCreateClusterResponse,
-        )
-
-    async def delete_cluster(
-        self,
-        cluster_id: str,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointDeleteClusterResponse:
-        """
-        Delete GPU cluster by cluster ID
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not cluster_id:
-            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
-        return await self._delete(
-            f"/clusters/{cluster_id}",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointDeleteClusterResponse,
-        )
-
     async def list_avzones(
         self,
         *,
@@ -957,119 +612,6 @@ class AsyncEndpointsResource(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=EndpointListAvzonesResponse,
-        )
-
-    async def list_clusters(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListClustersResponse:
-        """List all GPU clusters."""
-        return await self._get(
-            "/clusters",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointListClustersResponse,
-        )
-
-    async def list_regions(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointListRegionsResponse:
-        """List regions and corresponding supported driver versions"""
-        return await self._get(
-            "/clusters/regions",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointListRegionsResponse,
-        )
-
-    async def retrieve_cluster(
-        self,
-        cluster_id: str,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Cluster:
-        """
-        Get GPU cluster by cluster ID
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not cluster_id:
-            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
-        return await self._get(
-            f"/clusters/{cluster_id}",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=Cluster,
-        )
-
-    async def update_cluster(
-        self,
-        cluster_id: str,
-        *,
-        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
-        num_gpus: int | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> EndpointUpdateClusterResponse:
-        """
-        Update a GPU Cluster.
-
-        Args:
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not cluster_id:
-            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
-        return await self._put(
-            f"/clusters/{cluster_id}",
-            body=await async_maybe_transform(
-                {
-                    "cluster_type": cluster_type,
-                    "num_gpus": num_gpus,
-                },
-                endpoint_update_cluster_params.EndpointUpdateClusterParams,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=EndpointUpdateClusterResponse,
         )
 
 
@@ -1092,31 +634,9 @@ class EndpointsResourceWithRawResponse:
         self.delete = to_raw_response_wrapper(
             endpoints.delete,
         )
-        self.create_cluster = to_raw_response_wrapper(
-            endpoints.create_cluster,
-        )
-        self.delete_cluster = to_raw_response_wrapper(
-            endpoints.delete_cluster,
-        )
         self.list_avzones = to_raw_response_wrapper(
             endpoints.list_avzones,
         )
-        self.list_clusters = to_raw_response_wrapper(
-            endpoints.list_clusters,
-        )
-        self.list_regions = to_raw_response_wrapper(
-            endpoints.list_regions,
-        )
-        self.retrieve_cluster = to_raw_response_wrapper(
-            endpoints.retrieve_cluster,
-        )
-        self.update_cluster = to_raw_response_wrapper(
-            endpoints.update_cluster,
-        )
-
-    @cached_property
-    def storages(self) -> StoragesResourceWithRawResponse:
-        return StoragesResourceWithRawResponse(self._endpoints.storages)
 
 
 class AsyncEndpointsResourceWithRawResponse:
@@ -1138,31 +658,9 @@ class AsyncEndpointsResourceWithRawResponse:
         self.delete = async_to_raw_response_wrapper(
             endpoints.delete,
         )
-        self.create_cluster = async_to_raw_response_wrapper(
-            endpoints.create_cluster,
-        )
-        self.delete_cluster = async_to_raw_response_wrapper(
-            endpoints.delete_cluster,
-        )
         self.list_avzones = async_to_raw_response_wrapper(
             endpoints.list_avzones,
         )
-        self.list_clusters = async_to_raw_response_wrapper(
-            endpoints.list_clusters,
-        )
-        self.list_regions = async_to_raw_response_wrapper(
-            endpoints.list_regions,
-        )
-        self.retrieve_cluster = async_to_raw_response_wrapper(
-            endpoints.retrieve_cluster,
-        )
-        self.update_cluster = async_to_raw_response_wrapper(
-            endpoints.update_cluster,
-        )
-
-    @cached_property
-    def storages(self) -> AsyncStoragesResourceWithRawResponse:
-        return AsyncStoragesResourceWithRawResponse(self._endpoints.storages)
 
 
 class EndpointsResourceWithStreamingResponse:
@@ -1184,31 +682,9 @@ class EndpointsResourceWithStreamingResponse:
         self.delete = to_streamed_response_wrapper(
             endpoints.delete,
         )
-        self.create_cluster = to_streamed_response_wrapper(
-            endpoints.create_cluster,
-        )
-        self.delete_cluster = to_streamed_response_wrapper(
-            endpoints.delete_cluster,
-        )
         self.list_avzones = to_streamed_response_wrapper(
             endpoints.list_avzones,
         )
-        self.list_clusters = to_streamed_response_wrapper(
-            endpoints.list_clusters,
-        )
-        self.list_regions = to_streamed_response_wrapper(
-            endpoints.list_regions,
-        )
-        self.retrieve_cluster = to_streamed_response_wrapper(
-            endpoints.retrieve_cluster,
-        )
-        self.update_cluster = to_streamed_response_wrapper(
-            endpoints.update_cluster,
-        )
-
-    @cached_property
-    def storages(self) -> StoragesResourceWithStreamingResponse:
-        return StoragesResourceWithStreamingResponse(self._endpoints.storages)
 
 
 class AsyncEndpointsResourceWithStreamingResponse:
@@ -1230,28 +706,6 @@ class AsyncEndpointsResourceWithStreamingResponse:
         self.delete = async_to_streamed_response_wrapper(
             endpoints.delete,
         )
-        self.create_cluster = async_to_streamed_response_wrapper(
-            endpoints.create_cluster,
-        )
-        self.delete_cluster = async_to_streamed_response_wrapper(
-            endpoints.delete_cluster,
-        )
         self.list_avzones = async_to_streamed_response_wrapper(
             endpoints.list_avzones,
         )
-        self.list_clusters = async_to_streamed_response_wrapper(
-            endpoints.list_clusters,
-        )
-        self.list_regions = async_to_streamed_response_wrapper(
-            endpoints.list_regions,
-        )
-        self.retrieve_cluster = async_to_streamed_response_wrapper(
-            endpoints.retrieve_cluster,
-        )
-        self.update_cluster = async_to_streamed_response_wrapper(
-            endpoints.update_cluster,
-        )
-
-    @cached_property
-    def storages(self) -> AsyncStoragesResourceWithStreamingResponse:
-        return AsyncStoragesResourceWithStreamingResponse(self._endpoints.storages)
