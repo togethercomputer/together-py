@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import json as json_lib
 import getpass
+<<<<<<< HEAD:src/together/lib/cli/api/beta/clusters/create.py
 from typing import List, Literal
+=======
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Union
+>>>>>>> 459d4d9 (feat: Add together clusters get-credentials CLI command):src/together/lib/cli/api/beta/clusters.py
 
 import click
 from rich import print
