@@ -305,6 +305,9 @@ class FinetuneResponse(BaseModel):
     updated_at: datetime
     """Last update timestamp of the fine-tune job"""
 
+    started_at: Optional[datetime] = None
+    """Start timestamp of a current stage of the fine-tune job"""
+
     batch_size: Optional[int] = None
     """Batch size used for training"""
 

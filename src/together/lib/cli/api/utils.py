@@ -104,11 +104,11 @@ def generate_progress_bar(
     progress = "Progress: [bold red]unavailable[/bold red]"
     if finetune_job.status in COMPLETED_STATUSES:
         progress = "Progress: [bold green]completed[/bold green]"
-    elif finetune_job.updated_at is not None:
-        update_at = finetune_job.updated_at.astimezone()
+    elif getattr(finetune_job, "started_at", None) is not None and isinstance(finetune_job.started_at, datetime):
+        started_at = finetune_job.started_at.astimezone()
 
         if finetune_job.progress is not None:
-            if current_time < update_at:
+            if current_time < started_at:
                 return progress
 
             if not finetune_job.progress.estimate_available:
@@ -117,7 +117,7 @@ def generate_progress_bar(
             if finetune_job.progress.seconds_remaining <= 0:
                 return progress
 
-            elapsed_time = (current_time - update_at).total_seconds()
+            elapsed_time = (current_time - started_at).total_seconds()
             ratio_filled = min(elapsed_time / finetune_job.progress.seconds_remaining, 1.0)
             percentage = ratio_filled * 100
             filled = math.ceil(ratio_filled * _PROGRESS_BAR_WIDTH)

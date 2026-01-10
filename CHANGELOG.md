@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.0-alpha.15 (2026-01-09)
+
+Full Changelog: [v2.0.0-alpha.14...v2.0.0-alpha.15](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.14...v2.0.0-alpha.15)
+
+### Features
+
+* Add started_at timestamp to fix time estimation ([92ce60d](https://github.com/togethercomputer/together-py/commit/92ce60dd081700c1ef804dc7ad581a4fcf5d81a0))
+
+
+### Chores
+
+* **api:** Remove APIs that were accidentally added in the wrong namespace ([0425f14](https://github.com/togethercomputer/together-py/commit/0425f14f7598fe3065d6f26c0ae3b577149798b0))
+* Minimize breaking changes on common import paths and alias names ([#206](https://github.com/togethercomputer/together-py/issues/206)) ([e677e60](https://github.com/togethercomputer/together-py/commit/e677e6038ee662d79f9a5f0bbf5452843ea37782))
+* Update README for clusters CLI commands ([aeaf53a](https://github.com/togethercomputer/together-py/commit/aeaf53a4825376d4aad59c9a70efd0b26a3e1aab))
+
 ## 2.0.0-alpha.14 (2026-01-06)
 
 Full Changelog: [v2.0.0-alpha.13...v2.0.0-alpha.14](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.13...v2.0.0-alpha.14)

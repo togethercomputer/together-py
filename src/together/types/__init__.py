@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from __future__ import annotations
+from __future__ import annotations # noqa
 
 from .batch_job import BatchJob as BatchJob
 from .embedding import Embedding as Embedding
@@ -68,3 +68,14 @@ from .fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse
 from .fine_tuning_list_checkpoints_response import (
     FineTuningListCheckpointsResponse as FineTuningListCheckpointsResponse,
 )
+
+# Manually added to minimize breaking changes from V1
+from .chat.chat_completion import ChatCompletion 
+from .chat.chat_completion_chunk import ChatCompletionChunk as ChatCompletionChunk
+from .chat.chat_completion_usage import ChatCompletionUsage
+UsageData = ChatCompletionUsage
+ChatCompletionResponse = ChatCompletion
+CompletionResponse = Completion
+ListEndpoint = EndpointListResponse
+ImageRequest = ImageGenerateParams
+ImageResponse = ImageFile
