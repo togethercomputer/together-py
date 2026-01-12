@@ -150,6 +150,7 @@ exclude = [
     ".venv",
     ".nox",
     ".git",
+    "examples",
 ]
 
 reportImplicitOverride = true
