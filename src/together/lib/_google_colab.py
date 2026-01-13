@@ -2,7 +2,6 @@ import sys
 from typing import Union
 
 from together.lib.utils._log import log_info
-# from typing import TYPE_CHECKING
 
 def get_google_colab_secret(secret_name: str = "TOGETHER_API_KEY") -> Union[str, None]:
     """
@@ -19,17 +18,17 @@ def get_google_colab_secret(secret_name: str = "TOGETHER_API_KEY") -> Union[str,
         from google.colab import userdata # type: ignore
 
         try:
-            api_key = userdata.get(secret_name)
+            api_key = userdata.get(secret_name)  # type: ignore
             if not isinstance(api_key, str):
                 return None
             else:
                 return str(api_key)
-        except userdata.NotebookAccessError:
+        except userdata.NotebookAccessError:  # type: ignore
             log_info(
                 "The TOGETHER_API_KEY Colab secret was found, but notebook access is disabled. Please enable notebook "
                 "access for the secret."
             )
-        except userdata.SecretNotFoundError:
+        except userdata.SecretNotFoundError:  # type: ignore
             # warn and carry on
             log_info("Colab: No Google Colab secret named TOGETHER_API_KEY was found.")
 
