@@ -6,6 +6,7 @@ from rich import print
 from tabulate import tabulate
 
 from together import Together
+from together.lib.cli.api._track_cli import TrackingEvents, track_cli
 from together.lib.cli.api.utils import handle_api_errors
 from together.types.beta.clusters import ClusterStorage
 
@@ -59,6 +60,7 @@ def storage(ctx: click.Context) -> None:
 def create(ctx: click.Context, region: str, size_tib: int, volume_name: str, json: bool) -> None:
     """Create a storage volume"""
     client: Together = ctx.obj
+    track_cli(TrackingEvents.CLI_COMMAND_STARTED, { "command": "clusters storage create", "arguments": { "region": region, "size_tib": size_tib, "volume_name": volume_name } })
 
     response = client.beta.clusters.storage.create(
         region=region,

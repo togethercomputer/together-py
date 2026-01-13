@@ -35,6 +35,9 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
 
     models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
 
+    if json:
+        click.echo(json_lib.dumps(models_list, indent=2))
+
     display_list: List[Dict[str, Any]] = []
     model: BaseModel
     for model in models_list:
@@ -51,10 +54,7 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
             }
         )
 
-    if json:
-        click.echo(json_lib.dumps(display_list, indent=2))
-    else:
-        click.echo(tabulate(display_list, headers="keys", tablefmt="plain"))
+    click.echo(tabulate(display_list, headers="keys", tablefmt="plain"))
 
 
 @models.command()
