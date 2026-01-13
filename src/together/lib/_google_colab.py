@@ -3,6 +3,7 @@ from typing import Union
 
 from together.lib.utils._log import log_info
 
+
 def get_google_colab_secret(secret_name: str = "TOGETHER_API_KEY") -> Union[str, None]:
     """
     Checks to see if the user is running in Google Colab, and looks for the Together API Key secret.
@@ -15,7 +16,7 @@ def get_google_colab_secret(secret_name: str = "TOGETHER_API_KEY") -> Union[str,
     """
     # If running in Google Colab, check for Together in notebook secrets
     if "google.colab" in sys.modules:
-        from google.colab import userdata # type: ignore
+        from google.colab import userdata  # type: ignore
 
         try:
             api_key = userdata.get(secret_name)  # type: ignore
