@@ -57,12 +57,15 @@ class StorageResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> StorageCreateResponse:
-        """Create a shared volume.
+        """
+        Instant Clusters supports long-lived, resizable in-DC shared storage with user
+        data persistence. You can dynamically create and attach volumes to your cluster
+        at cluster creation time, and resize as your data grows. All shared storage is
+        backed by multi-NIC bare metal paths, ensuring high-throughput and low-latency
+        performance for shared storage.
 
         Args:
-          region: Region name.
-
-        Usable regions can be found from `client.clusters.list_regions()`
+          region: Region name. Usable regions can be found from `client.clusters.list_regions()`
 
           size_tib: Volume size in whole tebibytes (TiB).
 
@@ -102,7 +105,7 @@ class StorageResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterStorage:
         """
-        Get shared volume by volume Id.
+        Retrieve information about a specific shared volume.
 
         Args:
           extra_headers: Send extra headers
@@ -136,7 +139,7 @@ class StorageResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterStorage:
         """
-        Update a shared volume.
+        Update the configuration of an existing shared volume.
 
         Args:
           extra_headers: Send extra headers
@@ -192,8 +195,10 @@ class StorageResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> StorageDeleteResponse:
-        """
-        Delete shared volume by volume id.
+        """Delete a shared volume.
+
+        Note that if this volume is attached to a cluster,
+        deleting will fail.
 
         Args:
           extra_headers: Send extra headers
@@ -248,12 +253,15 @@ class AsyncStorageResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> StorageCreateResponse:
-        """Create a shared volume.
+        """
+        Instant Clusters supports long-lived, resizable in-DC shared storage with user
+        data persistence. You can dynamically create and attach volumes to your cluster
+        at cluster creation time, and resize as your data grows. All shared storage is
+        backed by multi-NIC bare metal paths, ensuring high-throughput and low-latency
+        performance for shared storage.
 
         Args:
-          region: Region name.
-
-        Usable regions can be found from `client.clusters.list_regions()`
+          region: Region name. Usable regions can be found from `client.clusters.list_regions()`
 
           size_tib: Volume size in whole tebibytes (TiB).
 
@@ -293,7 +301,7 @@ class AsyncStorageResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterStorage:
         """
-        Get shared volume by volume Id.
+        Retrieve information about a specific shared volume.
 
         Args:
           extra_headers: Send extra headers
@@ -327,7 +335,7 @@ class AsyncStorageResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterStorage:
         """
-        Update a shared volume.
+        Update the configuration of an existing shared volume.
 
         Args:
           extra_headers: Send extra headers
@@ -383,8 +391,10 @@ class AsyncStorageResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> StorageDeleteResponse:
-        """
-        Delete shared volume by volume id.
+        """Delete a shared volume.
+
+        Note that if this volume is attached to a cluster,
+        deleting will fail.
 
         Args:
           extra_headers: Send extra headers
