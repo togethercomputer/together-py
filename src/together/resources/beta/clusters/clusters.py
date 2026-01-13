@@ -80,8 +80,13 @@ class ClustersResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterCreateResponse:
-        """
-        Create GPU Cluster
+        """Create an Instant Cluster on Together's high-performance GPU clusters.
+
+        With
+        features like on-demand scaling, long-lived resizable high-bandwidth shared
+        DC-local storage, Kubernetes and Slurm cluster flavors, a REST API, and
+        Terraform support, you can run workloads flexibly without complex infrastructure
+        management.
 
         Args:
           cluster_name: Name of the GPU cluster.
@@ -141,7 +146,7 @@ class ClustersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Cluster:
         """
-        Get GPU cluster by cluster ID
+        Retrieve information about a specific GPU cluster.
 
         Args:
           extra_headers: Send extra headers
@@ -176,7 +181,7 @@ class ClustersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterUpdateResponse:
         """
-        Update a GPU Cluster.
+        Update the configuration of an existing GPU cluster.
 
         Args:
           extra_headers: Send extra headers
@@ -235,7 +240,7 @@ class ClustersResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterDeleteResponse:
         """
-        Delete GPU cluster by cluster ID
+        Delete a GPU cluster by cluster ID.
 
         Args:
           extra_headers: Send extra headers
@@ -320,8 +325,13 @@ class AsyncClustersResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterCreateResponse:
-        """
-        Create GPU Cluster
+        """Create an Instant Cluster on Together's high-performance GPU clusters.
+
+        With
+        features like on-demand scaling, long-lived resizable high-bandwidth shared
+        DC-local storage, Kubernetes and Slurm cluster flavors, a REST API, and
+        Terraform support, you can run workloads flexibly without complex infrastructure
+        management.
 
         Args:
           cluster_name: Name of the GPU cluster.
@@ -381,7 +391,7 @@ class AsyncClustersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Cluster:
         """
-        Get GPU cluster by cluster ID
+        Retrieve information about a specific GPU cluster.
 
         Args:
           extra_headers: Send extra headers
@@ -416,7 +426,7 @@ class AsyncClustersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterUpdateResponse:
         """
-        Update a GPU Cluster.
+        Update the configuration of an existing GPU cluster.
 
         Args:
           extra_headers: Send extra headers
@@ -475,7 +485,7 @@ class AsyncClustersResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ClusterDeleteResponse:
         """
-        Delete GPU cluster by cluster ID
+        Delete a GPU cluster by cluster ID.
 
         Args:
           extra_headers: Send extra headers
