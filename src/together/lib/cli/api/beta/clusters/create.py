@@ -3,8 +3,6 @@ from __future__ import annotations
 import json as json_lib
 import getpass
 from typing import List, Literal
-from pathlib import Path
-from typing import Any, Dict, List, Literal, Union
 
 import click
 from rich import print
