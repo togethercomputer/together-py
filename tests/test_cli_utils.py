@@ -32,7 +32,7 @@ def create_finetune_response(
     return FinetuneResponse(
         id=job_id,
         progress=progress,
-        updated_at=started_at, # to calm down mypy
+        updated_at=started_at,  # to calm down mypy
         started_at=started_at,
         status=status,
         created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),

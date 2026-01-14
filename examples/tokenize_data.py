@@ -24,9 +24,7 @@ def tokenize_variable_length(
     tokenizer: PreTrainedTokenizerBase,
     add_special_tokens: bool = True,
 ) -> BatchEncoding:
-    tokenized = tokenizer(
-        data["text"], add_special_tokens=add_special_tokens, truncation=False
-    )
+    tokenized = tokenizer(data["text"], add_special_tokens=add_special_tokens, truncation=False)
     return tokenized
 
 
@@ -48,8 +46,7 @@ def tokenize_constant_length(
     # add labels to mask out any padding tokens
     if add_labels:
         tokenized["labels"] = [
-            LOSS_IGNORE_INDEX if token_id == tokenizer.pad_token_id else token_id
-            for token_id in tokenized["input_ids"]
+            LOSS_IGNORE_INDEX if token_id == tokenizer.pad_token_id else token_id for token_id in tokenized["input_ids"]
         ]
 
     return tokenized
@@ -101,17 +98,13 @@ def pack_sequences(
     output = {"input_ids": packed_sequences}
     if add_labels:
         output["labels"] = [
-            [
-                LOSS_IGNORE_INDEX if token_id == pad_token_id else token_id
-                for token_id in example
-            ]
+            [LOSS_IGNORE_INDEX if token_id == pad_token_id else token_id for token_id in example]
             for example in output["input_ids"]
         ]
 
     # mask attention for padding tokens, a better version would also mask cross-sequence dependencies
     output["attention_mask"] = [
-        [0 if token_id == pad_token_id else 1 for token_id in example]
-        for example in output["input_ids"]
+        [0 if token_id == pad_token_id else 1 for token_id in example] for example in output["input_ids"]
     ]
     return output
 
@@ -124,9 +117,7 @@ def process_fast_packing(
     add_special_tokens: bool,
 ) -> Dataset:
     tokenized_dataset = dataset.map(
-        lambda examples: tokenize_variable_length(
-            examples, tokenizer, add_special_tokens=add_special_tokens
-        ),
+        lambda examples: tokenize_variable_length(examples, tokenizer, add_special_tokens=add_special_tokens),
         batched=True,
         num_proc=cpu_count(),
         load_from_cache_file=True,
@@ -183,10 +174,7 @@ def process_data(args: argparse.Namespace) -> None:
             add_special_tokens=True,
         )
 
-    assert (
-        "input_ids" in tokenized_data.column_names
-        and "attention_mask" in tokenized_data.column_names
-    )
+    assert "input_ids" in tokenized_data.column_names and "attention_mask" in tokenized_data.column_names
 
     if args.add_labels:
         assert "labels" in tokenized_data.column_names
@@ -200,18 +188,14 @@ def process_data(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Pretokenize examples for finetuning via Together"
-    )
+    parser = argparse.ArgumentParser(description="Pretokenize examples for finetuning via Together")
     parser.add_argument(
         "--dataset",
         type=str,
         default="clam004/antihallucination_dataset",
         help="Dataset name on the Hugging Face Hub",
     )
-    parser.add_argument(
-        "--max-seq-length", type=int, default=8192, help="Maximum sequence length"
-    )
+    parser.add_argument("--max-seq-length", type=int, default=8192, help="Maximum sequence length")
     parser.add_argument(
         "--add-labels",
         action="store_true",
