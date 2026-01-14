@@ -156,7 +156,6 @@ def process_data(args: argparse.Namespace) -> None:
     if not args.out_filename.endswith(".parquet"):
         raise ValueError("`--out_filename` should have the `.parquet` extension")
 
-    # Check if dataset is a local file path
     if os.path.isfile(args.dataset) and args.dataset.endswith(".jsonl"):
         dataset = load_dataset("json", data_files=args.dataset, split="train")
     else:
@@ -165,15 +164,20 @@ def process_data(args: argparse.Namespace) -> None:
     tokenizer.pad_token = tokenizer.eos_token
 
     # Handle prompt/completion format by combining into text field
-    if "prompt" in dataset.column_names and "completion" in dataset.column_names:
+    prompt_field = args.prompt_field
+    completion_field = args.completion_field
+    separator = args.separator
+    
+    if prompt_field in dataset.column_names and completion_field in dataset.column_names:
         if "text" not in dataset.column_names:
             dataset = dataset.map(
-                lambda x: {"text": x["prompt"] + x["completion"]},
-                remove_columns=["prompt", "completion"],
+                lambda x: {"text": x[prompt_field] + separator + x[completion_field]},
+                remove_columns=[prompt_field, completion_field],
             )
     elif "text" not in dataset.column_names:
         raise ValueError(
-            "Dataset must have either 'text' field or both 'prompt' and 'completion' fields"
+            f"Dataset must have either 'text' field or both '{prompt_field}' and '{completion_field}' fields. "
+            f"Available columns: {dataset.column_names}"
         )
 
     if not args.packing:
@@ -247,6 +251,24 @@ if __name__ == "__main__":
         "--packing",
         action="store_true",
         help="Whether to pack shorter sequences up to `--max-seq-length`",
+    )
+    parser.add_argument(
+        "--prompt-field",
+        type=str,
+        default="prompt",
+        help="Name of the field containing the prompt/input text (default: 'prompt')",
+    )
+    parser.add_argument(
+        "--completion-field",
+        type=str,
+        default="completion",
+        help="Name of the field containing the completion/output text (default: 'completion')",
+    )
+    parser.add_argument(
+        "--separator",
+        type=str,
+        default="",
+        help="Separator to insert between prompt and completion fields (default: empty string)",
     )
     args = parser.parse_args()
 
