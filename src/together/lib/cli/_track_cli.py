@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import os
 import json
@@ -35,12 +36,10 @@ class TrackingEvents(Enum):
     CLI_COMMAND_API_REQUEST = "CLI_COMMAND_API_REQUEST"
 
 
-def track_cli(event_name: TrackingEvents, args: Any) -> None:
+def track_cli(event_name: TrackingEvents, args: dict[str, Any]) -> None:
     """ Track a CLI event. Non-Blocking. """
     if is_tracking_enabled() == False:
         return
-
-    print(event_name)
 
     def send_event() -> None:
         ANALYTICS_API_ENV_VAR = os.getenv("TOGETHER_TELEMETRY_API")
@@ -56,7 +55,10 @@ def track_cli(event_name: TrackingEvents, args: Any) -> None:
                 },
                 content=json.dumps({
                     "event_name": event_name.value,
-                    "event_properties": args,
+                    "event_properties": {
+                        "is_ci": os.getenv("CI") is not None,
+                        **args,
+                    },
                     "event_options": {
                         "time": datetime.now().isoformat(),
                         "session_id": str(SESSION_ID),

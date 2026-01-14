@@ -12,9 +12,9 @@ from together import Together, omit
 from together._response import APIResponse as APIResponse
 from together.types.beta import Cluster, ClusterCreateParams
 from together.lib.cli.api.utils import handle_api_errors
+from together.lib.cli._track_cli import auto_track_command
 from together.types.beta.cluster_create_params import SharedVolume
 from together.lib.cli.api.beta.clusters_storage import storage
-from together.lib.cli._track_cli import auto_track_command
 
 
 def print_clusters(clusters: List[Cluster]) -> None:

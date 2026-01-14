@@ -10,9 +10,9 @@ import click
 from together import Together, omit
 from together.types import DedicatedEndpoint
 from together._exceptions import APIError
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.utils.serializer import datetime_serializer
 from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
-from together.lib.cli._track_cli import auto_track_command
 
 
 def print_endpoint(endpoint: DedicatedEndpoint | DedicatedEndpointListItem) -> None:

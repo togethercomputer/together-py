@@ -8,8 +8,8 @@ from tabulate import tabulate
 
 from together import APIError, Together, TogetherError
 from together._types import omit
-from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli._track_cli import auto_track_command
+from together.lib.utils.serializer import datetime_serializer
 from together.types.eval_create_params import (
     ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,

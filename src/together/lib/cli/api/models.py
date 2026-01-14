@@ -7,8 +7,8 @@ from tabulate import tabulate
 from together import Together, omit
 from together._models import BaseModel
 from together._response import APIResponse as APIResponse
-from together.types.model_upload_response import ModelUploadResponse
 from together.lib.cli._track_cli import auto_track_command
+from together.types.model_upload_response import ModelUploadResponse
 
 
 @click.group()

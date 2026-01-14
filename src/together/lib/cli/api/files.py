@@ -8,10 +8,10 @@ from tabulate import tabulate
 
 from together import Together
 from together.types import FilePurpose
+from together.lib.cli._track_cli import auto_track_command
 
 # from together.utils import check_file, convert_bytes, convert_unix_timestamp
 from ...utils import check_file, convert_bytes, convert_unix_timestamp
-from together.lib.cli._track_cli import auto_track_command
 
 
 @click.group()

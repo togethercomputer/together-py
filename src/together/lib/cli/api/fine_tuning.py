@@ -19,11 +19,11 @@ from together._types import NOT_GIVEN, NotGiven
 from together.lib.utils import log_warn
 from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
 from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO, generate_progress_bar
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.resources.fine_tuning import get_model_limits
-from together.lib.cli._track_cli import auto_track_command
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
