@@ -1,5 +1,6 @@
 import logging
 import argparse
+import os
 from typing import Dict, List
 from functools import partial
 from multiprocessing import cpu_count
@@ -155,11 +156,25 @@ def process_data(args: argparse.Namespace) -> None:
     if not args.out_filename.endswith(".parquet"):
         raise ValueError("`--out_filename` should have the `.parquet` extension")
 
-    dataset = load_dataset(args.dataset, split="train")
+    # Check if dataset is a local file path
+    if os.path.isfile(args.dataset) and args.dataset.endswith(".jsonl"):
+        dataset = load_dataset("json", data_files=args.dataset, split="train")
+    else:
+        dataset = load_dataset(args.dataset, split="train")
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
 
-    dataset.to_json("dataset.jsonl", orient="records", lines=True)
+    # Handle prompt/completion format by combining into text field
+    if "prompt" in dataset.column_names and "completion" in dataset.column_names:
+        if "text" not in dataset.column_names:
+            dataset = dataset.map(
+                lambda x: {"text": x["prompt"] + x["completion"]},
+                remove_columns=["prompt", "completion"],
+            )
+    elif "text" not in dataset.column_names:
+        raise ValueError(
+            "Dataset must have either 'text' field or both 'prompt' and 'completion' fields"
+        )
 
     if not args.packing:
         tokenized_data = dataset.map(
@@ -207,7 +222,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="clam004/antihallucination_dataset",
-        help="Dataset name on the Hugging Face Hub",
+        help="Dataset name on the Hugging Face Hub or path to local JSONL file",
     )
     parser.add_argument(
         "--max-seq-length", type=int, default=8192, help="Maximum sequence length"
