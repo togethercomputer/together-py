@@ -20,6 +20,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 SESSION_ID = uuid.uuid4()
 
+
 def is_tracking_enabled() -> bool:
     # Users can opt-out of tracking with the environment variable.
     if os.getenv("TOGETHER_TELEMETRY_DISABLED"):
@@ -27,6 +28,7 @@ def is_tracking_enabled() -> bool:
         return False
 
     return True
+
 
 class TrackingEvents(Enum):
     CLI_COMMAND_STARTED = "CLI_COMMAND_STARTED"
@@ -37,34 +39,35 @@ class TrackingEvents(Enum):
 
 
 def track_cli(event_name: TrackingEvents, args: dict[str, Any]) -> None:
-    """ Track a CLI event. Non-Blocking. """
+    """Track a CLI event. Non-Blocking."""
     if is_tracking_enabled() == False:
         return
 
     def send_event() -> None:
         ANALYTICS_API_ENV_VAR = os.getenv("TOGETHER_TELEMETRY_API")
-        ANALYTICS_API = ANALYTICS_API_ENV_VAR if ANALYTICS_API_ENV_VAR else "https://api.together.ai/api/together-cli-events"
+        ANALYTICS_API = (
+            ANALYTICS_API_ENV_VAR if ANALYTICS_API_ENV_VAR else "https://api.together.ai/api/together-cli-events"
+        )
 
         try:
             client = httpx.Client()
             client.post(
                 ANALYTICS_API,
-                headers={
-                    "content-type": "application/json",
-                    "user-agent": f"together-cli:{__version__}"
-                },
-                content=json.dumps({
-                    "event_name": event_name.value,
-                    "event_properties": {
-                        "is_ci": os.getenv("CI") is not None,
-                        **args,
-                    },
-                    "event_options": {
-                        "time": datetime.now().isoformat(),
-                        "session_id": str(SESSION_ID),
-                        "device_id": machineid.id(),
+                headers={"content-type": "application/json", "user-agent": f"together-cli:{__version__}"},
+                content=json.dumps(
+                    {
+                        "event_name": event_name.value,
+                        "event_properties": {
+                            "is_ci": os.getenv("CI") is not None,
+                            **args,
+                        },
+                        "event_options": {
+                            "time": datetime.now().isoformat(),
+                            "session_id": str(SESSION_ID),
+                            "device_id": machineid.id(),
+                        },
                     }
-                })
+                ),
             )
         except Exception as e:
             log_debug("Error sending analytics event", error=e)
@@ -75,20 +78,25 @@ def track_cli(event_name: TrackingEvents, args: dict[str, Any]) -> None:
 
 
 def auto_track_command(command: str) -> Callable[[F], F]:
-    """ Decorator for click commands to automatically track CLI commands start/completion/failure. """
+    """Decorator for click commands to automatically track CLI commands start/completion/failure."""
 
     def decorator(f: F) -> F:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            track_cli(TrackingEvents.CLI_COMMAND_STARTED, { "command": command, "arguments": kwargs })
+            track_cli(TrackingEvents.CLI_COMMAND_STARTED, {"command": command, "arguments": kwargs})
             try:
                 return f(*args, **kwargs)
             except click.Abort:
-                track_cli(TrackingEvents.CLI_COMMAND_USER_ABORTED, { "command": command, "arguments": kwargs, "error": "User aborted command" })
+                track_cli(
+                    TrackingEvents.CLI_COMMAND_USER_ABORTED,
+                    {"command": command, "arguments": kwargs, "error": "User aborted command"},
+                )
             except Exception as e:
-                track_cli(TrackingEvents.CLI_COMMAND_FAILED, { "command": command, "arguments": kwargs, "error": e })
+                track_cli(TrackingEvents.CLI_COMMAND_FAILED, {"command": command, "arguments": kwargs, "error": e})
                 raise e
             finally:
-                track_cli(TrackingEvents.CLI_COMMAND_COMPLETED, { "command": command, "arguments": kwargs })
-        return wrapper # type: ignore
-    return decorator # type: ignore
+                track_cli(TrackingEvents.CLI_COMMAND_COMPLETED, {"command": command, "arguments": kwargs})
+
+        return wrapper  # type: ignore
+
+    return decorator  # type: ignore

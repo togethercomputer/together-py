@@ -66,11 +66,14 @@ def main(
 
     # Wrap the client's httpx requests to track the parameters sent on api requests
     def track_request(request: httpx.Request) -> None:
-        track_cli(TrackingEvents.CLI_COMMAND_API_REQUEST, { "url": str(request.url), "method": request.method, "body": request.content.decode("utf-8") })
+        track_cli(
+            TrackingEvents.CLI_COMMAND_API_REQUEST,
+            {"url": str(request.url), "method": request.method, "body": request.content.decode("utf-8")},
+        )
+
     client._client.event_hooks["request"].append(track_request)
 
     ctx.obj = client
-    
 
 
 main.add_command(files)
