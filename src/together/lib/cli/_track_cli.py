@@ -20,7 +20,11 @@ F = TypeVar("F", bound=Callable[..., Any])
 SESSION_ID = uuid.uuid4()
 
 def is_tracking_enabled() -> bool:
-    # TODO: add a way to disable tracking
+    # Users can opt-out of tracking with the environment variable.
+    if os.getenv("TOGETHER_TELEMETRY_DISABLED"):
+        log_debug("Analytics tracking disabled by environment variable")
+        return False
+
     return True
 
 class TrackingEvents(Enum):
@@ -40,8 +44,7 @@ def track_cli(event_name: TrackingEvents, args: Any) -> None:
 
     def send_event() -> None:
         ANALYTICS_API_ENV_VAR = os.getenv("TOGETHER_TELEMETRY_API")
-        # ANALYTICS_API = ANALYTICS_API_ENV_VAR if ANALYTICS_API_ENV_VAR else "https://api.together.ai/v0/cli-events"
-        ANALYTICS_API = ANALYTICS_API_ENV_VAR if ANALYTICS_API_ENV_VAR else "http://localhost:3000/api/together-cli-events"
+        ANALYTICS_API = ANALYTICS_API_ENV_VAR if ANALYTICS_API_ENV_VAR else "https://api.together.ai/api/together-cli-events"
 
         try:
             client = httpx.Client()
