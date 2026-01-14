@@ -8,6 +8,7 @@ from together import Together, omit
 from together._models import BaseModel
 from together._response import APIResponse as APIResponse
 from together.types.model_upload_response import ModelUploadResponse
+from together.lib.cli._track_cli import auto_track_command
 
 
 @click.group()
@@ -29,6 +30,7 @@ def models(ctx: click.Context) -> None:
     help="Output in JSON format",
 )
 @click.pass_context
+@auto_track_command("models list")
 def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     """List models"""
     client: Together = ctx.obj
@@ -96,6 +98,7 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     help="Output in JSON format",
 )
 @click.pass_context
+@auto_track_command("models upload")
 def upload(
     ctx: click.Context,
     model_name: str,

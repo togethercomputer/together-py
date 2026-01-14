@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Any
 
 import click
+import httpx
 
 import together
 from together._version import __version__
 from together._constants import DEFAULT_TIMEOUT
+from together.lib.cli._track_cli import TrackingEvents, track_cli
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
 from together.lib.cli.api.models import models
@@ -57,9 +60,19 @@ def main(
 ) -> None:
     """This is a sample CLI tool."""
     os.environ.setdefault("TOGETHER_LOG", "debug" if debug else "info")
-    ctx.obj = together.Together(
+
+    client = together.Together(
         api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries if max_retries is not None else 0
     )
+
+    # Wrap the client's httpx requests to track the parameters sent on api requests
+    def track_request(request: httpx.Request) -> None:
+        print(request.content.decode("utf-8"))
+        track_cli(TrackingEvents.CLI_COMMAND_API_REQUEST, { "url": str(request.url), "method": request.method, "body": request.content.decode("utf-8") })
+    client._client.event_hooks["request"].append(track_request)
+
+    ctx.obj = client
+    
 
 
 main.add_command(files)

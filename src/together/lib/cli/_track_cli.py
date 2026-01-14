@@ -13,6 +13,7 @@ import httpx
 import machineid
 
 from together import __version__
+from together.lib.utils import log_debug
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -27,12 +28,15 @@ class TrackingEvents(Enum):
     CLI_COMMAND_COMPLETED = "CLI_COMMAND_COMPLETED"
     CLI_COMMAND_FAILED = "CLI_COMMAND_FAILED"
     CLI_COMMAND_USER_ABORTED = "CLI_COMMAND_USER_ABORTED"
+    CLI_COMMAND_API_REQUEST = "CLI_COMMAND_API_REQUEST"
 
 
 def track_cli(event_name: TrackingEvents, args: Any) -> None:
     """ Track a CLI event. Non-Blocking. """
     if is_tracking_enabled() == False:
         return
+
+    print(event_name)
 
     def send_event() -> None:
         ANALYTICS_API_ENV_VAR = os.getenv("TOGETHER_TELEMETRY_API")
@@ -57,7 +61,8 @@ def track_cli(event_name: TrackingEvents, args: Any) -> None:
                     }
                 })
             )
-        except Exception:
+        except Exception as e:
+            log_debug("Error sending analytics event", error=e)
             # No-op - this is not critical and we don't want to block the CLI
             pass
 

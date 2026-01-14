@@ -12,6 +12,7 @@ from together.types import DedicatedEndpoint
 from together._exceptions import APIError
 from together.lib.utils.serializer import datetime_serializer
 from together.types.endpoint_list_response import Data as DedicatedEndpointListItem
+from together.lib.cli._track_cli import auto_track_command
 
 
 def print_endpoint(endpoint: DedicatedEndpoint | DedicatedEndpointListItem) -> None:
@@ -134,6 +135,7 @@ def endpoints(ctx: click.Context) -> None:
 )
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints create")
 def create(
     client: Together,
     model: str,
@@ -221,6 +223,7 @@ def create(
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints get")
 def get(client: Together, endpoint_id: str, json: bool) -> None:
     """Get a dedicated inference endpoint."""
     endpoint = client.endpoints.retrieve(endpoint_id)
@@ -242,6 +245,7 @@ def get(client: Together, endpoint_id: str, json: bool) -> None:
 )
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints hardware")
 def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
     """List all available hardware options, optionally filtered by model."""
     fetch_and_print_hardware_options(client, model, json, available)
@@ -274,6 +278,7 @@ def fetch_and_print_hardware_options(client: Together, model: str | None, print_
 @click.option("--wait/--no-wait", default=True, help="Wait for the endpoint to stop")
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints stop")
 def stop(client: Together, endpoint_id: str, wait: bool) -> None:
     """Stop a dedicated inference endpoint."""
     client.endpoints.update(endpoint_id, state="STOPPED")
@@ -295,6 +300,7 @@ def stop(client: Together, endpoint_id: str, wait: bool) -> None:
 @click.option("--wait/--no-wait", default=True, help="Wait for the endpoint to start")
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints start")
 def start(client: Together, endpoint_id: str, wait: bool) -> None:
     """Start a dedicated inference endpoint."""
     client.endpoints.update(endpoint_id, state="STARTED")
@@ -315,6 +321,7 @@ def start(client: Together, endpoint_id: str, wait: bool) -> None:
 @click.argument("endpoint-id", required=True)
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints delete")
 def delete(client: Together, endpoint_id: str) -> None:
     """Delete a dedicated inference endpoint."""
     client.endpoints.delete(endpoint_id)
@@ -342,6 +349,7 @@ def delete(client: Together, endpoint_id: str) -> None:
 )
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints list")
 def list(
     client: Together,
     json: bool,
@@ -400,6 +408,7 @@ def list(
 )
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints update")
 def update(
     client: Together,
     endpoint_id: str,
@@ -449,6 +458,7 @@ def update(
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @click.pass_obj
 @handle_api_errors
+@auto_track_command("endpoints availability-zones")
 def availability_zones(client: Together, json: bool) -> None:
     """List all availability zones."""
     avzones = client.endpoints.list_avzones()

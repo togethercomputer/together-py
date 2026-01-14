@@ -23,6 +23,7 @@ from together.lib.resources.files import DownloadManager
 from together.lib.utils.serializer import datetime_serializer
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.resources.fine_tuning import get_model_limits
+from together.lib.cli._track_cli import auto_track_command
 
 _CONFIRMATION_MESSAGE = (
     "You are about to create a fine-tuning job. "
@@ -216,6 +217,7 @@ def fine_tuning(ctx: click.Context) -> None:
     default=None,
     help="HF repo to upload the fine-tuned model to",
 )
+@auto_track_command("fine-tuning create")
 def create(
     ctx: click.Context,
     training_file: str,
@@ -415,6 +417,7 @@ def create(
 
 @fine_tuning.command()
 @click.pass_context
+@auto_track_command("fine-tuning list")
 def list(ctx: click.Context) -> None:
     """List fine-tuning jobs"""
     client: Together = ctx.obj
@@ -449,6 +452,7 @@ def list(ctx: click.Context) -> None:
 @fine_tuning.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
+@auto_track_command("fine-tuning retrieve")
 def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
     """Retrieve fine-tuning job details"""
     client: Together = ctx.obj
@@ -468,6 +472,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
+@auto_track_command("fine-tuning cancel")
 def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     """Cancel fine-tuning job"""
     client: Together = ctx.obj
@@ -487,6 +492,7 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
 @fine_tuning.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
+@auto_track_command("fine-tuning list-events")
 def list_events(ctx: click.Context, fine_tune_id: str) -> None:
     """List fine-tuning events"""
     client: Together = ctx.obj
@@ -513,6 +519,7 @@ def list_events(ctx: click.Context, fine_tune_id: str) -> None:
 @fine_tuning.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
+@auto_track_command("fine-tuning list-checkpoints")
 def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
     """List available checkpoints for a fine-tuning job"""
     client: Together = ctx.obj
@@ -569,6 +576,7 @@ def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
     default="merged",
     help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
 )
+@auto_track_command("fine-tuning download")
 def download(
     ctx: click.Context,
     fine_tune_id: str,
@@ -628,6 +636,7 @@ def download(
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--force", is_flag=True, help="Force deletion without confirmation")
 @click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before deleting job")
+@auto_track_command("fine-tuning delete")
 def delete(ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False) -> None:
     """Delete fine-tuning job"""
     client: Together = ctx.obj

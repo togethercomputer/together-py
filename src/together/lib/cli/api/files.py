@@ -11,6 +11,7 @@ from together.types import FilePurpose
 
 # from together.utils import check_file, convert_bytes, convert_unix_timestamp
 from ...utils import check_file, convert_bytes, convert_unix_timestamp
+from together.lib.cli._track_cli import auto_track_command
 
 
 @click.group()
@@ -38,6 +39,7 @@ def files(ctx: click.Context) -> None:
     default=True,
     help="Whether to check the file before uploading.",
 )
+@auto_track_command("files upload")
 def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: bool) -> None:
     """Upload file"""
 
@@ -50,6 +52,7 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: 
 
 @files.command()
 @click.pass_context
+@auto_track_command("files list")
 def list(ctx: click.Context) -> None:
     """List files"""
     client: Together = ctx.obj
@@ -75,6 +78,7 @@ def list(ctx: click.Context) -> None:
 @files.command()
 @click.pass_context
 @click.argument("id", type=str, required=True)
+@auto_track_command("files retrieve")
 def retrieve(ctx: click.Context, id: str) -> None:
     """Upload file"""
 
@@ -89,6 +93,7 @@ def retrieve(ctx: click.Context, id: str) -> None:
 @click.pass_context
 @click.argument("id", type=str, required=True)
 @click.option("--output", type=str, default=None, help="Output filename")
+@auto_track_command("files retrieve-content")
 def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
     """Retrieve file content and output to file"""
 
@@ -108,6 +113,7 @@ def retrieve_content(ctx: click.Context, id: str, output: str) -> None:
 @files.command()
 @click.pass_context
 @click.argument("id", type=str, required=True)
+@auto_track_command("files delete")
 def delete(ctx: click.Context, id: str) -> None:
     """Delete remote file"""
 
@@ -125,6 +131,7 @@ def delete(ctx: click.Context, id: str) -> None:
     type=click.Path(exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False),
     required=True,
 )
+@auto_track_command("files check")
 def check(_ctx: click.Context, file: pathlib.Path) -> None:
     """Check file for issues"""
 

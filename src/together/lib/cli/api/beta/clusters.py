@@ -14,6 +14,7 @@ from together.types.beta import Cluster, ClusterCreateParams
 from together.lib.cli.api.utils import handle_api_errors
 from together.types.beta.cluster_create_params import SharedVolume
 from together.lib.cli.api.beta.clusters_storage import storage
+from together.lib.cli._track_cli import auto_track_command
 
 
 def print_clusters(clusters: List[Cluster]) -> None:
@@ -47,6 +48,7 @@ clusters.add_command(storage)
     help="Output in JSON format",
 )
 @click.pass_context
+@auto_track_command("clusters list")
 def list(ctx: click.Context, json: bool) -> None:
     """List clusters"""
     client: Together = ctx.obj
@@ -108,6 +110,7 @@ def list(ctx: click.Context, json: bool) -> None:
 )
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command("clusters create")
 def create(
     ctx: click.Context,
     name: str | None = None,
@@ -239,6 +242,7 @@ def create(
 )
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command("clusters retrieve")
 def retrieve(ctx: click.Context, cluster_id: str, json: bool) -> None:
     """Retrieve a cluster by ID"""
     client: Together = ctx.obj
@@ -273,6 +277,7 @@ def retrieve(ctx: click.Context, cluster_id: str, json: bool) -> None:
 )
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command("clusters update")
 def update(
     ctx: click.Context,
     cluster_id: str,
@@ -308,6 +313,7 @@ def update(
 )
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command("clusters delete")
 def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
     """Delete a cluster by ID"""
     client: Together = ctx.obj
@@ -336,6 +342,7 @@ def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
 )
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command("clusters list-regions")
 def list_regions(ctx: click.Context, json: bool) -> None:
     """List regions"""
     client: Together = ctx.obj

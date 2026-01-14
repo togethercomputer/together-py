@@ -9,6 +9,7 @@ from tabulate import tabulate
 from together import APIError, Together, TogetherError
 from together._types import omit
 from together.lib.utils.serializer import datetime_serializer
+from together.lib.cli._track_cli import auto_track_command
 from together.types.eval_create_params import (
     ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,
@@ -274,6 +275,7 @@ def evals(ctx: click.Context) -> None:
     help="Input template for model B.",
 )
 @handle_api_errors
+@auto_track_command("evals create")
 def create(
     ctx: click.Context,
     type: Literal["classify", "score", "compare"],
@@ -489,6 +491,7 @@ def create(
     type=int,
     help="Limit number of results (max 100).",
 )
+@auto_track_command("evals list")
 def list(
     ctx: click.Context,
     status: Union[Literal["pending", "queued", "running", "completed", "error", "user_error"], None],
@@ -530,6 +533,7 @@ def list(
 @evals.command()
 @click.pass_context
 @click.argument("evaluation_id", type=str, required=True)
+@auto_track_command("evals retrieve")
 def retrieve(ctx: click.Context, evaluation_id: str) -> None:
     """Get details of a specific evaluation job"""
 
@@ -543,6 +547,7 @@ def retrieve(ctx: click.Context, evaluation_id: str) -> None:
 @evals.command()
 @click.pass_context
 @click.argument("evaluation_id", type=str, required=True)
+@auto_track_command("evals status")
 def status(ctx: click.Context, evaluation_id: str) -> None:
     """Get the status and results of a specific evaluation job"""
 
