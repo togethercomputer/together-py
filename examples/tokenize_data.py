@@ -1,9 +1,9 @@
 import os
-import argparse
 import logging
+import argparse
+from typing import Dict, List
 from functools import partial
 from multiprocessing import cpu_count
-from typing import Dict, List
 
 from datasets import Dataset, load_dataset  # type: ignore
 from transformers import (  # type: ignore
