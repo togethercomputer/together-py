@@ -20,6 +20,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 SESSION_ID = int(str(uuid.uuid4().int)[0:13])
 
+
 def is_tracking_enabled() -> bool:
     # Users can opt-out of tracking with the environment variable.
     if os.getenv("TOGETHER_TELEMETRY_DISABLED"):
