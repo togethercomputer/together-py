@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import os
 import json
+import time
 import uuid
 import threading
 from enum import Enum
 from typing import Any, TypeVar, Callable
-from datetime import datetime
 from functools import wraps
 
 import click
@@ -18,8 +18,7 @@ from together.lib.utils import log_debug
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-SESSION_ID = uuid.uuid4()
-
+SESSION_ID = int(str(uuid.uuid4().int)[0:13])
 
 def is_tracking_enabled() -> bool:
     # Users can opt-out of tracking with the environment variable.
@@ -30,15 +29,15 @@ def is_tracking_enabled() -> bool:
     return True
 
 
-class TrackingEvents(Enum):
-    CLI_COMMAND_STARTED = "CLI_COMMAND_STARTED"
-    CLI_COMMAND_COMPLETED = "CLI_COMMAND_COMPLETED"
-    CLI_COMMAND_FAILED = "CLI_COMMAND_FAILED"
-    CLI_COMMAND_USER_ABORTED = "CLI_COMMAND_USER_ABORTED"
-    CLI_COMMAND_API_REQUEST = "CLI_COMMAND_API_REQUEST"
+class CliTrackingEvents(Enum):
+    CommandStarted = "cli_command_started"
+    CommandCompleted = "cli_commmand_completed"
+    CommandFailed = "cli_command_failed"
+    CommandUserAborted = "cli_command_user_aborted"
+    ApiRequest = "cli_command_api_request"
 
 
-def track_cli(event_name: TrackingEvents, args: dict[str, Any]) -> None:
+def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     """Track a CLI event. Non-Blocking."""
     if is_tracking_enabled() == False:
         return
@@ -62,9 +61,9 @@ def track_cli(event_name: TrackingEvents, args: dict[str, Any]) -> None:
                             **args,
                         },
                         "event_options": {
-                            "time": datetime.now().isoformat(),
+                            "time": int(time.time() * 1000),
                             "session_id": str(SESSION_ID),
-                            "device_id": machineid.id(),
+                            "device_id": machineid.id().lower(),
                         },
                     }
                 ),
@@ -83,19 +82,20 @@ def auto_track_command(command: str) -> Callable[[F], F]:
     def decorator(f: F) -> F:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            track_cli(TrackingEvents.CLI_COMMAND_STARTED, {"command": command, "arguments": kwargs})
+            track_cli(CliTrackingEvents.CommandStarted, {"command": command, "arguments": kwargs})
             try:
                 return f(*args, **kwargs)
             except click.Abort:
+                # Doesn't seem like this is working any more
                 track_cli(
-                    TrackingEvents.CLI_COMMAND_USER_ABORTED,
-                    {"command": command, "arguments": kwargs, "error": "User aborted command"},
+                    CliTrackingEvents.CommandUserAborted,
+                    {"command": command, "arguments": kwargs},
                 )
             except Exception as e:
-                track_cli(TrackingEvents.CLI_COMMAND_FAILED, {"command": command, "arguments": kwargs, "error": e})
+                track_cli(CliTrackingEvents.CommandFailed, {"command": command, "arguments": kwargs, "error": str(e)})
                 raise e
             finally:
-                track_cli(TrackingEvents.CLI_COMMAND_COMPLETED, {"command": command, "arguments": kwargs})
+                track_cli(CliTrackingEvents.CommandCompleted, {"command": command, "arguments": kwargs})
 
         return wrapper  # type: ignore
 

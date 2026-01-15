@@ -11,7 +11,7 @@ from together._version import __version__
 from together._constants import DEFAULT_TIMEOUT
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
-from together.lib.cli._track_cli import TrackingEvents, track_cli
+from together.lib.cli._track_cli import CliTrackingEvents, track_cli
 from together.lib.cli.api.models import models
 from together.lib.cli.api.beta.beta import beta
 from together.lib.cli.api.endpoints import endpoints
@@ -67,7 +67,7 @@ def main(
     # Wrap the client's httpx requests to track the parameters sent on api requests
     def track_request(request: httpx.Request) -> None:
         track_cli(
-            TrackingEvents.CLI_COMMAND_API_REQUEST,
+            CliTrackingEvents.ApiRequest,
             {"url": str(request.url), "method": request.method, "body": request.content.decode("utf-8")},
         )
 
