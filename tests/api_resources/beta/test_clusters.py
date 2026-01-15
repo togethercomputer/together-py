@@ -12,9 +12,7 @@ from tests.utils import assert_matches_type
 from together.types.beta import (
     Cluster,
     ClusterListResponse,
-    ClusterCreateResponse,
     ClusterDeleteResponse,
-    ClusterUpdateResponse,
     ClusterListRegionsResponse,
 )
 
@@ -30,12 +28,11 @@ class TestClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
         )
-        assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -43,11 +40,11 @@ class TestClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
             cluster_type="KUBERNETES",
+            duration_days=0,
             shared_volume={
                 "region": "region",
                 "size_tib": 0,
@@ -55,7 +52,7 @@ class TestClusters:
             },
             volume_id="volume_id",
         )
-        assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -63,7 +60,6 @@ class TestClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
@@ -72,7 +68,7 @@ class TestClusters:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         cluster = response.parse()
-        assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -80,7 +76,6 @@ class TestClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
@@ -89,7 +84,7 @@ class TestClusters:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             cluster = response.parse()
-            assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+            assert_matches_type(Cluster, cluster, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -136,7 +131,7 @@ class TestClusters:
         cluster = client.beta.clusters.update(
             cluster_id="cluster_id",
         )
-        assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     def test_method_update_with_all_params(self, client: Together) -> None:
@@ -145,7 +140,7 @@ class TestClusters:
             cluster_type="KUBERNETES",
             num_gpus=0,
         )
-        assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     def test_raw_response_update(self, client: Together) -> None:
@@ -156,7 +151,7 @@ class TestClusters:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         cluster = response.parse()
-        assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     def test_streaming_response_update(self, client: Together) -> None:
@@ -167,7 +162,7 @@ class TestClusters:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             cluster = response.parse()
-            assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+            assert_matches_type(Cluster, cluster, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -278,12 +273,11 @@ class TestAsyncClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
         )
-        assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -291,11 +285,11 @@ class TestAsyncClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
             cluster_type="KUBERNETES",
+            duration_days=0,
             shared_volume={
                 "region": "region",
                 "size_tib": 0,
@@ -303,7 +297,7 @@ class TestAsyncClusters:
             },
             volume_id="volume_id",
         )
-        assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -311,7 +305,6 @@ class TestAsyncClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
@@ -320,7 +313,7 @@ class TestAsyncClusters:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         cluster = await response.parse()
-        assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -328,7 +321,6 @@ class TestAsyncClusters:
             billing_type="RESERVED",
             cluster_name="cluster_name",
             driver_version="CUDA_12_5_555",
-            duration_days=0,
             gpu_type="H100_SXM",
             num_gpus=0,
             region="us-central-8",
@@ -337,7 +329,7 @@ class TestAsyncClusters:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             cluster = await response.parse()
-            assert_matches_type(ClusterCreateResponse, cluster, path=["response"])
+            assert_matches_type(Cluster, cluster, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -384,7 +376,7 @@ class TestAsyncClusters:
         cluster = await async_client.beta.clusters.update(
             cluster_id="cluster_id",
         )
-        assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -393,7 +385,7 @@ class TestAsyncClusters:
             cluster_type="KUBERNETES",
             num_gpus=0,
         )
-        assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
@@ -404,7 +396,7 @@ class TestAsyncClusters:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         cluster = await response.parse()
-        assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+        assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
     async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
@@ -415,7 +407,7 @@ class TestAsyncClusters:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             cluster = await response.parse()
-            assert_matches_type(ClusterUpdateResponse, cluster, path=["response"])
+            assert_matches_type(Cluster, cluster, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
