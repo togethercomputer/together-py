@@ -18,7 +18,6 @@ from ...._base_client import make_request_options
 from ....types.beta.clusters import storage_create_params, storage_update_params
 from ....types.beta.clusters.cluster_storage import ClusterStorage
 from ....types.beta.clusters.storage_list_response import StorageListResponse
-from ....types.beta.clusters.storage_create_response import StorageCreateResponse
 from ....types.beta.clusters.storage_delete_response import StorageDeleteResponse
 
 __all__ = ["StorageResource", "AsyncStorageResource"]
@@ -56,7 +55,7 @@ class StorageResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> StorageCreateResponse:
+    ) -> ClusterStorage:
         """
         Instant Clusters supports long-lived, resizable in-DC shared storage with user
         data persistence. You can dynamically create and attach volumes to your cluster
@@ -90,7 +89,7 @@ class StorageResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=StorageCreateResponse,
+            cast_to=ClusterStorage,
         )
 
     def retrieve(
@@ -252,7 +251,7 @@ class AsyncStorageResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> StorageCreateResponse:
+    ) -> ClusterStorage:
         """
         Instant Clusters supports long-lived, resizable in-DC shared storage with user
         data persistence. You can dynamically create and attach volumes to your cluster
@@ -286,7 +285,7 @@ class AsyncStorageResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=StorageCreateResponse,
+            cast_to=ClusterStorage,
         )
 
     async def retrieve(

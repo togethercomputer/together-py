@@ -28,9 +28,7 @@ from ....types.beta import cluster_create_params, cluster_update_params
 from ...._base_client import make_request_options
 from ....types.beta.cluster import Cluster
 from ....types.beta.cluster_list_response import ClusterListResponse
-from ....types.beta.cluster_create_response import ClusterCreateResponse
 from ....types.beta.cluster_delete_response import ClusterDeleteResponse
-from ....types.beta.cluster_update_response import ClusterUpdateResponse
 from ....types.beta.cluster_list_regions_response import ClusterListRegionsResponse
 
 __all__ = ["ClustersResource", "AsyncClustersResource"]
@@ -66,11 +64,11 @@ class ClustersResource(SyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND"],
         cluster_name: str,
         driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
-        duration_days: int,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
         region: Literal["us-central-8", "us-central-4"],
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        duration_days: int | Omit = omit,
         shared_volume: cluster_create_params.SharedVolume | Omit = omit,
         volume_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -79,7 +77,7 @@ class ClustersResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ClusterCreateResponse:
+    ) -> Cluster:
         """Create an Instant Cluster on Together's high-performance GPU clusters.
 
         With
@@ -93,8 +91,6 @@ class ClustersResource(SyncAPIResource):
 
           driver_version: NVIDIA driver version to use in the cluster.
 
-          duration_days: Duration in days to keep the cluster running.
-
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
@@ -102,6 +98,8 @@ class ClustersResource(SyncAPIResource):
 
           region: Region to create the GPU cluster in. Valid values are us-central-8 and
               us-central-4.
+
+          duration_days: Duration in days to keep the cluster running.
 
           extra_headers: Send extra headers
 
@@ -118,11 +116,11 @@ class ClustersResource(SyncAPIResource):
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
                     "driver_version": driver_version,
-                    "duration_days": duration_days,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
                     "region": region,
                     "cluster_type": cluster_type,
+                    "duration_days": duration_days,
                     "shared_volume": shared_volume,
                     "volume_id": volume_id,
                 },
@@ -131,7 +129,7 @@ class ClustersResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=ClusterCreateResponse,
+            cast_to=Cluster,
         )
 
     def retrieve(
@@ -179,7 +177,7 @@ class ClustersResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ClusterUpdateResponse:
+    ) -> Cluster:
         """
         Update the configuration of an existing GPU cluster.
 
@@ -206,7 +204,7 @@ class ClustersResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=ClusterUpdateResponse,
+            cast_to=Cluster,
         )
 
     def list(
@@ -311,11 +309,11 @@ class AsyncClustersResource(AsyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND"],
         cluster_name: str,
         driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
-        duration_days: int,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
         region: Literal["us-central-8", "us-central-4"],
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        duration_days: int | Omit = omit,
         shared_volume: cluster_create_params.SharedVolume | Omit = omit,
         volume_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -324,7 +322,7 @@ class AsyncClustersResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ClusterCreateResponse:
+    ) -> Cluster:
         """Create an Instant Cluster on Together's high-performance GPU clusters.
 
         With
@@ -338,8 +336,6 @@ class AsyncClustersResource(AsyncAPIResource):
 
           driver_version: NVIDIA driver version to use in the cluster.
 
-          duration_days: Duration in days to keep the cluster running.
-
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
@@ -347,6 +343,8 @@ class AsyncClustersResource(AsyncAPIResource):
 
           region: Region to create the GPU cluster in. Valid values are us-central-8 and
               us-central-4.
+
+          duration_days: Duration in days to keep the cluster running.
 
           extra_headers: Send extra headers
 
@@ -363,11 +361,11 @@ class AsyncClustersResource(AsyncAPIResource):
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
                     "driver_version": driver_version,
-                    "duration_days": duration_days,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
                     "region": region,
                     "cluster_type": cluster_type,
+                    "duration_days": duration_days,
                     "shared_volume": shared_volume,
                     "volume_id": volume_id,
                 },
@@ -376,7 +374,7 @@ class AsyncClustersResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=ClusterCreateResponse,
+            cast_to=Cluster,
         )
 
     async def retrieve(
@@ -424,7 +422,7 @@ class AsyncClustersResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ClusterUpdateResponse:
+    ) -> Cluster:
         """
         Update the configuration of an existing GPU cluster.
 
@@ -451,7 +449,7 @@ class AsyncClustersResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=ClusterUpdateResponse,
+            cast_to=Cluster,
         )
 
     async def list(

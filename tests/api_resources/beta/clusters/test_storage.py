@@ -12,7 +12,6 @@ from tests.utils import assert_matches_type
 from together.types.beta.clusters import (
     ClusterStorage,
     StorageListResponse,
-    StorageCreateResponse,
     StorageDeleteResponse,
 )
 
@@ -29,7 +28,7 @@ class TestStorage:
             size_tib=0,
             volume_name="volume_name",
         )
-        assert_matches_type(StorageCreateResponse, storage, path=["response"])
+        assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -42,7 +41,7 @@ class TestStorage:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         storage = response.parse()
-        assert_matches_type(StorageCreateResponse, storage, path=["response"])
+        assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -55,7 +54,7 @@ class TestStorage:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             storage = response.parse()
-            assert_matches_type(StorageCreateResponse, storage, path=["response"])
+            assert_matches_type(ClusterStorage, storage, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -206,7 +205,7 @@ class TestAsyncStorage:
             size_tib=0,
             volume_name="volume_name",
         )
-        assert_matches_type(StorageCreateResponse, storage, path=["response"])
+        assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -219,7 +218,7 @@ class TestAsyncStorage:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         storage = await response.parse()
-        assert_matches_type(StorageCreateResponse, storage, path=["response"])
+        assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -232,7 +231,7 @@ class TestAsyncStorage:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             storage = await response.parse()
-            assert_matches_type(StorageCreateResponse, storage, path=["response"])
+            assert_matches_type(ClusterStorage, storage, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
