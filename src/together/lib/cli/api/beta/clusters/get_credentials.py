@@ -132,10 +132,6 @@ def _handle_merge(existing: dict[str, Any], addition: dict[str, Any], key: str, 
     """Merge the incoming kube config into the existing config for the given key."""
     if not addition.get(key, False):
         return
-    if key not in existing:
-        raise TogetherError(
-            f"No such key '{key}' in existing config, please confirm whether it is a valid config file.\nMay back up this config file, delete it and retry the command."
-        )
     if not existing.get(key):
         existing[key] = addition[key]
         return
