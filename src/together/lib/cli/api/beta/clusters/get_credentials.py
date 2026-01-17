@@ -78,9 +78,16 @@ def get_credentials(
         with os.fdopen(os.open(kube_config_path, os.O_CREAT | os.O_WRONLY, 0o600), "wt"):
             pass
 
+
     # Write the decoded kubeconfig to the user's default kubeconfig path
     # Ensure the .kube directory exists before writing the config file
-    from yaml import safe_load, dump
+    try:
+        from yaml import safe_load, dump
+    except ImportError:
+        click.secho("Together cli dependencies are missing. Please run one of the following commands:\n", fg="red")
+        click.secho("uv:  uv add together --optional cli", fg="yellow")
+        click.secho("pip: pip install together[cli]", fg="yellow")
+        return
 
     # Load both configs into dictionaries to merge them
     kube_config_dict: dict[str, Any] | None = safe_load(kube_config_path.read_text())

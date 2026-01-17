@@ -81,7 +81,6 @@ dev = [
     "rich>=13.7.1",
     "pytest-xdist>=3.6.1",
     "pytest-mock>=3.14.0",
-    "PyYAML",
     "aiohttp>=3.12.13",
 ]
 pydantic-v1 = [
