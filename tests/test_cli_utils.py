@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import pytest
 from zoneinfo import ZoneInfo
 
-from together.lib.cli.api.utils import generate_progress_bar
+from together.lib.cli.api._utils import generate_progress_bar
 from together.lib.types.fine_tuning import (
     FinetuneProgress,
     FinetuneResponse,
