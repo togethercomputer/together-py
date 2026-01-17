@@ -1,14 +1,10 @@
-import sys
 import json
-from typing import Any, Dict, List, Union, Literal, TypeVar, Callable, Optional, cast
-from functools import wraps
+from typing import Any, Dict, Union, Literal, Optional, cast
 
 import click
-from tabulate import tabulate
 
-from together import APIError, Together, TogetherError
-from together._types import omit
-from together.lib.utils.serializer import datetime_serializer
+from together import Together, TogetherError
+from together.lib.cli.api._utils import handle_api_errors
 from together.types.eval_create_params import (
     ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,
@@ -23,51 +19,7 @@ from together.types.eval_create_params import (
 )
 
 
-def print_api_error(e: Union[APIError, TogetherError]) -> None:
-    if isinstance(e, APIError):
-        error_details = cast(Dict[str, Any], e.body)["error"]["message"]
-
-        if error_details and ("credentials" in error_details.lower() or "authentication" in error_details.lower()):
-            click.echo("Error: Invalid API key or authentication failed", err=True)
-        else:
-            click.echo(f"Error: {error_details}", err=True)
-
-    click.echo(f"Error: {e}", err=True)
-    return
-
-
-F = TypeVar("F", bound=Callable[..., Any])
-
-
-def handle_api_errors(f: F) -> F:
-    """Decorator to handle common API errors in CLI commands."""
-
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return f(*args, **kwargs)
-        except APIError as e:
-            print_api_error(e)
-            sys.exit(1)
-        except TogetherError as e:
-            print_api_error(e)
-            sys.exit(1)
-        except Exception as e:
-            click.echo(f"Error: An unexpected error occurred - {str(e)}", err=True)
-            sys.exit(1)
-
-    return wrapper  # type: ignore
-
-
-@click.group()
-@click.pass_context
-def evals(ctx: click.Context) -> None:
-    """Evals API commands"""
-    pass
-
-
-@evals.command()
-@click.pass_context
+@click.command()
 @click.option(
     "--type",
     type=click.Choice(["classify", "score", "compare"]),
@@ -273,7 +225,8 @@ def evals(ctx: click.Context) -> None:
     type=str,
     help="Input template for model B.",
 )
-@handle_api_errors
+@click.pass_context
+@handle_api_errors("Evals")
 def create(
     ctx: click.Context,
     type: Literal["classify", "score", "compare"],
@@ -473,82 +426,6 @@ def create(
                 model_b=cast(ParametersEvaluationCompareParametersModelBEvaluationModelRequest, model_b_final),
             ),
         )
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
-
-
-@evals.command()
-@click.pass_context
-@click.option(
-    "--status",
-    type=click.Choice(["pending", "queued", "running", "completed", "error", "user_error"]),
-    help="Filter by job status.",
-)
-@click.option(
-    "--limit",
-    type=int,
-    help="Limit number of results (max 100).",
-)
-def list(
-    ctx: click.Context,
-    status: Union[Literal["pending", "queued", "running", "completed", "error", "user_error"], None],
-    limit: Union[int, None],
-) -> None:
-    """List evals"""
-
-    client: Together = ctx.obj
-
-    response = client.evals.list(status=status or omit, limit=limit or omit)
-
-    display_list: List[Dict[str, Any]] = []
-    for job in response:
-        if job.parameters:
-            model = job.parameters.get("model_to_evaluate", "")
-            model_a = job.parameters.get("model_a", "")
-            model_b = job.parameters.get("model_b", "")
-        else:
-            model = ""
-            model_a = ""
-            model_b = ""
-
-        display_list.append(
-            {
-                "Workflow ID": job.workflow_id or "",
-                "Type": job.type,
-                "Status": job.status,
-                "Created At": job.created_at or 0,
-                "Model": model,
-                "Model A": model_a,
-                "Model B": model_b,
-            }
-        )
-
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
-    click.echo(table)
-
-
-@evals.command()
-@click.pass_context
-@click.argument("evaluation_id", type=str, required=True)
-def retrieve(ctx: click.Context, evaluation_id: str) -> None:
-    """Get details of a specific evaluation job"""
-
-    client: Together = ctx.obj
-
-    response = client.evals.retrieve(evaluation_id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), default=datetime_serializer, indent=4))
-
-
-@evals.command()
-@click.pass_context
-@click.argument("evaluation_id", type=str, required=True)
-def status(ctx: click.Context, evaluation_id: str) -> None:
-    """Get the status and results of a specific evaluation job"""
-
-    client: Together = ctx.obj
-
-    response = client.evals.status(evaluation_id)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
 
