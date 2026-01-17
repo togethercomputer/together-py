@@ -150,6 +150,7 @@ def _handle_merge(existing: dict[str, Any], addition: dict[str, Any], key: str, 
             if i['name'] == j['name']:
                 if overwrite_existing or i == j:
                     existing[key].remove(j)
+                    break
                 else:
                     raise TogetherError(f"A different object named {i['name']} already exists in {key} in your kubeconfig file.")
         existing[key].append(i)
