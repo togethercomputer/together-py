@@ -1,4 +1,3 @@
-
 # Manually added to minimize breaking changes from V1
 from ._exceptions import (
     APIError as APIError,

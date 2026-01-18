@@ -1,27 +1,15 @@
 from __future__ import annotations
 
-import re
-import json
-from typing import Any, Dict, List, Union, Literal
-from pathlib import Path
-from datetime import datetime, timezone
-from textwrap import wrap
+from typing import Any, Literal
 
 import click
 from rich import print as rprint
-from tabulate import tabulate
-from rich.json import JSON
-from click.core import ParameterSource  # type: ignore[attr-defined]
+from click.core import ParameterSource
 
 from together import Together
 from together.types import fine_tuning_estimate_price_params as pe_params
-from together._types import NOT_GIVEN, NotGiven
 from together.lib.utils import log_warn
-from together.lib.utils.tools import format_timestamp, finetune_price_to_dollars
-from together.lib.cli.api.utils import INT_WITH_MAX, BOOL_WITH_AUTO, generate_progress_bar
-from together.lib.resources.files import DownloadManager
-from together.lib.utils.serializer import datetime_serializer
-from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
+from together.lib.cli.api._utils import INT_WITH_MAX, BOOL_WITH_AUTO, handle_api_errors
 from together.lib.resources.fine_tuning import get_model_limits
 
 _CONFIRMATION_MESSAGE = (
@@ -41,17 +29,8 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "Consider increasing your credit limit at https://api.together.xyz/settings/profile\n"
 )
 
-_FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 
-
-@click.group(name="fine-tuning")
-@click.pass_context
-def fine_tuning(ctx: click.Context) -> None:
-    """Fine-tunes API commands"""
-    pass
-
-
-@fine_tuning.command()
+@click.command()
 @click.pass_context
 @click.option(
     "--training-file",
@@ -216,6 +195,7 @@ def fine_tuning(ctx: click.Context) -> None:
     default=None,
     help="HF repo to upload the fine-tuned model to",
 )
+@handle_api_errors("Fine-tuning")
 def create(
     ctx: click.Context,
     training_file: str,
@@ -411,235 +391,3 @@ def create(
         rprint(report_string)
     else:
         click.echo("No confirmation received, stopping job launch")
-
-
-@fine_tuning.command()
-@click.pass_context
-def list(ctx: click.Context) -> None:
-    """List fine-tuning jobs"""
-    client: Together = ctx.obj
-
-    response = client.fine_tuning.list()
-
-    response.data = response.data or []
-
-    # Use a default datetime for None values to make sure the key function always returns a comparable value
-    epoch_start = datetime.fromtimestamp(0, tz=timezone.utc)
-    response.data.sort(key=lambda x: x.created_at or epoch_start)
-
-    display_list: List[Dict[str, Any]] = []
-    for i in response.data:
-        display_list.append(
-            {
-                "Fine-tune ID": i.id,
-                "Model Output Name": "\n".join(wrap(i.x_model_output_name or "", width=30)),
-                "Status": i.status,
-                "Created At": i.created_at,
-                "Price": f"""${
-                    finetune_price_to_dollars(float(str(i.total_price)))
-                }""",  # convert to string for mypy typing
-                "Progress": generate_progress_bar(i, datetime.now().astimezone(), use_rich=False),
-            }
-        )
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
-
-    click.echo(table)
-
-
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-def retrieve(ctx: click.Context, fine_tune_id: str) -> None:
-    """Retrieve fine-tuning job details"""
-    client: Together = ctx.obj
-
-    response = client.fine_tuning.retrieve(fine_tune_id)
-
-    # remove events from response for cleaner output
-    response.events = None
-
-    rprint(JSON.from_data(response.model_json_schema()))
-    progress_text = generate_progress_bar(response, datetime.now().astimezone(), use_rich=True)
-    prefix = f"Status: [bold]{response.status}[/bold],"
-    rprint(f"{prefix} {progress_text}")
-
-
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
-def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
-    """Cancel fine-tuning job"""
-    client: Together = ctx.obj
-    if not quiet:
-        confirm_response = input(
-            "You will be billed for any completed training steps upon cancellation. "
-            f"Do you want to cancel job {fine_tune_id}? [y/N]"
-        )
-        if "y" not in confirm_response.lower():
-            click.echo({"status": "Cancel not submitted"})
-            return
-    response = client.fine_tuning.cancel(fine_tune_id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
-
-
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-def list_events(ctx: click.Context, fine_tune_id: str) -> None:
-    """List fine-tuning events"""
-    client: Together = ctx.obj
-
-    response = client.fine_tuning.list_events(fine_tune_id)
-
-    response.data = response.data or []
-
-    display_list: List[Dict[str, Any]] = []
-    for i in response.data:
-        display_list.append(
-            {
-                "Message": "\n".join(wrap(i.message or "", width=50)),
-                "Type": i.type,
-                "Created At": i.created_at,
-                "Hash": i.hash,
-            }
-        )
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
-
-    click.echo(table)
-
-
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
-    """List available checkpoints for a fine-tuning job"""
-    client: Together = ctx.obj
-
-    checkpoints = client.fine_tuning.list_checkpoints(fine_tune_id)
-
-    display_list: List[Dict[str, Any]] = []
-    for checkpoint in checkpoints.data:
-        name = (
-            f"{fine_tune_id}:{checkpoint.step}"
-            if "intermediate" in checkpoint.checkpoint_type.lower()
-            else fine_tune_id
-        )
-        display_list.append(
-            {
-                "Type": checkpoint.checkpoint_type,
-                "Timestamp": format_timestamp(checkpoint.created_at),
-                "Name": name,
-            }
-        )
-
-    if display_list:
-        click.echo(f"Job {fine_tune_id} contains the following checkpoints:")
-        table = tabulate(display_list, headers="keys", tablefmt="grid")
-        click.echo(table)
-        click.echo("\nTo download a checkpoint, use `together fine-tuning download`")
-    else:
-        click.echo(f"No checkpoints found for job {fine_tune_id}")
-
-
-@fine_tuning.command(name="download")
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option(
-    "--output_dir",
-    "-o",
-    type=click.Path(exists=True, file_okay=False, resolve_path=True),
-    required=False,
-    default=None,
-    help="Output directory",
-)
-@click.option(
-    "--checkpoint-step",
-    "-s",
-    type=int,
-    required=False,
-    default=None,
-    help="Download fine-tuning checkpoint. Defaults to latest.",
-)
-@click.option(
-    "--checkpoint-type",
-    type=click.Choice(["merged", "adapter", "default"]),
-    required=False,
-    default="merged",
-    help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
-)
-def download(
-    ctx: click.Context,
-    fine_tune_id: str,
-    output_dir: str | None = None,
-    checkpoint_step: Union[int, NotGiven] = NOT_GIVEN,
-    checkpoint_type: Literal["default", "merged", "adapter"] | NotGiven = NOT_GIVEN,
-) -> None:
-    """Download fine-tuning checkpoint"""
-    client: Together = ctx.obj
-
-    if re.match(_FT_JOB_WITH_STEP_REGEX, fine_tune_id) is not None:
-        if checkpoint_step is NOT_GIVEN:
-            checkpoint_step = int(fine_tune_id.split(":")[1])
-            fine_tune_id = fine_tune_id.split(":")[0]
-        else:
-            raise ValueError(
-                "Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, but `checkpoint_step` "
-                "was also set. Remove one of the step specifiers to proceed."
-            )
-
-    ft_job = client.fine_tuning.retrieve(fine_tune_id)
-
-    loosely_typed_checkpoint_type: str | NotGiven = checkpoint_type
-    if isinstance(ft_job.training_type, TrainingTypeFullTrainingType):
-        if checkpoint_type != "default":
-            raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
-        loosely_typed_checkpoint_type = "model_output_path"
-    elif isinstance(ft_job.training_type, TrainingTypeLoRaTrainingType):
-        if checkpoint_type == "default":
-            loosely_typed_checkpoint_type = "merged"
-
-        if checkpoint_type not in {
-            "merged",
-            "adapter",
-        }:
-            raise ValueError(f"Invalid checkpoint type for LoRATrainingType: {checkpoint_type}")
-
-    remote_name = ft_job.x_model_output_name
-
-    url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={loosely_typed_checkpoint_type}"
-    output: Path | None = None
-    if isinstance(output_dir, str):
-        output = Path(output_dir)
-
-    file_path, file_size = DownloadManager(client).download(
-        url=url,
-        output=output,
-        remote_name=remote_name,
-        fetch_metadata=True,
-    )
-
-    click.echo(json.dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}, indent=4))
-
-
-@fine_tuning.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--force", is_flag=True, help="Force deletion without confirmation")
-@click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before deleting job")
-def delete(ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False) -> None:
-    """Delete fine-tuning job"""
-    client: Together = ctx.obj
-
-    if not quiet:
-        confirm_response = input(
-            f"Are you sure you want to delete fine-tuning job {fine_tune_id}? This action cannot be undone. [y/N] "
-        )
-        if confirm_response.lower() != "y":
-            click.echo("Deletion cancelled")
-            return
-
-    response = client.fine_tuning.delete(fine_tune_id, force=force)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))

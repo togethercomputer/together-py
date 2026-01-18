@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import pytest
 from zoneinfo import ZoneInfo
 
-from together.lib.cli.api.utils import generate_progress_bar
+from together.lib.cli.api._utils import generate_progress_bar
 from together.lib.types.fine_tuning import (
     FinetuneProgress,
     FinetuneResponse,
@@ -32,7 +32,7 @@ def create_finetune_response(
     return FinetuneResponse(
         id=job_id,
         progress=progress,
-        updated_at=started_at, # to calm down mypy
+        updated_at=started_at,  # to calm down mypy
         started_at=started_at,
         status=status,
         created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),

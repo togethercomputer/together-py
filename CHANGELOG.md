@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.0.0-alpha.16 (2026-01-18)
+
+Full Changelog: [v2.0.0-alpha.15...v2.0.0-alpha.16](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.15...v2.0.0-alpha.16)
+
+### Features
+
+* Add backwards compatible support for google colab api keys ([#211](https://github.com/togethercomputer/together-py/issues/211)) ([80dacca](https://github.com/togethercomputer/together-py/commit/80daccafb4ef69438be1d98773fe3a31ac09cace))
+* Add together clusters get-credentials CLI command ([#208](https://github.com/togethercomputer/together-py/issues/208)) ([fa54aa9](https://github.com/togethercomputer/together-py/commit/fa54aa9646e9dab2822491473856f64d5cf4688f))
+* **client:** add support for binary request streaming ([8464e12](https://github.com/togethercomputer/together-py/commit/8464e12187b42ff3a58c82ca55ec284ffa98aeea))
+
+
+### Chores
+
+* Add code samples and descriptions to instant cluster apis ([e1ad614](https://github.com/togethercomputer/together-py/commit/e1ad614f8c3189ddc991fab96013cf5f7aace1d8))
+* Improve example script ([#213](https://github.com/togethercomputer/together-py/issues/213)) ([7839058](https://github.com/togethercomputer/together-py/commit/783905873500e3228837e2cf87ebc097d9026539))
+* **internal:** update `actions/checkout` version ([dc0819c](https://github.com/togethercomputer/together-py/commit/dc0819c95429f69bf0d7ef442b7b1ea811ec40b5))
+* Port tokenize_data example ([#209](https://github.com/togethercomputer/together-py/issues/209)) ([f2714a8](https://github.com/togethercomputer/together-py/commit/f2714a84f2802989a8f519c21e5c62e9fc787038))
+* Update cluster apis to reflect their new response shape ([6be132b](https://github.com/togethercomputer/together-py/commit/6be132b210973e9c26beedd0080039e28e522096))
+
 ## 2.0.0-alpha.15 (2026-01-09)
 
 Full Changelog: [v2.0.0-alpha.14...v2.0.0-alpha.15](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.14...v2.0.0-alpha.15)
