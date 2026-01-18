@@ -1,3 +1,4 @@
+import os
 import logging
 import argparse
 from typing import Dict, List
@@ -146,11 +147,29 @@ def process_data(args: argparse.Namespace) -> None:
     if not args.out_filename.endswith(".parquet"):
         raise ValueError("`--out_filename` should have the `.parquet` extension")
 
-    dataset = load_dataset(args.dataset, split="train")
+    if os.path.isfile(args.dataset) and args.dataset.endswith(".jsonl"):
+        dataset = load_dataset("json", data_files=args.dataset, split="train")
+    else:
+        dataset = load_dataset(args.dataset, split="train")
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
     tokenizer.pad_token = tokenizer.eos_token
 
-    dataset.to_json("dataset.jsonl", orient="records", lines=True)
+    # Handle prompt/completion format by combining into text field
+    prompt_field = args.prompt_field
+    completion_field = args.completion_field
+    separator = args.separator
+    
+    if prompt_field in dataset.column_names and completion_field in dataset.column_names:
+        if "text" not in dataset.column_names:
+            dataset = dataset.map(
+                lambda x: {"text": x[prompt_field] + separator + x[completion_field]},
+                remove_columns=[prompt_field, completion_field],
+            )
+    elif "text" not in dataset.column_names:
+        raise ValueError(
+            f"Dataset must have either 'text' field or both '{prompt_field}' and '{completion_field}' fields. "
+            f"Available columns: {dataset.column_names}"
+        )
 
     if not args.packing:
         tokenized_data = dataset.map(
@@ -193,7 +212,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="clam004/antihallucination_dataset",
-        help="Dataset name on the Hugging Face Hub",
+        help="Dataset name on the Hugging Face Hub or path to local JSONL file",
     )
     parser.add_argument("--max-seq-length", type=int, default=8192, help="Maximum sequence length")
     parser.add_argument(
@@ -216,6 +235,24 @@ if __name__ == "__main__":
         "--packing",
         action="store_true",
         help="Whether to pack shorter sequences up to `--max-seq-length`",
+    )
+    parser.add_argument(
+        "--prompt-field",
+        type=str,
+        default="prompt",
+        help="Name of the field containing the prompt/input text (default: 'prompt')",
+    )
+    parser.add_argument(
+        "--completion-field",
+        type=str,
+        default="completion",
+        help="Name of the field containing the completion/output text (default: 'completion')",
+    )
+    parser.add_argument(
+        "--separator",
+        type=str,
+        default="",
+        help="Separator to insert between prompt and completion fields (default: empty string)",
     )
     args = parser.parse_args()
 
