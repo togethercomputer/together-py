@@ -12,6 +12,7 @@ from .update import update
 from .storage import storage
 from .retrieve import retrieve
 from .list_regions import list_regions
+from .get_credentials import get_credentials
 
 
 @click.group()
@@ -43,3 +44,4 @@ clusters.add_command(retrieve)
 clusters.add_command(update)
 clusters.add_command(delete)
 clusters.add_command(list_regions)
+clusters.add_command(get_credentials)
