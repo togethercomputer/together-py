@@ -5,9 +5,9 @@ import click
 from tabulate import tabulate
 
 from together import Together, omit
-from together._models import BaseModel
 from together._response import APIResponse as APIResponse
 from together.lib.cli.api._utils import handle_api_errors
+from together.lib.utils.serializer import datetime_serializer
 
 
 @click.command()
@@ -29,23 +29,21 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
 
     models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
 
+    if json:
+        items = [model.model_dump() for model in models_list]
+        click.echo(json_lib.dumps(items, indent=2, default=datetime_serializer))
+        return
+
     display_list: List[Dict[str, Any]] = []
-    model: BaseModel
-    for model in models_list:
+    for model in sorted(models_list, key=lambda x: x.type):
         display_list.append(
             {
                 "ID": model.id,
-                "Name": model.display_name,
-                "Organization": model.organization,
                 "Type": model.type,
-                "Context Length": model.context_length,
-                "License": model.license,
-                "Input per 1M token": model.pricing.input if model.pricing else None,
-                "Output per 1M token": model.pricing.output if model.pricing else None,
+                "Organization": model.organization,
+                "Input price (per 1M token)": model.pricing.input if model.pricing else None,
+                "Output price (per 1M token)": model.pricing.output if model.pricing else None,
             }
         )
 
-    if json:
-        click.echo(json_lib.dumps(display_list, indent=2))
-    else:
-        click.echo(tabulate(display_list, headers="keys", tablefmt="plain"))
+    click.echo(tabulate(display_list, headers="keys", tablefmt="grid"))
