@@ -81,7 +81,7 @@ class EndpointsResource(SyncAPIResource):
 
           availability_zone: Create the endpoint in a specified availability zone (e.g., us-central-4b)
 
-          disable_prompt_cache: Whether to disable the prompt cache for this endpoint
+          disable_prompt_cache: This parameter is deprecated and no longer has any effect.
 
           disable_speculative_decoding: Whether to disable speculative decoding for this endpoint
 
@@ -375,7 +375,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           availability_zone: Create the endpoint in a specified availability zone (e.g., us-central-4b)
 
-          disable_prompt_cache: Whether to disable the prompt cache for this endpoint
+          disable_prompt_cache: This parameter is deprecated and no longer has any effect.
 
           disable_speculative_decoding: Whether to disable speculative decoding for this endpoint
 
