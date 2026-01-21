@@ -48,7 +48,7 @@ from .hardware import hardware
 @click.option(
     "--no-prompt-cache",
     is_flag=True,
-    help="Disable the prompt cache for this endpoint",
+    help="Deprecated and no longer has any effect.",
 )
 @click.option(
     "--no-speculative-decoding",
@@ -104,6 +104,9 @@ def create(
         "rtx-6000": "nvidia_rtx_6000_ada",
     }
 
+    if no_prompt_cache is not None:
+        click.echo("Warning: --no-prompt-cache is deprecated and no longer has any effect.", err=True)
+
     hardware_id = f"{gpu_count}x_{gpu_map[gpu]}"
 
     try:
@@ -115,7 +118,6 @@ def create(
                 "max_replicas": max_replicas,
             },
             display_name=display_name or omit,
-            disable_prompt_cache=no_prompt_cache or omit,
             disable_speculative_decoding=no_speculative_decoding or omit,
             state="STOPPED" if no_auto_start else "STARTED",
             inactive_timeout=inactive_timeout,
@@ -136,8 +138,6 @@ def create(
     click.echo(f"  Hardware: {hardware_id}", err=True)
     if display_name:
         click.echo(f"  Display name: {display_name}", err=True)
-    if no_prompt_cache:
-        click.echo("  Prompt cache: disabled", err=True)
     if no_speculative_decoding:
         click.echo("  Speculative decoding: disabled", err=True)
     if no_auto_start:
