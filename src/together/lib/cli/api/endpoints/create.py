@@ -31,7 +31,7 @@ from .hardware import hardware
 )
 @click.option(
     "--gpu",
-    type=click.Choice(["h100", "a100", "l40", "l40s", "rtx-6000"]),
+    type=click.Choice(["b200", "h200", "h100", "a100", "l40", "l40s", "rtx-6000"]),
     required=True,
     help="GPU type to use for inference",
 )
@@ -95,6 +95,8 @@ def create(
     client: Together = ctx.obj
     # Map GPU types to their full hardware ID names
     gpu_map = {
+        "b200": "nvidia_b200_180gb_sxm",
+        "h200": "nvidia_h200_140gb_sxm",
         "h100": "nvidia_h100_80gb_sxm",
         "a100": "nvidia_a100_80gb_pcie" if gpu_count == 1 else "nvidia_a100_80gb_sxm",
         "l40": "nvidia_l40",
