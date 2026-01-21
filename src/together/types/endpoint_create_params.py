@@ -24,7 +24,7 @@ class EndpointCreateParams(TypedDict, total=False):
     """Create the endpoint in a specified availability zone (e.g., us-central-4b)"""
 
     disable_prompt_cache: bool
-    """Whether to disable the prompt cache for this endpoint"""
+    """This parameter is deprecated and no longer has any effect."""
 
     disable_speculative_decoding: bool
     """Whether to disable speculative decoding for this endpoint"""
