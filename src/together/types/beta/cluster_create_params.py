@@ -16,9 +16,6 @@ class ClusterCreateParams(TypedDict, total=False):
     driver_version: Required[Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"]]
     """NVIDIA driver version to use in the cluster."""
 
-    duration_days: Required[int]
-    """Duration in days to keep the cluster running."""
-
     gpu_type: Required[Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"]]
     """Type of GPU to use in the cluster"""
 
@@ -35,6 +32,9 @@ class ClusterCreateParams(TypedDict, total=False):
     """
 
     cluster_type: Literal["KUBERNETES", "SLURM"]
+
+    duration_days: int
+    """Duration in days to keep the cluster running."""
 
     shared_volume: SharedVolume
 

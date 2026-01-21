@@ -94,8 +94,6 @@ Types:
 ```python
 from together.types.beta import (
     Cluster,
-    ClusterCreateResponse,
-    ClusterUpdateResponse,
     ClusterListResponse,
     ClusterDeleteResponse,
     ClusterListRegionsResponse,
@@ -104,9 +102,9 @@ from together.types.beta import (
 
 Methods:
 
-- <code title="post /clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">create</a>(\*\*<a href="src/together/types/beta/cluster_create_params.py">params</a>) -> <a href="./src/together/types/beta/cluster_create_response.py">ClusterCreateResponse</a></code>
+- <code title="post /clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">create</a>(\*\*<a href="src/together/types/beta/cluster_create_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
 - <code title="get /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">retrieve</a>(cluster_id) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="put /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">update</a>(cluster_id, \*\*<a href="src/together/types/beta/cluster_update_params.py">params</a>) -> <a href="./src/together/types/beta/cluster_update_response.py">ClusterUpdateResponse</a></code>
+- <code title="put /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">update</a>(cluster_id, \*\*<a href="src/together/types/beta/cluster_update_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
 - <code title="get /clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list</a>() -> <a href="./src/together/types/beta/cluster_list_response.py">ClusterListResponse</a></code>
 - <code title="delete /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">delete</a>(cluster_id) -> <a href="./src/together/types/beta/cluster_delete_response.py">ClusterDeleteResponse</a></code>
 - <code title="get /clusters/regions">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list_regions</a>() -> <a href="./src/together/types/beta/cluster_list_regions_response.py">ClusterListRegionsResponse</a></code>
@@ -116,17 +114,12 @@ Methods:
 Types:
 
 ```python
-from together.types.beta.clusters import (
-    ClusterStorage,
-    StorageCreateResponse,
-    StorageListResponse,
-    StorageDeleteResponse,
-)
+from together.types.beta.clusters import ClusterStorage, StorageListResponse, StorageDeleteResponse
 ```
 
 Methods:
 
-- <code title="post /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">create</a>(\*\*<a href="src/together/types/beta/clusters/storage_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/storage_create_response.py">StorageCreateResponse</a></code>
+- <code title="post /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">create</a>(\*\*<a href="src/together/types/beta/clusters/storage_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
 - <code title="get /clusters/storages/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">retrieve</a>(volume_id) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
 - <code title="put /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">update</a>(\*\*<a href="src/together/types/beta/clusters/storage_update_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
 - <code title="get /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">list</a>() -> <a href="./src/together/types/beta/clusters/storage_list_response.py">StorageListResponse</a></code>

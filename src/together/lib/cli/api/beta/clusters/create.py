@@ -2,64 +2,17 @@ from __future__ import annotations
 
 import json as json_lib
 import getpass
-from typing import Any, Dict, List, Literal
+from typing import List, Literal
 
 import click
 from rich import print
-from tabulate import tabulate
 
-from together import Together, omit
-from together._response import APIResponse as APIResponse
-from together.types.beta import Cluster, ClusterCreateParams
-from together.lib.cli.api.utils import handle_api_errors
-from together.types.beta.cluster_create_params import SharedVolume
-from together.lib.cli.api.beta.clusters_storage import storage
+from together import Together
+from together.lib.cli.api._utils import handle_api_errors
+from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
 
 
-def print_clusters(clusters: List[Cluster]) -> None:
-    data: List[Dict[str, Any]] = []
-    for cluster in clusters:
-        data.append(
-            {
-                "ID": cluster.cluster_id,
-                "Name": cluster.cluster_name,
-                "Status": cluster.status,
-                "Region": cluster.region,
-            }
-        )
-    click.echo(tabulate(data, headers="keys", tablefmt="grid"))
-
-
-@click.group()
-@click.pass_context
-def clusters(ctx: click.Context) -> None:
-    """Clusters API commands"""
-    pass
-
-
-clusters.add_command(storage)
-
-
-@clusters.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-def list(ctx: click.Context, json: bool) -> None:
-    """List clusters"""
-    client: Together = ctx.obj
-
-    response = client.beta.clusters.list()
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
-    else:
-        print_clusters(response.clusters)
-
-
-@clusters.command()
+@click.command()
 @click.option(
     "--name",
     type=str,
@@ -228,130 +181,3 @@ def create(
     else:
         click.echo(f"Clusters: Cluster created successfully")
         click.echo(f"Clusters: {response.cluster_id}")
-
-
-@clusters.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def retrieve(ctx: click.Context, cluster_id: str, json: bool) -> None:
-    """Retrieve a cluster by ID"""
-    client: Together = ctx.obj
-
-    if not json:
-        click.echo(f"Clusters: Retrieving cluster...")
-
-    response = client.beta.clusters.retrieve(cluster_id)
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
-    else:
-        print(response)
-
-
-@clusters.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--num-gpus",
-    type=int,
-    help="Number of GPUs to allocate in the cluster",
-)
-@click.option(
-    "--cluster-type",
-    type=click.Choice(["KUBERNETES", "SLURM"]),
-    help="Cluster type",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def update(
-    ctx: click.Context,
-    cluster_id: str,
-    num_gpus: int | None = None,
-    cluster_type: Literal["KUBERNETES", "SLURM"] | None = None,
-    json: bool = False,
-) -> None:
-    """Update a cluster"""
-    client: Together = ctx.obj
-
-    if not json:
-        click.echo("Clusters: Updating cluster...")
-
-    client.beta.clusters.update(
-        cluster_id,
-        num_gpus=num_gpus if num_gpus is not None else omit,
-        cluster_type=cluster_type if cluster_type is not None else omit,
-    )
-
-    if json:
-        cluster = client.beta.clusters.retrieve(cluster_id)
-        click.echo(json_lib.dumps(cluster.model_dump(exclude_none=True), indent=4))
-    else:
-        click.echo("Clusters: Done")
-
-
-@clusters.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
-    """Delete a cluster by ID"""
-    client: Together = ctx.obj
-
-    if json:
-        response = client.beta.clusters.delete(cluster_id=cluster_id)
-        click.echo(json_lib.dumps(response.model_dump(), indent=2))
-        return
-
-    cluster = client.beta.clusters.retrieve(cluster_id=cluster_id)
-    print_clusters([cluster])
-    if not click.confirm(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}?"):
-        return
-
-    click.echo("Clusters: Deleting cluster...")
-    response = client.beta.clusters.delete(cluster_id=cluster_id)
-
-    click.echo(f"Clusters: Deleted cluster {cluster.cluster_name}")
-
-
-@clusters.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def list_regions(ctx: click.Context, json: bool) -> None:
-    """List regions"""
-    client: Together = ctx.obj
-
-    response = client.beta.clusters.list_regions()
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
-    else:
-        data: List[Dict[str, Any]] = []
-        for region in response.regions:
-            data.append(
-                {
-                    "Name": region.name,
-                    "Availability Zones": ", ".join(region.availability_zones) if region.availability_zones else "",
-                    "Driver Versions": ", ".join(region.driver_versions) if region.driver_versions else "",
-                }
-            )
-        click.echo(tabulate(data, headers="keys", tablefmt="grid"))
