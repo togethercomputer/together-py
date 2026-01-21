@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.0-alpha.17 (2026-01-21)
+
+Full Changelog: [v2.0.0-alpha.16...v2.0.0-alpha.17](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.16...v2.0.0-alpha.17)
+
+### Features
+
+* **cli:** add b200 and h200 GPU options for endpoint creation ([#218](https://github.com/togethercomputer/together-py/issues/218)) ([b514912](https://github.com/togethercomputer/together-py/commit/b514912a281922fefbf8a9f62b936ed1de243718))
+* Improve usage of models list cli command ([#216](https://github.com/togethercomputer/together-py/issues/216)) ([430e6c1](https://github.com/togethercomputer/together-py/commit/430e6c1e030749be474f020b677d91014ba4482c))
+
+
+### Chores
+
+* Deprecate CLI usage for endpoints create flag --no-promopt-cache ([#219](https://github.com/togethercomputer/together-py/issues/219)) ([55e9700](https://github.com/togethercomputer/together-py/commit/55e9700187b42f8baff6f567a3a657b46577ed88))
+* Mark disable_prompt_cache as deprecated for endpoint creation ([6a629b2](https://github.com/togethercomputer/together-py/commit/6a629b29e53b4374503d30ca75456184ef313b67))
+
 ## 2.0.0-alpha.16 (2026-01-18)
 
 Full Changelog: [v2.0.0-alpha.15...v2.0.0-alpha.16](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.15...v2.0.0-alpha.16)
