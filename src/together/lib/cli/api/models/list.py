@@ -36,14 +36,21 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
 
     display_list: List[Dict[str, Any]] = []
     for model in sorted(models_list, key=lambda x: x.type):
+        price_parts: List[str] = []
+        if model.pricing:
+            if model.pricing.input == 0 and model.pricing.output == 0:
+                if model.pricing.hourly > 0:
+                    print(model)
+            else:
+                price_parts.append(f"${model.pricing.input:.2f}")
+                price_parts.append(f"${model.pricing.output:.2f}")
         display_list.append(
             {
                 "ID": model.id,
                 "Type": model.type,
-                "Organization": model.organization,
-                "Input price (per 1M token)": model.pricing.input if model.pricing else None,
-                "Output price (per 1M token)": model.pricing.output if model.pricing else None,
+                "Context length": model.context_length if model.context_length else None,
+                "Price per 1M Tokens (input/output)": "/".join(price_parts),
             }
         )
 
-    click.echo(tabulate(display_list, headers="keys", tablefmt="grid"))
+    click.echo(tabulate(display_list, headers="keys"))
