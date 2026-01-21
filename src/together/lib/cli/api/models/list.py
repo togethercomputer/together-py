@@ -37,16 +37,15 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     display_list: List[Dict[str, Any]] = []
     for model in sorted(models_list, key=lambda x: x.type):
         price_parts: List[str] = []
-        if model.pricing:
-            if model.pricing.input == 0 and model.pricing.output == 0:
-                if model.pricing.hourly > 0:
-                    print(model)
-            else:
-                price_parts.append(f"${model.pricing.input:.2f}")
-                price_parts.append(f"${model.pricing.output:.2f}")
+
+        # Only show pricing if a value actually exists
+        if model.pricing and model.pricing.input > 0 and model.pricing.output > 0:
+            price_parts.append(f"${model.pricing.input:.2f}")
+            price_parts.append(f"${model.pricing.output:.2f}")
+
         display_list.append(
             {
-                "ID": model.id,
+                "Model": model.id,
                 "Type": model.type,
                 "Context length": model.context_length if model.context_length else None,
                 "Price per 1M Tokens (input/output)": "/".join(price_parts),
