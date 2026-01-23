@@ -8,6 +8,7 @@ import click
 import together
 from together._version import __version__
 from together._constants import DEFAULT_TIMEOUT
+from together.lib.cli.api.jig import jig
 from together.lib.cli.api.beta import beta
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
@@ -68,6 +69,7 @@ main.add_command(models)
 main.add_command(endpoints)
 main.add_command(evals)
 main.add_command(beta)
+main.add_command(jig)
 
 if __name__ == "__main__":
     main()
