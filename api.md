@@ -5,13 +5,19 @@
 Types:
 
 ```python
-from together.types.beta import JigRetrieveResponse, JigUpdateResponse, JigDeployResponse
+from together.types.beta import (
+    JigRetrieveResponse,
+    JigUpdateResponse,
+    JigListResponse,
+    JigDeployResponse,
+)
 ```
 
 Methods:
 
 - <code title="get /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig_retrieve_response.py">JigRetrieveResponse</a></code>
 - <code title="patch /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">update</a>(id, \*\*<a href="src/together/types/beta/jig_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig_update_response.py">JigUpdateResponse</a></code>
+- <code title="get /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list</a>() -> <a href="./src/together/types/beta/jig_list_response.py">JigListResponse</a></code>
 - <code title="post /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">deploy</a>(\*\*<a href="src/together/types/beta/jig_deploy_params.py">params</a>) -> <a href="./src/together/types/beta/jig_deploy_response.py">JigDeployResponse</a></code>
 - <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
 
