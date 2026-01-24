@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+from .jig.jig import (
+    JigResource,
+    AsyncJigResource,
+    JigResourceWithRawResponse,
+    AsyncJigResourceWithRawResponse,
+    JigResourceWithStreamingResponse,
+    AsyncJigResourceWithStreamingResponse,
+)
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from .clusters.clusters import (
@@ -17,6 +25,10 @@ __all__ = ["BetaResource", "AsyncBetaResource"]
 
 
 class BetaResource(SyncAPIResource):
+    @cached_property
+    def jig(self) -> JigResource:
+        return JigResource(self._client)
+
     @cached_property
     def clusters(self) -> ClustersResource:
         return ClustersResource(self._client)
@@ -42,6 +54,10 @@ class BetaResource(SyncAPIResource):
 
 
 class AsyncBetaResource(AsyncAPIResource):
+    @cached_property
+    def jig(self) -> AsyncJigResource:
+        return AsyncJigResource(self._client)
+
     @cached_property
     def clusters(self) -> AsyncClustersResource:
         return AsyncClustersResource(self._client)
@@ -71,6 +87,10 @@ class BetaResourceWithRawResponse:
         self._beta = beta
 
     @cached_property
+    def jig(self) -> JigResourceWithRawResponse:
+        return JigResourceWithRawResponse(self._beta.jig)
+
+    @cached_property
     def clusters(self) -> ClustersResourceWithRawResponse:
         return ClustersResourceWithRawResponse(self._beta.clusters)
 
@@ -78,6 +98,10 @@ class BetaResourceWithRawResponse:
 class AsyncBetaResourceWithRawResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
+
+    @cached_property
+    def jig(self) -> AsyncJigResourceWithRawResponse:
+        return AsyncJigResourceWithRawResponse(self._beta.jig)
 
     @cached_property
     def clusters(self) -> AsyncClustersResourceWithRawResponse:
@@ -89,6 +113,10 @@ class BetaResourceWithStreamingResponse:
         self._beta = beta
 
     @cached_property
+    def jig(self) -> JigResourceWithStreamingResponse:
+        return JigResourceWithStreamingResponse(self._beta.jig)
+
+    @cached_property
     def clusters(self) -> ClustersResourceWithStreamingResponse:
         return ClustersResourceWithStreamingResponse(self._beta.clusters)
 
@@ -96,6 +124,10 @@ class BetaResourceWithStreamingResponse:
 class AsyncBetaResourceWithStreamingResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
+
+    @cached_property
+    def jig(self) -> AsyncJigResourceWithStreamingResponse:
+        return AsyncJigResourceWithStreamingResponse(self._beta.jig)
 
     @cached_property
     def clusters(self) -> AsyncClustersResourceWithStreamingResponse:
