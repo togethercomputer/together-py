@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .cluster import Cluster as Cluster
 from .jig_deploy_params import JigDeployParams as JigDeployParams
+from .jig_list_response import JigListResponse as JigListResponse
 from .jig_update_params import JigUpdateParams as JigUpdateParams
 from .jig_deploy_response import JigDeployResponse as JigDeployResponse
 from .jig_update_response import JigUpdateResponse as JigUpdateResponse

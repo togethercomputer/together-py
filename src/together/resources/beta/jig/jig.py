@@ -35,6 +35,7 @@ from ...._response import (
 )
 from ....types.beta import jig_deploy_params, jig_update_params
 from ...._base_client import make_request_options
+from ....types.beta.jig_list_response import JigListResponse
 from ....types.beta.jig_deploy_response import JigDeployResponse
 from ....types.beta.jig_update_response import JigUpdateResponse
 from ....types.beta.jig_retrieve_response import JigRetrieveResponse
@@ -224,6 +225,25 @@ class JigResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=JigUpdateResponse,
+        )
+
+    def list(
+        self,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> JigListResponse:
+        """Get a list of all deployments in your project"""
+        return self._get(
+            "/deployments",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=JigListResponse,
         )
 
     def deploy(
@@ -567,6 +587,25 @@ class AsyncJigResource(AsyncAPIResource):
             cast_to=JigUpdateResponse,
         )
 
+    async def list(
+        self,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> JigListResponse:
+        """Get a list of all deployments in your project"""
+        return await self._get(
+            "/deployments",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=JigListResponse,
+        )
+
     async def deploy(
         self,
         *,
@@ -734,6 +773,9 @@ class JigResourceWithRawResponse:
         self.update = to_raw_response_wrapper(
             jig.update,
         )
+        self.list = to_raw_response_wrapper(
+            jig.list,
+        )
         self.deploy = to_raw_response_wrapper(
             jig.deploy,
         )
@@ -759,6 +801,9 @@ class AsyncJigResourceWithRawResponse:
         )
         self.update = async_to_raw_response_wrapper(
             jig.update,
+        )
+        self.list = async_to_raw_response_wrapper(
+            jig.list,
         )
         self.deploy = async_to_raw_response_wrapper(
             jig.deploy,
@@ -786,6 +831,9 @@ class JigResourceWithStreamingResponse:
         self.update = to_streamed_response_wrapper(
             jig.update,
         )
+        self.list = to_streamed_response_wrapper(
+            jig.list,
+        )
         self.deploy = to_streamed_response_wrapper(
             jig.deploy,
         )
@@ -811,6 +859,9 @@ class AsyncJigResourceWithStreamingResponse:
         )
         self.update = async_to_streamed_response_wrapper(
             jig.update,
+        )
+        self.list = async_to_streamed_response_wrapper(
+            jig.list,
         )
         self.deploy = async_to_streamed_response_wrapper(
             jig.deploy,
