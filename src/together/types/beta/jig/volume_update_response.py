@@ -1,14 +1,14 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import Optional
 from typing_extensions import Literal
 
 from ...._models import BaseModel
 
-__all__ = ["VolumeListResponse", "Data", "DataContent"]
+__all__ = ["VolumeUpdateResponse", "Content"]
 
 
-class DataContent(BaseModel):
+class Content(BaseModel):
     """Content specifies the content that will be preloaded to this volume"""
 
     source_prefix: Optional[str] = None
@@ -24,11 +24,11 @@ class DataContent(BaseModel):
     """
 
 
-class Data(BaseModel):
+class VolumeUpdateResponse(BaseModel):
     id: Optional[str] = None
     """ID is the unique identifier for this volume"""
 
-    content: Optional[DataContent] = None
+    content: Optional[Content] = None
     """Content specifies the content that will be preloaded to this volume"""
 
     created_at: Optional[str] = None
@@ -45,11 +45,3 @@ class Data(BaseModel):
 
     updated_at: Optional[str] = None
     """UpdatedAt is the ISO8601 timestamp when this volume was last updated"""
-
-
-class VolumeListResponse(BaseModel):
-    data: Optional[List[Data]] = None
-    """Data is the array of volume items"""
-
-    object: Optional[str] = None
-    """Object is the type identifier for this response (always "list")"""

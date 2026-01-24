@@ -7,14 +7,6 @@ from typing_extensions import Literal
 
 import httpx
 
-from .queue import (
-    QueueResource,
-    AsyncQueueResource,
-    QueueResourceWithRawResponse,
-    AsyncQueueResourceWithRawResponse,
-    QueueResourceWithStreamingResponse,
-    AsyncQueueResourceWithStreamingResponse,
-)
 from .secrets import (
     SecretsResource,
     AsyncSecretsResource,
@@ -41,20 +33,16 @@ from ...._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ....types.beta import jig_deploy_params, jig_update_params, jig_retrieve_logs_params
+from ....types.beta import jig_deploy_params, jig_update_params
 from ...._base_client import make_request_options
-from ....types.beta.deployment import Deployment
-from ....types.beta.deployment_logs import DeploymentLogs
-from ....types.beta.jig_list_response import JigListResponse
+from ....types.beta.jig_deploy_response import JigDeployResponse
+from ....types.beta.jig_update_response import JigUpdateResponse
+from ....types.beta.jig_retrieve_response import JigRetrieveResponse
 
 __all__ = ["JigResource", "AsyncJigResource"]
 
 
 class JigResource(SyncAPIResource):
-    @cached_property
-    def queue(self) -> QueueResource:
-        return QueueResource(self._client)
-
     @cached_property
     def volumes(self) -> VolumesResource:
         return VolumesResource(self._client)
@@ -92,7 +80,7 @@ class JigResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Deployment:
+    ) -> JigRetrieveResponse:
         """
         Retrieve details of a specific deployment by its ID or name
 
@@ -112,7 +100,7 @@ class JigResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Deployment,
+            cast_to=JigRetrieveResponse,
         )
 
     def update(
@@ -143,7 +131,7 @@ class JigResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Deployment:
+    ) -> JigUpdateResponse:
         """
         Update an existing deployment configuration
 
@@ -235,32 +223,13 @@ class JigResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Deployment,
-        )
-
-    def list(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> JigListResponse:
-        """Get a list of all deployments in your project"""
-        return self._get(
-            "/deployments",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=JigListResponse,
+            cast_to=JigUpdateResponse,
         )
 
     def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", "a100-80gb"],
+        gpu_type: Literal["h100-80gb", " a100-80gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -284,7 +253,7 @@ class JigResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Deployment:
+    ) -> JigDeployResponse:
         """
         Create a new deployment with specified configuration
 
@@ -377,7 +346,7 @@ class JigResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Deployment,
+            cast_to=JigDeployResponse,
         )
 
     def destroy(
@@ -413,52 +382,8 @@ class JigResource(SyncAPIResource):
             cast_to=object,
         )
 
-    def retrieve_logs(
-        self,
-        id: str,
-        *,
-        replica_id: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DeploymentLogs:
-        """
-        Retrieve logs from a deployment, optionally filtered by replica ID.
-
-        Args:
-          replica_id: Replica ID to filter logs
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not id:
-            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        return self._get(
-            f"/deployments/{id}/logs",
-            options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=maybe_transform({"replica_id": replica_id}, jig_retrieve_logs_params.JigRetrieveLogsParams),
-            ),
-            cast_to=DeploymentLogs,
-        )
-
 
 class AsyncJigResource(AsyncAPIResource):
-    @cached_property
-    def queue(self) -> AsyncQueueResource:
-        return AsyncQueueResource(self._client)
-
     @cached_property
     def volumes(self) -> AsyncVolumesResource:
         return AsyncVolumesResource(self._client)
@@ -496,7 +421,7 @@ class AsyncJigResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Deployment:
+    ) -> JigRetrieveResponse:
         """
         Retrieve details of a specific deployment by its ID or name
 
@@ -516,7 +441,7 @@ class AsyncJigResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Deployment,
+            cast_to=JigRetrieveResponse,
         )
 
     async def update(
@@ -547,7 +472,7 @@ class AsyncJigResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Deployment:
+    ) -> JigUpdateResponse:
         """
         Update an existing deployment configuration
 
@@ -639,32 +564,13 @@ class AsyncJigResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Deployment,
-        )
-
-    async def list(
-        self,
-        *,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> JigListResponse:
-        """Get a list of all deployments in your project"""
-        return await self._get(
-            "/deployments",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=JigListResponse,
+            cast_to=JigUpdateResponse,
         )
 
     async def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", "a100-80gb"],
+        gpu_type: Literal["h100-80gb", " a100-80gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -688,7 +594,7 @@ class AsyncJigResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Deployment:
+    ) -> JigDeployResponse:
         """
         Create a new deployment with specified configuration
 
@@ -781,7 +687,7 @@ class AsyncJigResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Deployment,
+            cast_to=JigDeployResponse,
         )
 
     async def destroy(
@@ -817,48 +723,6 @@ class AsyncJigResource(AsyncAPIResource):
             cast_to=object,
         )
 
-    async def retrieve_logs(
-        self,
-        id: str,
-        *,
-        replica_id: str | Omit = omit,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> DeploymentLogs:
-        """
-        Retrieve logs from a deployment, optionally filtered by replica ID.
-
-        Args:
-          replica_id: Replica ID to filter logs
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not id:
-            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        return await self._get(
-            f"/deployments/{id}/logs",
-            options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=await async_maybe_transform(
-                    {"replica_id": replica_id}, jig_retrieve_logs_params.JigRetrieveLogsParams
-                ),
-            ),
-            cast_to=DeploymentLogs,
-        )
-
 
 class JigResourceWithRawResponse:
     def __init__(self, jig: JigResource) -> None:
@@ -870,22 +734,12 @@ class JigResourceWithRawResponse:
         self.update = to_raw_response_wrapper(
             jig.update,
         )
-        self.list = to_raw_response_wrapper(
-            jig.list,
-        )
         self.deploy = to_raw_response_wrapper(
             jig.deploy,
         )
         self.destroy = to_raw_response_wrapper(
             jig.destroy,
         )
-        self.retrieve_logs = to_raw_response_wrapper(
-            jig.retrieve_logs,
-        )
-
-    @cached_property
-    def queue(self) -> QueueResourceWithRawResponse:
-        return QueueResourceWithRawResponse(self._jig.queue)
 
     @cached_property
     def volumes(self) -> VolumesResourceWithRawResponse:
@@ -906,22 +760,12 @@ class AsyncJigResourceWithRawResponse:
         self.update = async_to_raw_response_wrapper(
             jig.update,
         )
-        self.list = async_to_raw_response_wrapper(
-            jig.list,
-        )
         self.deploy = async_to_raw_response_wrapper(
             jig.deploy,
         )
         self.destroy = async_to_raw_response_wrapper(
             jig.destroy,
         )
-        self.retrieve_logs = async_to_raw_response_wrapper(
-            jig.retrieve_logs,
-        )
-
-    @cached_property
-    def queue(self) -> AsyncQueueResourceWithRawResponse:
-        return AsyncQueueResourceWithRawResponse(self._jig.queue)
 
     @cached_property
     def volumes(self) -> AsyncVolumesResourceWithRawResponse:
@@ -942,22 +786,12 @@ class JigResourceWithStreamingResponse:
         self.update = to_streamed_response_wrapper(
             jig.update,
         )
-        self.list = to_streamed_response_wrapper(
-            jig.list,
-        )
         self.deploy = to_streamed_response_wrapper(
             jig.deploy,
         )
         self.destroy = to_streamed_response_wrapper(
             jig.destroy,
         )
-        self.retrieve_logs = to_streamed_response_wrapper(
-            jig.retrieve_logs,
-        )
-
-    @cached_property
-    def queue(self) -> QueueResourceWithStreamingResponse:
-        return QueueResourceWithStreamingResponse(self._jig.queue)
 
     @cached_property
     def volumes(self) -> VolumesResourceWithStreamingResponse:
@@ -978,22 +812,12 @@ class AsyncJigResourceWithStreamingResponse:
         self.update = async_to_streamed_response_wrapper(
             jig.update,
         )
-        self.list = async_to_streamed_response_wrapper(
-            jig.list,
-        )
         self.deploy = async_to_streamed_response_wrapper(
             jig.deploy,
         )
         self.destroy = async_to_streamed_response_wrapper(
             jig.destroy,
         )
-        self.retrieve_logs = async_to_streamed_response_wrapper(
-            jig.retrieve_logs,
-        )
-
-    @cached_property
-    def queue(self) -> AsyncQueueResourceWithStreamingResponse:
-        return AsyncQueueResourceWithStreamingResponse(self._jig.queue)
 
     @cached_property
     def volumes(self) -> AsyncVolumesResourceWithStreamingResponse:

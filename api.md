@@ -5,69 +5,57 @@
 Types:
 
 ```python
-from together.types.beta import Deployment, DeploymentLogs, JigListResponse
+from together.types.beta import JigRetrieveResponse, JigUpdateResponse, JigDeployResponse
 ```
 
 Methods:
 
-- <code title="get /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve</a>(id) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
-- <code title="patch /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">update</a>(id, \*\*<a href="src/together/types/beta/jig_update_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
-- <code title="get /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list</a>() -> <a href="./src/together/types/beta/jig_list_response.py">JigListResponse</a></code>
-- <code title="post /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">deploy</a>(\*\*<a href="src/together/types/beta/jig_deploy_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
+- <code title="get /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig_retrieve_response.py">JigRetrieveResponse</a></code>
+- <code title="patch /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">update</a>(id, \*\*<a href="src/together/types/beta/jig_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig_update_response.py">JigUpdateResponse</a></code>
+- <code title="post /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">deploy</a>(\*\*<a href="src/together/types/beta/jig_deploy_params.py">params</a>) -> <a href="./src/together/types/beta/jig_deploy_response.py">JigDeployResponse</a></code>
 - <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
-- <code title="get /deployments/{id}/logs">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_logs</a>(id, \*\*<a href="src/together/types/beta/jig_retrieve_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_logs.py">DeploymentLogs</a></code>
-
-### Queue
-
-Types:
-
-```python
-from together.types.beta.jig import (
-    QueueRetrieveResponse,
-    QueueCancelResponse,
-    QueueMetricsResponse,
-    QueueSubmitResponse,
-)
-```
-
-Methods:
-
-- <code title="get /queue/status">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">retrieve</a>(\*\*<a href="src/together/types/beta/jig/queue_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_retrieve_response.py">QueueRetrieveResponse</a></code>
-- <code title="post /queue/cancel">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/jig/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_cancel_response.py">QueueCancelResponse</a></code>
-- <code title="get /queue/metrics">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">metrics</a>(\*\*<a href="src/together/types/beta/jig/queue_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_metrics_response.py">QueueMetricsResponse</a></code>
-- <code title="post /queue/submit">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">submit</a>(\*\*<a href="src/together/types/beta/jig/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_submit_response.py">QueueSubmitResponse</a></code>
 
 ### Volumes
 
 Types:
 
 ```python
-from together.types.beta.jig import Volume, VolumeListResponse
+from together.types.beta.jig import (
+    VolumeCreateResponse,
+    VolumeRetrieveResponse,
+    VolumeUpdateResponse,
+    VolumeListResponse,
+)
 ```
 
 Methods:
 
-- <code title="post /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">create</a>(\*\*<a href="src/together/types/beta/jig/volume_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="get /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="patch /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/volume_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="get /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">list</a>() -> <a href="./src/together/types/beta/jig/volume_list_response.py">VolumeListResponse</a></code>
-- <code title="delete /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">delete</a>(id) -> object</code>
+- <code title="post /storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">create</a>(\*\*<a href="src/together/types/beta/jig/volume_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume_create_response.py">VolumeCreateResponse</a></code>
+- <code title="get /storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/volume_retrieve_response.py">VolumeRetrieveResponse</a></code>
+- <code title="patch /storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/volume_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume_update_response.py">VolumeUpdateResponse</a></code>
+- <code title="get /storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">list</a>() -> <a href="./src/together/types/beta/jig/volume_list_response.py">VolumeListResponse</a></code>
+- <code title="delete /storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">delete</a>(id) -> object</code>
 
 ### Secrets
 
 Types:
 
 ```python
-from together.types.beta.jig import Secret, SecretListResponse
+from together.types.beta.jig import (
+    SecretCreateResponse,
+    SecretRetrieveResponse,
+    SecretUpdateResponse,
+    SecretListResponse,
+)
 ```
 
 Methods:
 
-- <code title="post /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">create</a>(\*\*<a href="src/together/types/beta/jig/secret_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
-- <code title="get /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
-- <code title="patch /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/secret_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
-- <code title="get /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">list</a>() -> <a href="./src/together/types/beta/jig/secret_list_response.py">SecretListResponse</a></code>
-- <code title="delete /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">delete</a>(id) -> object</code>
+- <code title="post /secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">create</a>(\*\*<a href="src/together/types/beta/jig/secret_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret_create_response.py">SecretCreateResponse</a></code>
+- <code title="get /secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/secret_retrieve_response.py">SecretRetrieveResponse</a></code>
+- <code title="patch /secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/secret_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret_update_response.py">SecretUpdateResponse</a></code>
+- <code title="get /secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">list</a>() -> <a href="./src/together/types/beta/jig/secret_list_response.py">SecretListResponse</a></code>
+- <code title="delete /secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">delete</a>(id) -> object</code>
 
 ## Clusters
 

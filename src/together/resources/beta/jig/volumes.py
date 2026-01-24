@@ -18,8 +18,10 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.jig import volume_create_params, volume_update_params
-from ....types.beta.jig.volume import Volume
 from ....types.beta.jig.volume_list_response import VolumeListResponse
+from ....types.beta.jig.volume_create_response import VolumeCreateResponse
+from ....types.beta.jig.volume_update_response import VolumeUpdateResponse
+from ....types.beta.jig.volume_retrieve_response import VolumeRetrieveResponse
 
 __all__ = ["VolumesResource", "AsyncVolumesResource"]
 
@@ -56,7 +58,7 @@ class VolumesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Volume:
+    ) -> VolumeCreateResponse:
         """
         Create a new volume to preload files in deployments
 
@@ -76,7 +78,7 @@ class VolumesResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/deployments/storage/volumes",
+            "/storage/volumes",
             body=maybe_transform(
                 {
                     "content": content,
@@ -88,7 +90,7 @@ class VolumesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Volume,
+            cast_to=VolumeCreateResponse,
         )
 
     def retrieve(
@@ -101,7 +103,7 @@ class VolumesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Volume:
+    ) -> VolumeRetrieveResponse:
         """
         Retrieve details of a specific volume by its ID or name
 
@@ -117,11 +119,11 @@ class VolumesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            f"/deployments/storage/volumes/{id}",
+            f"/storage/volumes/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Volume,
+            cast_to=VolumeRetrieveResponse,
         )
 
     def update(
@@ -137,7 +139,7 @@ class VolumesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Volume:
+    ) -> VolumeUpdateResponse:
         """
         Update an existing volume's configuration or contents
 
@@ -159,7 +161,7 @@ class VolumesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._patch(
-            f"/deployments/storage/volumes/{id}",
+            f"/storage/volumes/{id}",
             body=maybe_transform(
                 {
                     "content": content,
@@ -171,7 +173,7 @@ class VolumesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Volume,
+            cast_to=VolumeUpdateResponse,
         )
 
     def list(
@@ -186,7 +188,7 @@ class VolumesResource(SyncAPIResource):
     ) -> VolumeListResponse:
         """Retrieve all volumes in your project"""
         return self._get(
-            "/deployments/storage/volumes",
+            "/storage/volumes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -219,7 +221,7 @@ class VolumesResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            f"/deployments/storage/volumes/{id}",
+            f"/storage/volumes/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -259,7 +261,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Volume:
+    ) -> VolumeCreateResponse:
         """
         Create a new volume to preload files in deployments
 
@@ -279,7 +281,7 @@ class AsyncVolumesResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/deployments/storage/volumes",
+            "/storage/volumes",
             body=await async_maybe_transform(
                 {
                     "content": content,
@@ -291,7 +293,7 @@ class AsyncVolumesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Volume,
+            cast_to=VolumeCreateResponse,
         )
 
     async def retrieve(
@@ -304,7 +306,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Volume:
+    ) -> VolumeRetrieveResponse:
         """
         Retrieve details of a specific volume by its ID or name
 
@@ -320,11 +322,11 @@ class AsyncVolumesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            f"/deployments/storage/volumes/{id}",
+            f"/storage/volumes/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Volume,
+            cast_to=VolumeRetrieveResponse,
         )
 
     async def update(
@@ -340,7 +342,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Volume:
+    ) -> VolumeUpdateResponse:
         """
         Update an existing volume's configuration or contents
 
@@ -362,7 +364,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._patch(
-            f"/deployments/storage/volumes/{id}",
+            f"/storage/volumes/{id}",
             body=await async_maybe_transform(
                 {
                     "content": content,
@@ -374,7 +376,7 @@ class AsyncVolumesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Volume,
+            cast_to=VolumeUpdateResponse,
         )
 
     async def list(
@@ -389,7 +391,7 @@ class AsyncVolumesResource(AsyncAPIResource):
     ) -> VolumeListResponse:
         """Retrieve all volumes in your project"""
         return await self._get(
-            "/deployments/storage/volumes",
+            "/storage/volumes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -422,7 +424,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            f"/deployments/storage/volumes/{id}",
+            f"/storage/volumes/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

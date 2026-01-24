@@ -9,7 +9,12 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.jig import Secret, SecretListResponse
+from together.types.beta.jig import (
+    SecretListResponse,
+    SecretCreateResponse,
+    SecretUpdateResponse,
+    SecretRetrieveResponse,
+)
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -23,7 +28,7 @@ class TestSecrets:
             name="x",
             value="x",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -33,7 +38,7 @@ class TestSecrets:
             description="description",
             project_id="project_id",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -45,7 +50,7 @@ class TestSecrets:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         secret = response.parse()
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -57,7 +62,7 @@ class TestSecrets:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             secret = response.parse()
-            assert_matches_type(Secret, secret, path=["response"])
+            assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -66,7 +71,7 @@ class TestSecrets:
         secret = client.beta.jig.secrets.retrieve(
             "id",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretRetrieveResponse, secret, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -77,7 +82,7 @@ class TestSecrets:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         secret = response.parse()
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretRetrieveResponse, secret, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -88,7 +93,7 @@ class TestSecrets:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             secret = response.parse()
-            assert_matches_type(Secret, secret, path=["response"])
+            assert_matches_type(SecretRetrieveResponse, secret, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -104,7 +109,7 @@ class TestSecrets:
         secret = client.beta.jig.secrets.update(
             id="id",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
     @parametrize
     def test_method_update_with_all_params(self, client: Together) -> None:
@@ -115,7 +120,7 @@ class TestSecrets:
             project_id="project_id",
             value="x",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
     @parametrize
     def test_raw_response_update(self, client: Together) -> None:
@@ -126,7 +131,7 @@ class TestSecrets:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         secret = response.parse()
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
     @parametrize
     def test_streaming_response_update(self, client: Together) -> None:
@@ -137,7 +142,7 @@ class TestSecrets:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             secret = response.parse()
-            assert_matches_type(Secret, secret, path=["response"])
+            assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -223,7 +228,7 @@ class TestAsyncSecrets:
             name="x",
             value="x",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -233,7 +238,7 @@ class TestAsyncSecrets:
             description="description",
             project_id="project_id",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -245,7 +250,7 @@ class TestAsyncSecrets:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         secret = await response.parse()
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -257,7 +262,7 @@ class TestAsyncSecrets:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             secret = await response.parse()
-            assert_matches_type(Secret, secret, path=["response"])
+            assert_matches_type(SecretCreateResponse, secret, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -266,7 +271,7 @@ class TestAsyncSecrets:
         secret = await async_client.beta.jig.secrets.retrieve(
             "id",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretRetrieveResponse, secret, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -277,7 +282,7 @@ class TestAsyncSecrets:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         secret = await response.parse()
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretRetrieveResponse, secret, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -288,7 +293,7 @@ class TestAsyncSecrets:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             secret = await response.parse()
-            assert_matches_type(Secret, secret, path=["response"])
+            assert_matches_type(SecretRetrieveResponse, secret, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -304,7 +309,7 @@ class TestAsyncSecrets:
         secret = await async_client.beta.jig.secrets.update(
             id="id",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
     @parametrize
     async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -315,7 +320,7 @@ class TestAsyncSecrets:
             project_id="project_id",
             value="x",
         )
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
     @parametrize
     async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
@@ -326,7 +331,7 @@ class TestAsyncSecrets:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         secret = await response.parse()
-        assert_matches_type(Secret, secret, path=["response"])
+        assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
     @parametrize
     async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
@@ -337,7 +342,7 @@ class TestAsyncSecrets:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             secret = await response.parse()
-            assert_matches_type(Secret, secret, path=["response"])
+            assert_matches_type(SecretUpdateResponse, secret, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

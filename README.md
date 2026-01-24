@@ -186,17 +186,12 @@ from together import Together
 
 client = Together()
 
-chat_completion = client.chat.completions.create(
-    messages=[
-        {
-            "content": "content",
-            "role": "system",
-        }
-    ],
-    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    reasoning={},
+volume = client.beta.jig.volumes.create(
+    content={},
+    name="name",
+    type="readOnly",
 )
-print(chat_completion.reasoning)
+print(volume.content)
 ```
 
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.

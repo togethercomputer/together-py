@@ -9,7 +9,12 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.jig import Volume, VolumeListResponse
+from together.types.beta.jig import (
+    VolumeListResponse,
+    VolumeCreateResponse,
+    VolumeUpdateResponse,
+    VolumeRetrieveResponse,
+)
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -24,7 +29,7 @@ class TestVolumes:
             name="name",
             type="readOnly",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -36,7 +41,7 @@ class TestVolumes:
             name="name",
             type="readOnly",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -49,7 +54,7 @@ class TestVolumes:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         volume = response.parse()
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -62,7 +67,7 @@ class TestVolumes:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             volume = response.parse()
-            assert_matches_type(Volume, volume, path=["response"])
+            assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -71,7 +76,7 @@ class TestVolumes:
         volume = client.beta.jig.volumes.retrieve(
             "id",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeRetrieveResponse, volume, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -82,7 +87,7 @@ class TestVolumes:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         volume = response.parse()
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeRetrieveResponse, volume, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -93,7 +98,7 @@ class TestVolumes:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             volume = response.parse()
-            assert_matches_type(Volume, volume, path=["response"])
+            assert_matches_type(VolumeRetrieveResponse, volume, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -109,7 +114,7 @@ class TestVolumes:
         volume = client.beta.jig.volumes.update(
             id="id",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
     @parametrize
     def test_method_update_with_all_params(self, client: Together) -> None:
@@ -122,7 +127,7 @@ class TestVolumes:
             name="name",
             type="readOnly",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
     @parametrize
     def test_raw_response_update(self, client: Together) -> None:
@@ -133,7 +138,7 @@ class TestVolumes:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         volume = response.parse()
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
     @parametrize
     def test_streaming_response_update(self, client: Together) -> None:
@@ -144,7 +149,7 @@ class TestVolumes:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             volume = response.parse()
-            assert_matches_type(Volume, volume, path=["response"])
+            assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -231,7 +236,7 @@ class TestAsyncVolumes:
             name="name",
             type="readOnly",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -243,7 +248,7 @@ class TestAsyncVolumes:
             name="name",
             type="readOnly",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -256,7 +261,7 @@ class TestAsyncVolumes:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         volume = await response.parse()
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -269,7 +274,7 @@ class TestAsyncVolumes:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             volume = await response.parse()
-            assert_matches_type(Volume, volume, path=["response"])
+            assert_matches_type(VolumeCreateResponse, volume, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -278,7 +283,7 @@ class TestAsyncVolumes:
         volume = await async_client.beta.jig.volumes.retrieve(
             "id",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeRetrieveResponse, volume, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -289,7 +294,7 @@ class TestAsyncVolumes:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         volume = await response.parse()
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeRetrieveResponse, volume, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -300,7 +305,7 @@ class TestAsyncVolumes:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             volume = await response.parse()
-            assert_matches_type(Volume, volume, path=["response"])
+            assert_matches_type(VolumeRetrieveResponse, volume, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -316,7 +321,7 @@ class TestAsyncVolumes:
         volume = await async_client.beta.jig.volumes.update(
             id="id",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
     @parametrize
     async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -329,7 +334,7 @@ class TestAsyncVolumes:
             name="name",
             type="readOnly",
         )
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
     @parametrize
     async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
@@ -340,7 +345,7 @@ class TestAsyncVolumes:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         volume = await response.parse()
-        assert_matches_type(Volume, volume, path=["response"])
+        assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
     @parametrize
     async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
@@ -351,7 +356,7 @@ class TestAsyncVolumes:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             volume = await response.parse()
-            assert_matches_type(Volume, volume, path=["response"])
+            assert_matches_type(VolumeUpdateResponse, volume, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

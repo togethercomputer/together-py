@@ -16,8 +16,10 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.jig import secret_create_params, secret_update_params
-from ....types.beta.jig.secret import Secret
 from ....types.beta.jig.secret_list_response import SecretListResponse
+from ....types.beta.jig.secret_create_response import SecretCreateResponse
+from ....types.beta.jig.secret_update_response import SecretUpdateResponse
+from ....types.beta.jig.secret_retrieve_response import SecretRetrieveResponse
 
 __all__ = ["SecretsResource", "AsyncSecretsResource"]
 
@@ -55,7 +57,7 @@ class SecretsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Secret:
+    ) -> SecretCreateResponse:
         """
         Create a new secret to store sensitive configuration values
 
@@ -82,7 +84,7 @@ class SecretsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/deployments/secrets",
+            "/secrets",
             body=maybe_transform(
                 {
                     "name": name,
@@ -95,7 +97,7 @@ class SecretsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Secret,
+            cast_to=SecretCreateResponse,
         )
 
     def retrieve(
@@ -108,7 +110,7 @@ class SecretsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Secret:
+    ) -> SecretRetrieveResponse:
         """
         Retrieve details of a specific secret by its ID or name
 
@@ -124,11 +126,11 @@ class SecretsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            f"/deployments/secrets/{id}",
+            f"/secrets/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Secret,
+            cast_to=SecretRetrieveResponse,
         )
 
     def update(
@@ -145,7 +147,7 @@ class SecretsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Secret:
+    ) -> SecretUpdateResponse:
         """
         Update an existing secret's value or metadata
 
@@ -174,7 +176,7 @@ class SecretsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._patch(
-            f"/deployments/secrets/{id}",
+            f"/secrets/{id}",
             body=maybe_transform(
                 {
                     "description": description,
@@ -187,7 +189,7 @@ class SecretsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Secret,
+            cast_to=SecretUpdateResponse,
         )
 
     def list(
@@ -202,7 +204,7 @@ class SecretsResource(SyncAPIResource):
     ) -> SecretListResponse:
         """Retrieve all secrets in your project"""
         return self._get(
-            "/deployments/secrets",
+            "/secrets",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -235,7 +237,7 @@ class SecretsResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            f"/deployments/secrets/{id}",
+            f"/secrets/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -276,7 +278,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Secret:
+    ) -> SecretCreateResponse:
         """
         Create a new secret to store sensitive configuration values
 
@@ -303,7 +305,7 @@ class AsyncSecretsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/deployments/secrets",
+            "/secrets",
             body=await async_maybe_transform(
                 {
                     "name": name,
@@ -316,7 +318,7 @@ class AsyncSecretsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Secret,
+            cast_to=SecretCreateResponse,
         )
 
     async def retrieve(
@@ -329,7 +331,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Secret:
+    ) -> SecretRetrieveResponse:
         """
         Retrieve details of a specific secret by its ID or name
 
@@ -345,11 +347,11 @@ class AsyncSecretsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            f"/deployments/secrets/{id}",
+            f"/secrets/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Secret,
+            cast_to=SecretRetrieveResponse,
         )
 
     async def update(
@@ -366,7 +368,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> Secret:
+    ) -> SecretUpdateResponse:
         """
         Update an existing secret's value or metadata
 
@@ -395,7 +397,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._patch(
-            f"/deployments/secrets/{id}",
+            f"/secrets/{id}",
             body=await async_maybe_transform(
                 {
                     "description": description,
@@ -408,7 +410,7 @@ class AsyncSecretsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=Secret,
+            cast_to=SecretUpdateResponse,
         )
 
     async def list(
@@ -423,7 +425,7 @@ class AsyncSecretsResource(AsyncAPIResource):
     ) -> SecretListResponse:
         """Retrieve all secrets in your project"""
         return await self._get(
-            "/deployments/secrets",
+            "/secrets",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -456,7 +458,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            f"/deployments/secrets/{id}",
+            f"/secrets/{id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

@@ -1,13 +1,13 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import Optional
 
 from ...._models import BaseModel
 
-__all__ = ["SecretListResponse", "Data"]
+__all__ = ["SecretUpdateResponse"]
 
 
-class Data(BaseModel):
+class SecretUpdateResponse(BaseModel):
     id: Optional[str] = None
     """ID is the unique identifier for this secret"""
 
@@ -31,11 +31,3 @@ class Data(BaseModel):
 
     updated_at: Optional[str] = None
     """UpdatedAt is the ISO8601 timestamp when this secret was last updated"""
-
-
-class SecretListResponse(BaseModel):
-    data: Optional[List[Data]] = None
-    """Data is the array of secret items"""
-
-    object: Optional[str] = None
-    """Object is the type identifier for this response (always "list")"""
