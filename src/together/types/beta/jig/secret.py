@@ -4,10 +4,10 @@ from typing import Optional
 
 from ...._models import BaseModel
 
-__all__ = ["SecretCreateResponse"]
+__all__ = ["Secret"]
 
 
-class SecretCreateResponse(BaseModel):
+class Secret(BaseModel):
     id: Optional[str] = None
     """ID is the unique identifier for this secret"""
 

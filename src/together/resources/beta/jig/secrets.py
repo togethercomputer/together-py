@@ -16,10 +16,8 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.jig import secret_create_params, secret_update_params
+from ....types.beta.jig.secret import Secret
 from ....types.beta.jig.secret_list_response import SecretListResponse
-from ....types.beta.jig.secret_create_response import SecretCreateResponse
-from ....types.beta.jig.secret_update_response import SecretUpdateResponse
-from ....types.beta.jig.secret_retrieve_response import SecretRetrieveResponse
 
 __all__ = ["SecretsResource", "AsyncSecretsResource"]
 
@@ -57,7 +55,7 @@ class SecretsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SecretCreateResponse:
+    ) -> Secret:
         """
         Create a new secret to store sensitive configuration values
 
@@ -97,7 +95,7 @@ class SecretsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SecretCreateResponse,
+            cast_to=Secret,
         )
 
     def retrieve(
@@ -110,7 +108,7 @@ class SecretsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SecretRetrieveResponse:
+    ) -> Secret:
         """
         Retrieve details of a specific secret by its ID or name
 
@@ -130,7 +128,7 @@ class SecretsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SecretRetrieveResponse,
+            cast_to=Secret,
         )
 
     def update(
@@ -147,7 +145,7 @@ class SecretsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SecretUpdateResponse:
+    ) -> Secret:
         """
         Update an existing secret's value or metadata
 
@@ -189,7 +187,7 @@ class SecretsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SecretUpdateResponse,
+            cast_to=Secret,
         )
 
     def list(
@@ -278,7 +276,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SecretCreateResponse:
+    ) -> Secret:
         """
         Create a new secret to store sensitive configuration values
 
@@ -318,7 +316,7 @@ class AsyncSecretsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SecretCreateResponse,
+            cast_to=Secret,
         )
 
     async def retrieve(
@@ -331,7 +329,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SecretRetrieveResponse:
+    ) -> Secret:
         """
         Retrieve details of a specific secret by its ID or name
 
@@ -351,7 +349,7 @@ class AsyncSecretsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SecretRetrieveResponse,
+            cast_to=Secret,
         )
 
     async def update(
@@ -368,7 +366,7 @@ class AsyncSecretsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SecretUpdateResponse:
+    ) -> Secret:
         """
         Update an existing secret's value or metadata
 
@@ -410,7 +408,7 @@ class AsyncSecretsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SecretUpdateResponse,
+            cast_to=Secret,
         )
 
     async def list(

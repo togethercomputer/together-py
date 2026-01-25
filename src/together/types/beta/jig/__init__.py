@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
+from .secret import Secret as Secret
 from .secret_create_params import SecretCreateParams as SecretCreateParams
 from .secret_list_response import SecretListResponse as SecretListResponse
 from .secret_update_params import SecretUpdateParams as SecretUpdateParams
 from .volume_create_params import VolumeCreateParams as VolumeCreateParams
 from .volume_list_response import VolumeListResponse as VolumeListResponse
 from .volume_update_params import VolumeUpdateParams as VolumeUpdateParams
-from .secret_create_response import SecretCreateResponse as SecretCreateResponse
-from .secret_update_response import SecretUpdateResponse as SecretUpdateResponse
 from .volume_create_response import VolumeCreateResponse as VolumeCreateResponse
 from .volume_update_response import VolumeUpdateResponse as VolumeUpdateResponse
-from .secret_retrieve_response import SecretRetrieveResponse as SecretRetrieveResponse
 from .volume_retrieve_response import VolumeRetrieveResponse as VolumeRetrieveResponse
