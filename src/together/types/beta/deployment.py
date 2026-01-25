@@ -8,7 +8,7 @@ from pydantic import Field as FieldInfo
 from ..._models import BaseModel
 
 __all__ = [
-    "JigDeployResponse",
+    "Deployment",
     "EnvironmentVariable",
     "ReplicaEvents",
     "ReplicaEventsContainerStatus",
@@ -169,7 +169,7 @@ class Volume(BaseModel):
     """
 
 
-class JigDeployResponse(BaseModel):
+class Deployment(BaseModel):
     id: Optional[str] = None
     """ID is the unique identifier of the deployment"""
 
