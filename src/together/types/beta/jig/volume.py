@@ -5,7 +5,7 @@ from typing_extensions import Literal
 
 from ...._models import BaseModel
 
-__all__ = ["VolumeRetrieveResponse", "Content"]
+__all__ = ["Volume", "Content"]
 
 
 class Content(BaseModel):
@@ -24,7 +24,7 @@ class Content(BaseModel):
     """
 
 
-class VolumeRetrieveResponse(BaseModel):
+class Volume(BaseModel):
     id: Optional[str] = None
     """ID is the unique identifier for this volume"""
 

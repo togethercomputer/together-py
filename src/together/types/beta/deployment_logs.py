@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from ..._models import BaseModel
 
-__all__ = ["JigRetrieveLogsResponse"]
+__all__ = ["DeploymentLogs"]
 
 
-class JigRetrieveLogsResponse(BaseModel):
+class DeploymentLogs(BaseModel):
     lines: Optional[List[str]] = None
