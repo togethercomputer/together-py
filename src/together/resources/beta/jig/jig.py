@@ -36,8 +36,8 @@ from ...._response import (
 from ....types.beta import jig_deploy_params, jig_update_params, jig_retrieve_logs_params
 from ...._base_client import make_request_options
 from ....types.beta.deployment import Deployment
+from ....types.beta.deployment_logs import DeploymentLogs
 from ....types.beta.jig_list_response import JigListResponse
-from ....types.beta.jig_retrieve_logs_response import JigRetrieveLogsResponse
 
 __all__ = ["JigResource", "AsyncJigResource"]
 
@@ -413,7 +413,7 @@ class JigResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> JigRetrieveLogsResponse:
+    ) -> DeploymentLogs:
         """Retrieve logs from a deployment, optionally filtered by replica ID.
 
         Use
@@ -449,7 +449,7 @@ class JigResource(SyncAPIResource):
                     jig_retrieve_logs_params.JigRetrieveLogsParams,
                 ),
             ),
-            cast_to=JigRetrieveLogsResponse,
+            cast_to=DeploymentLogs,
         )
 
 
@@ -824,7 +824,7 @@ class AsyncJigResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> JigRetrieveLogsResponse:
+    ) -> DeploymentLogs:
         """Retrieve logs from a deployment, optionally filtered by replica ID.
 
         Use
@@ -860,7 +860,7 @@ class AsyncJigResource(AsyncAPIResource):
                     jig_retrieve_logs_params.JigRetrieveLogsParams,
                 ),
             ),
-            cast_to=JigRetrieveLogsResponse,
+            cast_to=DeploymentLogs,
         )
 
 

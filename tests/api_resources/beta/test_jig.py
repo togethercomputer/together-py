@@ -11,8 +11,8 @@ from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types.beta import (
     Deployment,
+    DeploymentLogs,
     JigListResponse,
-    JigRetrieveLogsResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -273,7 +273,7 @@ class TestJig:
         jig = client.beta.jig.retrieve_logs(
             id="id",
         )
-        assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+        assert_matches_type(DeploymentLogs, jig, path=["response"])
 
     @parametrize
     def test_method_retrieve_logs_with_all_params(self, client: Together) -> None:
@@ -282,7 +282,7 @@ class TestJig:
             follow=True,
             replica_id="replica_id",
         )
-        assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+        assert_matches_type(DeploymentLogs, jig, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve_logs(self, client: Together) -> None:
@@ -293,7 +293,7 @@ class TestJig:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         jig = response.parse()
-        assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+        assert_matches_type(DeploymentLogs, jig, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve_logs(self, client: Together) -> None:
@@ -304,7 +304,7 @@ class TestJig:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             jig = response.parse()
-            assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+            assert_matches_type(DeploymentLogs, jig, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -573,7 +573,7 @@ class TestAsyncJig:
         jig = await async_client.beta.jig.retrieve_logs(
             id="id",
         )
-        assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+        assert_matches_type(DeploymentLogs, jig, path=["response"])
 
     @parametrize
     async def test_method_retrieve_logs_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -582,7 +582,7 @@ class TestAsyncJig:
             follow=True,
             replica_id="replica_id",
         )
-        assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+        assert_matches_type(DeploymentLogs, jig, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve_logs(self, async_client: AsyncTogether) -> None:
@@ -593,7 +593,7 @@ class TestAsyncJig:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         jig = await response.parse()
-        assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+        assert_matches_type(DeploymentLogs, jig, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve_logs(self, async_client: AsyncTogether) -> None:
@@ -604,7 +604,7 @@ class TestAsyncJig:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             jig = await response.parse()
-            assert_matches_type(JigRetrieveLogsResponse, jig, path=["response"])
+            assert_matches_type(DeploymentLogs, jig, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
