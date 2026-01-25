@@ -18,10 +18,8 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.jig import volume_create_params, volume_update_params
+from ....types.beta.jig.volume import Volume
 from ....types.beta.jig.volume_list_response import VolumeListResponse
-from ....types.beta.jig.volume_create_response import VolumeCreateResponse
-from ....types.beta.jig.volume_update_response import VolumeUpdateResponse
-from ....types.beta.jig.volume_retrieve_response import VolumeRetrieveResponse
 
 __all__ = ["VolumesResource", "AsyncVolumesResource"]
 
@@ -58,7 +56,7 @@ class VolumesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VolumeCreateResponse:
+    ) -> Volume:
         """
         Create a new volume to preload files in deployments
 
@@ -90,7 +88,7 @@ class VolumesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VolumeCreateResponse,
+            cast_to=Volume,
         )
 
     def retrieve(
@@ -103,7 +101,7 @@ class VolumesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VolumeRetrieveResponse:
+    ) -> Volume:
         """
         Retrieve details of a specific volume by its ID or name
 
@@ -123,7 +121,7 @@ class VolumesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VolumeRetrieveResponse,
+            cast_to=Volume,
         )
 
     def update(
@@ -139,7 +137,7 @@ class VolumesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VolumeUpdateResponse:
+    ) -> Volume:
         """
         Update an existing volume's configuration or contents
 
@@ -173,7 +171,7 @@ class VolumesResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VolumeUpdateResponse,
+            cast_to=Volume,
         )
 
     def list(
@@ -261,7 +259,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VolumeCreateResponse:
+    ) -> Volume:
         """
         Create a new volume to preload files in deployments
 
@@ -293,7 +291,7 @@ class AsyncVolumesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VolumeCreateResponse,
+            cast_to=Volume,
         )
 
     async def retrieve(
@@ -306,7 +304,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VolumeRetrieveResponse:
+    ) -> Volume:
         """
         Retrieve details of a specific volume by its ID or name
 
@@ -326,7 +324,7 @@ class AsyncVolumesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VolumeRetrieveResponse,
+            cast_to=Volume,
         )
 
     async def update(
@@ -342,7 +340,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> VolumeUpdateResponse:
+    ) -> Volume:
         """
         Update an existing volume's configuration or contents
 
@@ -376,7 +374,7 @@ class AsyncVolumesResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=VolumeUpdateResponse,
+            cast_to=Volume,
         )
 
     async def list(
