@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
+import time
 import shlex
 import shutil
 import subprocess
-import time
-from pathlib import Path
 from typing import Any, Optional
+from pathlib import Path
 
 import click
 from rich.pretty import pprint
@@ -17,14 +16,13 @@ from rich.pretty import pprint
 from together import Together
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
-    API_URL,
     DEBUG,
-    GENERATE_DOCKERFILE,
+    API_URL,
     REGISTRY_URL,
-    Config,
+    GENERATE_DOCKERFILE,
     State,
+    Config,
 )
-
 
 # --- Helper Functions ---
 
@@ -134,7 +132,7 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
 
-def _do_dockerfile(config: Config) -> None:
+def _dockerfile(config: Config) -> None:
     """Generate Dockerfile helper"""
     if not GENERATE_DOCKERFILE:
         click.echo("Set GENERATE_DOCKERFILE=1 to enable dockerfile generation")
@@ -214,8 +212,7 @@ def _ensure_username(client: Together, state: State) -> None:
 
 
 @click.command()
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-def init(config_path: str | None) -> None:
+def init() -> None:
     """Initialize jig configuration"""
     if (pyproject := Path("pyproject.toml")).exists():
         click.echo("pyproject.toml already exists")
@@ -249,7 +246,7 @@ gpu_count = 1
 def dockerfile(ctx: click.Context, config_path: str | None) -> None:
     """Generate Dockerfile"""
     config = Config.find(config_path)
-    _do_dockerfile(config)
+    _dockerfile(config)
 
 
 @click.command()
@@ -276,10 +273,10 @@ def build(ctx: click.Context, tag: str, config_path: str | None) -> None:
         ):
             msg = f"\N{INFORMATION SOURCE} {config._path} has changed, regenerating Dockerfile"
             click.echo(msg)
-            _do_dockerfile(config)
+            _dockerfile(config)
 
         if not dockerfile_path.exists():
-            _do_dockerfile(config)
+            _dockerfile(config)
 
     build_dir_worker_path = Path("./.sprocket.py")
     dst = Path(__file__).parent / "sprocket" / "sprocket.py"
@@ -311,10 +308,9 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     state = State.load(config._path.parent)
     _ensure_username(client, state)
 
-    api_key = os.getenv("TOGETHER_API_KEY", "")
     image = _get_image(state, config, tag)
 
-    login_cmd = f"echo {api_key} | docker login {REGISTRY_URL} --username user --password-stdin"
+    login_cmd = f"echo {client.api_key} | docker login {REGISTRY_URL} --username user --password-stdin"
     if subprocess.run(login_cmd, shell=True, capture_output=True).returncode != 0:
         raise RuntimeError("Registry login failed")
 
@@ -343,8 +339,6 @@ def deploy(
     config = Config.find(config_path)
     state = State.load(config._path.parent)
     _ensure_username(client, state)
-
-    api_key = os.getenv("TOGETHER_API_KEY", "")
 
     if existing_image:
         deployment_image = existing_image
@@ -381,7 +375,7 @@ def deploy(
     env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": API_URL})
 
     if "TOGETHER_API_KEY" not in state.secrets:
-        _set_secret(client, config, state, "TOGETHER_API_KEY", api_key, "Auth key for queue API")
+        _set_secret(client, config, state, "TOGETHER_API_KEY", client.api_key, "Auth key for queue API")
 
     for name, secret_id in state.secrets.items():
         env_vars.append({"name": name, "value_from_secret": secret_id})
