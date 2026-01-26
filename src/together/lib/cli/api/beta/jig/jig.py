@@ -433,15 +433,15 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
             click.echo("No logs available")
         return
 
-    # Stream logs
-    url = f"https://{API_URL}/v1/deployments/{config.model_name}/logs?follow=true"
+    # Stream logs using SDK streaming response
     try:
-        resp = client._client.get(url, timeout=None)
-        resp.raise_for_status()
-        for line in resp.iter_lines():
-            if line:
-                for log_line in json.loads(line).get("lines", []):
-                    click.echo(log_line)
+        with client.beta.jig.with_streaming_response.retrieve_logs(
+            config.model_name, extra_query={"follow": "true"}
+        ) as response:
+            for line in response.iter_lines():
+                if line:
+                    for log_line in json.loads(line).get("lines", []):
+                        click.echo(log_line)
     except KeyboardInterrupt:
         click.echo("\nStopped following logs")
     except Exception as e:
