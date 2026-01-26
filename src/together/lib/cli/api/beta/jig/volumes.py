@@ -450,6 +450,28 @@ def volumes_set(
     click.echo(f"\N{CHECK MARK} Volume '{name}' will be mounted at '{mount_path}' during deployment")
 
 
+@volumes.command("unset")
+@click.pass_context
+@click.option("--name", required=True, help="Volume name to remove from local state")
+@click.option("--config", "config_path", default=None, help="Configuration file path")
+@handle_api_errors("Volumes")
+def volumes_unset(
+    ctx: click.Context,
+    name: str,
+    config_path: str | None,
+) -> None:
+    """Remove volume from local deployment configuration (does not delete remote volume)"""
+    config = Config.find(config_path)
+    state = State.load(config._path.parent)
+
+    if name in state.volumes:
+        del state.volumes[name]
+        state.save()
+        click.echo(f"\N{CHECK MARK} Removed volume '{name}' from deployment configuration")
+    else:
+        click.echo(f"\N{CROSS MARK} Volume '{name}' is not configured for this deployment")
+
+
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
