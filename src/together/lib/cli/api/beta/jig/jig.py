@@ -435,9 +435,7 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(
-            config.model_name, extra_query={"follow": "true"}
-        ) as response:
+        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as response:
             for line in response.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
