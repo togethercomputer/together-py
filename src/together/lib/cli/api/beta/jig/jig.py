@@ -14,6 +14,7 @@ import click
 from rich.pretty import pprint
 
 from together import Together
+from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
@@ -132,16 +133,6 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
 
-def _dockerfile(config: Config) -> None:
-    """Generate Dockerfile helper"""
-    if not GENERATE_DOCKERFILE:
-        click.echo("Set GENERATE_DOCKERFILE=1 to enable dockerfile generation")
-    else:
-        with open(config.dockerfile, "w") as f:
-            f.write(_generate_dockerfile(config))
-        click.echo("\N{CHECK MARK} Generated Dockerfile")
-
-
 def _set_secret(client: Together, config: Config, state: State, name: str, value: str, description: str) -> None:
     """Set secret for the deployment"""
     deployment_secret_name = f"{config.model_name}-{name}"
@@ -246,7 +237,12 @@ gpu_count = 1
 def dockerfile(ctx: click.Context, config_path: str | None) -> None:
     """Generate Dockerfile"""
     config = Config.find(config_path)
-    _dockerfile(config)
+    if not GENERATE_DOCKERFILE:
+        click.echo("Set GENERATE_DOCKERFILE=1 to enable dockerfile generation")
+    else:
+        with open(config.dockerfile, "w") as f:
+            f.write(_generate_dockerfile(config))
+        click.echo("\N{CHECK MARK} Generated Dockerfile")
 
 
 @click.command()
@@ -273,10 +269,10 @@ def build(ctx: click.Context, tag: str, config_path: str | None) -> None:
         ):
             msg = f"\N{INFORMATION SOURCE} {config._path} has changed, regenerating Dockerfile"
             click.echo(msg)
-            _dockerfile(config)
+            ctx.invoke(dockerfile, config_path=config_path)
 
         if not dockerfile_path.exists():
-            _dockerfile(config)
+            ctx.invoke(dockerfile, config_path=config_path)
 
     build_dir_worker_path = Path("./.sprocket.py")
     dst = Path(__file__).parent / "sprocket" / "sprocket.py"
@@ -382,11 +378,11 @@ def deploy(
 
     deploy_data["environment_variables"] = env_vars
 
-    volumes_list = []
+    volumes = []
     for volume_name, mount_path in state.volumes.items():
-        volumes_list.append({"name": volume_name, "mount_path": mount_path})
-    if volumes_list:
-        deploy_data["volumes"] = volumes_list
+        volumes.append({"name": volume_name, "mount_path": mount_path})
+
+    deploy_data["volumes"] = volumes
 
     if DEBUG:
         pprint(deploy_data, indent_guides=False)
@@ -395,7 +391,7 @@ def deploy(
     try:
         response = client.beta.jig.update(config.model_name, **deploy_data)
         click.echo("\N{CHECK MARK} Updated deployment")
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo("\N{ROCKET} Creating new deployment")
             response = client.beta.jig.deploy(**deploy_data)

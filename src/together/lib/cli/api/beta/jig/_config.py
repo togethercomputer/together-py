@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
+import json
 from typing import Any, Optional
+from pathlib import Path
+from dataclasses import field, asdict, dataclass
 
 try:
     import tomllib
@@ -88,7 +88,7 @@ class DeployConfig:
 class Config:
     """Main configuration from jig.toml or pyproject.toml"""
 
-    model_name: Optional[str] = None
+    model_name: str = ""
     dockerfile: str = "Dockerfile"
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
