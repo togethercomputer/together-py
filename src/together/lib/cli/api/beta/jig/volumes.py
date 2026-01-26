@@ -18,8 +18,7 @@ except ImportError:
 
 from together import Together
 from together.lib.cli.api._utils import handle_api_errors
-
-from ._config import (
+from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     MAX_UPLOAD_RETRIES,
     MULTIPART_CHUNK_SIZE_MB,

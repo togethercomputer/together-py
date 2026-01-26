@@ -7,8 +7,7 @@ from rich.pretty import pprint
 
 from together import Together
 from together.lib.cli.api._utils import handle_api_errors
-
-from ._config import Config, State
+from together.lib.cli.api.beta.jig._config import Config, State
 
 
 @click.group()

@@ -2,7 +2,7 @@
 
 import click
 
-from .jig import (
+from together.lib.cli.api.beta.jig.jig import (
     init,
     logs,
     push,
@@ -16,8 +16,8 @@ from .jig import (
     queue_status,
     list_deployments,
 )
-from .secrets import secrets
-from .volumes import volumes
+from together.lib.cli.api.beta.jig.secrets import secrets
+from together.lib.cli.api.beta.jig.volumes import volumes
 
 
 @click.group()
