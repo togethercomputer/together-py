@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
-from pathlib import Path
+import asyncio
 from typing import Any, Callable, Coroutine
+from pathlib import Path
 
 import click
 import httpx
 from rich.pretty import pprint
+
+from together._exceptions import APIStatusError
 
 try:
     import aiofiles
@@ -21,11 +23,11 @@ from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     MAX_UPLOAD_RETRIES,
-    MULTIPART_CHUNK_SIZE_MB,
     MULTIPART_THRESHOLD_MB,
+    MULTIPART_CHUNK_SIZE_MB,
     UPLOAD_CONCURRENCY_LIMIT,
-    Config,
     State,
+    Config,
 )
 
 
@@ -373,7 +375,7 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
 
     try:
         client.beta.jig.volumes.retrieve(name)
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             raise ValueError(f"Volume '{name}' does not exist")
         raise
@@ -466,7 +468,7 @@ def volumes_delete(
     try:
         client.beta.jig.volumes.delete(name)
         click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
             return
@@ -492,7 +494,7 @@ def volumes_describe(
     try:
         response = client.beta.jig.volumes.retrieve(name)
         pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
             return

@@ -5,6 +5,7 @@ from __future__ import annotations
 import click
 
 from together import Together
+from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import State, Config
 
@@ -47,7 +48,7 @@ def secrets_set(
             value=value,
         )
         click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo("\N{ROCKET} Creating new secret")
             client.beta.jig.secrets.create(
@@ -87,7 +88,7 @@ def secrets_unset(
         client.beta.jig.secrets.delete(deployment_secret_name)
         click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from remote")
         deleted_remote = True
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             pass  # Not on remote, that's fine
         else:

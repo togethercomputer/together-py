@@ -146,7 +146,7 @@ def _set_secret(client: Together, config: Config, state: State, name: str, value
             value=value,
         )
         click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
-    except Exception as e:
+    except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo("\N{ROCKET} Creating new secret")
             client.beta.jig.secrets.create(
