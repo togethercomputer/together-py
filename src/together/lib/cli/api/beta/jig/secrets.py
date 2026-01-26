@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import click
-from rich.pretty import pprint
 
 from together import Together
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.cli.api.beta.jig._config import Config, State
+from together.lib.cli.api.beta.jig._config import State, Config
 
 
 @click.group()
@@ -37,13 +36,7 @@ def secrets_set(
     state = State.load(config._path.parent)
 
     deployment_secret_name = f"{config.model_name}-{name}"
-    secret_data = {
-        "name": deployment_secret_name,
-        "description": description,
-        "value": value,
-    }
 
-    # Try to get existing secret to determine if we should update
     try:
         client.beta.jig.secrets.retrieve(deployment_secret_name)
         # Secret exists, update it
@@ -55,9 +48,7 @@ def secrets_set(
         )
         click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
     except Exception as e:
-        # Check if it's a 404
         if hasattr(e, "status_code") and e.status_code == 404:
-            # Secret doesn't exist, create it
             click.echo("\N{ROCKET} Creating new secret")
             client.beta.jig.secrets.create(
                 name=deployment_secret_name,
@@ -82,15 +73,35 @@ def secrets_unset(
     name: str,
     config_path: str | None,
 ) -> None:
-    """Remove a secret from deployment configuration"""
+    """Remove a secret from both remote and local state"""
+    client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
-    if state.secrets.pop(name, ""):
+    deployment_secret_name = f"{config.model_name}-{name}"
+    deleted_remote = False
+    deleted_local = False
+
+    # Try to delete from remote
+    try:
+        client.beta.jig.secrets.delete(deployment_secret_name)
+        click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from remote")
+        deleted_remote = True
+    except Exception as e:
+        if hasattr(e, "status_code") and e.status_code == 404:
+            pass  # Not on remote, that's fine
+        else:
+            raise
+
+    # Remove from local state
+    if name in state.secrets:
+        del state.secrets[name]
         state.save()
-        click.echo("\N{CHECK MARK} Removed secret from deployment")
-    else:
-        click.echo(f"Secret {name} is not set")
+        click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
+        deleted_local = True
+
+    if not deleted_remote and not deleted_local:
+        click.echo(f"\N{CROSS MARK} Secret '{name}' not found (neither remote nor local)")
 
 
 @secrets.command("list")
@@ -101,53 +112,46 @@ def secrets_list(
     ctx: click.Context,
     config_path: str | None,
 ) -> None:
-    """List all secrets configured for deployment"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-
-    msg = f"\N{INFORMATION SOURCE} Following secrets are mapped to deployment {config.model_name}"
-    click.echo(msg)
-    for secret_name in state.secrets:
-        click.echo(f"  - Secret '{secret_name}'")
-
-
-@secrets.command("list-all")
-@click.pass_context
-@handle_api_errors("Secrets")
-def secrets_list_all(ctx: click.Context) -> None:
-    """List all secrets in the project"""
-    client: Together = ctx.obj
-    response = client.beta.jig.secrets.list()
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
-
-
-@secrets.command("delete")
-@click.pass_context
-@click.option("--name", required=True, help="Secret name to delete from server")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_delete(
-    ctx: click.Context,
-    name: str,
-    config_path: str | None,
-) -> None:
-    """Delete a secret from the server"""
+    """List all secrets with sync status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
-    deployment_secret_name = f"{config.model_name}-{name}"
+    prefix = f"{config.model_name}-"
 
-    try:
-        client.beta.jig.secrets.delete(deployment_secret_name)
-        click.echo(f"\N{CHECK MARK} Deleted secret '{name}'")
-    except Exception as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Secret '{name}' not found")
-            return
-        raise
+    # Get remote secrets for this deployment
+    remote_response = client.beta.jig.secrets.list()
+    remote_secrets: set[str] = set()
 
-    # Also remove from local state
-    if name in state.secrets:
-        del state.secrets[name]
-        state.save()
+    if hasattr(remote_response, "data") and remote_response.data:
+        for secret in remote_response.data:
+            secret_name = getattr(secret, "name", None)
+            if secret_name and secret_name.startswith(prefix):
+                # Strip prefix to get local name
+                remote_secrets.add(secret_name[len(prefix) :])
+
+    # Get local secrets
+    local_secrets = set(state.secrets.keys())
+
+    # Combine all secrets
+    all_secrets = local_secrets | remote_secrets
+
+    if not all_secrets:
+        click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{config.model_name}'")
+        return
+
+    click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{config.model_name}':")
+    click.echo()
+
+    for name in sorted(all_secrets):
+        in_local = name in local_secrets
+        in_remote = name in remote_secrets
+
+        if in_local and in_remote:
+            status = click.style("synced", fg="green")
+        elif in_local and not in_remote:
+            status = click.style("local only", fg="yellow")
+        else:  # in_remote and not in_local
+            status = click.style("remote only", fg="yellow")
+
+        click.echo(f"  - {name} [{status}]")
