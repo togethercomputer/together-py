@@ -192,7 +192,7 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
 def _ensure_username(client: Together, state: State) -> None:
     """Ensure username is set in state"""
     if not state.username:
-        response = client._client.get("/user/proof-data")
+        response = client._client.get(f"https://{API_URL}/api/user/proof-data", headers=client.auth_headers)
         response.raise_for_status()
         data = response.json()
         state.username = data["projectId"].lower()
@@ -528,8 +528,9 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
     config = Config.find(config_path)
 
     response = client._client.get(
-        "/internal/v1/queue/status",
+        f"https://{API_URL}/internal/v1/queue/status",
         params={"model": config.model_name},
+        headers=client.auth_headers,
     )
     response.raise_for_status()
     pprint(response.json(), indent_guides=False)
