@@ -3,14 +3,14 @@ from __future__ import annotations
 import re
 import json as json_lib
 from typing import Any, Dict, List
-from tabulate import tabulate
 
 import click
+from tabulate import tabulate
 
 from together import Together, omit
+from together.types import HardwareListResponse
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
-from together.types import HardwareListResponse
 
 
 @click.command()
@@ -26,7 +26,6 @@ from together.types import HardwareListResponse
 def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
     """List all available hardware options, optionally filtered by model."""
     hardware_options = client.hardware.list(model=model or omit)
-
 
     if available:
         hardware_options.data = [
@@ -45,16 +44,15 @@ def _format_hardware_options(hardware_options: HardwareListResponse, show_availa
     display_list: List[Dict[str, Any]] = []
 
     for hw in hardware_options.data:
-        data = ({
+        data = {
             "Hardware ID": hw.id,
-            "GPU": re.sub(r"\-\d+[a-zA-Z][a-zA-Z]$", "", hw.specs.gpu_type) if hw.specs and hw.specs.gpu_type else "N/A",
+            "GPU": re.sub(r"\-\d+[a-zA-Z][a-zA-Z]$", "", hw.specs.gpu_type)
+            if hw.specs and hw.specs.gpu_type
+            else "N/A",
             "Memory": f"{int(hw.specs.gpu_memory)}GB" if hw.specs else "N/A",
             "Count": hw.specs.gpu_count if hw.specs else "N/A",
-            "Price (per minute)": (
-                f"${hw.pricing.cents_per_minute / 100:.2f}"
-                if hw.pricing else "N/A"
-            ),
-        })
+            "Price (per minute)": (f"${hw.pricing.cents_per_minute / 100:.2f}" if hw.pricing else "N/A"),
+        }
 
         if show_availability:
             status_display = "—"
