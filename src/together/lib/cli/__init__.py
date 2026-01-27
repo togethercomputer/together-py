@@ -9,13 +9,16 @@ import httpx
 
 import together
 from together._version import __version__
+from together.lib.utils import log_debug
 from together._constants import DEFAULT_TIMEOUT
 from together._utils._logs import setup_logging
 from together.lib.cli.api.beta import beta
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
+from together.lib.cli._track_cli import CliTrackingEvents, track_cli
 from together.lib.cli.api.models import models
 from together.lib.cli.api.endpoints import endpoints
+from together.lib.cli.api.telemetry import telemetry
 from together.lib.cli.api.fine_tuning import fine_tuning
 
 
@@ -58,13 +61,13 @@ def main(
     debug: bool | None,
     max_retries: int | None,
 ) -> None:
-    """This is a sample CLI tool."""
+    """Together AI command-line interface."""
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()  # Must run this again here to allow the new logging configuration to take effect
 
     try:
-        ctx.obj = together.Together(
+        client = together.Together(
             api_key=api_key,
             base_url=base_url,
             timeout=timeout,
@@ -79,7 +82,7 @@ def main(
     # Instead we opt to create a dummy client and hook into any requests performed by the client. We take that moment to print the error and exit.
     except Exception as e:
         if "api_key" in str(e):
-            ctx.obj = together.Together(
+            client = together.Together(
                 api_key="0000000000000000000000000000000000000000",
                 base_url=base_url,
                 timeout=timeout,
@@ -98,12 +101,26 @@ def main(
                 click.secho(f"\nUsage: together --api-key <your-api-key> {invoked_command_name}", fg="yellow")
                 sys.exit(1)
 
-            ctx.obj._client.event_hooks["request"].append(block_requests_for_api_key)
-            return
+            client._client.event_hooks["request"].append(block_requests_for_api_key)
+        else:
+            raise e
 
-        raise e
+    # Wrap the client's httpx requests to track the parameters sent on api requests
+    def track_request(request: httpx.Request) -> None:
+        try:
+            track_cli(
+                CliTrackingEvents.ApiRequest,
+                {"url": str(request.url), "method": request.method, "body": request.content.decode("utf-8")},
+            )
+        except Exception as e:
+            log_debug("Error tracking api request", error=e)
+
+    client._client.event_hooks["request"].append(track_request)
+
+    ctx.obj = client
 
 
+main.add_command(telemetry)
 main.add_command(files)
 main.add_command(fine_tuning)
 main.add_command(models)
@@ -112,4 +129,12 @@ main.add_command(evals)
 main.add_command(beta)
 
 if __name__ == "__main__":
-    main()
+    # When running the script, call the command with standalone_mode=False
+    # to prevent Click's default top-level exception handling from suppressing
+    # your try/except block.
+    try:
+        main(standalone_mode=False)
+    except SystemExit as e:
+        # Re-raise SystemExit if it's not a success exit (code 0)
+        if e.code != 0:
+            raise

@@ -3,6 +3,7 @@ from rich import print_json
 
 from together import Together
 from together._utils._json import openapi_dumps
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 
 
@@ -31,6 +32,7 @@ from together.lib.cli.api._utils import handle_api_errors
     help="Output in JSON format",
 )
 @click.pass_context
+@auto_track_command("clusters storage create")
 @handle_api_errors("Clusters Storage")
 def create(ctx: click.Context, region: str, size_tib: int, volume_name: str, json: bool) -> None:
     """Create a storage volume"""

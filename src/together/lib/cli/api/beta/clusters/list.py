@@ -3,6 +3,7 @@ import json as json_lib
 import click
 
 from together import Together
+from together.lib.cli._track_cli import auto_track_command
 
 
 @click.command()
@@ -12,6 +13,7 @@ from together import Together
     help="Output in JSON format",
 )
 @click.pass_context
+@auto_track_command("clusters list")
 def list(ctx: click.Context, json: bool) -> None:
     """List clusters"""
     client: Together = ctx.obj

@@ -8,6 +8,7 @@ from rich import print, print_json
 
 from together import Together
 from together._utils._json import openapi_dumps
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
 
@@ -62,6 +63,7 @@ from together.types.beta.cluster_create_params import SharedVolume, ClusterCreat
 @click.option("--non-interactive", is_flag=True, default=False, help="Disable interactive mode")
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command("clusters create")
 def create(
     ctx: click.Context,
     name: str | None = None,

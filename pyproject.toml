@@ -25,6 +25,8 @@ dependencies = [
   "filelock>=3.13.1",
   "types-pyyaml>=6.0.12.20250915",
   "tomli>=2.0.0; python_version < '3.11'",
+  "py-machineid>=1.0.0",
+  "detect-agent>=0.1.0",
 ]
 
 requires-python = ">= 3.9"

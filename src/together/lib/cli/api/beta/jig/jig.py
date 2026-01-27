@@ -31,6 +31,7 @@ from click.exceptions import Exit
 
 from together import Together
 from together._exceptions import APIError, NotFoundError, AuthenticationError
+from together.lib.cli._track_cli import auto_track_command
 from together.types.beta.deployment import Deployment
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.api.beta.jig._uploader import Uploader
@@ -940,6 +941,7 @@ def _jig_command(f: Callable[..., Any]) -> click.Command:
 
 
 @jig.command()
+@auto_track_command("jig init")
 def init() -> None:
     """Initialize jig configuration"""
     if (pyproject := Path("pyproject.toml")).exists():
@@ -974,6 +976,7 @@ gpu_count = 1
 
 
 @_jig_command
+@auto_track_command("jig dockerfile")
 def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
     if not _dockerfile(jig.config):
@@ -994,6 +997,7 @@ def _build_options(f: Callable[..., Any]) -> Callable[..., Any]:
 
 @_jig_command
 @_build_options
+@auto_track_command("jig build")
 def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     """Build container image"""
     jig.build(tag, warmup, docker_args)
@@ -1001,6 +1005,7 @@ def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
 
 @_jig_command
 @_tag_option
+@auto_track_command("jig push")
 def push(jig: Jig, tag: str) -> None:
     """Push image to registry"""
     jig.push(tag)
@@ -1011,6 +1016,7 @@ def push(jig: Jig, tag: str) -> None:
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
+@auto_track_command("jig deploy")
 def deploy(
     jig: Jig,
     tag: str,
@@ -1026,6 +1032,7 @@ def deploy(
 
 @_jig_command
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
+@auto_track_command("jig status")
 def status(jig: Jig, json_output: bool = False) -> Any:
     """Get deployment status"""
     raw = jig.api.with_raw_response.retrieve(jig.name)
@@ -1035,6 +1042,7 @@ def status(jig: Jig, json_output: bool = False) -> Any:
 
 
 @_jig_command
+@auto_track_command("jig endpoint")
 def endpoint(jig: Jig) -> str:
     """Get deployment endpoint URL"""
     return f"https://api.together.ai/v1/deployment-request/{jig.name}"
@@ -1042,12 +1050,14 @@ def endpoint(jig: Jig) -> str:
 
 @_jig_command
 @click.option("--follow", is_flag=True, help="Follow log output")
+@auto_track_command("jig logs")
 def logs(jig: Jig, follow: bool) -> str | None:
     """Get deployment logs"""
     return jig.follow_logs() if follow else jig.logs()
 
 
 @_jig_command
+@auto_track_command("jig destroy")
 def destroy(jig: Jig) -> str:
     """Destroy deployment"""
     jig.api.destroy(jig.name)
@@ -1058,6 +1068,7 @@ def destroy(jig: Jig) -> str:
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
+@auto_track_command("jig submit")
 def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> None:
     """Submit a job to the deployment"""
     jig.submit(prompt, payload, watch)
@@ -1065,12 +1076,14 @@ def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> No
 
 @_jig_command
 @click.option("--request-id", required=True, help="Job request ID")
+@auto_track_command("jig job-status")
 def job_status(jig: Jig, request_id: str) -> Any:
     """Get status of a specific job"""
     return jig.api.queue.with_raw_response.retrieve(model=jig.name, request_id=request_id)
 
 
 @_jig_command
+@auto_track_command("jig queue-status")
 def queue_status(jig: Jig) -> Any:
     """Get queue metrics for the deployment"""
     return jig.api.queue.with_raw_response.metrics(model=jig.name)
@@ -1082,6 +1095,7 @@ def queue_status(jig: Jig) -> Any:
 # Eventually we should change this to output human text and json text.
 @click.option("--json", "_json_output", is_flag=True, help="Output raw JSON")
 @_command
+@auto_track_command("jig list")
 def list_deployments(jig: Jig, _json_output: bool) -> Any:
     """List all deployments"""
     return jig.api.with_raw_response.list()
@@ -1100,6 +1114,7 @@ def secrets() -> None:
 @click.option("--name", required=True, help="Secret name")
 @click.option("--value", required=True, help="Secret value")
 @click.option("--description", default="", help="Secret description")
+@auto_track_command("jig secrets set")
 def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
     """Set a secret (create or update)"""
     jig.set_secret(name, value, description)
@@ -1108,6 +1123,7 @@ def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
 @secrets.command("unset")
 @_command
 @click.option("--name", required=True, help="Secret name to remove")
+@auto_track_command("jig secrets unset")
 def secrets_unset(jig: Jig, name: str) -> None:
     """Remove a secret from local state"""
     jig.sync_secrets_from_deployment()
@@ -1121,6 +1137,7 @@ def secrets_unset(jig: Jig, name: str) -> None:
 
 @secrets.command("list")
 @_command
+@auto_track_command("jig secrets list")
 def secrets_list(jig: Jig) -> None:
     """List all secrets with sync status"""
     prefix = f"{jig.name}-"
@@ -1171,6 +1188,7 @@ _source_dir = click.Path(exists=True, file_okay=False, path_type=Path)
 @_command
 @_volume_name_option
 @click.option("--source", required=True, type=_source_dir, help="Source directory path")
+@auto_track_command("jig volumes create")
 def volumes_create(jig: Jig, name: str, source: Path) -> None:
     """Create a volume and upload files"""
     source_prefix = f"{name}/0"
@@ -1202,6 +1220,7 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
 @_command
 @_volume_name_option
 @click.option("--source", required=True, type=_source_dir, help="New source directory path")
+@auto_track_command("jig volumes update")
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
     """Update a volume and re-upload files"""
     try:
@@ -1223,6 +1242,7 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
 @volumes.command("delete")
 @_command
 @_volume_name_option
+@auto_track_command("jig volumes delete")
 def volumes_delete(jig: Jig, name: str) -> None:
     """Delete a volume"""
     try:
@@ -1235,6 +1255,7 @@ def volumes_delete(jig: Jig, name: str) -> None:
 @volumes.command("describe")
 @_command
 @_volume_name_option
+@auto_track_command("jig volumes describe")
 def volumes_describe(jig: Jig, name: str) -> Any:
     """Describe a volume"""
     try:
@@ -1245,6 +1266,7 @@ def volumes_describe(jig: Jig, name: str) -> Any:
 
 @volumes.command("list")
 @_command
+@auto_track_command("jig volumes list")
 def volumes_list(jig: Jig) -> Any:
     """List all volumes"""
     return jig.api.volumes.with_raw_response.list()
