@@ -75,34 +75,14 @@ def secrets_unset(
     config_path: str | None,
 ) -> None:
     """Remove a secret from both remote and local state"""
-    client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
-    deployment_secret_name = f"{config.model_name}-{name}"
-    deleted_remote = False
-    deleted_local = False
-
-    # Try to delete from remote
-    try:
-        client.beta.jig.secrets.delete(deployment_secret_name)
-        click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from remote")
-        deleted_remote = True
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            pass  # Not on remote, that's fine
-        else:
-            raise
-
-    # Remove from local state
-    if name in state.secrets:
-        del state.secrets[name]
+    if state.secrets.pop(name, ""):
         state.save()
         click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
-        deleted_local = True
-
-    if not deleted_remote and not deleted_local:
-        click.echo(f"\N{CROSS MARK} Secret '{name}' not found (neither remote nor local)")
+    else:
+        click.echo(f"\N{CROSS MARK} Secret '{name}' is not set")
 
 
 @secrets.command("list")
