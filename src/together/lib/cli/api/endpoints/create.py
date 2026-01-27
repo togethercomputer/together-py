@@ -124,8 +124,9 @@ def create(
             extra_query={"availability_zone": availability_zone or omit},
         )
     except APIError as e:
-        if "check the hardware api" in str(e.args[0]).lower() or "invalid hardware provided" in str(e.args[0]).lower():
-            print("Invalid hardware provided")
+        if "check the hardware api" in str(e.args[0]).lower() or "invalid hardware provided" in str(e.args[0]).lower() or "the selected configuration" in str(e.args[0]).lower():
+            click.secho("Invalid hardware selected.", fg="red", err=True)
+            click.echo("\nAvailable hardware options:")
             ctx.invoke(hardware, available=True, model=model, json=False)
             sys.exit(1)
         raise e
