@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-__all__ = ["QueueGetStatusParams"]
+__all__ = ["QueueRetrieveParams"]
 
 
-class QueueGetStatusParams(TypedDict, total=False):
+class QueueRetrieveParams(TypedDict, total=False):
     model: Required[str]
     """Model name"""
 

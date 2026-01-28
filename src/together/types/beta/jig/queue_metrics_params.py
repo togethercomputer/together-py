@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-__all__ = ["QueueGetMetricsParams"]
+__all__ = ["QueueMetricsParams"]
 
 
-class QueueGetMetricsParams(TypedDict, total=False):
+class QueueMetricsParams(TypedDict, total=False):
     model: Required[str]
     """Model name to get metrics for"""

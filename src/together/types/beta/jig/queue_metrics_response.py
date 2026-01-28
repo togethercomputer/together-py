@@ -3,6 +3,6 @@
 from typing import Dict
 from typing_extensions import TypeAlias
 
-__all__ = ["QueueGetMetricsResponse"]
+__all__ = ["QueueMetricsResponse"]
 
-QueueGetMetricsResponse: TypeAlias = Dict[str, object]
+QueueMetricsResponse: TypeAlias = Dict[str, object]
