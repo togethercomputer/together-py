@@ -293,21 +293,20 @@ from together.types import ModelObject, ModelListResponse, ModelUploadResponse
 
 Methods:
 
-- <code title="get /models">client.models.<a href="./src/together/resources/models.py">list</a>(\*\*<a href="src/together/types/model_list_params.py">params</a>) -> <a href="./src/together/types/model_list_response.py">ModelListResponse</a></code>
-- <code title="post /models">client.models.<a href="./src/together/resources/models.py">upload</a>(\*\*<a href="src/together/types/model_upload_params.py">params</a>) -> <a href="./src/together/types/model_upload_response.py">ModelUploadResponse</a></code>
+- <code title="get /models">client.models.<a href="./src/together/resources/models/models.py">list</a>(\*\*<a href="src/together/types/model_list_params.py">params</a>) -> <a href="./src/together/types/model_list_response.py">ModelListResponse</a></code>
+- <code title="post /models">client.models.<a href="./src/together/resources/models/models.py">upload</a>(\*\*<a href="src/together/types/model_upload_params.py">params</a>) -> <a href="./src/together/types/model_upload_response.py">ModelUploadResponse</a></code>
 
-# Jobs
+## Uploads
 
 Types:
 
 ```python
-from together.types import JobRetrieveResponse, JobListResponse
+from together.types.models import UploadStatusResponse
 ```
 
 Methods:
 
-- <code title="get /jobs/{jobId}">client.jobs.<a href="./src/together/resources/jobs.py">retrieve</a>(job_id) -> <a href="./src/together/types/job_retrieve_response.py">JobRetrieveResponse</a></code>
-- <code title="get /jobs">client.jobs.<a href="./src/together/resources/jobs.py">list</a>() -> <a href="./src/together/types/job_list_response.py">JobListResponse</a></code>
+- <code title="get /jobs/{jobId}">client.models.uploads.<a href="./src/together/resources/models/uploads.py">status</a>(job_id) -> <a href="./src/together/types/models/upload_status_response.py">UploadStatusResponse</a></code>
 
 # Endpoints
 
