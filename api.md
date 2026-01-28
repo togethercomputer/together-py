@@ -17,6 +17,26 @@ Methods:
 - <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
 - <code title="get /deployments/{id}/logs">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_logs</a>(id, \*\*<a href="src/together/types/beta/jig_retrieve_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_logs.py">DeploymentLogs</a></code>
 
+### Queue
+
+Types:
+
+```python
+from together.types.beta.jig import (
+    QueueCancelResponse,
+    QueueGetMetricsResponse,
+    QueueGetStatusResponse,
+    QueueSubmitResponse,
+)
+```
+
+Methods:
+
+- <code title="post /queue/cancel">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/jig/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_cancel_response.py">QueueCancelResponse</a></code>
+- <code title="get /queue/metrics">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">get_metrics</a>(\*\*<a href="src/together/types/beta/jig/queue_get_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_get_metrics_response.py">QueueGetMetricsResponse</a></code>
+- <code title="get /queue/status">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">get_status</a>(\*\*<a href="src/together/types/beta/jig/queue_get_status_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_get_status_response.py">QueueGetStatusResponse</a></code>
+- <code title="post /queue/submit">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">submit</a>(\*\*<a href="src/together/types/beta/jig/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_submit_response.py">QueueSubmitResponse</a></code>
+
 ### Volumes
 
 Types:
@@ -383,23 +403,3 @@ Methods:
 - <code title="get /evaluation/{id}">client.evals.<a href="./src/together/resources/evals.py">retrieve</a>(id) -> <a href="./src/together/types/evaluation_job.py">EvaluationJob</a></code>
 - <code title="get /evaluation">client.evals.<a href="./src/together/resources/evals.py">list</a>(\*\*<a href="src/together/types/eval_list_params.py">params</a>) -> <a href="./src/together/types/eval_list_response.py">EvalListResponse</a></code>
 - <code title="get /evaluation/{id}/status">client.evals.<a href="./src/together/resources/evals.py">status</a>(id) -> <a href="./src/together/types/eval_status_response.py">EvalStatusResponse</a></code>
-
-# Queue
-
-Types:
-
-```python
-from together.types import (
-    QueueCancelResponse,
-    QueueGetMetricsResponse,
-    QueueGetStatusResponse,
-    QueueSubmitResponse,
-)
-```
-
-Methods:
-
-- <code title="post /queue/cancel">client.queue.<a href="./src/together/resources/queue.py">cancel</a>(\*\*<a href="src/together/types/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/queue_cancel_response.py">QueueCancelResponse</a></code>
-- <code title="get /queue/metrics">client.queue.<a href="./src/together/resources/queue.py">get_metrics</a>(\*\*<a href="src/together/types/queue_get_metrics_params.py">params</a>) -> <a href="./src/together/types/queue_get_metrics_response.py">QueueGetMetricsResponse</a></code>
-- <code title="get /queue/status">client.queue.<a href="./src/together/resources/queue.py">get_status</a>(\*\*<a href="src/together/types/queue_get_status_params.py">params</a>) -> <a href="./src/together/types/queue_get_status_response.py">QueueGetStatusResponse</a></code>
-- <code title="post /queue/submit">client.queue.<a href="./src/together/resources/queue.py">submit</a>(\*\*<a href="src/together/types/queue_submit_params.py">params</a>) -> <a href="./src/together/types/queue_submit_response.py">QueueSubmitResponse</a></code>

@@ -6,22 +6,27 @@ from typing import Dict
 
 import httpx
 
-from ..types import queue_cancel_params, queue_submit_params, queue_get_status_params, queue_get_metrics_params
-from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from .._utils import maybe_transform, async_maybe_transform
-from .._compat import cached_property
-from .._resource import SyncAPIResource, AsyncAPIResource
-from .._response import (
+from ...._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from ...._utils import maybe_transform, async_maybe_transform
+from ...._compat import cached_property
+from ...._resource import SyncAPIResource, AsyncAPIResource
+from ...._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .._base_client import make_request_options
-from ..types.queue_cancel_response import QueueCancelResponse
-from ..types.queue_submit_response import QueueSubmitResponse
-from ..types.queue_get_status_response import QueueGetStatusResponse
-from ..types.queue_get_metrics_response import QueueGetMetricsResponse
+from ...._base_client import make_request_options
+from ....types.beta.jig import (
+    queue_cancel_params,
+    queue_submit_params,
+    queue_get_status_params,
+    queue_get_metrics_params,
+)
+from ....types.beta.jig.queue_cancel_response import QueueCancelResponse
+from ....types.beta.jig.queue_submit_response import QueueSubmitResponse
+from ....types.beta.jig.queue_get_status_response import QueueGetStatusResponse
+from ....types.beta.jig.queue_get_metrics_response import QueueGetMetricsResponse
 
 __all__ = ["QueueResource", "AsyncQueueResource"]
 
