@@ -40,7 +40,6 @@ if TYPE_CHECKING:
         audio,
         evals,
         files,
-        queue,
         images,
         models,
         rerank,
@@ -54,7 +53,6 @@ if TYPE_CHECKING:
     )
     from .resources.evals import EvalsResource, AsyncEvalsResource
     from .resources.files import FilesResource, AsyncFilesResource
-    from .resources.queue import QueueResource, AsyncQueueResource
     from .resources.images import ImagesResource, AsyncImagesResource
     from .resources.rerank import RerankResource, AsyncRerankResource
     from .resources.videos import VideosResource, AsyncVideosResource
@@ -230,12 +228,6 @@ class Together(SyncAPIClient):
         from .resources.evals import EvalsResource
 
         return EvalsResource(self)
-
-    @cached_property
-    def queue(self) -> QueueResource:
-        from .resources.queue import QueueResource
-
-        return QueueResource(self)
 
     @cached_property
     def with_raw_response(self) -> TogetherWithRawResponse:
@@ -503,12 +495,6 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncEvalsResource(self)
 
     @cached_property
-    def queue(self) -> AsyncQueueResource:
-        from .resources.queue import AsyncQueueResource
-
-        return AsyncQueueResource(self)
-
-    @cached_property
     def with_raw_response(self) -> AsyncTogetherWithRawResponse:
         return AsyncTogetherWithRawResponse(self)
 
@@ -719,12 +705,6 @@ class TogetherWithRawResponse:
 
         return EvalsResourceWithRawResponse(self._client.evals)
 
-    @cached_property
-    def queue(self) -> queue.QueueResourceWithRawResponse:
-        from .resources.queue import QueueResourceWithRawResponse
-
-        return QueueResourceWithRawResponse(self._client.queue)
-
 
 class AsyncTogetherWithRawResponse:
     _client: AsyncTogether
@@ -821,12 +801,6 @@ class AsyncTogetherWithRawResponse:
         from .resources.evals import AsyncEvalsResourceWithRawResponse
 
         return AsyncEvalsResourceWithRawResponse(self._client.evals)
-
-    @cached_property
-    def queue(self) -> queue.AsyncQueueResourceWithRawResponse:
-        from .resources.queue import AsyncQueueResourceWithRawResponse
-
-        return AsyncQueueResourceWithRawResponse(self._client.queue)
 
 
 class TogetherWithStreamedResponse:
@@ -925,12 +899,6 @@ class TogetherWithStreamedResponse:
 
         return EvalsResourceWithStreamingResponse(self._client.evals)
 
-    @cached_property
-    def queue(self) -> queue.QueueResourceWithStreamingResponse:
-        from .resources.queue import QueueResourceWithStreamingResponse
-
-        return QueueResourceWithStreamingResponse(self._client.queue)
-
 
 class AsyncTogetherWithStreamedResponse:
     _client: AsyncTogether
@@ -1027,12 +995,6 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.evals import AsyncEvalsResourceWithStreamingResponse
 
         return AsyncEvalsResourceWithStreamingResponse(self._client.evals)
-
-    @cached_property
-    def queue(self) -> queue.AsyncQueueResourceWithStreamingResponse:
-        from .resources.queue import AsyncQueueResourceWithStreamingResponse
-
-        return AsyncQueueResourceWithStreamingResponse(self._client.queue)
 
 
 Client = Together

@@ -40,14 +40,6 @@ from .files import (
     FilesResourceWithStreamingResponse,
     AsyncFilesResourceWithStreamingResponse,
 )
-from .queue import (
-    QueueResource,
-    AsyncQueueResource,
-    QueueResourceWithRawResponse,
-    AsyncQueueResourceWithRawResponse,
-    QueueResourceWithStreamingResponse,
-    AsyncQueueResourceWithStreamingResponse,
-)
 from .images import (
     ImagesResource,
     AsyncImagesResource,
@@ -220,10 +212,4 @@ __all__ = [
     "AsyncEvalsResourceWithRawResponse",
     "EvalsResourceWithStreamingResponse",
     "AsyncEvalsResourceWithStreamingResponse",
-    "QueueResource",
-    "AsyncQueueResource",
-    "QueueResourceWithRawResponse",
-    "AsyncQueueResourceWithRawResponse",
-    "QueueResourceWithStreamingResponse",
-    "AsyncQueueResourceWithStreamingResponse",
 ]
