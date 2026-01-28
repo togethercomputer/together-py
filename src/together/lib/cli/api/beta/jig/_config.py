@@ -19,15 +19,12 @@ except ImportError:
 TOGETHER_ENV = os.getenv("TOGETHER_ENV", "prod")
 if TOGETHER_ENV == "prod":
     API_URL = "api.together.ai"
-    REGISTRY_URL = "registry.together.xyz"
 elif TOGETHER_ENV == "qa":
     API_URL = "api.qa.together.ai"
-    REGISTRY_URL = "registry.t6r-ai.dev"
 elif TOGETHER_ENV == "dev":
     API_URL = os.getenv("TOGETHER_API_URL", "")
-    REGISTRY_URL = os.getenv("TOGETHER_REGISTRY_URL", "")
-    if not API_URL or not REGISTRY_URL:
-        print("ERROR: API_URL and REGISTRY_URL must be set in dev mode", file=sys.stderr)
+    if not API_URL:
+        print("ERROR: API_URL must be set in dev mode", file=sys.stderr)
         sys.exit(1)
 else:
     print(f"ERROR: unknown together env {TOGETHER_ENV}", file=sys.stderr)
@@ -156,7 +153,7 @@ class State:
     """Persistent state stored in .jig.json"""
 
     _config_dir: Path
-    username: Optional[str] = None
+    registry_base_path: Optional[str] = None
     secrets: dict[str, str] = field(default_factory=dict)
     volumes: dict[str, str] = field(default_factory=dict)
 

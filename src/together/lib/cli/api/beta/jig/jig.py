@@ -19,7 +19,6 @@ from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     API_URL,
-    REGISTRY_URL,
     GENERATE_DOCKERFILE,
     State,
     Config,
@@ -111,7 +110,7 @@ def _get_files_to_copy(config: Config) -> list[str]:
 
 def _get_image(state: State, config: Config, tag: str = "latest") -> str:
     """Get full image name"""
-    return f"{REGISTRY_URL}/{state.username}/{config.model_name}:{tag}"
+    return f"{state.registry_base_path}/{config.model_name}:{tag}"
 
 
 def _get_image_with_digest(state: State, config: Config, tag: str = "latest") -> str:
@@ -189,13 +188,13 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
             break
 
 
-def _ensure_username(client: Together, state: State) -> None:
-    """Ensure username is set in state"""
-    if not state.username:
-        response = client._client.get(f"https://{API_URL}/api/user/proof-data", headers=client.auth_headers)
+def _ensure_registry_base_path(client: Together, state: State) -> None:
+    """Ensure registry base path is set in state"""
+    if not state.registry_base_path:
+        response = client._client.get("/image-repositories/base-path")
         response.raise_for_status()
         data = response.json()
-        state.username = data["projectId"].lower()
+        state.registry_base_path = data["base-path"]
         state.save()
 
 
@@ -255,7 +254,7 @@ def build(ctx: click.Context, tag: str, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
-    _ensure_username(client, state)
+    _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
 
@@ -302,11 +301,12 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
-    _ensure_username(client, state)
+    _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
 
-    login_cmd = f"echo {client.api_key} | docker login {REGISTRY_URL} --username user --password-stdin"
+    registry = state.registry_base_path.split("/")[0]
+    login_cmd = f"echo {client.api_key} | docker login {registry} --username user --password-stdin"
     if subprocess.run(login_cmd, shell=True, capture_output=True).returncode != 0:
         raise RuntimeError("Registry login failed")
 
@@ -334,7 +334,7 @@ def deploy(
     client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
-    _ensure_username(client, state)
+    _ensure_registry_base_path(client, state)
 
     if existing_image:
         deployment_image = existing_image
