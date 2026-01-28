@@ -172,16 +172,13 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
     last_status = None
     while True:
         try:
-            # Use raw client request since this endpoint may not be in SDK
-            response = client._client.get(
-                f"/videos/status",
-                params={"request_id": request_id, "model": config.model_name},
+            response = client.beta.jig.queue.get_status(
+                model=config.model_name,
+                request_id=request_id,
             )
-            response.raise_for_status()
-            data = response.json()
-            current_status = data.get("status", "")
+            current_status = response.status
             if current_status != last_status:
-                pprint(data, indent_guides=False)
+                pprint(response.model_dump_json(), indent_guides=False)
                 last_status = current_status
 
             if current_status in ["done", "failed", "finished", "error"]:
@@ -485,23 +482,18 @@ def submit(
     if not prompt and not payload:
         raise click.UsageError("Either --prompt or --payload required")
 
-    request_data = {
-        "model": config.model_name,
-        "payload": json.loads(payload) if payload else {"prompt": prompt},
-        "priority": 1,
-    }
-
-    # Use raw client since this endpoint may not be in SDK
-    response = client._client.post("/videos/generations", json=request_data)
-    response.raise_for_status()
-    data = response.json()
+    response = client.beta.jig.queue.submit(
+        model=config.model_name,
+        payload=json.loads(payload) if payload else {"prompt": prompt},
+        priority=1,
+    )
 
     click.echo("\N{CHECK MARK} Submitted job")
-    pprint(data, indent_guides=False)
+    pprint(response.model_dump_json(), indent_guides=False)
 
-    if watch and "requestId" in data:
-        click.echo(f"\nWatching job {data['requestId']}...")
-        _watch_job_status(client, config, data["requestId"])
+    if watch and response.request_id:
+        click.echo(f"\nWatching job {response.request_id}...")
+        _watch_job_status(client, config, response.request_id)
 
 
 @click.command()
@@ -510,16 +502,15 @@ def submit(
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
 def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
-    """Get status of a specific video job"""
+    """Get status of a specific job"""
     client: Together = ctx.obj
     config = Config.find(config_path)
 
-    response = client._client.get(
-        "/videos/status",
-        params={"request_id": request_id, "model": config.model_name},
+    response = client.beta.jig.queue.get_status(
+        model=config.model_name,
+        request_id=request_id,
     )
-    response.raise_for_status()
-    pprint(response.json(), indent_guides=False)
+    pprint(response.model_dump_json(), indent_guides=False)
 
 
 @click.command()
@@ -527,17 +518,12 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
 def queue_status(ctx: click.Context, config_path: str | None) -> None:
-    """Get queue status for the deployment"""
+    """Get queue metrics for the deployment"""
     client: Together = ctx.obj
     config = Config.find(config_path)
 
-    response = client._client.get(
-        f"{_get_api_base_url(client)}/internal/v1/queue/status",
-        params={"model": config.model_name},
-        headers=client.auth_headers,
-    )
-    response.raise_for_status()
-    pprint(response.json(), indent_guides=False)
+    response = client.beta.jig.queue.get_metrics(model=config.model_name)
+    pprint(response, indent_guides=False)
 
 
 @click.command("list")
