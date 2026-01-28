@@ -233,10 +233,9 @@ gpu_count = 1
 
 
 @click.command()
-@click.pass_context
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def dockerfile(ctx: click.Context, config_path: str | None) -> None:
+def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
     config = Config.find(config_path)
     if not GENERATE_DOCKERFILE:
