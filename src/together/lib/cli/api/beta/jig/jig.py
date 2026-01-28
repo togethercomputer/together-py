@@ -9,6 +9,7 @@ import shutil
 import subprocess
 from typing import Any, Optional
 from pathlib import Path
+from urllib.parse import urlparse
 
 import click
 from rich.pretty import pprint
@@ -18,13 +19,18 @@ from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
-    API_URL,
     GENERATE_DOCKERFILE,
     State,
     Config,
 )
 
 # --- Helper Functions ---
+
+
+def _get_api_base_url(client: Together) -> str:
+    """Extract base URL (scheme://host) from client, stripping any path like /v1"""
+    parsed = urlparse(str(client.base_url))
+    return f"{parsed.scheme}://{parsed.netloc}"
 
 
 def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
@@ -368,7 +374,7 @@ def deploy(
         deploy_data["command"] = config.deploy.command
 
     env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
-    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": API_URL})
+    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
 
     if "TOGETHER_API_KEY" not in state.secrets:
         _set_secret(client, config, state, "TOGETHER_API_KEY", client.api_key, "Auth key for queue API")
@@ -526,7 +532,7 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
     config = Config.find(config_path)
 
     response = client._client.get(
-        f"https://{API_URL}/internal/v1/queue/status",
+        f"{_get_api_base_url(client)}/internal/v1/queue/status",
         params={"model": config.model_name},
         headers=client.auth_headers,
     )

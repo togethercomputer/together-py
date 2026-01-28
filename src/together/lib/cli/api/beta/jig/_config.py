@@ -16,20 +16,6 @@ except ImportError:
 
 # --- Environment Configuration ---
 
-TOGETHER_ENV = os.getenv("TOGETHER_ENV", "prod")
-if TOGETHER_ENV == "prod":
-    API_URL = "api.together.ai"
-elif TOGETHER_ENV == "qa":
-    API_URL = "api.qa.together.ai"
-elif TOGETHER_ENV == "dev":
-    API_URL = os.getenv("TOGETHER_API_URL", "")
-    if not API_URL:
-        print("ERROR: API_URL must be set in dev mode", file=sys.stderr)
-        sys.exit(1)
-else:
-    print(f"ERROR: unknown together env {TOGETHER_ENV}", file=sys.stderr)
-    sys.exit(1)
-
 GENERATE_DOCKERFILE = os.getenv("GENERATE_DOCKERFILE", "0") != "0"
 DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
