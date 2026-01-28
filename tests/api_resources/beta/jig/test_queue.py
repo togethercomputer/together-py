@@ -12,8 +12,8 @@ from tests.utils import assert_matches_type
 from together.types.beta.jig import (
     QueueCancelResponse,
     QueueSubmitResponse,
-    QueueGetStatusResponse,
-    QueueGetMetricsResponse,
+    QueueMetricsResponse,
+    QueueRetrieveResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -21,6 +21,40 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 class TestQueue:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
+
+    @parametrize
+    def test_method_retrieve(self, client: Together) -> None:
+        queue = client.beta.jig.queue.retrieve(
+            model="model",
+            request_id="request_id",
+        )
+        assert_matches_type(QueueRetrieveResponse, queue, path=["response"])
+
+    @parametrize
+    def test_raw_response_retrieve(self, client: Together) -> None:
+        response = client.beta.jig.queue.with_raw_response.retrieve(
+            model="model",
+            request_id="request_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        queue = response.parse()
+        assert_matches_type(QueueRetrieveResponse, queue, path=["response"])
+
+    @parametrize
+    def test_streaming_response_retrieve(self, client: Together) -> None:
+        with client.beta.jig.queue.with_streaming_response.retrieve(
+            model="model",
+            request_id="request_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            queue = response.parse()
+            assert_matches_type(QueueRetrieveResponse, queue, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
 
     @parametrize
     def test_method_cancel(self, client: Together) -> None:
@@ -57,67 +91,33 @@ class TestQueue:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    def test_method_get_metrics(self, client: Together) -> None:
-        queue = client.beta.jig.queue.get_metrics(
+    def test_method_metrics(self, client: Together) -> None:
+        queue = client.beta.jig.queue.metrics(
             model="model",
         )
-        assert_matches_type(QueueGetMetricsResponse, queue, path=["response"])
+        assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
     @parametrize
-    def test_raw_response_get_metrics(self, client: Together) -> None:
-        response = client.beta.jig.queue.with_raw_response.get_metrics(
+    def test_raw_response_metrics(self, client: Together) -> None:
+        response = client.beta.jig.queue.with_raw_response.metrics(
             model="model",
         )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         queue = response.parse()
-        assert_matches_type(QueueGetMetricsResponse, queue, path=["response"])
+        assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
     @parametrize
-    def test_streaming_response_get_metrics(self, client: Together) -> None:
-        with client.beta.jig.queue.with_streaming_response.get_metrics(
+    def test_streaming_response_metrics(self, client: Together) -> None:
+        with client.beta.jig.queue.with_streaming_response.metrics(
             model="model",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             queue = response.parse()
-            assert_matches_type(QueueGetMetricsResponse, queue, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    def test_method_get_status(self, client: Together) -> None:
-        queue = client.beta.jig.queue.get_status(
-            model="model",
-            request_id="request_id",
-        )
-        assert_matches_type(QueueGetStatusResponse, queue, path=["response"])
-
-    @parametrize
-    def test_raw_response_get_status(self, client: Together) -> None:
-        response = client.beta.jig.queue.with_raw_response.get_status(
-            model="model",
-            request_id="request_id",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        queue = response.parse()
-        assert_matches_type(QueueGetStatusResponse, queue, path=["response"])
-
-    @parametrize
-    def test_streaming_response_get_status(self, client: Together) -> None:
-        with client.beta.jig.queue.with_streaming_response.get_status(
-            model="model",
-            request_id="request_id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            queue = response.parse()
-            assert_matches_type(QueueGetStatusResponse, queue, path=["response"])
+            assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -172,6 +172,40 @@ class TestAsyncQueue:
     )
 
     @parametrize
+    async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
+        queue = await async_client.beta.jig.queue.retrieve(
+            model="model",
+            request_id="request_id",
+        )
+        assert_matches_type(QueueRetrieveResponse, queue, path=["response"])
+
+    @parametrize
+    async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.jig.queue.with_raw_response.retrieve(
+            model="model",
+            request_id="request_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        queue = await response.parse()
+        assert_matches_type(QueueRetrieveResponse, queue, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.jig.queue.with_streaming_response.retrieve(
+            model="model",
+            request_id="request_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            queue = await response.parse()
+            assert_matches_type(QueueRetrieveResponse, queue, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
     async def test_method_cancel(self, async_client: AsyncTogether) -> None:
         queue = await async_client.beta.jig.queue.cancel(
             model="model",
@@ -206,67 +240,33 @@ class TestAsyncQueue:
         assert cast(Any, response.is_closed) is True
 
     @parametrize
-    async def test_method_get_metrics(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.get_metrics(
+    async def test_method_metrics(self, async_client: AsyncTogether) -> None:
+        queue = await async_client.beta.jig.queue.metrics(
             model="model",
         )
-        assert_matches_type(QueueGetMetricsResponse, queue, path=["response"])
+        assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
     @parametrize
-    async def test_raw_response_get_metrics(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.jig.queue.with_raw_response.get_metrics(
+    async def test_raw_response_metrics(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.jig.queue.with_raw_response.metrics(
             model="model",
         )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         queue = await response.parse()
-        assert_matches_type(QueueGetMetricsResponse, queue, path=["response"])
+        assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
     @parametrize
-    async def test_streaming_response_get_metrics(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.jig.queue.with_streaming_response.get_metrics(
+    async def test_streaming_response_metrics(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.jig.queue.with_streaming_response.metrics(
             model="model",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             queue = await response.parse()
-            assert_matches_type(QueueGetMetricsResponse, queue, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    async def test_method_get_status(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.get_status(
-            model="model",
-            request_id="request_id",
-        )
-        assert_matches_type(QueueGetStatusResponse, queue, path=["response"])
-
-    @parametrize
-    async def test_raw_response_get_status(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.jig.queue.with_raw_response.get_status(
-            model="model",
-            request_id="request_id",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        queue = await response.parse()
-        assert_matches_type(QueueGetStatusResponse, queue, path=["response"])
-
-    @parametrize
-    async def test_streaming_response_get_status(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.jig.queue.with_streaming_response.get_status(
-            model="model",
-            request_id="request_id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            queue = await response.parse()
-            assert_matches_type(QueueGetStatusResponse, queue, path=["response"])
+            assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

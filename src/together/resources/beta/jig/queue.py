@@ -17,16 +17,11 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.jig import (
-    queue_cancel_params,
-    queue_submit_params,
-    queue_get_status_params,
-    queue_get_metrics_params,
-)
+from ....types.beta.jig import queue_cancel_params, queue_submit_params, queue_metrics_params, queue_retrieve_params
 from ....types.beta.jig.queue_cancel_response import QueueCancelResponse
 from ....types.beta.jig.queue_submit_response import QueueSubmitResponse
-from ....types.beta.jig.queue_get_status_response import QueueGetStatusResponse
-from ....types.beta.jig.queue_get_metrics_response import QueueGetMetricsResponse
+from ....types.beta.jig.queue_metrics_response import QueueMetricsResponse
+from ....types.beta.jig.queue_retrieve_response import QueueRetrieveResponse
 
 __all__ = ["QueueResource", "AsyncQueueResource"]
 
@@ -50,6 +45,52 @@ class QueueResource(SyncAPIResource):
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
         return QueueResourceWithStreamingResponse(self)
+
+    def retrieve(
+        self,
+        *,
+        model: str,
+        request_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> QueueRetrieveResponse:
+        """
+        Check the status of a job using request_id and model query parameters.
+
+        Args:
+          model: Model name
+
+          request_id: Request ID
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._get(
+            "/queue/status",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "model": model,
+                        "request_id": request_id,
+                    },
+                    queue_retrieve_params.QueueRetrieveParams,
+                ),
+            ),
+            cast_to=QueueRetrieveResponse,
+        )
 
     def cancel(
         self,
@@ -92,7 +133,7 @@ class QueueResource(SyncAPIResource):
             cast_to=QueueCancelResponse,
         )
 
-    def get_metrics(
+    def metrics(
         self,
         *,
         model: str,
@@ -102,7 +143,7 @@ class QueueResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> QueueGetMetricsResponse:
+    ) -> QueueMetricsResponse:
         """
         Get the current queue statistics including pending and running job counts.
 
@@ -124,55 +165,9 @@ class QueueResource(SyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=maybe_transform({"model": model}, queue_get_metrics_params.QueueGetMetricsParams),
+                query=maybe_transform({"model": model}, queue_metrics_params.QueueMetricsParams),
             ),
-            cast_to=QueueGetMetricsResponse,
-        )
-
-    def get_status(
-        self,
-        *,
-        model: str,
-        request_id: str,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> QueueGetStatusResponse:
-        """
-        Check the status of a job using request_id and model query parameters.
-
-        Args:
-          model: Model name
-
-          request_id: Request ID
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return self._get(
-            "/queue/status",
-            options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=maybe_transform(
-                    {
-                        "model": model,
-                        "request_id": request_id,
-                    },
-                    queue_get_status_params.QueueGetStatusParams,
-                ),
-            ),
-            cast_to=QueueGetStatusResponse,
+            cast_to=QueueMetricsResponse,
         )
 
     def submit(
@@ -243,6 +238,52 @@ class AsyncQueueResource(AsyncAPIResource):
         """
         return AsyncQueueResourceWithStreamingResponse(self)
 
+    async def retrieve(
+        self,
+        *,
+        model: str,
+        request_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> QueueRetrieveResponse:
+        """
+        Check the status of a job using request_id and model query parameters.
+
+        Args:
+          model: Model name
+
+          request_id: Request ID
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._get(
+            "/queue/status",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {
+                        "model": model,
+                        "request_id": request_id,
+                    },
+                    queue_retrieve_params.QueueRetrieveParams,
+                ),
+            ),
+            cast_to=QueueRetrieveResponse,
+        )
+
     async def cancel(
         self,
         *,
@@ -284,7 +325,7 @@ class AsyncQueueResource(AsyncAPIResource):
             cast_to=QueueCancelResponse,
         )
 
-    async def get_metrics(
+    async def metrics(
         self,
         *,
         model: str,
@@ -294,7 +335,7 @@ class AsyncQueueResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> QueueGetMetricsResponse:
+    ) -> QueueMetricsResponse:
         """
         Get the current queue statistics including pending and running job counts.
 
@@ -316,55 +357,9 @@ class AsyncQueueResource(AsyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=await async_maybe_transform({"model": model}, queue_get_metrics_params.QueueGetMetricsParams),
+                query=await async_maybe_transform({"model": model}, queue_metrics_params.QueueMetricsParams),
             ),
-            cast_to=QueueGetMetricsResponse,
-        )
-
-    async def get_status(
-        self,
-        *,
-        model: str,
-        request_id: str,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> QueueGetStatusResponse:
-        """
-        Check the status of a job using request_id and model query parameters.
-
-        Args:
-          model: Model name
-
-          request_id: Request ID
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        return await self._get(
-            "/queue/status",
-            options=make_request_options(
-                extra_headers=extra_headers,
-                extra_query=extra_query,
-                extra_body=extra_body,
-                timeout=timeout,
-                query=await async_maybe_transform(
-                    {
-                        "model": model,
-                        "request_id": request_id,
-                    },
-                    queue_get_status_params.QueueGetStatusParams,
-                ),
-            ),
-            cast_to=QueueGetStatusResponse,
+            cast_to=QueueMetricsResponse,
         )
 
     async def submit(
@@ -419,14 +414,14 @@ class QueueResourceWithRawResponse:
     def __init__(self, queue: QueueResource) -> None:
         self._queue = queue
 
+        self.retrieve = to_raw_response_wrapper(
+            queue.retrieve,
+        )
         self.cancel = to_raw_response_wrapper(
             queue.cancel,
         )
-        self.get_metrics = to_raw_response_wrapper(
-            queue.get_metrics,
-        )
-        self.get_status = to_raw_response_wrapper(
-            queue.get_status,
+        self.metrics = to_raw_response_wrapper(
+            queue.metrics,
         )
         self.submit = to_raw_response_wrapper(
             queue.submit,
@@ -437,14 +432,14 @@ class AsyncQueueResourceWithRawResponse:
     def __init__(self, queue: AsyncQueueResource) -> None:
         self._queue = queue
 
+        self.retrieve = async_to_raw_response_wrapper(
+            queue.retrieve,
+        )
         self.cancel = async_to_raw_response_wrapper(
             queue.cancel,
         )
-        self.get_metrics = async_to_raw_response_wrapper(
-            queue.get_metrics,
-        )
-        self.get_status = async_to_raw_response_wrapper(
-            queue.get_status,
+        self.metrics = async_to_raw_response_wrapper(
+            queue.metrics,
         )
         self.submit = async_to_raw_response_wrapper(
             queue.submit,
@@ -455,14 +450,14 @@ class QueueResourceWithStreamingResponse:
     def __init__(self, queue: QueueResource) -> None:
         self._queue = queue
 
+        self.retrieve = to_streamed_response_wrapper(
+            queue.retrieve,
+        )
         self.cancel = to_streamed_response_wrapper(
             queue.cancel,
         )
-        self.get_metrics = to_streamed_response_wrapper(
-            queue.get_metrics,
-        )
-        self.get_status = to_streamed_response_wrapper(
-            queue.get_status,
+        self.metrics = to_streamed_response_wrapper(
+            queue.metrics,
         )
         self.submit = to_streamed_response_wrapper(
             queue.submit,
@@ -473,14 +468,14 @@ class AsyncQueueResourceWithStreamingResponse:
     def __init__(self, queue: AsyncQueueResource) -> None:
         self._queue = queue
 
+        self.retrieve = async_to_streamed_response_wrapper(
+            queue.retrieve,
+        )
         self.cancel = async_to_streamed_response_wrapper(
             queue.cancel,
         )
-        self.get_metrics = async_to_streamed_response_wrapper(
-            queue.get_metrics,
-        )
-        self.get_status = async_to_streamed_response_wrapper(
-            queue.get_status,
+        self.metrics = async_to_streamed_response_wrapper(
+            queue.metrics,
         )
         self.submit = async_to_streamed_response_wrapper(
             queue.submit,

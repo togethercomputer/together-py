@@ -4,10 +4,10 @@ from typing import Dict, List, Optional
 
 from ...._models import BaseModel
 
-__all__ = ["QueueGetStatusResponse"]
+__all__ = ["QueueRetrieveResponse"]
 
 
-class QueueGetStatusResponse(BaseModel):
+class QueueRetrieveResponse(BaseModel):
     claimed_at: Optional[str] = None
 
     created_at: Optional[str] = None
