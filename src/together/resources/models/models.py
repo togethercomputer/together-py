@@ -6,25 +6,37 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import model_list_params, model_upload_params
-from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from .._utils import maybe_transform, async_maybe_transform
-from .._compat import cached_property
-from .._resource import SyncAPIResource, AsyncAPIResource
-from .._response import (
+from ...types import model_list_params, model_upload_params
+from .uploads import (
+    UploadsResource,
+    AsyncUploadsResource,
+    UploadsResourceWithRawResponse,
+    AsyncUploadsResourceWithRawResponse,
+    UploadsResourceWithStreamingResponse,
+    AsyncUploadsResourceWithStreamingResponse,
+)
+from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from ..._utils import maybe_transform, async_maybe_transform
+from ..._compat import cached_property
+from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .._base_client import make_request_options
-from ..types.model_list_response import ModelListResponse
-from ..types.model_upload_response import ModelUploadResponse
+from ..._base_client import make_request_options
+from ...types.model_list_response import ModelListResponse
+from ...types.model_upload_response import ModelUploadResponse
 
 __all__ = ["ModelsResource", "AsyncModelsResource"]
 
 
 class ModelsResource(SyncAPIResource):
+    @cached_property
+    def uploads(self) -> UploadsResource:
+        return UploadsResource(self._client)
+
     @cached_property
     def with_raw_response(self) -> ModelsResourceWithRawResponse:
         """
@@ -148,6 +160,10 @@ class ModelsResource(SyncAPIResource):
 
 
 class AsyncModelsResource(AsyncAPIResource):
+    @cached_property
+    def uploads(self) -> AsyncUploadsResource:
+        return AsyncUploadsResource(self._client)
+
     @cached_property
     def with_raw_response(self) -> AsyncModelsResourceWithRawResponse:
         """
@@ -281,6 +297,10 @@ class ModelsResourceWithRawResponse:
             models.upload,
         )
 
+    @cached_property
+    def uploads(self) -> UploadsResourceWithRawResponse:
+        return UploadsResourceWithRawResponse(self._models.uploads)
+
 
 class AsyncModelsResourceWithRawResponse:
     def __init__(self, models: AsyncModelsResource) -> None:
@@ -292,6 +312,10 @@ class AsyncModelsResourceWithRawResponse:
         self.upload = async_to_raw_response_wrapper(
             models.upload,
         )
+
+    @cached_property
+    def uploads(self) -> AsyncUploadsResourceWithRawResponse:
+        return AsyncUploadsResourceWithRawResponse(self._models.uploads)
 
 
 class ModelsResourceWithStreamingResponse:
@@ -305,6 +329,10 @@ class ModelsResourceWithStreamingResponse:
             models.upload,
         )
 
+    @cached_property
+    def uploads(self) -> UploadsResourceWithStreamingResponse:
+        return UploadsResourceWithStreamingResponse(self._models.uploads)
+
 
 class AsyncModelsResourceWithStreamingResponse:
     def __init__(self, models: AsyncModelsResource) -> None:
@@ -316,3 +344,7 @@ class AsyncModelsResourceWithStreamingResponse:
         self.upload = async_to_streamed_response_wrapper(
             models.upload,
         )
+
+    @cached_property
+    def uploads(self) -> AsyncUploadsResourceWithStreamingResponse:
+        return AsyncUploadsResourceWithStreamingResponse(self._models.uploads)

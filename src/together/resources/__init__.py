@@ -16,14 +16,6 @@ from .chat import (
     ChatResourceWithStreamingResponse,
     AsyncChatResourceWithStreamingResponse,
 )
-from .jobs import (
-    JobsResource,
-    AsyncJobsResource,
-    JobsResourceWithRawResponse,
-    AsyncJobsResourceWithRawResponse,
-    JobsResourceWithStreamingResponse,
-    AsyncJobsResourceWithStreamingResponse,
-)
 from .audio import (
     AudioResource,
     AsyncAudioResource,
@@ -212,12 +204,6 @@ __all__ = [
     "AsyncModelsResourceWithRawResponse",
     "ModelsResourceWithStreamingResponse",
     "AsyncModelsResourceWithStreamingResponse",
-    "JobsResource",
-    "AsyncJobsResource",
-    "JobsResourceWithRawResponse",
-    "AsyncJobsResourceWithRawResponse",
-    "JobsResourceWithStreamingResponse",
-    "AsyncJobsResourceWithStreamingResponse",
     "EndpointsResource",
     "AsyncEndpointsResource",
     "EndpointsResourceWithRawResponse",

@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from .resources import (
         beta,
         chat,
-        jobs,
         audio,
         evals,
         files,
@@ -51,12 +50,10 @@ if TYPE_CHECKING:
         fine_tuning,
         code_interpreter,
     )
-    from .resources.jobs import JobsResource, AsyncJobsResource
     from .resources.evals import EvalsResource, AsyncEvalsResource
     from .resources.files import FilesResource, AsyncFilesResource
     from .resources.queue import QueueResource, AsyncQueueResource
     from .resources.images import ImagesResource, AsyncImagesResource
-    from .resources.models import ModelsResource, AsyncModelsResource
     from .resources.rerank import RerankResource, AsyncRerankResource
     from .resources.videos import VideosResource, AsyncVideosResource
     from .resources.batches import BatchesResource, AsyncBatchesResource
@@ -68,6 +65,7 @@ if TYPE_CHECKING:
     from .resources.audio.audio import AudioResource, AsyncAudioResource
     from .resources.completions import CompletionsResource, AsyncCompletionsResource
     from .resources.fine_tuning import FineTuningResource, AsyncFineTuningResource
+    from .resources.models.models import ModelsResource, AsyncModelsResource
     from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
 __all__ = [
@@ -205,12 +203,6 @@ class Together(SyncAPIClient):
         from .resources.models import ModelsResource
 
         return ModelsResource(self)
-
-    @cached_property
-    def jobs(self) -> JobsResource:
-        from .resources.jobs import JobsResource
-
-        return JobsResource(self)
 
     @cached_property
     def endpoints(self) -> EndpointsResource:
@@ -488,12 +480,6 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncModelsResource(self)
 
     @cached_property
-    def jobs(self) -> AsyncJobsResource:
-        from .resources.jobs import AsyncJobsResource
-
-        return AsyncJobsResource(self)
-
-    @cached_property
     def endpoints(self) -> AsyncEndpointsResource:
         from .resources.endpoints import AsyncEndpointsResource
 
@@ -717,12 +703,6 @@ class TogetherWithRawResponse:
         return ModelsResourceWithRawResponse(self._client.models)
 
     @cached_property
-    def jobs(self) -> jobs.JobsResourceWithRawResponse:
-        from .resources.jobs import JobsResourceWithRawResponse
-
-        return JobsResourceWithRawResponse(self._client.jobs)
-
-    @cached_property
     def endpoints(self) -> endpoints.EndpointsResourceWithRawResponse:
         from .resources.endpoints import EndpointsResourceWithRawResponse
 
@@ -830,12 +810,6 @@ class AsyncTogetherWithRawResponse:
         from .resources.models import AsyncModelsResourceWithRawResponse
 
         return AsyncModelsResourceWithRawResponse(self._client.models)
-
-    @cached_property
-    def jobs(self) -> jobs.AsyncJobsResourceWithRawResponse:
-        from .resources.jobs import AsyncJobsResourceWithRawResponse
-
-        return AsyncJobsResourceWithRawResponse(self._client.jobs)
 
     @cached_property
     def endpoints(self) -> endpoints.AsyncEndpointsResourceWithRawResponse:
@@ -947,12 +921,6 @@ class TogetherWithStreamedResponse:
         return ModelsResourceWithStreamingResponse(self._client.models)
 
     @cached_property
-    def jobs(self) -> jobs.JobsResourceWithStreamingResponse:
-        from .resources.jobs import JobsResourceWithStreamingResponse
-
-        return JobsResourceWithStreamingResponse(self._client.jobs)
-
-    @cached_property
     def endpoints(self) -> endpoints.EndpointsResourceWithStreamingResponse:
         from .resources.endpoints import EndpointsResourceWithStreamingResponse
 
@@ -1060,12 +1028,6 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.models import AsyncModelsResourceWithStreamingResponse
 
         return AsyncModelsResourceWithStreamingResponse(self._client.models)
-
-    @cached_property
-    def jobs(self) -> jobs.AsyncJobsResourceWithStreamingResponse:
-        from .resources.jobs import AsyncJobsResourceWithStreamingResponse
-
-        return AsyncJobsResourceWithStreamingResponse(self._client.jobs)
 
     @cached_property
     def endpoints(self) -> endpoints.AsyncEndpointsResourceWithStreamingResponse:
