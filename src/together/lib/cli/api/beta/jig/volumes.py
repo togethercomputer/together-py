@@ -216,6 +216,7 @@ async def _upload_file_simple(
         response = client._client.post(
             "/storage/upload-request",
             json={"filename": remote_path},
+            headers=client.auth_headers,
         )
         response.raise_for_status()
         upload_data = response.json()
@@ -253,6 +254,7 @@ async def _upload_file_multipart(
     response = client._client.post(
         "/storage/multipart/init",
         json={"filename": remote_path, "parts_count": parts_count},
+        headers=client.auth_headers,
     )
     response.raise_for_status()
     init_data = response.json()
@@ -271,6 +273,7 @@ async def _upload_file_multipart(
                 "upload_id": upload_id,
                 "parts": completed_parts,
             },
+            headers=client.auth_headers,
         )
 
         await on_complete(0, remote_path, True)
@@ -279,6 +282,7 @@ async def _upload_file_multipart(
             client._client.post(
                 "/storage/multipart/abort",
                 json={"filename": remote_path, "upload_id": upload_id},
+                headers=client.auth_headers,
             )
         except Exception:
             pass
