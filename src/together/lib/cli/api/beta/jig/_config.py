@@ -148,7 +148,8 @@ class State:
         path = config_dir / ".jig.json"
         try:
             with open(path) as f:
-                return cls(_config_dir=config_dir, **json.load(f))
+                data = {k: v for k, v in json.load(f).items() if k in cls.__annotations__ and not k.startswith("_")}
+                return cls(_config_dir=config_dir, **data)
         except FileNotFoundError:
             return cls(_config_dir=config_dir)
 
