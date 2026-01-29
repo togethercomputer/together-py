@@ -197,7 +197,13 @@ def _ensure_registry_base_path(client: Together, state: State) -> None:
         response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
         response.raise_for_status()
         data = response.json()
-        state.registry_base_path = data["base-path"]
+        base_path = data["base-path"]
+        # Strip protocol prefix - Docker tags don't support URLs
+        if base_path.startswith("https://"):
+            base_path = base_path[8:]
+        elif base_path.startswith("http://"):
+            base_path = base_path[7:]
+        state.registry_base_path = base_path
         state.save()
 
 
