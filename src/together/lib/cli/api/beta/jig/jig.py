@@ -194,7 +194,7 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
 def _ensure_registry_base_path(client: Together, state: State) -> None:
     """Ensure registry base path is set in state"""
     if not state.registry_base_path:
-        response = client._client.get("/image-repositories/base-path")
+        response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
         response.raise_for_status()
         data = response.json()
         state.registry_base_path = data["base-path"]
