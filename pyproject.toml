@@ -52,6 +52,7 @@ Repository = "https://github.com/togethercomputer/together-py"
 
 [project.optional-dependencies]
 aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]
+aiofiles = ["aiofiles>=25.0.0", "types-aiofiles"]
 pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
 cli = ["PyYAML"]
 
