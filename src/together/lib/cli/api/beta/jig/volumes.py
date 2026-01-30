@@ -187,7 +187,9 @@ async def _upload_files(
                     progress_state["completed"] = completed_parts
                     progress_state["uploaded_bytes"] -= attempt_bytes
                 if attempt == MAX_UPLOAD_RETRIES - 1:
-                    raise RuntimeError(f"Failed to upload {remote_path} after {MAX_UPLOAD_RETRIES} attempts: {e}")
+                    raise RuntimeError(
+                        f"Failed to upload {remote_path} after {MAX_UPLOAD_RETRIES} attempts: {e}"
+                    ) from e
                 await asyncio.sleep(1 * (attempt + 1))
 
     spinner_task = asyncio.create_task(spinner_updater())
@@ -233,7 +235,7 @@ async def _upload_file_simple(
                 resp = await http_client.request(method, upload_url, content=file_data, headers=headers)
                 resp.raise_for_status()
             except Exception as e:
-                raise RuntimeError(f"Failed to upload {remote_path}: {e}")
+                raise RuntimeError(f"Failed to upload {remote_path}: {e}") from e
 
         await on_complete(max(file_size, 1), remote_path, True)
 
@@ -327,7 +329,7 @@ async def _upload_parts(
                         return {"part_number": part_number, "etag": etag}
                     except Exception as e:
                         if attempt == MAX_UPLOAD_RETRIES - 1:
-                            raise RuntimeError(f"Failed to upload part {part_number}: {e}")
+                            raise RuntimeError(f"Failed to upload part {part_number}: {e}") from e
                         await asyncio.sleep(1 * (attempt + 1))
                 raise RuntimeError(f"Failed to upload part {part_number}")
 
@@ -355,7 +357,7 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
         )
         click.echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
     except Exception as e:
-        raise RuntimeError(f"Failed to create volume: {e}")
+        raise RuntimeError(f"Failed to create volume: {e}") from e
 
     try:
         await _upload_files(client, source_path, volume_name=name)
@@ -381,7 +383,7 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
         client.beta.jig.volumes.retrieve(name)
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
-            raise ValueError(f"Volume '{name}' does not exist")
+            raise ValueError(f"Volume '{name}' does not exist") from e
         raise
 
     source_prefix = f"{name}/{source_path.name}"
@@ -443,6 +445,7 @@ def volumes_set(
     config_path: str | None,
 ) -> None:
     """Set volume mount configuration for deployment"""
+    del ctx  # unused but required by click
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
@@ -465,6 +468,7 @@ def volumes_unset(
     config_path: str | None,
 ) -> None:
     """Remove volume from local deployment configuration (does not delete remote volume)"""
+    del ctx  # unused but required by click
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
