@@ -6,22 +6,22 @@ from typing import Dict
 
 import httpx
 
-from ...._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from ...._utils import maybe_transform, async_maybe_transform
-from ...._compat import cached_property
-from ...._resource import SyncAPIResource, AsyncAPIResource
-from ...._response import (
+from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from ..._utils import maybe_transform, async_maybe_transform
+from ..._compat import cached_property
+from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ...._base_client import make_request_options
-from ....types.beta.jig import queue_cancel_params, queue_submit_params, queue_metrics_params, queue_retrieve_params
-from ....types.beta.jig.queue_cancel_response import QueueCancelResponse
-from ....types.beta.jig.queue_submit_response import QueueSubmitResponse
-from ....types.beta.jig.queue_metrics_response import QueueMetricsResponse
-from ....types.beta.jig.queue_retrieve_response import QueueRetrieveResponse
+from ...types.beta import queue_cancel_params, queue_submit_params, queue_metrics_params, queue_retrieve_params
+from ..._base_client import make_request_options
+from ...types.beta.queue_cancel_response import QueueCancelResponse
+from ...types.beta.queue_submit_response import QueueSubmitResponse
+from ...types.beta.queue_metrics_response import QueueMetricsResponse
+from ...types.beta.queue_retrieve_response import QueueRetrieveResponse
 
 __all__ = ["QueueResource", "AsyncQueueResource"]
 
