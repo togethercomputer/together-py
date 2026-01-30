@@ -134,7 +134,7 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
                     return digest
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() if e.stderr else "Docker command failed"
-        raise RuntimeError(f"Failed to get digest for {image_name}: {msg}")
+        raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
     raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
 
