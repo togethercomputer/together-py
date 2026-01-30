@@ -9,6 +9,8 @@ from typing import Any, Optional
 from pathlib import Path
 from dataclasses import field, asdict, dataclass
 
+import click
+
 try:
     import tomllib
 except ImportError:
@@ -83,7 +85,7 @@ class Config:
         if config_path:
             found_path = Path(config_path)
             if not found_path.exists():
-                print(f"ERROR: Configuration file not found: {config_path}", file=sys.stderr)
+                click.echo(f"ERROR: Configuration file not found: {config_path}", err=True)
                 sys.exit(1)
             return cls.load(tomllib.load(found_path.open("rb")), found_path)
 
@@ -97,9 +99,9 @@ class Config:
 
         if init:
             return cls()
-        print(
+        click.echo(
             "ERROR: No pyproject.toml or jig.toml found, use --config to specify a config path.",
-            file=sys.stderr,
+            err=True,
         )
         sys.exit(1)
 
@@ -116,7 +118,7 @@ class Config:
                 name = data.get("project", {}).get("name", "")
             else:
                 name = path.resolve().parent.name
-                print(f"\N{PACKAGE} Name not set in config file or pyproject.toml - defaulting to {name}")
+                click.echo(f"\N{PACKAGE} Name not set in config file or pyproject.toml - defaulting to {name}")
 
         if autoscaling := jig_config.get("autoscaling", {}):
             autoscaling["model"] = name
