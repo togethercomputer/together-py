@@ -220,7 +220,14 @@ def init() -> None:
     content = """[project]
 name = "my-model"
 version = "0.1.0"
-dependencies = ["torch", "transformers"]
+dependencies = ["torch", "transformers", "sprocket"]
+
+[[tool.uv.index]]
+name = "together-pypi"
+url = "https://sprocket-pypi.pages.dev"
+
+[tool.uv.sources]
+sprocket = { index = "together-pypi" }
 
 [tool.jig.image]
 python_version = "3.11"
