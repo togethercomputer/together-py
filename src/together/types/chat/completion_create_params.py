@@ -28,6 +28,7 @@ __all__ = [
     "MessageChatCompletionFunctionMessageParam",
     "FunctionCall",
     "FunctionCallName",
+    "Reasoning",
     "ResponseFormat",
     "ResponseFormatText",
     "ResponseFormatJsonSchema",
@@ -110,6 +111,8 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     A number between -2.0 and 2.0 where a positive value increases the likelihood of
     a model talking about new topics.
     """
+
+    reasoning: Reasoning
 
     reasoning_effort: Literal["low", "medium", "high"]
     """
@@ -312,6 +315,14 @@ class FunctionCallName(TypedDict, total=False):
 
 
 FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
+
+
+class Reasoning(TypedDict, total=False):
+    enabled: bool
+    """
+    For models that support toggling reasoning functionality, this object can be
+    used to control that functionality.
+    """
 
 
 class ResponseFormatText(TypedDict, total=False):
