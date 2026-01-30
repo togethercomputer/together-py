@@ -119,7 +119,7 @@ async def _upload_files(
         else:
             msg = f"\r{spinner} {percent}% - {display_file} {size_str} ({progress_state['completed_files']}/{total_files} files)"
 
-        print(f"\r{msg}\033[K", end="", flush=True)
+        print(f"\r{msg}\033[K", end="", flush=True)  # noqa: T201
 
     async def increment_progress(bytes_count: int, filename: str = "", file_complete: bool = False) -> None:
         async with progress_lock:
@@ -130,7 +130,7 @@ async def _upload_files(
                 progress_state["uploaded_bytes"] += bytes_count
                 progress_state["elapsed"] = time.time() - start_time
             if DEBUG:
-                print(f"\nDEBUG: bytes_count={bytes_count}, total={progress_state['uploaded_bytes']}")
+                click.echo(f"\nDEBUG: bytes_count={bytes_count}, total={progress_state['uploaded_bytes']}")
             if file_complete:
                 completed_files += 1
                 progress_state["completed_files"] = completed_files
@@ -199,7 +199,7 @@ async def _upload_files(
         await spinner_task
 
     elapsed_time = time.time() - start_time
-    print(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
+    click.echo(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
 
 
 async def _upload_file_simple(
