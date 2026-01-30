@@ -131,7 +131,7 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
             registry = image_name.rsplit("/", 2)[0]
             for digest in json.loads(repo_digests):
                 if digest.startswith(registry):
-                    return digest
+                    return str(digest)
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() if e.stderr else "Docker command failed"
         raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
@@ -450,8 +450,8 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as response:
-            for line in response.iter_lines():
+        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as streaming_response:
+            for line in streaming_response.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
                         click.echo(log_line)
