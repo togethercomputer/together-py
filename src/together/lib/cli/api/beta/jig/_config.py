@@ -5,16 +5,19 @@ from __future__ import annotations
 import os
 import sys
 import json
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from pathlib import Path
 from dataclasses import field, asdict, dataclass
 
 import click
 
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib  # type: ignore
+if TYPE_CHECKING:
+    import tomli as tomllib
+else:
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib
 
 # --- Environment Configuration ---
 
@@ -35,11 +38,11 @@ class ImageConfig:
     """Container image configuration from pyproject.toml"""
 
     python_version: str = "3.11"
-    system_packages: list[str] = field(default_factory=list)
-    environment: dict[str, str] = field(default_factory=dict)
-    run: list[str] = field(default_factory=list)
+    system_packages: list[str] = field(default_factory=list[str])
+    environment: dict[str, str] = field(default_factory=dict[str, str])
+    run: list[str] = field(default_factory=list[str])
     cmd: str = "python app.py"
-    copy: list[str] = field(default_factory=list)
+    copy: list[str] = field(default_factory=list[str])
     auto_include_git: bool = False
 
     @classmethod
@@ -59,9 +62,9 @@ class DeployConfig:
     min_replicas: int = 1
     max_replicas: int = 1
     port: int = 8000
-    environment_variables: dict[str, str] = field(default_factory=dict)
+    environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: Optional[list[str]] = None
-    autoscaling: dict[str, str] = field(default_factory=dict)
+    autoscaling: dict[str, str] = field(default_factory=dict[str, str])
     health_check_path: str = "/health"
 
     @classmethod
@@ -141,9 +144,9 @@ class State:
     """Persistent state stored in .jig.json"""
 
     _config_dir: Path
-    registry_base_path: Optional[str] = None
-    secrets: dict[str, str] = field(default_factory=dict)
-    volumes: dict[str, str] = field(default_factory=dict)
+    registry_base_path: str = ""
+    secrets: dict[str, str] = field(default_factory=dict[str, str])
+    volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
     def load(cls, config_dir: Path) -> State:

@@ -393,7 +393,7 @@ def deploy(
 
     deploy_data["environment_variables"] = env_vars
 
-    volumes = []
+    volumes: list[dict[str, str]] = []
     for volume_name, mount_path in state.volumes.items():
         volumes.append({"name": volume_name, "mount_path": mount_path})
 
@@ -414,7 +414,7 @@ def deploy(
         else:
             raise
 
-    return response.model_dump() if hasattr(response, "model_dump") else response
+    return response.model_dump()
 
 
 @click.command()

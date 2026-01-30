@@ -213,6 +213,9 @@ async def _upload_file_simple(
     on_complete: Callable[[int, str, bool], Coroutine[Any, Any, None]],
 ) -> None:
     """Upload a single file using simple upload"""
+    if aiofiles is None:
+        raise ImportError("aiofiles is required for volume uploads. Install with: pip install aiofiles")
+
     async with semaphore:
         # Use httpx to make the upload request directly since the SDK doesn't have this endpoint
         response = client._client.post(
@@ -302,6 +305,9 @@ async def _upload_parts(
     async with httpx.AsyncClient(timeout=300.0) as http_client:
 
         async def upload_part(part_info: dict[str, Any]) -> dict[str, Any]:
+            if aiofiles is None:
+                raise ImportError("aiofiles is required for volume uploads. Install with: pip install aiofiles")
+
             async with semaphore:
                 part_number = part_info["part_number"]
                 url = part_info["url"]
