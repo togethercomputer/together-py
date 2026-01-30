@@ -9,7 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.jig import (
+from together.types.beta import (
     QueueCancelResponse,
     QueueSubmitResponse,
     QueueMetricsResponse,
@@ -24,7 +24,7 @@ class TestQueue:
 
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
-        queue = client.beta.jig.queue.retrieve(
+        queue = client.beta.queue.retrieve(
             model="model",
             request_id="request_id",
         )
@@ -32,7 +32,7 @@ class TestQueue:
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
-        response = client.beta.jig.queue.with_raw_response.retrieve(
+        response = client.beta.queue.with_raw_response.retrieve(
             model="model",
             request_id="request_id",
         )
@@ -44,7 +44,7 @@ class TestQueue:
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
-        with client.beta.jig.queue.with_streaming_response.retrieve(
+        with client.beta.queue.with_streaming_response.retrieve(
             model="model",
             request_id="request_id",
         ) as response:
@@ -58,7 +58,7 @@ class TestQueue:
 
     @parametrize
     def test_method_cancel(self, client: Together) -> None:
-        queue = client.beta.jig.queue.cancel(
+        queue = client.beta.queue.cancel(
             model="model",
             request_id="request_id",
         )
@@ -66,7 +66,7 @@ class TestQueue:
 
     @parametrize
     def test_raw_response_cancel(self, client: Together) -> None:
-        response = client.beta.jig.queue.with_raw_response.cancel(
+        response = client.beta.queue.with_raw_response.cancel(
             model="model",
             request_id="request_id",
         )
@@ -78,7 +78,7 @@ class TestQueue:
 
     @parametrize
     def test_streaming_response_cancel(self, client: Together) -> None:
-        with client.beta.jig.queue.with_streaming_response.cancel(
+        with client.beta.queue.with_streaming_response.cancel(
             model="model",
             request_id="request_id",
         ) as response:
@@ -92,14 +92,14 @@ class TestQueue:
 
     @parametrize
     def test_method_metrics(self, client: Together) -> None:
-        queue = client.beta.jig.queue.metrics(
+        queue = client.beta.queue.metrics(
             model="model",
         )
         assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
     @parametrize
     def test_raw_response_metrics(self, client: Together) -> None:
-        response = client.beta.jig.queue.with_raw_response.metrics(
+        response = client.beta.queue.with_raw_response.metrics(
             model="model",
         )
 
@@ -110,7 +110,7 @@ class TestQueue:
 
     @parametrize
     def test_streaming_response_metrics(self, client: Together) -> None:
-        with client.beta.jig.queue.with_streaming_response.metrics(
+        with client.beta.queue.with_streaming_response.metrics(
             model="model",
         ) as response:
             assert not response.is_closed
@@ -123,7 +123,7 @@ class TestQueue:
 
     @parametrize
     def test_method_submit(self, client: Together) -> None:
-        queue = client.beta.jig.queue.submit(
+        queue = client.beta.queue.submit(
             model="model",
             payload={"foo": "bar"},
         )
@@ -131,7 +131,7 @@ class TestQueue:
 
     @parametrize
     def test_method_submit_with_all_params(self, client: Together) -> None:
-        queue = client.beta.jig.queue.submit(
+        queue = client.beta.queue.submit(
             model="model",
             payload={"foo": "bar"},
             info={"foo": "bar"},
@@ -141,7 +141,7 @@ class TestQueue:
 
     @parametrize
     def test_raw_response_submit(self, client: Together) -> None:
-        response = client.beta.jig.queue.with_raw_response.submit(
+        response = client.beta.queue.with_raw_response.submit(
             model="model",
             payload={"foo": "bar"},
         )
@@ -153,7 +153,7 @@ class TestQueue:
 
     @parametrize
     def test_streaming_response_submit(self, client: Together) -> None:
-        with client.beta.jig.queue.with_streaming_response.submit(
+        with client.beta.queue.with_streaming_response.submit(
             model="model",
             payload={"foo": "bar"},
         ) as response:
@@ -173,7 +173,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.retrieve(
+        queue = await async_client.beta.queue.retrieve(
             model="model",
             request_id="request_id",
         )
@@ -181,7 +181,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.jig.queue.with_raw_response.retrieve(
+        response = await async_client.beta.queue.with_raw_response.retrieve(
             model="model",
             request_id="request_id",
         )
@@ -193,7 +193,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.jig.queue.with_streaming_response.retrieve(
+        async with async_client.beta.queue.with_streaming_response.retrieve(
             model="model",
             request_id="request_id",
         ) as response:
@@ -207,7 +207,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_method_cancel(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.cancel(
+        queue = await async_client.beta.queue.cancel(
             model="model",
             request_id="request_id",
         )
@@ -215,7 +215,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_raw_response_cancel(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.jig.queue.with_raw_response.cancel(
+        response = await async_client.beta.queue.with_raw_response.cancel(
             model="model",
             request_id="request_id",
         )
@@ -227,7 +227,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_streaming_response_cancel(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.jig.queue.with_streaming_response.cancel(
+        async with async_client.beta.queue.with_streaming_response.cancel(
             model="model",
             request_id="request_id",
         ) as response:
@@ -241,14 +241,14 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_method_metrics(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.metrics(
+        queue = await async_client.beta.queue.metrics(
             model="model",
         )
         assert_matches_type(QueueMetricsResponse, queue, path=["response"])
 
     @parametrize
     async def test_raw_response_metrics(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.jig.queue.with_raw_response.metrics(
+        response = await async_client.beta.queue.with_raw_response.metrics(
             model="model",
         )
 
@@ -259,7 +259,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_streaming_response_metrics(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.jig.queue.with_streaming_response.metrics(
+        async with async_client.beta.queue.with_streaming_response.metrics(
             model="model",
         ) as response:
             assert not response.is_closed
@@ -272,7 +272,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_method_submit(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.submit(
+        queue = await async_client.beta.queue.submit(
             model="model",
             payload={"foo": "bar"},
         )
@@ -280,7 +280,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_method_submit_with_all_params(self, async_client: AsyncTogether) -> None:
-        queue = await async_client.beta.jig.queue.submit(
+        queue = await async_client.beta.queue.submit(
             model="model",
             payload={"foo": "bar"},
             info={"foo": "bar"},
@@ -290,7 +290,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_raw_response_submit(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.jig.queue.with_raw_response.submit(
+        response = await async_client.beta.queue.with_raw_response.submit(
             model="model",
             payload={"foo": "bar"},
         )
@@ -302,7 +302,7 @@ class TestAsyncQueue:
 
     @parametrize
     async def test_streaming_response_submit(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.jig.queue.with_streaming_response.submit(
+        async with async_client.beta.queue.with_streaming_response.submit(
             model="model",
             payload={"foo": "bar"},
         ) as response:

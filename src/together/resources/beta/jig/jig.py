@@ -7,14 +7,6 @@ from typing_extensions import Literal
 
 import httpx
 
-from .queue import (
-    QueueResource,
-    AsyncQueueResource,
-    QueueResourceWithRawResponse,
-    AsyncQueueResourceWithRawResponse,
-    QueueResourceWithStreamingResponse,
-    AsyncQueueResourceWithStreamingResponse,
-)
 from .secrets import (
     SecretsResource,
     AsyncSecretsResource,
@@ -51,10 +43,6 @@ __all__ = ["JigResource", "AsyncJigResource"]
 
 
 class JigResource(SyncAPIResource):
-    @cached_property
-    def queue(self) -> QueueResource:
-        return QueueResource(self._client)
-
     @cached_property
     def volumes(self) -> VolumesResource:
         return VolumesResource(self._client)
@@ -466,10 +454,6 @@ class JigResource(SyncAPIResource):
 
 
 class AsyncJigResource(AsyncAPIResource):
-    @cached_property
-    def queue(self) -> AsyncQueueResource:
-        return AsyncQueueResource(self._client)
-
     @cached_property
     def volumes(self) -> AsyncVolumesResource:
         return AsyncVolumesResource(self._client)
@@ -904,10 +888,6 @@ class JigResourceWithRawResponse:
         )
 
     @cached_property
-    def queue(self) -> QueueResourceWithRawResponse:
-        return QueueResourceWithRawResponse(self._jig.queue)
-
-    @cached_property
     def volumes(self) -> VolumesResourceWithRawResponse:
         return VolumesResourceWithRawResponse(self._jig.volumes)
 
@@ -938,10 +918,6 @@ class AsyncJigResourceWithRawResponse:
         self.retrieve_logs = async_to_raw_response_wrapper(
             jig.retrieve_logs,
         )
-
-    @cached_property
-    def queue(self) -> AsyncQueueResourceWithRawResponse:
-        return AsyncQueueResourceWithRawResponse(self._jig.queue)
 
     @cached_property
     def volumes(self) -> AsyncVolumesResourceWithRawResponse:
@@ -976,10 +952,6 @@ class JigResourceWithStreamingResponse:
         )
 
     @cached_property
-    def queue(self) -> QueueResourceWithStreamingResponse:
-        return QueueResourceWithStreamingResponse(self._jig.queue)
-
-    @cached_property
     def volumes(self) -> VolumesResourceWithStreamingResponse:
         return VolumesResourceWithStreamingResponse(self._jig.volumes)
 
@@ -1010,10 +982,6 @@ class AsyncJigResourceWithStreamingResponse:
         self.retrieve_logs = async_to_streamed_response_wrapper(
             jig.retrieve_logs,
         )
-
-    @cached_property
-    def queue(self) -> AsyncQueueResourceWithStreamingResponse:
-        return AsyncQueueResourceWithStreamingResponse(self._jig.queue)
 
     @cached_property
     def volumes(self) -> AsyncVolumesResourceWithStreamingResponse:
