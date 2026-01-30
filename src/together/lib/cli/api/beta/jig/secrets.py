@@ -70,7 +70,7 @@ def secrets_set(
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_unset(
-    ctx: click.Context,
+    ctx: click.Context,  # noqa: ARG001
     name: str,
     config_path: str | None,
 ) -> None:

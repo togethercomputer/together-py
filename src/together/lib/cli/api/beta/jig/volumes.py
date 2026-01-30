@@ -439,13 +439,12 @@ def volumes_update(
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Volumes")
 def volumes_set(
-    ctx: click.Context,
+    ctx: click.Context,  # noqa: ARG001
     name: str,
     mount_path: str,
     config_path: str | None,
 ) -> None:
     """Set volume mount configuration for deployment"""
-    del ctx  # unused but required by click
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
@@ -463,12 +462,11 @@ def volumes_set(
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Volumes")
 def volumes_unset(
-    ctx: click.Context,
+    ctx: click.Context,  # noqa: ARG001
     name: str,
     config_path: str | None,
 ) -> None:
     """Remove volume from local deployment configuration (does not delete remote volume)"""
-    del ctx  # unused but required by click
     config = Config.find(config_path)
     state = State.load(config._path.parent)
 
