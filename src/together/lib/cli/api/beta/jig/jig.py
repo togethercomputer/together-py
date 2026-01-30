@@ -224,7 +224,7 @@ dependencies = ["torch", "transformers", "sprocket"]
 
 [[tool.uv.index]]
 name = "together-pypi"
-url = "https://sprocket-pypi.pages.dev/"
+url = "https://pypi.together.ai/"
 
 [tool.uv.sources]
 sprocket = { index = "together-pypi" }
