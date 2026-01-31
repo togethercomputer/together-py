@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 import click
 
-from together import Together, omit
+from together import Together, TogetherError, omit
 from together._response import APIResponse as APIResponse
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.model_upload_response import ModelUploadResponse
@@ -76,6 +76,10 @@ def upload(
     if json:
         click.echo(json_lib.dumps(response.model_dump(), indent=2))
     else:
+        # If the model weights already exist, the api is returning 200 but with no data
+        if response.data is None: # type: ignore
+            raise TogetherError(response.message)
+
         click.echo(f"Model upload job created successfully!")
         if response.data.job_id:
             click.echo(f"Job ID: {response.data.job_id}")
