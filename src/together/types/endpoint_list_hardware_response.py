@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 from .._models import BaseModel
 
-__all__ = ["HardwareListResponse", "Data", "DataPricing", "DataSpecs", "DataAvailability"]
+__all__ = ["EndpointListHardwareResponse", "Data", "DataPricing", "DataSpecs", "DataAvailability"]
 
 
 class DataPricing(BaseModel):
@@ -60,7 +60,7 @@ class Data(BaseModel):
     """Indicates the current availability status of a hardware configuration"""
 
 
-class HardwareListResponse(BaseModel):
+class EndpointListHardwareResponse(BaseModel):
     data: List[Data]
 
     object: Literal["list"]

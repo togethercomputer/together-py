@@ -13,6 +13,7 @@ from together.types import (
     DedicatedEndpoint,
     EndpointListResponse,
     EndpointListAvzonesResponse,
+    EndpointListHardwareResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -272,6 +273,38 @@ class TestEndpoints:
 
         assert cast(Any, response.is_closed) is True
 
+    @parametrize
+    def test_method_list_hardware(self, client: Together) -> None:
+        endpoint = client.endpoints.list_hardware()
+        assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+    @parametrize
+    def test_method_list_hardware_with_all_params(self, client: Together) -> None:
+        endpoint = client.endpoints.list_hardware(
+            model="model",
+        )
+        assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+    @parametrize
+    def test_raw_response_list_hardware(self, client: Together) -> None:
+        response = client.endpoints.with_raw_response.list_hardware()
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        endpoint = response.parse()
+        assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+    @parametrize
+    def test_streaming_response_list_hardware(self, client: Together) -> None:
+        with client.endpoints.with_streaming_response.list_hardware() as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            endpoint = response.parse()
+            assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
 
 class TestAsyncEndpoints:
     parametrize = pytest.mark.parametrize(
@@ -526,5 +559,37 @@ class TestAsyncEndpoints:
 
             endpoint = await response.parse()
             assert_matches_type(EndpointListAvzonesResponse, endpoint, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_list_hardware(self, async_client: AsyncTogether) -> None:
+        endpoint = await async_client.endpoints.list_hardware()
+        assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+    @parametrize
+    async def test_method_list_hardware_with_all_params(self, async_client: AsyncTogether) -> None:
+        endpoint = await async_client.endpoints.list_hardware(
+            model="model",
+        )
+        assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+    @parametrize
+    async def test_raw_response_list_hardware(self, async_client: AsyncTogether) -> None:
+        response = await async_client.endpoints.with_raw_response.list_hardware()
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        endpoint = await response.parse()
+        assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_list_hardware(self, async_client: AsyncTogether) -> None:
+        async with async_client.endpoints.with_streaming_response.list_hardware() as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            endpoint = await response.parse()
+            assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
 
         assert cast(Any, response.is_closed) is True

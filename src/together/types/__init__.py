@@ -40,7 +40,6 @@ from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .eval_create_response import EvalCreateResponse as EvalCreateResponse
 from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
-from .hardware_list_params import HardwareListParams as HardwareListParams
 from .rerank_create_params import RerankCreateParams as RerankCreateParams
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
@@ -48,7 +47,6 @@ from .model_upload_response import ModelUploadResponse as ModelUploadResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
 from .endpoint_list_response import EndpointListResponse as EndpointListResponse
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
-from .hardware_list_response import HardwareListResponse as HardwareListResponse
 from .rerank_create_response import RerankCreateResponse as RerankCreateResponse
 from .embedding_create_params import EmbeddingCreateParams as EmbeddingCreateParams
 from .completion_create_params import CompletionCreateParams as CompletionCreateParams
@@ -58,8 +56,10 @@ from .fine_tuning_list_response import FineTuningListResponse as FineTuningListR
 from .fine_tuning_content_params import FineTuningContentParams as FineTuningContentParams
 from .fine_tuning_cancel_response import FineTuningCancelResponse as FineTuningCancelResponse
 from .fine_tuning_delete_response import FineTuningDeleteResponse as FineTuningDeleteResponse
+from .endpoint_list_hardware_params import EndpointListHardwareParams as EndpointListHardwareParams
 from .endpoint_list_avzones_response import EndpointListAvzonesResponse as EndpointListAvzonesResponse
 from .code_interpreter_execute_params import CodeInterpreterExecuteParams as CodeInterpreterExecuteParams
+from .endpoint_list_hardware_response import EndpointListHardwareResponse as EndpointListHardwareResponse
 from .fine_tuning_list_events_response import FineTuningListEventsResponse as FineTuningListEventsResponse
 from .fine_tuning_estimate_price_params import FineTuningEstimatePriceParams as FineTuningEstimatePriceParams
 from .fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse as FineTuningEstimatePriceResponse

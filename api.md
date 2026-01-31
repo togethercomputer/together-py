@@ -338,6 +338,7 @@ from together.types import (
     DedicatedEndpoint,
     EndpointListResponse,
     EndpointListAvzonesResponse,
+    EndpointListHardwareResponse,
 )
 ```
 
@@ -349,18 +350,7 @@ Methods:
 - <code title="get /endpoints">client.endpoints.<a href="./src/together/resources/endpoints.py">list</a>(\*\*<a href="src/together/types/endpoint_list_params.py">params</a>) -> <a href="./src/together/types/endpoint_list_response.py">EndpointListResponse</a></code>
 - <code title="delete /endpoints/{endpointId}">client.endpoints.<a href="./src/together/resources/endpoints.py">delete</a>(endpoint_id) -> None</code>
 - <code title="get /clusters/availability-zones">client.endpoints.<a href="./src/together/resources/endpoints.py">list_avzones</a>() -> <a href="./src/together/types/endpoint_list_avzones_response.py">EndpointListAvzonesResponse</a></code>
-
-# Hardware
-
-Types:
-
-```python
-from together.types import HardwareListResponse
-```
-
-Methods:
-
-- <code title="get /hardware">client.hardware.<a href="./src/together/resources/hardware.py">list</a>(\*\*<a href="src/together/types/hardware_list_params.py">params</a>) -> <a href="./src/together/types/hardware_list_response.py">HardwareListResponse</a></code>
+- <code title="get /hardware">client.endpoints.<a href="./src/together/resources/endpoints.py">list_hardware</a>(\*\*<a href="src/together/types/endpoint_list_hardware_params.py">params</a>) -> <a href="./src/together/types/endpoint_list_hardware_response.py">EndpointListHardwareResponse</a></code>
 
 # Rerank
 

@@ -80,14 +80,6 @@ from .batches import (
     BatchesResourceWithStreamingResponse,
     AsyncBatchesResourceWithStreamingResponse,
 )
-from .hardware import (
-    HardwareResource,
-    AsyncHardwareResource,
-    HardwareResourceWithRawResponse,
-    AsyncHardwareResourceWithRawResponse,
-    HardwareResourceWithStreamingResponse,
-    AsyncHardwareResourceWithStreamingResponse,
-)
 from .endpoints import (
     EndpointsResource,
     AsyncEndpointsResource,
@@ -202,12 +194,6 @@ __all__ = [
     "AsyncEndpointsResourceWithRawResponse",
     "EndpointsResourceWithStreamingResponse",
     "AsyncEndpointsResourceWithStreamingResponse",
-    "HardwareResource",
-    "AsyncHardwareResource",
-    "HardwareResourceWithRawResponse",
-    "AsyncHardwareResourceWithRawResponse",
-    "HardwareResourceWithStreamingResponse",
-    "AsyncHardwareResourceWithStreamingResponse",
     "RerankResource",
     "AsyncRerankResource",
     "RerankResourceWithRawResponse",

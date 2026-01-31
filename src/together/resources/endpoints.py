@@ -7,7 +7,12 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import endpoint_list_params, endpoint_create_params, endpoint_update_params
+from ..types import (
+    endpoint_list_params,
+    endpoint_create_params,
+    endpoint_update_params,
+    endpoint_list_hardware_params,
+)
 from .._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
 from .._utils import maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -23,6 +28,7 @@ from ..types.autoscaling_param import AutoscalingParam
 from ..types.dedicated_endpoint import DedicatedEndpoint
 from ..types.endpoint_list_response import EndpointListResponse
 from ..types.endpoint_list_avzones_response import EndpointListAvzonesResponse
+from ..types.endpoint_list_hardware_response import EndpointListHardwareResponse
 
 __all__ = ["EndpointsResource", "AsyncEndpointsResource"]
 
@@ -320,6 +326,47 @@ class EndpointsResource(SyncAPIResource):
             cast_to=EndpointListAvzonesResponse,
         )
 
+    def list_hardware(
+        self,
+        *,
+        model: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointListHardwareResponse:
+        """Returns a list of available hardware configurations for deploying models.
+
+        When a
+        model parameter is provided, it returns only hardware configurations compatible
+        with that model, including their current availability status.
+
+        Args:
+          model: Filter hardware configurations by model compatibility. When provided, the
+              response includes availability status for each compatible configuration.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._get(
+            "/hardware",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"model": model}, endpoint_list_hardware_params.EndpointListHardwareParams),
+            ),
+            cast_to=EndpointListHardwareResponse,
+        )
+
 
 class AsyncEndpointsResource(AsyncAPIResource):
     @cached_property
@@ -614,6 +661,49 @@ class AsyncEndpointsResource(AsyncAPIResource):
             cast_to=EndpointListAvzonesResponse,
         )
 
+    async def list_hardware(
+        self,
+        *,
+        model: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> EndpointListHardwareResponse:
+        """Returns a list of available hardware configurations for deploying models.
+
+        When a
+        model parameter is provided, it returns only hardware configurations compatible
+        with that model, including their current availability status.
+
+        Args:
+          model: Filter hardware configurations by model compatibility. When provided, the
+              response includes availability status for each compatible configuration.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._get(
+            "/hardware",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {"model": model}, endpoint_list_hardware_params.EndpointListHardwareParams
+                ),
+            ),
+            cast_to=EndpointListHardwareResponse,
+        )
+
 
 class EndpointsResourceWithRawResponse:
     def __init__(self, endpoints: EndpointsResource) -> None:
@@ -636,6 +726,9 @@ class EndpointsResourceWithRawResponse:
         )
         self.list_avzones = to_raw_response_wrapper(
             endpoints.list_avzones,
+        )
+        self.list_hardware = to_raw_response_wrapper(
+            endpoints.list_hardware,
         )
 
 
@@ -661,6 +754,9 @@ class AsyncEndpointsResourceWithRawResponse:
         self.list_avzones = async_to_raw_response_wrapper(
             endpoints.list_avzones,
         )
+        self.list_hardware = async_to_raw_response_wrapper(
+            endpoints.list_hardware,
+        )
 
 
 class EndpointsResourceWithStreamingResponse:
@@ -685,6 +781,9 @@ class EndpointsResourceWithStreamingResponse:
         self.list_avzones = to_streamed_response_wrapper(
             endpoints.list_avzones,
         )
+        self.list_hardware = to_streamed_response_wrapper(
+            endpoints.list_hardware,
+        )
 
 
 class AsyncEndpointsResourceWithStreamingResponse:
@@ -708,4 +807,7 @@ class AsyncEndpointsResourceWithStreamingResponse:
         )
         self.list_avzones = async_to_streamed_response_wrapper(
             endpoints.list_avzones,
+        )
+        self.list_hardware = async_to_streamed_response_wrapper(
+            endpoints.list_hardware,
         )

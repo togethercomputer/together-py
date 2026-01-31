@@ -42,7 +42,6 @@ if TYPE_CHECKING:
         rerank,
         videos,
         batches,
-        hardware,
         endpoints,
         embeddings,
         completions,
@@ -55,7 +54,6 @@ if TYPE_CHECKING:
     from .resources.rerank import RerankResource, AsyncRerankResource
     from .resources.videos import VideosResource, AsyncVideosResource
     from .resources.batches import BatchesResource, AsyncBatchesResource
-    from .resources.hardware import HardwareResource, AsyncHardwareResource
     from .resources.beta.beta import BetaResource, AsyncBetaResource
     from .resources.chat.chat import ChatResource, AsyncChatResource
     from .resources.endpoints import EndpointsResource, AsyncEndpointsResource
@@ -207,12 +205,6 @@ class Together(SyncAPIClient):
         from .resources.endpoints import EndpointsResource
 
         return EndpointsResource(self)
-
-    @cached_property
-    def hardware(self) -> HardwareResource:
-        from .resources.hardware import HardwareResource
-
-        return HardwareResource(self)
 
     @cached_property
     def rerank(self) -> RerankResource:
@@ -478,12 +470,6 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncEndpointsResource(self)
 
     @cached_property
-    def hardware(self) -> AsyncHardwareResource:
-        from .resources.hardware import AsyncHardwareResource
-
-        return AsyncHardwareResource(self)
-
-    @cached_property
     def rerank(self) -> AsyncRerankResource:
         from .resources.rerank import AsyncRerankResource
 
@@ -695,12 +681,6 @@ class TogetherWithRawResponse:
         return EndpointsResourceWithRawResponse(self._client.endpoints)
 
     @cached_property
-    def hardware(self) -> hardware.HardwareResourceWithRawResponse:
-        from .resources.hardware import HardwareResourceWithRawResponse
-
-        return HardwareResourceWithRawResponse(self._client.hardware)
-
-    @cached_property
     def rerank(self) -> rerank.RerankResourceWithRawResponse:
         from .resources.rerank import RerankResourceWithRawResponse
 
@@ -796,12 +776,6 @@ class AsyncTogetherWithRawResponse:
         from .resources.endpoints import AsyncEndpointsResourceWithRawResponse
 
         return AsyncEndpointsResourceWithRawResponse(self._client.endpoints)
-
-    @cached_property
-    def hardware(self) -> hardware.AsyncHardwareResourceWithRawResponse:
-        from .resources.hardware import AsyncHardwareResourceWithRawResponse
-
-        return AsyncHardwareResourceWithRawResponse(self._client.hardware)
 
     @cached_property
     def rerank(self) -> rerank.AsyncRerankResourceWithRawResponse:
@@ -901,12 +875,6 @@ class TogetherWithStreamedResponse:
         return EndpointsResourceWithStreamingResponse(self._client.endpoints)
 
     @cached_property
-    def hardware(self) -> hardware.HardwareResourceWithStreamingResponse:
-        from .resources.hardware import HardwareResourceWithStreamingResponse
-
-        return HardwareResourceWithStreamingResponse(self._client.hardware)
-
-    @cached_property
     def rerank(self) -> rerank.RerankResourceWithStreamingResponse:
         from .resources.rerank import RerankResourceWithStreamingResponse
 
@@ -1002,12 +970,6 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.endpoints import AsyncEndpointsResourceWithStreamingResponse
 
         return AsyncEndpointsResourceWithStreamingResponse(self._client.endpoints)
-
-    @cached_property
-    def hardware(self) -> hardware.AsyncHardwareResourceWithStreamingResponse:
-        from .resources.hardware import AsyncHardwareResourceWithStreamingResponse
-
-        return AsyncHardwareResourceWithStreamingResponse(self._client.hardware)
 
     @cached_property
     def rerank(self) -> rerank.AsyncRerankResourceWithStreamingResponse:
