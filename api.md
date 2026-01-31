@@ -17,6 +17,26 @@ Methods:
 - <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
 - <code title="get /deployments/{id}/logs">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_logs</a>(id, \*\*<a href="src/together/types/beta/jig_retrieve_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_logs.py">DeploymentLogs</a></code>
 
+### Queue
+
+Types:
+
+```python
+from together.types.beta.jig import (
+    QueueRetrieveResponse,
+    QueueCancelResponse,
+    QueueMetricsResponse,
+    QueueSubmitResponse,
+)
+```
+
+Methods:
+
+- <code title="get /queue/status">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">retrieve</a>(\*\*<a href="src/together/types/beta/jig/queue_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_retrieve_response.py">QueueRetrieveResponse</a></code>
+- <code title="post /queue/cancel">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/jig/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_cancel_response.py">QueueCancelResponse</a></code>
+- <code title="get /queue/metrics">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">metrics</a>(\*\*<a href="src/together/types/beta/jig/queue_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_metrics_response.py">QueueMetricsResponse</a></code>
+- <code title="post /queue/submit">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">submit</a>(\*\*<a href="src/together/types/beta/jig/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_submit_response.py">QueueSubmitResponse</a></code>
+
 ### Volumes
 
 Types:
@@ -49,26 +69,6 @@ Methods:
 - <code title="get /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">list</a>() -> <a href="./src/together/types/beta/jig/secret_list_response.py">SecretListResponse</a></code>
 - <code title="delete /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">delete</a>(id) -> object</code>
 
-## Queue
-
-Types:
-
-```python
-from together.types.beta import (
-    QueueRetrieveResponse,
-    QueueCancelResponse,
-    QueueMetricsResponse,
-    QueueSubmitResponse,
-)
-```
-
-Methods:
-
-- <code title="get /queue/status">client.beta.queue.<a href="./src/together/resources/beta/queue.py">retrieve</a>(\*\*<a href="src/together/types/beta/queue_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/queue_retrieve_response.py">QueueRetrieveResponse</a></code>
-- <code title="post /queue/cancel">client.beta.queue.<a href="./src/together/resources/beta/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/queue_cancel_response.py">QueueCancelResponse</a></code>
-- <code title="get /queue/metrics">client.beta.queue.<a href="./src/together/resources/beta/queue.py">metrics</a>(\*\*<a href="src/together/types/beta/queue_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/queue_metrics_response.py">QueueMetricsResponse</a></code>
-- <code title="post /queue/submit">client.beta.queue.<a href="./src/together/resources/beta/queue.py">submit</a>(\*\*<a href="src/together/types/beta/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/queue_submit_response.py">QueueSubmitResponse</a></code>
-
 ## Clusters
 
 Types:
@@ -84,12 +84,12 @@ from together.types.beta import (
 
 Methods:
 
-- <code title="post /clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">create</a>(\*\*<a href="src/together/types/beta/cluster_create_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="get /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">retrieve</a>(cluster_id) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="put /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">update</a>(cluster_id, \*\*<a href="src/together/types/beta/cluster_update_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="get /clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list</a>() -> <a href="./src/together/types/beta/cluster_list_response.py">ClusterListResponse</a></code>
-- <code title="delete /clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">delete</a>(cluster_id) -> <a href="./src/together/types/beta/cluster_delete_response.py">ClusterDeleteResponse</a></code>
-- <code title="get /clusters/regions">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list_regions</a>() -> <a href="./src/together/types/beta/cluster_list_regions_response.py">ClusterListRegionsResponse</a></code>
+- <code title="post /compute/clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">create</a>(\*\*<a href="src/together/types/beta/cluster_create_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
+- <code title="get /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">retrieve</a>(cluster_id) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
+- <code title="put /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">update</a>(cluster_id, \*\*<a href="src/together/types/beta/cluster_update_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
+- <code title="get /compute/clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list</a>() -> <a href="./src/together/types/beta/cluster_list_response.py">ClusterListResponse</a></code>
+- <code title="delete /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">delete</a>(cluster_id) -> <a href="./src/together/types/beta/cluster_delete_response.py">ClusterDeleteResponse</a></code>
+- <code title="get /compute/regions">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list_regions</a>() -> <a href="./src/together/types/beta/cluster_list_regions_response.py">ClusterListRegionsResponse</a></code>
 
 ### Storage
 
@@ -101,11 +101,11 @@ from together.types.beta.clusters import ClusterStorage, StorageListResponse, St
 
 Methods:
 
-- <code title="post /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">create</a>(\*\*<a href="src/together/types/beta/clusters/storage_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="get /clusters/storages/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">retrieve</a>(volume_id) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="put /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">update</a>(\*\*<a href="src/together/types/beta/clusters/storage_update_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="get /clusters/storages">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">list</a>() -> <a href="./src/together/types/beta/clusters/storage_list_response.py">StorageListResponse</a></code>
-- <code title="delete /clusters/storages/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">delete</a>(volume_id) -> <a href="./src/together/types/beta/clusters/storage_delete_response.py">StorageDeleteResponse</a></code>
+- <code title="post /compute/clusters/storage/volumes">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">create</a>(\*\*<a href="src/together/types/beta/clusters/storage_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="get /compute/clusters/storage/volumes/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">retrieve</a>(volume_id) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="put /compute/clusters/storage/volumes">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">update</a>(\*\*<a href="src/together/types/beta/clusters/storage_update_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="get /compute/clusters/storage/volumes">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">list</a>() -> <a href="./src/together/types/beta/clusters/storage_list_response.py">StorageListResponse</a></code>
+- <code title="delete /compute/clusters/storage/volumes/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">delete</a>(volume_id) -> <a href="./src/together/types/beta/clusters/storage_delete_response.py">StorageDeleteResponse</a></code>
 
 # Chat
 

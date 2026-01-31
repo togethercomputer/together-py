@@ -110,7 +110,7 @@ class ClustersResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/clusters",
+            "/compute/clusters",
             body=maybe_transform(
                 {
                     "billing_type": billing_type,
@@ -158,7 +158,7 @@ class ClustersResource(SyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return self._get(
-            f"/clusters/{cluster_id}",
+            f"/compute/clusters/{cluster_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -193,7 +193,7 @@ class ClustersResource(SyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return self._put(
-            f"/clusters/{cluster_id}",
+            f"/compute/clusters/{cluster_id}",
             body=maybe_transform(
                 {
                     "cluster_type": cluster_type,
@@ -219,7 +219,7 @@ class ClustersResource(SyncAPIResource):
     ) -> ClusterListResponse:
         """List all GPU clusters."""
         return self._get(
-            "/clusters",
+            "/compute/clusters",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -252,7 +252,7 @@ class ClustersResource(SyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return self._delete(
-            f"/clusters/{cluster_id}",
+            f"/compute/clusters/{cluster_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -271,7 +271,7 @@ class ClustersResource(SyncAPIResource):
     ) -> ClusterListRegionsResponse:
         """List regions and corresponding supported driver versions"""
         return self._get(
-            "/clusters/regions",
+            "/compute/regions",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -355,7 +355,7 @@ class AsyncClustersResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/clusters",
+            "/compute/clusters",
             body=await async_maybe_transform(
                 {
                     "billing_type": billing_type,
@@ -403,7 +403,7 @@ class AsyncClustersResource(AsyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return await self._get(
-            f"/clusters/{cluster_id}",
+            f"/compute/clusters/{cluster_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -438,7 +438,7 @@ class AsyncClustersResource(AsyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return await self._put(
-            f"/clusters/{cluster_id}",
+            f"/compute/clusters/{cluster_id}",
             body=await async_maybe_transform(
                 {
                     "cluster_type": cluster_type,
@@ -464,7 +464,7 @@ class AsyncClustersResource(AsyncAPIResource):
     ) -> ClusterListResponse:
         """List all GPU clusters."""
         return await self._get(
-            "/clusters",
+            "/compute/clusters",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -497,7 +497,7 @@ class AsyncClustersResource(AsyncAPIResource):
         if not cluster_id:
             raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
         return await self._delete(
-            f"/clusters/{cluster_id}",
+            f"/compute/clusters/{cluster_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -516,7 +516,7 @@ class AsyncClustersResource(AsyncAPIResource):
     ) -> ClusterListRegionsResponse:
         """List regions and corresponding supported driver versions"""
         return await self._get(
-            "/clusters/regions",
+            "/compute/regions",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

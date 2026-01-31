@@ -2,14 +2,6 @@
 
 from __future__ import annotations
 
-from .queue import (
-    QueueResource,
-    AsyncQueueResource,
-    QueueResourceWithRawResponse,
-    AsyncQueueResourceWithRawResponse,
-    QueueResourceWithStreamingResponse,
-    AsyncQueueResourceWithStreamingResponse,
-)
 from .jig.jig import (
     JigResource,
     AsyncJigResource,
@@ -36,10 +28,6 @@ class BetaResource(SyncAPIResource):
     @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
-
-    @cached_property
-    def queue(self) -> QueueResource:
-        return QueueResource(self._client)
 
     @cached_property
     def clusters(self) -> ClustersResource:
@@ -69,10 +57,6 @@ class AsyncBetaResource(AsyncAPIResource):
     @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
-
-    @cached_property
-    def queue(self) -> AsyncQueueResource:
-        return AsyncQueueResource(self._client)
 
     @cached_property
     def clusters(self) -> AsyncClustersResource:
@@ -107,10 +91,6 @@ class BetaResourceWithRawResponse:
         return JigResourceWithRawResponse(self._beta.jig)
 
     @cached_property
-    def queue(self) -> QueueResourceWithRawResponse:
-        return QueueResourceWithRawResponse(self._beta.queue)
-
-    @cached_property
     def clusters(self) -> ClustersResourceWithRawResponse:
         return ClustersResourceWithRawResponse(self._beta.clusters)
 
@@ -122,10 +102,6 @@ class AsyncBetaResourceWithRawResponse:
     @cached_property
     def jig(self) -> AsyncJigResourceWithRawResponse:
         return AsyncJigResourceWithRawResponse(self._beta.jig)
-
-    @cached_property
-    def queue(self) -> AsyncQueueResourceWithRawResponse:
-        return AsyncQueueResourceWithRawResponse(self._beta.queue)
 
     @cached_property
     def clusters(self) -> AsyncClustersResourceWithRawResponse:
@@ -141,10 +117,6 @@ class BetaResourceWithStreamingResponse:
         return JigResourceWithStreamingResponse(self._beta.jig)
 
     @cached_property
-    def queue(self) -> QueueResourceWithStreamingResponse:
-        return QueueResourceWithStreamingResponse(self._beta.queue)
-
-    @cached_property
     def clusters(self) -> ClustersResourceWithStreamingResponse:
         return ClustersResourceWithStreamingResponse(self._beta.clusters)
 
@@ -156,10 +128,6 @@ class AsyncBetaResourceWithStreamingResponse:
     @cached_property
     def jig(self) -> AsyncJigResourceWithStreamingResponse:
         return AsyncJigResourceWithStreamingResponse(self._beta.jig)
-
-    @cached_property
-    def queue(self) -> AsyncQueueResourceWithStreamingResponse:
-        return AsyncQueueResourceWithStreamingResponse(self._beta.queue)
 
     @cached_property
     def clusters(self) -> AsyncClustersResourceWithStreamingResponse:

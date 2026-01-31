@@ -16,14 +16,6 @@ from .beta import (
     BetaResourceWithStreamingResponse,
     AsyncBetaResourceWithStreamingResponse,
 )
-from .queue import (
-    QueueResource,
-    AsyncQueueResource,
-    QueueResourceWithRawResponse,
-    AsyncQueueResourceWithRawResponse,
-    QueueResourceWithStreamingResponse,
-    AsyncQueueResourceWithStreamingResponse,
-)
 from .clusters import (
     ClustersResource,
     AsyncClustersResource,
@@ -40,12 +32,6 @@ __all__ = [
     "AsyncJigResourceWithRawResponse",
     "JigResourceWithStreamingResponse",
     "AsyncJigResourceWithStreamingResponse",
-    "QueueResource",
-    "AsyncQueueResource",
-    "QueueResourceWithRawResponse",
-    "AsyncQueueResourceWithRawResponse",
-    "QueueResourceWithStreamingResponse",
-    "AsyncQueueResourceWithStreamingResponse",
     "ClustersResource",
     "AsyncClustersResource",
     "ClustersResourceWithRawResponse",
