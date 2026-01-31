@@ -11,7 +11,7 @@ __all__ = ["JigDeployParams", "EnvironmentVariable", "Volume"]
 
 
 class JigDeployParams(TypedDict, total=False):
-    gpu_type: Required[Literal["h100-80gb", " a100-80gb"]]
+    gpu_type: Required[Literal["h100-80gb", "a100-80gb"]]
     """GPUType specifies the GPU hardware to use (e.g., "h100-80gb")."""
 
     image: Required[str]
