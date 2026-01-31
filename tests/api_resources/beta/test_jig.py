@@ -279,7 +279,6 @@ class TestJig:
     def test_method_retrieve_logs_with_all_params(self, client: Together) -> None:
         jig = client.beta.jig.retrieve_logs(
             id="id",
-            follow=True,
             replica_id="replica_id",
         )
         assert_matches_type(DeploymentLogs, jig, path=["response"])
@@ -579,7 +578,6 @@ class TestAsyncJig:
     async def test_method_retrieve_logs_with_all_params(self, async_client: AsyncTogether) -> None:
         jig = await async_client.beta.jig.retrieve_logs(
             id="id",
-            follow=True,
             replica_id="replica_id",
         )
         assert_matches_type(DeploymentLogs, jig, path=["response"])

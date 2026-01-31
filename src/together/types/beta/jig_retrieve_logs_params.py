@@ -8,8 +8,5 @@ __all__ = ["JigRetrieveLogsParams"]
 
 
 class JigRetrieveLogsParams(TypedDict, total=False):
-    follow: bool
-    """Stream logs in real-time (ndjson format)"""
-
     replica_id: str
     """Replica ID to filter logs"""
