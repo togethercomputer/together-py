@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.0.0-alpha.18 (2026-01-31)
+
+Full Changelog: [v2.0.0-alpha.17...v2.0.0-alpha.18](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.17...v2.0.0-alpha.18)
+
+### Features
+
+* Add chat completion support for reasoning.enabled ([7fba349](https://github.com/togethercomputer/together-py/commit/7fba349c1bde34ace5ca38c0728479f054518e04))
+* **api:** Add API for listing deployments ([298d447](https://github.com/togethercomputer/together-py/commit/298d4475208fb24e1373fa7449c0716768d5501d))
+* **api:** Add beta sdks for jig features ([c3ac883](https://github.com/togethercomputer/together-py/commit/c3ac883f8ffe62d2c1b660e3a62fc82891e63dac))
+* **api:** Move jobs apis to nest under model uploads per their use case ([368c003](https://github.com/togethercomputer/together-py/commit/368c003ec61e8cea2ec995ba9889d3cf7ac21328))
+* **api:** Move queue out of jig namespace ([ebc1498](https://github.com/togethercomputer/together-py/commit/ebc1498125e7b95f2726cfb37a4324aadcf40f8d))
+* **api:** Update Jig types and add retrieve_logs api to jig ([76a3c1a](https://github.com/togethercomputer/together-py/commit/76a3c1abccf8bb1efaebd192a68fe31785b568cf))
+* **cli:** enhance hardware command to display availability status ([#223](https://github.com/togethercomputer/together-py/issues/223)) ([e7cf8a3](https://github.com/togethercomputer/together-py/commit/e7cf8a30c6a1d46f10ea5049f51e969be6f8418f))
+* **client:** add custom JSON encoder for extended type support ([036a0ea](https://github.com/togethercomputer/together-py/commit/036a0eaba07c3cca56e9dbec965e1cce2f8b848a))
+* internal: Update to new cluster api routing ([54af0bd](https://github.com/togethercomputer/together-py/commit/54af0bdf4076e5ff02f0475547a4b1d2f7393c46))
+* move byoc features under /deployments route ([d70e2e9](https://github.com/togethercomputer/together-py/commit/d70e2e9c3c12997935a34cb4a63a26e315e0c799))
+
+
+### Bug Fixes
+
+* Avoid crashing when uploading a model which weights already exist ([#226](https://github.com/togethercomputer/together-py/issues/226)) ([5a9095c](https://github.com/togethercomputer/together-py/commit/5a9095c91da5de8333e366e88f6960b428177d07))
+
+
+### Chores
+
+* **api:** Improve type names for jig volumes and logs ([b256c61](https://github.com/togethercomputer/together-py/commit/b256c61f601d67a0abee1dbc44e9851d52014d0d))
+* **api:** Move Queue SDK methods into Jig namespace ([43179e1](https://github.com/togethercomputer/together-py/commit/43179e1ee8451cc3bcb8430c2bc35148309b82db))
+* **api:** Rename jig queue apis ([4b466d6](https://github.com/togethercomputer/together-py/commit/4b466d6079071fd840880337b20c4d34a3a5cf45))
+* **ci:** upgrade `actions/github-script` ([c8668a1](https://github.com/togethercomputer/together-py/commit/c8668a1424fbfcd37d893d414d4dcd0307f5aac4))
+
+
+### Documentation
+
+* **axle-queue:** added axle-queue endpoints ([4e60b09](https://github.com/togethercomputer/together-py/commit/4e60b096128cbfef4769195a9b00cf0236e5052c))
+
 ## 2.0.0-alpha.17 (2026-01-21)
 
 Full Changelog: [v2.0.0-alpha.16...v2.0.0-alpha.17](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.16...v2.0.0-alpha.17)

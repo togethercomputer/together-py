@@ -186,20 +186,17 @@ from together import Together
 
 client = Together()
 
-cluster = client.beta.clusters.create(
-    billing_type="RESERVED",
-    cluster_name="cluster_name",
-    driver_version="CUDA_12_5_555",
-    gpu_type="H100_SXM",
-    num_gpus=0,
-    region="us-central-8",
-    shared_volume={
-        "region": "region",
-        "size_tib": 0,
-        "volume_name": "volume_name",
-    },
+chat_completion = client.chat.completions.create(
+    messages=[
+        {
+            "content": "content",
+            "role": "system",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    reasoning={},
 )
-print(cluster.shared_volume)
+print(chat_completion.reasoning)
 ```
 
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.

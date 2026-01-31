@@ -25,7 +25,6 @@ from .eval_list_params import EvalListParams as EvalListParams
 from .execute_response import ExecuteResponse as ExecuteResponse
 from .autoscaling_param import AutoscalingParam as AutoscalingParam
 from .finetune_response import FinetuneResponse as FinetuneResponse
-from .job_list_response import JobListResponse as JobListResponse
 from .model_list_params import ModelListParams as ModelListParams
 from .tool_choice_param import ToolChoiceParam as ToolChoiceParam
 from .dedicated_endpoint import DedicatedEndpoint as DedicatedEndpoint
@@ -45,7 +44,6 @@ from .hardware_list_params import HardwareListParams as HardwareListParams
 from .rerank_create_params import RerankCreateParams as RerankCreateParams
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
-from .job_retrieve_response import JobRetrieveResponse as JobRetrieveResponse
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
 from .endpoint_list_response import EndpointListResponse as EndpointListResponse
