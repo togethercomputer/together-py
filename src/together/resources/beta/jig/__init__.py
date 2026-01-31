@@ -8,6 +8,14 @@ from .jig import (
     JigResourceWithStreamingResponse,
     AsyncJigResourceWithStreamingResponse,
 )
+from .queue import (
+    QueueResource,
+    AsyncQueueResource,
+    QueueResourceWithRawResponse,
+    AsyncQueueResourceWithRawResponse,
+    QueueResourceWithStreamingResponse,
+    AsyncQueueResourceWithStreamingResponse,
+)
 from .secrets import (
     SecretsResource,
     AsyncSecretsResource,
@@ -26,6 +34,12 @@ from .volumes import (
 )
 
 __all__ = [
+    "QueueResource",
+    "AsyncQueueResource",
+    "QueueResourceWithRawResponse",
+    "AsyncQueueResourceWithRawResponse",
+    "QueueResourceWithStreamingResponse",
+    "AsyncQueueResourceWithStreamingResponse",
     "VolumesResource",
     "AsyncVolumesResource",
     "VolumesResourceWithRawResponse",

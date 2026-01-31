@@ -77,7 +77,7 @@ class StorageResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/clusters/storages",
+            "/compute/clusters/storage/volumes",
             body=maybe_transform(
                 {
                     "region": region,
@@ -118,7 +118,7 @@ class StorageResource(SyncAPIResource):
         if not volume_id:
             raise ValueError(f"Expected a non-empty value for `volume_id` but received {volume_id!r}")
         return self._get(
-            f"/clusters/storages/{volume_id}",
+            f"/compute/clusters/storage/volumes/{volume_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -150,7 +150,7 @@ class StorageResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._put(
-            "/clusters/storages",
+            "/compute/clusters/storage/volumes",
             body=maybe_transform(
                 {
                     "size_tib": size_tib,
@@ -176,7 +176,7 @@ class StorageResource(SyncAPIResource):
     ) -> StorageListResponse:
         """List all shared volumes."""
         return self._get(
-            "/clusters/storages",
+            "/compute/clusters/storage/volumes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -211,7 +211,7 @@ class StorageResource(SyncAPIResource):
         if not volume_id:
             raise ValueError(f"Expected a non-empty value for `volume_id` but received {volume_id!r}")
         return self._delete(
-            f"/clusters/storages/{volume_id}",
+            f"/compute/clusters/storage/volumes/{volume_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -273,7 +273,7 @@ class AsyncStorageResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/clusters/storages",
+            "/compute/clusters/storage/volumes",
             body=await async_maybe_transform(
                 {
                     "region": region,
@@ -314,7 +314,7 @@ class AsyncStorageResource(AsyncAPIResource):
         if not volume_id:
             raise ValueError(f"Expected a non-empty value for `volume_id` but received {volume_id!r}")
         return await self._get(
-            f"/clusters/storages/{volume_id}",
+            f"/compute/clusters/storage/volumes/{volume_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -346,7 +346,7 @@ class AsyncStorageResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._put(
-            "/clusters/storages",
+            "/compute/clusters/storage/volumes",
             body=await async_maybe_transform(
                 {
                     "size_tib": size_tib,
@@ -372,7 +372,7 @@ class AsyncStorageResource(AsyncAPIResource):
     ) -> StorageListResponse:
         """List all shared volumes."""
         return await self._get(
-            "/clusters/storages",
+            "/compute/clusters/storage/volumes",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -407,7 +407,7 @@ class AsyncStorageResource(AsyncAPIResource):
         if not volume_id:
             raise ValueError(f"Expected a non-empty value for `volume_id` but received {volume_id!r}")
         return await self._delete(
-            f"/clusters/storages/{volume_id}",
+            f"/compute/clusters/storage/volumes/{volume_id}",
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
