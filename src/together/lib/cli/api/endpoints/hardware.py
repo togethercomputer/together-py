@@ -8,9 +8,9 @@ import click
 from tabulate import tabulate
 
 from together import Together, omit
-from together.types import HardwareListResponse
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
+from together.types import EndpointListHardwareResponse
 
 
 @click.command()
@@ -25,7 +25,7 @@ from together.lib.utils.serializer import datetime_serializer
 @handle_api_errors("Endpoints")
 def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
     """List all available hardware options, optionally filtered by model."""
-    hardware_options = client.hardware.list(model=model or omit)
+    hardware_options = client.endpoints.list_hardware(model=model or omit)
 
     if available:
         hardware_options.data = [
@@ -40,7 +40,7 @@ def hardware(client: Together, model: str | None, json: bool, available: bool) -
         _format_hardware_options(hardware_options, show_availability=model is not None)
 
 
-def _format_hardware_options(hardware_options: HardwareListResponse, show_availability: bool = True) -> None:
+def _format_hardware_options(hardware_options: EndpointListHardwareResponse, show_availability: bool = True) -> None:
     display_list: List[Dict[str, Any]] = []
 
     for hw in hardware_options.data:
