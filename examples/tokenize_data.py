@@ -158,7 +158,7 @@ def process_data(args: argparse.Namespace) -> None:
     prompt_field = args.prompt_field
     completion_field = args.completion_field
     separator = args.separator
-    
+
     if prompt_field in dataset.column_names and completion_field in dataset.column_names:
         if "text" not in dataset.column_names:
             dataset = dataset.map(

@@ -8,9 +8,9 @@ import click
 from tabulate import tabulate
 
 from together import Together, omit
+from together.types import EndpointListHardwareResponse
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
-from together.types import EndpointListHardwareResponse
 
 
 @click.command()
