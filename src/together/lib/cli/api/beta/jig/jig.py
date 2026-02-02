@@ -179,7 +179,7 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
     last_status = None
     while True:
         try:
-            response = client.beta.jig.queue.get_status(
+            response = client.beta.jig.queue.retrieve(
                 model=config.model_name,
                 request_id=request_id,
             )
@@ -525,7 +525,7 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
     client: Together = ctx.obj
     config = Config.find(config_path)
 
-    response = client.beta.jig.queue.get_status(
+    response = client.beta.jig.queue.retrieve(
         model=config.model_name,
         request_id=request_id,
     )
@@ -541,7 +541,7 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
 
-    response = client.beta.jig.queue.get_metrics(model=config.model_name)
+    response = client.beta.jig.queue.metrics(model=config.model_name)
     pprint(response, indent_guides=False)
 
 
