@@ -258,12 +258,9 @@ gpu_count = 1
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
     config = Config.find(config_path)
-    if not GENERATE_DOCKERFILE:
-        click.echo("Set GENERATE_DOCKERFILE=1 to enable dockerfile generation")
-    else:
-        with open(config.dockerfile, "w") as f:
-            f.write(_generate_dockerfile(config))
-        click.echo("\N{CHECK MARK} Generated Dockerfile")
+    with open(config.dockerfile, "w") as f:
+        f.write(_generate_dockerfile(config))
+    click.echo("\N{CHECK MARK} Generated Dockerfile")
 
 
 @click.command()
