@@ -43,7 +43,7 @@ def _generate_dockerfile(config: Config) -> str:
     apt = ""
     if config.image.system_packages:
         sys_pkgs = " ".join(config.image.system_packages or [])
-        apt = f"""RUN --mount=type=cache,target=/var/cache/apt \\
+        apt = f"""RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
   apt-get update && \\
   DEBIAN_FRONTEND=noninteractive \\
   apt-get install -y --no-install-recommends {sys_pkgs} && \\
