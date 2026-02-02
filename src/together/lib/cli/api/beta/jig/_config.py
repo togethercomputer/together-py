@@ -21,7 +21,6 @@ else:
 
 # --- Environment Configuration ---
 
-GENERATE_DOCKERFILE = os.getenv("GENERATE_DOCKERFILE", "0") != "0"
 DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
 UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
