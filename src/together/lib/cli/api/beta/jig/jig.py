@@ -60,6 +60,12 @@ def _generate_dockerfile(config: Config) -> str:
 
     copy = "\n".join(f"COPY {file} {file}" for file in _get_files_to_copy(config))
 
+    # Check if .git exists in current directory
+    if Path(".git").exists():
+        git_version_cmd = 'RUN --mount=type=bind,source=.git,target=/git git --git-dir /git describe --tags --exact-match > VERSION || echo "0.0.0-dev" > VERSION'
+    else:
+        git_version_cmd = 'RUN echo "0.0.0-dev" > VERSION'
+
     return f"""
 # Build stage
 FROM python:{config.image.python_version} AS builder
@@ -90,8 +96,9 @@ WORKDIR /app
 {copy}
 # this is temporarily needed if building from a monorepo
 RUN --mount=type=bind,source=.,target=/src cp /src/.worker.p* worker.py 2>/dev/null || true
+ENV DEPLOYMENT_NAME={config.model_name}
 # this tag will set the X-Worker-Version header, used for rollout monitoring
-RUN --mount=type=bind,source=.,target=/src git -C /src describe --tags --exact-match > VERSION
+{git_version_cmd}
 
 CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
