@@ -19,10 +19,12 @@ from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
-    GENERATE_DOCKERFILE,
     State,
     Config,
 )
+
+# Managed dockerfile marker - if this is the first line, jig will regenerate the file
+DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
 
 # --- Helper Functions ---
 
@@ -66,7 +68,8 @@ def _generate_dockerfile(config: Config) -> str:
     else:
         git_version_cmd = 'RUN echo "0.0.0-dev" > VERSION'
 
-    return f"""
+    return f"""{DOCKERFILE_MANAGED_MARKER}
+
 # Build stage
 FROM python:{config.image.python_version} AS builder
 
@@ -119,6 +122,36 @@ def _get_files_to_copy(config: Config) -> list[str]:
         raise ValueError("Copying '.' is not allowed. Please enumerate specific files.")
 
     return sorted(files)
+
+
+def _dockerfile(config: Config) -> bool:
+    """Generate Dockerfile if appropriate.
+
+    Returns True if Dockerfile was generated, False if skipped (user-managed file exists).
+
+    Logic:
+    - If no Dockerfile exists → generate and return True
+    - If Dockerfile exists without our marker → skip and return False (user-managed)
+    - If Dockerfile exists with marker but config is older → skip and return True (no-op)
+    - If Dockerfile exists with marker and config is newer → regenerate and return True
+    """
+    dockerfile_path = Path(config.dockerfile)
+
+    if dockerfile_path.exists():
+        with open(dockerfile_path) as f:
+            first_line = f.readline().strip()
+
+        if first_line != DOCKERFILE_MANAGED_MARKER:
+            return False
+
+        # Skip regeneration if config hasn't changed
+        if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
+            return True
+
+    with open(dockerfile_path, "w") as f:
+        f.write(_generate_dockerfile(config))
+
+    return True
 
 
 def _get_image(state: State, config: Config, tag: str = "latest") -> str:
@@ -258,9 +291,14 @@ gpu_count = 1
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
     config = Config.find(config_path)
-    with open(config.dockerfile, "w") as f:
-        f.write(_generate_dockerfile(config))
-    click.echo("\N{CHECK MARK} Generated Dockerfile")
+    if _dockerfile(config):
+        click.echo("\N{CHECK MARK} Generated Dockerfile")
+    else:
+        click.echo(
+            f"ERROR: {config.dockerfile} exists and is not managed by jig. "
+            f"Remove or rename the file to allow jig to manage dockerfile.",
+            err=True,
+        )
 
 
 @click.command()
@@ -277,20 +315,10 @@ def build(ctx: click.Context, tag: str, config_path: str | None) -> None:
 
     image = _get_image(state, config, tag)
 
-    if GENERATE_DOCKERFILE:
-        dockerfile_path = Path(config.dockerfile)
-        if (
-            config._path
-            and config._path.exists()
-            and dockerfile_path.exists()
-            and config._path.stat().st_mtime > dockerfile_path.stat().st_mtime
-        ):
-            msg = f"\N{INFORMATION SOURCE} {config._path} has changed, regenerating Dockerfile"
-            click.echo(msg)
-            ctx.invoke(dockerfile, config_path=config_path)
-
-        if not dockerfile_path.exists():
-            ctx.invoke(dockerfile, config_path=config_path)
+    if _dockerfile(config):
+        click.echo("\N{CHECK MARK} Generated Dockerfile")
+    else:
+        click.echo(f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)")
 
     build_dir_worker_path = Path("./.sprocket.py")
     dst = Path(__file__).parent / "sprocket" / "sprocket.py"
