@@ -368,10 +368,14 @@ def dockerfile(config_path: str | None) -> None:
 @click.pass_context
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
+@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def build(ctx: click.Context, tag: str, warmup: bool, config_path: str | None) -> None:
+def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
     """Build container image"""
+    import shlex as shlex_module
+    import os
+
     client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent)
@@ -395,6 +399,11 @@ def build(ctx: click.Context, tag: str, warmup: bool, config_path: str | None) -
     cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
     if config.dockerfile != "Dockerfile":
         cmd.extend(["-f", config.dockerfile])
+
+    # Add extra docker args from flag or env
+    extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
+    if extra_args:
+        cmd.extend(shlex_module.split(extra_args))
     if subprocess.run(cmd).returncode != 0:
         raise RuntimeError("Build failed")
 
@@ -435,6 +444,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
+@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
@@ -443,6 +453,7 @@ def deploy(
     tag: str,
     build_only: bool,
     warmup: bool,
+    docker_args: str | None,
     existing_image: str | None,
     config_path: str | None,
 ) -> Optional[dict[str, Any]]:
@@ -456,7 +467,7 @@ def deploy(
         deployment_image = existing_image
     else:
         # Invoke build and push
-        ctx.invoke(build, tag=tag, warmup=warmup, config_path=config_path)
+        ctx.invoke(build, tag=tag, warmup=warmup, docker_args=docker_args, config_path=config_path)
         ctx.invoke(push, tag=tag, config_path=config_path)
         deployment_image = _get_image_with_digest(state, config, tag)
 
