@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
+import time
 import shlex
 import shutil
 import subprocess
-import time
-from dataclasses import asdict
-from pathlib import Path
 from typing import Any, Optional
+from pathlib import Path
+from dataclasses import asdict
 from urllib.parse import urlparse
 
 import click
@@ -22,8 +22,8 @@ from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     WARMUP_DEST,
     WARMUP_ENV_NAME,
-    Config,
     State,
+    Config,
 )
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
