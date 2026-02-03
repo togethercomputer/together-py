@@ -480,6 +480,7 @@ def deploy(
         "storage": config.deploy.storage,
         "autoscaling": config.deploy.autoscaling,
         "termination_grace_period_seconds": config.deploy.termination_grace_period_seconds,
+        "volumes": [asdict(vm) for vm in config.deploy.volume_mounts],
     }
 
     if config.deploy.health_check_path:
@@ -497,10 +498,6 @@ def deploy(
         env_vars.append({"name": name, "value_from_secret": secret_id})
 
     deploy_data["environment_variables"] = env_vars
-
-    volumes: list[dict[str, str]] = []
-    for volume_name, mount_path in state.volumes.items():
-        volumes.append({"name": volume_name, "mount_path": mount_path})
 
     deploy_data["volumes"] = volumes
 

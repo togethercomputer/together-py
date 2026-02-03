@@ -384,69 +384,6 @@ def volumes_update(
     asyncio.run(_update_volume(client, name, source))
 
 
-def _unset_volume_state(name: str, state: State) -> bool:
-    """Remove volume mount from deployment configuration. Returns True if was mounted."""
-    if name in state.volumes:
-        del state.volumes[name]
-        state.save()
-        click.echo(f"\N{CHECK MARK} Removed volume '{name}' from deployment configuration")
-        return True
-
-    click.echo(f"\N{WARNING SIGN} Volume '{name}' is not configured for deployment")
-    return False
-
-
-@volumes.command("set")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@click.option("--mount-path", required=True, help="Mount path in container")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Volumes")
-def volumes_set(
-    ctx: click.Context,
-    name: str,
-    mount_path: str,
-    config_path: str | None,
-) -> None:
-    """Set volume mount configuration for deployment"""
-    client: Together = ctx.obj
-
-    # Check if volume exists
-    try:
-        client.beta.jig.volumes.retrieve(name)
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
-
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-
-    if len(state.volumes) > 0 and name not in state.volumes:
-        raise ValueError("Only one read-only volume is supported per deployment")
-
-    state.volumes[name] = mount_path
-    state.save()
-    click.echo(f"\N{CHECK MARK} Volume '{name}' will be mounted at '{mount_path}' during deployment")
-
-
-@volumes.command("unset")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name to remove from local state")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Volumes")
-def volumes_unset(
-    ctx: click.Context,  # noqa: ARG001
-    name: str,
-    config_path: str | None,
-) -> None:
-    """Remove volume from local deployment configuration (does not delete remote volume)"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-    _unset_volume_state(name, state)
-
-
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")

@@ -54,6 +54,18 @@ class ImageConfig:
 
 
 @dataclass
+class VolumeMount:
+    """Volume mount configuration"""
+
+    name: str
+    mount_path: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
+        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+
+
+@dataclass
 class DeployConfig:
     """Deployment configuration"""
 
@@ -71,10 +83,14 @@ class DeployConfig:
     autoscaling: dict[str, str] = field(default_factory=dict[str, str])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
+    volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
-        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
+        if isinstance(deploy_config.get("volume_mounts"), list):
+            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in deploy_config["volume_mounts"]]
+        return cls(**deploy_config)
 
 
 @dataclass
