@@ -54,6 +54,18 @@ class ImageConfig:
 
 
 @dataclass
+class VolumeMount:
+    """Volume mount configuration"""
+
+    name: str
+    mount_path: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
+        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+
+
+@dataclass
 class DeployConfig:
     """Deployment configuration"""
 
@@ -71,10 +83,16 @@ class DeployConfig:
     autoscaling: dict[str, str] = field(default_factory=dict[str, str])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
+    volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
-        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
+        if isinstance(deploy_config.get("volume_mounts"), list):
+            deploy_config["volume_mounts"] = [
+                VolumeMount.from_dict(vm) for vm in deploy_config["volume_mounts"]
+            ]
+        return cls(**deploy_config)
 
 
 @dataclass
@@ -93,7 +111,9 @@ class Config:
         if config_path:
             found_path = Path(config_path)
             if not found_path.exists():
-                click.echo(f"ERROR: Configuration file not found: {config_path}", err=True)
+                click.echo(
+                    f"ERROR: Configuration file not found: {config_path}", err=True
+                )
                 sys.exit(1)
             return cls.load(tomllib.load(found_path.open("rb")), found_path)
 
@@ -126,11 +146,16 @@ class Config:
                 name = data.get("project", {}).get("name", "")
             else:
                 name = path.resolve().parent.name
-                click.echo(f"\N{PACKAGE} Name not set in config file or pyproject.toml - defaulting to {name}")
+                click.echo(
+                    f"\N{PACKAGE} Name not set in config file or pyproject.toml - defaulting to {name}"
+                )
 
         if autoscaling := jig_config.get("autoscaling", {}):
             autoscaling["model"] = name
             jig_config["deploy"]["autoscaling"] = autoscaling
+
+        if volume_mounts := jig_config.get("volume_mounts", []):
+            jig_config["deploy"]["volume_mounts"] = volume_mounts
 
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
@@ -158,7 +183,11 @@ class State:
         path = config_dir / ".jig.json"
         try:
             with open(path) as f:
-                data = {k: v for k, v in json.load(f).items() if k in cls.__annotations__ and not k.startswith("_")}
+                data = {
+                    k: v
+                    for k, v in json.load(f).items()
+                    if k in cls.__annotations__ and not k.startswith("_")
+                }
                 return cls(_config_dir=config_dir, **data)
         except FileNotFoundError:
             return cls(_config_dir=config_dir)
