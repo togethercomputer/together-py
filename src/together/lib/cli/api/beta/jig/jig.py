@@ -13,6 +13,7 @@ from dataclasses import asdict
 from urllib.parse import urlparse
 
 import click
+
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
@@ -583,8 +584,8 @@ def status(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    response = client.beta.jig.retrieve(config.model_name)
-    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
+    response = client.beta.jig.with_raw_response.retrieve(config.model_name)
+    click.echo(json.dumps(response.json(), indent=2))
 
 
 @click.command()
@@ -705,8 +706,8 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
 
-    response = client.beta.jig.queue.metrics(model=config.model_name)
-    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
+    response = client.beta.jig.queue.with_raw_response.metrics(model=config.model_name)
+    click.echo(json.dumps(response.json(), indent=2))
 
 
 @click.command("list")
@@ -715,5 +716,5 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
     client: Together = ctx.obj
-    response = client.beta.jig.list()
-    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
+    response = client.beta.jig.with_raw_response.list()
+    click.echo(json.dumps(response.json(), indent=2))
