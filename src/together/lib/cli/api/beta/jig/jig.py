@@ -13,8 +13,6 @@ from dataclasses import asdict
 from urllib.parse import urlparse
 
 import click
-from rich.pretty import pprint
-
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
@@ -237,7 +235,7 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
             )
             current_status = response.status
             if current_status != last_status:
-                pprint(response.model_dump_json(), indent_guides=False)
+                click.echo(response.model_dump_json(indent=2))
                 last_status = current_status
 
             if current_status in ["done", "failed", "finished", "error"]:
@@ -560,7 +558,7 @@ def deploy(
     deploy_data["environment_variables"] = env_vars
 
     if DEBUG:
-        pprint(deploy_data, indent_guides=False)
+        click.echo(json.dumps(deploy_data, indent=2))
     click.echo(f"Deploying model: {config.model_name}")
 
     try:
@@ -586,10 +584,7 @@ def status(ctx: click.Context, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
     response = client.beta.jig.retrieve(config.model_name)
-    pprint(
-        response.model_dump() if hasattr(response, "model_dump") else response,
-        indent_guides=False,
-    )
+    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
 
 
 @click.command()
@@ -677,7 +672,7 @@ def submit(
     )
 
     click.echo("\N{CHECK MARK} Submitted job")
-    pprint(response.model_dump_json(), indent_guides=False)
+    click.echo(response.model_dump_json(indent=2))
 
     if watch and response.request_id:
         click.echo(f"\nWatching job {response.request_id}...")
@@ -698,7 +693,7 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
         model=config.model_name,
         request_id=request_id,
     )
-    pprint(response.model_dump_json(), indent_guides=False)
+    click.echo(response.model_dump_json(indent=2))
 
 
 @click.command()
@@ -711,7 +706,7 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
     config = Config.find(config_path)
 
     response = client.beta.jig.queue.metrics(model=config.model_name)
-    pprint(response, indent_guides=False)
+    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
 
 
 @click.command("list")
@@ -721,7 +716,4 @@ def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
     client: Together = ctx.obj
     response = client.beta.jig.list()
-    pprint(
-        response.model_dump() if hasattr(response, "model_dump") else response,
-        indent_guides=False,
-    )
+    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
