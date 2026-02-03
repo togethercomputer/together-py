@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 import asyncio
 import itertools
@@ -10,7 +11,6 @@ from pathlib import Path
 
 import click
 import httpx
-from rich.pretty import pprint
 
 from together import Together
 from together._exceptions import APIStatusError
@@ -491,7 +491,7 @@ def volumes_describe(
 
     try:
         response = client.beta.jig.volumes.retrieve(name)
-        pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+        click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
@@ -506,4 +506,4 @@ def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: Together = ctx.obj
     response = client.beta.jig.volumes.list()
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
