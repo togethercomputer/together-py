@@ -1,3 +1,5 @@
+import json as json_lib
+
 import click
 
 from together import Together
@@ -6,12 +8,18 @@ from together.lib.cli.api._utils import handle_api_errors
 
 @click.command()
 @click.argument("endpoint-id", required=True)
-@click.option("--wait/--no-wait", default=True, help="Wait for the endpoint to stop")
+@click.option("--wait", is_flag=True, help="Wait for the endpoint to stop")
+@click.option("--json", is_flag=True, help="Print output in JSON format")
 @click.pass_obj
 @handle_api_errors("Endpoints")
-def stop(client: Together, endpoint_id: str, wait: bool) -> None:
+def stop(client: Together, endpoint_id: str, wait: bool, json: bool) -> None:
     """Stop a dedicated inference endpoint."""
     client.endpoints.update(endpoint_id, state="STOPPED")
+
+    if json:
+        click.echo(json_lib.dumps({"message": "Successfully marked endpoint as stopping"}, indent=2))
+        return
+
     click.echo("Successfully marked endpoint as stopping", err=True)
 
     if wait:

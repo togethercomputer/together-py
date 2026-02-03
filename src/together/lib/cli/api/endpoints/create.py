@@ -7,7 +7,7 @@ import click
 from together import APIError, Together, omit
 from together.lib.cli.api._utils import handle_api_errors
 
-from .hardware import hardware
+from .hardware import hardware as list_hardware
 
 
 @click.command()
@@ -29,16 +29,9 @@ from .hardware import hardware
     help="Maximum number of replicas to deploy",
 )
 @click.option(
-    "--gpu",
-    type=click.Choice(["b200", "h200", "h100", "a100", "l40", "l40s", "rtx-6000"]),
-    required=True,
-    help="GPU type to use for inference",
-)
-@click.option(
-    "--gpu-count",
-    type=int,
-    default=1,
-    help="Number of GPUs to use per replica",
+    "--hardware",
+    type=str,
+    help="Hardware configuration to use for inference",
 )
 @click.option(
     "--display-name",
@@ -47,6 +40,7 @@ from .hardware import hardware
 @click.option(
     "--no-prompt-cache",
     is_flag=True,
+    default=None,
     help="Deprecated and no longer has any effect.",
 )
 @click.option(
@@ -69,9 +63,14 @@ from .hardware import hardware
     help="Start endpoint in specified availability zone (e.g., us-central-4b)",
 )
 @click.option(
-    "--wait/--no-wait",
-    default=True,
+    "--wait",
+    is_flag=True,
     help="Wait for the endpoint to be ready after creation",
+)
+@click.option(
+    "--json",
+    is_flag=True,
+    help="Print output in JSON format",
 )
 @click.pass_context
 @handle_api_errors("Endpoints")
@@ -80,8 +79,7 @@ def create(
     model: str,
     min_replicas: int,
     max_replicas: int,
-    gpu: str,
-    gpu_count: int,
+    hardware: str,
     display_name: str | None,
     no_prompt_cache: bool | None,
     no_speculative_decoding: bool | None,
@@ -89,29 +87,23 @@ def create(
     inactive_timeout: int | None,
     availability_zone: str | None,
     wait: bool,
+    json: bool,
 ) -> None:
     """Create a new dedicated inference endpoint."""
     client: Together = ctx.obj
     # Map GPU types to their full hardware ID names
-    gpu_map = {
-        "b200": "nvidia_b200_180gb_sxm",
-        "h200": "nvidia_h200_140gb_sxm",
-        "h100": "nvidia_h100_80gb_sxm",
-        "a100": "nvidia_a100_80gb_pcie" if gpu_count == 1 else "nvidia_a100_80gb_sxm",
-        "l40": "nvidia_l40",
-        "l40s": "nvidia_l40s",
-        "rtx-6000": "nvidia_rtx_6000_ada",
-    }
 
-    if no_prompt_cache is not None:
+    if json is True and wait is True:
+        click.secho("Error: --json and --wait cannot be used together.", fg="red", err=True)
+        return
+
+    if no_prompt_cache is not None and not json:
         click.echo("Warning: --no-prompt-cache is deprecated and no longer has any effect.", err=True)
-
-    hardware_id = f"{gpu_count}x_{gpu_map[gpu]}"
 
     try:
         response = client.endpoints.create(
             model=model,
-            hardware=hardware_id,
+            hardware=hardware,
             autoscaling={
                 "min_replicas": min_replicas,
                 "max_replicas": max_replicas,
@@ -123,23 +115,31 @@ def create(
             extra_query={"availability_zone": availability_zone or omit},
         )
     except APIError as e:
+        if json:
+            raise e
+
         if (
             "check the hardware api" in str(e.args[0]).lower()
             or "invalid hardware provided" in str(e.args[0]).lower()
             or "the selected configuration" in str(e.args[0]).lower()
+            or "hardware is required" in str(e.args[0]).lower()
         ):
             click.secho("Invalid hardware selected.", fg="red", err=True)
             click.echo("\nAvailable hardware options:")
-            ctx.invoke(hardware, available=True, model=model, json=False)
+            ctx.invoke(list_hardware, available=True, model=model, json=False)
             sys.exit(1)
         raise e
 
     # Print detailed information to stderr
+    if json:
+        click.echo(response.model_dump_json(indent=2))
+        return
+
     click.echo("Created dedicated endpoint with:", err=True)
     click.echo(f"  Model: {model}", err=True)
     click.echo(f"  Min replicas: {min_replicas}", err=True)
     click.echo(f"  Max replicas: {max_replicas}", err=True)
-    click.echo(f"  Hardware: {hardware_id}", err=True)
+    click.echo(f"  Hardware: {hardware}", err=True)
     if display_name:
         click.echo(f"  Display name: {display_name}", err=True)
     if no_speculative_decoding:

@@ -1,17 +1,26 @@
+import json as json_lib
+
 import click
 
 from together import Together
 from together.lib.cli.api._utils import handle_api_errors
+from together.lib.utils.serializer import datetime_serializer
 
 
 @click.command()
 @click.argument("endpoint-id", required=True)
-@click.option("--wait/--no-wait", default=True, help="Wait for the endpoint to start")
+@click.option("--wait", is_flag=True, help="Wait for the endpoint to start")
+@click.option("--json", is_flag=True, help="Print output in JSON format")
 @click.pass_obj
 @handle_api_errors("Endpoints")
-def start(client: Together, endpoint_id: str, wait: bool) -> None:
+def start(client: Together, endpoint_id: str, wait: bool, json: bool) -> None:
     """Start a dedicated inference endpoint."""
-    client.endpoints.update(endpoint_id, state="STARTED")
+    response = client.endpoints.update(endpoint_id, state="STARTED")
+
+    if json:
+        click.echo(json_lib.dumps(response.model_dump(), default=datetime_serializer, indent=2))
+        return
+
     click.echo("Successfully marked endpoint as starting", err=True)
 
     if wait:
