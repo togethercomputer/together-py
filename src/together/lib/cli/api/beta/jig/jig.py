@@ -7,6 +7,7 @@ import time
 import shlex
 import shutil
 import subprocess
+from dataclasses import asdict
 from typing import Any, Optional
 from pathlib import Path
 from urllib.parse import urlparse
@@ -26,7 +27,9 @@ from together.lib.cli.api.beta.jig._config import (
 )
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
-DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
+DOCKERFILE_MANAGED_MARKER = (
+    "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
+)
 
 # --- Helper Functions ---
 
@@ -113,7 +116,9 @@ def _get_files_to_copy(config: Config) -> list[str]:
     if config.image.auto_include_git:
         try:
             if _run(["git", "status", "--porcelain"]).stdout.strip():
-                raise RuntimeError("Git repository has uncommitted changes: auto_include_git not allowed.")
+                raise RuntimeError(
+                    "Git repository has uncommitted changes: auto_include_git not allowed."
+                )
             git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
             files.update(f for f in git_files if f and f != ".")
         except subprocess.CalledProcessError:
@@ -146,7 +151,11 @@ def _dockerfile(config: Config) -> bool:
             return False
 
         # Skip regeneration if config hasn't changed
-        if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
+        if (
+            config._path
+            and config._path.exists()
+            and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime
+        ):
             return True
 
     with open(dockerfile_path, "w") as f:
@@ -176,10 +185,19 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() if e.stderr else "Docker command failed"
         raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
-    raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
+    raise RuntimeError(
+        f"No registry digest found for {image_name}. Make sure the image was pushed to registry first."
+    )
 
 
-def _set_secret(client: Together, config: Config, state: State, name: str, value: str, description: str) -> None:
+def _set_secret(
+    client: Together,
+    config: Config,
+    state: State,
+    name: str,
+    value: str,
+    description: str,
+) -> None:
     """Set secret for the deployment"""
     deployment_secret_name = f"{config.model_name}-{name}"
 
@@ -235,7 +253,9 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
 def _ensure_registry_base_path(client: Together, state: State) -> None:
     """Ensure registry base path is set in state"""
     if not state.registry_base_path:
-        response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
+        response = client._client.get(
+            "/image-repositories/base-path", headers=client.auth_headers
+        )
         response.raise_for_status()
         data = response.json()
         base_path = data["base-path"]
@@ -289,7 +309,9 @@ def _build_warm_image(base_image: str) -> None:
     if not cache_files:
         raise RuntimeError("Warmup completed but no cache files were generated")
 
-    click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
+    click.echo(
+        f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated"
+    )
 
     # Generate cache dockerfile - copy cache to same location used during warmup
     cache_dockerfile = Path("Dockerfile.cache")
@@ -367,10 +389,20 @@ def dockerfile(config_path: str | None) -> None:
 @click.pass_context
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@click.option(
+    "--docker-args",
+    default=None,
+    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
+)
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
+def build(
+    ctx: click.Context,
+    tag: str,
+    warmup: bool,
+    docker_args: str | None,
+    config_path: str | None,
+) -> None:
     """Build container image"""
     import os
     import shlex as shlex_module
@@ -385,7 +417,9 @@ def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, c
     if _dockerfile(config):
         click.echo("\N{CHECK MARK} Generated Dockerfile")
     else:
-        click.echo(f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)")
+        click.echo(
+            f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)"
+        )
 
     click.echo(f"Building {image}")
     cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
@@ -435,8 +469,17 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
-@click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
+@click.option(
+    "--docker-args",
+    default=None,
+    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
+)
+@click.option(
+    "--image",
+    "existing_image",
+    default=None,
+    help="Use existing image (skip build/push)",
+)
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
 def deploy(
@@ -458,7 +501,13 @@ def deploy(
         deployment_image = existing_image
     else:
         # Invoke build and push
-        ctx.invoke(build, tag=tag, warmup=warmup, docker_args=docker_args, config_path=config_path)
+        ctx.invoke(
+            build,
+            tag=tag,
+            warmup=warmup,
+            docker_args=docker_args,
+            config_path=config_path,
+        )
         ctx.invoke(push, tag=tag, config_path=config_path)
         deployment_image = _get_image_with_digest(state, config, tag)
 
@@ -488,18 +537,27 @@ def deploy(
     if config.deploy.command:
         deploy_data["command"] = config.deploy.command
 
-    env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
-    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
+    env_vars = [
+        {"name": k, "value": v} for k, v in config.deploy.environment_variables.items()
+    ]
+    env_vars.append(
+        {"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)}
+    )
 
     if "TOGETHER_API_KEY" not in state.secrets:
-        _set_secret(client, config, state, "TOGETHER_API_KEY", client.api_key, "Auth key for queue API")
+        _set_secret(
+            client,
+            config,
+            state,
+            "TOGETHER_API_KEY",
+            client.api_key,
+            "Auth key for queue API",
+        )
 
     for name, secret_id in state.secrets.items():
         env_vars.append({"name": name, "value_from_secret": secret_id})
 
     deploy_data["environment_variables"] = env_vars
-
-    deploy_data["volumes"] = volumes
 
     if DEBUG:
         pprint(deploy_data, indent_guides=False)
@@ -528,7 +586,10 @@ def status(ctx: click.Context, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
     response = client.beta.jig.retrieve(config.model_name)
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+    pprint(
+        response.model_dump() if hasattr(response, "model_dump") else response,
+        indent_guides=False,
+    )
 
 
 @click.command()
@@ -563,7 +624,9 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as streaming_response:
+        with client.beta.jig.with_streaming_response.retrieve_logs(
+            config.model_name
+        ) as streaming_response:
             for line in streaming_response.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
@@ -658,4 +721,7 @@ def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
     client: Together = ctx.obj
     response = client.beta.jig.list()
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+    pprint(
+        response.model_dump() if hasattr(response, "model_dump") else response,
+        indent_guides=False,
+    )
