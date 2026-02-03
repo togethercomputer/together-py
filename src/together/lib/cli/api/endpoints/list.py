@@ -59,8 +59,11 @@ def list(
         return
 
     click.echo("Endpoints:", err=True)
+    # Only show autoscaling for user's own endpoints (when --mine is set)
+    show_autoscaling = mine is True
     for endpoint in endpoints.data:
         ctx.obj.print_endpoint(
             endpoint,
+            show_autoscaling=show_autoscaling,
         )
         click.echo()
