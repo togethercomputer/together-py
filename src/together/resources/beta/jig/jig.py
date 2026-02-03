@@ -260,7 +260,7 @@ class JigResource(SyncAPIResource):
     def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", " a100-80gb"],
+        gpu_type: Literal["h100-80gb", "a100-80gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -417,7 +417,6 @@ class JigResource(SyncAPIResource):
         self,
         id: str,
         *,
-        follow: bool | Omit = omit,
         replica_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -426,14 +425,10 @@ class JigResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> DeploymentLogs:
-        """Retrieve logs from a deployment, optionally filtered by replica ID.
-
-        Use
-        follow=true to stream logs in real-time.
+        """
+        Retrieve logs from a deployment, optionally filtered by replica ID.
 
         Args:
-          follow: Stream logs in real-time (ndjson format)
-
           replica_id: Replica ID to filter logs
 
           extra_headers: Send extra headers
@@ -453,13 +448,7 @@ class JigResource(SyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=maybe_transform(
-                    {
-                        "follow": follow,
-                        "replica_id": replica_id,
-                    },
-                    jig_retrieve_logs_params.JigRetrieveLogsParams,
-                ),
+                query=maybe_transform({"replica_id": replica_id}, jig_retrieve_logs_params.JigRetrieveLogsParams),
             ),
             cast_to=DeploymentLogs,
         )
@@ -675,7 +664,7 @@ class AsyncJigResource(AsyncAPIResource):
     async def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", " a100-80gb"],
+        gpu_type: Literal["h100-80gb", "a100-80gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -832,7 +821,6 @@ class AsyncJigResource(AsyncAPIResource):
         self,
         id: str,
         *,
-        follow: bool | Omit = omit,
         replica_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -841,14 +829,10 @@ class AsyncJigResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> DeploymentLogs:
-        """Retrieve logs from a deployment, optionally filtered by replica ID.
-
-        Use
-        follow=true to stream logs in real-time.
+        """
+        Retrieve logs from a deployment, optionally filtered by replica ID.
 
         Args:
-          follow: Stream logs in real-time (ndjson format)
-
           replica_id: Replica ID to filter logs
 
           extra_headers: Send extra headers
@@ -869,11 +853,7 @@ class AsyncJigResource(AsyncAPIResource):
                 extra_body=extra_body,
                 timeout=timeout,
                 query=await async_maybe_transform(
-                    {
-                        "follow": follow,
-                        "replica_id": replica_id,
-                    },
-                    jig_retrieve_logs_params.JigRetrieveLogsParams,
+                    {"replica_id": replica_id}, jig_retrieve_logs_params.JigRetrieveLogsParams
                 ),
             ),
             cast_to=DeploymentLogs,

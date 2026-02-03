@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.0-alpha.19 (2026-02-03)
+
+Full Changelog: [v2.0.0-alpha.18...v2.0.0-alpha.19](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.18...v2.0.0-alpha.19)
+
+### Features
+
+* internal: Add code samples to deployments features ([eaa20a5](https://github.com/togethercomputer/together-py/commit/eaa20a59aa3bf1d48026f0018060ef6b34d7b50d))
+
+
+### Chores
+
+* **api:** move hardware listing feature under endpoints resource. ([ac6671a](https://github.com/togethercomputer/together-py/commit/ac6671a36b1c41374e7d491a37e7086718972e20))
+* Fix CLI ([5d89415](https://github.com/togethercomputer/together-py/commit/5d8941523300914c62e4f97d354cdff664445517))
+* run internal foramt ([45ef6b3](https://github.com/togethercomputer/together-py/commit/45ef6b3d97a49108f02eeeb4ec856bd7c352fd75))
+
 ## 2.0.0-alpha.18 (2026-01-31)
 
 Full Changelog: [v2.0.0-alpha.17...v2.0.0-alpha.18](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.17...v2.0.0-alpha.18)

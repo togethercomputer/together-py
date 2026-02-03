@@ -77,7 +77,7 @@ def upload(
         click.echo(json_lib.dumps(response.model_dump(), indent=2))
     else:
         # If the model weights already exist, the api is returning 200 but with no data
-        if response.data is None: # type: ignore
+        if response.data is None:  # type: ignore
             raise TogetherError(response.message)
 
         click.echo(f"Model upload job created successfully!")
