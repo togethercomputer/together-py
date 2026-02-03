@@ -19,8 +19,8 @@ from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
-    WARMUP_ENV_NAME,
     WARMUP_DEST,
+    WARMUP_ENV_NAME,
     State,
     Config,
 )
@@ -372,8 +372,8 @@ def dockerfile(config_path: str | None) -> None:
 @handle_api_errors("Jig")
 def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
     """Build container image"""
-    import shlex as shlex_module
     import os
+    import shlex as shlex_module
 
     client: Together = ctx.obj
     config = Config.find(config_path)
