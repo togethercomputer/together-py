@@ -9,9 +9,9 @@ from together.lib.cli.api.beta.jig.jig import (
     build,
     deploy,
     status,
-    endpoint,
     submit,
     destroy,
+    endpoint,
     dockerfile,
     job_status,
     queue_status,
@@ -28,7 +28,7 @@ def jig(ctx: click.Context) -> None:
     pass
 
 
-def add_commands(parent: click.Group):
+def add_commands(parent: click.Group) -> None:
     # Add subgroups
     parent.add_command(secrets)
     parent.add_command(volumes)
