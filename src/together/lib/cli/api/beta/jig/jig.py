@@ -82,7 +82,8 @@ COPY --from=ghcr.io/astral-sh/uv /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml .
 RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv pip install --system --compile-bytecode .
+    uv pip install --system --compile-bytecode . && \\
+    python -c "import sprocket" 2>/dev/null || uv pip install --system --index-url https://pypi.together.ai/ sprocket
 
 # Final stage - slim image
 FROM python:{config.image.python_version}-slim
@@ -99,8 +100,6 @@ ENTRYPOINT ["/tini", "--"]
 {run}
 WORKDIR /app
 {copy}
-# this is temporarily needed if building from a monorepo
-RUN --mount=type=bind,source=.,target=/src cp /src/.worker.p* worker.py 2>/dev/null || true
 ENV DEPLOYMENT_NAME={config.model_name}
 # this tag will set the X-Worker-Version header, used for rollout monitoring
 {git_version_cmd}
@@ -388,13 +387,6 @@ def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, c
     else:
         click.echo(f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)")
 
-    build_dir_worker_path = Path("./.sprocket.py")
-    dst = Path(__file__).parent / "sprocket" / "sprocket.py"
-    try:
-        shutil.copy(dst, build_dir_worker_path)
-    except FileNotFoundError:
-        pass
-
     click.echo(f"Building {image}")
     cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
     if config.dockerfile != "Dockerfile":
@@ -407,7 +399,6 @@ def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, c
     if subprocess.run(cmd).returncode != 0:
         raise RuntimeError("Build failed")
 
-    build_dir_worker_path.unlink(missing_ok=True)
     click.echo("\N{CHECK MARK} Built")
 
     if warmup:
