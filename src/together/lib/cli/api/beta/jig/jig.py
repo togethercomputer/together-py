@@ -83,7 +83,7 @@ WORKDIR /app
 COPY pyproject.toml .
 RUN --mount=type=cache,target=/root/.cache/uv \\
     uv pip install --system --compile-bytecode . && \\
-    (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --index-url https://pypi.together.ai/ sprocket))
+    (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
 
 # Final stage - slim image
 FROM python:{config.image.python_version}-slim
