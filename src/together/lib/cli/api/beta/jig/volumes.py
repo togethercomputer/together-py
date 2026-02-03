@@ -490,8 +490,8 @@ def volumes_describe(
     client: Together = ctx.obj
 
     try:
-        response = client.beta.jig.volumes.retrieve(name)
-        click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
+        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
+        click.echo(json.dumps(response.json(), indent=2))
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
@@ -505,5 +505,5 @@ def volumes_describe(
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: Together = ctx.obj
-    response = client.beta.jig.volumes.list()
-    click.echo(json.dumps(response.model_dump() if hasattr(response, "model_dump") else response, indent=2))
+    response = client.beta.jig.volumes.with_raw_response.list()
+    click.echo(json.dumps(response.json(), indent=2))
