@@ -28,7 +28,7 @@ def jig(ctx: click.Context) -> None:
     pass
 
 
-def add_commands(parent: click.Group):
+def add_commands(parent: click.Group) -> None:
     # Add subgroups
     parent.add_command(secrets)
     parent.add_command(volumes)
