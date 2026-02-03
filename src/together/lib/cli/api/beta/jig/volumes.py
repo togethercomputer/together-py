@@ -5,21 +5,15 @@ from __future__ import annotations
 import time
 import asyncio
 import itertools
-from typing import Any, AsyncIterator
+from typing import Any
 from pathlib import Path
 
 import click
 import httpx
 from rich.pretty import pprint
 
-from together._exceptions import APIStatusError
-
-try:
-    import aiofiles
-except ImportError:
-    aiofiles = None  # type: ignore
-
 from together import Together
+from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
@@ -117,9 +111,6 @@ class Uploader:
 
     async def upload_files(self, source_path: Path, volume_name: str) -> None:
         """Upload all files from source directory with progress tracking"""
-        if aiofiles is None:
-            raise ImportError("aiofiles is required for volume uploads. Install with: pip install aiofiles")
-
         # these require a running event loop
         self.semaphore = asyncio.Semaphore(UPLOAD_CONCURRENCY_LIMIT)
         self.progress_lock = asyncio.Lock()
@@ -182,9 +173,6 @@ class Uploader:
         file_size: int,
     ) -> None:
         """Upload a single file using simple upload"""
-        if aiofiles is None:
-            raise ImportError("aiofiles is required for volume uploads. Install with: pip install aiofiles")
-
         async with self.semaphore:
             response = self.client._client.post(
                 "/storage/upload-request",
@@ -198,8 +186,7 @@ class Uploader:
             method = upload_data["upload_url"]["method"]
             headers = upload_data["upload_url"].get("headers", {})
 
-            async with aiofiles.open(file_path, "rb") as f:
-                file_data = await f.read()
+            file_data = await asyncio.to_thread(Path(file_path).read_bytes)
 
             try:
                 resp = await self.http_client.request(method, upload_url, content=file_data, headers=headers)
@@ -260,13 +247,6 @@ class Uploader:
         part_urls: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         """Upload file parts concurrently"""
-        if aiofiles is None:
-            raise ImportError("aiofiles is required for volume uploads. Install with: pip install aiofiles")
-
-        async def get_chunks() -> AsyncIterator[tuple[dict[str, Any], bytes]]:
-            async with aiofiles.open(file_path, "rb") as f:
-                for part in part_urls:
-                    yield part, await f.read(self.chunk_size)
 
         async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
             err = None
@@ -294,7 +274,15 @@ class Uploader:
                             await asyncio.sleep(1 * (attempt + 1))
                 raise RuntimeError(f"Failed to upload part {part_number}: {err}")
 
-        tasks = [asyncio.create_task(upload_part(part_info, data)) async for (part_info, data) in get_chunks()]
+        with open(file_path, "rb") as f:
+            tasks = [
+                upload_part(
+                    part_info=part_info,
+                    data=await asyncio.to_thread(f.read, self.chunk_size),
+                )
+                for part_info in part_urls
+            ]
+
         completed_parts = await asyncio.gather(*tasks)
         return sorted(completed_parts, key=lambda x: x["part_number"])
 
