@@ -542,7 +542,7 @@ def endpoint(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    click.echo(f"{client.base_url}/deployment-request/{config.model_name}")
+    click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{config.model_name}")
 
 
 @click.command()
