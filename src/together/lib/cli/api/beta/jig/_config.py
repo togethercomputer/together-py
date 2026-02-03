@@ -28,6 +28,10 @@ MULTIPART_CHUNK_SIZE_MB = int(os.getenv("TOGETHER_MULTIPART_CHUNK_SIZE_MB", "20"
 MULTIPART_THRESHOLD_MB = int(os.getenv("TOGETHER_MULTIPART_THRESHOLD_MB", "100"))
 MAX_UPLOAD_RETRIES = 3
 
+# Warmup configuration (for torch compile cache)
+WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
+WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
+
 
 # --- Configuration Dataclasses ---
 
@@ -56,8 +60,9 @@ class DeployConfig:
     description: str = ""
     gpu_type: str = "h100-80gb"
     gpu_count: int = 1
-    cpu: int = 1
-    memory: int = 8
+    cpu: float = 1
+    memory: float = 8
+    storage: int = 100
     min_replicas: int = 1
     max_replicas: int = 1
     port: int = 8000
@@ -65,6 +70,7 @@ class DeployConfig:
     command: Optional[list[str]] = None
     autoscaling: dict[str, str] = field(default_factory=dict[str, str])
     health_check_path: str = "/health"
+    termination_grace_period_seconds: int = 300
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:

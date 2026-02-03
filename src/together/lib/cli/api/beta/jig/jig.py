@@ -19,6 +19,8 @@ from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
+    WARMUP_ENV_NAME,
+    WARMUP_DEST,
     State,
     Config,
 )
@@ -247,6 +249,67 @@ def _ensure_registry_base_path(client: Together, state: State) -> None:
         state.save()
 
 
+def _build_warm_image(base_image: str) -> None:
+    """Run a warmup container to generate a cache, then rebuild with cache baked in.
+
+    This runs the container with RUN_AND_EXIT=1 which triggers warmup_inputs in sprocket.
+    The cache directory is mounted at /app/torch_cache and the user's code should set the
+    appropriate env var (TORCHINDUCTOR_CACHE_DIR, TKCC_OUTPUT_DIR, etc.) to point there.
+    """
+    import os
+
+    cache_dir = Path(".") / WARMUP_DEST
+    # Clean any existing cache
+    try:
+        shutil.rmtree(cache_dir)
+    except FileNotFoundError:
+        pass
+    cache_dir.mkdir(exist_ok=True)
+
+    click.echo("\N{FIRE} Running warmup to generate compile cache...")
+
+    # Run container with GPU and RUN_AND_EXIT=1
+    # Mount current dir as /app so warmup_inputs can reference local weights
+    # Mount cache dir for compile artifacts
+    warmup_cmd = ["docker", "run", "--rm", "--gpus", "all", "-e", "RUN_AND_EXIT=1"]
+    warmup_cmd.extend(["-e", f"{WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"])
+    warmup_cmd.extend(["-v", f"{Path.cwd().absolute()}:/app"])
+    # if MODEL_PRELOAD_PATH is set, also mount that (e.g. ~/.cache/huggingface)
+    if weights_path := os.getenv("MODEL_PRELOAD_PATH"):
+        warmup_cmd.extend(["-v", f"{weights_path}:{weights_path}"])
+        warmup_cmd.extend(["-e", f"MODEL_PRELOAD_PATH={weights_path}"])
+    warmup_cmd.append(base_image)
+
+    click.echo(f"Running: {' '.join(warmup_cmd)}")
+    result = subprocess.run(warmup_cmd)
+    if result.returncode != 0:
+        raise RuntimeError(f"Warmup failed with code {result.returncode}")
+
+    # Check cache was generated
+    cache_files = list(cache_dir.rglob("*"))
+    if not cache_files:
+        raise RuntimeError("Warmup completed but no cache files were generated")
+
+    click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
+
+    # Generate cache dockerfile - copy cache to same location used during warmup
+    cache_dockerfile = Path("Dockerfile.cache")
+    dockerfile_content = f"""FROM {base_image}
+COPY {cache_dir.name} /app/{WARMUP_DEST}
+ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
+    cache_dockerfile.write_text(dockerfile_content)
+
+    click.echo("\N{PACKAGE} Building final image with cache...")
+    cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image]
+    cmd.extend(["-f", str(cache_dockerfile), "."])
+
+    if subprocess.run(cmd).returncode != 0:
+        cache_dockerfile.unlink(missing_ok=True)
+        raise RuntimeError("Cache image build failed")
+    cache_dockerfile.unlink(missing_ok=True)
+    click.echo("\N{CHECK MARK} Final image with cache built")
+
+
 # --- CLI Commands ---
 
 
@@ -304,9 +367,10 @@ def dockerfile(config_path: str | None) -> None:
 @click.command()
 @click.pass_context
 @click.option("--tag", default="latest", help="Image tag")
+@click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def build(ctx: click.Context, tag: str, config_path: str | None) -> None:
+def build(ctx: click.Context, tag: str, warmup: bool, config_path: str | None) -> None:
     """Build container image"""
     client: Together = ctx.obj
     config = Config.find(config_path)
@@ -336,6 +400,9 @@ def build(ctx: click.Context, tag: str, config_path: str | None) -> None:
 
     build_dir_worker_path.unlink(missing_ok=True)
     click.echo("\N{CHECK MARK} Built")
+
+    if warmup:
+        _build_warm_image(image)
 
 
 @click.command()
@@ -367,6 +434,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.pass_context
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
+@click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
@@ -374,6 +442,7 @@ def deploy(
     ctx: click.Context,
     tag: str,
     build_only: bool,
+    warmup: bool,
     existing_image: str | None,
     config_path: str | None,
 ) -> Optional[dict[str, Any]]:
@@ -387,7 +456,7 @@ def deploy(
         deployment_image = existing_image
     else:
         # Invoke build and push
-        ctx.invoke(build, tag=tag, config_path=config_path)
+        ctx.invoke(build, tag=tag, warmup=warmup, config_path=config_path)
         ctx.invoke(push, tag=tag, config_path=config_path)
         deployment_image = _get_image_with_digest(state, config, tag)
 
@@ -406,7 +475,9 @@ def deploy(
         "gpu_count": config.deploy.gpu_count,
         "cpu": config.deploy.cpu,
         "memory": config.deploy.memory,
+        "storage": config.deploy.storage,
         "autoscaling": config.deploy.autoscaling,
+        "termination_grace_period_seconds": config.deploy.termination_grace_period_seconds,
     }
 
     if config.deploy.health_check_path:
@@ -459,6 +530,17 @@ def status(ctx: click.Context, config_path: str | None) -> None:
     config = Config.find(config_path)
     response = client.beta.jig.retrieve(config.model_name)
     pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+
+
+@click.command()
+@click.pass_context
+@click.option("--config", "config_path", default=None, help="Configuration file path")
+@handle_api_errors("Jig")
+def endpoint(ctx: click.Context, config_path: str | None) -> None:
+    """Get deployment endpoint URL"""
+    client: Together = ctx.obj
+    config = Config.find(config_path)
+    click.echo(f"{client.base_url}/deployment-request/{config.model_name}")
 
 
 @click.command()

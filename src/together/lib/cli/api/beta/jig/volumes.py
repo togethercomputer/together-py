@@ -276,9 +276,12 @@ class Uploader:
 
         with open(file_path, "rb") as f:
             tasks = [
-                upload_part(
-                    part_info=part_info,
-                    data=await asyncio.to_thread(f.read, self.chunk_size),
+                asyncio.create_task(
+                    upload_part(
+                        part_info=part_info,
+                        # read file sequentially while uploads proceed
+                        data=await asyncio.to_thread(f.read, self.chunk_size),
+                    )
                 )
                 for part_info in part_urls
             ]

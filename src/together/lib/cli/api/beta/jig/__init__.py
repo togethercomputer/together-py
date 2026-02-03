@@ -9,6 +9,7 @@ from together.lib.cli.api.beta.jig.jig import (
     build,
     deploy,
     status,
+    endpoint,
     submit,
     destroy,
     dockerfile,
@@ -23,24 +24,29 @@ from together.lib.cli.api.beta.jig.volumes import volumes
 @click.group()
 @click.pass_context
 def jig(ctx: click.Context) -> None:
-    """Jig API commands - deployment tool for Together AI"""
+    """Jig commands - deploy and manage containers"""
     pass
 
 
-# Add subgroups
-jig.add_command(secrets)
-jig.add_command(volumes)
+def add_commands(parent: click.Group):
+    # Add subgroups
+    parent.add_command(secrets)
+    parent.add_command(volumes)
 
-# Add main commands
-jig.add_command(init)
-jig.add_command(dockerfile)
-jig.add_command(build)
-jig.add_command(push)
-jig.add_command(deploy)
-jig.add_command(status)
-jig.add_command(logs)
-jig.add_command(destroy)
-jig.add_command(submit)
-jig.add_command(job_status)
-jig.add_command(queue_status)
-jig.add_command(list_deployments)
+    # Add main commands
+    parent.add_command(init)
+    parent.add_command(dockerfile)
+    parent.add_command(build)
+    parent.add_command(push)
+    parent.add_command(deploy)
+    parent.add_command(status)
+    parent.add_command(endpoint)
+    parent.add_command(logs)
+    parent.add_command(destroy)
+    parent.add_command(submit)
+    parent.add_command(job_status)
+    parent.add_command(queue_status)
+    parent.add_command(list_deployments)
+
+
+add_commands(jig)
