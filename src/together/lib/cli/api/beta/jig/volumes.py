@@ -21,8 +21,6 @@ from together.lib.cli.api.beta.jig._config import (
     MULTIPART_THRESHOLD_MB,
     MULTIPART_CHUNK_SIZE_MB,
     UPLOAD_CONCURRENCY_LIMIT,
-    State,
-    Config,
 )
 
 
@@ -91,12 +89,16 @@ class Uploader:
         # \r moves cursor to start of line, \033[K clears from cursor to end of line
         print(f"\r{msg}\033[K", end="", flush=True)  # noqa: T201
 
-    async def increment_progress(self, bytes_count: int, filename: str = "", file_complete: bool = False) -> None:
+    async def increment_progress(
+        self, bytes_count: int, filename: str = "", file_complete: bool = False
+    ) -> None:
         async with self.progress_lock:
             if bytes_count > 0:
                 self.uploaded_bytes += bytes_count
             if DEBUG:
-                click.echo(f"\nDEBUG: bytes_count={bytes_count}, total={self.uploaded_bytes}")
+                click.echo(
+                    f"\nDEBUG: bytes_count={bytes_count}, total={self.uploaded_bytes}"
+                )
             if file_complete:
                 self.completed_files += 1
             if filename:
@@ -135,7 +137,10 @@ class Uploader:
         spinner_task = asyncio.create_task(self.spinner_updater())
         async with httpx.AsyncClient(timeout=300.0) as self.http_client:
             try:
-                tasks = [self.upload_file_with_retry(fp, rp, fs) for fp, rp, fs in files_to_upload]
+                tasks = [
+                    self.upload_file_with_retry(fp, rp, fs)
+                    for fp, rp, fs in files_to_upload
+                ]
                 await asyncio.gather(*tasks)
             finally:
                 self.spinner_running = False
@@ -144,7 +149,9 @@ class Uploader:
         elapsed_time = time.time() - self.start_time
         click.echo(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
 
-    async def upload_file_with_retry(self, file_path: Path, remote_path: str, file_size: int) -> None:
+    async def upload_file_with_retry(
+        self, file_path: Path, remote_path: str, file_size: int
+    ) -> None:
         for attempt in range(MAX_UPLOAD_RETRIES):
             # Snapshot progress before attempt
             async with self.progress_lock:
@@ -189,12 +196,16 @@ class Uploader:
             file_data = await asyncio.to_thread(Path(file_path).read_bytes)
 
             try:
-                resp = await self.http_client.request(method, upload_url, content=file_data, headers=headers)
+                resp = await self.http_client.request(
+                    method, upload_url, content=file_data, headers=headers
+                )
                 resp.raise_for_status()
             except Exception as e:
                 raise RuntimeError(f"Failed to upload {remote_path}: {e}") from e
 
-            await self.increment_progress(max(file_size, 1), remote_path, file_complete=True)
+            await self.increment_progress(
+                max(file_size, 1), remote_path, file_complete=True
+            )
 
     async def _upload_file_multipart(
         self,
@@ -260,7 +271,9 @@ class Uploader:
 
                 for attempt in range(MAX_UPLOAD_RETRIES):
                     try:
-                        response = await self.http_client.request(method, url, content=data, headers=headers)
+                        response = await self.http_client.request(
+                            method, url, content=data, headers=headers
+                        )
                         response.raise_for_status()
                         etag = response.headers.get("ETag", "").strip('"')
                         await self.increment_progress(
@@ -300,7 +313,9 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
 
     source_prefix = f"{name}/{source_path.name}"
 
-    click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
+    click.echo(
+        f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'"
+    )
     try:
         volume_response = client.beta.jig.volumes.create(
             name=name,
@@ -343,7 +358,9 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
     click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
     await Uploader(client).upload_files(source_path, volume_name=name)
 
-    click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
+    click.echo(
+        f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'"
+    )
     client.beta.jig.volumes.update(
         name,
         content={"type": "files", "source_prefix": source_prefix},
@@ -384,89 +401,16 @@ def volumes_update(
     asyncio.run(_update_volume(client, name, source))
 
 
-def _unset_volume_state(name: str, state: State) -> bool:
-    """Remove volume mount from deployment configuration. Returns True if was mounted."""
-    if name in state.volumes:
-        del state.volumes[name]
-        state.save()
-        click.echo(f"\N{CHECK MARK} Removed volume '{name}' from deployment configuration")
-        return True
-
-    click.echo(f"\N{WARNING SIGN} Volume '{name}' is not configured for deployment")
-    return False
-
-
-@volumes.command("set")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@click.option("--mount-path", required=True, help="Mount path in container")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Volumes")
-def volumes_set(
-    ctx: click.Context,
-    name: str,
-    mount_path: str,
-    config_path: str | None,
-) -> None:
-    """Set volume mount configuration for deployment"""
-    client: Together = ctx.obj
-
-    # Check if volume exists
-    try:
-        client.beta.jig.volumes.retrieve(name)
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
-
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-
-    if len(state.volumes) > 0 and name not in state.volumes:
-        raise ValueError("Only one read-only volume is supported per deployment")
-
-    state.volumes[name] = mount_path
-    state.save()
-    click.echo(f"\N{CHECK MARK} Volume '{name}' will be mounted at '{mount_path}' during deployment")
-
-
-@volumes.command("unset")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name to remove from local state")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Volumes")
-def volumes_unset(
-    ctx: click.Context,  # noqa: ARG001
-    name: str,
-    config_path: str | None,
-) -> None:
-    """Remove volume from local deployment configuration (does not delete remote volume)"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-    _unset_volume_state(name, state)
-
-
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Volumes")
 def volumes_delete(
     ctx: click.Context,
     name: str,
-    config_path: str | None,
 ) -> None:
     """Delete a volume"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-
-    # Unset volume first before deleting
-    volume_mounted = _unset_volume_state(name, state)
-    if volume_mounted:
-        click.echo("\N{WARNING SIGN} Please redeploy first before deleting the volume")
-        return
 
     try:
         client.beta.jig.volumes.delete(name)
