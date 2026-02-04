@@ -24,6 +24,7 @@ from together.lib.cli.api.beta.jig._config import (
     State,
     Config,
 )
+from together.lib.cli.api.beta.jig._utils import _format_deployment_status
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
@@ -560,13 +561,19 @@ def deploy(
 @click.command()
 @click.pass_context
 @click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("--json", "as_json", is_flag=True, help="Output raw JSON")
 @handle_api_errors("Jig")
-def status(ctx: click.Context, config_path: str | None) -> None:
+def status(ctx: click.Context, config_path: str | None, as_json: bool) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
     response = client.beta.jig.with_raw_response.retrieve(config.model_name)
-    click.echo(json.dumps(response.json(), indent=2))
+    data = response.json()
+
+    if as_json:
+        click.echo(json.dumps(data, indent=2))
+    else:
+        click.echo(_format_deployment_status(data))
 
 
 @click.command()
