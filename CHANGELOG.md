@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0 (2026-02-04)
+
+Full Changelog: [v2.0.0-alpha.20...v2.0.0](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.20...v2.0.0)
+
+### Features
+
+* **api:** Publish 2.0 Stable ([213f5c1](https://github.com/togethercomputer/together-py/commit/213f5c173bbe98c4ee80bd19a96e0a59bbbc236a))
+
 ## 2.0.0-alpha.20 (2026-02-04)
 
 Full Changelog: [v2.0.0-alpha.19...v2.0.0-alpha.20](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.19...v2.0.0-alpha.20)
