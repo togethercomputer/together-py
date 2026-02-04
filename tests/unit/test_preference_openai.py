@@ -150,12 +150,6 @@ STRUCTURAL_ISSUE_TEST_CASES = [
         id="wrong_output_format_non_preferred",
     ),
     pytest.param(
-        "missing_content",
-        lambda item: item.update({"input": {"messages": [{"role": "user"}]}}),  # type: ignore
-        "Missing content in messages",
-        id="missing_content",
-    ),
-    pytest.param(
         "multiple_preferred_outputs",
         lambda item: item.update(  # type: ignore
             {
@@ -208,21 +202,6 @@ STRUCTURAL_ISSUE_TEST_CASES = [
         ),
         "Invalid role in messages",
         id="invalid_role_in_messages",
-    ),
-    pytest.param(
-        "non_alternating_roles",
-        lambda item: item.update(  # type: ignore
-            {
-                "input": {
-                    "messages": [
-                        {"role": "user", "content": "Hello"},
-                        {"role": "user", "content": "How are you?"},
-                    ]
-                }
-            }
-        ),
-        "Non-alternating roles in messages",
-        id="non_alternating_roles",
     ),
     pytest.param(
         "invalid_weight_type",

@@ -314,7 +314,7 @@ def test_check_jsonl_missing_field_in_conversation(tmp_path: Path):
         {
             "messages": [
                 {"role": "user", "content": "Hi"},
-                {"role": "assistant"},
+                {"content": "Hello"},
             ]
         }
     ]
@@ -323,7 +323,7 @@ def test_check_jsonl_missing_field_in_conversation(tmp_path: Path):
 
     report = check_file(file)
     assert not report["is_check_passed"]
-    assert "Missing required column `content`" in report["message"]
+    assert "Missing required column `role`" in report["message"]
 
 
 def test_check_jsonl_wrong_turn_type(tmp_path: Path):
