@@ -41,7 +41,7 @@ def _format_timestamp(timestamp_str: str | None) -> str:
         return timestamp_str or "-"
 
 
-def _format_deployment_status(data: dict[str, Any]) -> str:
+def format_deployment_status(data: dict[str, Any]) -> str:
     """Format deployment status for CLI display"""
     lines: list[str] = []
 
@@ -81,7 +81,7 @@ def _format_deployment_status(data: dict[str, Any]) -> str:
     lines.append(image)
 
     # Volumes
-    volumes = data.get("volumes") or []
+    volumes: list[dict[str, Any]] = data.get("volumes") or []
     if volumes:
         vol_strs = [f"{v.get('name')}:{v.get('mount_path')}" for v in volumes]
         lines.append(f"volumes: {', '.join(vol_strs)}")
@@ -89,8 +89,8 @@ def _format_deployment_status(data: dict[str, Any]) -> str:
         lines.append("volumes: none")
 
     # Secrets (env vars from secrets)
-    env_vars = data.get("environment_variables") or []
-    secrets = [e.get("value_from_secret") for e in env_vars if e.get("value_from_secret")]
+    env_vars: list[dict[str, Any]] = data.get("environment_variables") or []
+    secrets: list[str] = [e.get("value_from_secret") for e in env_vars if e.get("value_from_secret")]  # type: ignore[misc]
     if secrets:
         lines.append(f"secrets: {', '.join(secrets)}")
     else:
@@ -106,8 +106,8 @@ def _format_deployment_status(data: dict[str, Any]) -> str:
 
     # Port, command, args, health_check
     port = data.get("port", "-")
-    command = data.get("command") or []
-    args = data.get("args") or []
+    command: list[str] = data.get("command") or []  # type: ignore[assignment]
+    args: list[str] = data.get("args") or []  # type: ignore[assignment]
     health_check = data.get("health_check_path", "-")
     cmd_str = " ".join(command) if command else "-"
     args_str = " ".join(args) if args else "-"
@@ -122,7 +122,7 @@ def _format_deployment_status(data: dict[str, Any]) -> str:
         lines.append("environment: none")
 
     # Detailed status section
-    replica_events = data.get("replica_events") or {}
+    replica_events: dict[str, dict[str, Any]] = data.get("replica_events") or {}  # type: ignore[assignment]
     if replica_events:
         lines.append("")
         lines.append("= detailed status =")
@@ -130,7 +130,7 @@ def _format_deployment_status(data: dict[str, Any]) -> str:
         # Group replicas by image
         by_image: dict[str, list[tuple[str, dict[str, Any]]]] = defaultdict(list)
         for replica_name, replica_info in replica_events.items():
-            img = replica_info.get("image", "unknown")
+            img: str = replica_info.get("image", "unknown")  # type: ignore[assignment]
             # Extract just the tag from image if it's a full path
             if ":" in img:
                 img = img.split(":")[-1]

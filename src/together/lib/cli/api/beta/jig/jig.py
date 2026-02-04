@@ -17,6 +17,7 @@ import click
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.api.beta.jig._utils import format_deployment_status
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     WARMUP_DEST,
@@ -24,7 +25,6 @@ from together.lib.cli.api.beta.jig._config import (
     State,
     Config,
 )
-from together.lib.cli.api.beta.jig._utils import _format_deployment_status
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
@@ -568,12 +568,12 @@ def status(ctx: click.Context, config_path: str | None, as_json: bool) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
     response = client.beta.jig.with_raw_response.retrieve(config.model_name)
-    data = response.json()
+    data: dict[str, Any] = response.json()  # type: ignore[assignment]
 
     if as_json:
         click.echo(json.dumps(data, indent=2))
     else:
-        click.echo(_format_deployment_status(data))
+        click.echo(format_deployment_status(data))
 
 
 @click.command()
