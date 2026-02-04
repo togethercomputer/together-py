@@ -17,7 +17,7 @@ The REST API documentation can be found on [docs.together.ai](https://docs.toget
 
 ```sh
 # install from PyPI
-pip install '--pre together'
+pip install together
 ```
 
 ## Usage
@@ -89,7 +89,7 @@ You can enable this by installing `aiohttp`:
 
 ```sh
 # install from PyPI
-pip install '--pre together[aiohttp]'
+pip install together[aiohttp]
 ```
 
 Then you can enable it by instantiating the client with `http_client=DefaultAioHttpClient()`:
