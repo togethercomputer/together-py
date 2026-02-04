@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import json
 import time
 import shlex
@@ -321,13 +322,40 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
 
 
 @click.command()
-def init() -> None:
+@click.option("--profile", default=None, help="Profile to initialize (creates [tool.jig.PROFILE.*])")
+def init(profile: str | None) -> None:
     """Initialize jig configuration"""
-    if (pyproject := Path("pyproject.toml")).exists():
-        click.echo("pyproject.toml already exists")
+    pyproject = Path("pyproject.toml")
+
+    if pyproject.exists():
+        # Add profile to existing file
+        if profile:
+            click.echo(f"Adding profile '{profile}' to existing pyproject.toml")
+
+            # Simple check: look for existing profile section in file text
+            content = pyproject.read_text()
+            if f"[tool.jig.{profile}." in content or f"[tool.jig.{profile}]" in content:
+                click.echo(f"ERROR: Profile '{profile}' already exists in pyproject.toml", err=True)
+                return
+
+            # Append new profile to the file
+            profile_content = f"""
+# {profile.capitalize()} profile (use with: jig deploy --profile {profile})
+[tool.jig.{profile}.deploy]
+description = "My {profile} deployment"
+gpu_type = "h100-80gb"
+gpu_count = 1
+min_replicas = 1
+"""
+            with open(pyproject, "a") as f:
+                f.write(profile_content)
+            click.echo(f"\N{CHECK MARK} Added profile '{profile}' to pyproject.toml")
+        else:
+            click.echo("pyproject.toml already exists. Use --profile to add a new profile.")
         return
 
-    content = """[project]
+    # Create new pyproject.toml with default structure
+    base_content = """[project]
 name = "my-model"
 version = "0.1.0"
 dependencies = ["torch", "transformers", "sprocket"]
@@ -339,28 +367,66 @@ url = "https://pypi.together.ai/"
 [tool.uv.sources]
 sprocket = { index = "together-pypi" }
 
-[tool.jig.image]
+# Default profile configuration
+[tool.jig.default.image]
 python_version = "3.11"
 system_packages = ["git", "libglib2.0-0"]
 cmd = "python app.py"
 
-[tool.jig.deploy]
+[tool.jig.default.deploy]
 description = "My model deployment"
 gpu_type = "h100-80gb"
 gpu_count = 1
+min_replicas = 1
+max_replicas = 10
 """
+
+    if profile:
+        # Create with specified profile
+        profile_content = f"""
+# {profile.capitalize()} profile (use with: jig deploy --profile {profile})
+[tool.jig.{profile}.deploy]
+description = "My {profile} deployment"
+gpu_type = "h100-80gb"
+gpu_count = 1
+min_replicas = 1
+"""
+        content = base_content + profile_content
+    else:
+        # Create with example profiles as comments
+        examples = """
+# Example: Dev profile (uncomment and customize)
+# [tool.jig.dev.deploy]
+# gpu_type = "none"
+# cpu = 2
+# min_replicas = 1
+
+# Example: Staging profile (uncomment and customize)
+# [tool.jig.staging.deploy]
+# min_replicas = 2
+# max_replicas = 5
+"""
+        content = base_content + examples
+
     with open(pyproject, "w") as f:
         f.write(content)
-    click.echo("\N{CHECK MARK} Created pyproject.toml")
+
+    if profile:
+        click.echo(f"\N{CHECK MARK} Created pyproject.toml with default and {profile} profiles")
+    else:
+        click.echo("\N{CHECK MARK} Created pyproject.toml with default profile")
     click.echo("  Edit the configuration and run 'jig deploy'")
+    if not profile:
+        click.echo("  Use 'jig init --profile dev' to add more profiles")
 
 
 @click.command()
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def dockerfile(config_path: str | None) -> None:
+def dockerfile(profile: str | None, config_path: str | None) -> None:
     """Generate Dockerfile"""
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
     if _dockerfile(config):
         click.echo("\N{CHECK MARK} Generated Dockerfile")
     else:
@@ -373,6 +439,7 @@ def dockerfile(config_path: str | None) -> None:
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option(
@@ -382,23 +449,25 @@ def dockerfile(config_path: str | None) -> None:
 )
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def build(
-    ctx: click.Context,
-    tag: str,
-    warmup: bool,
-    docker_args: str | None,
-    config_path: str | None,
-) -> None:
+def build(ctx: click.Context, profile: str | None, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
     """Build container image"""
-    import os
     import shlex as shlex_module
 
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    config = Config.find(config_path, profile)
+    state = State.load(config._path.parent, profile)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
+
+    # Show profile information
+    if profile:
+        click.echo(f"\N{PACKAGE} Using profile: {profile}")
+    elif os.getenv("JIG_PROFILE"):
+        click.echo(f"\N{PACKAGE} Using profile: {os.getenv('JIG_PROFILE')} (from JIG_PROFILE env)")
+
+    if config._profile != "default":
+        click.echo(f"\N{PACKAGE} Deployment name: {config.model_name}")
 
     if _dockerfile(config):
         click.echo("\N{CHECK MARK} Generated Dockerfile")
@@ -425,14 +494,15 @@ def build(
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
+def push(ctx: click.Context, profile: str | None, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    config = Config.find(config_path, profile)
+    state = State.load(config._path.parent, profile)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
@@ -450,6 +520,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
@@ -468,6 +539,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @handle_api_errors("Jig")
 def deploy(
     ctx: click.Context,
+    profile: str | None,
     tag: str,
     build_only: bool,
     warmup: bool,
@@ -477,22 +549,24 @@ def deploy(
 ) -> Optional[dict[str, Any]]:
     """Deploy model"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    config = Config.find(config_path, profile)
+    state = State.load(config._path.parent, profile)
     _ensure_registry_base_path(client, state)
+
+    # Show profile information
+    if profile:
+        click.echo(f"\N{PACKAGE} Using profile: {profile}")
+    elif os.getenv("JIG_PROFILE"):
+        click.echo(f"\N{PACKAGE} Using profile: {os.getenv('JIG_PROFILE')} (from JIG_PROFILE env)")
+
+    click.echo(f"\N{PACKAGE} Deploying: {config.model_name}")
 
     if existing_image:
         deployment_image = existing_image
     else:
         # Invoke build and push
-        ctx.invoke(
-            build,
-            tag=tag,
-            warmup=warmup,
-            docker_args=docker_args,
-            config_path=config_path,
-        )
-        ctx.invoke(push, tag=tag, config_path=config_path)
+        ctx.invoke(build, profile=profile, tag=tag, warmup=warmup, docker_args=docker_args, config_path=config_path)
+        ctx.invoke(push, profile=profile, tag=tag, config_path=config_path)
         deployment_image = _get_image_with_digest(state, config, tag)
 
     if build_only:
@@ -559,36 +633,39 @@ def deploy(
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def status(ctx: click.Context, config_path: str | None) -> None:
+def status(ctx: click.Context, profile: str | None, config_path: str | None) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    response = client.beta.jig.with_raw_response.retrieve(config.model_name)
-    click.echo(json.dumps(response.json(), indent=2))
+    config = Config.find(config_path, profile)
+    response = client.beta.jig.retrieve(config.model_name)
+    click.echo(response.model_dump_json(indent=2))
 
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def endpoint(ctx: click.Context, config_path: str | None) -> None:
+def endpoint(ctx: click.Context, profile: str | None, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
     click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{config.model_name}")
 
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--follow", is_flag=True, help="Follow log output")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
+def logs(ctx: click.Context, profile: str | None, follow: bool, config_path: str | None) -> None:
     """Get deployment logs"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
 
     if not follow:
         response = client.beta.jig.retrieve_logs(config.model_name)
@@ -614,18 +691,20 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def destroy(ctx: click.Context, config_path: str | None) -> None:
+def destroy(ctx: click.Context, profile: str | None, config_path: str | None) -> None:
     """Destroy deployment"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
     client.beta.jig.destroy(config.model_name)
     click.echo(f"\N{WASTEBASKET} Destroyed {config.model_name}")
 
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
@@ -633,6 +712,7 @@ def destroy(ctx: click.Context, config_path: str | None) -> None:
 @handle_api_errors("Jig")
 def submit(
     ctx: click.Context,
+    profile: str | None,
     prompt: str | None,
     payload: str | None,
     watch: bool,
@@ -640,7 +720,7 @@ def submit(
 ) -> None:
     """Submit a job to the deployment"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
 
     if not prompt and not payload:
         raise click.UsageError("Either --prompt or --payload required")
@@ -665,13 +745,14 @@ def submit(
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--request-id", required=True, help="Job request ID")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
+def job_status(ctx: click.Context, profile: str | None, request_id: str, config_path: str | None) -> None:
     """Get status of a specific job"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
 
     response = client.beta.jig.queue.retrieve(
         model=config.model_name,
@@ -682,12 +763,13 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
 
 @click.command()
 @click.pass_context
+@click.option("--profile", default=None, help="Deployment profile to use (dev, staging, etc.)")
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def queue_status(ctx: click.Context, config_path: str | None) -> None:
+def queue_status(ctx: click.Context, profile: str | None, config_path: str | None) -> None:
     """Get queue metrics for the deployment"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
+    config = Config.find(config_path, profile)
 
     response = client.beta.jig.queue.with_raw_response.metrics(model=config.model_name)
     click.echo(json.dumps(response.json(), indent=2))
