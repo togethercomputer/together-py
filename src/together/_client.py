@@ -32,7 +32,6 @@ from ._base_client import (
 
 if TYPE_CHECKING:
     from .resources import (
-        rl,
         beta,
         chat,
         audio,
@@ -51,7 +50,6 @@ if TYPE_CHECKING:
     )
     from .resources.evals import EvalsResource, AsyncEvalsResource
     from .resources.files import FilesResource, AsyncFilesResource
-    from .resources.rl.rl import RlResource, AsyncRlResource
     from .resources.images import ImagesResource, AsyncImagesResource
     from .resources.rerank import RerankResource, AsyncRerankResource
     from .resources.videos import VideosResource, AsyncVideosResource
@@ -225,12 +223,6 @@ class Together(SyncAPIClient):
         from .resources.evals import EvalsResource
 
         return EvalsResource(self)
-
-    @cached_property
-    def rl(self) -> RlResource:
-        from .resources.rl import RlResource
-
-        return RlResource(self)
 
     @cached_property
     def with_raw_response(self) -> TogetherWithRawResponse:
@@ -496,12 +488,6 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncEvalsResource(self)
 
     @cached_property
-    def rl(self) -> AsyncRlResource:
-        from .resources.rl import AsyncRlResource
-
-        return AsyncRlResource(self)
-
-    @cached_property
     def with_raw_response(self) -> AsyncTogetherWithRawResponse:
         return AsyncTogetherWithRawResponse(self)
 
@@ -712,12 +698,6 @@ class TogetherWithRawResponse:
 
         return EvalsResourceWithRawResponse(self._client.evals)
 
-    @cached_property
-    def rl(self) -> rl.RlResourceWithRawResponse:
-        from .resources.rl import RlResourceWithRawResponse
-
-        return RlResourceWithRawResponse(self._client.rl)
-
 
 class AsyncTogetherWithRawResponse:
     _client: AsyncTogether
@@ -814,12 +794,6 @@ class AsyncTogetherWithRawResponse:
         from .resources.evals import AsyncEvalsResourceWithRawResponse
 
         return AsyncEvalsResourceWithRawResponse(self._client.evals)
-
-    @cached_property
-    def rl(self) -> rl.AsyncRlResourceWithRawResponse:
-        from .resources.rl import AsyncRlResourceWithRawResponse
-
-        return AsyncRlResourceWithRawResponse(self._client.rl)
 
 
 class TogetherWithStreamedResponse:
@@ -918,12 +892,6 @@ class TogetherWithStreamedResponse:
 
         return EvalsResourceWithStreamingResponse(self._client.evals)
 
-    @cached_property
-    def rl(self) -> rl.RlResourceWithStreamingResponse:
-        from .resources.rl import RlResourceWithStreamingResponse
-
-        return RlResourceWithStreamingResponse(self._client.rl)
-
 
 class AsyncTogetherWithStreamedResponse:
     _client: AsyncTogether
@@ -1020,12 +988,6 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.evals import AsyncEvalsResourceWithStreamingResponse
 
         return AsyncEvalsResourceWithStreamingResponse(self._client.evals)
-
-    @cached_property
-    def rl(self) -> rl.AsyncRlResourceWithStreamingResponse:
-        from .resources.rl import AsyncRlResourceWithStreamingResponse
-
-        return AsyncRlResourceWithStreamingResponse(self._client.rl)
 
 
 Client = Together
