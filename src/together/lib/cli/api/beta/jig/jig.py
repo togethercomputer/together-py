@@ -24,6 +24,7 @@ from together.lib.cli.api.beta.jig._config import (
     State,
     Config,
 )
+from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
@@ -644,11 +645,15 @@ def submit(
     if not prompt and not payload:
         raise click.UsageError("Either --prompt or --payload required")
 
-    response = client.beta.jig.queue.submit(
+    raw_response = client.beta.jig.queue.with_raw_response.submit(
         model=config.model_name,
         payload=json.loads(payload) if payload else {"prompt": prompt},
         priority=1,
     )
+
+    # Getting raw response and parsing ourselves here due to Stainless limitation with
+    # Pydantic aliases not handled correctly (both fields are present in the model)
+    response = QueueSubmitResponse.model_validate_json(raw_response.read())
 
     click.echo("\N{CHECK MARK} Submitted job")
     click.echo(response.model_dump_json(indent=2))
