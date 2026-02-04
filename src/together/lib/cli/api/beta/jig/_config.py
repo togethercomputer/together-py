@@ -41,11 +41,11 @@ class ImageConfig:
     """Container image configuration from pyproject.toml"""
 
     python_version: str = "3.11"
-    system_packages: list[str] = field(default_factory=list[str])
-    environment: dict[str, str] = field(default_factory=dict[str, str])
-    run: list[str] = field(default_factory=list[str])
+    system_packages: list[str] = field(default_factory=list)
+    environment: dict[str, str] = field(default_factory=dict)
+    run: list[str] = field(default_factory=list)
     cmd: str = "python app.py"
-    copy: list[str] = field(default_factory=list[str])
+    copy: list[str] = field(default_factory=list)
     auto_include_git: bool = False
 
     @classmethod
@@ -78,12 +78,12 @@ class DeployConfig:
     min_replicas: int = 1
     max_replicas: int = 1
     port: int = 8000
-    environment_variables: dict[str, str] = field(default_factory=dict[str, str])
+    environment_variables: dict[str, str] = field(default_factory=dict)
     command: Optional[list[str]] = None
-    autoscaling: dict[str, str] = field(default_factory=dict[str, str])
+    autoscaling: dict[str, str] = field(default_factory=dict)
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
-    volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
+    volume_mounts: list[VolumeMount] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -169,8 +169,8 @@ class State:
 
     _config_dir: Path
     registry_base_path: str = ""
-    secrets: dict[str, str] = field(default_factory=dict[str, str])
-    volumes: dict[str, str] = field(default_factory=dict[str, str])
+    secrets: dict[str, str] = field(default_factory=dict)
+    volumes: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def load(cls, config_dir: Path) -> State:
