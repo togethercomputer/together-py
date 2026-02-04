@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.0.0-alpha.20 (2026-02-04)
+
+Full Changelog: [v2.0.0-alpha.19...v2.0.0-alpha.20](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.19...v2.0.0-alpha.20)
+
+### Features
+
+* ENG-82904 - chore: update ReplicaEvent schema ([21d143c](https://github.com/togethercomputer/together-py/commit/21d143c457b73cd3042ca9c81acb9a660c41c7bc))
+* Improve error handling and messaging when api key is missing in CLI usage ([#231](https://github.com/togethercomputer/together-py/issues/231)) ([cc16ba6](https://github.com/togethercomputer/together-py/commit/cc16ba6bb7bad823fc9c5b946a5de118e68753bb))
+* simplify cli endpoints usability ([#233](https://github.com/togethercomputer/together-py/issues/233)) ([4649e95](https://github.com/togethercomputer/together-py/commit/4649e956f17ef8aa1126a7c5c19d3593e11ec1e1))
+
+
+### Bug Fixes
+
+* **jig:** fix jig submit response showing request_id and requestId ([#240](https://github.com/togethercomputer/together-py/issues/240)) ([0518b99](https://github.com/togethercomputer/together-py/commit/0518b99925be3ed30bee9e3a62fdbaac6bf5e174))
+* **jig:** print raw json response for retrieve commands in order to maintain the same order ([#234](https://github.com/togethercomputer/together-py/issues/234)) ([15324d7](https://github.com/togethercomputer/together-py/commit/15324d7505df908a683d8b9c303a43a3efdcf40d))
+* **jig:** replace pprint with click.echo ([67281e7](https://github.com/togethercomputer/together-py/commit/67281e7ef2601f8923230454db2540955c8753d8))
+
+
+### Chores
+
+* cleanup ([3511302](https://github.com/togethercomputer/together-py/commit/351130273cb5d1e388401d96ce06f2076800c244))
+
+
+### Documentation
+
+* Add jig documentation ([9bb2454](https://github.com/togethercomputer/together-py/commit/9bb2454678b9ce8ae6de306195bc2052097d2029))
+
 ## 2.0.0-alpha.19 (2026-02-03)
 
 Full Changelog: [v2.0.0-alpha.18...v2.0.0-alpha.19](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.18...v2.0.0-alpha.19)
