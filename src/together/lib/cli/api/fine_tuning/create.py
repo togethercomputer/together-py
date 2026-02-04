@@ -359,6 +359,7 @@ def create(
         training_file=training_file,
         validation_file=validation_file,
         model=model or "",
+        from_checkpoint=from_checkpoint or "",
         n_epochs=n_epochs,
         n_evals=n_evals,
         training_type=training_type_cls,
