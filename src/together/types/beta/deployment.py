@@ -3,18 +3,9 @@
 from typing import Dict, List, Optional
 from typing_extensions import Literal
 
-from pydantic import Field as FieldInfo
-
 from ..._models import BaseModel
 
-__all__ = [
-    "Deployment",
-    "EnvironmentVariable",
-    "ReplicaEvents",
-    "ReplicaEventsContainerStatus",
-    "ReplicaEventsEvent",
-    "Volume",
-]
+__all__ = ["Deployment", "EnvironmentVariable", "ReplicaEvents", "Volume"]
 
 
 class EnvironmentVariable(BaseModel):
@@ -40,86 +31,9 @@ class EnvironmentVariable(BaseModel):
     """
 
 
-class ReplicaEventsContainerStatus(BaseModel):
-    """
-    ContainerStatus provides detailed status information about the container within this replica
-    """
-
-    finished_at: Optional[str] = FieldInfo(alias="finishedAt", default=None)
-    """
-    FinishedAt is the timestamp when the container finished execution (if
-    terminated)
-    """
-
-    message: Optional[str] = None
-    """
-    Message provides a human-readable message with details about the container's
-    status
-    """
-
-    name: Optional[str] = None
-    """Name is the name of the container"""
-
-    reason: Optional[str] = None
-    """
-    Reason provides a brief machine-readable reason for the container's current
-    status
-    """
-
-    started_at: Optional[str] = FieldInfo(alias="startedAt", default=None)
-    """StartedAt is the timestamp when the container started execution"""
-
-    status: Optional[str] = None
-    """
-    Status is the current state of the container (e.g., "Running", "Terminated",
-    "Waiting")
-    """
-
-
-class ReplicaEventsEvent(BaseModel):
-    action: Optional[str] = None
-    """Action is the action taken or reported by this event"""
-
-    count: Optional[int] = None
-    """Count is the number of times this event has occurred"""
-
-    first_seen: Optional[str] = None
-    """FirstSeen is the timestamp when this event was first observed"""
-
-    last_seen: Optional[str] = None
-    """LastSeen is the timestamp when this event was last observed"""
-
-    message: Optional[str] = None
-    """Message is a human-readable description of the event"""
-
-    reason: Optional[str] = None
-    """
-    Reason is a brief machine-readable reason for this event (e.g., "Pulling",
-    "Started", "Failed")
-    """
-
-
 class ReplicaEvents(BaseModel):
-    container_status: Optional[ReplicaEventsContainerStatus] = None
-    """
-    ContainerStatus provides detailed status information about the container within
-    this replica
-    """
-
-    events: Optional[List[ReplicaEventsEvent]] = None
-    """
-    Events is a list of Kubernetes events related to this replica for
-    troubleshooting
-    """
-
-    replica_completed_at: Optional[str] = None
-    """ReplicaCompletedAt is the timestamp when the replica finished execution"""
-
-    replica_marked_for_termination_at: Optional[str] = None
-    """
-    ReplicaMarkedForTerminationAt is the timestamp when the replica was marked for
-    termination
-    """
+    image: Optional[str] = None
+    """Image is the container image used for this replica"""
 
     replica_ready_since: Optional[str] = None
     """
@@ -127,16 +41,10 @@ class ReplicaEvents(BaseModel):
     traffic
     """
 
-    replica_running_since: Optional[str] = None
-    """ReplicaRunningSince is the timestamp when the replica entered the running state"""
-
-    replica_started_at: Optional[str] = None
-    """ReplicaStartedAt is the timestamp when the replica was created"""
-
     replica_status: Optional[str] = None
     """
-    ReplicaStatus is the current status of the replica (e.g., "Running", "Pending",
-    "Failed")
+    ReplicaStatus is the current status of the replica (e.g., "Running", "Waiting",
+    "Terminated")
     """
 
     replica_status_message: Optional[str] = None
@@ -151,8 +59,20 @@ class ReplicaEvents(BaseModel):
     status
     """
 
-    scheduled_on_cluster: Optional[str] = None
-    """ScheduledOnCluster identifies which cluster this replica is scheduled on"""
+    revision_id: Optional[str] = None
+    """RevisionID is the deployment revision ID associated with this replica"""
+
+    volume_preload_completed_at: Optional[str] = None
+    """VolumePreloadCompletedAt is the timestamp when the volume preload completed"""
+
+    volume_preload_started_at: Optional[str] = None
+    """VolumePreloadStartedAt is the timestamp when the volume preload started"""
+
+    volume_preload_status: Optional[str] = None
+    """
+    VolumePreloadStatus is the status of the volume preload (e.g., "InProgress",
+    "Completed", "Failed")
+    """
 
 
 class Volume(BaseModel):
