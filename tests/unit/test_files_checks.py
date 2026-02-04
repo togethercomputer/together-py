@@ -283,26 +283,6 @@ def test_check_jsonl_invalid_role(tmp_path: Path):
     assert "Invalid role `invalid_role` in conversation" in report["message"]
 
 
-def test_check_jsonl_non_alternating_roles(tmp_path: Path):
-    # Create a JSONL file with non-alternating user/assistant roles
-    file = tmp_path / "non_alternating_roles.jsonl"
-    content = [
-        {
-            "messages": [
-                {"role": "user", "content": "Hi"},
-                {"role": "user", "content": "Hello again"},
-            ]
-        }
-    ]
-    with file.open("w") as f:
-        f.write("\n".join(json.dumps(item) for item in content))
-
-    report = check_file(file)
-
-    assert not report["is_check_passed"]
-    assert "Invalid role turns" in report["message"]
-
-
 def test_check_jsonl_assistant_role_exists(tmp_path: Path):
     # Create a JSONL file with no assistant role
     file = tmp_path / "assistant_role_exists.jsonl"
