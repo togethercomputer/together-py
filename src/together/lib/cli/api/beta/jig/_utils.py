@@ -139,16 +139,33 @@ def format_deployment_status(data: dict[str, Any]) -> str:
                     img = img.split("@")[0]
             by_image[img].append((replica_name, replica_info))
 
+        # Get latest revision ID from env vars
+        latest_revision = None
+        for e in env_vars:
+            if e.get("name") == "TOGETHER_DEPLOYMENT_REVISION_ID":
+                latest_revision = e.get("value")
+                break
+
         for img, replicas in sorted(by_image.items()):
-            lines.append(f"{img}:")
+            lines.append(f"image: {img}:")
             for replica_name, replica_info in replicas:
                 status_str = replica_info.get("replica_status", "Unknown")
                 reason = replica_info.get("replica_status_reason")
                 if reason and reason != status_str:
                     status_str = f"{status_str}:{reason}"
 
-                age = _format_age(replica_info.get("replica_ready_since"))
+                # Show volume preload status if loading
+                preload_status = replica_info.get("volume_preload_status")
+                preload_completed = replica_info.get("volume_preload_completed_at")
+                if preload_status and not preload_completed:
+                    status_str = f"{status_str} (Loading volume contents)"
 
-                lines.append(f"    {replica_name}: {status_str}, Age {age}")
+                age = _format_age(replica_info.get("replica_ready_since"))
+                revision_id = replica_info.get("revision_id", "")
+                is_latest = " (latest)" if revision_id and revision_id == latest_revision else ""
+
+                lines.append(
+                    f"    {replica_name}: {status_str}, Age {age}, Rev {revision_id if revision_id else '-'}{is_latest}"
+                )
 
     return "\n".join(lines)
