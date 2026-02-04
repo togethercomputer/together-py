@@ -53,18 +53,35 @@ class DatasetFormat(enum.Enum):
     GENERAL = "general"
     CONVERSATION = "conversation"
     INSTRUCTION = "instruction"
+    PREFERENCE = "preference"
     PREFERENCE_OPENAI = "preference_openai"
 
+
+SYSTEM_ROLE = "system"
+USER_ROLE = "user"
+ASSISTANT_ROLE = "assistant"
+TOOL_ROLE = "tool"
 
 JSONL_REQUIRED_COLUMNS_MAP = {
     DatasetFormat.GENERAL: ["text"],
     DatasetFormat.CONVERSATION: ["messages"],
     DatasetFormat.INSTRUCTION: ["prompt", "completion"],
+    DatasetFormat.PREFERENCE: ["chosen", "rejected"],
     DatasetFormat.PREFERENCE_OPENAI: [
         "input",
         "preferred_output",
         "non_preferred_output",
     ],
 }
-REQUIRED_COLUMNS_MESSAGE = ["role", "content"]
-POSSIBLE_ROLES_CONVERSATION = ["system", "user", "assistant"]
+# Columns that may appear in a conversation message: column -> (required, type, type_str)
+POSSIBLE_MESSAGE_COLUMNS = {
+    "role": (True, str, "a string, one of: 'system', 'user', 'assistant', 'tool'"),
+    "content": (
+        False,
+        (str, list),
+        "a string or a list of dicts with 'type': 'text' or 'image_url', and 'text' or 'image_url.url' string fields",
+    ),
+    "tool_calls": (False, list, "a list of dicts, each with 'type' and 'function' fields"),
+    "weight": (False, int, "an integer with value 0 or 1"),
+}
+POSSIBLE_ROLES_CONVERSATION = [SYSTEM_ROLE, USER_ROLE, ASSISTANT_ROLE, TOOL_ROLE]
