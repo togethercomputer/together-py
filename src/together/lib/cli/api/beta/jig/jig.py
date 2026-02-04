@@ -9,21 +9,22 @@ import shutil
 import subprocess
 from typing import Any, Optional
 from pathlib import Path
+from dataclasses import asdict
 from urllib.parse import urlparse
 
 import click
-from rich.pretty import pprint
 
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
-    WARMUP_ENV_NAME,
     WARMUP_DEST,
+    WARMUP_ENV_NAME,
     State,
     Config,
 )
+from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
@@ -179,7 +180,14 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
 
-def _set_secret(client: Together, config: Config, state: State, name: str, value: str, description: str) -> None:
+def _set_secret(
+    client: Together,
+    config: Config,
+    state: State,
+    name: str,
+    value: str,
+    description: str,
+) -> None:
     """Set secret for the deployment"""
     deployment_secret_name = f"{config.model_name}-{name}"
 
@@ -219,7 +227,7 @@ def _watch_job_status(client: Together, config: Config, request_id: str) -> None
             )
             current_status = response.status
             if current_status != last_status:
-                pprint(response.model_dump_json(), indent_guides=False)
+                click.echo(response.model_dump_json(indent=2))
                 last_status = current_status
 
             if current_status in ["done", "failed", "finished", "error"]:
@@ -367,13 +375,23 @@ def dockerfile(config_path: str | None) -> None:
 @click.pass_context
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@click.option(
+    "--docker-args",
+    default=None,
+    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
+)
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
-def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
+def build(
+    ctx: click.Context,
+    tag: str,
+    warmup: bool,
+    docker_args: str | None,
+    config_path: str | None,
+) -> None:
     """Build container image"""
-    import shlex as shlex_module
     import os
+    import shlex as shlex_module
 
     client: Together = ctx.obj
     config = Config.find(config_path)
@@ -435,8 +453,17 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
-@click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
+@click.option(
+    "--docker-args",
+    default=None,
+    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
+)
+@click.option(
+    "--image",
+    "existing_image",
+    default=None,
+    help="Use existing image (skip build/push)",
+)
 @click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
 def deploy(
@@ -458,7 +485,13 @@ def deploy(
         deployment_image = existing_image
     else:
         # Invoke build and push
-        ctx.invoke(build, tag=tag, warmup=warmup, docker_args=docker_args, config_path=config_path)
+        ctx.invoke(
+            build,
+            tag=tag,
+            warmup=warmup,
+            docker_args=docker_args,
+            config_path=config_path,
+        )
         ctx.invoke(push, tag=tag, config_path=config_path)
         deployment_image = _get_image_with_digest(state, config, tag)
 
@@ -480,6 +513,7 @@ def deploy(
         "storage": config.deploy.storage,
         "autoscaling": config.deploy.autoscaling,
         "termination_grace_period_seconds": config.deploy.termination_grace_period_seconds,
+        "volumes": [asdict(vm) for vm in config.deploy.volume_mounts],
     }
 
     if config.deploy.health_check_path:
@@ -491,21 +525,22 @@ def deploy(
     env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
 
     if "TOGETHER_API_KEY" not in state.secrets:
-        _set_secret(client, config, state, "TOGETHER_API_KEY", client.api_key, "Auth key for queue API")
+        _set_secret(
+            client,
+            config,
+            state,
+            "TOGETHER_API_KEY",
+            client.api_key,
+            "Auth key for queue API",
+        )
 
     for name, secret_id in state.secrets.items():
         env_vars.append({"name": name, "value_from_secret": secret_id})
 
     deploy_data["environment_variables"] = env_vars
 
-    volumes: list[dict[str, str]] = []
-    for volume_name, mount_path in state.volumes.items():
-        volumes.append({"name": volume_name, "mount_path": mount_path})
-
-    deploy_data["volumes"] = volumes
-
     if DEBUG:
-        pprint(deploy_data, indent_guides=False)
+        click.echo(json.dumps(deploy_data, indent=2))
     click.echo(f"Deploying model: {config.model_name}")
 
     try:
@@ -530,8 +565,8 @@ def status(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    response = client.beta.jig.retrieve(config.model_name)
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+    response = client.beta.jig.with_raw_response.retrieve(config.model_name)
+    click.echo(json.dumps(response.json(), indent=2))
 
 
 @click.command()
@@ -542,7 +577,7 @@ def endpoint(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    click.echo(f"{client.base_url}/deployment-request/{config.model_name}")
+    click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{config.model_name}")
 
 
 @click.command()
@@ -610,14 +645,18 @@ def submit(
     if not prompt and not payload:
         raise click.UsageError("Either --prompt or --payload required")
 
-    response = client.beta.jig.queue.submit(
+    raw_response = client.beta.jig.queue.with_raw_response.submit(
         model=config.model_name,
         payload=json.loads(payload) if payload else {"prompt": prompt},
         priority=1,
     )
 
+    # Getting raw response and parsing ourselves here due to Stainless limitation with
+    # Pydantic aliases not handled correctly (both fields are present in the model)
+    response = QueueSubmitResponse.model_validate_json(raw_response.read())
+
     click.echo("\N{CHECK MARK} Submitted job")
-    pprint(response.model_dump_json(), indent_guides=False)
+    click.echo(response.model_dump_json(indent=2))
 
     if watch and response.request_id:
         click.echo(f"\nWatching job {response.request_id}...")
@@ -638,7 +677,7 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
         model=config.model_name,
         request_id=request_id,
     )
-    pprint(response.model_dump_json(), indent_guides=False)
+    click.echo(response.model_dump_json(indent=2))
 
 
 @click.command()
@@ -650,8 +689,8 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
     client: Together = ctx.obj
     config = Config.find(config_path)
 
-    response = client.beta.jig.queue.metrics(model=config.model_name)
-    pprint(response, indent_guides=False)
+    response = client.beta.jig.queue.with_raw_response.metrics(model=config.model_name)
+    click.echo(json.dumps(response.json(), indent=2))
 
 
 @click.command("list")
@@ -660,5 +699,5 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
     client: Together = ctx.obj
-    response = client.beta.jig.list()
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+    response = client.beta.jig.with_raw_response.list()
+    click.echo(json.dumps(response.json(), indent=2))

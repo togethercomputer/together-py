@@ -529,7 +529,6 @@ together models --help
 together models list
 ```
 
-
 ## Versioning
 
 This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
@@ -669,6 +668,95 @@ together beta clusters storage retrieve [storage-id]
 
 # Delete storage volume
 together beta clusters storage delete [storage-id]
+```
+
+### Jig (Container Deployments)
+
+```bash
+# Help
+together beta jig --help
+
+# Initialize jig configuration (creates pyproject.toml)
+together beta jig init
+
+# Generate Dockerfile from config
+together beta jig dockerfile
+
+# Build container image
+together beta jig build
+together beta jig build --tag v1.0 --warmup
+
+# Push image to registry
+together beta jig push
+together beta jig push --tag v1.0
+
+# Deploy model (builds, pushes, and deploys)
+together beta jig deploy
+together beta jig deploy --build-only
+together beta jig deploy --image existing-image:tag
+
+# Get deployment status
+together beta jig status
+
+# Get deployment endpoint URL
+together beta jig endpoint
+
+# View deployment logs
+together beta jig logs
+together beta jig logs --follow
+
+# Destroy deployment
+together beta jig destroy
+
+# Get queue metrics
+together beta jig queue-status
+
+# List all deployments
+together beta jig list
+```
+
+##### Jig Secrets
+
+```bash
+# Help
+together beta jig secrets --help
+
+# Set a secret (creates or updates)
+together beta jig secrets set --name MY_SECRET --value "secret-value"
+
+# Remove a secret from local state
+together beta jig secrets unset --name MY_SECRET
+
+# List all secrets with sync status
+together beta jig secrets list
+```
+
+##### Jig Volumes
+
+```bash
+# Help
+together beta jig volumes --help
+
+# Create a volume and upload files from directory
+together beta jig volumes create --name my-volume --source ./data
+
+# Update a volume with new files
+together beta jig volumes update --name my-volume --source ./data
+
+# Set volume mount path for deployment
+together beta jig volumes set --name my-volume --mount-path /app/data
+
+# Remove volume from deployment config (does not delete remote volume)
+together beta jig volumes unset --name my-volume
+
+# Delete a volume
+together beta jig volumes delete --name my-volume
+
+# Describe a volume
+together beta jig volumes describe --name my-volume
+
+# List all volumes
+together beta jig volumes list
 ```
 
 ## Contributing

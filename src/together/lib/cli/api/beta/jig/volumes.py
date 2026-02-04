@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 import asyncio
 import itertools
@@ -10,7 +11,6 @@ from pathlib import Path
 
 import click
 import httpx
-from rich.pretty import pprint
 
 from together import Together
 from together._exceptions import APIStatusError
@@ -21,8 +21,6 @@ from together.lib.cli.api.beta.jig._config import (
     MULTIPART_THRESHOLD_MB,
     MULTIPART_CHUNK_SIZE_MB,
     UPLOAD_CONCURRENCY_LIMIT,
-    State,
-    Config,
 )
 
 
@@ -384,89 +382,16 @@ def volumes_update(
     asyncio.run(_update_volume(client, name, source))
 
 
-def _unset_volume_state(name: str, state: State) -> bool:
-    """Remove volume mount from deployment configuration. Returns True if was mounted."""
-    if name in state.volumes:
-        del state.volumes[name]
-        state.save()
-        click.echo(f"\N{CHECK MARK} Removed volume '{name}' from deployment configuration")
-        return True
-
-    click.echo(f"\N{WARNING SIGN} Volume '{name}' is not configured for deployment")
-    return False
-
-
-@volumes.command("set")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@click.option("--mount-path", required=True, help="Mount path in container")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Volumes")
-def volumes_set(
-    ctx: click.Context,
-    name: str,
-    mount_path: str,
-    config_path: str | None,
-) -> None:
-    """Set volume mount configuration for deployment"""
-    client: Together = ctx.obj
-
-    # Check if volume exists
-    try:
-        client.beta.jig.volumes.retrieve(name)
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
-
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-
-    if len(state.volumes) > 0 and name not in state.volumes:
-        raise ValueError("Only one read-only volume is supported per deployment")
-
-    state.volumes[name] = mount_path
-    state.save()
-    click.echo(f"\N{CHECK MARK} Volume '{name}' will be mounted at '{mount_path}' during deployment")
-
-
-@volumes.command("unset")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name to remove from local state")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Volumes")
-def volumes_unset(
-    ctx: click.Context,  # noqa: ARG001
-    name: str,
-    config_path: str | None,
-) -> None:
-    """Remove volume from local deployment configuration (does not delete remote volume)"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-    _unset_volume_state(name, state)
-
-
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Volumes")
 def volumes_delete(
     ctx: click.Context,
     name: str,
-    config_path: str | None,
 ) -> None:
     """Delete a volume"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent)
-
-    # Unset volume first before deleting
-    volume_mounted = _unset_volume_state(name, state)
-    if volume_mounted:
-        click.echo("\N{WARNING SIGN} Please redeploy first before deleting the volume")
-        return
 
     try:
         client.beta.jig.volumes.delete(name)
@@ -490,8 +415,8 @@ def volumes_describe(
     client: Together = ctx.obj
 
     try:
-        response = client.beta.jig.volumes.retrieve(name)
-        pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
+        click.echo(json.dumps(response.json(), indent=2))
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
@@ -505,5 +430,5 @@ def volumes_describe(
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: Together = ctx.obj
-    response = client.beta.jig.volumes.list()
-    pprint(response.model_dump() if hasattr(response, "model_dump") else response, indent_guides=False)
+    response = client.beta.jig.volumes.with_raw_response.list()
+    click.echo(json.dumps(response.json(), indent=2))

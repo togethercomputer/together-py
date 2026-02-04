@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json as json_lib
 from typing import Literal
 
 import click
@@ -18,7 +19,7 @@ from together.lib.utils.serializer import datetime_serializer
 )
 @click.option(
     "--mine",
-    type=click.BOOL,
+    is_flag=True,
     default=None,
     help="true (only mine), default=all",
 )
@@ -45,22 +46,21 @@ def list(
         mine=mine if mine is not None else omit,
     )
 
-    if not endpoints:
-        click.echo("No dedicated endpoints found", err=True)
-        return
-
-    click.echo("Endpoints:", err=True)
     if json:
-        import json as json_lib
-
         click.echo(
             json_lib.dumps(
                 [endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2
             )
         )
-    else:
-        for endpoint in endpoints.data:
-            ctx.obj.print_endpoint(
-                endpoint,
-            )
-            click.echo()
+        return
+
+    if not endpoints:
+        click.echo("No dedicated endpoints found", err=True)
+        return
+
+    click.echo("Endpoints:", err=True)
+    for endpoint in endpoints.data:
+        ctx.obj.print_endpoint(
+            endpoint,
+        )
+        click.echo()
