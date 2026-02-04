@@ -19,6 +19,7 @@ from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.deployment import Deployment
+from together.lib.cli.api.beta.jig._utils import format_deployment_status
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     WARMUP_DEST,
@@ -781,12 +782,17 @@ def deploy(
 
 
 @jig_command
-def status(ctx: click.Context, config_path: str | None) -> None:
+@click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
+def status(ctx: click.Context, config_path: str | None, json_output: bool = False) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    response = client.beta.jig.with_raw_response.retrieve(config.model_name)
-    click.echo(json.dumps(response.json(), indent=2))
+    response = client.beta.jig.retrieve(config.model_name)
+
+    if json_output:
+        click.echo(response.model_dump_json(indent=2))
+    else:
+        click.echo(format_deployment_status(response))
 
 
 @jig_command
