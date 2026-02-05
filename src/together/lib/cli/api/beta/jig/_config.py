@@ -102,6 +102,7 @@ class Config:
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
+    _unique_name_tip: str = "Update project.name in pyproject.toml"
 
     @classmethod
     def find(cls, config_path: Optional[str] = None, init: bool = False) -> Config:
@@ -132,17 +133,26 @@ class Config:
     @classmethod
     def load(cls, data: dict[str, Any], path: Path) -> Config:
         """Load configuration from parsed TOML data"""
-        is_pyproject = path.name == "pyproject.toml"
-
-        jig_config = data.get("tool", {}).get("jig", {}) if is_pyproject else data
-
-        name = jig_config.get("name")
-        if name is None:
-            if is_pyproject:
-                name = data.get("project", {}).get("name", "")
+        # figure out config location and "Deployment name must be unique. Tip: update ..." message
+        is_pyproject = path.name.endswith("pyproject.toml")
+        if is_pyproject:
+            jig_config = data.get("tool", {}).get("jig", {})
+            if name := jig_config.get("name"):
+                tip = "update `name` in your pyproject.toml"
+            elif name := data.get("project", {}).get("name", ""):
+                tip = "update `project.name` in your pyproject.toml"
             else:
                 name = path.resolve().parent.name
-                click.echo(f"\N{PACKAGE} Name not set in config file or pyproject.toml - defaulting to {name}")
+                tip = "rename your folder or add `project.name` to your pyproject.toml"
+                click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
+        else:
+            jig_config = data
+            if name := jig_config.get("name"):
+                tip = "update `name` in {path}"
+            else:
+                name = path.resolve().parent.name
+                tip = "rename your folder or add `name` to {path}"
+                click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
 
         if autoscaling := jig_config.get("autoscaling", {}):
             autoscaling["model"] = name
@@ -157,6 +167,7 @@ class Config:
             dockerfile=jig_config.get("dockerfile", "Dockerfile"),
             model_name=name,
             _path=path,
+            _unique_name_tip=tip,
         )
 
 
