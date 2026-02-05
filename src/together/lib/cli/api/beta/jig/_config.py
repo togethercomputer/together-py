@@ -187,7 +187,6 @@ class State:
           "project-name-2": {...}
         }
 
-        Falls back to old flat structure for backward compatibility.
         """
         path = config_dir / ".jig.json"
         try:
@@ -199,15 +198,6 @@ class State:
                     # New structure: extract project-specific state
                     project_data = all_data[project_name]
                     data = {k: v for k, v in project_data.items()
-                            if k in cls.__annotations__ and not k.startswith("_")}
-                    return cls(_config_dir=config_dir, _project_name=project_name, **data)
-
-                # Old flat structure (backward compatibility)
-                # Check if any keys match State fields directly (old structure)
-                state_keys = {"registry_base_path", "secrets", "volumes"}
-                if any(key in all_data for key in state_keys):
-                    # This is an old flat structure file
-                    data = {k: v for k, v in all_data.items()
                             if k in cls.__annotations__ and not k.startswith("_")}
                     return cls(_config_dir=config_dir, _project_name=project_name, **data)
 
