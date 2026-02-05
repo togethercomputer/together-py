@@ -42,36 +42,43 @@ def _format_timestamp(timestamp_str: str | None) -> str:
         return timestamp_str or "-"
 
 
+def _get_app_status(deployment: Deployment) -> str:
+    app_status = (
+        "App\n"
+        f"  Name: \t{deployment.name}\n"
+        f"  ID: \t{deployment.id}\n"
+        f"  Status: \t{deployment.status}\n"
+        f"  Created: \t{_format_timestamp(deployment.created_at)}\n"
+        f"  Updated: \t{_format_timestamp(deployment.updated_at)}\n"
+    )
+
+    if deployment.autoscaling:
+        autoscaling_status = (
+            f"\n"
+            f"  Autoscaling:\n"
+            f"  PROFILE \tTARGET\n"
+            f"  {deployment.autoscaling['profile']} \t{deployment.autoscaling['targetValue']}\n"
+        )
+
+        app_status += autoscaling_status
+
+    replica_status = (
+        f"\n"
+        f"  Replicas:\n"
+        f"    (min/max): \t{deployment.min_replicas}/{deployment.max_replicas}\n"
+        f"    (ready/desired): \t{deployment.ready_replicas}/{deployment.desired_replicas}\n"
+    )
+
+    app_status += replica_status
+
+    return app_status
+
+
 def format_deployment_status(deployment: Deployment) -> str:
     """Format deployment status for CLI display"""
     lines: list[str] = []
 
-    # Header section
-    name = deployment.name
-    dep_id = deployment.id
-    status = deployment.status
-    min_rep = deployment.min_replicas
-    max_rep = deployment.max_replicas
-    desired = deployment.desired_replicas
-    ready = deployment.ready_replicas
-    created = _format_timestamp(deployment.created_at)
-    updated = _format_timestamp(deployment.updated_at)
-
-    lines.append(f"{name}, id: {dep_id}")
-    lines.append(f"status: {status}")
-    lines.append(f"min/max replicas: {min_rep}/{max_rep}")
-    lines.append(f"desired/ready replicas: {desired}/{ready}")
-
-    # Autoscaling
-    autoscaling = deployment.autoscaling
-    if autoscaling:
-        profile = autoscaling.get("profile", "-")
-        target_value = autoscaling.get("targetValue", "-")
-        lines.append(f"autoscaling: {profile}, target={target_value}")
-    else:
-        lines.append("autoscaling: disabled")
-
-    lines.append(f"created/updated: {created} / {updated}")
+    lines.append(_get_app_status(deployment))
 
     # Settings section
     lines.append("")

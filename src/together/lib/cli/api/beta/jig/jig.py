@@ -567,13 +567,12 @@ def status(ctx: click.Context, config_path: str | None, as_json: bool) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    response = client.beta.jig.with_raw_response.retrieve(config.model_name)
-    data: dict[str, Any] = response.json()  # type: ignore[assignment]
+    response = client.beta.jig.retrieve(config.model_name)
 
     if as_json:
-        click.echo(json.dumps(data, indent=2))
+        click.echo(json.dumps(response.model_dump_json(), indent=2))
     else:
-        click.echo(format_deployment_status(data))
+        click.echo(format_deployment_status(response))
 
 
 @click.command()
