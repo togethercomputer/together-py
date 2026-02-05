@@ -1043,7 +1043,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 def _calculate_parts(file_size: int) -> Tuple[int, int]:
     """Calculate optimal part size and count"""
     min_part_size = MIN_PART_SIZE_MB * 1024 * 1024  # 5MB
-    target_part_size = TARGET_PART_SIZE_MB * 1024 * 1024  # 100MB
+    target_part_size = TARGET_PART_SIZE_MB * 1024 * 1024  # 500MB
 
     if file_size <= target_part_size:
         return file_size, 1

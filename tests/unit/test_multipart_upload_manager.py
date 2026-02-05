@@ -24,7 +24,7 @@ def test_calculate_parts_medium_file():
 def test_calculate_parts_large_file():
     """Ensure 50GB files respect the 205-part cap with ~250MB chunks."""
 
-    file_size = 50 * 1024 * 1024 * 1024  # 50GB
+    file_size = int(MAX_FILE_SIZE_GB * NUM_BYTES_IN_GB)
     part_size, num_parts = _calculate_parts(file_size)
 
     expected_parts = math.ceil(file_size / (TARGET_PART_SIZE_MB * 1024 * 1024))  # 50GB / 250MB ~= 205
@@ -35,7 +35,7 @@ def test_calculate_parts_large_file():
 
 @patch("together.lib.resources.files.os.stat")
 def test_file_size_exceeds_limit_raises_error(mock_stat: MagicMock):
-    """Uploading a file above 50.1GB should raise FileTypeError."""
+    """Uploading a file above limit should raise FileTypeError."""
 
     mock_stat.return_value.st_size = int((MAX_FILE_SIZE_GB + 1) * NUM_BYTES_IN_GB)
     manager = MultipartUploadManager(MagicMock())
