@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from collections import defaultdict
 
-from together.types.beta.deployment import Volume, Deployment, ReplicaEvents, EnvironmentVariable
+from together.types.beta.deployment import Deployment, ReplicaEvents, EnvironmentVariable
 
 
 def _format_age(timestamp_str: str | None) -> str:
@@ -42,59 +42,49 @@ def _format_timestamp(timestamp_str: str | None) -> str:
         return timestamp_str or "-"
 
 
-def _get_app_status(deployment: Deployment) -> str:
-    app_status = (
-        "App\n"
-        f"  Name: \t{deployment.name}\n"
-        f"  ID: \t{deployment.id}\n"
-        f"  Status: \t{deployment.status}\n"
-        f"  Created: \t{_format_timestamp(deployment.created_at)}\n"
-        f"  Updated: \t{_format_timestamp(deployment.updated_at)}\n"
-    )
-
-    if deployment.autoscaling:
-        autoscaling_status = (
-            f"\n"
-            f"  Autoscaling:\n"
-            f"  PROFILE \tTARGET\n"
-            f"  {deployment.autoscaling['profile']} \t{deployment.autoscaling['targetValue']}\n"
-        )
-
-        app_status += autoscaling_status
-
-    replica_status = (
-        f"\n"
-        f"  Replicas:\n"
-        f"    (min/max): \t{deployment.min_replicas}/{deployment.max_replicas}\n"
-        f"    (ready/desired): \t{deployment.ready_replicas}/{deployment.desired_replicas}\n"
-    )
-
-    app_status += replica_status
-
-    return app_status
-
-
 def format_deployment_status(deployment: Deployment) -> str:
     """Format deployment status for CLI display"""
     lines: list[str] = []
 
-    lines.append(_get_app_status(deployment))
+    status = (
+        "App:\n"
+        f"  {'Name':<10}: {deployment.name}\n"
+        f"  {'ID':<10}: {deployment.id}\n"
+        f"  {'Image':<10}: {deployment.image}\n"
+        f"  {'Status':<10}: {deployment.status}\n"
+        f"  {'Created':<10}: {_format_timestamp(deployment.created_at)}\n"
+        f"  {'Updated':<10}: {_format_timestamp(deployment.updated_at)}\n"
+    )
 
-    # Settings section
-    lines.append("")
-    lines.append("= settings =")
+    if deployment.autoscaling:
+        autoscaling_status = (
+            "\n"
+            f"  Autoscaling:\n"
+            f"    {'PROFILE':<28} TARGET\n"
+            f"    {deployment.autoscaling['profile']:<28} {deployment.autoscaling['targetValue']}\n"
+        )
 
-    # Image
-    image = deployment.image or "-"
-    lines.append(image)
+        status += autoscaling_status
 
-    # Volumes
-    volumes: list[Volume] | None = deployment.volumes
-    if volumes:
-        vol_strs = [f"{v.name}:{v.mount_path}" for v in volumes]
-        lines.append(f"volumes: {', '.join(vol_strs)}")
-    else:
-        lines.append("volumes: none")
+    replica_status = (
+        "\n"
+        f"  Replicas:\n"
+        f"    {'Min/Max':<16}: {deployment.min_replicas}/{deployment.max_replicas}\n"
+        f"    {'Ready/Desired':<16}: {deployment.ready_replicas}/{deployment.desired_replicas}\n"
+    )
+
+    status += replica_status
+
+    config_status = f"\nConfiguration:\n"
+
+    if deployment.volumes:
+        config_status += f"  Volumes:\n    {'NAME':<28} MOUNT_PATH\n"
+        for vol in deployment.volumes:
+            config_status += f"    {vol.name:<28} {vol.mount_path}\n"
+
+    status += config_status
+
+    lines.append(status)
 
     # Secrets (env vars from secrets)
     env_vars: list[EnvironmentVariable] = deployment.environment_variables or []
