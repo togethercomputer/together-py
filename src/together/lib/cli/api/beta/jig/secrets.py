@@ -22,7 +22,7 @@ def secrets(ctx: click.Context) -> None:
 @click.option("--name", required=True, help="Secret name")
 @click.option("--value", required=True, help="Secret value")
 @click.option("--description", default="", help="Secret description")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_set(
     ctx: click.Context,
@@ -67,7 +67,7 @@ def secrets_set(
 @secrets.command("unset")
 @click.pass_context
 @click.option("--name", required=True, help="Secret name to remove")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_unset(
     ctx: click.Context,  # noqa: ARG001
@@ -87,7 +87,7 @@ def secrets_unset(
 
 @secrets.command("list")
 @click.pass_context
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_list(
     ctx: click.Context,
