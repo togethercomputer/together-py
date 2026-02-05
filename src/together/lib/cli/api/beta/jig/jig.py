@@ -543,16 +543,38 @@ def deploy(
         click.echo(json.dumps(deploy_data, indent=2))
     click.echo(f"Deploying model: {config.model_name}")
 
+    def handle_create() -> dict[str, Any]:
+        click.echo("\N{ROCKET} Creating new deployment")
+        try:
+            response = client.beta.jig.deploy(**deploy_data)
+            click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
+            return response.model_dump()
+        except APIStatusError as e:
+            # all errors:
+            # "min replicas cannot be greater than max replicas"
+            # "storage cannot be more than %d GB"
+            # "user does not have access to the specified image"
+            # "invalid mount_path: %s"
+            # "only one readOnly volume is allowed per deployment"
+            # "volume not found"
+            # gorm tx.Create(...).Save() err (internal server error?)
+            # "failed to add deployment reference" (failed to add deployment reference to secret or "Failed to delete secret metadata from database",)
+            # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
+            # "failed to delete deployment from kubernetes: %w"
+            # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
+            error_message = getattr(e, "body", {}).get("error", "")
+            if "already exists" in error_message or "must be unique" in error_message:
+                raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
+            # TODO: helpful tips for more error cases
+            raise
+
     try:
         response = client.beta.jig.update(config.model_name, **deploy_data)
         click.echo("\N{CHECK MARK} Updated deployment")
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo("\N{ROCKET} Creating new deployment")
-            response = client.beta.jig.deploy(**deploy_data)
-            click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
-        else:
-            raise
+            return handle_create()
+        raise
 
     return response.model_dump()
 
