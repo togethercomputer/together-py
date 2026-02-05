@@ -7,7 +7,7 @@ import time
 import shlex
 import shutil
 import subprocess
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 from pathlib import Path
 from dataclasses import asdict
 from urllib.parse import urlparse
@@ -320,6 +320,15 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
 # --- CLI Commands ---
 
 
+# Shared CLI decorator: pass_context + config option + api error handling
+def jig_command(f: Callable[..., Any]) -> Any:
+    f = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")(f)
+    f = handle_api_errors("Jig")(f)
+    f = click.pass_context(f)
+    f = click.command()(f)
+    return f
+
+
 @click.command()
 def init() -> None:
     """Initialize jig configuration"""
@@ -356,7 +365,7 @@ gpu_count = 1
 
 
 @click.command()
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
@@ -371,17 +380,10 @@ def dockerfile(config_path: str | None) -> None:
         )
 
 
-@click.command()
-@click.pass_context
+@jig_command
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option(
-    "--docker-args",
-    default=None,
-    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
-)
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
+@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
 def build(
     ctx: click.Context,
     tag: str,
@@ -423,11 +425,8 @@ def build(
         _build_warm_image(image)
 
 
-@click.command()
-@click.pass_context
+@jig_command
 @click.option("--tag", default="latest", help="Image tag")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
 def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
     client: Together = ctx.obj
@@ -448,24 +447,12 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     click.echo("\N{CHECK MARK} Pushed")
 
 
-@click.command()
-@click.pass_context
+@jig_command
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option(
-    "--docker-args",
-    default=None,
-    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
-)
-@click.option(
-    "--image",
-    "existing_image",
-    default=None,
-    help="Use existing image (skip build/push)",
-)
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
+@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 def deploy(
     ctx: click.Context,
     tag: str,
@@ -579,10 +566,7 @@ def deploy(
     return response.model_dump()
 
 
-@click.command()
-@click.pass_context
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
+@jig_command
 def status(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment status"""
     client: Together = ctx.obj
@@ -591,10 +575,7 @@ def status(ctx: click.Context, config_path: str | None) -> None:
     click.echo(json.dumps(response.json(), indent=2))
 
 
-@click.command()
-@click.pass_context
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
+@jig_command
 def endpoint(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
     client: Together = ctx.obj
@@ -602,11 +583,8 @@ def endpoint(ctx: click.Context, config_path: str | None) -> None:
     click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{config.model_name}")
 
 
-@click.command()
-@click.pass_context
+@jig_command
 @click.option("--follow", is_flag=True, help="Follow log output")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
 def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
     """Get deployment logs"""
     client: Together = ctx.obj
@@ -634,10 +612,7 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
         click.echo(f"\nConnection ended: {e}")
 
 
-@click.command()
-@click.pass_context
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
+@jig_command
 def destroy(ctx: click.Context, config_path: str | None) -> None:
     """Destroy deployment"""
     client: Together = ctx.obj
@@ -646,13 +621,10 @@ def destroy(ctx: click.Context, config_path: str | None) -> None:
     click.echo(f"\N{WASTEBASKET} Destroyed {config.model_name}")
 
 
-@click.command()
-@click.pass_context
+@jig_command
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
 def submit(
     ctx: click.Context,
     prompt: str | None,
@@ -685,11 +657,8 @@ def submit(
         _watch_job_status(client, config, response.request_id)
 
 
-@click.command()
-@click.pass_context
+@jig_command
 @click.option("--request-id", required=True, help="Job request ID")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
 def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
     """Get status of a specific job"""
     client: Together = ctx.obj
@@ -702,10 +671,7 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
     click.echo(response.model_dump_json(indent=2))
 
 
-@click.command()
-@click.pass_context
-@click.option("--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
+@jig_command
 def queue_status(ctx: click.Context, config_path: str | None) -> None:
     """Get queue metrics for the deployment"""
     client: Together = ctx.obj
@@ -716,8 +682,8 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
 
 
 @click.command("list")
-@click.pass_context
 @handle_api_errors("Jig")
+@click.pass_context
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
     client: Together = ctx.obj
