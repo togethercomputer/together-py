@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
 from datetime import datetime, timezone
 from collections import defaultdict
+
+from together.types.beta.deployment import Volume, Deployment, ReplicaEvents, EnvironmentVariable
 
 
 def _format_age(timestamp_str: str | None) -> str:
@@ -41,20 +42,20 @@ def _format_timestamp(timestamp_str: str | None) -> str:
         return timestamp_str or "-"
 
 
-def format_deployment_status(data: dict[str, Any]) -> str:
+def format_deployment_status(deployment: Deployment) -> str:
     """Format deployment status for CLI display"""
     lines: list[str] = []
 
     # Header section
-    name = data.get("name", "-")
-    dep_id = data.get("id", "-")
-    status = data.get("status", "-")
-    min_rep = data.get("min_replicas", 0)
-    max_rep = data.get("max_replicas", 0)
-    desired = data.get("desired_replicas", 0)
-    ready = data.get("ready_replicas", 0)
-    created = _format_timestamp(data.get("created_at"))
-    updated = _format_timestamp(data.get("updated_at"))
+    name = deployment.name
+    dep_id = deployment.id
+    status = deployment.status
+    min_rep = deployment.min_replicas
+    max_rep = deployment.max_replicas
+    desired = deployment.desired_replicas
+    ready = deployment.ready_replicas
+    created = _format_timestamp(deployment.created_at)
+    updated = _format_timestamp(deployment.updated_at)
 
     lines.append(f"{name}, id: {dep_id}")
     lines.append(f"status: {status}")
@@ -62,7 +63,7 @@ def format_deployment_status(data: dict[str, Any]) -> str:
     lines.append(f"desired/ready replicas: {desired}/{ready}")
 
     # Autoscaling
-    autoscaling = data.get("autoscaling")
+    autoscaling = deployment.autoscaling
     if autoscaling:
         profile = autoscaling.get("profile", "-")
         target_value = autoscaling.get("targetValue", "-")
@@ -77,44 +78,44 @@ def format_deployment_status(data: dict[str, Any]) -> str:
     lines.append("= settings =")
 
     # Image
-    image = data.get("image", "-")
+    image = deployment.image or "-"
     lines.append(image)
 
     # Volumes
-    volumes: list[dict[str, Any]] = data.get("volumes") or []
+    volumes: list[Volume] | None = deployment.volumes
     if volumes:
-        vol_strs = [f"{v.get('name')}:{v.get('mount_path')}" for v in volumes]
+        vol_strs = [f"{v.name}:{v.mount_path}" for v in volumes]
         lines.append(f"volumes: {', '.join(vol_strs)}")
     else:
         lines.append("volumes: none")
 
     # Secrets (env vars from secrets)
-    env_vars: list[dict[str, Any]] = data.get("environment_variables") or []
-    secrets: list[str] = [e.get("value_from_secret") for e in env_vars if e.get("value_from_secret")]  # type: ignore[misc]
+    env_vars: list[EnvironmentVariable] = deployment.environment_variables or []
+    secrets: list[str] = [e.value_from_secret for e in env_vars if e.value_from_secret]
     if secrets:
         lines.append(f"secrets: {', '.join(secrets)}")
     else:
         lines.append("secrets: none")
 
     # Resources
-    gpu_type = data.get("gpu_type", "-")
-    gpu_count = data.get("gpu_count", 0)
-    cpu = data.get("cpu", "-")
-    memory = data.get("memory", "-")
-    storage = data.get("storage", "-")
+    gpu_type = deployment.gpu_type
+    gpu_count = deployment.gpu_count
+    cpu = deployment.cpu
+    memory = deployment.memory
+    storage = deployment.storage
     lines.append(f"gpu: {gpu_count}x {gpu_type}, cpu: {cpu}, memory: {memory}GB, storage: {storage}MB")
 
     # Port, command, args, health_check
-    port = data.get("port", "-")
-    command: list[str] = data.get("command") or []  # type: ignore[assignment]
-    args: list[str] = data.get("args") or []  # type: ignore[assignment]
-    health_check = data.get("health_check_path", "-")
+    port = deployment.port
+    command: list[str] | None = deployment.command
+    args: list[str] | None = deployment.args
+    health_check = deployment.health_check_path
     cmd_str = " ".join(command) if command else "-"
     args_str = " ".join(args) if args else "-"
     lines.append(f"port: {port}, command: {cmd_str}, args: {args_str}, health_check_path: {health_check}")
 
     # Environment variables (non-secret)
-    plain_env = {e.get("name"): e.get("value") for e in env_vars if e.get("value") is not None}
+    plain_env = {e.name: e.value for e in env_vars if e.value is not None}
     if plain_env:
         env_str = ", ".join(f"{k}={v}" for k, v in plain_env.items())
         lines.append(f"environment: {env_str}")
@@ -122,15 +123,15 @@ def format_deployment_status(data: dict[str, Any]) -> str:
         lines.append("environment: none")
 
     # Detailed status section
-    replica_events: dict[str, dict[str, Any]] = data.get("replica_events") or {}  # type: ignore[assignment]
+    replica_events = deployment.replica_events
     if replica_events:
         lines.append("")
         lines.append("= detailed status =")
 
         # Group replicas by image
-        by_image: dict[str, list[tuple[str, dict[str, Any]]]] = defaultdict(list)
+        by_image: dict[str, list[tuple[str, ReplicaEvents]]] = defaultdict(list)
         for replica_name, replica_info in replica_events.items():
-            img: str = replica_info.get("image", "unknown")  # type: ignore[assignment]
+            img: str = replica_info.image or "Unknown"
             # Extract just the tag from image if it's a full path
             if ":" in img:
                 img = img.split(":")[-1]
@@ -142,26 +143,26 @@ def format_deployment_status(data: dict[str, Any]) -> str:
         # Get latest revision ID from env vars
         latest_revision = None
         for e in env_vars:
-            if e.get("name") == "TOGETHER_DEPLOYMENT_REVISION_ID":
-                latest_revision = e.get("value")
+            if e.name == "TOGETHER_DEPLOYMENT_REVISION_ID":
+                latest_revision = e.value
                 break
 
         for img, replicas in sorted(by_image.items()):
             lines.append(f"image: {img}:")
             for replica_name, replica_info in replicas:
-                status_str = replica_info.get("replica_status", "Unknown")
-                reason = replica_info.get("replica_status_reason")
+                status_str = replica_info.replica_status or "Unknown"
+                reason = replica_info.replica_status_reason
                 if reason and reason != status_str:
                     status_str = f"{status_str}:{reason}"
 
                 # Show volume preload status if loading
-                preload_status = replica_info.get("volume_preload_status")
-                preload_completed = replica_info.get("volume_preload_completed_at")
+                preload_status = replica_info.volume_preload_status
+                preload_completed = replica_info.volume_preload_completed_at
                 if preload_status and not preload_completed:
                     status_str = f"{status_str} (Loading volume contents)"
 
-                age = _format_age(replica_info.get("replica_ready_since"))
-                revision_id = replica_info.get("revision_id", "")
+                age = _format_age(replica_info.replica_ready_since)
+                revision_id = replica_info.revision_id
                 is_latest = " (latest)" if revision_id and revision_id == latest_revision else ""
 
                 lines.append(
