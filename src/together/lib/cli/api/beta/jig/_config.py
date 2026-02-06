@@ -179,22 +179,63 @@ class State:
     """Persistent state stored in .jig.json"""
 
     _config_dir: Path
+    _project_name: str
     registry_base_path: str = ""
     secrets: dict[str, str] = field(default_factory=dict[str, str])
     volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
-    def load(cls, config_dir: Path) -> State:
+    def load(cls, config_dir: Path, project_name: str) -> State:
+        """Load state for a specific project from .jig.json.
+
+        The state file structure is:
+        {
+          "project-name-1": {
+            "registry_base_path": "...",
+            "secrets": {...},
+            "volumes": {...}
+          },
+          "project-name-2": {...}
+        }
+
+        """
         path = config_dir / ".jig.json"
         try:
             with open(path) as f:
-                data = {k: v for k, v in json.load(f).items() if k in cls.__annotations__ and not k.startswith("_")}
-                return cls(_config_dir=config_dir, **data)
+                all_data = json.load(f)
+
+                # Check if this is the new nested structure (project_name as key)
+                if project_name in all_data and isinstance(all_data[project_name], dict):
+                    # New structure: extract project-specific state
+                    project_data = all_data[project_name]
+                    data = {k: v for k, v in project_data.items()
+                            if k in cls.__annotations__ and not k.startswith("_")}
+                    return cls(_config_dir=config_dir, _project_name=project_name, **data)
+
+                # File exists but this project isn't in it yet
+                return cls(_config_dir=config_dir, _project_name=project_name)
+
         except FileNotFoundError:
-            return cls(_config_dir=config_dir)
+            return cls(_config_dir=config_dir, _project_name=project_name)
 
     def save(self) -> None:
+        """Save state for this project to .jig.json.
+
+        Preserves other projects' state in the same file.
+        """
         path = self._config_dir / ".jig.json"
-        data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+
+        # Load existing file to preserve other projects
+        try:
+            with open(path) as f:
+                all_data = json.load(f)
+        except FileNotFoundError:
+            all_data = {}
+
+        # Update this project's state
+        project_data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+        all_data[self._project_name] = project_data
+
+        # Save back to file
         with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(all_data, f, indent=2)
