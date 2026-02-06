@@ -9,5 +9,7 @@ __all__ = ["QueueCancelParams"]
 
 class QueueCancelParams(TypedDict, total=False):
     model: Required[str]
+    """Model identifier the job was submitted to"""
 
     request_id: Required[str]
+    """The request ID returned from the submit endpoint"""
