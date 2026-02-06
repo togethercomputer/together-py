@@ -397,7 +397,7 @@ def build(
 
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    state = State.load(config._path.parent, config.model_name)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
@@ -431,7 +431,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    state = State.load(config._path.parent, config.model_name)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
@@ -465,7 +465,7 @@ def deploy(
     """Deploy model"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    state = State.load(config._path.parent, config.model_name)
     _ensure_registry_base_path(client, state)
 
     if existing_image:
