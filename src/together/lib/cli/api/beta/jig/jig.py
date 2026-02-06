@@ -658,11 +658,14 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
+@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
     ctx: click.Context,
     tag: str,
     build_only: bool,
     warmup: bool,
+    detach: bool,
     docker_args: str | None,
     existing_image: str | None,
     config_path: str | None,
@@ -735,12 +738,12 @@ def deploy(
         click.echo(json.dumps(deploy_data, indent=2))
     click.echo(f"Deploying model: {config.model_name}")
 
-    def handle_create() -> dict[str, Any]:
+    def handle_create() -> Deployment:
         click.echo("\N{ROCKET} Creating new deployment")
         try:
             response = client.beta.jig.deploy(**deploy_data)
-            click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
-            return response.model_dump()
+            click.echo("\N{CHECK MARK}  Applied new deployment configuration")
+            return response
         except APIStatusError as e:
             # all errors:
             # "min replicas cannot be greater than max replicas"
@@ -761,14 +764,29 @@ def deploy(
             raise
 
     try:
+        existing = client.beta.jig.retrieve(config.model_name)
+        old_revision_id = _get_current_revision_id(existing)
+        was_scaled_to_zero = existing.ready_replicas == 0
         response = client.beta.jig.update(config.model_name, **deploy_data)
-        click.echo("\N{CHECK MARK} Updated deployment")
+        click.echo("\N{CHECK MARK}  Applied new deployment configuration")
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
-            return handle_create()
-        raise
+            old_revision_id = ""
+            was_scaled_to_zero = False
+            response = handle_create()
+        else:
+            raise
 
-    return response.model_dump()
+    if detach:
+        return response.model_dump()
+
+    # Skip tracking if revision didn't change and not scaling up from zero
+    new_revision_id = _get_current_revision_id(response)
+    scaling_up = was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
+    if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
+        return None
+
+    return _track_deployment_progress(config.model_name, client)
 
 
 @jig_command
