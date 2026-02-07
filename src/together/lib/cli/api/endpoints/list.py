@@ -7,6 +7,7 @@ import click
 
 from together import Together, omit
 from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 from together.lib.utils.serializer import datetime_serializer
 
 
@@ -30,6 +31,7 @@ from together.lib.utils.serializer import datetime_serializer
 )
 @click.pass_context
 @handle_api_errors("Endpoints")
+@handle_endpoint_api_errors("Endpoints")
 def list(
     ctx: click.Context,
     json: bool,

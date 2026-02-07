@@ -4,6 +4,7 @@ import click
 
 from together import Together
 from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
 @click.command()
@@ -12,6 +13,7 @@ from together.lib.cli.api._utils import handle_api_errors
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @click.pass_obj
 @handle_api_errors("Endpoints")
+@handle_endpoint_api_errors("Endpoints")
 def stop(client: Together, endpoint_id: str, wait: bool, json: bool) -> None:
     """Stop a dedicated inference endpoint."""
     client.endpoints.update(endpoint_id, state="STOPPED")

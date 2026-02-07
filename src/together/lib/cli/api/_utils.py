@@ -156,42 +156,8 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
                     error_msg = getattr(e.body, "message", str(e.body))
                 else:
                     error_msg = str(e)
-
-                error_lower = error_msg.lower()
-
-                # Provide specific error messages for common cases
-                if "not found" in error_lower and "endpoint" in error_lower:
-                    endpoint_id = kwargs.get("endpoint_id", "")
-                    endpoint_display = f"'{endpoint_id}'" if endpoint_id else ""
-                    click.echo(prefix_styled + click.style("Failed", fg="red"))
-                    click.echo(
-                        prefix_styled + click.style(f"Endpoint {endpoint_display} not found.", fg="red")
-                    )
-                    click.echo(
-                        prefix_styled + "The endpoint may have been deleted or the ID may be incorrect.",
-                        err=True,
-                    )
-                    click.echo(
-                        prefix_styled + "Use 'together endpoints list' to see your endpoints.",
-                        err=True,
-                    )
-                elif "permission" in error_lower or "forbidden" in error_lower or "unauthorized" in error_lower:
-                    click.echo(prefix_styled + click.style("Failed", fg="red"))
-                    click.echo(
-                        prefix_styled + click.style("You don't have permission to access this resource.", fg="red")
-                    )
-                    click.echo(
-                        prefix_styled + "This may belong to another user or organization.",
-                        err=True,
-                    )
-                elif "credentials" in error_lower or "authentication" in error_lower:
-                    click.echo(prefix_styled + click.style("Failed", fg="red"))
-                    click.echo(
-                        prefix_styled + click.style("Invalid API key or authentication failed.", fg="red")
-                    )
-                else:
-                    click.echo(prefix_styled + click.style("Failed", fg="red"))
-                    click.echo(prefix_styled + click.style(error_msg, fg="red"))
+                click.echo(prefix_styled + click.style("Failed", fg="red"))
+                click.echo(prefix_styled + click.style(error_msg, fg="red"))
                 sys.exit(1)
             except Exception as e:
                 click.echo(prefix_styled + click.style("Failed", fg="red"))
