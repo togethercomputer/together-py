@@ -391,7 +391,7 @@ def validate_messages(
         message_weight = _check_message_weight(message, idx)
         role = _check_message_role(message, idx)
         assistant_role_exists |= role == "assistant"
-        if "content" not in message:
+        if "content" not in message or not message.get("content"):
             continue
         is_multimodal, number_of_images = _check_message_content(message["content"], role=role, idx=idx)
         # Multimodal validation
