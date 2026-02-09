@@ -150,6 +150,12 @@ STRUCTURAL_ISSUE_TEST_CASES = [
         id="wrong_output_format_non_preferred",
     ),
     pytest.param(
+        "missing_content",
+        lambda item: item.update({"input": {"messages": [{"role": "user"}]}}),  # type: ignore
+        "Missing content in messages",
+        id="missing_content",
+    ),
+    pytest.param(
         "multiple_preferred_outputs",
         lambda item: item.update(  # type: ignore
             {

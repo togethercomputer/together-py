@@ -158,6 +158,13 @@ def _check_conversation_type(messages: List[Dict[str, str | int | MessageContent
                     error_source="key_value",
                 )
 
+        if message["role"] != "assistant" and "content" not in message:
+            raise InvalidFileFormatError(
+                message=f"Missing required column `content` in message on line {idx + 1}.",
+                line_number=idx + 1,
+                error_source="key_value",
+            )
+
         if "content" not in message and "tool_calls" not in message:
             raise InvalidFileFormatError(
                 message=f"Missing required column `content` or `tool_calls` in message on line {idx + 1}.",
