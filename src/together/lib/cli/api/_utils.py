@@ -151,11 +151,13 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
             except click.Abort:
                 sys.exit(0)
             except APIError as e:
-                click.echo(prefix_styled + click.style("Failed", fg="red"))
+                error_msg = ""
                 if e.body is not None:
-                    click.echo(prefix_styled + click.style(getattr(e.body, "message", str(e.body)), fg="red"))
+                    error_msg = getattr(e.body, "message", str(e.body))
                 else:
-                    click.echo(prefix_styled + click.style(str(e), fg="red"))
+                    error_msg = str(e)
+                click.echo(prefix_styled + click.style("Failed", fg="red"))
+                click.echo(prefix_styled + click.style(error_msg, fg="red"))
                 sys.exit(1)
             except Exception as e:
                 click.echo(prefix_styled + click.style("Failed", fg="red"))

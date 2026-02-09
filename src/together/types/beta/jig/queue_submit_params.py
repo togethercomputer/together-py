@@ -13,7 +13,20 @@ class QueueSubmitParams(TypedDict, total=False):
     """Required model identifier"""
 
     payload: Required[Dict[str, object]]
+    """Freeform model input.
+
+    Passed unchanged to the model. Contents are model-specific.
+    """
 
     info: Dict[str, object]
+    """Arbitrary JSON metadata stored with the job and returned in status responses.
+
+    The model and system may add or update keys during processing.
+    """
 
     priority: int
+    """Job priority.
+
+    Higher values are processed first (strict priority ordering). Jobs with equal
+    priority are processed in submission order (FIFO).
+    """
