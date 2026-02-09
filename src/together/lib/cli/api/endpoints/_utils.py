@@ -68,7 +68,7 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                         + click.style("Invalid API key or authentication failed.", fg="red")
                     )
                     sys.exit(1)
-                raise
+                raise e
 
         return wrapper  # type: ignore
 
