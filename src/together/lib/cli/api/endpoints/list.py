@@ -8,6 +8,7 @@ import click
 from together import Together, omit
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
+from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
 @click.command()
@@ -30,6 +31,7 @@ from together.lib.utils.serializer import datetime_serializer
 )
 @click.pass_context
 @handle_api_errors("Endpoints")
+@handle_endpoint_api_errors("Endpoints")
 def list(
     ctx: click.Context,
     json: bool,
@@ -59,8 +61,11 @@ def list(
         return
 
     click.echo("Endpoints:", err=True)
+    # Only show autoscaling for user's own endpoints (when --mine is set)
+    show_autoscaling = mine is True
     for endpoint in endpoints.data:
         ctx.obj.print_endpoint(
             endpoint,
+            show_autoscaling=show_autoscaling,
         )
         click.echo()

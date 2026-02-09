@@ -6,6 +6,7 @@ import click
 
 from together import APIError, Together, omit
 from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 from .hardware import hardware as list_hardware
 
@@ -18,15 +19,15 @@ from .hardware import hardware as list_hardware
 )
 @click.option(
     "--min-replicas",
-    type=int,
+    type=click.IntRange(min=0),
     default=1,
-    help="Minimum number of replicas to deploy",
+    help="Minimum number of replicas to deploy (must be >= 0)",
 )
 @click.option(
     "--max-replicas",
-    type=int,
+    type=click.IntRange(min=0),
     default=1,
-    help="Maximum number of replicas to deploy",
+    help="Maximum number of replicas to deploy (must be >= 0)",
 )
 @click.option(
     "--hardware",
@@ -74,6 +75,7 @@ from .hardware import hardware as list_hardware
 )
 @click.pass_context
 @handle_api_errors("Endpoints")
+@handle_endpoint_api_errors("Endpoints")
 def create(
     ctx: click.Context,
     model: str,
@@ -91,7 +93,32 @@ def create(
 ) -> None:
     """Create a new dedicated inference endpoint."""
     client: Together = ctx.obj
-    # Map GPU types to their full hardware ID names
+
+    # Validate min <= max replicas
+    if min_replicas > max_replicas:
+        click.echo(
+            f"Error: --min-replicas ({min_replicas}) cannot be greater than "
+            f"--max-replicas ({max_replicas})",
+            err=True,
+        )
+        sys.exit(1)
+
+    # Validate availability zone if specified
+    if availability_zone:
+        try:
+            valid_zones = client.endpoints.list_avzones()
+            if availability_zone not in valid_zones.avzones:
+                click.echo(
+                    f"Error: Invalid availability zone '{availability_zone}'", err=True
+                )
+                if valid_zones.avzones:
+                    click.echo("Available zones:", err=True)
+                    for zone in sorted(valid_zones.avzones):
+                        click.echo(f"  {zone}", err=True)
+                sys.exit(1)
+        except Exception:
+            # If we can't fetch zones, let the API validate it
+            pass
 
     if json is True and wait is True:
         click.secho("Error: --json and --wait cannot be used together.", fg="red", err=True)
@@ -118,15 +145,37 @@ def create(
         if json:
             raise e
 
+        error_msg = str(e.args[0]).lower() if e.args else ""
         if (
-            "check the hardware api" in str(e.args[0]).lower()
-            or "invalid hardware provided" in str(e.args[0]).lower()
-            or "the selected configuration" in str(e.args[0]).lower()
-            or "hardware is required" in str(e.args[0]).lower()
+            "check the hardware api" in error_msg
+            or "invalid hardware provided" in error_msg
+            or "the selected configuration" in error_msg
+            or "hardware is required" in error_msg
         ):
             click.secho("Invalid hardware selected.", fg="red", err=True)
             click.echo("\nAvailable hardware options:")
             ctx.invoke(list_hardware, available=True, model=model, json=False)
+            sys.exit(1)
+        elif "model" in error_msg and (
+            "not found" in error_msg
+            or "invalid" in error_msg
+            or "does not exist" in error_msg
+            or "not supported" in error_msg
+        ):
+            click.echo(
+                f"Error: Model '{model}' was not found or is not available for "
+                "dedicated endpoints.",
+                err=True,
+            )
+            click.echo(
+                "Please check that the model name is correct and that it supports "
+                "dedicated endpoint deployment.",
+                err=True,
+            )
+            click.echo(
+                "You can browse available models at: https://api.together.ai/models",
+                err=True,
+            )
             sys.exit(1)
         raise e
 

@@ -21,19 +21,40 @@ from .availability_zones import availability_zones
 def endpoints(ctx: click.Context) -> None:
     """Endpoints API commands"""
 
-    def print_endpoint(endpoint: DedicatedEndpoint | DedicatedEndpointListItem) -> None:
-        """Print endpoint details in a Docker-like format or JSON."""
+    def print_endpoint(endpoint: DedicatedEndpoint | DedicatedEndpointListItem, show_autoscaling: bool = True) -> None:
+        """Print endpoint details in a Docker-like format or JSON.
+        
+        Args:
+            endpoint: The endpoint to print
+            show_autoscaling: Whether to show min/max replicas (only for user's own endpoints)
+        """
 
         # Print header info
         click.echo(f"ID:\t\t{endpoint.id}")
         click.echo(f"Name:\t\t{endpoint.name}")
 
+        # Handle autoscaling - only show for user's dedicated endpoints
         if isinstance(endpoint, DedicatedEndpoint):
             click.echo(f"Display Name:\t{endpoint.display_name}")
             click.echo(f"Hardware:\t{endpoint.hardware}")
-            click.echo(
-                f"Autoscaling:\tMin={endpoint.autoscaling.min_replicas}, Max={endpoint.autoscaling.max_replicas}"
-            )
+            if show_autoscaling:
+                click.echo(f"Min Replicas:\t{endpoint.autoscaling.min_replicas}")
+                click.echo(f"Max Replicas:\t{endpoint.autoscaling.max_replicas}")
+        elif endpoint.type == "dedicated":
+            # For list responses, check model_extra for data from API
+            model_extra = getattr(endpoint, "model_extra", {})
+            display_name = model_extra.get("display_name")
+            if display_name:
+                click.echo(f"Display Name:\t{display_name}")
+            hardware = model_extra.get("hardware")
+            if hardware:
+                click.echo(f"Hardware:\t{hardware}")
+            # Only show autoscaling for user's own endpoints
+            if show_autoscaling:
+                autoscaling = model_extra.get("autoscaling")
+                if autoscaling:
+                    click.echo(f"Min Replicas:\t{autoscaling.get('min_replicas', 'N/A')}")
+                    click.echo(f"Max Replicas:\t{autoscaling.get('max_replicas', 'N/A')}")
 
         click.echo(f"Model:\t\t{endpoint.model}")
         click.echo(f"Type:\t\t{endpoint.type}")
