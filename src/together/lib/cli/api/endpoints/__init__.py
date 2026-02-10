@@ -23,7 +23,7 @@ def endpoints(ctx: click.Context) -> None:
 
     def print_endpoint(endpoint: DedicatedEndpoint | DedicatedEndpointListItem, show_autoscaling: bool = True) -> None:
         """Print endpoint details in a Docker-like format or JSON.
-        
+
         Args:
             endpoint: The endpoint to print
             show_autoscaling: Whether to show min/max replicas (only for user's own endpoints)
