@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from pathlib import Path
 
 import click
 from rich import print as rprint
@@ -239,6 +240,13 @@ def create(
     """Start fine-tuning"""
     client: Together = ctx.obj
 
+    # If the user passes a path to a file, try to upload it to the files API first
+    # Uploads are idompotent so we can depend on this API always giving us a file ID
+    if _check_path_exists(training_file):
+        click.echo(f"Uploading training file {training_file}")
+        file_upload = client.files.upload(Path(training_file), purpose="fine-tune")
+        training_file = file_upload.id
+
     training_args: dict[str, Any] = dict(
         training_file=training_file,
         model=model,
@@ -392,3 +400,13 @@ def create(
         rprint(report_string)
     else:
         click.echo("No confirmation received, stopping job launch")
+
+
+def _check_path_exists(path_string: str) -> bool:
+    my_path = Path(path_string)
+    if my_path.exists():
+        if my_path.is_file():
+            return True
+        elif my_path.is_dir():
+            return True
+    return False

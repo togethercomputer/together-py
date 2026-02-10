@@ -9,6 +9,7 @@ from pathlib import Path
 import httpx
 
 from together.types import FilePurpose
+from together.lib.resources.files import FileAlreadyExistsError
 
 from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
 from ..types import FilePurpose
@@ -162,20 +163,23 @@ class FilesResource(SyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        upload_manager = UploadManager(self._client)
-        result = upload_manager.upload("/files", file, purpose)
+        try:
+            upload_manager = UploadManager(self._client)
+            result = upload_manager.upload("/files", file, purpose)
 
-        return FileResponse(
-            id=result.id,
-            bytes=result.bytes,
-            created_at=result.created_at,
-            filename=result.filename,
-            FileType=result.file_type,
-            LineCount=result.line_count,
-            object=result.object,
-            Processed=result.processed,
-            purpose=result.purpose,
-        )
+            return FileResponse(
+                id=result.id,
+                bytes=result.bytes,
+                created_at=result.created_at,
+                filename=result.filename,
+                FileType=result.file_type,
+                LineCount=result.line_count,
+                object=result.object,
+                Processed=result.processed,
+                purpose=result.purpose,
+            )
+        except FileAlreadyExistsError as e:
+            return self.retrieve(e.file_id)
 
     def content(
         self,
@@ -337,20 +341,23 @@ class AsyncFilesResource(AsyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
-        upload_manager = AsyncUploadManager(self._client)
-        result = await upload_manager.upload("/files", file, purpose)
+        try:
+            upload_manager = AsyncUploadManager(self._client)
+            result = await upload_manager.upload("/files", file, purpose)
 
-        return FileResponse(
-            id=result.id,
-            bytes=result.bytes,
-            created_at=result.created_at,
-            filename=result.filename,
-            FileType=result.file_type,
-            LineCount=result.line_count,
-            object=result.object,
-            Processed=result.processed,
-            purpose=result.purpose,
-        )
+            return FileResponse(
+                id=result.id,
+                bytes=result.bytes,
+                created_at=result.created_at,
+                filename=result.filename,
+                FileType=result.file_type,
+                LineCount=result.line_count,
+                object=result.object,
+                Processed=result.processed,
+                purpose=result.purpose,
+            )
+        except FileAlreadyExistsError as e:
+            return await self.retrieve(e.file_id)
 
     async def content(
         self,
