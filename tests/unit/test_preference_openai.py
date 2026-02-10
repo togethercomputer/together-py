@@ -210,21 +210,6 @@ STRUCTURAL_ISSUE_TEST_CASES = [
         id="invalid_role_in_messages",
     ),
     pytest.param(
-        "non_alternating_roles",
-        lambda item: item.update(  # type: ignore
-            {
-                "input": {
-                    "messages": [
-                        {"role": "user", "content": "Hello"},
-                        {"role": "user", "content": "How are you?"},
-                    ]
-                }
-            }
-        ),
-        "Non-alternating roles in messages",
-        id="non_alternating_roles",
-    ),
-    pytest.param(
         "invalid_weight_type",
         lambda item: item.update(  # type: ignore
             {"input": {"messages": [{"role": "user", "content": "Hello", "weight": "not_an_integer"}]}}

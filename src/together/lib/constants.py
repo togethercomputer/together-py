@@ -66,5 +66,11 @@ JSONL_REQUIRED_COLUMNS_MAP = {
         "non_preferred_output",
     ],
 }
-REQUIRED_COLUMNS_MESSAGE = ["role", "content"]
-POSSIBLE_ROLES_CONVERSATION = ["system", "user", "assistant"]
+JSONL_EXTRA_COLUMNS_MAP = {
+    DatasetFormat.GENERAL: [],
+    DatasetFormat.CONVERSATION: ["tools"],
+    DatasetFormat.INSTRUCTION: [],
+    DatasetFormat.PREFERENCE_OPENAI: [],
+}
+REQUIRED_COLUMNS_MESSAGE = ["role"]
+POSSIBLE_ROLES_CONVERSATION = ["system", "user", "assistant", "tool"]
