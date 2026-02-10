@@ -185,6 +185,11 @@ class State:
     volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
+    def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
+        filtered = {k: v for k, v in data.items() if k in cls.__annotations__ and not k.startswith("_")}
+        return cls(_config_dir=config_dir, _project_name=project_name, **filtered)
+
+    @classmethod
     def load(cls, config_dir: Path, project_name: str) -> State:
         """Load state for a specific project from .jig.json.
 
@@ -208,12 +213,10 @@ class State:
                 if project_name in all_data and isinstance(all_data[project_name], dict):
                     # New structure: extract project-specific state
                     project_data = all_data[project_name]
-                    data = {k: v for k, v in project_data.items()
-                            if k in cls.__annotations__ and not k.startswith("_")}
-                    return cls(_config_dir=config_dir, _project_name=project_name, **data)
+                    return cls.from_dict(config_dir, project_name, **project_data)
                 # Secrets or volumes exist, but not yet migrated (don't care about registry base path)
                 if "secrets" in all_data or "volumes" in all_data:
-                    return cls(_config_dir=config_dir, _project_name=project_name, **all_data)
+                    return cls.from_dict(config_dir, project_name, **all_data)
                 # File exists but this project isn't in it yet
                 return cls(_config_dir=config_dir, _project_name=project_name)
         except FileNotFoundError:

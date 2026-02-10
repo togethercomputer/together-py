@@ -525,8 +525,8 @@ def deploy(
             # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
             # "failed to delete deployment from kubernetes: %w"
             # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-            error_body = getattr(e, "body", None)
-            error_message = error_body.get("error", "") if isinstance(error_body, dict) else ""
+            error_body: Any = getattr(e, "body", None)
+            error_message = error_body.get("error", "") if isinstance(error_body, dict) else "" # pyright: ignore
             if "already exists" in error_message or "must be unique" in error_message:
                 raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
             # TODO: helpful tips for more error cases
