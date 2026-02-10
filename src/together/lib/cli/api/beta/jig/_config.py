@@ -102,6 +102,7 @@ class Config:
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
+    _unique_name_tip: str = "Update project.name in pyproject.toml"
 
     @classmethod
     def find(cls, config_path: Optional[str] = None, init: bool = False) -> Config:
@@ -132,17 +133,26 @@ class Config:
     @classmethod
     def load(cls, data: dict[str, Any], path: Path) -> Config:
         """Load configuration from parsed TOML data"""
-        is_pyproject = path.name == "pyproject.toml"
-
-        jig_config = data.get("tool", {}).get("jig", {}) if is_pyproject else data
-
-        name = jig_config.get("name")
-        if name is None:
-            if is_pyproject:
-                name = data.get("project", {}).get("name", "")
+        # figure out config location and "Deployment name must be unique. Tip: update ..." message
+        is_pyproject = path.name.endswith("pyproject.toml")
+        if is_pyproject:
+            jig_config = data.get("tool", {}).get("jig", {})
+            if name := jig_config.get("name"):
+                tip = "update `name` in your pyproject.toml"
+            elif name := data.get("project", {}).get("name", ""):
+                tip = "update `project.name` in your pyproject.toml"
             else:
                 name = path.resolve().parent.name
-                click.echo(f"\N{PACKAGE} Name not set in config file or pyproject.toml - defaulting to {name}")
+                tip = "rename your folder or add `project.name` to your pyproject.toml"
+                click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
+        else:
+            jig_config = data
+            if name := jig_config.get("name"):
+                tip = "update `name` in {path}"
+            else:
+                name = path.resolve().parent.name
+                tip = f"rename your folder or add `name` to {path}"
+                click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
 
         if autoscaling := jig_config.get("autoscaling", {}):
             autoscaling["model"] = name
@@ -157,6 +167,7 @@ class Config:
             dockerfile=jig_config.get("dockerfile", "Dockerfile"),
             model_name=name,
             _path=path,
+            _unique_name_tip=tip,
         )
 
 
@@ -168,22 +179,67 @@ class State:
     """Persistent state stored in .jig.json"""
 
     _config_dir: Path
+    _project_name: str
     registry_base_path: str = ""
     secrets: dict[str, str] = field(default_factory=dict[str, str])
     volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
-    def load(cls, config_dir: Path) -> State:
+    def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
+        filtered = {k: v for k, v in data.items() if k in cls.__annotations__ and not k.startswith("_")}
+        return cls(_config_dir=config_dir, _project_name=project_name, **filtered)
+
+    @classmethod
+    def load(cls, config_dir: Path, project_name: str) -> State:
+        """Load state for a specific project from .jig.json.
+
+        The state file structure is:
+        {
+          "project-name-1": {
+            "registry_base_path": "...",
+            "secrets": {...},
+            "volumes": {...}
+          },
+          "project-name-2": {...}
+        }
+
+        """
         path = config_dir / ".jig.json"
         try:
             with open(path) as f:
-                data = {k: v for k, v in json.load(f).items() if k in cls.__annotations__ and not k.startswith("_")}
-                return cls(_config_dir=config_dir, **data)
+                all_data = json.load(f)
+
+                # Check if this is the new nested structure (project_name as key)
+                if project_name in all_data and isinstance(all_data[project_name], dict):
+                    # New structure: extract project-specific state
+                    project_data = all_data[project_name]
+                    return cls.from_dict(config_dir, project_name, **project_data)
+                # Secrets or volumes exist, but not yet migrated (don't care about registry base path)
+                if "secrets" in all_data or "volumes" in all_data:
+                    return cls.from_dict(config_dir, project_name, **all_data)
+                # File exists but this project isn't in it yet
+                return cls(_config_dir=config_dir, _project_name=project_name)
         except FileNotFoundError:
-            return cls(_config_dir=config_dir)
+            return cls(_config_dir=config_dir, _project_name=project_name)
 
     def save(self) -> None:
+        """Save state for this project to .jig.json.
+
+        Preserves other projects' state in the same file.
+        """
         path = self._config_dir / ".jig.json"
-        data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+
+        # Load existing file to preserve other projects
+        try:
+            with open(path) as f:
+                all_data = json.load(f)
+        except FileNotFoundError:
+            all_data = {}
+
+        # Update this project's state
+        project_data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+        all_data[self._project_name] = project_data
+
+        # Save back to file
         with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(all_data, f, indent=2)

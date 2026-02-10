@@ -34,13 +34,9 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                     endpoint_id = kwargs.get("endpoint_id", "")
                     endpoint_display = f"'{endpoint_id}'" if endpoint_id else ""
                     click.echo(prefix_styled + click.style("Failed", fg="red"))
+                    click.echo(prefix_styled + click.style(f"Endpoint {endpoint_display} not found.", fg="red"))
                     click.echo(
-                        prefix_styled
-                        + click.style(f"Endpoint {endpoint_display} not found.", fg="red")
-                    )
-                    click.echo(
-                        prefix_styled
-                        + "The endpoint may have been deleted or the ID may be incorrect.",
+                        prefix_styled + "The endpoint may have been deleted or the ID may be incorrect.",
                         err=True,
                     )
                     click.echo(
@@ -51,10 +47,7 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                 if "permission" in error_lower or "forbidden" in error_lower or "unauthorized" in error_lower:
                     click.echo(prefix_styled + click.style("Failed", fg="red"))
                     click.echo(
-                        prefix_styled
-                        + click.style(
-                            "You don't have permission to access this resource.", fg="red"
-                        )
+                        prefix_styled + click.style("You don't have permission to access this resource.", fg="red")
                     )
                     click.echo(
                         prefix_styled + "This may belong to another user or organization.",
@@ -63,10 +56,7 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                     sys.exit(1)
                 if "credentials" in error_lower or "authentication" in error_lower:
                     click.echo(prefix_styled + click.style("Failed", fg="red"))
-                    click.echo(
-                        prefix_styled
-                        + click.style("Invalid API key or authentication failed.", fg="red")
-                    )
+                    click.echo(prefix_styled + click.style("Invalid API key or authentication failed.", fg="red"))
                     sys.exit(1)
                 raise e
 

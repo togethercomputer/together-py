@@ -22,7 +22,7 @@ def secrets(ctx: click.Context) -> None:
 @click.option("--name", required=True, help="Secret name")
 @click.option("--value", required=True, help="Secret value")
 @click.option("--description", default="", help="Secret description")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_set(
     ctx: click.Context,
@@ -34,7 +34,7 @@ def secrets_set(
     """Set a secret (create or update)"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    state = State.load(config._path.parent, config.model_name)
 
     deployment_secret_name = f"{config.model_name}-{name}"
 
@@ -67,7 +67,7 @@ def secrets_set(
 @secrets.command("unset")
 @click.pass_context
 @click.option("--name", required=True, help="Secret name to remove")
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_unset(
     ctx: click.Context,  # noqa: ARG001
@@ -76,7 +76,7 @@ def secrets_unset(
 ) -> None:
     """Remove a secret from both remote and local state"""
     config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    state = State.load(config._path.parent, config.model_name)
 
     if state.secrets.pop(name, ""):
         state.save()
@@ -87,7 +87,7 @@ def secrets_unset(
 
 @secrets.command("list")
 @click.pass_context
-@click.option("--config", "config_path", default=None, help="Configuration file path")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Secrets")
 def secrets_list(
     ctx: click.Context,
@@ -96,7 +96,7 @@ def secrets_list(
     """List all secrets with sync status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent)
+    state = State.load(config._path.parent, config.model_name)
 
     prefix = f"{config.model_name}-"
 

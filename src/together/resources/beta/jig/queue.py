@@ -58,13 +58,15 @@ class QueueResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueRetrieveResponse:
-        """
-        Check the status of a job using request_id and model query parameters.
+        """Poll the current status of a previously submitted job.
+
+        Provide the request_id
+        and model as query parameters.
 
         Args:
-          model: Model name
+          model: Model name the job was submitted to
 
-          request_id: Request ID
+          request_id: Request ID returned from the submit endpoint
 
           extra_headers: Send extra headers
 
@@ -104,12 +106,17 @@ class QueueResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueCancelResponse:
-        """Cancel a pending or running job.
+        """Cancel a pending job.
 
-        Returns the job status after the cancellation
-        attempt.
+        Only jobs in pending status can be canceled. Running jobs
+        cannot be stopped. Returns the job status after the attempt. If the job is not
+        pending, returns 409 with the current status unchanged.
 
         Args:
+          model: Model identifier the job was submitted to
+
+          request_id: The request ID returned from the submit endpoint
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -145,7 +152,8 @@ class QueueResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueMetricsResponse:
         """
-        Get the current queue statistics including pending and running job counts.
+        Get the current queue statistics for a model, including pending and running job
+        counts.
 
         Args:
           model: Model name to get metrics for
@@ -184,13 +192,23 @@ class QueueResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueSubmitResponse:
-        """Submit a new job to the queue.
+        """Submit a new job to the queue for asynchronous processing.
 
-        Returns a request ID that can be used to check
-        status.
+        Jobs are processed in
+        strict priority order (higher priority first, FIFO within the same priority).
+        Returns a request ID that can be used to poll status or cancel the job.
 
         Args:
           model: Required model identifier
+
+          payload: Freeform model input. Passed unchanged to the model. Contents are
+              model-specific.
+
+          info: Arbitrary JSON metadata stored with the job and returned in status responses.
+              The model and system may add or update keys during processing.
+
+          priority: Job priority. Higher values are processed first (strict priority ordering). Jobs
+              with equal priority are processed in submission order (FIFO).
 
           extra_headers: Send extra headers
 
@@ -250,13 +268,15 @@ class AsyncQueueResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueRetrieveResponse:
-        """
-        Check the status of a job using request_id and model query parameters.
+        """Poll the current status of a previously submitted job.
+
+        Provide the request_id
+        and model as query parameters.
 
         Args:
-          model: Model name
+          model: Model name the job was submitted to
 
-          request_id: Request ID
+          request_id: Request ID returned from the submit endpoint
 
           extra_headers: Send extra headers
 
@@ -296,12 +316,17 @@ class AsyncQueueResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueCancelResponse:
-        """Cancel a pending or running job.
+        """Cancel a pending job.
 
-        Returns the job status after the cancellation
-        attempt.
+        Only jobs in pending status can be canceled. Running jobs
+        cannot be stopped. Returns the job status after the attempt. If the job is not
+        pending, returns 409 with the current status unchanged.
 
         Args:
+          model: Model identifier the job was submitted to
+
+          request_id: The request ID returned from the submit endpoint
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -337,7 +362,8 @@ class AsyncQueueResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueMetricsResponse:
         """
-        Get the current queue statistics including pending and running job counts.
+        Get the current queue statistics for a model, including pending and running job
+        counts.
 
         Args:
           model: Model name to get metrics for
@@ -376,13 +402,23 @@ class AsyncQueueResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> QueueSubmitResponse:
-        """Submit a new job to the queue.
+        """Submit a new job to the queue for asynchronous processing.
 
-        Returns a request ID that can be used to check
-        status.
+        Jobs are processed in
+        strict priority order (higher priority first, FIFO within the same priority).
+        Returns a request ID that can be used to poll status or cancel the job.
 
         Args:
           model: Required model identifier
+
+          payload: Freeform model input. Passed unchanged to the model. Contents are
+              model-specific.
+
+          info: Arbitrary JSON metadata stored with the job and returned in status responses.
+              The model and system may add or update keys during processing.
+
+          priority: Job priority. Higher values are processed first (strict priority ordering). Jobs
+              with equal priority are processed in submission order (FIFO).
 
           extra_headers: Send extra headers
 

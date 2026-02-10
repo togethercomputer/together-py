@@ -17,6 +17,7 @@ from together.lib.constants import (
     NUM_BYTES_IN_GB,
     MAX_FILE_SIZE_GB,
     MAX_IMAGES_PER_EXAMPLE,
+    JSONL_EXTRA_COLUMNS_MAP,
     MAX_BASE64_IMAGE_LENGTH,
     PARQUET_EXPECTED_COLUMNS,
     REQUIRED_COLUMNS_MESSAGE,
@@ -157,6 +158,20 @@ def _check_conversation_type(messages: List[Dict[str, str | int | MessageContent
                     error_source="key_value",
                 )
 
+        if message["role"] != "assistant" and "content" not in message:
+            raise InvalidFileFormatError(
+                message=f"Missing required column `content` in message on line {idx + 1}.",
+                line_number=idx + 1,
+                error_source="key_value",
+            )
+
+        if "content" not in message and "tool_calls" not in message:
+            raise InvalidFileFormatError(
+                message=f"Missing required column `content` or `tool_calls` in message on line {idx + 1}.",
+                line_number=idx + 1,
+                error_source="key_value",
+            )
+
 
 def _check_conversation_roles(require_assistant_role: bool, assistant_role_exists: bool, idx: int) -> None:
     """Check that the conversation has correct roles.
@@ -207,12 +222,11 @@ def _check_message_weight(message: Dict[str, str | int | MessageContent], idx: i
     return None
 
 
-def _check_message_role(message: Dict[str, str | int | MessageContent], previous_role: str | None, idx: int) -> str:
+def _check_message_role(message: Dict[str, str | int | MessageContent], idx: int) -> str:
     """Check that the message has correct roles.
 
     Args:
         message: The message to check.
-        previous_role: The role of the previous message.
         idx: Line number in the file.
 
     Returns:
@@ -233,13 +247,6 @@ def _check_message_role(message: Dict[str, str | int | MessageContent], previous
         raise InvalidFileFormatError(
             message=f"Invalid role `{message['role']}` in conversation on line {idx + 1}. "
             f"Possible roles: {', '.join(POSSIBLE_ROLES_CONVERSATION)}",
-            line_number=idx + 1,
-            error_source="key_value",
-        )
-    if previous_role is not None and message["role"] == previous_role:
-        raise InvalidFileFormatError(
-            message=f"Invalid role turns on line {idx + 1} of the input file. "
-            "After the optional system message, conversation roles must alternate between user/assistant/user/assistant.",
             line_number=idx + 1,
             error_source="key_value",
         )
@@ -382,7 +389,6 @@ def validate_messages(
     """
     _check_conversation_type(messages, idx)
 
-    previous_role = None
     assistant_role_exists = False
 
     messages_are_multimodal: bool | None = None
@@ -390,9 +396,11 @@ def validate_messages(
 
     for message in messages:
         message_weight = _check_message_weight(message, idx)
-        previous_role = _check_message_role(message, previous_role, idx)
-        assistant_role_exists |= previous_role == "assistant"
-        is_multimodal, number_of_images = _check_message_content(message["content"], role=previous_role, idx=idx)
+        role = _check_message_role(message, idx)
+        assistant_role_exists |= role == "assistant"
+        if "content" not in message or not message.get("content"):
+            continue
+        is_multimodal, number_of_images = _check_message_content(message["content"], role=role, idx=idx)
         # Multimodal validation
         if number_of_images > 0 and message_weight is not None and message_weight != 0:
             raise InvalidFileFormatError(
@@ -656,7 +664,11 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
 
                             # Check that there are no extra columns
                             for column in cast(List[str], json_line.keys()):
-                                if column not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]:
+                                if (
+                                    column
+                                    not in JSONL_REQUIRED_COLUMNS_MAP[possible_format]
+                                    + JSONL_EXTRA_COLUMNS_MAP[possible_format]
+                                ):
                                     raise InvalidFileFormatError(
                                         message=f'Found extra column "{column}" in the line {idx + 1}.',
                                         line_number=idx + 1,
