@@ -97,8 +97,7 @@ def create(
     # Validate min <= max replicas
     if min_replicas > max_replicas:
         click.echo(
-            f"Error: --min-replicas ({min_replicas}) cannot be greater than "
-            f"--max-replicas ({max_replicas})",
+            f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})",
             err=True,
         )
         sys.exit(1)
@@ -108,9 +107,7 @@ def create(
         try:
             valid_zones = client.endpoints.list_avzones()
             if availability_zone not in valid_zones.avzones:
-                click.echo(
-                    f"Error: Invalid availability zone '{availability_zone}'", err=True
-                )
+                click.echo(f"Error: Invalid availability zone '{availability_zone}'", err=True)
                 if valid_zones.avzones:
                     click.echo("Available zones:", err=True)
                     for zone in sorted(valid_zones.avzones):
@@ -163,13 +160,11 @@ def create(
             or "not supported" in error_msg
         ):
             click.echo(
-                f"Error: Model '{model}' was not found or is not available for "
-                "dedicated endpoints.",
+                f"Error: Model '{model}' was not found or is not available for dedicated endpoints.",
                 err=True,
             )
             click.echo(
-                "Please check that the model name is correct and that it supports "
-                "dedicated endpoint deployment.",
+                "Please check that the model name is correct and that it supports dedicated endpoint deployment.",
                 err=True,
             )
             click.echo(
