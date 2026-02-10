@@ -216,30 +216,6 @@ def _set_secret(
     state.save()
 
 
-def _watch_job_status(client: Together, config: Config, request_id: str) -> None:
-    """Watch job status until completion"""
-    last_status = None
-    while True:
-        try:
-            response = client.beta.jig.queue.retrieve(
-                model=config.model_name,
-                request_id=request_id,
-            )
-            current_status = response.status
-            if current_status != last_status:
-                click.echo(response.model_dump_json(indent=2))
-                last_status = current_status
-
-            if current_status in ["done", "failed", "finished", "error"]:
-                break
-
-            time.sleep(1)
-
-        except KeyboardInterrupt:
-            click.echo(f"\nStopped watching {request_id}")
-            break
-
-
 def _ensure_registry_base_path(client: Together, state: State) -> None:
     """Ensure registry base path is set in state"""
     if not state.registry_base_path:
@@ -652,9 +628,32 @@ def submit(
     click.echo("\N{CHECK MARK} Submitted job")
     click.echo(response.model_dump_json(indent=2))
 
-    if watch and response.request_id:
-        click.echo(f"\nWatching job {response.request_id}...")
-        _watch_job_status(client, config, response.request_id)
+    if not watch or not response.request_id:
+        return
+
+    click.echo(f"\nWatching job {response.request_id}...")
+    last_status = None
+    while True:
+        try:
+            response = client.beta.jig.queue.retrieve(
+                model=config.model_name,
+                request_id=request_id,
+            )
+            current_status = response.status
+            if current_status != last_status:
+                click.echo(response.model_dump_json(indent=2))
+                last_status = current_status
+
+            if current_status in ["done", "failed", "finished", "error"]:
+                if current_status != "done":
+                    ctx.exit(1)
+                break
+
+            time.sleep(1)
+
+        except KeyboardInterrupt:
+            click.echo(f"\nStopped watching {request_id}")
+            ctx.exit(130)
 
 
 @jig_command
