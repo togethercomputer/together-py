@@ -627,21 +627,22 @@ def submit(
 
     click.echo("\N{CHECK MARK} Submitted job")
     click.echo(response.model_dump_json(indent=2))
+    request_id = response.request_id
 
-    if not watch or not response.request_id:
+    if not watch or not request_id:
         return
 
-    click.echo(f"\nWatching job {response.request_id}...")
+    click.echo(f"\nWatching job {request_id}...")
     last_status = None
     while True:
         try:
-            response = client.beta.jig.queue.retrieve(
+            queue_response = client.beta.jig.queue.retrieve(
                 model=config.model_name,
                 request_id=request_id,
             )
-            current_status = response.status
+            current_status = queue_response.status
             if current_status != last_status:
-                click.echo(response.model_dump_json(indent=2))
+                click.echo(queue_response.model_dump_json(indent=2))
                 last_status = current_status
 
             if current_status in ["done", "failed", "finished", "error"]:
