@@ -211,10 +211,11 @@ class State:
                     data = {k: v for k, v in project_data.items()
                             if k in cls.__annotations__ and not k.startswith("_")}
                     return cls(_config_dir=config_dir, _project_name=project_name, **data)
-
+                # Secrets or volumes exist, but not yet migrated (don't care about registry base path)
+                if "secrets" in all_data or "volumes" in all_data:
+                    return cls(_config_dir=config_dir, _project_name=project_name, **all_data)
                 # File exists but this project isn't in it yet
                 return cls(_config_dir=config_dir, _project_name=project_name)
-
         except FileNotFoundError:
             return cls(_config_dir=config_dir, _project_name=project_name)
 
