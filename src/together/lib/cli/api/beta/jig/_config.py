@@ -151,7 +151,7 @@ class Config:
                 tip = "update `name` in {path}"
             else:
                 name = path.resolve().parent.name
-                tip = "rename your folder or add `name` to {path}"
+                tip = f"rename your folder or add `name` to {path}"
                 click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
 
         if autoscaling := jig_config.get("autoscaling", {}):

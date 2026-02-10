@@ -623,28 +623,28 @@ def submit(
 
     # Getting raw response and parsing ourselves here due to Stainless limitation with
     # Pydantic aliases not handled correctly (both fields are present in the model)
-    response = QueueSubmitResponse.model_validate_json(raw_response.read())
+    submit_response = QueueSubmitResponse.model_validate_json(raw_response.read())
 
     click.echo("\N{CHECK MARK} Submitted job")
-    click.echo(response.model_dump_json(indent=2))
+    click.echo(submit_response.model_dump_json(indent=2))
 
-    if not watch or not response.request_id:
+    if not watch or not submit_response.request_id:
         return
 
-    click.echo(f"\nWatching job {response.request_id}...")
+    click.echo(f"\nWatching job {submit_response.request_id}...")
     last_status = None
     while True:
         try:
             response = client.beta.jig.queue.retrieve(
                 model=config.model_name,
-                request_id=request_id,
+                request_id=submit_response.request_id,
             )
             current_status = response.status
             if current_status != last_status:
                 click.echo(response.model_dump_json(indent=2))
                 last_status = current_status
 
-            if current_status in ["done", "failed", "finished", "error"]:
+            if current_status in ["done", "failed", "finished", "error", "canceled"]:
                 if current_status != "done":
                     ctx.exit(1)
                 break
@@ -652,7 +652,7 @@ def submit(
             time.sleep(1)
 
         except KeyboardInterrupt:
-            click.echo(f"\nStopped watching {request_id}")
+            click.echo(f"\nStopped watching {submit_response.request_id}")
             ctx.exit(130)
 
 
