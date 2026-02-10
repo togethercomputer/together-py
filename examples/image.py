@@ -3,7 +3,7 @@ import base64
 from together import Together
 from together.types.image_data_b64 import ImageDataB64
 
-client = Together(api_key="04cf1e314be9c686cd14b3881f5c4ad76505af4c93a8d3fe6ef62337114d1d51")
+client = Together()
 
 image = client.images.generate(
     model="runwayml/stable-diffusion-v1-5",
