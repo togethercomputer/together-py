@@ -7,9 +7,11 @@ import sys
 import json
 from typing import TYPE_CHECKING, Any, Optional
 from pathlib import Path
-from dataclasses import field, asdict, dataclass
+from dataclasses import field, asdict
 
 import click
+from pydantic import ValidationError
+from pydantic.dataclasses import dataclass
 
 if TYPE_CHECKING:
     import tomli as tomllib
