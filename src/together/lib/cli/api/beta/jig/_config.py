@@ -38,6 +38,25 @@ WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
 # --- Configuration Dataclasses ---
 
 
+def _format_validation_errors(
+    exc: ValidationError,
+    prefix: str,
+    section: str,
+    path: Path,
+) -> str:
+    """Format a pydantic ValidationError with file context."""
+    header = f"Configuration error in {path}"
+    if prefix:
+        header += f" [{prefix}.{section}]" if section else f" [{prefix}]"
+    elif section:
+        header += f" [{section}]"
+    lines = [header + ":"]
+    for e in exc.errors():
+        loc = " -> ".join(str(part) for part in e["loc"])
+        lines.append(f"  - {loc}: {e['msg']}")
+    return "\n".join(lines)
+
+
 @dataclass
 class ImageConfig:
     """Container image configuration from pyproject.toml"""
@@ -163,9 +182,29 @@ class Config:
         # Support volume_mounts at jig level (merge into deploy config)
         jig_config["deploy"]["volume_mounts"] = jig_config.get("volume_mounts", [])
 
+        prefix = "tool.jig" if is_pyproject else ""
+        errors: list[str] = []
+
+        try:
+            image = ImageConfig.from_dict(jig_config.get("image", {}))
+        except ValidationError as exc:
+            errors.append(_format_validation_errors(exc, prefix, "image", path))
+            image = None
+
+        try:
+            deploy = DeployConfig.from_dict(jig_config.get("deploy", {}))
+        except ValidationError as exc:
+            errors.append(_format_validation_errors(exc, prefix, "deploy", path))
+            deploy = None
+
+        if errors:
+            click.echo("\n\n".join(errors), err=True)
+            sys.exit(1)
+
+        assert image is not None and deploy is not None
         return cls(
-            image=ImageConfig.from_dict(jig_config.get("image", {})),
-            deploy=DeployConfig.from_dict(jig_config.get("deploy", {})),
+            image=image,
+            deploy=deploy,
             dockerfile=jig_config.get("dockerfile", "Dockerfile"),
             model_name=name,
             _path=path,
