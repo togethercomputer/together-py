@@ -34,7 +34,7 @@ def secrets_set(
     """Set a secret (create or update)"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    state = State.load(config.config_path.parent, config.model_name)
 
     deployment_secret_name = f"{config.model_name}-{name}"
 
@@ -76,7 +76,7 @@ def secrets_unset(
 ) -> None:
     """Remove a secret from both remote and local state"""
     config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    state = State.load(config.config_path.parent, config.model_name)
 
     if state.secrets.pop(name, ""):
         state.save()
@@ -96,7 +96,7 @@ def secrets_list(
     """List all secrets with sync status"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    state = State.load(config.config_path.parent, config.model_name)
 
     prefix = f"{config.model_name}-"
 

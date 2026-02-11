@@ -110,7 +110,7 @@ CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
 def _get_files_to_copy(config: Config) -> list[str]:
     """Get list of files to copy"""
-    files = set(config.image.copy)
+    files = set(config.image.copy_files)
     if config.image.auto_include_git:
         try:
             if _run(["git", "status", "--porcelain"]).stdout.strip():
@@ -147,7 +147,11 @@ def _dockerfile(config: Config) -> bool:
             return False
 
         # Skip regeneration if config hasn't changed
-        if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
+        if (
+            config.config_path
+            and config.config_path.exists()
+            and dockerfile_path.stat().st_mtime >= config.config_path.stat().st_mtime
+        ):
             return True
 
     with open(dockerfile_path, "w") as f:
@@ -373,7 +377,7 @@ def build(
 
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    state = State.load(config.config_path.parent, config.model_name)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
@@ -407,7 +411,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    state = State.load(config.config_path.parent, config.model_name)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
@@ -441,7 +445,7 @@ def deploy(
     """Deploy model"""
     client: Together = ctx.obj
     config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    state = State.load(config.config_path.parent, config.model_name)
     _ensure_registry_base_path(client, state)
 
     if existing_image:
@@ -528,7 +532,7 @@ def deploy(
             error_body: Any = getattr(e, "body", None)
             error_message = error_body.get("error", "") if isinstance(error_body, dict) else ""  # pyright: ignore
             if "already exists" in error_message or "must be unique" in error_message:
-                raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
+                raise RuntimeError(f"Deployment name must be unique. Tip: {config.unique_name_tip}") from None
             # TODO: helpful tips for more error cases
             raise
 

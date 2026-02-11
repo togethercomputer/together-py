@@ -66,12 +66,15 @@ class ImageConfig:
     environment: dict[str, str] = field(default_factory=dict[str, str])
     run: list[str] = field(default_factory=list[str])
     cmd: str = "python app.py"
-    copy: list[str] = field(default_factory=list[str])
+    copy_files: list[str] = field(default_factory=list[str])
     auto_include_git: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ImageConfig:
-        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        mapped = {k: v for k, v in data.items() if k in cls.__annotations__}
+        if "copy" in data:
+            mapped["copy_files"] = data["copy"]
+        return cls(**mapped)
 
 
 @dataclass
@@ -122,8 +125,8 @@ class Config:
     dockerfile: str = "Dockerfile"
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
-    _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
-    _unique_name_tip: str = "Update project.name in pyproject.toml"
+    config_path: Path = field(default_factory=lambda: Path("pyproject.toml"))
+    unique_name_tip: str = "Update project.name in pyproject.toml"
 
     @classmethod
     def find(cls, config_path: Optional[str] = None, init: bool = False) -> Config:
@@ -207,8 +210,8 @@ class Config:
             deploy=deploy,
             dockerfile=jig_config.get("dockerfile", "Dockerfile"),
             model_name=name,
-            _path=path,
-            _unique_name_tip=tip,
+            config_path=path,
+            unique_name_tip=tip,
         )
 
 
@@ -219,16 +222,18 @@ class Config:
 class State:
     """Persistent state stored in .jig.json"""
 
-    _config_dir: Path
-    _project_name: str
+    config_dir: Path
+    project_name: str
     registry_base_path: str = ""
     secrets: dict[str, str] = field(default_factory=dict[str, str])
     volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
-        filtered = {k: v for k, v in data.items() if k in cls.__annotations__ and not k.startswith("_")}
-        return cls(_config_dir=config_dir, _project_name=project_name, **filtered)
+        filtered = {
+            k: v for k, v in data.items() if k in cls.__annotations__ and k not in ("config_dir", "project_name")
+        }
+        return cls(config_dir=config_dir, project_name=project_name, **filtered)
 
     @classmethod
     def load(cls, config_dir: Path, project_name: str) -> State:
@@ -259,16 +264,16 @@ class State:
                 if "secrets" in all_data or "volumes" in all_data:
                     return cls.from_dict(config_dir, project_name, **all_data)
                 # File exists but this project isn't in it yet
-                return cls(_config_dir=config_dir, _project_name=project_name)
+                return cls(config_dir=config_dir, project_name=project_name)
         except FileNotFoundError:
-            return cls(_config_dir=config_dir, _project_name=project_name)
+            return cls(config_dir=config_dir, project_name=project_name)
 
     def save(self) -> None:
         """Save state for this project to .jig.json.
 
         Preserves other projects' state in the same file.
         """
-        path = self._config_dir / ".jig.json"
+        path = self.config_dir / ".jig.json"
 
         # Load existing file to preserve other projects
         try:
@@ -278,8 +283,8 @@ class State:
             all_data = {}
 
         # Update this project's state
-        project_data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
-        all_data[self._project_name] = project_data
+        project_data = {k: v for k, v in asdict(self).items() if k not in ("config_dir", "project_name")}
+        all_data[self.project_name] = project_data
 
         # Save back to file
         with open(path, "w") as f:
