@@ -60,8 +60,10 @@ class RerankResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RerankCreateResponse:
-        """
-        Query a reranker model
+        """Rerank a list of documents by relevance to a query.
+
+        Returns a relevance score
+        and ordering index for each document.
 
         Args:
           documents: List of documents, which can be either strings or objects.
@@ -143,8 +145,10 @@ class AsyncRerankResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RerankCreateResponse:
-        """
-        Query a reranker model
+        """Rerank a list of documents by relevance to a query.
+
+        Returns a relevance score
+        and ordering index for each document.
 
         Args:
           documents: List of documents, which can be either strings or objects.
