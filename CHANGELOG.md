@@ -7,8 +7,6 @@ Full Changelog: [v2.1.0...v2.1.1](https://github.com/togethercomputer/together-p
 ### Bug Fixes
 
 * **cli:** handle None model.type in 'together models list' sort ([9c17a0c](https://github.com/togethercomputer/together-py/commit/9c17a0c873264e30ee217edc43269f3c8f8d4990))
-* **cli:** handle None model.type in 'together models list' sort ([9c17a0c](https://github.com/togethercomputer/together-py/commit/9c17a0c873264e30ee217edc43269f3c8f8d4990))
-* **cli:** handle None model.type in 'together models list' sort ([94bd7cc](https://github.com/togethercomputer/together-py/commit/94bd7cc4687079d58dabee3348963876f06a7002))
 
 
 ### Chores
