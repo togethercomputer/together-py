@@ -35,7 +35,9 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
         return
 
     display_list: List[Dict[str, Any]] = []
-    for model in sorted(models_list, key=lambda x: x.type):
+
+    # If the server has a bug and returns an empty .type this will crash if we don't do the or "". 
+    for model in sorted(models_list, key=lambda x: x.type or ""): # type: ignore
         price_parts: List[str] = []
 
         # Only show pricing if a value actually exists

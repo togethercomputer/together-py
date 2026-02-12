@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.1 (2026-02-12)
+
+Full Changelog: [v2.1.0...v2.1.1](https://github.com/togethercomputer/together-py/compare/v2.1.0...v2.1.1)
+
+### Bug Fixes
+
+* **cli:** handle None model.type in 'together models list' sort ([9c17a0c](https://github.com/togethercomputer/together-py/commit/9c17a0c873264e30ee217edc43269f3c8f8d4990))
+
+
+### Chores
+
+* **internal:** fix lint error on Python 3.14 ([c66238c](https://github.com/togethercomputer/together-py/commit/c66238c18b21eaa8aa6184bbfb2fc1242d270b6f))
+
 ## 2.1.0 (2026-02-10)
 
 Full Changelog: [v2.0.0...v2.1.0](https://github.com/togethercomputer/together-py/compare/v2.0.0...v2.1.0)
