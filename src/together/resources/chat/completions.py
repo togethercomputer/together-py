@@ -94,8 +94,10 @@ class CompletionsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -242,8 +244,10 @@ class CompletionsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Stream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -390,8 +394,10 @@ class CompletionsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion | Stream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -650,8 +656,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -798,8 +806,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncStream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -946,8 +956,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.

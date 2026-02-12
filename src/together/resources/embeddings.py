@@ -64,8 +64,10 @@ class EmbeddingsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Embedding:
-        """
-        Query an embedding model for a given string of text.
+        """Generate vector embeddings for one or more text inputs.
+
+        Returns numerical arrays
+        representing semantic meaning, useful for search, classification, and retrieval.
 
         Args:
           input: A string providing the text for the model to embed.
@@ -138,8 +140,10 @@ class AsyncEmbeddingsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Embedding:
-        """
-        Query an embedding model for a given string of text.
+        """Generate vector embeddings for one or more text inputs.
+
+        Returns numerical arrays
+        representing semantic meaning, useful for search, classification, and retrieval.
 
         Args:
           input: A string providing the text for the model to embed.
