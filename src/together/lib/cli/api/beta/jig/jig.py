@@ -7,6 +7,7 @@ import time
 import shlex
 import shutil
 import subprocess
+from enum import Enum
 from typing import Any, Callable, Optional
 from pathlib import Path
 from dataclasses import asdict
@@ -17,6 +18,7 @@ import click
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
+from together.types.beta.deployment import Deployment
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     WARMUP_DEST,
@@ -27,7 +29,9 @@ from together.lib.cli.api.beta.jig._config import (
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
-DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
+DOCKERFILE_MANAGED_MARKER = (
+    "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
+)
 
 # --- Helper Functions ---
 
@@ -114,7 +118,9 @@ def _get_files_to_copy(config: Config) -> list[str]:
     if config.image.auto_include_git:
         try:
             if _run(["git", "status", "--porcelain"]).stdout.strip():
-                raise RuntimeError("Git repository has uncommitted changes: auto_include_git not allowed.")
+                raise RuntimeError(
+                    "Git repository has uncommitted changes: auto_include_git not allowed."
+                )
             git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
             files.update(f for f in git_files if f and f != ".")
         except subprocess.CalledProcessError:
@@ -147,7 +153,11 @@ def _dockerfile(config: Config) -> bool:
             return False
 
         # Skip regeneration if config hasn't changed
-        if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
+        if (
+            config._path
+            and config._path.exists()
+            and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime
+        ):
             return True
 
     with open(dockerfile_path, "w") as f:
@@ -177,7 +187,9 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() if e.stderr else "Docker command failed"
         raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
-    raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
+    raise RuntimeError(
+        f"No registry digest found for {image_name}. Make sure the image was pushed to registry first."
+    )
 
 
 def _set_secret(
@@ -219,7 +231,9 @@ def _set_secret(
 def _ensure_registry_base_path(client: Together, state: State) -> None:
     """Ensure registry base path is set in state"""
     if not state.registry_base_path:
-        response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
+        response = client._client.get(
+            "/image-repositories/base-path", headers=client.auth_headers
+        )
         response.raise_for_status()
         data = response.json()
         base_path = data["base-path"]
@@ -273,7 +287,9 @@ def _build_warm_image(base_image: str) -> None:
     if not cache_files:
         raise RuntimeError("Warmup completed but no cache files were generated")
 
-    click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
+    click.echo(
+        f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated"
+    )
 
     # Generate cache dockerfile - copy cache to same location used during warmup
     cache_dockerfile = Path("Dockerfile.cache")
@@ -293,12 +309,223 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
     click.echo("\N{CHECK MARK} Final image with cache built")
 
 
+def _get_current_revision_id(deployment: Any) -> str:
+    """Extract current revision ID from deployment environment variables."""
+    env_vars: list[Any] = deployment.environment_variables or []
+    for env_var in env_vars:
+        if env_var.name == "TOGETHER_DEPLOYMENT_REVISION_ID":
+            return str(env_var.value)
+    return ""
+
+
+def _print_replica_failure(event: Any) -> None:
+    """Print replica failure details."""
+    if event.replica_status_reason:
+        click.echo(f"  Reason: {event.replica_status_reason}")
+    if event.replica_status_message:
+        click.echo(f"  Message: {event.replica_status_message}")
+
+
+def _fetch_and_print_logs(
+    client: Together, deployment_name: str, replica_id: str
+) -> None:
+    """Fetch and print logs for a specific replica."""
+    click.echo(f"\n--- Logs for {replica_id} ---")
+    try:
+        response = client.beta.jig.retrieve_logs(deployment_name, replica_id=replica_id)
+        if hasattr(response, "lines") and response.lines:
+            for log_line in response.lines:
+                click.echo(log_line)
+        else:
+            click.echo("No logs available")
+    except Exception as e:
+        click.echo(f"Failed to fetch logs: {e}")
+    click.echo("--- End of logs ---\n")
+
+
+def _is_volume_preload_done(event: Any) -> bool:
+    """Check if volume preload is complete or not applicable."""
+    if not event.volume_preload_status:
+        return True  # No volume preload
+    return bool(event.volume_preload_completed_at)
+
+
+class ReplicaTrackingResult(Enum):
+    """Result of processing a single replica event."""
+
+    CONTINUE = "continue"
+    SUCCESS = "success"
+    FAILURE = "failure"
+
+
+def _process_replica_event(
+    replica_id: str,
+    event: Any,
+    states: set[str],
+    replica_ready_wait_start: dict[str, float],
+    ready_timeout: float,
+    client: Together,
+    deployment_name: str,
+) -> ReplicaTrackingResult:
+    """Process a single replica event and return the tracking result.
+
+    Updates `states` and `replica_ready_wait_start` as side effects.
+    """
+    volume_done = _is_volume_preload_done(event)
+
+    # Track volume preload progress
+    if event.volume_preload_status:
+        if "volume_preload_started" not in states:
+            click.echo(f"\N{PACKAGE} [{replica_id}] Preloading volume contents...")
+            states.add("volume_preload_started")
+        elif volume_done and "volume_preload_completed" not in states:
+            click.echo(
+                f"\N{CHECK MARK}  [{replica_id}] Successfully preloaded volume contents. "
+                "Attaching the volume to the container..."
+            )
+            states.add("volume_preload_completed")
+
+    # Skip terminated replicas
+    if event.replica_status == "Terminated":
+        return ReplicaTrackingResult.CONTINUE
+
+    # Check if ready - SUCCESS
+    if event.replica_status == "Running" and event.replica_ready_since:
+        click.echo(f"\N{CHECK MARK}  [{replica_id}] Container is running and ready")
+        click.echo("\N{ROCKET} Deployment successful!")
+        click.echo("Note: Additional replicas may still be scaling up.")
+        return ReplicaTrackingResult.SUCCESS
+
+    # Check for CrashLoopBackOff
+    if event.replica_status_reason == "CrashLoopBackOff":
+        click.echo(f"\N{CROSS MARK} [{replica_id}] Container is crash looping")
+        _print_replica_failure(event)
+        _fetch_and_print_logs(client, deployment_name, replica_id)
+        return ReplicaTrackingResult.FAILURE
+
+    # Check for stuck in Running state without becoming ready
+    if event.replica_status == "Running" and volume_done:
+        if replica_id not in replica_ready_wait_start:
+            replica_ready_wait_start[replica_id] = time.time()
+
+        wait_duration = time.time() - replica_ready_wait_start[replica_id]
+        if wait_duration > ready_timeout:
+            click.echo(
+                f"\N{CROSS MARK}  [{replica_id}] Container is running but "
+                f"not ready to serve requests after {ready_timeout} seconds"
+            )
+            _print_replica_failure(event)
+            _fetch_and_print_logs(client, deployment_name, replica_id)
+            click.echo(f"Deployment '{deployment_name}' may still be in progress.")
+            return ReplicaTrackingResult.FAILURE
+
+    # Print status updates deduplicated by status + reason
+    # Skip all status updates while volume preload is in progress
+    if volume_done and event.replica_status_reason:
+        status_key = f"{event.replica_status}_{event.replica_status_reason}"
+        if status_key not in states:
+            states.add(status_key)
+            click.echo(
+                f"\N{HOURGLASS WITH FLOWING SAND} [{replica_id}] {event.replica_status}: {event.replica_status_reason}"
+            )
+            if event.replica_status_message:
+                click.echo(f"  {event.replica_status_message}")
+
+    return ReplicaTrackingResult.CONTINUE
+
+
+def _track_deployment_progress(
+    deployment_name: str, client: Together
+) -> Optional[dict[str, Any]]:
+    """Track deployment progress until ready or failed.
+
+    Polls deployment status every 3 seconds until:
+    - Success: At least one replica with the latest revision has replica_ready_since set
+    - Failure: CrashLoopBackOff or Running without ready_since for > 2 minute
+    - Timeout: 10 minutes elapsed
+    """
+    poll_interval = 3  # seconds
+    timeout = 600  # 10 minutes
+    ready_timeout = 120  # 2 minutes for Running without ready_since
+
+    start_time = time.time()
+    printed_states: dict[str, set[str]] = {}  # replica_id -> set of printed states
+    replica_ready_wait_start: dict[
+        str, float
+    ] = {}  # replica_id -> when we started waiting for ready
+
+    click.echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
+
+    try:
+        while time.time() - start_time < timeout:
+            deployment = client.beta.jig.retrieve(deployment_name)
+
+            # Handle scale to zero - no replicas expected
+            if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
+                if str(deployment.status) == "ScaledToZero":
+                    click.echo("\N{CHECK MARK} Deployment scaled to zero replicas")
+                    return None
+                # Not yet scaled to zero, wait and retry
+                time.sleep(poll_interval)
+                continue
+
+            current_revision_id = _get_current_revision_id(deployment)
+
+            replica_events = deployment.replica_events or {}
+
+            # Filter to replicas with matching revision
+            relevant_replicas = {
+                replica_id: event
+                for replica_id, event in replica_events.items()
+                if event.revision_id == current_revision_id
+            }
+
+            if not relevant_replicas:
+                time.sleep(poll_interval)
+                continue
+
+            for replica_id, event in relevant_replicas.items():
+                if replica_id not in printed_states:
+                    printed_states[replica_id] = set()
+
+                result = _process_replica_event(
+                    replica_id=replica_id,
+                    event=event,
+                    states=printed_states[replica_id],
+                    replica_ready_wait_start=replica_ready_wait_start,
+                    ready_timeout=ready_timeout,
+                    client=client,
+                    deployment_name=deployment_name,
+                )
+
+                if result == ReplicaTrackingResult.SUCCESS:
+                    return None
+                if result == ReplicaTrackingResult.FAILURE:
+                    raise SystemExit(1)
+
+            time.sleep(poll_interval)
+
+        # Timeout reached
+        click.echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
+        click.echo(f"Deployment '{deployment_name}' may still be in progress.")
+        click.echo("Run 'jig status' to check current state.")
+        raise SystemExit(1)
+
+    except KeyboardInterrupt:
+        click.echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
+        click.echo(f"Deployment '{deployment_name}' may still be in progress.")
+        click.echo("Run 'jig status' to check current state.")
+        raise SystemExit(130) from None
+
+
 # --- CLI Commands ---
 
 
 # Shared CLI decorator: pass_context + config option + api error handling
 def jig_command(f: Callable[..., Any]) -> Any:
-    f = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")(f)
+    f = click.option(
+        "-c", "--config", "config_path", default=None, help="Configuration file path"
+    )(f)
     f = handle_api_errors("Jig")(f)
     f = click.pass_context(f)
     f = click.command()(f)
@@ -341,7 +568,9 @@ gpu_count = 1
 
 
 @click.command()
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+@click.option(
+    "-c", "--config", "config_path", default=None, help="Configuration file path"
+)
 @handle_api_errors("Jig")
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
@@ -359,7 +588,11 @@ def dockerfile(config_path: str | None) -> None:
 @jig_command
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@click.option(
+    "--docker-args",
+    default=None,
+    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
+)
 def build(
     ctx: click.Context,
     tag: str,
@@ -381,7 +614,9 @@ def build(
     if _dockerfile(config):
         click.echo("\N{CHECK MARK} Generated Dockerfile")
     else:
-        click.echo(f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)")
+        click.echo(
+            f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)"
+        )
 
     click.echo(f"Building {image}")
     cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
@@ -427,13 +662,26 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
-@click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
+@click.option(
+    "--docker-args",
+    default=None,
+    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
+)
+@click.option(
+    "--image",
+    "existing_image",
+    default=None,
+    help="Use existing image (skip build/push)",
+)
+@click.option(
+    "--detach", "detach", is_flag=True, help="Do not wait for deployment to complete"
+)
 def deploy(
     ctx: click.Context,
     tag: str,
     build_only: bool,
     warmup: bool,
+    detach: bool,
     docker_args: str | None,
     existing_image: str | None,
     config_path: str | None,
@@ -484,8 +732,12 @@ def deploy(
     if config.deploy.command:
         deploy_data["command"] = config.deploy.command
 
-    env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
-    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
+    env_vars = [
+        {"name": k, "value": v} for k, v in config.deploy.environment_variables.items()
+    ]
+    env_vars.append(
+        {"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)}
+    )
 
     if "TOGETHER_API_KEY" not in state.secrets:
         _set_secret(
@@ -506,12 +758,12 @@ def deploy(
         click.echo(json.dumps(deploy_data, indent=2))
     click.echo(f"Deploying model: {config.model_name}")
 
-    def handle_create() -> dict[str, Any]:
+    def handle_create() -> Deployment:
         click.echo("\N{ROCKET} Creating new deployment")
         try:
             response = client.beta.jig.deploy(**deploy_data)
             click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
-            return response.model_dump()
+            return response
         except APIStatusError as e:
             # all errors:
             # "min replicas cannot be greater than max replicas"
@@ -526,21 +778,42 @@ def deploy(
             # "failed to delete deployment from kubernetes: %w"
             # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
             error_body: Any = getattr(e, "body", None)
-            error_message = error_body.get("error", "") if isinstance(error_body, dict) else ""  # pyright: ignore
+            error_message = (
+                error_body.get("error", "") if isinstance(error_body, dict) else ""
+            )  # pyright: ignore
             if "already exists" in error_message or "must be unique" in error_message:
-                raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
+                raise RuntimeError(
+                    f"Deployment name must be unique. Tip: {config._unique_name_tip}"
+                ) from None
             # TODO: helpful tips for more error cases
             raise
 
     try:
+        existing = client.beta.jig.retrieve(config.model_name)
+        old_revision_id = _get_current_revision_id(existing)
+        was_scaled_to_zero = existing.ready_replicas == 0
         response = client.beta.jig.update(config.model_name, **deploy_data)
-        click.echo("\N{CHECK MARK} Updated deployment")
+        click.echo("\N{CHECK MARK}  Applied new deployment configuration")
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
-            return handle_create()
-        raise
+            old_revision_id = ""
+            was_scaled_to_zero = False
+            response = handle_create()
+        else:
+            raise
 
-    return response.model_dump()
+    if detach:
+        return response.model_dump()
+
+    # Skip tracking if revision didn't change and not scaling up from zero
+    new_revision_id = _get_current_revision_id(response)
+    scaling_up = (
+        was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
+    )
+    if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
+        return None
+
+    return _track_deployment_progress(config.model_name, client)
 
 
 @jig_command
@@ -578,7 +851,9 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as streaming_response:
+        with client.beta.jig.with_streaming_response.retrieve_logs(
+            config.model_name
+        ) as streaming_response:
             for line in streaming_response.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
