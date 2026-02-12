@@ -29,9 +29,7 @@ from together.lib.cli.api.beta.jig._config import (
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
-DOCKERFILE_MANAGED_MARKER = (
-    "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
-)
+DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
 
 # --- Helper Functions ---
 
@@ -118,9 +116,7 @@ def _get_files_to_copy(config: Config) -> list[str]:
     if config.image.auto_include_git:
         try:
             if _run(["git", "status", "--porcelain"]).stdout.strip():
-                raise RuntimeError(
-                    "Git repository has uncommitted changes: auto_include_git not allowed."
-                )
+                raise RuntimeError("Git repository has uncommitted changes: auto_include_git not allowed.")
             git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
             files.update(f for f in git_files if f and f != ".")
         except subprocess.CalledProcessError:
@@ -153,11 +149,7 @@ def _dockerfile(config: Config) -> bool:
             return False
 
         # Skip regeneration if config hasn't changed
-        if (
-            config._path
-            and config._path.exists()
-            and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime
-        ):
+        if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
             return True
 
     with open(dockerfile_path, "w") as f:
@@ -187,9 +179,7 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() if e.stderr else "Docker command failed"
         raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
-    raise RuntimeError(
-        f"No registry digest found for {image_name}. Make sure the image was pushed to registry first."
-    )
+    raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
 
 def _set_secret(
@@ -231,9 +221,7 @@ def _set_secret(
 def _ensure_registry_base_path(client: Together, state: State) -> None:
     """Ensure registry base path is set in state"""
     if not state.registry_base_path:
-        response = client._client.get(
-            "/image-repositories/base-path", headers=client.auth_headers
-        )
+        response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
         response.raise_for_status()
         data = response.json()
         base_path = data["base-path"]
@@ -287,9 +275,7 @@ def _build_warm_image(base_image: str) -> None:
     if not cache_files:
         raise RuntimeError("Warmup completed but no cache files were generated")
 
-    click.echo(
-        f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated"
-    )
+    click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
     # Generate cache dockerfile - copy cache to same location used during warmup
     cache_dockerfile = Path("Dockerfile.cache")
@@ -326,9 +312,7 @@ def _print_replica_failure(event: Any) -> None:
         click.echo(f"  Message: {event.replica_status_message}")
 
 
-def _fetch_and_print_logs(
-    client: Together, deployment_name: str, replica_id: str
-) -> None:
+def _fetch_and_print_logs(client: Together, deployment_name: str, replica_id: str) -> None:
     """Fetch and print logs for a specific replica."""
     click.echo(f"\n--- Logs for {replica_id} ---")
     try:
@@ -434,9 +418,7 @@ def _process_replica_event(
     return ReplicaTrackingResult.CONTINUE
 
 
-def _track_deployment_progress(
-    deployment_name: str, client: Together
-) -> Optional[dict[str, Any]]:
+def _track_deployment_progress(deployment_name: str, client: Together) -> Optional[dict[str, Any]]:
     """Track deployment progress until ready or failed.
 
     Polls deployment status every 3 seconds until:
@@ -450,9 +432,7 @@ def _track_deployment_progress(
 
     start_time = time.time()
     printed_states: dict[str, set[str]] = {}  # replica_id -> set of printed states
-    replica_ready_wait_start: dict[
-        str, float
-    ] = {}  # replica_id -> when we started waiting for ready
+    replica_ready_wait_start: dict[str, float] = {}  # replica_id -> when we started waiting for ready
 
     click.echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
 
@@ -523,9 +503,7 @@ def _track_deployment_progress(
 
 # Shared CLI decorator: pass_context + config option + api error handling
 def jig_command(f: Callable[..., Any]) -> Any:
-    f = click.option(
-        "-c", "--config", "config_path", default=None, help="Configuration file path"
-    )(f)
+    f = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")(f)
     f = handle_api_errors("Jig")(f)
     f = click.pass_context(f)
     f = click.command()(f)
@@ -568,9 +546,7 @@ gpu_count = 1
 
 
 @click.command()
-@click.option(
-    "-c", "--config", "config_path", default=None, help="Configuration file path"
-)
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
 @handle_api_errors("Jig")
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
@@ -614,9 +590,7 @@ def build(
     if _dockerfile(config):
         click.echo("\N{CHECK MARK} Generated Dockerfile")
     else:
-        click.echo(
-            f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)"
-        )
+        click.echo(f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)")
 
     click.echo(f"Building {image}")
     cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
@@ -673,9 +647,7 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     default=None,
     help="Use existing image (skip build/push)",
 )
-@click.option(
-    "--detach", "detach", is_flag=True, help="Do not wait for deployment to complete"
-)
+@click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
     ctx: click.Context,
     tag: str,
@@ -732,12 +704,8 @@ def deploy(
     if config.deploy.command:
         deploy_data["command"] = config.deploy.command
 
-    env_vars = [
-        {"name": k, "value": v} for k, v in config.deploy.environment_variables.items()
-    ]
-    env_vars.append(
-        {"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)}
-    )
+    env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
+    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
 
     if "TOGETHER_API_KEY" not in state.secrets:
         _set_secret(
@@ -778,13 +746,11 @@ def deploy(
             # "failed to delete deployment from kubernetes: %w"
             # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
             error_body: Any = getattr(e, "body", None)
-            error_message = (
-                error_body.get("error", "") if isinstance(error_body, dict) else ""
-            )  # pyright: ignore
+            error_message = (  # pyright: ignore
+                error_body.get("error", "") if isinstance(error_body, dict) else ""  # pyright: ignore
+            )
             if "already exists" in error_message or "must be unique" in error_message:
-                raise RuntimeError(
-                    f"Deployment name must be unique. Tip: {config._unique_name_tip}"
-                ) from None
+                raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
             # TODO: helpful tips for more error cases
             raise
 
@@ -807,9 +773,7 @@ def deploy(
 
     # Skip tracking if revision didn't change and not scaling up from zero
     new_revision_id = _get_current_revision_id(response)
-    scaling_up = (
-        was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
-    )
+    scaling_up = was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
     if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
         return None
 
@@ -851,9 +815,7 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(
-            config.model_name
-        ) as streaming_response:
+        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as streaming_response:
             for line in streaming_response.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
@@ -908,7 +870,7 @@ def submit(
         return
 
     click.echo(f"\nWatching job {submit_response.request_id}...")
-    last_status = None
+    last_status: str | None = None
     while True:
         try:
             response = client.beta.jig.queue.retrieve(
