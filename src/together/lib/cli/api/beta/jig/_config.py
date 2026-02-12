@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
-import json
-from typing import TYPE_CHECKING, Any, Optional
+import typing
+from dataclasses import asdict, dataclass, field, is_dataclass
 from pathlib import Path
-from dataclasses import field, asdict, dataclass
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import click
 
@@ -72,8 +73,8 @@ class DeployConfig:
     description: str = ""
     gpu_type: str = "h100-80gb"
     gpu_count: int = 1
-    cpu: float = 1
-    memory: float = 8
+    cpu: int | float = 1
+    memory: int | float = 8
     storage: int = 100
     min_replicas: int = 1
     max_replicas: int = 1
@@ -93,6 +94,46 @@ class DeployConfig:
         return cls(**deploy_config)
 
 
+def validate(value: Any, value_type: type, path: str = "") -> str | None:
+    origin = typing.get_origin(value_type)
+    args = typing.get_args(value_type)
+
+    if origin is list:
+        if not isinstance(value, list):
+            return f"{path}: expected list, got {type(value).__name__}"
+        for i, v in enumerate(value):
+            if err := validate(v, args[0], f"{path}[{i}]"):
+                return err
+        return None
+
+    if origin is dict:
+        if not isinstance(value, dict):
+            return f"{path}: expected dict, got {type(value).__name__}"
+        for k, v in value.items():
+            if err := validate(k, args[0], f"{path}.key({k!r})"):
+                return err
+            if err := validate(v, args[1], f"{path}[{k!r}]"):
+                return err
+        return None
+
+    if origin is Union:
+        if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
+            return None
+        return f"{path}: expected {value_type}, got {type(value).__name__}"
+
+    if is_dataclass(value_type):
+        if not isinstance(value, value_type):
+            return f"{path}: expected {value_type.__name__}, got {type(value).__name__}"
+        for k, t in typing.get_type_hints(value_type, globalns=globals()).items():
+            if err := validate(getattr(value, k), t, f"{path}.{k}" if path else k):
+                return err
+        return None
+
+    if not isinstance(value, value_type):
+        return f"{path}: expected {type(value).__name__}, got {value!r}"
+    return None
+
+
 @dataclass
 class Config:
     """Main configuration from jig.toml or pyproject.toml"""
@@ -102,6 +143,10 @@ class Config:
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
+
+    def __post_init__(self):
+        if err := validate(self, type(self)):
+            raise click.UsageError(f"Invalid {self._path}: {err}")
 
     @classmethod
     def find(cls, config_path: Optional[str] = None, init: bool = False) -> Config:
