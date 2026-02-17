@@ -155,7 +155,6 @@ class TestEvals:
         eval = client.evals.list(
             limit=0,
             status="status",
-            user_id="userId",
         )
         assert_matches_type(EvalListResponse, eval, path=["response"])
 
@@ -356,7 +355,6 @@ class TestAsyncEvals:
         eval = await async_client.evals.list(
             limit=0,
             status="status",
-            user_id="userId",
         )
         assert_matches_type(EvalListResponse, eval, path=["response"])
 

@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import Optional
+from typing_extensions import Literal
 
 from ...._models import BaseModel
 
@@ -26,8 +27,8 @@ class Secret(BaseModel):
     name: Optional[str] = None
     """Name is the name/key of the secret"""
 
-    object: Optional[str] = None
-    """Object is the type identifier for this response (always "secret")"""
+    object: Optional[Literal["secret"]] = None
+    """The object type, which is always `secret`."""
 
     updated_at: Optional[str] = None
     """UpdatedAt is the ISO8601 timestamp when this secret was last updated"""

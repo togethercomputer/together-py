@@ -145,6 +145,8 @@ class EndpointsResource(SyncAPIResource):
         configuration, and scaling settings.
 
         Args:
+          endpoint_id: The ID of the endpoint to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -184,6 +186,8 @@ class EndpointsResource(SyncAPIResource):
         autoscaling settings, or change the endpoint's state (start/stop).
 
         Args:
+          endpoint_id: The ID of the endpoint to update
+
           autoscaling: New autoscaling configuration for the endpoint
 
           display_name: A human-readable name for the endpoint
@@ -288,6 +292,8 @@ class EndpointsResource(SyncAPIResource):
         This action cannot be undone.
 
         Args:
+          endpoint_id: The ID of the endpoint to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -480,6 +486,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
         configuration, and scaling settings.
 
         Args:
+          endpoint_id: The ID of the endpoint to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -519,6 +527,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
         autoscaling settings, or change the endpoint's state (start/stop).
 
         Args:
+          endpoint_id: The ID of the endpoint to update
+
           autoscaling: New autoscaling configuration for the endpoint
 
           display_name: A human-readable name for the endpoint
@@ -623,6 +633,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
         This action cannot be undone.
 
         Args:
+          endpoint_id: The ID of the endpoint to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

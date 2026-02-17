@@ -46,6 +46,7 @@ class Data(BaseModel):
     """Unique identifier for the hardware configuration"""
 
     object: Literal["hardware"]
+    """The object type, which is always `hardware`."""
 
     pricing: DataPricing
     """Pricing details for using an endpoint"""
@@ -64,3 +65,4 @@ class EndpointListHardwareResponse(BaseModel):
     data: List[Data]
 
     object: Literal["list"]
+    """The object type, which is always `list`."""

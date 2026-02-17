@@ -11,14 +11,17 @@ class DataVoice(BaseModel):
     id: str
 
     name: str
+    """Voice name to be used for audio inference."""
 
 
 class Data(BaseModel):
     """Represents a model with its available voices."""
 
     model: str
+    """Model name."""
 
     voices: List[DataVoice]
+    """List of available voices for the model."""
 
 
 class VoiceListResponse(BaseModel):

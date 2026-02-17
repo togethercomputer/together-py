@@ -9,6 +9,11 @@ __all__ = ["ClusterCreateParams", "SharedVolume"]
 
 class ClusterCreateParams(TypedDict, total=False):
     billing_type: Required[Literal["RESERVED", "ON_DEMAND"]]
+    """
+    RESERVED billing types allow you to specify the duration of the cluster
+    reservation via the duration_days field. ON_DEMAND billing types will give you
+    ownership of the cluster until you delete it.
+    """
 
     cluster_name: Required[str]
     """Name of the GPU cluster."""
@@ -25,23 +30,28 @@ class ClusterCreateParams(TypedDict, total=False):
     This must be multiple of 8. For example, 8, 16 or 24
     """
 
-    region: Required[Literal["us-central-8", "us-central-4"]]
+    region: Required[str]
     """Region to create the GPU cluster in.
 
-    Valid values are us-central-8 and us-central-4.
+    Usable regions can be found from `client.clusters.list_regions()`
     """
 
     cluster_type: Literal["KUBERNETES", "SLURM"]
+    """Type of cluster to create."""
 
     duration_days: int
     """Duration in days to keep the cluster running."""
 
     shared_volume: SharedVolume
+    """Inline configuration to create a shared volume with the cluster creation."""
 
     volume_id: str
+    """ID of an existing volume to use with the cluster creation."""
 
 
 class SharedVolume(TypedDict, total=False):
+    """Inline configuration to create a shared volume with the cluster creation."""
+
     region: Required[str]
     """Region name. Usable regions can be found from `client.clusters.list_regions()`"""
 
@@ -49,3 +59,4 @@ class SharedVolume(TypedDict, total=False):
     """Volume size in whole tebibytes (TiB)."""
 
     volume_name: Required[str]
+    """Customizable name of the volume to create."""
