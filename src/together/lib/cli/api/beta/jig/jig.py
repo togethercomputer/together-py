@@ -401,6 +401,305 @@ def format_deployment_status(d: Deployment) -> str:
     return status
 
 
+# = Secrets and Volumes subcommands =
+# == Secrets ==
+
+
+def _set_secret(
+    client: Together,
+    config: Config,
+    state: State,
+    name: str,
+    value: str,
+    description: str,
+) -> None:
+    """Set secret for the deployment"""
+    deployment_secret_name = f"{config.model_name}-{name}"
+
+    try:
+        client.beta.jig.secrets.retrieve(deployment_secret_name)
+        client.beta.jig.secrets.update(
+            deployment_secret_name,
+            name=deployment_secret_name,
+            description=description,
+            value=value,
+        )
+        click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
+    except APIStatusError as e:
+        if hasattr(e, "status_code") and e.status_code == 404:
+            click.echo("\N{ROCKET} Creating new secret")
+            client.beta.jig.secrets.create(
+                name=deployment_secret_name,
+                value=value,
+                description=description,
+            )
+            click.echo(f"\N{CHECK MARK} Created secret: {name}")
+        else:
+            raise
+
+    state.secrets[name] = deployment_secret_name
+    state.save()
+
+
+@click.group()
+@click.pass_context
+def secrets(ctx: click.Context) -> None:
+    """Manage deployment secrets"""
+    pass
+
+
+@secrets.command("set")
+@click.pass_context
+@click.option("--name", required=True, help="Secret name")
+@click.option("--value", required=True, help="Secret value")
+@click.option("--description", default="", help="Secret description")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+@handle_api_errors("Secrets")
+def secrets_set(
+    ctx: click.Context,
+    name: str,
+    value: str,
+    description: str,
+    config_path: str | None,
+) -> None:
+    """Set a secret (create or update)"""
+    client: Together = ctx.obj
+    config = Config.find(config_path)
+    state = State.load(config._path.parent, config.model_name)
+    _set_secret(client, config, state, name, value, description)
+
+
+@secrets.command("unset")
+@click.pass_context
+@click.option("--name", required=True, help="Secret name to remove")
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+@handle_api_errors("Secrets")
+def secrets_unset(
+    ctx: click.Context,  # noqa: ARG001
+    name: str,
+    config_path: str | None,
+) -> None:
+    """Remove a secret from both remote and local state"""
+    config = Config.find(config_path)
+    state = State.load(config._path.parent, config.model_name)
+
+    if state.secrets.pop(name, ""):
+        state.save()
+        click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
+    else:
+        click.echo(f"\N{CROSS MARK} Secret '{name}' is not set")
+
+
+@secrets.command("list")
+@click.pass_context
+@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+@handle_api_errors("Secrets")
+def secrets_list(
+    ctx: click.Context,
+    config_path: str | None,
+) -> None:
+    """List all secrets with sync status"""
+    client: Together = ctx.obj
+    config = Config.find(config_path)
+    state = State.load(config._path.parent, config.model_name)
+
+    prefix = f"{config.model_name}-"
+
+    # Get remote secrets for this deployment
+    remote_response = client.beta.jig.secrets.list()
+    remote_secrets: set[str] = set()
+
+    if hasattr(remote_response, "data") and remote_response.data:
+        for secret in remote_response.data:
+            secret_name = getattr(secret, "name", None)
+            if secret_name and secret_name.startswith(prefix):
+                # Strip prefix to get local name
+                remote_secrets.add(secret_name[len(prefix) :])
+
+    # Get local secrets
+    local_secrets = set(state.secrets.keys())
+
+    # Combine all secrets
+    all_secrets = local_secrets | remote_secrets
+
+    if not all_secrets:
+        click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{config.model_name}'")
+        return
+
+    click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{config.model_name}':")
+    click.echo()
+
+    for name in sorted(all_secrets):
+        in_local = name in local_secrets
+        in_remote = name in remote_secrets
+
+        if in_local and in_remote:
+            status = click.style("synced", fg="green")
+        elif in_local and not in_remote:
+            status = click.style("local only", fg="yellow")
+        else:  # in_remote and not in_local
+            status = click.style("remote only", fg="yellow")
+
+        click.echo(f"  - {name} [{status}]")
+
+
+# == Volumes ==
+# --- File upload ---
+
+
+async def _create_volume(client: Together, name: str, source: str) -> None:
+    """Create a volume and upload files"""
+    source_path = Path(source)
+    if not source_path.exists():
+        raise ValueError(f"Source path does not exist: {source}")
+    if not source_path.is_dir():
+        raise ValueError(f"Source path must be a directory: {source}")
+
+    source_prefix = f"{name}/{source_path.name}"
+
+    click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
+    try:
+        volume_response = client.beta.jig.volumes.create(
+            name=name,
+            type="readOnly",
+            content={"type": "files", "source_prefix": source_prefix},
+        )
+        click.echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to create volume: {e}") from e
+
+    try:
+        await Uploader(client).upload_files(source_path, volume_name=name)
+    except Exception as e:
+        click.echo(f"\N{CROSS MARK} Upload failed: {e}")
+        click.echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
+        try:
+            client.beta.jig.volumes.delete(name)
+        except Exception as cleanup_error:
+            click.echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
+        raise
+
+
+async def _update_volume(client: Together, name: str, source: str) -> None:
+    """Update a volume and re-upload files"""
+    source_path = Path(source)
+    if not source_path.exists():
+        raise ValueError(f"Source path does not exist: {source}")
+    if not source_path.is_dir():
+        raise ValueError(f"Source path must be a directory: {source}")
+
+    try:
+        client.beta.jig.volumes.retrieve(name)
+    except APIStatusError as e:
+        if hasattr(e, "status_code") and e.status_code == 404:
+            raise ValueError(f"Volume '{name}' does not exist") from e
+        raise
+
+    source_prefix = f"{name}/{source_path.name}"
+
+    click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
+    await Uploader(client).upload_files(source_path, volume_name=name)
+
+    click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
+    client.beta.jig.volumes.update(
+        name,
+        content={"type": "files", "source_prefix": source_prefix},
+    )
+    click.echo("\N{CHECK MARK} Volume updated successfully")
+
+
+# --- Volumes CLI Commands ---
+
+
+@click.group()
+@click.pass_context
+def volumes(ctx: click.Context) -> None:
+    """Manage volumes"""
+    pass
+
+
+@volumes.command("create")
+@click.pass_context
+@click.option("--name", required=True, help="Volume name")
+@click.option("--source", required=True, help="Source directory path")
+@handle_api_errors("Volumes")
+def volumes_create(
+    ctx: click.Context,
+    name: str,
+    source: str,
+) -> None:
+    """Create a volume and upload files"""
+    client: Together = ctx.obj
+    asyncio.run(_create_volume(client, name, source))
+
+
+@volumes.command("update")
+@click.pass_context
+@click.option("--name", required=True, help="Volume name")
+@click.option("--source", required=True, help="New source directory path")
+@handle_api_errors("Volumes")
+def volumes_update(
+    ctx: click.Context,
+    name: str,
+    source: str,
+) -> None:
+    """Update a volume and re-upload files"""
+    client: Together = ctx.obj
+    asyncio.run(_update_volume(client, name, source))
+
+
+@volumes.command("delete")
+@click.pass_context
+@click.option("--name", required=True, help="Volume name")
+@handle_api_errors("Volumes")
+def volumes_delete(
+    ctx: click.Context,
+    name: str,
+) -> None:
+    """Delete a volume"""
+    client: Together = ctx.obj
+
+    try:
+        client.beta.jig.volumes.delete(name)
+        click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
+    except APIStatusError as e:
+        if hasattr(e, "status_code") and e.status_code == 404:
+            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
+            return
+        raise
+
+
+@volumes.command("describe")
+@click.pass_context
+@click.option("--name", required=True, help="Volume name")
+@handle_api_errors("Volumes")
+def volumes_describe(
+    ctx: click.Context,
+    name: str,
+) -> None:
+    """Describe a volume"""
+    client: Together = ctx.obj
+
+    try:
+        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
+        click.echo(json.dumps(response.json(), indent=2))
+    except APIStatusError as e:
+        if hasattr(e, "status_code") and e.status_code == 404:
+            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
+            return
+        raise
+
+
+@volumes.command("list")
+@click.pass_context
+@handle_api_errors("Volumes")
+def volumes_list(ctx: click.Context) -> None:
+    """List all volumes"""
+    client: Together = ctx.obj
+    response = client.beta.jig.volumes.with_raw_response.list()
+    click.echo(json.dumps(response.json(), indent=2))
+
+
 # == Main CLI ==
 # --- Helper Functions ---
 
@@ -1033,14 +1332,7 @@ def deploy(
     env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
 
     if "TOGETHER_API_KEY" not in state.secrets:
-        _set_secret(
-            client,
-            config,
-            state,
-            "TOGETHER_API_KEY",
-            client.api_key,
-            "Auth key for queue API",
-        )
+        _set_secret(client, config, state, "TOGETHER_API_KEY", client.api_key, "Auth key for queue API")
 
     for name, secret_id in state.secrets.items():
         env_vars.append({"name": name, "value_from_secret": secret_id})
@@ -1255,328 +1547,4 @@ def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
     client: Together = ctx.obj
     response = client.beta.jig.with_raw_response.list()
-    click.echo(json.dumps(response.json(), indent=2))
-
-
-# == Secrets ==
-
-
-def _set_secret(
-    client: Together,
-    config: Config,
-    state: State,
-    name: str,
-    value: str,
-    description: str,
-) -> None:
-    """Set secret for the deployment"""
-    deployment_secret_name = f"{config.model_name}-{name}"
-
-    try:
-        client.beta.jig.secrets.retrieve(deployment_secret_name)
-        client.beta.jig.secrets.update(
-            deployment_secret_name,
-            name=deployment_secret_name,
-            description=description,
-            value=value,
-        )
-        click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo("\N{ROCKET} Creating new secret")
-            client.beta.jig.secrets.create(
-                name=deployment_secret_name,
-                value=value,
-                description=description,
-            )
-            click.echo(f"\N{CHECK MARK} Created secret: {name}")
-        else:
-            raise
-
-    state.secrets[name] = deployment_secret_name
-    state.save()
-
-
-@click.group()
-@click.pass_context
-def secrets(ctx: click.Context) -> None:
-    """Manage deployment secrets"""
-    pass
-
-
-@secrets.command("set")
-@click.pass_context
-@click.option("--name", required=True, help="Secret name")
-@click.option("--value", required=True, help="Secret value")
-@click.option("--description", default="", help="Secret description")
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_set(
-    ctx: click.Context,
-    name: str,
-    value: str,
-    description: str,
-    config_path: str | None,
-) -> None:
-    """Set a secret (create or update)"""
-    client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
-
-    deployment_secret_name = f"{config.model_name}-{name}"
-
-    try:
-        client.beta.jig.secrets.retrieve(deployment_secret_name)
-        # Secret exists, update it
-        client.beta.jig.secrets.update(
-            deployment_secret_name,
-            name=deployment_secret_name,
-            description=description,
-            value=value,
-        )
-        click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo("\N{ROCKET} Creating new secret")
-            client.beta.jig.secrets.create(
-                name=deployment_secret_name,
-                value=value,
-                description=description,
-            )
-            click.echo(f"\N{CHECK MARK} Created secret: {name}")
-        else:
-            raise
-
-    state.secrets[name] = deployment_secret_name
-    state.save()
-
-
-@secrets.command("unset")
-@click.pass_context
-@click.option("--name", required=True, help="Secret name to remove")
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_unset(
-    ctx: click.Context,  # noqa: ARG001
-    name: str,
-    config_path: str | None,
-) -> None:
-    """Remove a secret from both remote and local state"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
-
-    if state.secrets.pop(name, ""):
-        state.save()
-        click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
-    else:
-        click.echo(f"\N{CROSS MARK} Secret '{name}' is not set")
-
-
-@secrets.command("list")
-@click.pass_context
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_list(
-    ctx: click.Context,
-    config_path: str | None,
-) -> None:
-    """List all secrets with sync status"""
-    client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
-
-    prefix = f"{config.model_name}-"
-
-    # Get remote secrets for this deployment
-    remote_response = client.beta.jig.secrets.list()
-    remote_secrets: set[str] = set()
-
-    if hasattr(remote_response, "data") and remote_response.data:
-        for secret in remote_response.data:
-            secret_name = getattr(secret, "name", None)
-            if secret_name and secret_name.startswith(prefix):
-                # Strip prefix to get local name
-                remote_secrets.add(secret_name[len(prefix) :])
-
-    # Get local secrets
-    local_secrets = set(state.secrets.keys())
-
-    # Combine all secrets
-    all_secrets = local_secrets | remote_secrets
-
-    if not all_secrets:
-        click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{config.model_name}'")
-        return
-
-    click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{config.model_name}':")
-    click.echo()
-
-    for name in sorted(all_secrets):
-        in_local = name in local_secrets
-        in_remote = name in remote_secrets
-
-        if in_local and in_remote:
-            status = click.style("synced", fg="green")
-        elif in_local and not in_remote:
-            status = click.style("local only", fg="yellow")
-        else:  # in_remote and not in_local
-            status = click.style("remote only", fg="yellow")
-
-        click.echo(f"  - {name} [{status}]")
-
-
-# == Volumes ==
-# --- File upload ---
-
-
-async def _create_volume(client: Together, name: str, source: str) -> None:
-    """Create a volume and upload files"""
-    source_path = Path(source)
-    if not source_path.exists():
-        raise ValueError(f"Source path does not exist: {source}")
-    if not source_path.is_dir():
-        raise ValueError(f"Source path must be a directory: {source}")
-
-    source_prefix = f"{name}/{source_path.name}"
-
-    click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
-    try:
-        volume_response = client.beta.jig.volumes.create(
-            name=name,
-            type="readOnly",
-            content={"type": "files", "source_prefix": source_prefix},
-        )
-        click.echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
-    except Exception as e:
-        raise RuntimeError(f"Failed to create volume: {e}") from e
-
-    try:
-        await Uploader(client).upload_files(source_path, volume_name=name)
-    except Exception as e:
-        click.echo(f"\N{CROSS MARK} Upload failed: {e}")
-        click.echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
-        try:
-            client.beta.jig.volumes.delete(name)
-        except Exception as cleanup_error:
-            click.echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        raise
-
-
-async def _update_volume(client: Together, name: str, source: str) -> None:
-    """Update a volume and re-upload files"""
-    source_path = Path(source)
-    if not source_path.exists():
-        raise ValueError(f"Source path does not exist: {source}")
-    if not source_path.is_dir():
-        raise ValueError(f"Source path must be a directory: {source}")
-
-    try:
-        client.beta.jig.volumes.retrieve(name)
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            raise ValueError(f"Volume '{name}' does not exist") from e
-        raise
-
-    source_prefix = f"{name}/{source_path.name}"
-
-    click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
-    await Uploader(client).upload_files(source_path, volume_name=name)
-
-    click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
-    client.beta.jig.volumes.update(
-        name,
-        content={"type": "files", "source_prefix": source_prefix},
-    )
-    click.echo("\N{CHECK MARK} Volume updated successfully")
-
-
-# --- Volumes CLI Commands ---
-
-
-@click.group()
-@click.pass_context
-def volumes(ctx: click.Context) -> None:
-    """Manage volumes"""
-    pass
-
-
-@volumes.command("create")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@click.option("--source", required=True, help="Source directory path")
-@handle_api_errors("Volumes")
-def volumes_create(
-    ctx: click.Context,
-    name: str,
-    source: str,
-) -> None:
-    """Create a volume and upload files"""
-    client: Together = ctx.obj
-    asyncio.run(_create_volume(client, name, source))
-
-
-@volumes.command("update")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@click.option("--source", required=True, help="New source directory path")
-@handle_api_errors("Volumes")
-def volumes_update(
-    ctx: click.Context,
-    name: str,
-    source: str,
-) -> None:
-    """Update a volume and re-upload files"""
-    client: Together = ctx.obj
-    asyncio.run(_update_volume(client, name, source))
-
-
-@volumes.command("delete")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")
-def volumes_delete(
-    ctx: click.Context,
-    name: str,
-) -> None:
-    """Delete a volume"""
-    client: Together = ctx.obj
-
-    try:
-        client.beta.jig.volumes.delete(name)
-        click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
-
-
-@volumes.command("describe")
-@click.pass_context
-@click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")
-def volumes_describe(
-    ctx: click.Context,
-    name: str,
-) -> None:
-    """Describe a volume"""
-    client: Together = ctx.obj
-
-    try:
-        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
-        click.echo(json.dumps(response.json(), indent=2))
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
-
-
-@volumes.command("list")
-@click.pass_context
-@handle_api_errors("Volumes")
-def volumes_list(ctx: click.Context) -> None:
-    """List all volumes"""
-    client: Together = ctx.obj
-    response = client.beta.jig.volumes.with_raw_response.list()
     click.echo(json.dumps(response.json(), indent=2))
