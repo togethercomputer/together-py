@@ -548,42 +548,6 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
     raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
 
-def _set_secret(
-    client: Together,
-    config: Config,
-    state: State,
-    name: str,
-    value: str,
-    description: str,
-) -> None:
-    """Set secret for the deployment"""
-    deployment_secret_name = f"{config.model_name}-{name}"
-
-    try:
-        client.beta.jig.secrets.retrieve(deployment_secret_name)
-        client.beta.jig.secrets.update(
-            deployment_secret_name,
-            name=deployment_secret_name,
-            description=description,
-            value=value,
-        )
-        click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
-    except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo("\N{ROCKET} Creating new secret")
-            client.beta.jig.secrets.create(
-                name=deployment_secret_name,
-                value=value,
-                description=description,
-            )
-            click.echo(f"\N{CHECK MARK} Created secret: {name}")
-        else:
-            raise
-
-    state.secrets[name] = deployment_secret_name
-    state.save()
-
-
 def _ensure_registry_base_path(client: Together, state: State) -> None:
     """Ensure registry base path is set in state"""
     if not state.registry_base_path:
@@ -1295,6 +1259,42 @@ def list_deployments(ctx: click.Context) -> None:
 
 
 # == Secrets ==
+
+
+def _set_secret(
+    client: Together,
+    config: Config,
+    state: State,
+    name: str,
+    value: str,
+    description: str,
+) -> None:
+    """Set secret for the deployment"""
+    deployment_secret_name = f"{config.model_name}-{name}"
+
+    try:
+        client.beta.jig.secrets.retrieve(deployment_secret_name)
+        client.beta.jig.secrets.update(
+            deployment_secret_name,
+            name=deployment_secret_name,
+            description=description,
+            value=value,
+        )
+        click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
+    except APIStatusError as e:
+        if hasattr(e, "status_code") and e.status_code == 404:
+            click.echo("\N{ROCKET} Creating new secret")
+            client.beta.jig.secrets.create(
+                name=deployment_secret_name,
+                value=value,
+                description=description,
+            )
+            click.echo(f"\N{CHECK MARK} Created secret: {name}")
+        else:
+            raise
+
+    state.secrets[name] = deployment_secret_name
+    state.save()
 
 
 @click.group()
