@@ -36,6 +36,7 @@ class Completion(BaseModel):
     model: str
 
     object: Literal["text.completion"]
+    """The object type, which is always `text.completion`."""
 
     usage: Optional[ChatCompletionUsage] = None
 

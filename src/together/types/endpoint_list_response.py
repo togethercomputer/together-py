@@ -25,7 +25,7 @@ class Data(BaseModel):
     """System name for the endpoint"""
 
     object: Literal["endpoint"]
-    """The type of object"""
+    """The object type, which is always `endpoint`."""
 
     owner: str
     """The owner of this endpoint"""
@@ -41,3 +41,4 @@ class EndpointListResponse(BaseModel):
     data: List[Data]
 
     object: Literal["list"]
+    """The object type, which is always `list`."""

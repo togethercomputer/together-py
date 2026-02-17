@@ -106,6 +106,8 @@ class VolumesResource(SyncAPIResource):
         Retrieve details of a specific volume by its ID or name
 
         Args:
+          id: Volume ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -142,6 +144,8 @@ class VolumesResource(SyncAPIResource):
         Update an existing volume's configuration or contents
 
         Args:
+          id: Volume ID or name.
+
           content: Content specifies the new content that will be preloaded to this volume
 
           name: Name is the new unique identifier for the volume within the project
@@ -208,6 +212,8 @@ class VolumesResource(SyncAPIResource):
         Delete an existing volume
 
         Args:
+          id: Volume ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -309,6 +315,8 @@ class AsyncVolumesResource(AsyncAPIResource):
         Retrieve details of a specific volume by its ID or name
 
         Args:
+          id: Volume ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -345,6 +353,8 @@ class AsyncVolumesResource(AsyncAPIResource):
         Update an existing volume's configuration or contents
 
         Args:
+          id: Volume ID or name.
+
           content: Content specifies the new content that will be preloaded to this volume
 
           name: Name is the new unique identifier for the volume within the project
@@ -411,6 +421,8 @@ class AsyncVolumesResource(AsyncAPIResource):
         Delete an existing volume
 
         Args:
+          id: Volume ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

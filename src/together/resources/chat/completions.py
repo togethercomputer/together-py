@@ -94,8 +94,10 @@ class CompletionsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -103,6 +105,8 @@ class CompletionsResource(SyncAPIResource):
           model: The name of the model to query.
 
               [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
+          chat_template_kwargs: Additional configuration to pass to model engine.
 
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
@@ -129,6 +133,9 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -242,8 +249,10 @@ class CompletionsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Stream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -255,6 +264,8 @@ class CompletionsResource(SyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          chat_template_kwargs: Additional configuration to pass to model engine.
 
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
@@ -281,6 +292,9 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -390,8 +404,10 @@ class CompletionsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion | Stream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -403,6 +419,8 @@ class CompletionsResource(SyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          chat_template_kwargs: Additional configuration to pass to model engine.
 
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
@@ -429,6 +447,9 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -650,8 +671,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -659,6 +682,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           model: The name of the model to query.
 
               [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
+
+          chat_template_kwargs: Additional configuration to pass to model engine.
 
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
@@ -685,6 +710,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -798,8 +826,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncStream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -811,6 +841,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          chat_template_kwargs: Additional configuration to pass to model engine.
 
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
@@ -837,6 +869,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -946,8 +981,10 @@ class AsyncCompletionsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
-        """
-        Query a chat model.
+        """Generate a model response for a given chat conversation.
+
+        Supports single queries
+        and multi-turn conversations with system, user, and assistant messages.
 
         Args:
           messages: A list of messages comprising the conversation so far.
@@ -959,6 +996,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
+
+          chat_template_kwargs: Additional configuration to pass to model engine.
 
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
@@ -985,6 +1024,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses

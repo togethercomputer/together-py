@@ -15,3 +15,4 @@ class StorageCreateParams(TypedDict, total=False):
     """Volume size in whole tebibytes (TiB)."""
 
     volume_name: Required[str]
+    """Customizable name of the volume to create."""

@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.1.1 (2026-02-12)
+
+Full Changelog: [v2.1.0...v2.1.1](https://github.com/togethercomputer/together-py/compare/v2.1.0...v2.1.1)
+
+### Bug Fixes
+
+* **cli:** handle None model.type in 'together models list' sort ([9c17a0c](https://github.com/togethercomputer/together-py/commit/9c17a0c873264e30ee217edc43269f3c8f8d4990))
+
+
+### Chores
+
+* **internal:** fix lint error on Python 3.14 ([c66238c](https://github.com/togethercomputer/together-py/commit/c66238c18b21eaa8aa6184bbfb2fc1242d270b6f))
+
+## 2.1.0 (2026-02-10)
+
+Full Changelog: [v2.0.0...v2.1.0](https://github.com/togethercomputer/together-py/compare/v2.0.0...v2.1.0)
+
+### Features
+
+* **cli:** improve error messages for endpoint creation failures ([#230](https://github.com/togethercomputer/together-py/issues/230)) ([0285a69](https://github.com/togethercomputer/together-py/commit/0285a69893688938068d235aa109a5d7678cb713))
+* jig support for multi deployment ([d1165fd](https://github.com/togethercomputer/together-py/commit/d1165fd786533e37ed401f4bb60601b39473a5d8))
+
+
+### Bug Fixes
+
+* **cli:** fine-tuning retrieve now renders data instead of schema ([#250](https://github.com/togethercomputer/together-py/issues/250)) ([52cde25](https://github.com/togethercomputer/together-py/commit/52cde258d39644a5a9706fc8f491c951115aa16d))
+* **jig:** lint errors ([07f4d34](https://github.com/togethercomputer/together-py/commit/07f4d340ebd24247d0d280ce53cac768f76e03b8))
+* **jig:** migrate old state files properly and be even more defensive about parsing deploy errors ([92ef79b](https://github.com/togethercomputer/together-py/commit/92ef79b4229953d8e463bebe8027420c8e8decfe))
+* **jig:** pyright does not handle isinstance type narrowing in ternary expressions. also fix migration logic ([bf5267f](https://github.com/togethercomputer/together-py/commit/bf5267ff65fa409c21d3ac92e794dfd83f70c300))
+* remove hardcoded API key from image example ([#254](https://github.com/togethercomputer/together-py/issues/254)) ([8f2c60c](https://github.com/togethercomputer/together-py/commit/8f2c60c8fa4c2352e5768aa47876dd51b379df6b))
+
+
+### Chores
+
+* **internal:** bump dependencies ([c9678ff](https://github.com/togethercomputer/together-py/commit/c9678ff922fa549261c5db2af5be60f719e6a1cf))
+* Update descriptions for jig queue methods and properties ([23be158](https://github.com/togethercomputer/together-py/commit/23be1581cf1986bf4e9474e70f6e1029bc082ec4))
+
 ## 2.0.0 (2026-02-04)
 
 Full Changelog: [v2.0.0-alpha.20...v2.0.0](https://github.com/togethercomputer/together-py/compare/v2.0.0-alpha.20...v2.0.0)

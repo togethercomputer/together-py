@@ -9,3 +9,4 @@ __all__ = ["FineTuningDeleteParams"]
 
 class FineTuningDeleteParams(TypedDict, total=False):
     force: bool
+    """Deprecated and unused parameter."""

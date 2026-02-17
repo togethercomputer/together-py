@@ -158,14 +158,7 @@ Methods:
 Types:
 
 ```python
-from together.types import (
-    FileList,
-    FileObject,
-    FilePurpose,
-    FileResponse,
-    FileType,
-    FileDeleteResponse,
-)
+from together.types import FileList, FilePurpose, FileResponse, FileType, FileDeleteResponse
 ```
 
 Methods:

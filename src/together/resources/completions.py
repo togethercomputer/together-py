@@ -84,7 +84,8 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Completion:
         """
-        Query a language, code, or image model.
+        Generate text completions for a given prompt using a language, code, or image
+        model.
 
         Args:
           model: The name of the model to query.
@@ -196,7 +197,8 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Stream[CompletionChunk]:
         """
-        Query a language, code, or image model.
+        Generate text completions for a given prompt using a language, code, or image
+        model.
 
         Args:
           model: The name of the model to query.
@@ -308,7 +310,8 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Completion | Stream[CompletionChunk]:
         """
-        Query a language, code, or image model.
+        Generate text completions for a given prompt using a language, code, or image
+        model.
 
         Args:
           model: The name of the model to query.
@@ -513,7 +516,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Completion:
         """
-        Query a language, code, or image model.
+        Generate text completions for a given prompt using a language, code, or image
+        model.
 
         Args:
           model: The name of the model to query.
@@ -625,7 +629,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncStream[CompletionChunk]:
         """
-        Query a language, code, or image model.
+        Generate text completions for a given prompt using a language, code, or image
+        model.
 
         Args:
           model: The name of the model to query.
@@ -737,7 +742,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Completion | AsyncStream[CompletionChunk]:
         """
-        Query a language, code, or image model.
+        Generate text completions for a given prompt using a language, code, or image
+        model.
 
         Args:
           model: The name of the model to query.
