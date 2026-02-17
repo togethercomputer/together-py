@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
+import json
 import typing
-from dataclasses import asdict, dataclass, field, is_dataclass
+from typing import TYPE_CHECKING, Any, Union, Optional
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from dataclasses import field, asdict, dataclass, is_dataclass
 
 import click
 
@@ -63,7 +63,10 @@ class VolumeMount:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
-        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        try:
+            return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        except Exception as e:
+            raise click.UsageError(f"Invalid volume mount {data}: {e}") from None
 
 
 @dataclass
@@ -89,8 +92,8 @@ class DeployConfig:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
         deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
-        if isinstance(deploy_config.get("volume_mounts"), list):
-            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in deploy_config["volume_mounts"]]
+        if isinstance((mounts := deploy_config.get("volume_mounts")), list):
+            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]
         return cls(**deploy_config)
 
 
