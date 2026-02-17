@@ -41,6 +41,6 @@ def test_file_size_exceeds_limit_raises_error(mock_stat: MagicMock):
     manager = MultipartUploadManager(MagicMock())
 
     with pytest.raises(FileTypeError) as exc_info:
-        manager.upload("/files", Path("too_large.jsonl"), "fine-tune")
+        manager.upload("/files", Path("too_large.jsonl"), "checksum", "fine-tune")
 
     assert "exceeds maximum supported size" in str(exc_info.value)
