@@ -1,31 +1,25 @@
 """Utility functions for jig CLI commands."""
 
 from __future__ import annotations
-
+from itertools import groupby
 from datetime import datetime
 
 from together.types.beta.deployment import Deployment
 
 
-def _format_timestamp(timestamp_str: str | None) -> str:
+def _format_timestamp(ts: str | None) -> str:
     """Format ISO timestamp for display"""
-    if not timestamp_str:
-        return "-"
     try:
-        ts = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-        return ts.strftime("%Y-%m-%d %H:%M:%S")
-    except (ValueError, TypeError):
+        return datetime.fromisoformat(ts.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError, AttributeError):
         return timestamp_str or "-"
 
 
 def _image_tag(image: str | None) -> str:
     if image is None:
         return "unknown"
-    tag = image.rsplit(":", 1)[-1] if ":" in image else image
-    if "@sha256:" in image:
-        tag = f"sha256:{tag[:8]}"
-
-    return tag
+    tag = image.rsplit(":", 1)[-1]
+    return f"sha256:{tag[:8]}" if "sha256:" in image else tag
 
 
 def format_deployment_status(d: Deployment) -> str:
@@ -86,22 +80,21 @@ def format_deployment_status(d: Deployment) -> str:
     status += config_status
 
     if d.replica_events:
+        for replica in d.replica_events.values():
+            replica.image = replica.image or "-"
+        sorted_replicas = sorted(d.replica_events.items(), key=lambda item: item[1].image, reverse=True)
         events_status = "\nReplica Events:\n"
-        images = set(map(lambda x: x.image or "-", d.replica_events.values()))
-        for image in reversed(sorted(images)):
-            events = filter(lambda x: ((x[1].image or "-") == image), d.replica_events.items())
+        for image, group in groupby(sorted_replicas, key=lambda item: item[1].image):
             events_status += f"{_image_tag(image)}:\n"
-            for replica_id, event in events:
+            for replica_id, replica in group:
                 events_status += f"  {replica_id}: "
-
-                if event.volume_preload_status and not event.volume_preload_completed_at:
+                if replica.volume_preload_status and not replica.volume_preload_completed_at:
                     events_status += f"Volume Preloading"
                 else:
-                    events_status += f"{event.replica_status}"
-                    if event.replica_status == "Running":
-                        events_status += f", ready since {_format_timestamp(event.replica_ready_since)}"
+                    events_status += f"{replica.replica_status}"
+                    if replica.replica_status == "Running":
+                        events_status += f", ready since {_format_timestamp(replica.replica_ready_since)}"
                 events_status += "\n"
 
         status += events_status
-
     return status
