@@ -93,7 +93,7 @@ class DeployConfig:
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
         deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
         if isinstance((mounts := deploy_config.get("volume_mounts")), list):
-            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]
+            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]  # pyright: ignore
         return cls(**deploy_config)
 
 
@@ -104,7 +104,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
     if origin is list:
         if not isinstance(value, list):
             return f"{path}: expected list, got {type(value).__name__}"
-        for i, v in enumerate(value):
+        for i, v in enumerate(value):  # pyright: ignore
             if err := validate(v, args[0], f"{path}[{i}]"):
                 return err
         return None
@@ -112,7 +112,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
     if origin is dict:
         if not isinstance(value, dict):
             return f"{path}: expected dict, got {type(value).__name__}"
-        for k, v in value.items():
+        for k, v in value.items():  # pyright: ignore
             if err := validate(k, args[0], f"{path}.key({k!r})"):
                 return err
             if err := validate(v, args[1], f"{path}[{k!r}]"):
@@ -147,7 +147,7 @@ class Config:
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if err := validate(self, type(self)):
             raise click.UsageError(f"Invalid {self._path}: {err}")
 
