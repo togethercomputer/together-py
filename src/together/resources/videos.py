@@ -156,6 +156,8 @@ class VideosResource(SyncAPIResource):
         Fetch video metadata
 
         Args:
+          id: Identifier of video from create response.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -307,6 +309,8 @@ class AsyncVideosResource(AsyncAPIResource):
         Fetch video metadata
 
         Args:
+          id: Identifier of video from create response.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

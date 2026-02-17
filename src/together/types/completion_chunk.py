@@ -62,5 +62,6 @@ class CompletionChunk(BaseModel):
     created: Optional[int] = None
 
     object: Optional[Literal["completion.chunk"]] = None
+    """The object type, which is always `completion.chunk`."""
 
     seed: Optional[int] = None

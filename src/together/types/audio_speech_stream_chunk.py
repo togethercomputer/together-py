@@ -14,3 +14,4 @@ class AudioSpeechStreamChunk(BaseModel):
     model: str
 
     object: Literal["audio.tts.chunk"]
+    """The object type, which is always `audio.tts.chunk`."""

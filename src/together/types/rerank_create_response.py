@@ -26,7 +26,7 @@ class RerankCreateResponse(BaseModel):
     """The model to be used for the rerank request."""
 
     object: Literal["rerank"]
-    """Object type"""
+    """The object type, which is always `rerank`."""
 
     results: List[Result]
 

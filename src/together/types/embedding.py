@@ -14,6 +14,7 @@ class Data(BaseModel):
     index: int
 
     object: Literal["embedding"]
+    """The object type, which is always `embedding`."""
 
 
 class Embedding(BaseModel):
@@ -22,3 +23,4 @@ class Embedding(BaseModel):
     model: str
 
     object: Literal["list"]
+    """The object type, which is always `list`."""

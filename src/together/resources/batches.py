@@ -113,6 +113,8 @@ class BatchesResource(SyncAPIResource):
         Get details of a batch job by ID
 
         Args:
+          id: The ID of the batch job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -165,6 +167,8 @@ class BatchesResource(SyncAPIResource):
         Cancel a batch job by ID
 
         Args:
+          id: The ID of the batch job to cancel
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -274,6 +278,8 @@ class AsyncBatchesResource(AsyncAPIResource):
         Get details of a batch job by ID
 
         Args:
+          id: The ID of the batch job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -326,6 +332,8 @@ class AsyncBatchesResource(AsyncAPIResource):
         Cancel a batch job by ID
 
         Args:
+          id: The ID of the batch job to cancel
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

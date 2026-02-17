@@ -58,6 +58,7 @@ class Cluster(BaseModel):
     cluster_name: str
 
     cluster_type: Literal["KUBERNETES", "SLURM"]
+    """Type of cluster."""
 
     control_plane_nodes: List[ControlPlaneNode]
 

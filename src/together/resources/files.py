@@ -69,9 +69,11 @@ class FilesResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileResponse:
         """
-        List the metadata for a single uploaded data file.
+        Retrieve the metadata for a single uploaded data file.
 
         Args:
+          id: The ID of the file to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -124,6 +126,8 @@ class FilesResource(SyncAPIResource):
         Delete a previously uploaded data file.
 
         Args:
+          id: The ID of the file to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -192,6 +196,8 @@ class FilesResource(SyncAPIResource):
         Get the contents of a single uploaded data file.
 
         Args:
+          id: The ID of the file to get the content of
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -244,9 +250,11 @@ class AsyncFilesResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> FileResponse:
         """
-        List the metadata for a single uploaded data file.
+        Retrieve the metadata for a single uploaded data file.
 
         Args:
+          id: The ID of the file to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -299,6 +307,8 @@ class AsyncFilesResource(AsyncAPIResource):
         Delete a previously uploaded data file.
 
         Args:
+          id: The ID of the file to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -367,6 +377,8 @@ class AsyncFilesResource(AsyncAPIResource):
         Get the contents of a single uploaded data file.
 
         Args:
+          id: The ID of the file to get the content of
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

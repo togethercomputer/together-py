@@ -288,6 +288,8 @@ class FineTuningResource(SyncAPIResource):
         List the metadata for a single fine-tuning job.
 
         Args:
+          id: The ID of the job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -345,6 +347,10 @@ class FineTuningResource(SyncAPIResource):
         Delete a fine-tuning job.
 
         Args:
+          id: The ID of the fine-tune job to delete
+
+          force: Deprecated and unused parameter.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -384,6 +390,8 @@ class FineTuningResource(SyncAPIResource):
         object.
 
         Args:
+          id: Fine-tune ID to cancel. A string that starts with `ft-`.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -540,6 +548,8 @@ class FineTuningResource(SyncAPIResource):
         List the checkpoints for a single fine-tuning job.
 
         Args:
+          id: The ID of the fine-tune job to list checkpoints for
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -573,6 +583,8 @@ class FineTuningResource(SyncAPIResource):
         List the events for a single fine-tuning job.
 
         Args:
+          id: The ID of the fine-tune job to list events for
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -821,6 +833,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
         List the metadata for a single fine-tuning job.
 
         Args:
+          id: The ID of the job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -878,6 +892,10 @@ class AsyncFineTuningResource(AsyncAPIResource):
         Delete a fine-tuning job.
 
         Args:
+          id: The ID of the fine-tune job to delete
+
+          force: Deprecated and unused parameter.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -917,6 +935,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
         object.
 
         Args:
+          id: Fine-tune ID to cancel. A string that starts with `ft-`.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -1073,6 +1093,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
         List the checkpoints for a single fine-tuning job.
 
         Args:
+          id: The ID of the fine-tune job to list checkpoints for
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -1106,6 +1128,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
         List the events for a single fine-tuning job.
 
         Args:
+          id: The ID of the fine-tune job to list events for
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

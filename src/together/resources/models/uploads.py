@@ -54,6 +54,8 @@ class UploadsResource(SyncAPIResource):
         Get the status of a specific job
 
         Args:
+          job_id: The ID of the job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -108,6 +110,8 @@ class AsyncUploadsResource(AsyncAPIResource):
         Get the status of a specific job
 
         Args:
+          job_id: The ID of the job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

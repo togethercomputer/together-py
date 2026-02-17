@@ -281,7 +281,7 @@ class TestEndpoints:
     @parametrize
     def test_method_list_hardware_with_all_params(self, client: Together) -> None:
         endpoint = client.endpoints.list_hardware(
-            model="model",
+            model="meta-llama/Llama-3-70b-chat-hf",
         )
         assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
 
@@ -570,7 +570,7 @@ class TestAsyncEndpoints:
     @parametrize
     async def test_method_list_hardware_with_all_params(self, async_client: AsyncTogether) -> None:
         endpoint = await async_client.endpoints.list_hardware(
-            model="model",
+            model="meta-llama/Llama-3-70b-chat-hf",
         )
         assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
 
