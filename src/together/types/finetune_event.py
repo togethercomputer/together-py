@@ -23,6 +23,7 @@ class FinetuneEvent(BaseModel):
     x_model_path: str = FieldInfo(alias="model_path")
 
     object: Literal["fine-tune-event"]
+    """The object type, which is always `fine-tune-event`."""
 
     param_count: int
 

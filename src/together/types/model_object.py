@@ -25,7 +25,8 @@ class ModelObject(BaseModel):
 
     created: int
 
-    object: str
+    object: Literal["model"]
+    """The object type, which is always `model`."""
 
     type: Literal["chat", "language", "code", "image", "embedding", "moderation", "rerank"]
 

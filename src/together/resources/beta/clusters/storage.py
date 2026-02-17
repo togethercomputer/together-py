@@ -68,6 +68,8 @@ class StorageResource(SyncAPIResource):
 
           size_tib: Volume size in whole tebibytes (TiB).
 
+          volume_name: Customizable name of the volume to create.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -107,6 +109,8 @@ class StorageResource(SyncAPIResource):
         Retrieve information about a specific shared volume.
 
         Args:
+          volume_id: The ID of the volume to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -141,6 +145,10 @@ class StorageResource(SyncAPIResource):
         Update the configuration of an existing shared volume.
 
         Args:
+          size_tib: Size of the volume in whole tebibytes (TiB).
+
+          volume_id: ID of the volume to update.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -200,6 +208,8 @@ class StorageResource(SyncAPIResource):
         deleting will fail.
 
         Args:
+          volume_id: The ID of the volume to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -264,6 +274,8 @@ class AsyncStorageResource(AsyncAPIResource):
 
           size_tib: Volume size in whole tebibytes (TiB).
 
+          volume_name: Customizable name of the volume to create.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -303,6 +315,8 @@ class AsyncStorageResource(AsyncAPIResource):
         Retrieve information about a specific shared volume.
 
         Args:
+          volume_id: The ID of the volume to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -337,6 +351,10 @@ class AsyncStorageResource(AsyncAPIResource):
         Update the configuration of an existing shared volume.
 
         Args:
+          size_tib: Size of the volume in whole tebibytes (TiB).
+
+          volume_id: ID of the volume to update.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -396,6 +414,8 @@ class AsyncStorageResource(AsyncAPIResource):
         deleting will fail.
 
         Args:
+          volume_id: The ID of the volume to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

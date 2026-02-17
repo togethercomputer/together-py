@@ -106,6 +106,8 @@ class CompletionsResource(SyncAPIResource):
 
               [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
 
+          chat_template_kwargs: Additional configuration to pass to model engine.
+
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
               error message. When set to 'truncate', override the max_tokens with maximum
@@ -131,6 +133,9 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -260,6 +265,8 @@ class CompletionsResource(SyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
+          chat_template_kwargs: Additional configuration to pass to model engine.
+
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
               error message. When set to 'truncate', override the max_tokens with maximum
@@ -285,6 +292,9 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -410,6 +420,8 @@ class CompletionsResource(SyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
+          chat_template_kwargs: Additional configuration to pass to model engine.
+
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
               error message. When set to 'truncate', override the max_tokens with maximum
@@ -435,6 +447,9 @@ class CompletionsResource(SyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -668,6 +683,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
               [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)
 
+          chat_template_kwargs: Additional configuration to pass to model engine.
+
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
               error message. When set to 'truncate', override the max_tokens with maximum
@@ -693,6 +710,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -822,6 +842,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
+          chat_template_kwargs: Additional configuration to pass to model engine.
+
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
               error message. When set to 'truncate', override the max_tokens with maximum
@@ -847,6 +869,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses
@@ -972,6 +997,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
+          chat_template_kwargs: Additional configuration to pass to model engine.
+
           context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
               length of the model. When set to 'error', API will return 400 with appropriate
               error message. When set to 'truncate', override the max_tokens with maximum
@@ -997,6 +1024,9 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           presence_penalty: A number between -2.0 and 2.0 where a positive value increases the likelihood of
               a model talking about new topics.
+
+          reasoning: For models that support toggling reasoning functionality, this object can be
+              used to control that functionality.
 
           reasoning_effort: Controls the level of reasoning effort the model should apply when generating
               responses. Higher values may result in more thoughtful and detailed responses

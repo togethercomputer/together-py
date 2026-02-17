@@ -37,8 +37,8 @@ class Volume(BaseModel):
     name: Optional[str] = None
     """Name is the name of the volume"""
 
-    object: Optional[str] = None
-    """Object is the type identifier for this response (always "volume")"""
+    object: Optional[Literal["volume"]] = None
+    """The object type, which is always `volume`."""
 
     type: Optional[Literal["readOnly"]] = None
     """Type is the volume type (e.g., "readOnly")"""

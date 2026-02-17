@@ -21,3 +21,4 @@ class ImageFile(BaseModel):
     model: str
 
     object: Literal["list"]
+    """The object type, which is always `list`."""

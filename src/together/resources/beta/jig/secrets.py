@@ -113,6 +113,8 @@ class SecretsResource(SyncAPIResource):
         Retrieve details of a specific secret by its ID or name
 
         Args:
+          id: Secret ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -150,6 +152,8 @@ class SecretsResource(SyncAPIResource):
         Update an existing secret's value or metadata
 
         Args:
+          id: Secret ID or name
+
           description: Description is an optional human-readable description of the secret's purpose
               (max 500 characters)
 
@@ -224,6 +228,8 @@ class SecretsResource(SyncAPIResource):
         Delete an existing secret
 
         Args:
+          id: Secret ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -334,6 +340,8 @@ class AsyncSecretsResource(AsyncAPIResource):
         Retrieve details of a specific secret by its ID or name
 
         Args:
+          id: Secret ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -371,6 +379,8 @@ class AsyncSecretsResource(AsyncAPIResource):
         Update an existing secret's value or metadata
 
         Args:
+          id: Secret ID or name
+
           description: Description is an optional human-readable description of the secret's purpose
               (max 500 characters)
 
@@ -445,6 +455,8 @@ class AsyncSecretsResource(AsyncAPIResource):
         Delete an existing secret
 
         Args:
+          id: Secret ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

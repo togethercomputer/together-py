@@ -104,6 +104,8 @@ class EvalsResource(SyncAPIResource):
         Get evaluation job details
 
         Args:
+          id: The ID of the evaluation job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -127,7 +129,6 @@ class EvalsResource(SyncAPIResource):
         *,
         limit: int | Omit = omit,
         status: str | Omit = omit,
-        user_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -139,8 +140,9 @@ class EvalsResource(SyncAPIResource):
         Get all evaluation jobs
 
         Args:
-          user_id: Admin users can specify a user ID to filter jobs. Pass empty string to get all
-              jobs.
+          limit: Limit the number of results
+
+          status: Filter evaluation jobs by status
 
           extra_headers: Send extra headers
 
@@ -161,7 +163,6 @@ class EvalsResource(SyncAPIResource):
                     {
                         "limit": limit,
                         "status": status,
-                        "user_id": user_id,
                     },
                     eval_list_params.EvalListParams,
                 ),
@@ -184,6 +185,8 @@ class EvalsResource(SyncAPIResource):
         Get evaluation job status and results
 
         Args:
+          id: The ID of the evaluation job to get the status of
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -281,6 +284,8 @@ class AsyncEvalsResource(AsyncAPIResource):
         Get evaluation job details
 
         Args:
+          id: The ID of the evaluation job to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -304,7 +309,6 @@ class AsyncEvalsResource(AsyncAPIResource):
         *,
         limit: int | Omit = omit,
         status: str | Omit = omit,
-        user_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -316,8 +320,9 @@ class AsyncEvalsResource(AsyncAPIResource):
         Get all evaluation jobs
 
         Args:
-          user_id: Admin users can specify a user ID to filter jobs. Pass empty string to get all
-              jobs.
+          limit: Limit the number of results
+
+          status: Filter evaluation jobs by status
 
           extra_headers: Send extra headers
 
@@ -338,7 +343,6 @@ class AsyncEvalsResource(AsyncAPIResource):
                     {
                         "limit": limit,
                         "status": status,
-                        "user_id": user_id,
                     },
                     eval_list_params.EvalListParams,
                 ),
@@ -361,6 +365,8 @@ class AsyncEvalsResource(AsyncAPIResource):
         Get evaluation job status and results
 
         Args:
+          id: The ID of the evaluation job to get the status of
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
