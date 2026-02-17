@@ -240,12 +240,6 @@ def create(
     """Start fine-tuning"""
     client: Together = ctx.obj
 
-    # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idompotent so we can depend on this API always giving us a file ID
-    if _check_path_exists(training_file):
-        click.echo(f"Uploading training file {training_file}")
-        file_upload = client.files.upload(Path(training_file), purpose="fine-tune")
-        training_file = file_upload.id
 
     training_args: dict[str, Any] = dict(
         training_file=training_file,
@@ -363,8 +357,17 @@ def create(
         # Don't show price estimation for multimodal models yet
         confirm = True
 
+    
+    # If the user passes a path to a file, try to upload it to the files API first
+    # Uploads are idompotent so we can depend on this API always giving us a file ID
+    if _check_path_exists(training_args["training_file"]):
+        file_upload = client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
+
+        # Update the local variables to the uploaded file ID.
+        training_args["training_file"] = file_upload.id
+
     finetune_price_estimation_result = client.fine_tuning.estimate_price(
-        training_file=training_file,
+        training_file=training_args["training_file"],
         validation_file=validation_file,
         model=model or "",
         from_checkpoint=from_checkpoint or "",
@@ -388,6 +391,8 @@ def create(
     )
 
     if confirm or click.confirm(confirmation_message, default=True, show_default=True):
+
+
         response = client.fine_tuning.create(
             **training_args,
             verbose=True,
