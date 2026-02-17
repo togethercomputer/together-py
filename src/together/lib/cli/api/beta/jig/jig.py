@@ -2,41 +2,36 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 import os
+import sys
+import json
+import time
 import shlex
 import shutil
-import subprocess
-import sys
-import time
 import typing
-from dataclasses import asdict, dataclass, field, is_dataclass
-from datetime import datetime
+import asyncio
+import subprocess
 from enum import Enum
-from itertools import groupby
+from typing import TYPE_CHECKING, Any, Union, Callable, Optional
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from datetime import datetime
+from itertools import groupby
+from dataclasses import field, asdict, dataclass, is_dataclass
 from urllib.parse import urlparse
 
 import click
+
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.cli.api.beta.jig._config import DEBUG, WARMUP_DEST, WARMUP_ENV_NAME, Config, State
-from together.lib.cli.api.beta.jig._uploader import Uploader
-from together.lib.cli.api.beta.jig._utils import format_deployment_status
 from together.types.beta.deployment import Deployment
+from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
-if TYPE_CHECKING:
+if TYPE_CHECKING or sys.version_info < (3, 11):
     import tomli as tomllib
 else:
-    try:
-        import tomllib
-    except ImportError:
-        import tomli as tomllib
-
+    import tomllib
 
 # Managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
@@ -46,11 +41,6 @@ DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig 
 # --- Environment Configuration ---
 
 DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
-
-UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
-MULTIPART_CHUNK_SIZE_MB = int(os.getenv("TOGETHER_MULTIPART_CHUNK_SIZE_MB", "20"))
-MULTIPART_THRESHOLD_MB = int(os.getenv("TOGETHER_MULTIPART_THRESHOLD_MB", "100"))
-MAX_UPLOAD_RETRIES = 3
 
 # Warmup configuration (for torch compile cache)
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
@@ -277,19 +267,18 @@ class State:
         """
         path = config_dir / ".jig.json"
         try:
-            with open(path) as f:
-                all_data = json.load(f)
+            all_data = json.loads(path.read_text())
 
-                # Check if this is the new nested structure (project_name as key)
-                if project_name in all_data and isinstance(all_data[project_name], dict):
-                    # New structure: extract project-specific state
-                    project_data = all_data[project_name]
-                    return cls.from_dict(config_dir, project_name, **project_data)
-                # Secrets or volumes exist, but not yet migrated (don't care about registry base path)
-                if "secrets" in all_data or "volumes" in all_data:
-                    return cls.from_dict(config_dir, project_name, **all_data)
-                # File exists but this project isn't in it yet
-                return cls(_config_dir=config_dir, _project_name=project_name)
+            # Check if this is the new nested structure (project_name as key)
+            if project_name in all_data and isinstance(all_data[project_name], dict):
+                # New structure: extract project-specific state
+                project_data = all_data[project_name]
+                return cls.from_dict(config_dir, project_name, **project_data)
+            # Secrets or volumes exist, but not yet migrated (don't care about registry base path)
+            if "secrets" in all_data or "volumes" in all_data:
+                return cls.from_dict(config_dir, project_name, **all_data)
+            # File exists but this project isn't in it yet
+            return cls(_config_dir=config_dir, _project_name=project_name)
         except FileNotFoundError:
             return cls(_config_dir=config_dir, _project_name=project_name)
 
@@ -302,8 +291,7 @@ class State:
 
         # Load existing file to preserve other projects
         try:
-            with open(path) as f:
-                all_data = json.load(f)
+            all_data = json.loads(path.read_text())
         except FileNotFoundError:
             all_data = {}
 
@@ -319,12 +307,13 @@ class State:
 # == Status prettyprint utils ==
 
 
-def _format_timestamp(ts: str | None) -> str:
+def _format_timestamp(timestamp: str | None) -> str:
     """Format ISO timestamp for display"""
+    t = timestamp or "-"
     try:
-        return datetime.fromisoformat(ts.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
-    except (ValueError, TypeError, AttributeError):
-        return timestamp_str or "-"
+        return datetime.fromisoformat(t.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        return t
 
 
 def _image_tag(image: str | None) -> str:
@@ -394,7 +383,7 @@ def format_deployment_status(d: Deployment) -> str:
     if d.replica_events:
         for replica in d.replica_events.values():
             replica.image = replica.image or "-"
-        sorted_replicas = sorted(d.replica_events.items(), key=lambda item: item[1].image, reverse=True)
+        sorted_replicas = sorted(d.replica_events.items(), key=lambda item: item[1].image or "-", reverse=True)
         events_status = "\nReplica Events:\n"
         for image, group in groupby(sorted_replicas, key=lambda item: item[1].image):
             events_status += f"{_image_tag(image)}:\n"
@@ -439,12 +428,10 @@ def _generate_dockerfile(config: Config) -> str:
   apt-get clean && rm -rf /var/lib/apt/lists/*
 """
 
-    env = "\n".join(f"ENV {k}={v}" for k, v in config.image.environment.items())
-    if env:
+    if env := "\n".join(f"ENV {k}={v}" for k, v in config.image.environment.items()):
         env += "\n"
 
-    run = "\n".join(f"RUN {cmd}" for cmd in config.image.run)
-    if run:
+    if run := "\n".join(f"RUN {cmd}" for cmd in config.image.run):
         run += "\n"
 
     copy = "\n".join(f"COPY {file} {file}" for file in _get_files_to_copy(config))
@@ -524,9 +511,7 @@ def _dockerfile(config: Config) -> bool:
     dockerfile_path = Path(config.dockerfile)
 
     if dockerfile_path.exists():
-        with open(dockerfile_path) as f:
-            first_line = f.readline().strip()
-
+        first_line = dockerfile_path.read_text().split("\n")[0]
         if first_line != DOCKERFILE_MANAGED_MARKER:
             return False
 
@@ -552,8 +537,7 @@ def _get_image_with_digest(state: State, config: Config, tag: str = "latest") ->
         return image_name
     try:
         cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image_name]
-        repo_digests = _run(cmd).stdout.strip()
-        if repo_digests and repo_digests != "null":
+        if (repo_digests := _run(cmd).stdout.strip()) and repo_digests != "null":
             registry = image_name.rsplit("/", 2)[0]
             for digest in json.loads(repo_digests):
                 if digest.startswith(registry):
@@ -606,13 +590,8 @@ def _ensure_registry_base_path(client: Together, state: State) -> None:
         response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
         response.raise_for_status()
         data = response.json()
-        base_path = data["base-path"]
         # Strip protocol prefix - Docker tags don't support URLs
-        if base_path.startswith("https://"):
-            base_path = base_path[8:]
-        elif base_path.startswith("http://"):
-            base_path = base_path[7:]
-        state.registry_base_path = base_path
+        state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("http://")
         state.save()
 
 
@@ -716,7 +695,7 @@ def _is_volume_preload_done(event: Any) -> bool:
     return bool(event.volume_preload_completed_at)
 
 
-class ReplicaTrackingResult(Enum):
+class ReplicaTrackingResult(str, Enum):
     """Result of processing a single replica event."""
 
     CONTINUE = "continue"

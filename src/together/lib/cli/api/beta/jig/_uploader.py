@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 import asyncio
 import itertools
@@ -12,20 +13,13 @@ import click
 import httpx
 
 from together import Together
-from together.lib.cli.api.beta.jig._config import (
-    DEBUG,
-    MAX_UPLOAD_RETRIES,
-    MULTIPART_THRESHOLD_MB,
-    MULTIPART_CHUNK_SIZE_MB,
-    UPLOAD_CONCURRENCY_LIMIT,
-)
 
+DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
-@click.group()
-@click.pass_context
-def volumes(ctx: click.Context) -> None:
-    """Manage volumes"""
-    pass
+UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
+MULTIPART_CHUNK_SIZE_MB = int(os.getenv("TOGETHER_MULTIPART_CHUNK_SIZE_MB", "20"))
+MULTIPART_THRESHOLD_MB = int(os.getenv("TOGETHER_MULTIPART_THRESHOLD_MB", "100"))
+MAX_UPLOAD_RETRIES = 3
 
 
 # --- File upload ---
@@ -283,5 +277,3 @@ class Uploader:
 
         completed_parts = await asyncio.gather(*tasks)
         return sorted(completed_parts, key=lambda x: x["part_number"])
-
-

@@ -1,22 +1,23 @@
 """Jig CLI - deployment tool for Together AI."""
 
 import click
+
 from together.lib.cli.api.beta.jig.jig import (
-    build,
-    deploy,
-    destroy,
-    dockerfile,
-    endpoint,
     init,
-    job_status,
-    list_deployments,
     logs,
     push,
-    queue_status,
-    secrets,
+    build,
+    deploy,
     status,
     submit,
+    destroy,
+    secrets,
     volumes,
+    endpoint,
+    dockerfile,
+    job_status,
+    queue_status,
+    list_deployments,
 )
 
 
