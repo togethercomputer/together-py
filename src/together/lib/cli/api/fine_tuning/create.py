@@ -38,11 +38,11 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "-t",
     type=str,
     required=True,
-    help="Training file ID from Files API",
+    help="Training file ID from Files API or local path to a file to be uploaded.",
 )
 @click.option("--model", "-m", type=str, help="Base model name")
 @click.option("--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for")
-@click.option("--validation-file", type=str, default="", help="Validation file ID from Files API")
+@click.option("--validation-file", type=str, default="", help="Validation file ID from Files API or local path to a file to be uploaded.")
 @click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
 @click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
 @click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
@@ -366,9 +366,17 @@ def create(
         # Update the local variables to the uploaded file ID.
         training_args["training_file"] = file_upload.id
 
+    # If the user passes a path to a file, try to upload it to the files API first
+    # Uploads are idompotent so we can depend on this API always giving us a file ID
+    if _check_path_exists(training_args["validation_file"]):
+        file_upload = client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
+
+        # Update the local variables to the uploaded file ID.
+        training_args["validation_file"] = file_upload.id
+
     finetune_price_estimation_result = client.fine_tuning.estimate_price(
         training_file=training_args["training_file"],
-        validation_file=validation_file,
+        validation_file=training_args["validation_file"],
         model=model or "",
         from_checkpoint=from_checkpoint or "",
         n_epochs=n_epochs,
