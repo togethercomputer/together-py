@@ -5,9 +5,10 @@ from __future__ import annotations
 import os
 import sys
 import json
-from typing import TYPE_CHECKING, Any, Optional
+import typing
+from typing import TYPE_CHECKING, Any, Union, Optional
 from pathlib import Path
-from dataclasses import field, asdict, dataclass
+from dataclasses import field, asdict, dataclass, is_dataclass
 
 import click
 
@@ -62,7 +63,10 @@ class VolumeMount:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
-        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        try:
+            return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+        except Exception as e:
+            raise click.UsageError(f"Invalid volume mount {data}: {e}") from None
 
 
 @dataclass
@@ -72,8 +76,8 @@ class DeployConfig:
     description: str = ""
     gpu_type: str = "h100-80gb"
     gpu_count: int = 1
-    cpu: float = 1
-    memory: float = 8
+    cpu: int | float = 1
+    memory: int | float = 8
     storage: int = 100
     min_replicas: int = 1
     max_replicas: int = 1
@@ -88,9 +92,49 @@ class DeployConfig:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
         deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
-        if isinstance(deploy_config.get("volume_mounts"), list):
-            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in deploy_config["volume_mounts"]]
+        if isinstance((mounts := deploy_config.get("volume_mounts")), list):
+            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]  # pyright: ignore
         return cls(**deploy_config)
+
+
+def validate(value: Any, value_type: type, path: str = "") -> str | None:
+    origin = typing.get_origin(value_type)
+    args = typing.get_args(value_type)
+
+    if origin is list:
+        if not isinstance(value, list):
+            return f"{path}: expected list, got {type(value).__name__}"
+        for i, v in enumerate(value):  # pyright: ignore
+            if err := validate(v, args[0], f"{path}[{i}]"):
+                return err
+        return None
+
+    if origin is dict:
+        if not isinstance(value, dict):
+            return f"{path}: expected dict, got {type(value).__name__}"
+        for k, v in value.items():  # pyright: ignore
+            if err := validate(k, args[0], f"{path}.key({k!r})"):
+                return err
+            if err := validate(v, args[1], f"{path}[{k!r}]"):
+                return err
+        return None
+
+    if origin is Union:
+        if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
+            return None
+        return f"{path}: expected {value_type}, got {type(value).__name__}"
+
+    if is_dataclass(value_type):
+        if not isinstance(value, value_type):
+            return f"{path}: expected {value_type.__name__}, got {type(value).__name__}"
+        for k, t in typing.get_type_hints(value_type, globalns=globals()).items():
+            if err := validate(getattr(value, k), t, f"{path}.{k}" if path else k):
+                return err
+        return None
+
+    if not isinstance(value, value_type):
+        return f"{path}: expected {type(value).__name__}, got {value!r}"
+    return None
 
 
 @dataclass
@@ -103,6 +147,10 @@ class Config:
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
     _unique_name_tip: str = "Update project.name in pyproject.toml"
+
+    def __post_init__(self) -> None:
+        if err := validate(self, type(self)):
+            raise click.UsageError(f"Invalid {self._path}: {err}")
 
     @classmethod
     def find(cls, config_path: Optional[str] = None, init: bool = False) -> Config:
