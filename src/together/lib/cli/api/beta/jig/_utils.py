@@ -40,8 +40,9 @@ def format_deployment_status(d: Deployment) -> str:
     )
 
     if d.autoscaling:
-
-        autoscaling_status = f"\n  Autoscaling: {d.autoscaling.get('profile', 'N/A')} {d.autoscaling.get('targetValue', 'N/A')}(target)\n"
+        autoscaling_status = (
+            f"\n  Autoscaling: {d.autoscaling.get('metric', 'N/A')} {d.autoscaling.get('target', 'N/A')}(target)\n"
+        )
         status += autoscaling_status
 
     replica_status = (
