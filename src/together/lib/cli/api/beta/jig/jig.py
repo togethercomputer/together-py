@@ -176,8 +176,7 @@ class Config:
         if config_path:
             found_path = Path(config_path)
             if not found_path.exists():
-                click.echo(f"ERROR: Configuration file not found: {config_path}", err=True)
-                sys.exit(1)
+                raise click.UsageError(f"Configuration file not found: {config_path}")
             return cls.load(tomllib.loads(found_path.read_text()), found_path)
 
         if (jigfile := Path("jig.toml")).exists():
@@ -190,11 +189,7 @@ class Config:
 
         if init:
             return cls()
-        click.echo(
-            "ERROR: No pyproject.toml or jig.toml found, use --config to specify a config path.",
-            err=True,
-        )
-        sys.exit(1)
+        raise click.UsageError("No pyproject.toml or jig.toml found, use --config to specify a config path.")
 
     @classmethod
     def load(cls, data: dict[str, Any], path: Path) -> Config:
