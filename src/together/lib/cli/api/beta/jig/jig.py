@@ -13,7 +13,7 @@ import typing
 import asyncio
 import subprocess
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Union, Callable
 from pathlib import Path
 from datetime import datetime
 from itertools import groupby
@@ -473,7 +473,7 @@ def secrets_unset(
     config_path: str | None,
 ) -> None:
     """Remove a secret from both remote and local state"""
-    config, state = _load_config_state(config_path)
+    _, state = _load_config_state(config_path)
 
     if state.secrets.pop(name, ""):
         state.save()
@@ -790,40 +790,6 @@ def _dockerfile(config: Config) -> bool:
     return True
 
 
-def _get_image(state: State, config: Config, tag: str = "latest") -> str:
-    """Get full image name"""
-    return f"{state.registry_base_path}/{config.model_name}:{tag}"
-
-
-def _get_image_with_digest(state: State, config: Config, tag: str = "latest") -> str:
-    """Get full image name tagged with digest"""
-    image_name = _get_image(state, config, tag)
-    if tag != "latest":
-        return image_name
-    try:
-        cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image_name]
-        if (repo_digests := _run(cmd).stdout.strip()) and repo_digests != "null":
-            registry = image_name.rsplit("/", 2)[0]
-            for digest in json.loads(repo_digests):
-                if digest.startswith(registry):
-                    return str(digest)
-    except subprocess.CalledProcessError as e:
-        msg = e.stderr.strip() if e.stderr else "Docker command failed"
-        raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
-    raise RuntimeError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
-
-
-def _ensure_registry_base_path(client: Together, state: State) -> None:
-    """Ensure registry base path is set in state"""
-    if not state.registry_base_path:
-        response = client._client.get("/image-repositories/base-path", headers=client.auth_headers)
-        response.raise_for_status()
-        data = response.json()
-        # Strip protocol prefix - Docker tags don't support URLs
-        state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("https://")
-        state.save()
-
-
 def _build_warm_image(base_image: str) -> None:
     """Run a warmup container to generate a cache, then rebuild with cache baked in.
 
@@ -1053,6 +1019,296 @@ class Tracker:
         return ReplicaTrackingResult.CONTINUE
 
 
+# --- Jig class: shared state + operations ---
+
+
+def _is_not_unique_error(e: APIStatusError) -> bool:
+    # all errors:
+    # "min replicas cannot be greater than max replicas"
+    # "storage cannot be more than %d GB"
+    # "user does not have access to the specified image"
+    # "invalid mount_path: %s"
+    # "only one readOnly volume is allowed per deployment"
+    # "volume not found"
+    # gorm tx.Create(...).Save() err (internal server error?)
+    # "failed to add deployment reference" (failed to add deployment reference to secret or "Failed to delete secret metadata from database",)
+    # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
+    # "failed to delete deployment from kubernetes: %w"
+    # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
+    msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
+    return "already exists" in msg
+
+
+class Jig:
+    """Holds Together client, config, and state. Methods implement the core jig operations."""
+
+    def __init__(self, client: Together, config_path: str | None = None) -> None:
+        self.together = client
+        self.jig: JigResource = client.beta.jig
+        self.config = Config.find(config_path)
+        self.state = State.load(self.config._path.parent, self.config.model_name)
+
+    def _ensure_registry(self) -> None:
+        """Ensure registry base path is set in state"""
+        if not self.state.registry_base_path:
+            response = self.together._client.get("/image-repositories/base-path", headers=self.together.auth_headers)
+            response.raise_for_status()
+            data = response.json()
+            # Strip protocol prefix - Docker tags don't support URLs
+            self.state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("https://")
+            self.state.save()
+
+    def _image(self, tag: str = "latest") -> str:
+        return f"{self.state.registry_base_path}/{self.config.model_name}:{tag}"
+
+    def _image_with_digest(self, tag: str = "latest") -> str:
+        if tag != "latest":
+            return image_name
+        try:
+            cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image_name]
+            if (repo_digests := _run(cmd).stdout.strip()) and repo_digests != "null":
+                registry = image_name.rsplit("/", 2)[0]
+                for digest in json.loads(repo_digests):
+                    if digest.startswith(registry):
+                        return str(digest)
+        except subprocess.CalledProcessError as e:
+            msg = e.stderr.strip() if e.stderr else "Docker command failed"
+            raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
+        raise RuntimeError(
+            f"No registry digest found for {image_name}. Make sure the image was pushed to registry first."
+        )
+
+    # == Build / Push / Deploy ==
+
+    def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
+        self._ensure_registry()
+        image = self._image(tag)
+
+        if _dockerfile(self.config):
+            click.echo("\N{CHECK MARK} Generated Dockerfile")
+        else:
+            click.echo(f"\N{INFORMATION SOURCE} Using existing {self.config.dockerfile} (not managed by jig)")
+
+        click.echo(f"Building {image}")
+        cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
+        if self.config.dockerfile != "Dockerfile":
+            cmd.extend(["-f", self.config.dockerfile])
+
+        extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
+        if extra_args:
+            cmd.extend(shlex.split(extra_args))
+        if subprocess.run(cmd).returncode != 0:
+            raise RuntimeError("Build failed")
+
+        click.echo("\N{CHECK MARK} Built")
+
+        if warmup:
+            _build_warm_image(image)
+
+    def push(self, tag: str = "latest") -> None:
+        self._ensure_registry()
+        image = self._image(tag)
+
+        registry = self.state.registry_base_path.split("/")[0]
+        login_cmd = ["docker", "login", registry, "--username", "user", "--password-stdin"]
+        if _run(login_cmd, input=self.together.api_key).returncode != 0:
+            raise RuntimeError("Registry login failed")
+
+        click.echo(f"Pushing {image}")
+        if subprocess.run(["docker", "push", image]).returncode != 0:
+            raise RuntimeError("Push failed")
+        click.echo("\N{CHECK MARK} Pushed")
+
+    def _build_deploy_data(self, image: str) -> dict[str, Any]:
+        """Build the deployment API payload."""
+        deploy_data: dict[str, Any] = {
+            "name": self.config.model_name,
+            "description": self.config.deploy.description,
+            "image": image,
+            "min_replicas": self.config.deploy.min_replicas,
+            "max_replicas": self.config.deploy.max_replicas,
+            "port": self.config.deploy.port,
+            "gpu_type": self.config.deploy.gpu_type,
+            "gpu_count": self.config.deploy.gpu_count,
+            "cpu": self.config.deploy.cpu,
+            "memory": self.config.deploy.memory,
+            "storage": self.config.deploy.storage,
+            "autoscaling": self.config.deploy.autoscaling,
+            "termination_grace_period_seconds": self.config.deploy.termination_grace_period_seconds,
+            "volumes": [asdict(vm) for vm in self.config.deploy.volume_mounts],
+        }
+
+        if self.config.deploy.health_check_path:
+            deploy_data["health_check_path"] = self.config.deploy.health_check_path
+        if self.config.deploy.command:
+            deploy_data["command"] = self.config.deploy.command
+
+        if (base_url := _get_api_base_url(self.together)) != "https://api.together.ai":
+            self.config.deploy.environment_variables["TOGETHER_API_BASE_URL"] = base_url
+
+        env_vars = [{"name": k, "value": v} for k, v in self.config.deploy.environment_variables.items()]
+
+        if "TOGETHER_API_KEY" not in self.state.secrets:
+            _set_secret(
+                self.jig, self.config, self.state, "TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API"
+            )
+
+        for name, secret_id in self.state.secrets.items():
+            env_vars.append({"name": name, "value_from_secret": secret_id})
+
+        deploy_data["environment_variables"] = env_vars
+        return deploy_data
+
+    def deploy(
+        self,
+        tag: str = "latest",
+        build_only: bool = False,
+        warmup: bool = False,
+        detach: bool = False,
+        docker_args: str | None = None,
+        existing_image: str | None = None,
+    ) -> dict[str, Any] | None:
+        self._ensure_registry()
+
+        if existing_image:
+            deployment_image = existing_image
+        else:
+            self.build(tag, warmup, docker_args)
+            self.push(tag)
+            deployment_image = self._image_with_digest(tag)
+
+        if build_only:
+            click.echo("\N{CHECK MARK} Build complete (--build-only)")
+            return None
+
+        deploy_data = self._build_deploy_data(deployment_image)
+
+        if DEBUG:
+            click.echo(json.dumps(deploy_data, indent=2))
+        click.echo(f"Deploying model: {self.config.model_name}")
+
+        try:
+            existing = self.jig.retrieve(self.config.model_name)
+            old_revision_id = _get_current_revision_id(existing)
+            was_scaled_to_zero = existing.ready_replicas == 0
+            response = self.jig.update(self.config.model_name, **deploy_data)
+            click.echo("\N{CHECK MARK}  Applied new deployment configuration")
+        except APIStatusError as e:
+            if e.status_code != 404:
+                raise
+            old_revision_id = ""
+            was_scaled_to_zero = False
+            click.echo("\N{ROCKET} Creating new deployment")
+            try:
+                response = self.jig.deploy(**deploy_data)
+                click.echo(f"\N{CHECK MARK} Deployed: {self.config.model_name}")
+            except APIStatusError as e:
+                if _is_not_unique_error(e):
+                    raise RuntimeError(f"Deployment name must be unique. Tip: {self.config._unique_name_tip}") from None
+                # TODO: helpful tips for more error cases
+                raise
+
+        if detach:
+            return response.model_dump()
+
+        new_revision_id = _get_current_revision_id(response)
+        scaling_up = was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
+        if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
+            return None
+
+        return Tracker(self.jig, self.config.model_name).track_deployment_progress()
+
+    # == Query commands ==
+
+    def status(self, json_output: bool = False) -> None:
+        response = self.jig.retrieve(self.config.model_name)
+        if json_output:
+            click.echo(response.model_dump_json(indent=2))
+        else:
+            click.echo(format_deployment_status(response))
+
+    def endpoint(self) -> None:
+        base = _get_api_base_url(self.together)
+        click.echo(f"{base}/v1/deployment-request/{self.config.model_name}")
+
+    def logs(self, follow: bool = False) -> None:
+        if not follow:
+            if lines := self.jig.retrieve_logs(self.config.model_name).lines:
+                for line in lines:
+                    click.echo(line)
+            else:
+                click.echo("No logs available")
+            return
+
+        try:
+            with self.jig.with_streaming_response.retrieve_logs(self.config.model_name) as stream:
+                for line in stream.iter_lines():
+                    if line:
+                        for log_line in json.loads(line).get("lines", []):
+                            click.echo(log_line)
+        except KeyboardInterrupt:
+            click.echo("\nStopped following logs")
+        except Exception as e:
+            click.echo(f"\nConnection ended: {e}")
+
+    def destroy(self) -> None:
+        self.jig.destroy(self.config.model_name)
+        click.echo(f"\N{WASTEBASKET} Destroyed {self.config.model_name}")
+
+    def submit(self, prompt: str | None, payload: str | None, watch: bool) -> int | None:
+        """Submit a job. Returns exit code if non-zero, else None."""
+        if not prompt and not payload:
+            raise click.UsageError("Either --prompt or --payload required")
+
+        raw_response = self.jig.queue.with_raw_response.submit(
+            model=self.config.model_name,
+            payload=json.loads(payload) if payload else {"prompt": prompt},
+            priority=1,
+        )
+
+        # Raw response due to Stainless limitation with Pydantic aliases
+        submit_response = QueueSubmitResponse.model_validate_json(raw_response.read())
+
+        click.echo("\N{CHECK MARK} Submitted job")
+        click.echo(submit_response.model_dump_json(indent=2))
+
+        if not watch or not submit_response.request_id:
+            return None
+
+        click.echo(f"\nWatching job {submit_response.request_id}...")
+        last_status: str | None = None
+        while True:
+            try:
+                response = self.jig.queue.retrieve(
+                    model=self.config.model_name,
+                    request_id=submit_response.request_id,
+                )
+                current_status = response.status
+                if current_status != last_status:
+                    click.echo(response.model_dump_json(indent=2))
+                    last_status = current_status
+
+                if current_status in ["done", "failed", "finished", "error", "canceled"]:
+                    return 1 if current_status != "done" else None
+
+                time.sleep(1)
+
+            except KeyboardInterrupt:
+                click.echo(f"\nStopped watching {submit_response.request_id}")
+                return 130
+
+    def job_status(self, request_id: str) -> None:
+        response = self.jig.queue.retrieve(
+            model=self.config.model_name,
+            request_id=request_id,
+        )
+        click.echo(response.model_dump_json(indent=2))
+
+    def queue_status(self) -> None:
+        response = self.jig.queue.with_raw_response.metrics(model=self.config.model_name)
+        click.echo(json.dumps(response.json(), indent=2))
+
+
 # --- CLI Commands ---
 
 
@@ -1118,107 +1374,27 @@ def dockerfile(config_path: str | None) -> None:
 @_jig_options
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option(
-    "--docker-args",
-    default=None,
-    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
-)
-def build(
-    ctx: click.Context,
-    tag: str,
-    warmup: bool,
-    docker_args: str | None,
-    config_path: str | None,
-) -> None:
+@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
     """Build container image"""
-    client: Together = ctx.obj
-    config, state = _load_config_state(config_path)
-    _ensure_registry_base_path(client, state)
-
-    image = _get_image(state, config, tag)
-
-    if _dockerfile(config):
-        click.echo("\N{CHECK MARK} Generated Dockerfile")
-    else:
-        click.echo(f"\N{INFORMATION SOURCE} Using existing {config.dockerfile} (not managed by jig)")
-
-    click.echo(f"Building {image}")
-    cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
-    if config.dockerfile != "Dockerfile":
-        cmd.extend(["-f", config.dockerfile])
-
-    # Add extra docker args from flag or env
-    extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
-    if extra_args:
-        cmd.extend(shlex.split(extra_args))
-    if subprocess.run(cmd).returncode != 0:
-        raise RuntimeError("Build failed")
-
-    click.echo("\N{CHECK MARK} Built")
-
-    if warmup:
-        _build_warm_image(image)
+    Jig(ctx.obj, config_path).build(tag, warmup, docker_args)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 @click.option("--tag", default="latest", help="Image tag")
 def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
-    client: Together = ctx.obj
-    config, state = _load_config_state(config_path)
-    _ensure_registry_base_path(client, state)
-
-    image = _get_image(state, config, tag)
-
-    registry = state.registry_base_path.split("/")[0]
-    login_cmd = ["docker", "login", registry, "--username", "user", "--password-stdin"]
-    if _run(login_cmd, input=client.api_key).returncode != 0:
-        raise RuntimeError("Registry login failed")
-
-    click.echo(f"Pushing {image}")
-    if subprocess.run(["docker", "push", image]).returncode != 0:
-        raise RuntimeError("Push failed")
-    click.echo("\N{CHECK MARK} Pushed")
-
-
-def _is_not_unique_error(e: APIStatusError) -> bool:
-    # all errors:
-    # "min replicas cannot be greater than max replicas"
-    # "storage cannot be more than %d GB"
-    # "user does not have access to the specified image"
-    # "invalid mount_path: %s"
-    # "only one readOnly volume is allowed per deployment"
-    # "volume not found"
-    # gorm tx.Create(...).Save() err (internal server error?)
-    # "failed to add deployment reference" (failed to add deployment reference to secret or "Failed to delete secret metadata from database",)
-    # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
-    # "failed to delete deployment from kubernetes: %w"
-    # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-    msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
-    return "already exists" in msg
+    Jig(ctx.obj, config_path).push(tag)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option(
-    "--docker-args",
-    default=None,
-    help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)",
-)
-@click.option(
-    "--image",
-    "existing_image",
-    default=None,
-    help="Use existing image (skip build/push)",
-)
+@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
     ctx: click.Context,
@@ -1229,262 +1405,65 @@ def deploy(
     docker_args: str | None,
     existing_image: str | None,
     config_path: str | None,
-) -> dict[str, Any] | None:
+) -> None:
     """Deploy model"""
-    client: JigResource = ctx.obj.beta.jig
-    config, state = _load_config_state(config_path)
-    _ensure_registry_base_path(ctx.obj, state)
-
-    if existing_image:
-        deployment_image = existing_image
-    else:
-        # Invoke build and push
-        ctx.invoke(
-            build,
-            tag=tag,
-            warmup=warmup,
-            docker_args=docker_args,
-            config_path=config_path,
-        )
-        ctx.invoke(push, tag=tag, config_path=config_path)
-        deployment_image = _get_image_with_digest(state, config, tag)
-
-    if build_only:
-        click.echo("\N{CHECK MARK} Build complete (--build-only)")
-        return None
-
-    deploy_data: dict[str, Any] = {
-        "name": config.model_name,
-        "description": config.deploy.description,
-        "image": deployment_image,
-        "min_replicas": config.deploy.min_replicas,
-        "max_replicas": config.deploy.max_replicas,
-        "port": config.deploy.port,
-        "gpu_type": config.deploy.gpu_type,
-        "gpu_count": config.deploy.gpu_count,
-        "cpu": config.deploy.cpu,
-        "memory": config.deploy.memory,
-        "storage": config.deploy.storage,
-        "autoscaling": config.deploy.autoscaling,
-        "termination_grace_period_seconds": config.deploy.termination_grace_period_seconds,
-        "volumes": [asdict(vm) for vm in config.deploy.volume_mounts],
-    }
-
-    if config.deploy.health_check_path:
-        deploy_data["health_check_path"] = config.deploy.health_check_path
-    if config.deploy.command:
-        deploy_data["command"] = config.deploy.command
-
-    if (base_url := _get_api_base_url(ctx.obj)) != "https://api.together.ai":
-        config.deploy.environment_variables["TOGETHER_API_BASE_URL"] = base_url
-
-    env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
-
-    if "TOGETHER_API_KEY" not in state.secrets:
-        _set_secret(client, config, state, "TOGETHER_API_KEY", ctx.obj.api_key, "Auth key for queue API")
-
-    for name, secret_id in state.secrets.items():
-        env_vars.append({"name": name, "value_from_secret": secret_id})
-
-    deploy_data["environment_variables"] = env_vars
-
-    if DEBUG:
-        click.echo(json.dumps(deploy_data, indent=2))
-    click.echo(f"Deploying model: {config.model_name}")
-
-    try:
-        existing = client.retrieve(config.model_name)
-        old_revision_id = _get_current_revision_id(existing)
-        was_scaled_to_zero = existing.ready_replicas == 0
-        response = client.update(config.model_name, **deploy_data)
-        click.echo("\N{CHECK MARK}  Applied new deployment configuration")
-    except APIStatusError as e:
-        if e.status_code != 404:
-            raise
-        old_revision_id = ""
-        was_scaled_to_zero = False
-        click.echo("\N{ROCKET} Creating new deployment")
-        try:
-            response = client.deploy(**deploy_data)
-            click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
-        except APIStatusError as e:
-            if _is_not_unique_error(e):
-                raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
-            # TODO: helpful tips for more error cases
-            raise
-
-    if detach:
-        return response.model_dump()
-
-    # Skip tracking if revision didn't change and not scaling up from zero
-    new_revision_id = _get_current_revision_id(response)
-    scaling_up = was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
-    if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
-        return None
-
-    return Tracker(client, config.model_name).track_deployment_progress()
+    Jig(ctx.obj, config_path).deploy(tag, build_only, warmup, detach, docker_args, existing_image)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 def status(ctx: click.Context, config_path: str | None, json_output: bool = False) -> None:
     """Get deployment status"""
-    client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-    response = client.retrieve(config.model_name)
-
-    if json_output:
-        click.echo(response.model_dump_json(indent=2))
-    else:
-        click.echo(format_deployment_status(response))
+    Jig(ctx.obj, config_path).status(json_output)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 def endpoint(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
-    client: Together = ctx.obj
-    click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{Config.find(config_path).model_name}")
+    Jig(ctx.obj, config_path).endpoint()
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 @click.option("--follow", is_flag=True, help="Follow log output")
 def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
     """Get deployment logs"""
-    client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-
-    if not follow:
-        if lines := client.retrieve_logs(config.model_name).lines:
-            for line in lines:
-                click.echo(line)
-        else:
-            click.echo("No logs available")
-        return
-
-    # Stream logs using SDK streaming response
-    try:
-        with client.with_streaming_response.retrieve_logs(config.model_name) as stream:
-            for line in stream.iter_lines():
-                if line:
-                    for log_line in json.loads(line).get("lines", []):
-                        click.echo(log_line)
-    except KeyboardInterrupt:
-        click.echo("\nStopped following logs")
-    except Exception as e:
-        click.echo(f"\nConnection ended: {e}")
+    Jig(ctx.obj, config_path).logs(follow)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 def destroy(ctx: click.Context, config_path: str | None) -> None:
     """Destroy deployment"""
-    client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-    client.destroy(config.model_name)
-    click.echo(f"\N{WASTEBASKET} Destroyed {config.model_name}")
+    Jig(ctx.obj, config_path).destroy()
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
-def submit(
-    ctx: click.Context,
-    prompt: str | None,
-    payload: str | None,
-    watch: bool,
-    config_path: str | None,
-) -> None:
+def submit(ctx: click.Context, prompt: str | None, payload: str | None, watch: bool, config_path: str | None) -> None:
     """Submit a job to the deployment"""
-    client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-
-    if not prompt and not payload:
-        raise click.UsageError("Either --prompt or --payload required")
-
-    raw_response = client.queue.with_raw_response.submit(
-        model=config.model_name,
-        payload=json.loads(payload) if payload else {"prompt": prompt},
-        priority=1,
-    )
-
-    # Getting raw response and parsing ourselves here due to Stainless limitation with
-    # Pydantic aliases not handled correctly (both fields are present in the model)
-    submit_response = QueueSubmitResponse.model_validate_json(raw_response.read())
-
-    click.echo("\N{CHECK MARK} Submitted job")
-    click.echo(submit_response.model_dump_json(indent=2))
-
-    if not watch or not submit_response.request_id:
-        return
-
-    click.echo(f"\nWatching job {submit_response.request_id}...")
-    last_status: str | None = None
-    while True:
-        try:
-            response = client.queue.retrieve(
-                model=config.model_name,
-                request_id=submit_response.request_id,
-            )
-            current_status = response.status
-            if current_status != last_status:
-                click.echo(response.model_dump_json(indent=2))
-                last_status = current_status
-
-            if current_status in ["done", "failed", "finished", "error", "canceled"]:
-                if current_status != "done":
-                    ctx.exit(1)
-                break
-
-            time.sleep(1)
-
-        except KeyboardInterrupt:
-            click.echo(f"\nStopped watching {submit_response.request_id}")
-            ctx.exit(130)
+    if exit_code := Jig(ctx.obj, config_path).submit(prompt, payload, watch):
+        ctx.exit(exit_code)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 @click.option("--request-id", required=True, help="Job request ID")
 def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
     """Get status of a specific job"""
-    client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-
-    response = client.queue.retrieve(
-        model=config.model_name,
-        request_id=request_id,
-    )
-    click.echo(response.model_dump_json(indent=2))
+    Jig(ctx.obj, config_path).job_status(request_id)
 
 
 @click.command()
-@click.pass_context
-@handle_api_errors("Jig")
-@config_option
+@_jig_options
 def queue_status(ctx: click.Context, config_path: str | None) -> None:
     """Get queue metrics for the deployment"""
-    client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-
-    response = client.queue.with_raw_response.metrics(model=config.model_name)
-    click.echo(json.dumps(response.json(), indent=2))
+    Jig(ctx.obj, config_path).queue_status()
 
 
 @click.command("list")
