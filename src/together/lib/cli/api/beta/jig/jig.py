@@ -794,8 +794,8 @@ def _dockerfile(config: Config) -> bool:
     Logic:
     - If no Dockerfile exists → generate and return True
     - If Dockerfile exists without our marker → skip and return False (user-managed)
-    - If Dockerfile exists with marker but config is older → skip and return True (no-op)
-    - If Dockerfile exists with marker and config is newer → regenerate and return True
+    - Else and config is older → skip and return True (no-op)
+    - Else → regenerate and return True
     """
     dockerfile_path = Path(config.dockerfile)
 
@@ -808,8 +808,7 @@ def _dockerfile(config: Config) -> bool:
         if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
             return True
 
-    with open(dockerfile_path, "w") as f:
-        f.write(_generate_dockerfile(config))
+    dockerfile_path.write_text(_generate_dockerfile(config))
 
     return True
 
@@ -855,8 +854,6 @@ def _build_warm_image(base_image: str) -> None:
     The cache directory is mounted at /app/torch_cache and the user's code should set the
     appropriate env var (TORCHINDUCTOR_CACHE_DIR, TKCC_OUTPUT_DIR, etc.) to point there.
     """
-    import os
-
     cache_dir = Path(".") / WARMUP_DEST
     # Clean any existing cache
     try:
@@ -870,17 +867,17 @@ def _build_warm_image(base_image: str) -> None:
     # Run container with GPU and RUN_AND_EXIT=1
     # Mount current dir as /app so warmup_inputs can reference local weights
     # Mount cache dir for compile artifacts
-    warmup_cmd = ["docker", "run", "--rm", "--gpus", "all", "-e", "RUN_AND_EXIT=1"]
-    warmup_cmd.extend(["-e", f"{WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"])
-    warmup_cmd.extend(["-v", f"{Path.cwd().absolute()}:/app"])
+    cmd = ["docker", "run", "--rm", "--gpus", "all", "-e", "RUN_AND_EXIT=1"]
+    cmd.extend(["-e", f"{WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"])
+    cmd.extend(["-v", f"{Path.cwd().absolute()}:/app"])
     # if MODEL_PRELOAD_PATH is set, also mount that (e.g. ~/.cache/huggingface)
     if weights_path := os.getenv("MODEL_PRELOAD_PATH"):
-        warmup_cmd.extend(["-v", f"{weights_path}:{weights_path}"])
-        warmup_cmd.extend(["-e", f"MODEL_PRELOAD_PATH={weights_path}"])
-    warmup_cmd.append(base_image)
+        cmd.extend(["-v", f"{weights_path}:{weights_path}"])
+        cmd.extend(["-e", f"MODEL_PRELOAD_PATH={weights_path}"])
+    cmd.append(base_image)
 
-    click.echo(f"Running: {' '.join(warmup_cmd)}")
-    result = subprocess.run(warmup_cmd)
+    click.echo(f"Running: {' '.join(cmd)}")
+    result = subprocess.run(cmd)
     if result.returncode != 0:
         raise RuntimeError(f"Warmup failed with code {result.returncode}")
 
@@ -899,10 +896,10 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
     cache_dockerfile.write_text(dockerfile_content)
 
     click.echo("\N{PACKAGE} Building final image with cache...")
-    cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image]
-    cmd.extend(["-f", str(cache_dockerfile), "."])
+    final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image]
+    final_cmd.extend(["-f", str(cache_dockerfile), "."])
 
-    if subprocess.run(cmd).returncode != 0:
+    if subprocess.run(final_cmd).returncode != 0:
         cache_dockerfile.unlink(missing_ok=True)
         raise RuntimeError("Cache image build failed")
     cache_dockerfile.unlink(missing_ok=True)
