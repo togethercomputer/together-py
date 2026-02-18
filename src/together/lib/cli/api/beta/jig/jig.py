@@ -197,8 +197,7 @@ class Config:
     def load(cls, data: dict[str, Any], path: Path) -> Config:
         """Load configuration from parsed TOML data"""
         # figure out config location and "Deployment name must be unique. Tip: update ..." message
-        is_pyproject = path.name.endswith("pyproject.toml")
-        if is_pyproject:
+        if path.name.endswith("pyproject.toml"):
             jig_config = data.get("tool", {}).get("jig", {})
             if name := jig_config.get("name"):
                 tip = "update `name` in your pyproject.toml"
@@ -267,19 +266,16 @@ class State:
         }
 
         """
-        path = config_dir / ".jig.json"
         try:
-            all_data = json.loads(path.read_text())
-
-            # Check if this is the new nested structure (project_name as key)
-            if project_name in all_data and isinstance(all_data[project_name], dict):
-                # New structure: extract project-specific state
-                project_data = all_data[project_name]
+            all_data = json.loads((config_dir / ".jig.json").read_text())
+            # is our project in the nested state format?
+            if isinstance(project_data := all_data.get(project_name), dict):
                 return cls.from_dict(config_dir, project_name, **project_data)
-            # Secrets or volumes exist, but not yet migrated (don't care about registry base path)
+            # top-level secrets/volumes project fields are set, but not migrated
+            # (don't care about registry base path)
             if "secrets" in all_data or "volumes" in all_data:
                 return cls.from_dict(config_dir, project_name, **all_data)
-            # File exists but this project isn't in it yet
+            # state exists but our project isn't in it
             return cls(_config_dir=config_dir, _project_name=project_name)
         except FileNotFoundError:
             return cls(_config_dir=config_dir, _project_name=project_name)
@@ -298,8 +294,7 @@ class State:
             all_data = {}
 
         # Update this project's state
-        project_data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
-        all_data[self._project_name] = project_data
+        all_data[self._project_name] = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
 
         path.write_text(json.dumps(all_data, indent=2))
 
