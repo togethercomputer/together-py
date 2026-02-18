@@ -13,7 +13,7 @@ import typing
 import asyncio
 import subprocess
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Union, Callable
+from typing import TYPE_CHECKING, Any, Callable, Union
 from pathlib import Path
 from datetime import datetime
 from itertools import groupby
@@ -1056,12 +1056,11 @@ class Tracker:
 # --- CLI Commands ---
 
 
-# Shared CLI decorator: pass_context + config option + api error handling
-def jig_command(f: Callable[..., Any]) -> Any:
-    f = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")(f)
+def _jig_options(f: Callable[..., Any]) -> Any:
+    """Bundles @click.pass_context + @handle_api_errors("Jig") + @config_option."""
+    f = config_option(f)
     f = handle_api_errors("Jig")(f)
     f = click.pass_context(f)
-    f = click.command()(f)
     return f
 
 
@@ -1100,7 +1099,7 @@ gpu_count = 1
 
 
 @click.command()
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+@config_option
 @handle_api_errors("Jig")
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
@@ -1115,7 +1114,8 @@ def dockerfile(config_path: str | None) -> None:
         )
 
 
-@jig_command
+@click.command()
+@_jig_options
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option(
@@ -1160,7 +1160,10 @@ def build(
         _build_warm_image(image)
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 @click.option("--tag", default="latest", help="Image tag")
 def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
@@ -1198,7 +1201,10 @@ def _is_not_unique_error(e: APIStatusError) -> bool:
     return "already exists" in msg
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
@@ -1319,7 +1325,10 @@ def deploy(
     return Tracker(client, config.model_name).track_deployment_progress()
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 def status(ctx: click.Context, config_path: str | None, json_output: bool = False) -> None:
     """Get deployment status"""
@@ -1333,14 +1342,20 @@ def status(ctx: click.Context, config_path: str | None, json_output: bool = Fals
         click.echo(format_deployment_status(response))
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 def endpoint(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
     client: Together = ctx.obj
     click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{Config.find(config_path).model_name}")
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 @click.option("--follow", is_flag=True, help="Follow log output")
 def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
     """Get deployment logs"""
@@ -1368,7 +1383,10 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
         click.echo(f"\nConnection ended: {e}")
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 def destroy(ctx: click.Context, config_path: str | None) -> None:
     """Destroy deployment"""
     client: JigResource = ctx.obj.beta.jig
@@ -1377,7 +1395,10 @@ def destroy(ctx: click.Context, config_path: str | None) -> None:
     click.echo(f"\N{WASTEBASKET} Destroyed {config.model_name}")
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
@@ -1436,7 +1457,10 @@ def submit(
             ctx.exit(130)
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 @click.option("--request-id", required=True, help="Job request ID")
 def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
     """Get status of a specific job"""
@@ -1450,7 +1474,10 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
     click.echo(response.model_dump_json(indent=2))
 
 
-@jig_command
+@click.command()
+@click.pass_context
+@handle_api_errors("Jig")
+@config_option
 def queue_status(ctx: click.Context, config_path: str | None) -> None:
     """Get queue metrics for the deployment"""
     client: JigResource = ctx.obj.beta.jig
