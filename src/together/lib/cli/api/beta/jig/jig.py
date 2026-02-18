@@ -302,9 +302,7 @@ class State:
         project_data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
         all_data[self._project_name] = project_data
 
-        # Save back to file
-        with open(path, "w") as f:
-            json.dump(all_data, f, indent=2)
+        path.write_text(json.dumps(all_data, indent=2))
 
 
 # == Status prettyprint utils ==
@@ -379,12 +377,10 @@ def format_deployment_status(d: Deployment) -> str:
                 status += f"    {env.name:<40} {env.value}\n"
 
     if d.replica_events:
-        for replica in d.replica_events.values():
-            replica.image = replica.image or "-"
         sorted_replicas = sorted(d.replica_events.items(), key=lambda item: item[1].image or "-", reverse=True)
         events_status = "\nReplica Events:\n"
-        for image, group in groupby(sorted_replicas, key=lambda item: item[1].image):
-            events_status += f"{_image_tag(image)}:\n"
+        for image, group in groupby(sorted_replicas, key=lambda item: item[1].image or "-"):
+            events_status += f"{_image_tag(image or '-')}:\n"
             for replica_id, replica in group:
                 events_status += f"  {replica_id}: "
                 if replica.volume_preload_status and not replica.volume_preload_completed_at:
@@ -397,6 +393,17 @@ def format_deployment_status(d: Deployment) -> str:
 
         status += events_status
     return status
+
+
+# == Shared CLI helpers ==
+
+config_option = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+
+
+def _load_config_state(config_path: str | None) -> tuple[Config, State]:
+    """Load config and state from config_path — shared by commands needing both."""
+    config = Config.find(config_path)
+    return config, State.load(config._path.parent, config.model_name)
 
 
 # = Secrets and Volumes subcommands =
@@ -451,9 +458,8 @@ def secrets_set(
     config_path: str | None,
 ) -> None:
     """Set a secret (create or update)"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
-    _set_secret(ctx.obj, config, state, name, value, description)
+    config, state = _load_config_state(config_path)
+    _set_secret(ctx.obj.beta.jig, config, state, name, value, description)
 
 
 @secrets.command("unset")
@@ -467,8 +473,7 @@ def secrets_unset(
     config_path: str | None,
 ) -> None:
     """Remove a secret from both remote and local state"""
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    config, state = _load_config_state(config_path)
 
     if state.secrets.pop(name, ""):
         state.save()
@@ -487,8 +492,7 @@ def secrets_list(
 ) -> None:
     """List all secrets with sync status"""
     client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    config, state = _load_config_state(config_path)
 
     prefix = f"{config.model_name}-"
 
@@ -671,14 +675,11 @@ def _get_api_base_url(client: Together) -> str:
     return f"{parsed.scheme}://{parsed.netloc}"
 
 
-def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run process with defaults"""
+def _run(cmd: list[str], *, input: str | None = None) -> subprocess.CompletedProcess[str]:
+    """Run subprocess. Captures output unless input is provided."""
+    if input is not None:
+        return subprocess.run(cmd, input=input, text=True)
     return subprocess.run(cmd, capture_output=True, text=True, check=True)
-
-
-def _run_input(cmd: list[str], input: str) -> subprocess.CompletedProcess[str]:
-    """Run process with input"""
-    return subprocess.run(cmd, input=input, text=True)
 
 
 def _generate_dockerfile(config: Config) -> str:
@@ -872,7 +873,7 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
     click.echo("\N{PACKAGE} Building final image with cache...")
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
 
-    if _run_input(final_cmd, input=final_dockerfile).returncode != 0:
+    if _run(final_cmd, input=final_dockerfile).returncode != 0:
         raise RuntimeError("Cache image build failed")
     click.echo("\N{CHECK MARK} Final image with cache built")
 
@@ -1131,8 +1132,7 @@ def build(
 ) -> None:
     """Build container image"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    config, state = _load_config_state(config_path)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
@@ -1165,15 +1165,14 @@ def build(
 def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     """Push image to registry"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    config, state = _load_config_state(config_path)
     _ensure_registry_base_path(client, state)
 
     image = _get_image(state, config, tag)
 
     registry = state.registry_base_path.split("/")[0]
     login_cmd = ["docker", "login", registry, "--username", "user", "--password-stdin"]
-    if _run_input(login_cmd, input=client.api_key).returncode != 0:
+    if _run(login_cmd, input=client.api_key).returncode != 0:
         raise RuntimeError("Registry login failed")
 
     click.echo(f"Pushing {image}")
@@ -1227,8 +1226,7 @@ def deploy(
 ) -> dict[str, Any] | None:
     """Deploy model"""
     client: JigResource = ctx.obj.beta.jig
-    config = Config.find(config_path)
-    state = State.load(config._path.parent, config.model_name)
+    config, state = _load_config_state(config_path)
     _ensure_registry_base_path(ctx.obj, state)
 
     if existing_image:
