@@ -26,6 +26,7 @@ from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.deployment import Deployment, ReplicaEvents
+from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
@@ -407,7 +408,7 @@ def format_deployment_status(d: Deployment) -> str:
 
 
 def _set_secret(
-    client: Together,
+    client: JigResource,
     config: Config,
     state: State,
     name: str,
@@ -418,16 +419,14 @@ def _set_secret(
     deployment_secret_name = f"{config.model_name}-{name}"
 
     try:
-        client.beta.jig.secrets.retrieve(deployment_secret_name)
-        client.beta.jig.secrets.update(
-            deployment_secret_name, name=deployment_secret_name, description=description, value=value
-        )
+        client.secrets.retrieve(deployment_secret_name)
+        client.secrets.update(deployment_secret_name, name=deployment_secret_name, description=description, value=value)
         click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
     except APIStatusError as e:
         if e.status_code != 404:
             raise
         click.echo("\N{ROCKET} Creating new secret")
-        client.beta.jig.secrets.create(name=deployment_secret_name, value=value, description=description)
+        client.secrets.create(name=deployment_secret_name, value=value, description=description)
         click.echo(f"\N{CHECK MARK} Created secret: {name}")
 
     state.secrets[name] = deployment_secret_name
@@ -491,7 +490,7 @@ def secrets_list(
     config_path: str | None,
 ) -> None:
     """List all secrets with sync status"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
     state = State.load(config._path.parent, config.model_name)
 
@@ -500,7 +499,7 @@ def secrets_list(
     local_secrets = set(state.secrets.keys())
     remote_secrets: set[str] = set()
     # Get all remote secrets then filter for this deployment
-    for secret in client.beta.jig.secrets.list().data or []:
+    for secret in client.secrets.list().data or []:
         if (name := secret.name) and name.startswith(prefix):
             # Strip prefix to get local name
             remote_secrets.add(name.removeprefix(prefix))
@@ -537,7 +536,7 @@ def _validate_source(p: Path) -> None:
         raise ValueError(f"Source path must be a directory: {p}")
 
 
-async def _create_volume(client: Together, name: str, source: str) -> None:
+async def _create_volume(client: JigResource, name: str, source: str) -> None:
     """Create a volume and upload files"""
     source_path = Path(source)
     _validate_source(source_path)
@@ -545,7 +544,7 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
 
     click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
     try:
-        volume_response = client.beta.jig.volumes.create(
+        volume_response = client.volumes.create(
             name=name,
             type="readOnly",
             content={"type": "files", "source_prefix": source_prefix},
@@ -555,23 +554,23 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
         raise RuntimeError(f"Failed to create volume: {e}") from e
 
     try:
-        await Uploader(client).upload_files(source_path, volume_name=name)
+        await Uploader(client._client).upload_files(source_path, volume_name=name)
     except Exception as e:
         click.echo(f"\N{CROSS MARK} Upload failed: {e}")
         click.echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
         try:
-            client.beta.jig.volumes.delete(name)
+            client.volumes.delete(name)
         except Exception as cleanup_error:
             click.echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
         raise
 
 
-async def _update_volume(client: Together, name: str, source: str) -> None:
+async def _update_volume(client: JigResource, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     source_path = Path(source)
     _validate_source(source_path)
     try:
-        client.beta.jig.volumes.retrieve(name)
+        client.volumes.retrieve(name)
     except APIStatusError as e:
         if e.status_code == 404:
             raise ValueError(f"Volume '{name}' does not exist") from e
@@ -580,10 +579,10 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
     source_prefix = f"{name}/{source_path.name}"
 
     click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
-    await Uploader(client).upload_files(source_path, volume_name=name)
+    await Uploader(client._client).upload_files(source_path, volume_name=name)
 
     click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
-    client.beta.jig.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
+    client.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
     click.echo("\N{CHECK MARK} Volume updated successfully")
 
 
@@ -602,13 +601,9 @@ def volumes(ctx: click.Context) -> None:
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="Source directory path")
 @handle_api_errors("Volumes")
-def volumes_create(
-    ctx: click.Context,
-    name: str,
-    source: str,
-) -> None:
+def volumes_create(ctx: click.Context, name: str, source: str) -> None:
     """Create a volume and upload files"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     asyncio.run(_create_volume(client, name, source))
 
 
@@ -617,13 +612,9 @@ def volumes_create(
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="New source directory path")
 @handle_api_errors("Volumes")
-def volumes_update(
-    ctx: click.Context,
-    name: str,
-    source: str,
-) -> None:
+def volumes_update(ctx: click.Context, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     asyncio.run(_update_volume(client, name, source))
 
 
@@ -631,15 +622,12 @@ def volumes_update(
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @handle_api_errors("Volumes")
-def volumes_delete(
-    ctx: click.Context,
-    name: str,
-) -> None:
+def volumes_delete(ctx: click.Context, name: str) -> None:
     """Delete a volume"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
 
     try:
-        client.beta.jig.volumes.delete(name)
+        client.volumes.delete(name)
         click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
     except APIStatusError as e:
         if e.status_code != 404:
@@ -656,10 +644,10 @@ def volumes_describe(
     name: str,
 ) -> None:
     """Describe a volume"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
 
     try:
-        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
+        response = client.volumes.with_raw_response.retrieve(name)
         click.echo(json.dumps(response.json(), indent=2))
     except APIStatusError as e:
         if e.status_code != 404:
@@ -672,8 +660,8 @@ def volumes_describe(
 @handle_api_errors("Volumes")
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
-    client: Together = ctx.obj
-    response = client.beta.jig.volumes.with_raw_response.list()
+    client: JigResource = ctx.obj.beta.jig
+    response = client.volumes.with_raw_response.list()
     click.echo(json.dumps(response.json(), indent=2))
 
 
@@ -908,10 +896,10 @@ def _print_replica_failure(event: ReplicaEvents) -> None:
         click.echo(f"  Message: {event.replica_status_message}")
 
 
-def _fetch_and_print_logs(client: Together, deployment_name: str, replica_id: str) -> None:
+def _fetch_and_print_logs(client: JigResource, deployment_name: str, replica_id: str) -> None:
     click.echo(f"\n--- Logs for {replica_id} ---")
     try:
-        if lines := client.beta.jig.retrieve_logs(deployment_name, replica_id=replica_id).lines:
+        if lines := client.retrieve_logs(deployment_name, replica_id=replica_id).lines:
             for line in lines:
                 click.echo(line)
         else:
@@ -935,7 +923,7 @@ def _process_replica_event(
     states: set[str],
     replica_ready_wait_start: dict[str, float],
     ready_timeout: float,
-    client: Together,
+    client: JigResource,
     deployment_name: str,
 ) -> ReplicaTrackingResult:
     """Process a single replica event and return the tracking result.
@@ -1003,7 +991,7 @@ def _process_replica_event(
     return ReplicaTrackingResult.CONTINUE
 
 
-def _track_deployment_progress(deployment_name: str, client: Together) -> dict[str, Any] | None:
+def _track_deployment_progress(deployment_name: str, client: JigResource) -> dict[str, Any] | None:
     """Track deployment progress until ready or failed.
 
     Polls deployment status every 3 seconds until:
@@ -1024,7 +1012,7 @@ def _track_deployment_progress(deployment_name: str, client: Together) -> dict[s
 
     try:
         while time.time() - start_time < timeout:
-            deployment = client.beta.jig.retrieve(deployment_name)
+            deployment = client.retrieve(deployment_name)
 
             # Handle scale to zero - no replicas expected
             if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
@@ -1242,10 +1230,10 @@ def deploy(
     config_path: str | None,
 ) -> dict[str, Any] | None:
     """Deploy model"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
     state = State.load(config._path.parent, config.model_name)
-    _ensure_registry_base_path(client, state)
+    _ensure_registry_base_path(ctx.obj, state)
 
     if existing_image:
         deployment_image = existing_image
@@ -1288,10 +1276,10 @@ def deploy(
         deploy_data["command"] = config.deploy.command
 
     env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
-    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(client)})
+    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(ctx.obj)})  # refactor
 
     if "TOGETHER_API_KEY" not in state.secrets:
-        _set_secret(client, config, state, "TOGETHER_API_KEY", client.api_key, "Auth key for queue API")
+        _set_secret(client, config, state, "TOGETHER_API_KEY", ctx.obj.api_key, "Auth key for queue API")
 
     for name, secret_id in state.secrets.items():
         env_vars.append({"name": name, "value_from_secret": secret_id})
@@ -1305,7 +1293,7 @@ def deploy(
     def handle_create() -> Deployment:
         click.echo("\N{ROCKET} Creating new deployment")
         try:
-            response = client.beta.jig.deploy(**deploy_data)
+            response = client.deploy(**deploy_data)
             click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
             return response
         except APIStatusError as e:
@@ -1331,10 +1319,10 @@ def deploy(
             raise
 
     try:
-        existing = client.beta.jig.retrieve(config.model_name)
+        existing = client.retrieve(config.model_name)
         old_revision_id = _get_current_revision_id(existing)
         was_scaled_to_zero = existing.ready_replicas == 0
-        response = client.beta.jig.update(config.model_name, **deploy_data)
+        response = client.update(config.model_name, **deploy_data)
         click.echo("\N{CHECK MARK}  Applied new deployment configuration")
     except APIStatusError as e:
         if e.status_code != 404:
@@ -1359,9 +1347,9 @@ def deploy(
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 def status(ctx: click.Context, config_path: str | None, json_output: bool = False) -> None:
     """Get deployment status"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
-    response = client.beta.jig.retrieve(config.model_name)
+    response = client.retrieve(config.model_name)
 
     if json_output:
         click.echo(response.model_dump_json(indent=2))
@@ -1373,19 +1361,18 @@ def status(ctx: click.Context, config_path: str | None, json_output: bool = Fals
 def endpoint(ctx: click.Context, config_path: str | None) -> None:
     """Get deployment endpoint URL"""
     client: Together = ctx.obj
-    config = Config.find(config_path)
-    click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{config.model_name}")
+    click.echo(f"{_get_api_base_url(client)}/v1/deployment-request/{Config.find(config_path).model_name}")
 
 
 @jig_command
 @click.option("--follow", is_flag=True, help="Follow log output")
 def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
     """Get deployment logs"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
 
     if not follow:
-        if lines := client.beta.jig.retrieve_logs(config.model_name).lines:
+        if lines := client.retrieve_logs(config.model_name).lines:
             for line in lines:
                 click.echo(line)
         else:
@@ -1394,7 +1381,7 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as stream:
+        with client.with_streaming_response.retrieve_logs(config.model_name) as stream:
             for line in stream.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
@@ -1408,9 +1395,9 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
 @jig_command
 def destroy(ctx: click.Context, config_path: str | None) -> None:
     """Destroy deployment"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
-    client.beta.jig.destroy(config.model_name)
+    client.destroy(config.model_name)
     click.echo(f"\N{WASTEBASKET} Destroyed {config.model_name}")
 
 
@@ -1426,13 +1413,13 @@ def submit(
     config_path: str | None,
 ) -> None:
     """Submit a job to the deployment"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
 
     if not prompt and not payload:
         raise click.UsageError("Either --prompt or --payload required")
 
-    raw_response = client.beta.jig.queue.with_raw_response.submit(
+    raw_response = client.queue.with_raw_response.submit(
         model=config.model_name,
         payload=json.loads(payload) if payload else {"prompt": prompt},
         priority=1,
@@ -1452,7 +1439,7 @@ def submit(
     last_status: str | None = None
     while True:
         try:
-            response = client.beta.jig.queue.retrieve(
+            response = client.queue.retrieve(
                 model=config.model_name,
                 request_id=submit_response.request_id,
             )
@@ -1477,10 +1464,10 @@ def submit(
 @click.option("--request-id", required=True, help="Job request ID")
 def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
     """Get status of a specific job"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
 
-    response = client.beta.jig.queue.retrieve(
+    response = client.queue.retrieve(
         model=config.model_name,
         request_id=request_id,
     )
@@ -1490,10 +1477,10 @@ def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> 
 @jig_command
 def queue_status(ctx: click.Context, config_path: str | None) -> None:
     """Get queue metrics for the deployment"""
-    client: Together = ctx.obj
+    client: JigResource = ctx.obj.beta.jig
     config = Config.find(config_path)
 
-    response = client.beta.jig.queue.with_raw_response.metrics(model=config.model_name)
+    response = client.queue.with_raw_response.metrics(model=config.model_name)
     click.echo(json.dumps(response.json(), indent=2))
 
 
@@ -1502,6 +1489,6 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
 @click.pass_context
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
-    client: Together = ctx.obj
-    response = client.beta.jig.with_raw_response.list()
+    client: JigResource = ctx.obj.beta.jig
+    response = client.with_raw_response.list()
     click.echo(json.dumps(response.json(), indent=2))
