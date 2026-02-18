@@ -150,6 +150,9 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
             # User aborted the command
             except click.Abort:
                 sys.exit(0)
+            # Re-raise a usage error so it displays a proper click error message
+            except click.UsageError as e:
+                raise e
             except APIError as e:
                 error_msg = ""
                 if e.body is not None:
