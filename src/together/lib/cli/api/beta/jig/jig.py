@@ -913,156 +913,143 @@ class ReplicaTrackingResult(str, Enum):
     FAILURE = "failure"
 
 
-def _process_replica_event(
-    replica_id: str,
-    event: ReplicaEvents,
-    states: set[str],
-    replica_ready_wait_start: dict[str, float],
-    ready_timeout: float,
-    client: JigResource,
-    deployment_name: str,
-) -> ReplicaTrackingResult:
-    """Process a single replica event and return the tracking result.
+@dataclass
+class Tracker:
+    client: JigResource
+    deployment_name: str
 
-    Updates `states` and `replica_ready_wait_start` as side effects.
-    """
-    volume_done = not event.volume_preload_status or bool(event.volume_preload_completed_at)
+    poll_interval: int = 3  # seconds
+    timeout: int = 600  # 10 minutes
+    ready_timeout: int = 120  # 2 minutes for Running without ready_since
 
-    # Track volume preload progress
-    if event.volume_preload_status:
-        if "volume_preload_started" not in states:
-            click.echo(f"\N{PACKAGE} [{replica_id}] Preloading volume contents...")
-            states.add("volume_preload_started")
-        elif volume_done and "volume_preload_completed" not in states:
-            click.echo(
-                f"\N{CHECK MARK}  [{replica_id}] Successfully preloaded volume contents. "
-                "Attaching the volume to the container..."
-            )
-            states.add("volume_preload_completed")
+    # replica_id -> set of printed states
+    printed_states: dict[str, set[str]] = field(default_factory=lambda: defaultdict(set))
+    # replica_id -> when we started waiting for ready
+    replica_wait_start: dict[str, float] = field(default_factory=lambda: defaultdict(time.time))
 
-    # Skip terminated replicas
-    if event.replica_status == "Terminated":
-        return ReplicaTrackingResult.CONTINUE
+    def track_deployment_progress(self) -> dict[str, Any] | None:
+        """Track deployment progress until ready or failed.
 
-    # Check if ready - SUCCESS
-    if event.replica_status == "Running" and event.replica_ready_since:
-        click.echo(f"\N{CHECK MARK}  [{replica_id}] Container is running and ready")
-        click.echo("\N{ROCKET} Deployment successful!")
-        click.echo("Note: Additional replicas may still be scaling up.")
-        return ReplicaTrackingResult.SUCCESS
+        Polls deployment status every 3 seconds until:
+        - Success: At least one replica with the latest revision has replica_ready_since set
+        - Failure: CrashLoopBackOff or Running without ready_since for > 2 minute
+        - Timeout: 10 minutes elapsed
+        """
+        start_time = time.time()
 
-    # Check for CrashLoopBackOff
-    if event.replica_status_reason == "CrashLoopBackOff":
-        click.echo(f"\N{CROSS MARK} [{replica_id}] Container is crash looping")
-        _print_replica_failure(event)
-        _fetch_and_print_logs(client, deployment_name, replica_id)
-        return ReplicaTrackingResult.FAILURE
+        click.echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
 
-    # Check for stuck in Running state without becoming ready
-    if event.replica_status == "Running" and volume_done:
-        # If wait start time is not set, set it to now
-        wait_start = replica_ready_wait_start.setdefault(replica_id, time.time())
-        if time.time() - wait_start > ready_timeout:
-            click.echo(
-                f"\N{CROSS MARK}  [{replica_id}] Container is running but "
-                f"not ready to serve requests after {ready_timeout} seconds"
-            )
+        try:
+            while time.time() - start_time < self.timeout:
+                deployment = self.client.retrieve(self.deployment_name)
+
+                # Handle scale to zero - no replicas expected
+                if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
+                    if str(deployment.status) == "ScaledToZero":
+                        click.echo("\N{CHECK MARK} Deployment scaled to zero replicas")
+                        return None
+                    # Not yet scaled to zero, wait and retry
+                    time.sleep(self.poll_interval)
+                    continue
+
+                current_revision_id = _get_current_revision_id(deployment)
+
+                replica_events = deployment.replica_events or {}
+
+                # Filter to replicas with matching revision
+                relevant_replicas = {
+                    replica_id: event
+                    for replica_id, event in replica_events.items()
+                    if event.revision_id == current_revision_id
+                }
+
+                if not relevant_replicas:
+                    time.sleep(self.poll_interval)
+                    continue
+
+                for replica_id, event in relevant_replicas.items():
+                    result = self.process_replica_event(replica_id=replica_id, event=event)
+
+                    if result == ReplicaTrackingResult.SUCCESS:
+                        return None
+                    if result == ReplicaTrackingResult.FAILURE:
+                        raise SystemExit(1)
+
+                time.sleep(self.poll_interval)
+
+            # Timeout reached
+            click.echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
+            click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
+            click.echo("Run 'jig status' to check current state.")
+            raise SystemExit(1)
+
+        except KeyboardInterrupt:
+            click.echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
+            click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
+            click.echo("Run 'jig status' to check current state.")
+            raise SystemExit(130) from None
+
+    def process_replica_event(self, replica_id: str, event: ReplicaEvents) -> ReplicaTrackingResult:
+        """Process a single replica event and return the tracking result."""
+        states = self.printed_states[replica_id]
+
+        volume_done = not event.volume_preload_status or bool(event.volume_preload_completed_at)
+        # Track volume preload progress
+        if event.volume_preload_status:
+            if "volume_preload_started" not in states:
+                click.echo(f"\N{PACKAGE} [{replica_id}] Preloading volume contents...")
+                states.add("volume_preload_started")
+            elif volume_done and "volume_preload_completed" not in states:
+                click.echo(
+                    f"\N{CHECK MARK}  [{replica_id}] Successfully preloaded volume contents. "
+                    "Attaching the volume to the container..."
+                )
+                states.add("volume_preload_completed")
+
+        # Skip terminated replicas
+        if event.replica_status == "Terminated":
+            return ReplicaTrackingResult.CONTINUE
+
+        # Check if ready - SUCCESS
+        if event.replica_status == "Running" and event.replica_ready_since:
+            click.echo(f"\N{CHECK MARK}  [{replica_id}] Container is running and ready")
+            click.echo("\N{ROCKET} Deployment successful!")
+            click.echo("Note: Additional replicas may still be scaling up.")
+            return ReplicaTrackingResult.SUCCESS
+
+        # Check for CrashLoopBackOff
+        if event.replica_status_reason == "CrashLoopBackOff":
+            click.echo(f"\N{CROSS MARK} [{replica_id}] Container is crash looping")
             _print_replica_failure(event)
-            _fetch_and_print_logs(client, deployment_name, replica_id)
-            click.echo(f"Deployment '{deployment_name}' may still be in progress.")
+            _fetch_and_print_logs(self.client, self.deployment_name, replica_id)
             return ReplicaTrackingResult.FAILURE
 
-    # Print status updates deduplicated by status + reason
-    # Skip all status updates while volume preload is in progress
-    if volume_done and event.replica_status_reason:
-        status_key = f"{event.replica_status}_{event.replica_status_reason}"
-        if status_key not in states:
-            states.add(status_key)
-            click.echo(
-                f"\N{HOURGLASS WITH FLOWING SAND} [{replica_id}] {event.replica_status}: {event.replica_status_reason}"
-            )
-            if event.replica_status_message:
-                click.echo(f"  {event.replica_status_message}")
-
-    return ReplicaTrackingResult.CONTINUE
-
-
-def _track_deployment_progress(deployment_name: str, client: JigResource) -> dict[str, Any] | None:
-    """Track deployment progress until ready or failed.
-
-    Polls deployment status every 3 seconds until:
-    - Success: At least one replica with the latest revision has replica_ready_since set
-    - Failure: CrashLoopBackOff or Running without ready_since for > 2 minute
-    - Timeout: 10 minutes elapsed
-    """
-    poll_interval = 3  # seconds
-    timeout = 600  # 10 minutes
-    ready_timeout = 120  # 2 minutes for Running without ready_since
-
-    start_time = time.time()
-    printed_states: dict[str, set[str]] = defaultdict(set)  # replica_id -> set of printed states
-    # replica_id -> when we started waiting for ready
-    replica_ready_wait_start: dict[str, float] = {}
-
-    click.echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
-
-    try:
-        while time.time() - start_time < timeout:
-            deployment = client.retrieve(deployment_name)
-
-            # Handle scale to zero - no replicas expected
-            if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
-                if str(deployment.status) == "ScaledToZero":
-                    click.echo("\N{CHECK MARK} Deployment scaled to zero replicas")
-                    return None
-                # Not yet scaled to zero, wait and retry
-                time.sleep(poll_interval)
-                continue
-
-            current_revision_id = _get_current_revision_id(deployment)
-
-            replica_events = deployment.replica_events or {}
-
-            # Filter to replicas with matching revision
-            relevant_replicas = {
-                replica_id: event
-                for replica_id, event in replica_events.items()
-                if event.revision_id == current_revision_id
-            }
-
-            if not relevant_replicas:
-                time.sleep(poll_interval)
-                continue
-
-            for replica_id, event in relevant_replicas.items():
-                result = _process_replica_event(
-                    replica_id=replica_id,
-                    event=event,
-                    states=printed_states[replica_id],
-                    replica_ready_wait_start=replica_ready_wait_start,
-                    ready_timeout=ready_timeout,
-                    client=client,
-                    deployment_name=deployment_name,
+        # Check for stuck in Running state without becoming ready
+        if event.replica_status == "Running" and volume_done:
+            # replica_wait_start will default to time.time()
+            if time.time() - self.replica_wait_start[replica_id] > self.ready_timeout:
+                click.echo(
+                    f"\N{CROSS MARK}  [{replica_id}] Container is running but "
+                    f"not ready to serve requests after {self.ready_timeout} seconds"
                 )
+                _print_replica_failure(event)
+                _fetch_and_print_logs(self.client, self.deployment_name, replica_id)
+                click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
+                return ReplicaTrackingResult.FAILURE
 
-                if result == ReplicaTrackingResult.SUCCESS:
-                    return None
-                if result == ReplicaTrackingResult.FAILURE:
-                    raise SystemExit(1)
+        # Print status updates deduplicated by status + reason
+        # Skip all status updates while volume preload is in progress
+        if volume_done and event.replica_status_reason:
+            status_key = f"{event.replica_status}_{event.replica_status_reason}"
+            if status_key not in states:
+                states.add(status_key)
+                click.echo(
+                    f"\N{HOURGLASS WITH FLOWING SAND} [{replica_id}] {event.replica_status}: {event.replica_status_reason}"
+                )
+                if event.replica_status_message:
+                    click.echo(f"  {event.replica_status_message}")
 
-            time.sleep(poll_interval)
-
-        # Timeout reached
-        click.echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
-        click.echo(f"Deployment '{deployment_name}' may still be in progress.")
-        click.echo("Run 'jig status' to check current state.")
-        raise SystemExit(1)
-
-    except KeyboardInterrupt:
-        click.echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
-        click.echo(f"Deployment '{deployment_name}' may still be in progress.")
-        click.echo("Run 'jig status' to check current state.")
-        raise SystemExit(130) from None
+        return ReplicaTrackingResult.CONTINUE
 
 
 # --- CLI Commands ---
@@ -1331,7 +1318,7 @@ def deploy(
     if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
         return None
 
-    return _track_deployment_progress(config.model_name, client)
+    return Tracker(client, config.model_name).track_deployment_progress()
 
 
 @jig_command
