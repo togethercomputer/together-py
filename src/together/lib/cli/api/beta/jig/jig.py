@@ -153,6 +153,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return f"{path}: expected {value_type.__name__}, got {value!r}"  # pyright: ignore
     return None
 
+# TODO: make state a property of config
 
 @dataclass
 class Config:
@@ -1039,6 +1040,7 @@ def _is_not_unique_error(e: APIStatusError) -> bool:
     msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
     return "already exists" in msg
 
+# TODO: merge Tracker into Jig
 
 class Jig:
     """Holds Together client, config, and state. Methods implement the core jig operations."""
