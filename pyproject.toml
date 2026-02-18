@@ -49,6 +49,8 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/togethercomputer/together-py"
 Repository = "https://github.com/togethercomputer/together-py"
+Documentation = "https://docs.together.ai/"
+Changelog = "https://github.com/togethercomputer/together-py/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]
