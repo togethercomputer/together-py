@@ -1292,8 +1292,10 @@ def deploy(
     if config.deploy.command:
         deploy_data["command"] = config.deploy.command
 
+    if (base_url := _get_api_base_url(ctx.obj)) != "https://api.together.ai":
+        config.deploy.environment_variables["TOGETHER_API_BASE_URL"] = base_url
+
     env_vars = [{"name": k, "value": v} for k, v in config.deploy.environment_variables.items()]
-    env_vars.append({"name": "TOGETHER_API_BASE_URL", "value": _get_api_base_url(ctx.obj)})  # refactor
 
     if "TOGETHER_API_KEY" not in state.secrets:
         _set_secret(client, config, state, "TOGETHER_API_KEY", ctx.obj.api_key, "Auth key for queue API")
