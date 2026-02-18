@@ -24,7 +24,7 @@ import click
 from together import Together
 from together._exceptions import APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
-from together.types.beta.deployment import Deployment
+from together.types.beta.deployment import Deployment, ReplicaEvents
 from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
@@ -906,16 +906,15 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
     click.echo("\N{CHECK MARK} Final image with cache built")
 
 
-def _get_current_revision_id(deployment: Any) -> str:
+def _get_current_revision_id(d: Deployment) -> str:
     """Extract current revision ID from deployment environment variables."""
-    env_vars: list[Any] = deployment.environment_variables or []
-    for env_var in env_vars:
-        if env_var.name == "TOGETHER_DEPLOYMENT_REVISION_ID":
-            return str(env_var.value)
+    for var in d.environment_variables or []:
+        if var.name == "TOGETHER_DEPLOYMENT_REVISION_ID":
+            return str(var.value)
     return ""
 
 
-def _print_replica_failure(event: Any) -> None:
+def _print_replica_failure(event: ReplicaEvents) -> None:
     """Print replica failure details."""
     if event.replica_status_reason:
         click.echo(f"  Reason: {event.replica_status_reason}")
@@ -928,21 +927,13 @@ def _fetch_and_print_logs(client: Together, deployment_name: str, replica_id: st
     click.echo(f"\n--- Logs for {replica_id} ---")
     try:
         response = client.beta.jig.retrieve_logs(deployment_name, replica_id=replica_id)
-        if hasattr(response, "lines") and response.lines:
-            for log_line in response.lines:
-                click.echo(log_line)
+        for log_line in response.lines or []:
+            click.echo(log_line)
         else:
             click.echo("No logs available")
     except Exception as e:
         click.echo(f"Failed to fetch logs: {e}")
     click.echo("--- End of logs ---\n")
-
-
-def _is_volume_preload_done(event: Any) -> bool:
-    """Check if volume preload is complete or not applicable."""
-    if not event.volume_preload_status:
-        return True  # No volume preload
-    return bool(event.volume_preload_completed_at)
 
 
 class ReplicaTrackingResult(str, Enum):
@@ -955,7 +946,7 @@ class ReplicaTrackingResult(str, Enum):
 
 def _process_replica_event(
     replica_id: str,
-    event: Any,
+    event: ReplicaEvents,
     states: set[str],
     replica_ready_wait_start: dict[str, float],
     ready_timeout: float,
@@ -966,7 +957,7 @@ def _process_replica_event(
 
     Updates `states` and `replica_ready_wait_start` as side effects.
     """
-    volume_done = _is_volume_preload_done(event)
+    volume_done = not event.volume_preload_status or bool(event.volume_preload_completed_at)
 
     # Track volume preload progress
     if event.volume_preload_status:
@@ -1000,11 +991,9 @@ def _process_replica_event(
 
     # Check for stuck in Running state without becoming ready
     if event.replica_status == "Running" and volume_done:
-        if replica_id not in replica_ready_wait_start:
-            replica_ready_wait_start[replica_id] = time.time()
-
-        wait_duration = time.time() - replica_ready_wait_start[replica_id]
-        if wait_duration > ready_timeout:
+        # If wait start time is not set, set it to now
+        wait_start = replica_ready_wait_start.setdefault(replica_id, time.time())
+        if time.time() - wait_start > ready_timeout:
             click.echo(
                 f"\N{CROSS MARK}  [{replica_id}] Container is running but "
                 f"not ready to serve requests after {ready_timeout} seconds"
