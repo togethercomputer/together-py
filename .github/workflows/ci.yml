@@ -30,6 +30,9 @@ jobs:
       - name: Run lints
         run: ./scripts/lint
 
+      - name: Run formatting
+        run: uv run ruff format --check
+
   build:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     timeout-minutes: 10
