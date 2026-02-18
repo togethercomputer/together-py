@@ -176,13 +176,13 @@ class Config:
             if not found_path.exists():
                 click.echo(f"ERROR: Configuration file not found: {config_path}", err=True)
                 sys.exit(1)
-            return cls.load(tomllib.load(found_path.open("rb")), found_path)
+            return cls.load(tomllib.loads(found_path.read_text()), found_path)
 
         if (jigfile := Path("jig.toml")).exists():
-            return cls.load(tomllib.load(jigfile.open("rb")), jigfile)
+            return cls.load(tomllib.loads(jigfile.read_text()), jigfile)
 
         if (pyproject_path := Path("pyproject.toml")).exists():
-            data = tomllib.load(pyproject_path.open("rb"))
+            data = tomllib.loads(pyproject_path.read_text())
             if "tool" in data and "jig" in data["tool"]:
                 return cls.load(data, pyproject_path)
 
@@ -1106,8 +1106,7 @@ description = "My model deployment"
 gpu_type = "h100-80gb"
 gpu_count = 1
 """
-    with open(pyproject, "w") as f:
-        f.write(content)
+    pyproject.write_text(content)
     click.echo("\N{CHECK MARK} Created pyproject.toml")
     click.echo("  Edit the configuration and run 'jig deploy'")
 
@@ -1209,7 +1208,7 @@ def _is_not_unique_error(e: APIStatusError) -> bool:
     # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
     # "failed to delete deployment from kubernetes: %w"
     # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-    msg = e.body.get("error", "") if isinstance(e.body, dict) else "" # type: ignore
+    msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
     return "already exists" in msg
 
 
