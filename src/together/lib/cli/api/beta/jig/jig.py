@@ -104,10 +104,10 @@ class DeployConfig:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
-        deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
-        if isinstance((mounts := deploy_config.get("volume_mounts")), list):
-            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]  # pyright: ignore
-        return cls(**deploy_config)
+        cfg = {k: v for k, v in data.items() if k in cls.__annotations__}
+        if isinstance((mounts := cfg.get("volume_mounts")), list):
+            cfg["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]  # pyright: ignore
+        return cls(**cfg)
 
 
 def validate(value: Any, value_type: type, path: str = "") -> str | None:
@@ -220,7 +220,7 @@ class Config:
             jig_config["deploy"]["autoscaling"] = autoscaling
 
         # Support volume_mounts at jig level (merge into deploy config)
-        jig_config["deploy"]["volume_mounts"] = jig_config.get("volume_mounts", [])
+        jig_config.setdefault("deploy", {})["volume_mounts"] = jig_config.get("volume_mounts", [])
 
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
@@ -390,7 +390,7 @@ def format_deployment_status(d: Deployment) -> str:
             for replica_id, replica in group:
                 events_status += f"  {replica_id}: "
                 if replica.volume_preload_status and not replica.volume_preload_completed_at:
-                    events_status += f"Volume Preloading"
+                    events_status += "Volume Preloading"
                 else:
                     events_status += f"{replica.replica_status}"
                     if replica.replica_status == "Running":
@@ -525,7 +525,7 @@ def secrets_list(
 
         if in_local and in_remote:
             status = click.style("synced", fg="green")
-        elif in_local and not in_remote:
+        elif in_local:
             status = click.style("local only", fg="yellow")
         else:
             status = click.style("remote only", fg="yellow")
@@ -537,14 +537,17 @@ def secrets_list(
 # --- File upload ---
 
 
+def _validate_source(p: Path) -> None:
+    if not p.exists():
+        raise ValueError(f"Source path does not exist: {p}")
+    if not p.is_dir():
+        raise ValueError(f"Source path must be a directory: {p}")
+
+
 async def _create_volume(client: Together, name: str, source: str) -> None:
     """Create a volume and upload files"""
     source_path = Path(source)
-    if not source_path.exists():
-        raise ValueError(f"Source path does not exist: {source}")
-    if not source_path.is_dir():
-        raise ValueError(f"Source path must be a directory: {source}")
-
+    _validate_source(source_path)
     source_prefix = f"{name}/{source_path.name}"
 
     click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
@@ -573,11 +576,7 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
 async def _update_volume(client: Together, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     source_path = Path(source)
-    if not source_path.exists():
-        raise ValueError(f"Source path does not exist: {source}")
-    if not source_path.is_dir():
-        raise ValueError(f"Source path must be a directory: {source}")
-
+    validate_source(source_path)
     try:
         client.beta.jig.volumes.retrieve(name)
     except APIStatusError as e:
@@ -1032,7 +1031,8 @@ def _track_deployment_progress(deployment_name: str, client: Together) -> dict[s
 
     start_time = time.time()
     printed_states: dict[str, set[str]] = {}  # replica_id -> set of printed states
-    replica_ready_wait_start: dict[str, float] = {}  # replica_id -> when we started waiting for ready
+    # replica_id -> when we started waiting for ready
+    replica_ready_wait_start: dict[str, float] = {}
 
     click.echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
 
