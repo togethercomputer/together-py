@@ -16,6 +16,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Union, Callable
 from pathlib import Path
 from datetime import datetime
+from functools import wraps
 from itertools import groupby
 from collections import defaultdict
 from dataclasses import field, asdict, dataclass, is_dataclass
@@ -24,7 +25,7 @@ from urllib.parse import urlparse
 import click
 
 from together import Together
-from together._exceptions import APIStatusError
+from together._exceptions import APIError, APIStatusError
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.deployment import Deployment, ReplicaEvents
 from together.resources.beta.jig.jig import JigResource
@@ -894,7 +895,7 @@ class Tracker:
     # replica_id -> when we started waiting for ready
     replica_wait_start: dict[str, float] = field(default_factory=lambda: defaultdict(time.time))
 
-    def track_deployment_progress(self) -> dict[str, Any] | None:
+    def track_deployment_progress(self) -> None:
         """Track deployment progress until ready or failed.
 
         Polls deployment status every 3 seconds until:
@@ -914,7 +915,7 @@ class Tracker:
                 if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
                     if str(deployment.status) == "ScaledToZero":
                         click.echo("\N{CHECK MARK} Deployment scaled to zero replicas")
-                        return None
+                        return
                     # Not yet scaled to zero, wait and retry
                     time.sleep(self.poll_interval)
                     continue
@@ -938,7 +939,7 @@ class Tracker:
                     result = self.process_replica_event(replica_id=replica_id, event=event)
 
                     if result == ReplicaTrackingResult.SUCCESS:
-                        return None
+                        return
                     if result == ReplicaTrackingResult.FAILURE:
                         raise SystemExit(1)
 
@@ -1062,6 +1063,7 @@ class Jig:
         return f"{self.state.registry_base_path}/{self.config.model_name}:{tag}"
 
     def _image_with_digest(self, tag: str = "latest") -> str:
+        image_name = self._image(tag)
         if tag != "latest":
             return image_name
         try:
@@ -1167,7 +1169,7 @@ class Jig:
         detach: bool = False,
         docker_args: str | None = None,
         existing_image: str | None = None,
-    ) -> dict[str, Any] | None:
+    ) -> None:
         self._ensure_registry()
 
         if existing_image:
@@ -1179,7 +1181,7 @@ class Jig:
 
         if build_only:
             click.echo("\N{CHECK MARK} Build complete (--build-only)")
-            return None
+            return
 
         deploy_data = self._build_deploy_data(deployment_image)
 
@@ -1209,14 +1211,15 @@ class Jig:
                 raise
 
         if detach:
-            return response.model_dump()
+            click.echo(json.dumps(response.model_dump(), indent=2))
+            return
 
         new_revision_id = _get_current_revision_id(response)
         scaling_up = was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
         if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
-            return None
+            return
 
-        return Tracker(self.jig, self.config.model_name).track_deployment_progress()
+        Tracker(self.jig, self.config.model_name).track_deployment_progress()
 
     # == Query commands ==
 
@@ -1255,8 +1258,8 @@ class Jig:
         self.jig.destroy(self.config.model_name)
         click.echo(f"\N{WASTEBASKET} Destroyed {self.config.model_name}")
 
-    def submit(self, prompt: str | None, payload: str | None, watch: bool) -> int | None:
-        """Submit a job. Returns exit code if non-zero, else None."""
+    def submit(self, prompt: str | None, payload: str | None, watch: bool) -> None:
+        """Submit a job and optionally watch for completion."""
         if not prompt and not payload:
             raise click.UsageError("Either --prompt or --payload required")
 
@@ -1273,7 +1276,7 @@ class Jig:
         click.echo(submit_response.model_dump_json(indent=2))
 
         if not watch or not submit_response.request_id:
-            return None
+            return
 
         click.echo(f"\nWatching job {submit_response.request_id}...")
         last_status: str | None = None
@@ -1289,13 +1292,15 @@ class Jig:
                     last_status = current_status
 
                 if current_status in ["done", "failed", "finished", "error", "canceled"]:
-                    return 1 if current_status != "done" else None
+                    if current_status != "done":
+                        raise SystemExit(1)
+                    return
 
                 time.sleep(1)
 
             except KeyboardInterrupt:
                 click.echo(f"\nStopped watching {submit_response.request_id}")
-                return 130
+                raise SystemExit(130) from None
 
     def job_status(self, request_id: str) -> None:
         response = self.jig.queue.retrieve(
@@ -1313,11 +1318,27 @@ class Jig:
 
 
 def _jig_options(f: Callable[..., Any]) -> Any:
-    """Bundles @click.pass_context + @handle_api_errors("Jig") + @config_option."""
-    f = config_option(f)
-    f = handle_api_errors("Jig")(f)
-    f = click.pass_context(f)
-    return f
+    """Bundles @click.pass_context + error handling + @config_option."""
+
+    @click.pass_context
+    @config_option
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        try:
+            f(*args, **kwargs)
+        except click.Abort:
+            raise SystemExit(0) from None
+        except click.ClickException:
+            raise
+        except APIError as e:
+            msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
+            click.echo(msg, err=True)
+            raise SystemExit(1) from None
+        except Exception as e:
+            click.echo(str(e), err=True)
+            raise SystemExit(1) from None
+
+    return wrapper
 
 
 @click.command()
@@ -1447,8 +1468,7 @@ def destroy(ctx: click.Context, config_path: str | None) -> None:
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
 def submit(ctx: click.Context, prompt: str | None, payload: str | None, watch: bool, config_path: str | None) -> None:
     """Submit a job to the deployment"""
-    if exit_code := Jig(ctx.obj, config_path).submit(prompt, payload, watch):
-        ctx.exit(exit_code)
+    Jig(ctx.obj, config_path).submit(prompt, payload, watch)
 
 
 @click.command()
