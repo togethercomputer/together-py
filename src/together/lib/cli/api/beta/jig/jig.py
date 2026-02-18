@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Union, Callable
 from pathlib import Path
 from datetime import datetime
 from itertools import groupby
+from collections import defaultdict
 from dataclasses import field, asdict, dataclass, is_dataclass
 from urllib.parse import urlparse
 
@@ -337,21 +338,18 @@ def format_deployment_status(d: Deployment) -> str:
     )
 
     if d.autoscaling:
-        autoscaling_status = (
+        status += (
             f"\n  Autoscaling: {d.autoscaling.get('metric', 'N/A')} {d.autoscaling.get('target', 'N/A')}(target)\n"
         )
-        status += autoscaling_status
 
-    replica_status = (
+    status += (
         "\n"
         f"  Replicas:\n"
         f"    {'Min/Max':<16}: {d.min_replicas}/{d.max_replicas}\n"
         f"    {'Ready/Desired':<16}: {d.ready_replicas}/{d.desired_replicas}\n"
     )
 
-    status += replica_status
-
-    config_status = (
+    status += (
         f"\nConfiguration:\n"
         f"  Port: {d.port}\n"
         f"  Command: {d.command}\n"
@@ -361,26 +359,24 @@ def format_deployment_status(d: Deployment) -> str:
     )
 
     if d.gpu_count and d.gpu_type:
-        config_status += f"  GPU: {d.gpu_count}x {d.gpu_type}\n"
+        status += f"  GPU: {d.gpu_count}x {d.gpu_type}\n"
 
     if d.volumes:
-        config_status += f"\n  Volumes:\n    {'NAME':<28} MOUNT_PATH\n"
+        status += f"\n  Volumes:\n    {'NAME':<28} MOUNT_PATH\n"
         for vol in d.volumes:
-            config_status += f"    {vol.name:<28} {vol.mount_path}\n"
+            status += f"    {vol.name:<28} {vol.mount_path}\n"
 
     if d.environment_variables:
         secrets = [env for env in d.environment_variables if env.value_from_secret]
         env_vars = [env for env in d.environment_variables if not env.value_from_secret]
 
         if secrets:
-            config_status += f"\n  Secrets: {[secret.name for secret in secrets]}\n"
+            status += f"\n  Secrets: {[secret.name for secret in secrets]}\n"
 
         if env_vars:
-            config_status += f"\n  Environment Variables:\n    {'NAME':<40} VALUE\n"
+            status += f"\n  Environment Variables:\n    {'NAME':<40} VALUE\n"
             for env in env_vars:
-                config_status += f"    {env.name:<40} {env.value}\n"
-
-    status += config_status
+                status += f"    {env.name:<40} {env.value}\n"
 
     if d.replica_events:
         for replica in d.replica_events.values():
@@ -829,7 +825,7 @@ def _build_warm_image(base_image: str) -> None:
     The cache directory is mounted at /app/torch_cache and the user's code should set the
     appropriate env var (TORCHINDUCTOR_CACHE_DIR, TKCC_OUTPUT_DIR, etc.) to point there.
     """
-    cache_dir = Path(".") / WARMUP_DEST
+    cache_dir = Path(WARMUP_DEST)
     # Clean any existing cache
     try:
         shutil.rmtree(cache_dir)
@@ -844,7 +840,7 @@ def _build_warm_image(base_image: str) -> None:
     # Mount cache dir for compile artifacts
     cmd = ["docker", "run", "--rm", "--gpus", "all", "-e", "RUN_AND_EXIT=1"]
     cmd.extend(["-e", f"{WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"])
-    cmd.extend(["-v", f"{Path.cwd().absolute()}:/app"])
+    cmd.extend(["-v", f"{Path.cwd()}:/app"])
     # if MODEL_PRELOAD_PATH is set, also mount that (e.g. ~/.cache/huggingface)
     if weights_path := os.getenv("MODEL_PRELOAD_PATH"):
         cmd.extend(["-v", f"{weights_path}:{weights_path}"])
@@ -1004,7 +1000,7 @@ def _track_deployment_progress(deployment_name: str, client: JigResource) -> dic
     ready_timeout = 120  # 2 minutes for Running without ready_since
 
     start_time = time.time()
-    printed_states: dict[str, set[str]] = {}  # replica_id -> set of printed states
+    printed_states: dict[str, set[str]] = defaultdict(set)  # replica_id -> set of printed states
     # replica_id -> when we started waiting for ready
     replica_ready_wait_start: dict[str, float] = {}
 
@@ -1039,9 +1035,6 @@ def _track_deployment_progress(deployment_name: str, client: JigResource) -> dic
                 continue
 
             for replica_id, event in relevant_replicas.items():
-                if replica_id not in printed_states:
-                    printed_states[replica_id] = set()
-
                 result = _process_replica_event(
                     replica_id=replica_id,
                     event=event,
@@ -1216,8 +1209,8 @@ def _is_not_unique_error(e: APIStatusError) -> bool:
     # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
     # "failed to delete deployment from kubernetes: %w"
     # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-    error_message = error_body.get("error", "") if isinstance(e.body, dict) else ""
-    return "already exists" in error_message or "must be unique" in error_message
+    msg = e.body.get("error", "") if isinstance(e.body, dict) else "" # type: ignore
+    return "already exists" in msg
 
 
 @jig_command
@@ -1324,7 +1317,6 @@ def deploy(
         try:
             response = client.deploy(**deploy_data)
             click.echo(f"\N{CHECK MARK} Deployed: {config.model_name}")
-            return response
         except APIStatusError as e:
             if _is_not_unique_error(e):
                 raise RuntimeError(f"Deployment name must be unique. Tip: {config._unique_name_tip}") from None
