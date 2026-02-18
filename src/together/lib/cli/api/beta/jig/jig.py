@@ -133,7 +133,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
                 return err
         return None
 
-    if origin is Union or origin is types.UnionType:
+    if origin is Union or origin is getattr(types, "UnionType", None):
         if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
             return None
         return f"{path}: expected {value_type}, got {type(value).__name__}"
@@ -420,23 +420,15 @@ def _set_secret(
     try:
         client.beta.jig.secrets.retrieve(deployment_secret_name)
         client.beta.jig.secrets.update(
-            deployment_secret_name,
-            name=deployment_secret_name,
-            description=description,
-            value=value,
+            deployment_secret_name, name=deployment_secret_name, description=description, value=value
         )
         click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
     except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo("\N{ROCKET} Creating new secret")
-            client.beta.jig.secrets.create(
-                name=deployment_secret_name,
-                value=value,
-                description=description,
-            )
-            click.echo(f"\N{CHECK MARK} Created secret: {name}")
-        else:
+        if e.status_code != 404:
             raise
+        click.echo("\N{ROCKET} Creating new secret")
+        client.beta.jig.secrets.create(name=deployment_secret_name, value=value, description=description)
+        click.echo(f"\N{CHECK MARK} Created secret: {name}")
 
     state.secrets[name] = deployment_secret_name
     state.save()
@@ -581,7 +573,7 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
     try:
         client.beta.jig.volumes.retrieve(name)
     except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
+        if e.status_code == 404:
             raise ValueError(f"Volume '{name}' does not exist") from e
         raise
 
@@ -591,10 +583,7 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
     await Uploader(client).upload_files(source_path, volume_name=name)
 
     click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
-    client.beta.jig.volumes.update(
-        name,
-        content={"type": "files", "source_prefix": source_prefix},
-    )
+    client.beta.jig.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
     click.echo("\N{CHECK MARK} Volume updated successfully")
 
 
@@ -653,10 +642,9 @@ def volumes_delete(
         client.beta.jig.volumes.delete(name)
         click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
     except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
+        if e.status_code != 404:
+            raise
+        click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
 
 
 @volumes.command("describe")
@@ -674,10 +662,9 @@ def volumes_describe(
         response = client.beta.jig.volumes.with_raw_response.retrieve(name)
         click.echo(json.dumps(response.json(), indent=2))
     except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
-            return
-        raise
+        if e.status_code != 404:
+            raise
+        click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
 
 
 @volumes.command("list")
@@ -769,7 +756,7 @@ CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
 
 def _get_files_to_copy(config: Config) -> list[str]:
-    """Get list of files to copy"""
+    """Combine explicitly copied files with git files if requested and valid"""
     files = set(config.image.copy)
     if config.image.auto_include_git:
         try:
@@ -1350,12 +1337,11 @@ def deploy(
         response = client.beta.jig.update(config.model_name, **deploy_data)
         click.echo("\N{CHECK MARK}  Applied new deployment configuration")
     except APIStatusError as e:
-        if hasattr(e, "status_code") and e.status_code == 404:
-            old_revision_id = ""
-            was_scaled_to_zero = False
-            response = handle_create()
-        else:
+        if e.status_code != 404:
             raise
+        old_revision_id = ""
+        was_scaled_to_zero = False
+        response = handle_create()
 
     if detach:
         return response.model_dump()
