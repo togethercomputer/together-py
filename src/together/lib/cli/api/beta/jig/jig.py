@@ -463,10 +463,9 @@ def secrets_set(
     config_path: str | None,
 ) -> None:
     """Set a secret (create or update)"""
-    client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent, config.model_name)
-    _set_secret(client, config, state, name, value, description)
+    _set_secret(ctx.obj, config, state, name, value, description)
 
 
 @secrets.command("unset")
@@ -505,31 +504,22 @@ def secrets_list(
 
     prefix = f"{config.model_name}-"
 
-    # Get remote secrets for this deployment
-    remote_response = client.beta.jig.secrets.list()
-    remote_secrets: set[str] = set()
-
-    if hasattr(remote_response, "data") and remote_response.data:
-        for secret in remote_response.data:
-            secret_name = getattr(secret, "name", None)
-            if secret_name and secret_name.startswith(prefix):
-                # Strip prefix to get local name
-                remote_secrets.add(secret_name[len(prefix) :])
-
-    # Get local secrets
     local_secrets = set(state.secrets.keys())
+    remote_secrets: set[str] = set()
+    # Get all remote secrets then filter for this deployment
+    for secret in client.beta.jig.secrets.list().data or []:
+        if (name := secret.name) and name.startswith(prefix):
+            # Strip prefix to get local name
+            remote_secrets.add(name.removeprefix(prefix))
 
-    # Combine all secrets
-    all_secrets = local_secrets | remote_secrets
-
-    if not all_secrets:
+    if not local_secrets and not remote_secrets:
         click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{config.model_name}'")
         return
 
     click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{config.model_name}':")
     click.echo()
 
-    for name in sorted(all_secrets):
+    for name in sorted(local_secrets | remote_secrets):
         in_local = name in local_secrets
         in_remote = name in remote_secrets
 
@@ -537,7 +527,7 @@ def secrets_list(
             status = click.style("synced", fg="green")
         elif in_local and not in_remote:
             status = click.style("local only", fg="yellow")
-        else:  # in_remote and not in_local
+        else:
             status = click.style("remote only", fg="yellow")
 
         click.echo(f"  - {name} [{status}]")
