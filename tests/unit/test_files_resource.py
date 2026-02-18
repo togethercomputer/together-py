@@ -47,7 +47,6 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
             "created_at": 1234567890,
             "filename": "valid.jsonl",
             "FileType": "jsonl",
-            "LineCount": 0,
             "purpose": "fine-tune",
             "object": "file",
             "Processed": True,
@@ -80,7 +79,6 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     assert response.bytes == len(content_bytes)
     assert response.created_at == 1234567890
     assert response.file_type == "jsonl"
-    assert response.line_count == 0
     assert response.object == "file"
     assert response.processed == True
     assert response.purpose == "fine-tune"
