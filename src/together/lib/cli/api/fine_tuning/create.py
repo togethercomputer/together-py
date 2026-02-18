@@ -42,7 +42,12 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 )
 @click.option("--model", "-m", type=str, help="Base model name")
 @click.option("--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for")
-@click.option("--validation-file", type=str, default="", help="Validation file ID from Files API or local path to a file to be uploaded.")
+@click.option(
+    "--validation-file",
+    type=str,
+    default="",
+    help="Validation file ID from Files API or local path to a file to be uploaded.",
+)
 @click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
 @click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
 @click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
@@ -240,7 +245,6 @@ def create(
     """Start fine-tuning"""
     client: Together = ctx.obj
 
-
     training_args: dict[str, Any] = dict(
         training_file=training_file,
         model=model,
@@ -357,7 +361,6 @@ def create(
         # Don't show price estimation for multimodal models yet
         confirm = True
 
-    
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idompotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
@@ -399,8 +402,6 @@ def create(
     )
 
     if confirm or click.confirm(confirmation_message, default=True, show_default=True):
-
-
         response = client.fine_tuning.create(
             **training_args,
             verbose=True,
