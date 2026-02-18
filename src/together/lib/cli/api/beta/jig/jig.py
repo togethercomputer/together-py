@@ -146,7 +146,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
 
     if not isinstance(value, value_type):
-        return f"{path}: expected {type(value).__name__}, got {value!r}"
+        return f"{path}: expected {value_type.__name__}, got {value!r}"  # pyright: ignore
     return None
 
 
@@ -209,7 +209,7 @@ class Config:
         else:
             jig_config = data
             if name := jig_config.get("name"):
-                tip = "update `name` in {path}"
+                tip = f"update `name` in {path}"
             else:
                 name = path.resolve().parent.name
                 tip = f"rename your folder or add `name` to {path}"
@@ -242,8 +242,8 @@ class State:
     _config_dir: Path
     _project_name: str
     registry_base_path: str = ""
-    secrets: dict[str, str] = field(default_factory=dict[str, str])
-    volumes: dict[str, str] = field(default_factory=dict[str, str])
+    secrets: dict[str, str] = field(default_factory=dict)
+    volumes: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
@@ -709,7 +709,7 @@ def _generate_dockerfile(config: Config) -> str:
     """Generate Dockerfile from config"""
     apt = ""
     if config.image.system_packages:
-        sys_pkgs = " ".join(config.image.system_packages or [])
+        sys_pkgs = " ".join(config.image.system_packages)
         apt = f"""RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
   apt-get update && \\
   DEBIAN_FRONTEND=noninteractive \\
@@ -843,7 +843,7 @@ def _ensure_registry_base_path(client: Together, state: State) -> None:
         response.raise_for_status()
         data = response.json()
         # Strip protocol prefix - Docker tags don't support URLs
-        state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("http://")
+        state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("https://")
         state.save()
 
 
@@ -926,9 +926,9 @@ def _fetch_and_print_logs(client: Together, deployment_name: str, replica_id: st
     """Fetch and print logs for a specific replica."""
     click.echo(f"\n--- Logs for {replica_id} ---")
     try:
-        response = client.beta.jig.retrieve_logs(deployment_name, replica_id=replica_id)
-        for log_line in response.lines or []:
-            click.echo(log_line)
+        if lines := client.beta.jig.retrieve_logs(deployment_name, replica_id=replica_id).lines:
+            for line in lines:
+                click.echo(line)
         else:
             click.echo("No logs available")
     except Exception as e:
@@ -1177,9 +1177,6 @@ def build(
     config_path: str | None,
 ) -> None:
     """Build container image"""
-    import os
-    import shlex as shlex_module
-
     client: Together = ctx.obj
     config = Config.find(config_path)
     state = State.load(config._path.parent, config.model_name)
@@ -1200,7 +1197,7 @@ def build(
     # Add extra docker args from flag or env
     extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
     if extra_args:
-        cmd.extend(shlex_module.split(extra_args))
+        cmd.extend(shlex.split(extra_args))
     if subprocess.run(cmd).returncode != 0:
         raise RuntimeError("Build failed")
 
@@ -1403,18 +1400,17 @@ def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
     config = Config.find(config_path)
 
     if not follow:
-        response = client.beta.jig.retrieve_logs(config.model_name)
-        if hasattr(response, "lines") and response.lines:
-            for log_line in response.lines:
-                click.echo(log_line)
+        if lines := client.beta.jig.retrieve_logs(config.model_name).lines:
+            for line in lines:
+                click.echo(line)
         else:
             click.echo("No logs available")
         return
 
     # Stream logs using SDK streaming response
     try:
-        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as streaming_response:
-            for line in streaming_response.iter_lines():
+        with client.beta.jig.with_streaming_response.retrieve_logs(config.model_name) as stream:
+            for line in stream.iter_lines():
                 if line:
                     for log_line in json.loads(line).get("lines", []):
                         click.echo(log_line)
