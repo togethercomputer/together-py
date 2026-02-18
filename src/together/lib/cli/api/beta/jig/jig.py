@@ -7,6 +7,7 @@ import sys
 import json
 import time
 import shlex
+import types
 import shutil
 import typing
 import asyncio
@@ -132,7 +133,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
                 return err
         return None
 
-    if origin is Union:
+    if origin is Union or origin is types.UnionType:
         if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
             return None
         return f"{path}: expected {value_type}, got {type(value).__name__}"
@@ -576,7 +577,7 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
 async def _update_volume(client: Together, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     source_path = Path(source)
-    validate_source(source_path)
+    _validate_source(source_path)
     try:
         client.beta.jig.volumes.retrieve(name)
     except APIStatusError as e:
@@ -914,7 +915,6 @@ def _get_current_revision_id(d: Deployment) -> str:
 
 
 def _print_replica_failure(event: ReplicaEvents) -> None:
-    """Print replica failure details."""
     if event.replica_status_reason:
         click.echo(f"  Reason: {event.replica_status_reason}")
     if event.replica_status_message:
@@ -922,7 +922,6 @@ def _print_replica_failure(event: ReplicaEvents) -> None:
 
 
 def _fetch_and_print_logs(client: Together, deployment_name: str, replica_id: str) -> None:
-    """Fetch and print logs for a specific replica."""
     click.echo(f"\n--- Logs for {replica_id} ---")
     try:
         if lines := client.beta.jig.retrieve_logs(deployment_name, replica_id=replica_id).lines:
