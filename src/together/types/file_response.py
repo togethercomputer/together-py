@@ -29,9 +29,6 @@ class FileResponse(BaseModel):
     file_type: FileType = FieldInfo(alias="FileType")
     """The type of the file such as `jsonl`, `csv`, or `parquet`."""
 
-    line_count: int = FieldInfo(alias="LineCount")
-    """The number of lines in the file."""
-
     object: Literal["file"]
     """The object type, which is always `file`."""
 
