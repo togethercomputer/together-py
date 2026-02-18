@@ -12,7 +12,7 @@ import typing
 import asyncio
 import subprocess
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Union, Callable, Optional
+from typing import TYPE_CHECKING, Any, Union, Callable
 from pathlib import Path
 from datetime import datetime
 from itertools import groupby
@@ -55,11 +55,11 @@ class ImageConfig:
     """Container image configuration from pyproject.toml"""
 
     python_version: str = "3.11"
-    system_packages: list[str] = field(default_factory=list[str])
-    environment: dict[str, str] = field(default_factory=dict[str, str])
-    run: list[str] = field(default_factory=list[str])
+    system_packages: list[str] = field(default_factory=list)
+    environment: dict[str, str] = field(default_factory=dict)
+    run: list[str] = field(default_factory=list)
     cmd: str = "python app.py"
-    copy: list[str] = field(default_factory=list[str])
+    copy: list[str] = field(default_factory=list)
     auto_include_git: bool = False
 
     @classmethod
@@ -95,12 +95,12 @@ class DeployConfig:
     min_replicas: int = 1
     max_replicas: int = 1
     port: int = 8000
-    environment_variables: dict[str, str] = field(default_factory=dict[str, str])
-    command: Optional[list[str]] = None
-    autoscaling: dict[str, str] = field(default_factory=dict[str, str])
+    environment_variables: dict[str, str] = field(default_factory=dict)
+    command: list[str] | None = None
+    autoscaling: dict[str, str] = field(default_factory=dict)
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
-    volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
+    volume_mounts: list[VolumeMount] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -166,7 +166,7 @@ class Config:
             raise click.UsageError(f"Invalid {self._path}: {err}")
 
     @classmethod
-    def find(cls, config_path: Optional[str] = None, init: bool = False) -> Config:
+    def find(cls, config_path: str | None = None, init: bool = False) -> Config:
         """Find specified config_path, pyproject.toml, or jig.toml"""
         if config_path:
             found_path = Path(config_path)
@@ -1029,7 +1029,7 @@ def _process_replica_event(
     return ReplicaTrackingResult.CONTINUE
 
 
-def _track_deployment_progress(deployment_name: str, client: Together) -> Optional[dict[str, Any]]:
+def _track_deployment_progress(deployment_name: str, client: Together) -> dict[str, Any] | None:
     """Track deployment progress until ready or failed.
 
     Polls deployment status every 3 seconds until:
@@ -1268,7 +1268,7 @@ def deploy(
     docker_args: str | None,
     existing_image: str | None,
     config_path: str | None,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Deploy model"""
     client: Together = ctx.obj
     config = Config.find(config_path)
