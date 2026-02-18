@@ -676,6 +676,11 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, capture_output=True, text=True, check=True)
 
 
+def _run_input(cmd: list[str], input: str) -> subprocess.CompletedProcess[str]:
+    """Run process with input"""
+    return subprocess.run(cmd, input=input, text=True)
+
+
 def _generate_dockerfile(config: Config) -> str:
     """Generate Dockerfile from config"""
     apt = ""
@@ -860,20 +865,15 @@ def _build_warm_image(base_image: str) -> None:
     click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
     # Generate cache dockerfile - copy cache to same location used during warmup
-    cache_dockerfile = Path("Dockerfile.cache")
-    dockerfile_content = f"""FROM {base_image}
+    final_dockerfile = f"""FROM {base_image}
 COPY {cache_dir.name} /app/{WARMUP_DEST}
 ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
-    cache_dockerfile.write_text(dockerfile_content)
 
     click.echo("\N{PACKAGE} Building final image with cache...")
-    final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image]
-    final_cmd.extend(["-f", str(cache_dockerfile), "."])
+    final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
 
-    if subprocess.run(final_cmd).returncode != 0:
-        cache_dockerfile.unlink(missing_ok=True)
+    if _run_input(final_cmd, input=final_dockerfile).returncode != 0:
         raise RuntimeError("Cache image build failed")
-    cache_dockerfile.unlink(missing_ok=True)
     click.echo("\N{CHECK MARK} Final image with cache built")
 
 
@@ -1185,8 +1185,8 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
     image = _get_image(state, config, tag)
 
     registry = state.registry_base_path.split("/")[0]
-    login_cmd = f"echo {client.api_key} | docker login {registry} --username user --password-stdin"
-    if subprocess.run(login_cmd, shell=True, capture_output=True).returncode != 0:
+    login_cmd = ["docker", "login", registry, "--username", "user", "--password-stdin"]
+    if _run_input(login_cmd, input=client.api_key).returncode != 0:
         raise RuntimeError("Registry login failed")
 
     click.echo(f"Pushing {image}")
