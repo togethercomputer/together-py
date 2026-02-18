@@ -1323,9 +1323,7 @@ def _jig_options(f: Callable[..., Any]) -> Any:
     def wrapper(*args: Any, **kwargs: Any) -> None:
         try:
             f(*args, **kwargs)
-        except click.Abort:
-            raise SystemExit(0) from None
-        except click.ClickException:
+        except (click.Abort, click.ClickException):
             raise
         except APIError as e:
             msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
