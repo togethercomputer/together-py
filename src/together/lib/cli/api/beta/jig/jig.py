@@ -23,6 +23,7 @@ from dataclasses import field, asdict, dataclass, is_dataclass
 from urllib.parse import urlparse
 
 import click
+from click.exceptions import Exit
 
 from together import Together
 from together._exceptions import APIError, APIStatusError
@@ -423,10 +424,10 @@ def _print_errors(f: Callable[..., Any]) -> Any:
         except APIError as e:
             msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
             click.echo(msg, err=True)
-            raise SystemExit(1) from None
+            raise Exit(1) from None
         except Exception as e:
             click.echo(str(e), err=True)
-            raise SystemExit(1) from None
+            raise Exit(1) from None
 
     return wrapper
 
@@ -516,9 +517,9 @@ def secrets_list(jig: Jig) -> None:
 
 def _validate_source(p: Path) -> None:
     if not p.exists():
-        raise ValueError(f"Source path does not exist: {p}")
+        raise click.BadParameter(f"Source path does not exist: {p}")
     if not p.is_dir():
-        raise ValueError(f"Source path must be a directory: {p}")
+        raise click.BadParameter(f"Source path must be a directory: {p}")
 
 
 async def _create_volume(client: JigResource, name: str, source: str) -> None:
@@ -736,14 +737,14 @@ def _get_files_to_copy(config: Config) -> list[str]:
     if config.image.auto_include_git:
         try:
             if _run(["git", "status", "--porcelain"]).stdout.strip():
-                raise RuntimeError("Git repository has uncommitted changes: auto_include_git not allowed.")
+                raise click.UsageError("Git repository has uncommitted changes: auto_include_git not allowed.")
             git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
             files.update(f for f in git_files if f and f != ".")
         except subprocess.CalledProcessError:
             pass
 
     if "." in files:
-        raise ValueError("Copying '.' is not allowed. Please enumerate specific files.")
+        raise click.UsageError("Copying '.' is not allowed. Please enumerate specific files.")
 
     return sorted(files)
 
@@ -925,7 +926,7 @@ class Tracker:
                     if result == ReplicaTrackingResult.SUCCESS:
                         return
                     if result == ReplicaTrackingResult.FAILURE:
-                        raise SystemExit(1)
+                        raise Exit(1)
 
                 time.sleep(self.poll_interval)
 
@@ -933,13 +934,13 @@ class Tracker:
             click.echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
             click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
             click.echo("Run 'jig status' to check current state.")
-            raise SystemExit(1)
+            raise Exit(1)
 
         except KeyboardInterrupt:
             click.echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
             click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
             click.echo("Run 'jig status' to check current state.")
-            raise SystemExit(130) from None
+            raise Exit(130) from None
 
     def process_replica_event(self, replica_id: str, event: ReplicaEvents) -> ReplicaTrackingResult:
         """Process a single replica event and return the tracking result."""
@@ -1263,14 +1264,14 @@ class Jig:
 
                 if current_status in ["done", "failed", "finished", "error", "canceled"]:
                     if current_status != "done":
-                        raise SystemExit(1)
+                        raise Exit(1)
                     return
 
                 time.sleep(1)
 
             except KeyboardInterrupt:
                 click.echo(f"\nStopped watching {submit_response.request_id}")
-                raise SystemExit(130) from None
+                raise Exit(130) from None
 
 
 # --- CLI Commands ---
