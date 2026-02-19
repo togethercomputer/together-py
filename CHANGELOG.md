@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.2.0 (2026-02-19)
+
+Full Changelog: [v2.1.1...v2.2.0](https://github.com/togethercomputer/together-py/compare/v2.1.1...v2.2.0)
+
+### Features
+
+* **cli:** Add json mode to `fine-tuning list --json` ([#269](https://github.com/togethercomputer/together-py/issues/269)) ([13d3551](https://github.com/togethercomputer/together-py/commit/13d35511bb039b3053ecf3e7a90c04e2e2d91237))
+* Improve file uploads and FT create flows with checksums ([#253](https://github.com/togethercomputer/together-py/issues/253)) ([3095b9a](https://github.com/togethercomputer/together-py/commit/3095b9af2ba564cefe6b64a7ee65450aacfbfa4c))
+* Update descriptions for endpoints ([70900c6](https://github.com/togethercomputer/together-py/commit/70900c6da2e8f60bfd0f70a5497cf41c18008ee5))
+
+
+### Bug Fixes
+
+* **cli:** fine-tuning create regression ([#270](https://github.com/togethercomputer/together-py/issues/270)) ([59d0c33](https://github.com/togethercomputer/together-py/commit/59d0c3399643c42e1c6ee9cf74c70aa99104218c))
+
+
+### Chores
+
+* Add documentation and changelog to project.urls ([#264](https://github.com/togethercomputer/together-py/issues/264)) ([7b9e574](https://github.com/togethercomputer/together-py/commit/7b9e5749e448042f548a0fbcd5db5ff5bfbb99d7))
+* Better jig deployment progress ([#242](https://github.com/togethercomputer/together-py/issues/242)) ([ba9c50a](https://github.com/togethercomputer/together-py/commit/ba9c50a8b9855ec95e871525a33932e46f470379))
+* **cli:** Improve messaging when attempting to cancel finetune that is not cancellable ([#268](https://github.com/togethercomputer/together-py/issues/268)) ([6502acc](https://github.com/togethercomputer/together-py/commit/6502acc911413abceff3870f620a2bed742e9b08))
+* configure new SDK language ([b312b50](https://github.com/togethercomputer/together-py/commit/b312b502fcff52aa3b877e03928ef6f5a34ed88a))
+* Fix various docstrings ([2e1bd13](https://github.com/togethercomputer/together-py/commit/2e1bd13a49a1ddeb717c072e3b4a4e4c1669f2de))
+* format all `api.md` files ([c16f892](https://github.com/togethercomputer/together-py/commit/c16f89205ebc2a371dfa468bfb9b3b1081e41a4f))
+* format files ([#266](https://github.com/togethercomputer/together-py/issues/266)) ([2a452df](https://github.com/togethercomputer/together-py/commit/2a452df565a93a32963c615a5be3eb23a2e6b713))
+* Refactor argument options with CLI file downloads ([#267](https://github.com/togethercomputer/together-py/issues/267)) ([642adbd](https://github.com/togethercomputer/together-py/commit/642adbda9f113bf815d63b90a9829367c4fac82e))
+* Remove broken field LineCount from FileResponse ([778a7d9](https://github.com/togethercomputer/together-py/commit/778a7d9e61f1f69feff51a5c908a1d2221e8133d))
+* Remove line_count field from files sdks/clis ([#265](https://github.com/togethercomputer/together-py/issues/265)) ([62c9da6](https://github.com/togethercomputer/together-py/commit/62c9da6efd0c8e8c5f686b45736b8765030e5e5f))
+* Revert adding mcp code. Code additions were unexpected. ([7a322f7](https://github.com/togethercomputer/together-py/commit/7a322f7f3388149418e3a576d93cb0017f5fdecd))
+* update mock server docs ([5bcfbdf](https://github.com/togethercomputer/together-py/commit/5bcfbdf4cd2ff84de834c8df0ecdccb18cac1e35))
+
 ## 2.1.1 (2026-02-12)
 
 Full Changelog: [v2.1.0...v2.1.1](https://github.com/togethercomputer/together-py/compare/v2.1.0...v2.1.1)
