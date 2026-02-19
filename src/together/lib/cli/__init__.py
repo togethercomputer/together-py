@@ -61,7 +61,7 @@ def main(
     """This is a sample CLI tool."""
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
-        setup_logging() # Must run this again here to allow the new logging configuration to take effect
+        setup_logging()  # Must run this again here to allow the new logging configuration to take effect
 
     try:
         ctx.obj = together.Together(

@@ -417,7 +417,7 @@ def create(
 
 
 def _check_path_exists(path_string: str) -> bool:
-    # Empty string is not considerd a path. 
+    # Empty string is not considerd a path.
     if path_string == "":
         return False
 

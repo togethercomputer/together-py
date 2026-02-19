@@ -8,6 +8,7 @@ from together.lib.utils.serializer import datetime_serializer
 
 NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed", "user_error"]
 
+
 @click.command()
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
@@ -18,7 +19,11 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     client: Together = ctx.obj
     job = client.fine_tuning.retrieve(fine_tune_id)
     if job.status in NON_CANCELLABLE_STATES:
-        click.echo(click.style(f"Fine-tuning: ", fg="blue") + f"Training is not currently cancellable. Current status is " + click.style(job.status, fg="yellow"))
+        click.echo(
+            click.style(f"Fine-tuning: ", fg="blue")
+            + f"Training is not currently cancellable. Current status is "
+            + click.style(job.status, fg="yellow")
+        )
         return
 
     if not quiet:
@@ -32,4 +37,3 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     response = client.fine_tuning.cancel(fine_tune_id)
 
     click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
-
