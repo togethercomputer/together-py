@@ -23,6 +23,7 @@ def list(ctx: click.Context, json: bool) -> None:
 
     if json:
         from json import dumps
+
         click.echo(dumps(response.model_dump(exclude_none=True), indent=2, default=datetime_serializer))
         return
 

@@ -358,7 +358,7 @@ class UploadManager(SyncAPIResource):
             raise FileTypeError(
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
-        
+
         checksum = _calculate_file_checksum(file)
 
         if file_size_gb > MULTIPART_THRESHOLD_GB:
@@ -755,7 +755,7 @@ class AsyncUploadManager(AsyncAPIResource):
             raise FileTypeError(
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
-        
+
         checksum = _calculate_file_checksum(file)
 
         if file_size_gb > MULTIPART_THRESHOLD_GB:
@@ -782,7 +782,7 @@ class AsyncUploadManager(AsyncAPIResource):
             raise FileTypeError(
                 f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
             )
-        
+
         redirect_url, file_id = await self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
@@ -1111,13 +1111,14 @@ def _calculate_file_checksum(file_path: Path, algorithm: str = "sha256", block_s
         return f"Error: Invalid algorithm name '{algorithm}'"
 
     # Open the file in binary read mode
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         # Read the file in chunks and update the hash object
-        for chunk in iter(lambda: f.read(block_size), b''):
+        for chunk in iter(lambda: f.read(block_size), b""):
             hasher.update(chunk)
 
     # Return the hexadecimal digest of the hash
     return hasher.hexdigest()
+
 
 class FileAlreadyExistsError(Exception):
     def __init__(self, file_id: str):
