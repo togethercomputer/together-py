@@ -431,7 +431,12 @@ def _handle_jig_errors(f: Callable[..., Any]) -> Any:
         except (Exit, click.Abort, click.ClickException):
             raise
         except APIError as e:
-            msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
+            body = e.body
+            if isinstance(body, dict):
+                err = body.get("error", body)
+                msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+            else:
+                msg = e.message
             jig_fail(msg)
             raise Exit(1) from None
         except JigError as e:
