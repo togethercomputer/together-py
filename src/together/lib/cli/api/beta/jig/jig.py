@@ -541,9 +541,7 @@ async def _create_volume(client: JigResource, name: str, source: str) -> None:
     click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
     try:
         volume_response = client.volumes.create(
-            name=name,
-            type="readOnly",
-            content={"type": "files", "source_prefix": source_prefix},
+            name=name, type="readOnly", content={"type": "files", "source_prefix": source_prefix}
         )
         click.echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
     except Exception as e:
@@ -599,8 +597,7 @@ def volumes(ctx: click.Context) -> None:
 @_handle_jig_errors
 def volumes_create(ctx: click.Context, name: str, source: str) -> None:
     """Create a volume and upload files"""
-    client: JigResource = ctx.obj.beta.jig
-    asyncio.run(_create_volume(client, name, source))
+    asyncio.run(_create_volume(ctx.obj.beta.jig, name, source))
 
 
 @volumes.command("update")
@@ -610,8 +607,7 @@ def volumes_create(ctx: click.Context, name: str, source: str) -> None:
 @_handle_jig_errors
 def volumes_update(ctx: click.Context, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
-    client: JigResource = ctx.obj.beta.jig
-    asyncio.run(_update_volume(client, name, source))
+    asyncio.run(_update_volume(ctx.obj.beta.jig, name, source))
 
 
 @volumes.command("delete")
@@ -620,10 +616,8 @@ def volumes_update(ctx: click.Context, name: str, source: str) -> None:
 @_handle_jig_errors
 def volumes_delete(ctx: click.Context, name: str) -> None:
     """Delete a volume"""
-    client: JigResource = ctx.obj.beta.jig
-
     try:
-        client.volumes.delete(name)
+        ctx.obj.beta.jig.volumes.delete(name)
         click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
     except APIStatusError as e:
         if e.status_code != 404:
@@ -637,10 +631,8 @@ def volumes_delete(ctx: click.Context, name: str) -> None:
 @_handle_jig_errors
 def volumes_describe(ctx: click.Context, name: str) -> None:
     """Describe a volume"""
-    client: JigResource = ctx.obj.beta.jig
-
     try:
-        response = client.volumes.with_raw_response.retrieve(name)
+        response = ctx.obj.beta.jig.volumes.with_raw_response.retrieve(name)
         click.echo(json.dumps(response.json(), indent=2))
     except APIStatusError as e:
         if e.status_code != 404:
@@ -653,8 +645,7 @@ def volumes_describe(ctx: click.Context, name: str) -> None:
 @_handle_jig_errors
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
-    client: JigResource = ctx.obj.beta.jig
-    response = client.volumes.with_raw_response.list()
+    response = ctx.obj.beta.jig.volumes.with_raw_response.list()
     click.echo(json.dumps(response.json(), indent=2))
 
 
