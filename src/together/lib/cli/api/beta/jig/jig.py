@@ -422,7 +422,7 @@ def jig_fail(msg: str) -> None:
     click.echo(prefix + click.style(msg, fg="red"), err=True)
 
 
-def _print_errors(f: Callable[..., Any]) -> Any:
+def _handle_jig_errors(f: Callable[..., Any]) -> Any:
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> None:
         try:
@@ -445,7 +445,8 @@ def _print_errors(f: Callable[..., Any]) -> Any:
     return wrapper
 
 
-def _pass_jig(f: Callable[..., Any]) -> Any:
+def _jig_command(f: Callable[..., Any]) -> Any:
+    @_handle_jig_errors
     @click.pass_context
     @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
     @wraps(f)
@@ -463,8 +464,7 @@ def secrets(ctx: click.Context) -> None:
 
 
 @secrets.command("set")
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--name", required=True, help="Secret name")
 @click.option("--value", required=True, help="Secret value")
 @click.option("--description", default="", help="Secret description")
@@ -474,8 +474,7 @@ def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
 
 
 @secrets.command("unset")
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--name", required=True, help="Secret name to remove")
 def secrets_unset(jig: Jig, name: str) -> None:
     """Remove a secret from both remote and local state"""
@@ -488,8 +487,7 @@ def secrets_unset(jig: Jig, name: str) -> None:
 
 
 @secrets.command("list")
-@_pass_jig
-@_print_errors
+@_jig_command
 def secrets_list(jig: Jig) -> None:
     """List all secrets with sync status"""
     prefix = f"{jig.config.model_name}-"
@@ -598,7 +596,7 @@ def volumes(ctx: click.Context) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="Source directory path")
-@_print_errors
+@_handle_jig_errors
 def volumes_create(ctx: click.Context, name: str, source: str) -> None:
     """Create a volume and upload files"""
     client: JigResource = ctx.obj.beta.jig
@@ -609,7 +607,7 @@ def volumes_create(ctx: click.Context, name: str, source: str) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="New source directory path")
-@_print_errors
+@_handle_jig_errors
 def volumes_update(ctx: click.Context, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     client: JigResource = ctx.obj.beta.jig
@@ -619,7 +617,7 @@ def volumes_update(ctx: click.Context, name: str, source: str) -> None:
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@_print_errors
+@_handle_jig_errors
 def volumes_delete(ctx: click.Context, name: str) -> None:
     """Delete a volume"""
     client: JigResource = ctx.obj.beta.jig
@@ -636,11 +634,8 @@ def volumes_delete(ctx: click.Context, name: str) -> None:
 @volumes.command("describe")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@_print_errors
-def volumes_describe(
-    ctx: click.Context,
-    name: str,
-) -> None:
+@_handle_jig_errors
+def volumes_describe(ctx: click.Context, name: str) -> None:
     """Describe a volume"""
     client: JigResource = ctx.obj.beta.jig
 
@@ -655,7 +650,7 @@ def volumes_describe(
 
 @volumes.command("list")
 @click.pass_context
-@_print_errors
+@_handle_jig_errors
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: JigResource = ctx.obj.beta.jig
@@ -1323,8 +1318,7 @@ gpu_count = 1
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
     if _dockerfile(jig.config):
@@ -1335,8 +1329,7 @@ def dockerfile(jig: Jig) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
@@ -1346,8 +1339,7 @@ def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--tag", default="latest", help="Image tag")
 def push(jig: Jig, tag: str) -> None:
     """Push image to registry"""
@@ -1355,8 +1347,7 @@ def push(jig: Jig, tag: str) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
@@ -1377,8 +1368,7 @@ def deploy(
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 def status(jig: Jig, json_output: bool = False) -> None:
     """Get deployment status"""
@@ -1390,16 +1380,14 @@ def status(jig: Jig, json_output: bool = False) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 def endpoint(jig: Jig) -> None:
     """Get deployment endpoint URL"""
     click.echo(f"{_get_api_base_url(jig.together)}/v1/deployment-request/{jig.config.model_name}")
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--follow", is_flag=True, help="Follow log output")
 def logs(jig: Jig, follow: bool) -> None:
     """Get deployment logs"""
@@ -1407,8 +1395,7 @@ def logs(jig: Jig, follow: bool) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 def destroy(jig: Jig) -> None:
     """Destroy deployment"""
     jig.api.destroy(jig.config.model_name)
@@ -1416,8 +1403,7 @@ def destroy(jig: Jig) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
@@ -1427,8 +1413,7 @@ def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> No
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 @click.option("--request-id", required=True, help="Job request ID")
 def job_status(jig: Jig, request_id: str) -> None:
     """Get status of a specific job"""
@@ -1437,8 +1422,7 @@ def job_status(jig: Jig, request_id: str) -> None:
 
 
 @click.command()
-@_pass_jig
-@_print_errors
+@_jig_command
 def queue_status(jig: Jig) -> None:
     """Get queue metrics for the deployment"""
     response = jig.api.queue.with_raw_response.metrics(model=jig.config.model_name)
@@ -1446,7 +1430,7 @@ def queue_status(jig: Jig) -> None:
 
 
 @click.command("list")
-@_print_errors
+@_handle_jig_errors
 @click.pass_context
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
