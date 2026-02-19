@@ -413,7 +413,16 @@ def _set_secret(jig: Jig, name: str, value: str, description: str) -> None:
     jig.state.save()
 
 
-# should this have the same prefix behavior as handle_api_errors?
+class JigError(Exception):
+    """Actionable runtime error"""
+
+
+def jig_fail(msg: str) -> None:
+    prefix = click.style("Jig: ", fg="blue")
+    click.echo(prefix + click.style("Failed", fg="red"), err=True)
+    click.echo(prefix + click.style(msg, fg="red"), err=True)
+
+
 def _print_errors(f: Callable[..., Any]) -> Any:
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> None:
@@ -423,11 +432,16 @@ def _print_errors(f: Callable[..., Any]) -> Any:
             raise
         except APIError as e:
             msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
-            click.echo(msg, err=True)
+            fail(msg)
+            raise Exit(1) from None
+        except JigError as e:
+            fail(str(e))
             raise Exit(1) from None
         except Exception as e:
-            click.echo(str(e), err=True)
-            raise Exit(1) from None
+            if DEBUG:
+                raise
+            fail(f"Unexpected error: {e}")
+            raise click.exceptions.Exit(1) from None
 
     return wrapper
 
@@ -435,7 +449,6 @@ def _print_errors(f: Callable[..., Any]) -> Any:
 def _pass_jig(f: Callable[..., Any]) -> Any:
     @click.pass_context
     @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-    @_print_errors
     @wraps(f)
     def wrapper(ctx: click.Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
         f(Jig(ctx.obj, config_path), *args, **kwargs)
