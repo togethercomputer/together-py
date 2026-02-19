@@ -589,10 +589,12 @@ def volumes(ctx: click.Context) -> None:
     """Manage volumes"""
     pass
 
+volume_name_option = click.option("--name", required=True, help="Volume name")
+
 
 @volumes.command("create")
 @click.pass_context
-@click.option("--name", required=True, help="Volume name")
+@volume_name_option
 @click.option("--source", required=True, help="Source directory path")
 @_handle_jig_errors
 def volumes_create(ctx: click.Context, name: str, source: str) -> None:
@@ -602,7 +604,7 @@ def volumes_create(ctx: click.Context, name: str, source: str) -> None:
 
 @volumes.command("update")
 @click.pass_context
-@click.option("--name", required=True, help="Volume name")
+@volume_name_option
 @click.option("--source", required=True, help="New source directory path")
 @_handle_jig_errors
 def volumes_update(ctx: click.Context, name: str, source: str) -> None:
@@ -612,7 +614,7 @@ def volumes_update(ctx: click.Context, name: str, source: str) -> None:
 
 @volumes.command("delete")
 @click.pass_context
-@click.option("--name", required=True, help="Volume name")
+@volume_name_option
 @_handle_jig_errors
 def volumes_delete(ctx: click.Context, name: str) -> None:
     """Delete a volume"""
@@ -627,7 +629,7 @@ def volumes_delete(ctx: click.Context, name: str) -> None:
 
 @volumes.command("describe")
 @click.pass_context
-@click.option("--name", required=True, help="Volume name")
+@volume_name_option
 @_handle_jig_errors
 def volumes_describe(ctx: click.Context, name: str) -> None:
     """Describe a volume"""
@@ -1318,12 +1320,16 @@ def dockerfile(jig: Jig) -> None:
         msg = f"ERROR: {jig.config.dockerfile} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
         click.echo(msg, err=True)
 
+tag_option = click.option("--tag", default="latest", help="Image tag")
+warmup_option = click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
+docker_args_option = click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+build_options = lambda 
 
 @click.command()
 @_jig_command
-@click.option("--tag", default="latest", help="Image tag")
-@click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@tag_option
+@warmup_option
+@docker_args_option
 def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     """Build container image"""
     jig.build(tag, warmup, docker_args)
@@ -1331,7 +1337,7 @@ def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
 
 @click.command()
 @_jig_command
-@click.option("--tag", default="latest", help="Image tag")
+@tag_option
 def push(jig: Jig, tag: str) -> None:
     """Push image to registry"""
     jig.push(tag)
@@ -1339,10 +1345,10 @@ def push(jig: Jig, tag: str) -> None:
 
 @click.command()
 @_jig_command
-@click.option("--tag", default="latest", help="Image tag")
+@tag_option
 @click.option("--build-only", is_flag=True, help="Build and push only")
-@click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-@click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
+@warmup_option
+@docker_args_option
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
