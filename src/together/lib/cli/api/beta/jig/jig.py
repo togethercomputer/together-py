@@ -1020,7 +1020,7 @@ def _is_not_unique_error(e: APIStatusError) -> bool:
     # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
     # "failed to delete deployment from kubernetes: %w"
     # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-    msg = e.body.get("error", "") if isinstance(e.body, dict) else "" # type: ignore
+    msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
     return "already exists" in msg
 
 
@@ -1208,17 +1208,6 @@ class Jig:
 
     # == Query commands ==
 
-    def status(self, json_output: bool = False) -> None:
-        response = self.api.retrieve(self.config.model_name)
-        if json_output:
-            click.echo(response.model_dump_json(indent=2))
-        else:
-            click.echo(format_deployment_status(response))
-
-    def endpoint(self) -> None:
-        base = _get_api_base_url(self.together)
-        click.echo(f"{base}/v1/deployment-request/{self.config.model_name}")
-
     def logs(self, follow: bool = False) -> None:
         if not follow:
             if lines := self.api.retrieve_logs(self.config.model_name).lines:
@@ -1238,10 +1227,6 @@ class Jig:
             click.echo("\nStopped following logs")
         except Exception as e:
             click.echo(f"\nConnection ended: {e}")
-
-    def destroy(self) -> None:
-        self.api.destroy(self.config.model_name)
-        click.echo(f"\N{WASTEBASKET} Destroyed {self.config.model_name}")
 
     def submit(self, prompt: str | None, payload: str | None, watch: bool) -> None:
         """Submit a job and optionally watch for completion."""
@@ -1286,14 +1271,6 @@ class Jig:
             except KeyboardInterrupt:
                 click.echo(f"\nStopped watching {submit_response.request_id}")
                 raise SystemExit(130) from None
-
-    def job_status(self, request_id: str) -> None:
-        response = self.api.queue.retrieve(model=self.config.model_name, request_id=request_id)
-        click.echo(response.model_dump_json(indent=2))
-
-    def queue_status(self) -> None:
-        response = self.api.queue.with_raw_response.metrics(model=self.config.model_name)
-        click.echo(json.dumps(response.json(), indent=2))
 
 
 # --- CLI Commands ---
@@ -1393,7 +1370,11 @@ def deploy(
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 def status(jig: Jig, json_output: bool = False) -> None:
     """Get deployment status"""
-    jig.status(json_output)
+    response = jig.api.retrieve(jig.config.model_name)
+    if json_output:
+        click.echo(response.model_dump_json(indent=2))
+    else:
+        click.echo(format_deployment_status(response))
 
 
 @click.command()
@@ -1401,7 +1382,7 @@ def status(jig: Jig, json_output: bool = False) -> None:
 @_print_errors
 def endpoint(jig: Jig) -> None:
     """Get deployment endpoint URL"""
-    jig.endpoint()
+    click.echo(f"{_get_api_base_url(jig.together)}/v1/deployment-request/{jig.config.model_name}")
 
 
 @click.command()
@@ -1418,7 +1399,8 @@ def logs(jig: Jig, follow: bool) -> None:
 @_print_errors
 def destroy(jig: Jig) -> None:
     """Destroy deployment"""
-    jig.destroy()
+    jig.api.destroy(jig.config.model_name)
+    click.echo(f"\N{WASTEBASKET} Destroyed {jig.config.model_name}")
 
 
 @click.command()
@@ -1438,7 +1420,8 @@ def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> No
 @click.option("--request-id", required=True, help="Job request ID")
 def job_status(jig: Jig, request_id: str) -> None:
     """Get status of a specific job"""
-    jig.job_status(request_id)
+    response = jig.api.queue.retrieve(model=jig.config.model_name, request_id=request_id)
+    click.echo(response.model_dump_json(indent=2))
 
 
 @click.command()
@@ -1446,7 +1429,8 @@ def job_status(jig: Jig, request_id: str) -> None:
 @_print_errors
 def queue_status(jig: Jig) -> None:
     """Get queue metrics for the deployment"""
-    jig.queue_status()
+    response = jig.api.queue.with_raw_response.metrics(model=jig.config.model_name)
+    click.echo(json.dumps(response.json(), indent=2))
 
 
 @click.command("list")
