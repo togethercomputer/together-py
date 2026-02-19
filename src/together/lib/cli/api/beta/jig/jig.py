@@ -23,6 +23,7 @@ from dataclasses import field, asdict, dataclass, is_dataclass
 from urllib.parse import urlparse
 
 import click
+from click import Context, echo
 from click.exceptions import Exit
 
 from together import Together
@@ -206,7 +207,7 @@ class Config:
             else:
                 name = path.resolve().parent.name
                 tip = "rename your folder or add `project.name` to your pyproject.toml"
-                click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
+                echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
         else:
             jig_config = data
             if name := jig_config.get("name"):
@@ -214,7 +215,7 @@ class Config:
             else:
                 name = path.resolve().parent.name
                 tip = f"rename your folder or add `name` to {path}"
-                click.echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
+                echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
 
         if autoscaling := jig_config.get("autoscaling", {}):
             autoscaling["model"] = name
@@ -400,13 +401,13 @@ def _set_secret(jig: Jig, name: str, value: str, description: str) -> None:
     try:
         jig.api.secrets.retrieve(scoped_name)
         jig.api.secrets.update(id=scoped_name, name=scoped_name, description=description, value=value)
-        click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
+        echo(f"\N{CHECK MARK} Updated secret: '{name}'")
     except APIStatusError as e:
         if e.status_code != 404:
             raise
-        click.echo("\N{ROCKET} Creating new secret")
+        echo("\N{ROCKET} Creating new secret")
         jig.api.secrets.create(name=scoped_name, value=value, description=description)
-        click.echo(f"\N{CHECK MARK} Created secret: {name}")
+        echo(f"\N{CHECK MARK} Created secret: {name}")
 
     jig.state.secrets[name] = scoped_name
     jig.state.save()
@@ -418,8 +419,8 @@ class JigError(Exception):
 
 def jig_fail(msg: str) -> None:
     prefix = click.style("Jig: ", fg="blue")
-    click.echo(prefix + click.style("Failed", fg="red"), err=True)
-    click.echo(prefix + click.style(msg, fg="red"), err=True)
+    echo(prefix + click.style("Failed", fg="red"), err=True)
+    echo(prefix + click.style(msg, fg="red"), err=True)
 
 
 def _handle_jig_errors(f: Callable[..., Any]) -> Any:
@@ -450,7 +451,7 @@ def _jig_command(f: Callable[..., Any]) -> Any:
     @click.pass_context
     @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
     @wraps(f)
-    def wrapper(ctx: click.Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
+    def wrapper(ctx: Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
         f(Jig(ctx.obj, config_path), *args, **kwargs)
 
     return wrapper
@@ -458,7 +459,7 @@ def _jig_command(f: Callable[..., Any]) -> Any:
 
 @click.group()
 @click.pass_context
-def secrets(ctx: click.Context) -> None:
+def secrets(ctx: Context) -> None:
     """Manage deployment secrets"""
     pass
 
@@ -481,9 +482,9 @@ def secrets_unset(jig: Jig, name: str) -> None:
     try:
         del jig.state.secrets[name]
         jig.state.save()
-        click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
+        echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
     except KeyError:
-        click.echo(f"\N{CROSS MARK} Secret '{name}' is not set")
+        echo(f"\N{CROSS MARK} Secret '{name}' is not set")
 
 
 @secrets.command("list")
@@ -501,11 +502,11 @@ def secrets_list(jig: Jig) -> None:
             remote_secrets.add(name.removeprefix(prefix))
 
     if not local_secrets and not remote_secrets:
-        click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{jig.config.model_name}'")
+        echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{jig.config.model_name}'")
         return
 
-    click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{jig.config.model_name}':")
-    click.echo()
+    echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{jig.config.model_name}':")
+    echo()
 
     for name in sorted(local_secrets | remote_secrets):
         in_local = name in local_secrets
@@ -518,7 +519,7 @@ def secrets_list(jig: Jig) -> None:
         else:
             status = click.style("remote only", fg="yellow")
 
-        click.echo(f"  - {name} [{status}]")
+        echo(f"  - {name} [{status}]")
 
 
 # == Volumes ==
@@ -538,24 +539,24 @@ async def _create_volume(client: JigResource, name: str, source: str) -> None:
     _validate_source(source_path)
     source_prefix = f"{name}/{source_path.name}"
 
-    click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
+    echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
     try:
         volume_response = client.volumes.create(
             name=name, type="readOnly", content={"type": "files", "source_prefix": source_prefix}
         )
-        click.echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
+        echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
     except Exception as e:
         raise JigError(f"Failed to create volume: {e}") from e
 
     try:
         await Uploader(client._client).upload_files(source_path, volume_name=name)
     except Exception as e:
-        click.echo(f"\N{CROSS MARK} Upload failed: {e}")
-        click.echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
+        echo(f"\N{CROSS MARK} Upload failed: {e}")
+        echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
         try:
             client.volumes.delete(name)
         except Exception as cleanup_error:
-            click.echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
+            echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
         raise Exit(1) from None
 
 
@@ -572,12 +573,12 @@ async def _update_volume(client: JigResource, name: str, source: str) -> None:
 
     source_prefix = f"{name}/{source_path.name}"
 
-    click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
+    echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
     await Uploader(client._client).upload_files(source_path, volume_name=name)
 
-    click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
+    echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
     client.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
-    click.echo("\N{CHECK MARK} Volume updated successfully")
+    echo("\N{CHECK MARK} Volume updated successfully")
 
 
 # --- Volumes CLI Commands ---
@@ -585,9 +586,10 @@ async def _update_volume(client: JigResource, name: str, source: str) -> None:
 
 @click.group()
 @click.pass_context
-def volumes(ctx: click.Context) -> None:
+def volumes(ctx: Context) -> None:
     """Manage volumes"""
     pass
+
 
 volume_name_option = click.option("--name", required=True, help="Volume name")
 
@@ -597,7 +599,7 @@ volume_name_option = click.option("--name", required=True, help="Volume name")
 @volume_name_option
 @click.option("--source", required=True, help="Source directory path")
 @_handle_jig_errors
-def volumes_create(ctx: click.Context, name: str, source: str) -> None:
+def volumes_create(ctx: Context, name: str, source: str) -> None:
     """Create a volume and upload files"""
     asyncio.run(_create_volume(ctx.obj.beta.jig, name, source))
 
@@ -607,7 +609,7 @@ def volumes_create(ctx: click.Context, name: str, source: str) -> None:
 @volume_name_option
 @click.option("--source", required=True, help="New source directory path")
 @_handle_jig_errors
-def volumes_update(ctx: click.Context, name: str, source: str) -> None:
+def volumes_update(ctx: Context, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     asyncio.run(_update_volume(ctx.obj.beta.jig, name, source))
 
@@ -616,39 +618,39 @@ def volumes_update(ctx: click.Context, name: str, source: str) -> None:
 @click.pass_context
 @volume_name_option
 @_handle_jig_errors
-def volumes_delete(ctx: click.Context, name: str) -> None:
+def volumes_delete(ctx: Context, name: str) -> None:
     """Delete a volume"""
     try:
         ctx.obj.beta.jig.volumes.delete(name)
-        click.echo(f"\N{CHECK MARK} Deleted volume '{name}'")
+        echo(f"\N{CHECK MARK} Deleted volume '{name}'")
     except APIStatusError as e:
         if e.status_code != 404:
             raise
-        click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
+        echo(f"\N{CROSS MARK} Volume '{name}' not found")
 
 
 @volumes.command("describe")
 @click.pass_context
 @volume_name_option
 @_handle_jig_errors
-def volumes_describe(ctx: click.Context, name: str) -> None:
+def volumes_describe(ctx: Context, name: str) -> None:
     """Describe a volume"""
     try:
         response = ctx.obj.beta.jig.volumes.with_raw_response.retrieve(name)
-        click.echo(json.dumps(response.json(), indent=2))
+        echo(json.dumps(response.json(), indent=2))
     except APIStatusError as e:
         if e.status_code != 404:
             raise
-        click.echo(f"\N{CROSS MARK} Volume '{name}' not found")
+        echo(f"\N{CROSS MARK} Volume '{name}' not found")
 
 
 @volumes.command("list")
 @click.pass_context
 @_handle_jig_errors
-def volumes_list(ctx: click.Context) -> None:
+def volumes_list(ctx: Context) -> None:
     """List all volumes"""
     response = ctx.obj.beta.jig.volumes.with_raw_response.list()
-    click.echo(json.dumps(response.json(), indent=2))
+    echo(json.dumps(response.json(), indent=2))
 
 
 # == Main CLI ==
@@ -791,7 +793,7 @@ def _build_warm_image(base_image: str) -> None:
         pass
     cache_dir.mkdir(exist_ok=True)
 
-    click.echo("\N{FIRE} Running warmup to generate compile cache...")
+    echo("\N{FIRE} Running warmup to generate compile cache...")
 
     # Run container with GPU and RUN_AND_EXIT=1
     # Mount current dir as /app so warmup_inputs can reference local weights
@@ -805,7 +807,7 @@ def _build_warm_image(base_image: str) -> None:
         cmd.extend(["-e", f"MODEL_PRELOAD_PATH={weights_path}"])
     cmd.append(base_image)
 
-    click.echo(f"Running: {' '.join(cmd)}")
+    echo(f"Running: {' '.join(cmd)}")
     result = subprocess.run(cmd)
     if result.returncode != 0:
         raise JigError(f"Warmup failed with code {result.returncode}")
@@ -815,19 +817,19 @@ def _build_warm_image(base_image: str) -> None:
     if not cache_files:
         raise JigError("Warmup completed but no cache files were generated")
 
-    click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
+    echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
     # Generate cache dockerfile - copy cache to same location used during warmup
     final_dockerfile = f"""FROM {base_image}
 COPY {cache_dir.name} /app/{WARMUP_DEST}
 ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
 
-    click.echo("\N{PACKAGE} Building final image with cache...")
+    echo("\N{PACKAGE} Building final image with cache...")
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
 
     if _run(final_cmd, input=final_dockerfile).returncode != 0:
         raise JigError("Cache image build failed")
-    click.echo("\N{CHECK MARK} Final image with cache built")
+    echo("\N{CHECK MARK} Final image with cache built")
 
 
 def _get_current_revision_id(d: Deployment) -> str:
@@ -840,22 +842,22 @@ def _get_current_revision_id(d: Deployment) -> str:
 
 def _print_replica_failure(event: ReplicaEvents) -> None:
     if event.replica_status_reason:
-        click.echo(f"  Reason: {event.replica_status_reason}")
+        echo(f"  Reason: {event.replica_status_reason}")
     if event.replica_status_message:
-        click.echo(f"  Message: {event.replica_status_message}")
+        echo(f"  Message: {event.replica_status_message}")
 
 
 def _fetch_and_print_logs(client: JigResource, deployment_name: str, replica_id: str) -> None:
-    click.echo(f"\n--- Logs for {replica_id} ---")
+    echo(f"\n--- Logs for {replica_id} ---")
     try:
         if lines := client.retrieve_logs(deployment_name, replica_id=replica_id).lines:
             for line in lines:
-                click.echo(line)
+                echo(line)
         else:
-            click.echo("No logs available")
+            echo("No logs available")
     except Exception as e:
-        click.echo(f"Failed to fetch logs: {e}")
-    click.echo("--- End of logs ---\n")
+        echo(f"Failed to fetch logs: {e}")
+    echo("--- End of logs ---\n")
 
 
 class ReplicaTrackingResult(str, Enum):
@@ -890,7 +892,7 @@ class Tracker:
         """
         start_time = time.time()
 
-        click.echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
+        echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
 
         try:
             while time.time() - start_time < self.timeout:
@@ -899,7 +901,7 @@ class Tracker:
                 # Handle scale to zero - no replicas expected
                 if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
                     if str(deployment.status) == "ScaledToZero":
-                        click.echo("\N{CHECK MARK} Deployment scaled to zero replicas")
+                        echo("\N{CHECK MARK} Deployment scaled to zero replicas")
                         return
                     # Not yet scaled to zero, wait and retry
                     time.sleep(self.poll_interval)
@@ -931,15 +933,15 @@ class Tracker:
                 time.sleep(self.poll_interval)
 
             # Timeout reached
-            click.echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
-            click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
-            click.echo("Run 'jig status' to check current state.")
+            echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
+            echo(f"Deployment '{self.deployment_name}' may still be in progress.")
+            echo("Run 'jig status' to check current state.")
             raise Exit(1)
 
         except KeyboardInterrupt:
-            click.echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
-            click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
-            click.echo("Run 'jig status' to check current state.")
+            echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
+            echo(f"Deployment '{self.deployment_name}' may still be in progress.")
+            echo("Run 'jig status' to check current state.")
             raise Exit(130) from None
 
     def process_replica_event(self, replica_id: str, event: ReplicaEvents) -> ReplicaTrackingResult:
@@ -950,10 +952,10 @@ class Tracker:
         # Track volume preload progress
         if event.volume_preload_status:
             if "volume_preload_started" not in states:
-                click.echo(f"\N{PACKAGE} [{replica_id}] Preloading volume contents...")
+                echo(f"\N{PACKAGE} [{replica_id}] Preloading volume contents...")
                 states.add("volume_preload_started")
             elif volume_done and "volume_preload_completed" not in states:
-                click.echo(
+                echo(
                     f"\N{CHECK MARK}  [{replica_id}] Successfully preloaded volume contents. "
                     "Attaching the volume to the container..."
                 )
@@ -965,14 +967,14 @@ class Tracker:
 
         # Check if ready - SUCCESS
         if event.replica_status == "Running" and event.replica_ready_since:
-            click.echo(f"\N{CHECK MARK}  [{replica_id}] Container is running and ready")
-            click.echo("\N{ROCKET} Deployment successful!")
-            click.echo("Note: Additional replicas may still be scaling up.")
+            echo(f"\N{CHECK MARK}  [{replica_id}] Container is running and ready")
+            echo("\N{ROCKET} Deployment successful!")
+            echo("Note: Additional replicas may still be scaling up.")
             return ReplicaTrackingResult.SUCCESS
 
         # Check for CrashLoopBackOff
         if event.replica_status_reason == "CrashLoopBackOff":
-            click.echo(f"\N{CROSS MARK} [{replica_id}] Container is crash looping")
+            echo(f"\N{CROSS MARK} [{replica_id}] Container is crash looping")
             _print_replica_failure(event)
             _fetch_and_print_logs(self.client, self.deployment_name, replica_id)
             return ReplicaTrackingResult.FAILURE
@@ -981,13 +983,13 @@ class Tracker:
         if event.replica_status == "Running" and volume_done:
             # replica_wait_start will default to time.time()
             if time.time() - self.replica_wait_start[replica_id] > self.ready_timeout:
-                click.echo(
+                echo(
                     f"\N{CROSS MARK}  [{replica_id}] Container is running but "
                     f"not ready to serve requests after {self.ready_timeout} seconds"
                 )
                 _print_replica_failure(event)
                 _fetch_and_print_logs(self.client, self.deployment_name, replica_id)
-                click.echo(f"Deployment '{self.deployment_name}' may still be in progress.")
+                echo(f"Deployment '{self.deployment_name}' may still be in progress.")
                 return ReplicaTrackingResult.FAILURE
 
         # Print status updates deduplicated by status + reason
@@ -996,11 +998,11 @@ class Tracker:
             status_key = f"{event.replica_status}_{event.replica_status_reason}"
             if status_key not in states:
                 states.add(status_key)
-                click.echo(
+                echo(
                     f"\N{HOURGLASS WITH FLOWING SAND} [{replica_id}] {event.replica_status}: {event.replica_status_reason}"
                 )
                 if event.replica_status_message:
-                    click.echo(f"  {event.replica_status_message}")
+                    echo(f"  {event.replica_status_message}")
 
         return ReplicaTrackingResult.CONTINUE
 
@@ -1074,11 +1076,11 @@ class Jig:
         image = self._image(tag)
 
         if _dockerfile(self.config):
-            click.echo("\N{CHECK MARK} Generated Dockerfile")
+            echo("\N{CHECK MARK} Generated Dockerfile")
         else:
-            click.echo(f"\N{INFORMATION SOURCE} Using existing {self.config.dockerfile} (not managed by jig)")
+            echo(f"\N{INFORMATION SOURCE} Using existing {self.config.dockerfile} (not managed by jig)")
 
-        click.echo(f"Building {image}")
+        echo(f"Building {image}")
         cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
         if self.config.dockerfile != "Dockerfile":
             cmd.extend(["-f", self.config.dockerfile])
@@ -1089,7 +1091,7 @@ class Jig:
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build failed")
 
-        click.echo("\N{CHECK MARK} Built")
+        echo("\N{CHECK MARK} Built")
 
         if warmup:
             _build_warm_image(image)
@@ -1103,10 +1105,10 @@ class Jig:
         if _run(login_cmd, input=self.together.api_key).returncode != 0:
             raise JigError("Registry login failed")
 
-        click.echo(f"Pushing {image}")
+        echo(f"Pushing {image}")
         if subprocess.run(["docker", "push", image]).returncode != 0:
             raise JigError("Push failed")
-        click.echo("\N{CHECK MARK} Pushed")
+        echo("\N{CHECK MARK} Pushed")
 
     def _build_deploy_data(self, image: str) -> dict[str, Any]:
         """Build the deployment API payload."""
@@ -1165,30 +1167,30 @@ class Jig:
             deployment_image = self._image_with_digest(tag)
 
         if build_only:
-            click.echo("\N{CHECK MARK} Build complete (--build-only)")
+            echo("\N{CHECK MARK} Build complete (--build-only)")
             return
 
         deploy_data = self._build_deploy_data(deployment_image)
 
         if DEBUG:
-            click.echo(json.dumps(deploy_data, indent=2))
-        click.echo(f"Deploying model: {self.config.model_name}")
+            echo(json.dumps(deploy_data, indent=2))
+        echo(f"Deploying model: {self.config.model_name}")
 
         try:
             existing = self.api.retrieve(self.config.model_name)
             old_revision_id = _get_current_revision_id(existing)
             was_scaled_to_zero = existing.ready_replicas == 0
             response = self.api.update(self.config.model_name, **deploy_data)
-            click.echo("\N{CHECK MARK}  Applied new deployment configuration")
+            echo("\N{CHECK MARK}  Applied new deployment configuration")
         except APIStatusError as e:
             if e.status_code != 404:
                 raise
             old_revision_id = ""
             was_scaled_to_zero = False
-            click.echo("\N{ROCKET} Creating new deployment")
+            echo("\N{ROCKET} Creating new deployment")
             try:
                 response = self.api.deploy(**deploy_data)
-                click.echo(f"\N{CHECK MARK} Deployed: {self.config.model_name}")
+                echo(f"\N{CHECK MARK} Deployed: {self.config.model_name}")
             except APIStatusError as e:
                 if _is_not_unique_error(e):
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_tip}") from None
@@ -1196,7 +1198,7 @@ class Jig:
                 raise
 
         if detach:
-            click.echo(json.dumps(response.model_dump(), indent=2))
+            echo(json.dumps(response.model_dump(), indent=2))
             return
 
         new_revision_id = _get_current_revision_id(response)
@@ -1212,9 +1214,9 @@ class Jig:
         if not follow:
             if lines := self.api.retrieve_logs(self.config.model_name).lines:
                 for line in lines:
-                    click.echo(line)
+                    echo(line)
             else:
-                click.echo("No logs available")
+                echo("No logs available")
             return
 
         try:
@@ -1222,11 +1224,11 @@ class Jig:
                 for line in stream.iter_lines():
                     if line:
                         for log_line in json.loads(line).get("lines", []):
-                            click.echo(log_line)
+                            echo(log_line)
         except KeyboardInterrupt:
-            click.echo("\nStopped following logs")
+            echo("\nStopped following logs")
         except Exception as e:
-            click.echo(f"\nConnection ended: {e}")
+            echo(f"\nConnection ended: {e}")
 
     def submit(self, prompt: str | None, payload: str | None, watch: bool) -> None:
         """Submit a job and optionally watch for completion."""
@@ -1242,13 +1244,13 @@ class Jig:
         # Raw response due to Stainless limitation with Pydantic aliases
         submit_response = QueueSubmitResponse.model_validate_json(raw_response.read())
 
-        click.echo("\N{CHECK MARK} Submitted job")
-        click.echo(submit_response.model_dump_json(indent=2))
+        echo("\N{CHECK MARK} Submitted job")
+        echo(submit_response.model_dump_json(indent=2))
 
         if not watch or not submit_response.request_id:
             return
 
-        click.echo(f"\nWatching job {submit_response.request_id}...")
+        echo(f"\nWatching job {submit_response.request_id}...")
         last_status: str | None = None
         while True:
             try:
@@ -1258,7 +1260,7 @@ class Jig:
                 )
                 current_status = response.status
                 if current_status != last_status:
-                    click.echo(response.model_dump_json(indent=2))
+                    echo(response.model_dump_json(indent=2))
                     last_status = current_status
 
                 if current_status in ["done", "failed", "finished", "error", "canceled"]:
@@ -1269,7 +1271,7 @@ class Jig:
                 time.sleep(1)
 
             except KeyboardInterrupt:
-                click.echo(f"\nStopped watching {submit_response.request_id}")
+                echo(f"\nStopped watching {submit_response.request_id}")
                 raise Exit(130) from None
 
 
@@ -1280,7 +1282,7 @@ class Jig:
 def init() -> None:
     """Initialize jig configuration"""
     if (pyproject := Path("pyproject.toml")).exists():
-        click.echo("pyproject.toml already exists")
+        echo("pyproject.toml already exists")
         return
 
     content = """[project]
@@ -1306,8 +1308,8 @@ gpu_type = "h100-80gb"
 gpu_count = 1
 """
     pyproject.write_text(content)
-    click.echo("\N{CHECK MARK} Created pyproject.toml")
-    click.echo("  Edit the configuration and run 'jig deploy'")
+    echo("\N{CHECK MARK} Created pyproject.toml")
+    echo("  Edit the configuration and run 'jig deploy'")
 
 
 @click.command()
@@ -1315,15 +1317,18 @@ gpu_count = 1
 def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
     if _dockerfile(jig.config):
-        click.echo("\N{CHECK MARK} Generated Dockerfile")
+        echo("\N{CHECK MARK} Generated Dockerfile")
     else:
         msg = f"ERROR: {jig.config.dockerfile} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
-        click.echo(msg, err=True)
+        echo(msg, err=True)
+
 
 tag_option = click.option("--tag", default="latest", help="Image tag")
 warmup_option = click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-docker_args_option = click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
-build_options = lambda 
+docker_args_option = click.option(
+    "--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)"
+)
+
 
 @click.command()
 @_jig_command
@@ -1371,16 +1376,16 @@ def status(jig: Jig, json_output: bool = False) -> None:
     """Get deployment status"""
     response = jig.api.retrieve(jig.config.model_name)
     if json_output:
-        click.echo(response.model_dump_json(indent=2))
+        echo(response.model_dump_json(indent=2))
     else:
-        click.echo(format_deployment_status(response))
+        echo(format_deployment_status(response))
 
 
 @click.command()
 @_jig_command
 def endpoint(jig: Jig) -> None:
     """Get deployment endpoint URL"""
-    click.echo(f"{_get_api_base_url(jig.together)}/v1/deployment-request/{jig.config.model_name}")
+    echo(f"{_get_api_base_url(jig.together)}/v1/deployment-request/{jig.config.model_name}")
 
 
 @click.command()
@@ -1396,7 +1401,7 @@ def logs(jig: Jig, follow: bool) -> None:
 def destroy(jig: Jig) -> None:
     """Destroy deployment"""
     jig.api.destroy(jig.config.model_name)
-    click.echo(f"\N{WASTEBASKET} Destroyed {jig.config.model_name}")
+    echo(f"\N{WASTEBASKET} Destroyed {jig.config.model_name}")
 
 
 @click.command()
@@ -1415,7 +1420,7 @@ def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> No
 def job_status(jig: Jig, request_id: str) -> None:
     """Get status of a specific job"""
     response = jig.api.queue.retrieve(model=jig.config.model_name, request_id=request_id)
-    click.echo(response.model_dump_json(indent=2))
+    echo(response.model_dump_json(indent=2))
 
 
 @click.command()
@@ -1423,13 +1428,13 @@ def job_status(jig: Jig, request_id: str) -> None:
 def queue_status(jig: Jig) -> None:
     """Get queue metrics for the deployment"""
     response = jig.api.queue.with_raw_response.metrics(model=jig.config.model_name)
-    click.echo(json.dumps(response.json(), indent=2))
+    echo(json.dumps(response.json(), indent=2))
 
 
 @click.command("list")
 @_handle_jig_errors
 @click.pass_context
-def list_deployments(ctx: click.Context) -> None:
+def list_deployments(ctx: Context) -> None:
     """List all deployments"""
     response = ctx.obj.beta.jig.with_raw_response.list()
-    click.echo(json.dumps(response.json(), indent=2))
+    echo(json.dumps(response.json(), indent=2))
