@@ -428,20 +428,20 @@ def _print_errors(f: Callable[..., Any]) -> Any:
     def wrapper(*args: Any, **kwargs: Any) -> None:
         try:
             f(*args, **kwargs)
-        except (click.Abort, click.ClickException):
+        except (Exit, click.Abort, click.ClickException):
             raise
         except APIError as e:
             msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
-            fail(msg)
+            jig_fail(msg)
             raise Exit(1) from None
         except JigError as e:
-            fail(str(e))
+            jig_fail(str(e))
             raise Exit(1) from None
         except Exception as e:
             if DEBUG:
                 raise
-            fail(f"Unexpected error: {e}")
-            raise click.exceptions.Exit(1) from None
+            jig_fail(f"Unexpected error: {e}")
+            raise Exit(1) from None
 
     return wrapper
 
