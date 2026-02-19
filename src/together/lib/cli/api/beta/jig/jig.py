@@ -389,38 +389,57 @@ def format_deployment_status(d: Deployment) -> str:
     return status
 
 
-# == Shared CLI helpers ==
-
-config_option = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-
-
-def _load_config_state(config_path: str | None) -> tuple[Config, State]:
-    """Load config and state from config_path — shared by commands needing both."""
-    config = Config.find(config_path)
-    return config, State.load(config._path.parent, config.model_name)
-
-
 # = Secrets and Volumes subcommands =
 # == Secrets ==
 
 
-def _set_secret(client: JigResource, config: Config, state: State, name: str, value: str, description: str) -> None:
+def _set_secret(jig: Jig, name: str, value: str, description: str) -> None:
     """Set secret for the deployment"""
-    deployment_secret_name = f"{config.model_name}-{name}"
+    scoped_name = f"{jig.config.model_name}-{name}"
 
     try:
-        client.secrets.retrieve(deployment_secret_name)
-        client.secrets.update(deployment_secret_name, name=deployment_secret_name, description=description, value=value)
+        jig.api.secrets.retrieve(scoped_name)
+        jig.api.secrets.update(id=scoped_name, name=scoped_name, description=description, value=value)
         click.echo(f"\N{CHECK MARK} Updated secret: '{name}'")
     except APIStatusError as e:
         if e.status_code != 404:
             raise
         click.echo("\N{ROCKET} Creating new secret")
-        client.secrets.create(name=deployment_secret_name, value=value, description=description)
+        jig.api.secrets.create(name=scoped_name, value=value, description=description)
         click.echo(f"\N{CHECK MARK} Created secret: {name}")
 
-    state.secrets[name] = deployment_secret_name
-    state.save()
+    jig.state.secrets[name] = scoped_name
+    jig.state.save()
+
+
+# should this have the same prefix behavior as handle_api_errors?
+def _print_errors(f: Callable[..., Any]) -> Any:
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        try:
+            f(*args, **kwargs)
+        except (click.Abort, click.ClickException):
+            raise
+        except APIError as e:
+            msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
+            click.echo(msg, err=True)
+            raise SystemExit(1) from None
+        except Exception as e:
+            click.echo(str(e), err=True)
+            raise SystemExit(1) from None
+
+    return wrapper
+
+
+def _pass_jig(f: Callable[..., Any]) -> Any:
+    @click.pass_context
+    @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+    @_print_errors
+    @wraps(f)
+    def wrapper(ctx: click.Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
+        f(Jig(ctx.obj, config_path), *args, **kwargs)
+
+    return wrapper
 
 
 @click.group()
@@ -431,71 +450,50 @@ def secrets(ctx: click.Context) -> None:
 
 
 @secrets.command("set")
-@click.pass_context
+@_pass_jig
+@_print_errors
 @click.option("--name", required=True, help="Secret name")
 @click.option("--value", required=True, help="Secret value")
 @click.option("--description", default="", help="Secret description")
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_set(
-    ctx: click.Context,
-    name: str,
-    value: str,
-    description: str,
-    config_path: str | None,
-) -> None:
+def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
     """Set a secret (create or update)"""
-    config, state = _load_config_state(config_path)
-    _set_secret(ctx.obj.beta.jig, config, state, name, value, description)
+    _set_secret(jig, name, value, description)
 
 
 @secrets.command("unset")
-@click.pass_context
+@_pass_jig
+@_print_errors
 @click.option("--name", required=True, help="Secret name to remove")
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_unset(
-    ctx: click.Context,  # noqa: ARG001
-    name: str,
-    config_path: str | None,
-) -> None:
+def secrets_unset(jig: Jig, name: str) -> None:
     """Remove a secret from both remote and local state"""
-    _, state = _load_config_state(config_path)
-
-    if state.secrets.pop(name, ""):
-        state.save()
+    try:
+        del jig.state.secrets[name]
+        jig.state.save()
         click.echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
-    else:
+    except KeyError:
         click.echo(f"\N{CROSS MARK} Secret '{name}' is not set")
 
 
 @secrets.command("list")
-@click.pass_context
-@click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Secrets")
-def secrets_list(
-    ctx: click.Context,
-    config_path: str | None,
-) -> None:
+@_pass_jig
+@_print_errors
+def secrets_list(jig: Jig) -> None:
     """List all secrets with sync status"""
-    client: JigResource = ctx.obj.beta.jig
-    config, state = _load_config_state(config_path)
+    prefix = f"{jig.config.model_name}-"
 
-    prefix = f"{config.model_name}-"
-
-    local_secrets = set(state.secrets.keys())
+    local_secrets = set(jig.state.secrets.keys())
     remote_secrets: set[str] = set()
     # Get all remote secrets then filter for this deployment
-    for secret in client.secrets.list().data or []:
+    for secret in jig.api.secrets.list().data or []:
         if (name := secret.name) and name.startswith(prefix):
             # Strip prefix to get local name
             remote_secrets.add(name.removeprefix(prefix))
 
     if not local_secrets and not remote_secrets:
-        click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{config.model_name}'")
+        click.echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{jig.config.model_name}'")
         return
 
-    click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{config.model_name}':")
+    click.echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{jig.config.model_name}':")
     click.echo()
 
     for name in sorted(local_secrets | remote_secrets):
@@ -587,7 +585,7 @@ def volumes(ctx: click.Context) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="Source directory path")
-@handle_api_errors("Volumes")
+@handle_api_errors("Volumes")  # fixme
 def volumes_create(ctx: click.Context, name: str, source: str) -> None:
     """Create a volume and upload files"""
     client: JigResource = ctx.obj.beta.jig
@@ -598,7 +596,7 @@ def volumes_create(ctx: click.Context, name: str, source: str) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="New source directory path")
-@handle_api_errors("Volumes")
+@handle_api_errors("Volumes")  # fixme
 def volumes_update(ctx: click.Context, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     client: JigResource = ctx.obj.beta.jig
@@ -608,7 +606,7 @@ def volumes_update(ctx: click.Context, name: str, source: str) -> None:
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")
+@handle_api_errors("Volumes")  # fixme
 def volumes_delete(ctx: click.Context, name: str) -> None:
     """Delete a volume"""
     client: JigResource = ctx.obj.beta.jig
@@ -625,7 +623,7 @@ def volumes_delete(ctx: click.Context, name: str) -> None:
 @volumes.command("describe")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")
+@handle_api_errors("Volumes")  # fixme
 def volumes_describe(
     ctx: click.Context,
     name: str,
@@ -644,7 +642,7 @@ def volumes_describe(
 
 @volumes.command("list")
 @click.pass_context
-@handle_api_errors("Volumes")
+@handle_api_errors("Volumes")  # fixme
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: JigResource = ctx.obj.beta.jig
@@ -1022,7 +1020,7 @@ def _is_not_unique_error(e: APIStatusError) -> bool:
     # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
     # "failed to delete deployment from kubernetes: %w"
     # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-    msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
+    msg = e.body.get("error", "") if isinstance(e.body, dict) else "" # type: ignore
     return "already exists" in msg
 
 
@@ -1140,9 +1138,7 @@ class Jig:
         env_vars = [{"name": k, "value": v} for k, v in self.config.deploy.environment_variables.items()]
 
         if "TOGETHER_API_KEY" not in self.state.secrets:
-            _set_secret(
-                self.api, self.config, self.state, "TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API"
-            )
+            _set_secret(self, "TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
 
         for name, secret_id in self.state.secrets.items():
             env_vars.append({"name": name, "value_from_secret": secret_id})
@@ -1292,10 +1288,7 @@ class Jig:
                 raise SystemExit(130) from None
 
     def job_status(self, request_id: str) -> None:
-        response = self.api.queue.retrieve(
-            model=self.config.model_name,
-            request_id=request_id,
-        )
+        response = self.api.queue.retrieve(model=self.config.model_name, request_id=request_id)
         click.echo(response.model_dump_json(indent=2))
 
     def queue_status(self) -> None:
@@ -1304,28 +1297,6 @@ class Jig:
 
 
 # --- CLI Commands ---
-
-
-def _jig_options(f: Callable[..., Any]) -> Any:
-    """Bundles @click.pass_context + error handling + @config_option."""
-
-    @click.pass_context
-    @config_option
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> None:
-        try:
-            f(*args, **kwargs)
-        except (click.Abort, click.ClickException):
-            raise
-        except APIError as e:
-            msg = getattr(e.body, "message", str(e.body)) if e.body is not None else str(e)
-            click.echo(msg, err=True)
-            raise SystemExit(1) from None
-        except Exception as e:
-            click.echo(str(e), err=True)
-            raise SystemExit(1) from None
-
-    return wrapper
 
 
 @click.command()
@@ -1363,41 +1334,40 @@ gpu_count = 1
 
 
 @click.command()
-@config_option
-@handle_api_errors("Jig")
-def dockerfile(config_path: str | None) -> None:
+@_pass_jig
+@_print_errors
+def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
-    config = Config.find(config_path)
-    if _dockerfile(config):
+    if _dockerfile(jig.config):
         click.echo("\N{CHECK MARK} Generated Dockerfile")
     else:
-        click.echo(
-            f"ERROR: {config.dockerfile} exists and is not managed by jig. "
-            f"Remove or rename the file to allow jig to manage dockerfile.",
-            err=True,
-        )
+        msg = f"ERROR: {jig.config.dockerfile} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
+        click.echo(msg, err=True)
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
 @click.option("--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)")
-def build(ctx: click.Context, tag: str, warmup: bool, docker_args: str | None, config_path: str | None) -> None:
+def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     """Build container image"""
-    Jig(ctx.obj, config_path).build(tag, warmup, docker_args)
+    jig.build(tag, warmup, docker_args)
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--tag", default="latest", help="Image tag")
-def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
+def push(jig: Jig, tag: str) -> None:
     """Push image to registry"""
-    Jig(ctx.obj, config_path).push(tag)
+    jig.push(tag)
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--tag", default="latest", help="Image tag")
 @click.option("--build-only", is_flag=True, help="Build and push only")
 @click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
@@ -1405,76 +1375,82 @@ def push(ctx: click.Context, tag: str, config_path: str | None) -> None:
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
-    ctx: click.Context,
+    jig: Jig,
     tag: str,
     build_only: bool,
     warmup: bool,
     detach: bool,
     docker_args: str | None,
     existing_image: str | None,
-    config_path: str | None,
 ) -> None:
     """Deploy model"""
-    Jig(ctx.obj, config_path).deploy(tag, build_only, warmup, detach, docker_args, existing_image)
+    jig.deploy(tag, build_only, warmup, detach, docker_args, existing_image)
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
-def status(ctx: click.Context, config_path: str | None, json_output: bool = False) -> None:
+def status(jig: Jig, json_output: bool = False) -> None:
     """Get deployment status"""
-    Jig(ctx.obj, config_path).status(json_output)
+    jig.status(json_output)
 
 
 @click.command()
-@_jig_options
-def endpoint(ctx: click.Context, config_path: str | None) -> None:
+@_pass_jig
+@_print_errors
+def endpoint(jig: Jig) -> None:
     """Get deployment endpoint URL"""
-    Jig(ctx.obj, config_path).endpoint()
+    jig.endpoint()
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--follow", is_flag=True, help="Follow log output")
-def logs(ctx: click.Context, follow: bool, config_path: str | None) -> None:
+def logs(jig: Jig, follow: bool) -> None:
     """Get deployment logs"""
-    Jig(ctx.obj, config_path).logs(follow)
+    jig.logs(follow)
 
 
 @click.command()
-@_jig_options
-def destroy(ctx: click.Context, config_path: str | None) -> None:
+@_pass_jig
+@_print_errors
+def destroy(jig: Jig) -> None:
     """Destroy deployment"""
-    Jig(ctx.obj, config_path).destroy()
+    jig.destroy()
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
 @click.option("--watch", is_flag=True, help="Watch job status until completion")
-def submit(ctx: click.Context, prompt: str | None, payload: str | None, watch: bool, config_path: str | None) -> None:
+def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> None:
     """Submit a job to the deployment"""
-    Jig(ctx.obj, config_path).submit(prompt, payload, watch)
+    jig.submit(prompt, payload, watch)
 
 
 @click.command()
-@_jig_options
+@_pass_jig
+@_print_errors
 @click.option("--request-id", required=True, help="Job request ID")
-def job_status(ctx: click.Context, request_id: str, config_path: str | None) -> None:
+def job_status(jig: Jig, request_id: str) -> None:
     """Get status of a specific job"""
-    Jig(ctx.obj, config_path).job_status(request_id)
+    jig.job_status(request_id)
 
 
 @click.command()
-@_jig_options
-def queue_status(ctx: click.Context, config_path: str | None) -> None:
+@_pass_jig
+@_print_errors
+def queue_status(jig: Jig) -> None:
     """Get queue metrics for the deployment"""
-    Jig(ctx.obj, config_path).queue_status()
+    jig.queue_status()
 
 
 @click.command("list")
-@handle_api_errors("Jig")
+@handle_api_errors("Jig")  # fixme
 @click.pass_context
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
