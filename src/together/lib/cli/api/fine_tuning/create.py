@@ -417,6 +417,10 @@ def create(
 
 
 def _check_path_exists(path_string: str) -> bool:
+    # Empty string is not considerd a path. 
+    if path_string == "":
+        return False
+
     my_path = Path(path_string)
     if my_path.exists():
         if my_path.is_file():
