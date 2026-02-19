@@ -27,7 +27,6 @@ from click.exceptions import Exit
 
 from together import Together
 from together._exceptions import APIError, APIStatusError
-from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.deployment import Deployment, ReplicaEvents
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.api.beta.jig._uploader import Uploader
@@ -550,7 +549,7 @@ async def _create_volume(client: JigResource, name: str, source: str) -> None:
         )
         click.echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
     except Exception as e:
-        raise RuntimeError(f"Failed to create volume: {e}") from e
+        raise JigError(f"Failed to create volume: {e}") from e
 
     try:
         await Uploader(client._client).upload_files(source_path, volume_name=name)
@@ -561,7 +560,7 @@ async def _create_volume(client: JigResource, name: str, source: str) -> None:
             client.volumes.delete(name)
         except Exception as cleanup_error:
             click.echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        raise
+        raise Exit(1) from None
 
 
 async def _update_volume(client: JigResource, name: str, source: str) -> None:
@@ -572,7 +571,7 @@ async def _update_volume(client: JigResource, name: str, source: str) -> None:
         client.volumes.retrieve(name)
     except APIStatusError as e:
         if e.status_code == 404:
-            raise ValueError(f"Volume '{name}' does not exist") from e
+            raise JigError(f"Volume '{name}' does not exist") from e
         raise
 
     source_prefix = f"{name}/{source_path.name}"
@@ -599,7 +598,7 @@ def volumes(ctx: click.Context) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="Source directory path")
-@handle_api_errors("Volumes")  # fixme
+@_print_errors
 def volumes_create(ctx: click.Context, name: str, source: str) -> None:
     """Create a volume and upload files"""
     client: JigResource = ctx.obj.beta.jig
@@ -610,7 +609,7 @@ def volumes_create(ctx: click.Context, name: str, source: str) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="New source directory path")
-@handle_api_errors("Volumes")  # fixme
+@_print_errors
 def volumes_update(ctx: click.Context, name: str, source: str) -> None:
     """Update a volume and re-upload files"""
     client: JigResource = ctx.obj.beta.jig
@@ -620,7 +619,7 @@ def volumes_update(ctx: click.Context, name: str, source: str) -> None:
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")  # fixme
+@_print_errors
 def volumes_delete(ctx: click.Context, name: str) -> None:
     """Delete a volume"""
     client: JigResource = ctx.obj.beta.jig
@@ -637,7 +636,7 @@ def volumes_delete(ctx: click.Context, name: str) -> None:
 @volumes.command("describe")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")  # fixme
+@_print_errors
 def volumes_describe(
     ctx: click.Context,
     name: str,
@@ -656,7 +655,7 @@ def volumes_describe(
 
 @volumes.command("list")
 @click.pass_context
-@handle_api_errors("Volumes")  # fixme
+@_print_errors
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: JigResource = ctx.obj.beta.jig
@@ -821,12 +820,12 @@ def _build_warm_image(base_image: str) -> None:
     click.echo(f"Running: {' '.join(cmd)}")
     result = subprocess.run(cmd)
     if result.returncode != 0:
-        raise RuntimeError(f"Warmup failed with code {result.returncode}")
+        raise JigError(f"Warmup failed with code {result.returncode}")
 
     # Check cache was generated
     cache_files = list(cache_dir.rglob("*"))
     if not cache_files:
-        raise RuntimeError("Warmup completed but no cache files were generated")
+        raise JigError("Warmup completed but no cache files were generated")
 
     click.echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
@@ -839,7 +838,7 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
 
     if _run(final_cmd, input=final_dockerfile).returncode != 0:
-        raise RuntimeError("Cache image build failed")
+        raise JigError("Cache image build failed")
     click.echo("\N{CHECK MARK} Final image with cache built")
 
 
@@ -1054,7 +1053,8 @@ class Jig:
         """Ensure registry base path is set in state"""
         if not self.state.registry_base_path:
             response = self.together._client.get("/image-repositories/base-path", headers=self.together.auth_headers)
-            response.raise_for_status()
+            if not response.is_success:
+                raise JigError(f"Failed to get registry path (HTTP {response.status_code})")
             data = response.json()
             # Strip protocol prefix - Docker tags don't support URLs
             self.state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("https://")
@@ -1076,10 +1076,8 @@ class Jig:
                         return str(digest)
         except subprocess.CalledProcessError as e:
             msg = e.stderr.strip() if e.stderr else "Docker command failed"
-            raise RuntimeError(f"Failed to get digest for {image_name}: {msg}") from e
-        raise RuntimeError(
-            f"No registry digest found for {image_name}. Make sure the image was pushed to registry first."
-        )
+            raise JigError(f"Failed to get digest for {image_name}: {msg}") from e
+        raise JigError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
 
     # == Build / Push / Deploy ==
 
@@ -1101,7 +1099,7 @@ class Jig:
         if extra_args:
             cmd.extend(shlex.split(extra_args))
         if subprocess.run(cmd).returncode != 0:
-            raise RuntimeError("Build failed")
+            raise JigError("Build failed")
 
         click.echo("\N{CHECK MARK} Built")
 
@@ -1115,11 +1113,11 @@ class Jig:
         registry = self.state.registry_base_path.split("/")[0]
         login_cmd = ["docker", "login", registry, "--username", "user", "--password-stdin"]
         if _run(login_cmd, input=self.together.api_key).returncode != 0:
-            raise RuntimeError("Registry login failed")
+            raise JigError("Registry login failed")
 
         click.echo(f"Pushing {image}")
         if subprocess.run(["docker", "push", image]).returncode != 0:
-            raise RuntimeError("Push failed")
+            raise JigError("Push failed")
         click.echo("\N{CHECK MARK} Pushed")
 
     def _build_deploy_data(self, image: str) -> dict[str, Any]:
@@ -1205,7 +1203,7 @@ class Jig:
                 click.echo(f"\N{CHECK MARK} Deployed: {self.config.model_name}")
             except APIStatusError as e:
                 if _is_not_unique_error(e):
-                    raise RuntimeError(f"Deployment name must be unique. Tip: {self.config._unique_name_tip}") from None
+                    raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_tip}") from None
                 # TODO: helpful tips for more error cases
                 raise
 
@@ -1448,10 +1446,9 @@ def queue_status(jig: Jig) -> None:
 
 
 @click.command("list")
-@handle_api_errors("Jig")  # fixme
+@_print_errors
 @click.pass_context
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""
-    client: JigResource = ctx.obj.beta.jig
-    response = client.with_raw_response.list()
+    response = ctx.obj.beta.jig.with_raw_response.list()
     click.echo(json.dumps(response.json(), indent=2))
