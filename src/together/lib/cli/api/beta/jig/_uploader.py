@@ -98,13 +98,11 @@ class Uploader:
                 self.update_progress()
             await asyncio.sleep(0.1)
 
-    async def upload_files(self, source_path: Path, volume_name: str) -> None:
+    async def upload_files(self, source_path: Path, source_prefix: str) -> None:
         """Upload all files from source directory with progress tracking"""
         # these require a running event loop
         self.semaphore = asyncio.Semaphore(UPLOAD_CONCURRENCY_LIMIT)
         self.progress_lock = asyncio.Lock()
-
-        source_prefix = f"{volume_name}/{source_path.name}"
         files_to_upload: list[tuple[Path, str, int]] = []
 
         for file_path in source_path.rglob("*"):

@@ -1,4 +1,4 @@
-"""Main jig CLI commands (deploy, build, push, etc.)."""
+"""Main jig CLI commands (deploy, build, push, etc.)"""
 
 from __future__ import annotations
 
@@ -12,47 +12,46 @@ import shutil
 import typing
 import asyncio
 import subprocess
-from enum import Enum
 from typing import TYPE_CHECKING, Any, Union, Callable
 from pathlib import Path
-from datetime import datetime
-from functools import wraps
+from datetime import datetime as dt
+from functools import wraps, cached_property
 from itertools import groupby
-from collections import defaultdict
 from dataclasses import field, asdict, dataclass, is_dataclass
-from urllib.parse import urlparse
 
 import click
 from click import Context, echo
 from click.exceptions import Exit
 
 from together import Together
-from together._exceptions import APIError, APIStatusError
-from together.types.beta.deployment import Deployment, ReplicaEvents
+from together._exceptions import APIError, NotFoundError, AuthenticationError
+from together.types.beta.deployment import Deployment
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.api.beta.jig._uploader import Uploader
-from together.types.beta.jig.queue_submit_response import QueueSubmitResponse
 
 if TYPE_CHECKING or sys.version_info < (3, 11):
     import tomli as tomllib
 else:
     import tomllib
 
-# Managed dockerfile marker - if this is the first line, jig will regenerate the file
+# managed dockerfile marker - if this is the first line, jig will regenerate the file
 DOCKERFILE_MANAGED_MARKER = "# MANAGED BY JIG - Remove this line to prevent jig from overwriting this file"
-
-
-# == Config and state ==
-# --- Environment Configuration ---
 
 DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
-# Warmup configuration (for torch compile cache)
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
 WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
 
+_TRACK_POLL_INTERVAL = 3
+_TRACK_TIMEOUT = 600
+_TRACK_READY_TIMEOUT = 120
 
-# --- Configuration Dataclasses ---
+
+class JigError(Exception):
+    """Actionable runtime error"""
+
+
+# == Configuration ==
 
 
 @dataclass
@@ -60,11 +59,12 @@ class ImageConfig:
     """Container image configuration from pyproject.toml"""
 
     python_version: str = "3.11"
-    system_packages: list[str] = field(default_factory=list)
-    environment: dict[str, str] = field(default_factory=dict)
-    run: list[str] = field(default_factory=list)
+    # microsoft/pyright#10277 default_factory requirement
+    system_packages: list[str] = field(default_factory=list[str])
+    environment: dict[str, str] = field(default_factory=dict[str, str])
+    run: list[str] = field(default_factory=list[str])
     cmd: str = "python app.py"
-    copy: list[str] = field(default_factory=list)
+    copy: list[str] = field(default_factory=list[str])
     auto_include_git: bool = False
 
     @classmethod
@@ -100,12 +100,12 @@ class DeployConfig:
     min_replicas: int = 1
     max_replicas: int = 1
     port: int = 8000
-    environment_variables: dict[str, str] = field(default_factory=dict)
+    environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: list[str] | None = None
-    autoscaling: dict[str, str] = field(default_factory=dict)
+    autoscaling: dict[str, str] = field(default_factory=dict[str, str])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
-    volume_mounts: list[VolumeMount] = field(default_factory=list)
+    volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -155,9 +155,6 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
     return None
 
 
-# TODO: make state a property of config
-
-
 @dataclass
 class Config:
     """Main configuration from jig.toml or pyproject.toml"""
@@ -167,7 +164,7 @@ class Config:
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
-    _unique_name_tip: str = "Update project.name in pyproject.toml"
+    _unique_name_hint: str = "Update project.name in pyproject.toml"
 
     def __post_init__(self) -> None:
         if err := validate(self, type(self)):
@@ -192,7 +189,7 @@ class Config:
 
         if init:
             return cls()
-        raise click.UsageError("No pyproject.toml or jig.toml found, use --config to specify a config path.")
+        raise click.UsageError("No pyproject.toml or jig.toml found, use --config to specify a config path")
 
     @classmethod
     def load(cls, data: dict[str, Any], path: Path) -> Config:
@@ -201,28 +198,28 @@ class Config:
         if path.name.endswith("pyproject.toml"):
             jig_config = data.get("tool", {}).get("jig", {})
             if name := jig_config.get("name"):
-                tip = "update `name` in your pyproject.toml"
+                hint = "update `name` in your pyproject.toml"
             elif name := data.get("project", {}).get("name", ""):
-                tip = "update `project.name` in your pyproject.toml"
+                hint = "update `project.name` in your pyproject.toml"
             else:
                 name = path.resolve().parent.name
-                tip = "rename your folder or add `project.name` to your pyproject.toml"
-                echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
+                hint = "rename your folder or add `project.name` to your pyproject.toml"
+                echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
         else:
             jig_config = data
             if name := jig_config.get("name"):
-                tip = f"update `name` in {path}"
+                hint = f"update `name` in {path}"
             else:
                 name = path.resolve().parent.name
-                tip = f"rename your folder or add `name` to {path}"
-                echo(f"\N{PACKAGE} Name not set in {path} - defaulting to {name}")
+                hint = f"rename your folder or add `name` to {path}"
+                echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
+
+        # support volume_mounts at jig level (merge into deploy config)
+        jig_config.setdefault("deploy", {})["volume_mounts"] = jig_config.get("volume_mounts", [])
 
         if autoscaling := jig_config.get("autoscaling", {}):
             autoscaling["model"] = name
             jig_config["deploy"]["autoscaling"] = autoscaling
-
-        # Support volume_mounts at jig level (merge into deploy config)
-        jig_config.setdefault("deploy", {})["volume_mounts"] = jig_config.get("volume_mounts", [])
 
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
@@ -230,11 +227,8 @@ class Config:
             dockerfile=jig_config.get("dockerfile", "Dockerfile"),
             model_name=name,
             _path=path,
-            _unique_name_tip=tip,
+            _unique_name_hint=hint,
         )
-
-
-# --- State Management ---
 
 
 @dataclass
@@ -244,8 +238,8 @@ class State:
     _config_dir: Path
     _project_name: str
     registry_base_path: str = ""
-    secrets: dict[str, str] = field(default_factory=dict)
-    volumes: dict[str, str] = field(default_factory=dict)
+    secrets: dict[str, str] = field(default_factory=dict[str, str])
+    volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
@@ -254,7 +248,7 @@ class State:
 
     @classmethod
     def load(cls, config_dir: Path, project_name: str) -> State:
-        """Load state for a specific project from .jig.json.
+        """Load state for a specific project from .jig.json
 
         The state file structure is:
         {
@@ -265,7 +259,6 @@ class State:
           },
           "project-name-2": {...}
         }
-
         """
         try:
             all_data = json.loads((config_dir / ".jig.json").read_text())
@@ -282,397 +275,45 @@ class State:
             return cls(_config_dir=config_dir, _project_name=project_name)
 
     def save(self) -> None:
-        """Save state for this project to .jig.json.
-
-        Preserves other projects' state in the same file.
-        """
+        """Save state for this project to .jig.json, preserves other projects' state"""
         path = self._config_dir / ".jig.json"
 
-        # Load existing file to preserve other projects
+        # load existing file to preserve other projects
         try:
             all_data = json.loads(path.read_text())
         except FileNotFoundError:
             all_data = {}
 
-        # Update this project's state
+        # update this project's state
         all_data[self._project_name] = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
 
         path.write_text(json.dumps(all_data, indent=2))
 
 
-# == Status prettyprint utils ==
+# == Build ==
 
 
-def _format_timestamp(timestamp: str | None) -> str:
-    """Format ISO timestamp for display"""
-    t = timestamp or "-"
-    try:
-        return datetime.fromisoformat(t.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
-    except (ValueError, TypeError):
-        return t
-
-
-def _image_tag(image: str | None) -> str:
-    if image is None:
-        return "unknown"
-    tag = image.rsplit(":", 1)[-1]
-    return f"sha256:{tag[:8]}" if "sha256:" in image else tag
-
-
-def format_deployment_status(d: Deployment) -> str:
-    """Format d status for CLI display"""
-    status = (
-        "App:\n"
-        f"  {'Name':<8}: {d.name} ┃ ID: {d.id}\n"
-        f"  {'Image':<8}: {d.image}\n"
-        f"  {'Status':<8}: {d.status}\n"
-        f"  Created : {_format_timestamp(d.created_at)}"
-        f" ┃ Updated : {_format_timestamp(d.updated_at)}\n"
-    )
-
-    if d.autoscaling:
-        status += (
-            f"\n  Autoscaling: {d.autoscaling.get('metric', 'N/A')} {d.autoscaling.get('target', 'N/A')}(target)\n"
-        )
-
-    status += (
-        "\n"
-        f"  Replicas:\n"
-        f"    {'Min/Max':<16}: {d.min_replicas}/{d.max_replicas}\n"
-        f"    {'Ready/Desired':<16}: {d.ready_replicas}/{d.desired_replicas}\n"
-    )
-
-    status += (
-        f"\nConfiguration:\n"
-        f"  Port: {d.port}\n"
-        f"  Command: {d.command}\n"
-        f"  Args: {d.args}\n"
-        f"  Health Check Path: {d.health_check_path}\n"
-        f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory ┃ {d.storage}GB Storage \n"
-    )
-
-    if d.gpu_count and d.gpu_type:
-        status += f"  GPU: {d.gpu_count}x {d.gpu_type}\n"
-
-    if d.volumes:
-        status += f"\n  Volumes:\n    {'NAME':<28} MOUNT_PATH\n"
-        for vol in d.volumes:
-            status += f"    {vol.name:<28} {vol.mount_path}\n"
-
-    if d.environment_variables:
-        secrets = [env for env in d.environment_variables if env.value_from_secret]
-        env_vars = [env for env in d.environment_variables if not env.value_from_secret]
-
-        if secrets:
-            status += f"\n  Secrets: {[secret.name for secret in secrets]}\n"
-
-        if env_vars:
-            status += f"\n  Environment Variables:\n    {'NAME':<40} VALUE\n"
-            for env in env_vars:
-                status += f"    {env.name:<40} {env.value}\n"
-
-    if d.replica_events:
-        sorted_replicas = sorted(d.replica_events.items(), key=lambda item: item[1].image or "-", reverse=True)
-        events_status = "\nReplica Events:\n"
-        for image, group in groupby(sorted_replicas, key=lambda item: item[1].image or "-"):
-            events_status += f"{_image_tag(image or '-')}:\n"
-            for replica_id, replica in group:
-                events_status += f"  {replica_id}: "
-                if replica.volume_preload_status and not replica.volume_preload_completed_at:
-                    events_status += "Volume Preloading"
-                else:
-                    events_status += f"{replica.replica_status}"
-                    if replica.replica_status == "Running":
-                        events_status += f", ready since {_format_timestamp(replica.replica_ready_since)}"
-                events_status += "\n"
-
-        status += events_status
-    return status
-
-
-# = Secrets and Volumes subcommands =
-# == Secrets ==
-
-
-def _set_secret(jig: Jig, name: str, value: str, description: str) -> None:
-    """Set secret for the deployment"""
-    scoped_name = f"{jig.config.model_name}-{name}"
-
-    try:
-        jig.api.secrets.retrieve(scoped_name)
-        jig.api.secrets.update(id=scoped_name, name=scoped_name, description=description, value=value)
-        echo(f"\N{CHECK MARK} Updated secret: '{name}'")
-    except APIStatusError as e:
-        if e.status_code != 404:
-            raise
-        echo("\N{ROCKET} Creating new secret")
-        jig.api.secrets.create(name=scoped_name, value=value, description=description)
-        echo(f"\N{CHECK MARK} Created secret: {name}")
-
-    jig.state.secrets[name] = scoped_name
-    jig.state.save()
-
-
-class JigError(Exception):
-    """Actionable runtime error"""
-
-
-def jig_fail(msg: str) -> None:
-    prefix = click.style("Jig: ", fg="blue")
-    echo(prefix + click.style("Failed", fg="red"), err=True)
-    echo(prefix + click.style(msg, fg="red"), err=True)
-
-
-def _handle_jig_errors(f: Callable[..., Any]) -> Any:
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> None:
-        try:
-            f(*args, **kwargs)
-        except (Exit, click.Abort, click.ClickException):
-            raise
-        except APIError as e:
-            body = e.body
-            if isinstance(body, dict):
-                err = body.get("error", body)
-                msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
-            else:
-                msg = e.message
-            jig_fail(msg)
-            raise Exit(1) from None
-        except JigError as e:
-            jig_fail(str(e))
-            raise Exit(1) from None
-        except Exception as e:
-            if DEBUG:
-                raise
-            jig_fail(f"Unexpected error: {e}")
-            raise Exit(1) from None
-
-    return wrapper
-
-
-def _jig_command(f: Callable[..., Any]) -> Any:
-    @_handle_jig_errors
-    @click.pass_context
-    @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-    @wraps(f)
-    def wrapper(ctx: Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
-        f(Jig(ctx.obj, config_path), *args, **kwargs)
-
-    return wrapper
-
-
-@click.group()
-@click.pass_context
-def secrets(ctx: Context) -> None:
-    """Manage deployment secrets"""
-    pass
-
-
-@secrets.command("set")
-@_jig_command
-@click.option("--name", required=True, help="Secret name")
-@click.option("--value", required=True, help="Secret value")
-@click.option("--description", default="", help="Secret description")
-def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
-    """Set a secret (create or update)"""
-    _set_secret(jig, name, value, description)
-
-
-@secrets.command("unset")
-@_jig_command
-@click.option("--name", required=True, help="Secret name to remove")
-def secrets_unset(jig: Jig, name: str) -> None:
-    """Remove a secret from both remote and local state"""
-    try:
-        del jig.state.secrets[name]
-        jig.state.save()
-        echo(f"\N{CHECK MARK} Deleted secret '{name}' from local state")
-    except KeyError:
-        echo(f"\N{CROSS MARK} Secret '{name}' is not set")
-
-
-@secrets.command("list")
-@_jig_command
-def secrets_list(jig: Jig) -> None:
-    """List all secrets with sync status"""
-    prefix = f"{jig.config.model_name}-"
-
-    local_secrets = set(jig.state.secrets.keys())
-    remote_secrets: set[str] = set()
-    # Get all remote secrets then filter for this deployment
-    for secret in jig.api.secrets.list().data or []:
-        if (name := secret.name) and name.startswith(prefix):
-            # Strip prefix to get local name
-            remote_secrets.add(name.removeprefix(prefix))
-
-    if not local_secrets and not remote_secrets:
-        echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment '{jig.config.model_name}'")
-        return
-
-    echo(f"\N{INFORMATION SOURCE} Secrets for deployment '{jig.config.model_name}':")
-    echo()
-
-    for name in sorted(local_secrets | remote_secrets):
-        in_local = name in local_secrets
-        in_remote = name in remote_secrets
-
-        if in_local and in_remote:
-            status = click.style("synced", fg="green")
-        elif in_local:
-            status = click.style("local only", fg="yellow")
-        else:
-            status = click.style("remote only", fg="yellow")
-
-        echo(f"  - {name} [{status}]")
-
-
-# == Volumes ==
-# --- File upload ---
-
-
-def _validate_source(p: Path) -> None:
-    if not p.exists():
-        raise click.BadParameter(f"Source path does not exist: {p}")
-    if not p.is_dir():
-        raise click.BadParameter(f"Source path must be a directory: {p}")
-
-
-async def _create_volume(client: JigResource, name: str, source: str) -> None:
-    """Create a volume and upload files"""
-    source_path = Path(source)
-    _validate_source(source_path)
-    source_prefix = f"{name}/{source_path.name}"
-
-    echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
-    try:
-        volume_response = client.volumes.create(
-            name=name, type="readOnly", content={"type": "files", "source_prefix": source_prefix}
-        )
-        echo(f"\N{CHECK MARK} Volume created: {volume_response.id}")
-    except Exception as e:
-        raise JigError(f"Failed to create volume: {e}") from e
-
-    try:
-        await Uploader(client._client).upload_files(source_path, volume_name=name)
-    except Exception as e:
-        echo(f"\N{CROSS MARK} Upload failed: {e}")
-        echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
-        try:
-            client.volumes.delete(name)
-        except Exception as cleanup_error:
-            echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        raise Exit(1) from None
-
-
-async def _update_volume(client: JigResource, name: str, source: str) -> None:
-    """Update a volume and re-upload files"""
-    source_path = Path(source)
-    _validate_source(source_path)
-    try:
-        client.volumes.retrieve(name)
-    except APIStatusError as e:
-        if e.status_code == 404:
-            raise JigError(f"Volume '{name}' does not exist") from e
-        raise
-
-    source_prefix = f"{name}/{source_path.name}"
-
-    echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
-    await Uploader(client._client).upload_files(source_path, volume_name=name)
-
-    echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
-    client.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
-    echo("\N{CHECK MARK} Volume updated successfully")
-
-
-# --- Volumes CLI Commands ---
-
-
-@click.group()
-@click.pass_context
-def volumes(ctx: Context) -> None:
-    """Manage volumes"""
-    pass
-
-
-volume_name_option = click.option("--name", required=True, help="Volume name")
-
-
-@volumes.command("create")
-@click.pass_context
-@volume_name_option
-@click.option("--source", required=True, help="Source directory path")
-@_handle_jig_errors
-def volumes_create(ctx: Context, name: str, source: str) -> None:
-    """Create a volume and upload files"""
-    asyncio.run(_create_volume(ctx.obj.beta.jig, name, source))
-
-
-@volumes.command("update")
-@click.pass_context
-@volume_name_option
-@click.option("--source", required=True, help="New source directory path")
-@_handle_jig_errors
-def volumes_update(ctx: Context, name: str, source: str) -> None:
-    """Update a volume and re-upload files"""
-    asyncio.run(_update_volume(ctx.obj.beta.jig, name, source))
-
-
-@volumes.command("delete")
-@click.pass_context
-@volume_name_option
-@_handle_jig_errors
-def volumes_delete(ctx: Context, name: str) -> None:
-    """Delete a volume"""
-    try:
-        ctx.obj.beta.jig.volumes.delete(name)
-        echo(f"\N{CHECK MARK} Deleted volume '{name}'")
-    except APIStatusError as e:
-        if e.status_code != 404:
-            raise
-        echo(f"\N{CROSS MARK} Volume '{name}' not found")
-
-
-@volumes.command("describe")
-@click.pass_context
-@volume_name_option
-@_handle_jig_errors
-def volumes_describe(ctx: Context, name: str) -> None:
-    """Describe a volume"""
-    try:
-        response = ctx.obj.beta.jig.volumes.with_raw_response.retrieve(name)
-        echo(json.dumps(response.json(), indent=2))
-    except APIStatusError as e:
-        if e.status_code != 404:
-            raise
-        echo(f"\N{CROSS MARK} Volume '{name}' not found")
-
-
-@volumes.command("list")
-@click.pass_context
-@_handle_jig_errors
-def volumes_list(ctx: Context) -> None:
-    """List all volumes"""
-    response = ctx.obj.beta.jig.volumes.with_raw_response.list()
-    echo(json.dumps(response.json(), indent=2))
-
-
-# == Main CLI ==
-# --- Helper Functions ---
-
-
-def _get_api_base_url(client: Together) -> str:
-    """Extract base URL (scheme://host) from client, stripping any path like /v1"""
-    parsed = urlparse(str(client.base_url))
-    return f"{parsed.scheme}://{parsed.netloc}"
-
-
-def _run(cmd: list[str], *, input: str | None = None) -> subprocess.CompletedProcess[str]:
-    """Run subprocess. Captures output unless input is provided."""
-    if input is not None:
-        return subprocess.run(cmd, input=input, text=True)
+def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run command and return captured output, raises CalledProcessError on failure"""
     return subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+
+def _files_to_copy(config: Config) -> list[str]:
+    """Combine explicitly copied files with git files if requested and valid"""
+    files = set(config.image.copy)
+    if config.image.auto_include_git:
+        try:
+            if _run(["git", "status", "--porcelain"]).stdout.strip():
+                raise click.UsageError("Git repository has uncommitted changes: auto_include_git not allowed")
+            git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
+            files.update(f for f in git_files if f and f != ".")
+        except subprocess.CalledProcessError:
+            pass
+
+    if "." in files:
+        raise click.UsageError("Copying '.' is not allowed. Please enumerate specific files")
+
+    return sorted(files)
 
 
 def _generate_dockerfile(config: Config) -> str:
@@ -693,9 +334,9 @@ def _generate_dockerfile(config: Config) -> str:
     if run := "\n".join(f"RUN {cmd}" for cmd in config.image.run):
         run += "\n"
 
-    copy = "\n".join(f"COPY {file} {file}" for file in _get_files_to_copy(config))
+    copy = "\n".join(f"COPY {file} {file}" for file in _files_to_copy(config))
 
-    # Check if .git exists in current directory
+    # check if .git exists in current directory
     if Path(".git").exists():
         git_version_cmd = 'RUN --mount=type=bind,source=.git,target=/git git --git-dir /git describe --tags --exact-match > VERSION || echo "0.0.0-dev" > VERSION'
     else:
@@ -738,60 +379,34 @@ ENV DEPLOYMENT_NAME={config.model_name}
 CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
 
-def _get_files_to_copy(config: Config) -> list[str]:
-    """Combine explicitly copied files with git files if requested and valid"""
-    files = set(config.image.copy)
-    if config.image.auto_include_git:
-        try:
-            if _run(["git", "status", "--porcelain"]).stdout.strip():
-                raise click.UsageError("Git repository has uncommitted changes: auto_include_git not allowed.")
-            git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
-            files.update(f for f in git_files if f and f != ".")
-        except subprocess.CalledProcessError:
-            pass
-
-    if "." in files:
-        raise click.UsageError("Copying '.' is not allowed. Please enumerate specific files.")
-
-    return sorted(files)
-
-
 def _dockerfile(config: Config) -> bool:
-    """Generate Dockerfile if appropriate.
-
-    Returns True if Dockerfile was generated, False if skipped (user-managed file exists).
-
-    Logic:
-    - If no Dockerfile exists → generate and return True
-    - If Dockerfile exists without our marker → skip and return False (user-managed)
-    - Else and config is older → skip and return True (no-op)
-    - Else → regenerate and return True
-    """
+    """Generate or update managed Dockerfile, returns False if user-managed"""
     dockerfile_path = Path(config.dockerfile)
+    if not dockerfile_path.exists():
+        dockerfile_path.write_text(_generate_dockerfile(config))
+        echo("\N{CHECK MARK} Generated Dockerfile")
+        return True
 
-    if dockerfile_path.exists():
-        first_line = dockerfile_path.read_text().split("\n")[0]
-        if first_line != DOCKERFILE_MANAGED_MARKER:
-            return False
+    current = dockerfile_path.read_text()
+    if not current.startswith(DOCKERFILE_MANAGED_MARKER):
+        return False
 
-        # Skip regeneration if config hasn't changed
-        if config._path and config._path.exists() and dockerfile_path.stat().st_mtime >= config._path.stat().st_mtime:
-            return True
-
-    dockerfile_path.write_text(_generate_dockerfile(config))
-
+    suggested = _generate_dockerfile(config)
+    if current != suggested:
+        dockerfile_path.write_text(suggested)
+        echo("\N{CHECK MARK} Updated Dockerfile")
     return True
 
 
 def _build_warm_image(base_image: str) -> None:
-    """Run a warmup container to generate a cache, then rebuild with cache baked in.
+    """Run a warmup container to generate a compile cache, then rebuild with it baked in
 
-    This runs the container with RUN_AND_EXIT=1 which triggers warmup_inputs in sprocket.
-    The cache directory is mounted at /app/torch_cache and the user's code should set the
-    appropriate env var (TORCHINDUCTOR_CACHE_DIR, TKCC_OUTPUT_DIR, etc.) to point there.
+    Runs the container with RUN_AND_EXIT=1 which triggers warmup_inputs in sprocket.
+    The cache is mounted at /app/torch_cache; the user's code should set the appropriate
+    env var (TORCHINDUCTOR_CACHE_DIR, TKCC_OUTPUT_DIR, etc.) to point there.
     """
     cache_dir = Path(WARMUP_DEST)
-    # Clean any existing cache
+    # clean any existing cache
     try:
         shutil.rmtree(cache_dir)
     except FileNotFoundError:
@@ -800,9 +415,9 @@ def _build_warm_image(base_image: str) -> None:
 
     echo("\N{FIRE} Running warmup to generate compile cache...")
 
-    # Run container with GPU and RUN_AND_EXIT=1
-    # Mount current dir as /app so warmup_inputs can reference local weights
-    # Mount cache dir for compile artifacts
+    # run container with GPU and RUN_AND_EXIT=1
+    # mount current dir as /app so warmup_inputs can reference local weights
+    # mount cache dir for compile artifacts
     cmd = ["docker", "run", "--rm", "--gpus", "all", "-e", "RUN_AND_EXIT=1"]
     cmd.extend(["-e", f"{WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"])
     cmd.extend(["-v", f"{Path.cwd()}:/app"])
@@ -813,276 +428,117 @@ def _build_warm_image(base_image: str) -> None:
     cmd.append(base_image)
 
     echo(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd)
-    if result.returncode != 0:
-        raise JigError(f"Warmup failed with code {result.returncode}")
+    if (code := subprocess.run(cmd).returncode) != 0:
+        echo(f"\N{FIRE EXTINGUISHER} Warmup failed with code {code}")
+        raise Exit(1)
 
-    # Check cache was generated
+    # check cache was generated
     cache_files = list(cache_dir.rglob("*"))
     if not cache_files:
-        raise JigError("Warmup completed but no cache files were generated")
+        echo("\N{FIRE EXTINGUISHER} Warmup completed but no cache files were generated")
+        raise Exit(1)
 
     echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
-    # Generate cache dockerfile - copy cache to same location used during warmup
+    # generate cache dockerfile - copy cache to same location used during warmup
     final_dockerfile = f"""FROM {base_image}
 COPY {cache_dir.name} /app/{WARMUP_DEST}
 ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
 
-    echo("\N{PACKAGE} Building final image with cache...")
+    echo("\N{FIRE} Building final image with cache...")
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
 
-    if _run(final_cmd, input=final_dockerfile).returncode != 0:
-        raise JigError("Cache image build failed")
+    if subprocess.run(final_cmd, input=final_dockerfile, text=True).returncode != 0:
+        raise JigError("\N{FIRE EXTINGUISHER} Cache image build failed")
     echo("\N{CHECK MARK} Final image with cache built")
 
 
-def _get_current_revision_id(d: Deployment) -> str:
-    """Extract current revision ID from deployment environment variables."""
-    for var in d.environment_variables or []:
-        if var.name == "TOGETHER_DEPLOYMENT_REVISION_ID":
-            return str(var.value)
-    return ""
+# == Jig ==
 
 
-def _print_replica_failure(event: ReplicaEvents) -> None:
-    if event.replica_status_reason:
-        echo(f"  Reason: {event.replica_status_reason}")
-    if event.replica_status_message:
-        echo(f"  Message: {event.replica_status_message}")
-
-
-def _fetch_and_print_logs(client: JigResource, deployment_name: str, replica_id: str) -> None:
-    echo(f"\n--- Logs for {replica_id} ---")
+def _age(t: str | None) -> str:
+    """ISO8601 string to relative age, e.g. '4d11h', max 2 units"""
     try:
-        if lines := client.retrieve_logs(deployment_name, replica_id=replica_id).lines:
-            for line in lines:
-                echo(line)
-        else:
-            echo("No logs available")
-    except Exception as e:
-        echo(f"Failed to fetch logs: {e}")
-    echo("--- End of logs ---\n")
-
-
-class ReplicaTrackingResult(str, Enum):
-    """Result of processing a single replica event."""
-
-    CONTINUE = "continue"
-    SUCCESS = "success"
-    FAILURE = "failure"
-
-
-@dataclass
-class Tracker:
-    client: JigResource
-    deployment_name: str
-
-    poll_interval: int = 3  # seconds
-    timeout: int = 600  # 10 minutes
-    ready_timeout: int = 120  # 2 minutes for Running without ready_since
-
-    # replica_id -> set of printed states
-    printed_states: dict[str, set[str]] = field(default_factory=lambda: defaultdict(set))
-    # replica_id -> when we started waiting for ready
-    replica_wait_start: dict[str, float] = field(default_factory=lambda: defaultdict(time.time))
-
-    def track_deployment_progress(self) -> None:
-        """Track deployment progress until ready or failed.
-
-        Polls deployment status every 3 seconds until:
-        - Success: At least one replica with the latest revision has replica_ready_since set
-        - Failure: CrashLoopBackOff or Running without ready_since for > 2 minute
-        - Timeout: 10 minutes elapsed
-        """
-        start_time = time.time()
-
-        echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
-
-        try:
-            while time.time() - start_time < self.timeout:
-                deployment = self.client.retrieve(self.deployment_name)
-
-                # Handle scale to zero - no replicas expected
-                if deployment.min_replicas == 0 and deployment.desired_replicas == 0:
-                    if str(deployment.status) == "ScaledToZero":
-                        echo("\N{CHECK MARK} Deployment scaled to zero replicas")
-                        return
-                    # Not yet scaled to zero, wait and retry
-                    time.sleep(self.poll_interval)
-                    continue
-
-                current_revision_id = _get_current_revision_id(deployment)
-
-                replica_events = deployment.replica_events or {}
-
-                # Filter to replicas with matching revision
-                relevant_replicas = {
-                    replica_id: event
-                    for replica_id, event in replica_events.items()
-                    if event.revision_id == current_revision_id
-                }
-
-                if not relevant_replicas:
-                    time.sleep(self.poll_interval)
-                    continue
-
-                for replica_id, event in relevant_replicas.items():
-                    result = self.process_replica_event(replica_id=replica_id, event=event)
-
-                    if result == ReplicaTrackingResult.SUCCESS:
-                        return
-                    if result == ReplicaTrackingResult.FAILURE:
-                        raise Exit(1)
-
-                time.sleep(self.poll_interval)
-
-            # Timeout reached
-            echo("\N{CROSS MARK} Deployment tracking timed out after 10 minutes")
-            echo(f"Deployment '{self.deployment_name}' may still be in progress.")
-            echo("Run 'jig status' to check current state.")
-            raise Exit(1)
-
-        except KeyboardInterrupt:
-            echo("\n\N{WARNING SIGN} Deployment tracking interrupted")
-            echo(f"Deployment '{self.deployment_name}' may still be in progress.")
-            echo("Run 'jig status' to check current state.")
-            raise Exit(130) from None
-
-    def process_replica_event(self, replica_id: str, event: ReplicaEvents) -> ReplicaTrackingResult:
-        """Process a single replica event and return the tracking result."""
-        states = self.printed_states[replica_id]
-
-        volume_done = not event.volume_preload_status or bool(event.volume_preload_completed_at)
-        # Track volume preload progress
-        if event.volume_preload_status:
-            if "volume_preload_started" not in states:
-                echo(f"\N{PACKAGE} [{replica_id}] Preloading volume contents...")
-                states.add("volume_preload_started")
-            elif volume_done and "volume_preload_completed" not in states:
-                echo(
-                    f"\N{CHECK MARK}  [{replica_id}] Successfully preloaded volume contents. "
-                    "Attaching the volume to the container..."
-                )
-                states.add("volume_preload_completed")
-
-        # Skip terminated replicas
-        if event.replica_status == "Terminated":
-            return ReplicaTrackingResult.CONTINUE
-
-        # Check if ready - SUCCESS
-        if event.replica_status == "Running" and event.replica_ready_since:
-            echo(f"\N{CHECK MARK}  [{replica_id}] Container is running and ready")
-            echo("\N{ROCKET} Deployment successful!")
-            echo("Note: Additional replicas may still be scaling up.")
-            return ReplicaTrackingResult.SUCCESS
-
-        # Check for CrashLoopBackOff
-        if event.replica_status_reason == "CrashLoopBackOff":
-            echo(f"\N{CROSS MARK} [{replica_id}] Container is crash looping")
-            _print_replica_failure(event)
-            _fetch_and_print_logs(self.client, self.deployment_name, replica_id)
-            return ReplicaTrackingResult.FAILURE
-
-        # Check for stuck in Running state without becoming ready
-        if event.replica_status == "Running" and volume_done:
-            # replica_wait_start will default to time.time()
-            if time.time() - self.replica_wait_start[replica_id] > self.ready_timeout:
-                echo(
-                    f"\N{CROSS MARK}  [{replica_id}] Container is running but "
-                    f"not ready to serve requests after {self.ready_timeout} seconds"
-                )
-                _print_replica_failure(event)
-                _fetch_and_print_logs(self.client, self.deployment_name, replica_id)
-                echo(f"Deployment '{self.deployment_name}' may still be in progress.")
-                return ReplicaTrackingResult.FAILURE
-
-        # Print status updates deduplicated by status + reason
-        # Skip all status updates while volume preload is in progress
-        if volume_done and event.replica_status_reason:
-            status_key = f"{event.replica_status}_{event.replica_status_reason}"
-            if status_key not in states:
-                states.add(status_key)
-                echo(
-                    f"\N{HOURGLASS WITH FLOWING SAND} [{replica_id}] {event.replica_status}: {event.replica_status_reason}"
-                )
-                if event.replica_status_message:
-                    echo(f"  {event.replica_status_message}")
-
-        return ReplicaTrackingResult.CONTINUE
-
-
-# --- Jig class: shared state + operations ---
-
-
-def _is_not_unique_error(e: APIStatusError) -> bool:
-    # all errors:
-    # "min replicas cannot be greater than max replicas"
-    # "storage cannot be more than %d GB"
-    # "user does not have access to the specified image"
-    # "invalid mount_path: %s"
-    # "only one readOnly volume is allowed per deployment"
-    # "volume not found"
-    # gorm tx.Create(...).Save() err (internal server error?)
-    # "failed to add deployment reference" (failed to add deployment reference to secret or "Failed to delete secret metadata from database",)
-    # "failed to delete secret" ("Failed to delete secret metadata from database" in logs)
-    # "failed to delete deployment from kubernetes: %w"
-    # errors for toKubernetesEnvironmentVariables, toKubernetesVolumeMounts, getCustomScalers, ReconcileWithKubernetes
-    msg = e.body.get("error", "") if isinstance(e.body, dict) else ""  # type: ignore
-    return "already exists" in msg
-
-
-# TODO: merge Tracker into Jig
+        s = int(time.time() - dt.fromisoformat((t or "").replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return "-"
+    parts: list[str] = []
+    for unit, label in [(30 * 86400, "mo"), (86400, "d"), (3600, "h"), (60, "m"), (1, "s")]:
+        if s >= unit:
+            parts.append(f"{s // unit}{label}")
+            s %= unit
+    return "".join(parts[:2]) or "0s"
 
 
 class Jig:
-    """Holds Together client, config, and state. Methods implement the core jig operations."""
+    """Holds Together client, config, and state"""
 
     def __init__(self, client: Together, config_path: str | None = None) -> None:
         self.together = client
         self.api: JigResource = client.beta.jig
-        self.config = Config.find(config_path)
-        self.state = State.load(self.config._path.parent, self.config.model_name)
+        self._config_path = config_path
 
-    def _ensure_registry(self) -> None:
-        """Ensure registry base path is set in state"""
+    @cached_property
+    def config(self) -> Config:
+        return Config.find(self._config_path)
+
+    @cached_property
+    def name(self) -> str:
+        return self.config.model_name
+
+    @cached_property
+    def state(self) -> State:
+        return State.load(self.config._path.parent, self.name)
+
+    def registry(self) -> str:
+        """Get registry and namespace for current user"""
         if not self.state.registry_base_path:
             response = self.together._client.get("/image-repositories/base-path", headers=self.together.auth_headers)
             if not response.is_success:
                 raise JigError(f"Failed to get registry path (HTTP {response.status_code})")
-            data = response.json()
-            # Strip protocol prefix - Docker tags don't support URLs
-            self.state.registry_base_path = data["base-path"].removeprefix("http://").removeprefix("https://")
+            # strip protocol for docker image format
+            self.state.registry_base_path = response.json()["base-path"].split("://", 1)[-1]
             self.state.save()
+        return self.state.registry_base_path + "/"
 
-    def _image(self, tag: str = "latest") -> str:
-        return f"{self.state.registry_base_path}/{self.config.model_name}:{tag}"
+    def image(self, tag: str) -> str:
+        return f"{self.registry()}{self.name}:{tag}"
 
-    def _image_with_digest(self, tag: str = "latest") -> str:
-        image_name = self._image(tag)
+    def image_with_digest(self, tag: str = "latest") -> str:
+        image = self.image(tag)
         if tag != "latest":
-            return image_name
+            return image
         try:
-            cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image_name]
+            cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image]
             if (repo_digests := _run(cmd).stdout.strip()) and repo_digests != "null":
-                registry = image_name.rsplit("/", 2)[0]
                 for digest in json.loads(repo_digests):
-                    if digest.startswith(registry):
+                    if digest.startswith(self.registry()):
                         return str(digest)
         except subprocess.CalledProcessError as e:
             msg = e.stderr.strip() if e.stderr else "Docker command failed"
-            raise JigError(f"Failed to get digest for {image_name}: {msg}") from e
-        raise JigError(f"No registry digest found for {image_name}. Make sure the image was pushed to registry first.")
+            raise JigError(f"Failed to get digest for {image}: {msg}") from e
+        raise JigError(f"No registry digest found for {image}. Make sure the image was pushed to registry first")
 
-    # == Build / Push / Deploy ==
+    def set_secret(self, name: str, value: str, description: str) -> None:
+        """Set secret for the deployment (create or update)"""
+        scoped_name = f"{self.name}-{name}"
+
+        try:
+            self.api.secrets.update(id=scoped_name, name=scoped_name, description=description, value=value)
+            echo(f"\N{CHECK MARK} Updated secret {name}")
+        except NotFoundError:
+            self.api.secrets.create(name=scoped_name, value=value, description=description)
+            echo(f"\N{CHECK MARK} Created secret {name}")
+
+        self.state.secrets[name] = scoped_name
+        self.state.save()
+
+    # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
-        self._ensure_registry()
-        image = self._image(tag)
+        image = self.image(tag)
 
-        if _dockerfile(self.config):
-            echo("\N{CHECK MARK} Generated Dockerfile")
-        else:
+        if not _dockerfile(self.config):
             echo(f"\N{INFORMATION SOURCE} Using existing {self.config.dockerfile} (not managed by jig)")
 
         echo(f"Building {image}")
@@ -1102,12 +558,10 @@ class Jig:
             _build_warm_image(image)
 
     def push(self, tag: str = "latest") -> None:
-        self._ensure_registry()
-        image = self._image(tag)
-
-        registry = self.state.registry_base_path.split("/")[0]
-        login_cmd = ["docker", "login", registry, "--username", "user", "--password-stdin"]
-        if _run(login_cmd, input=self.together.api_key).returncode != 0:
+        image = self.image(tag)
+        host = self.registry().split("/")[0]
+        login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
+        if subprocess.run(login_cmd, input=self.together.api_key, text=True).returncode != 0:
             raise JigError("Registry login failed")
 
         echo(f"Pushing {image}")
@@ -1115,12 +569,30 @@ class Jig:
             raise JigError("Push failed")
         echo("\N{CHECK MARK} Pushed")
 
-    def _build_deploy_data(self, image: str) -> dict[str, Any]:
-        """Build the deployment API payload."""
+    def deploy(
+        self,
+        tag: str = "latest",
+        build_only: bool = False,
+        warmup: bool = False,
+        detach: bool = False,
+        docker_args: str | None = None,
+        existing_image: str | None = None,
+    ) -> None:
+        if existing_image:
+            deployment_image = existing_image
+        else:
+            self.build(tag, warmup, docker_args)
+            self.push(tag)
+            deployment_image = self.image_with_digest(tag)
+
+        if build_only:
+            echo("\N{CHECK MARK} Build complete (--build-only)")
+            return
+
         deploy_data: dict[str, Any] = {
-            "name": self.config.model_name,
+            "name": self.name,
             "description": self.config.deploy.description,
-            "image": image,
+            "image": deployment_image,
             "min_replicas": self.config.deploy.min_replicas,
             "max_replicas": self.config.deploy.max_replicas,
             "port": self.config.deploy.port,
@@ -1139,151 +611,294 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
-        if (base_url := _get_api_base_url(self.together)) != "https://api.together.ai":
-            self.config.deploy.environment_variables["TOGETHER_API_BASE_URL"] = base_url
-
-        env_vars = [{"name": k, "value": v} for k, v in self.config.deploy.environment_variables.items()]
-
         if "TOGETHER_API_KEY" not in self.state.secrets:
-            _set_secret(self, "TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
+            self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
 
-        for name, secret_id in self.state.secrets.items():
-            env_vars.append({"name": name, "value_from_secret": secret_id})
+        env_dict = dict(self.config.deploy.environment_variables)
+        if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
+            env_dict["TOGETHER_API_BASE_URL"] = str(self.together.base_url.copy_with(path=""))
 
-        deploy_data["environment_variables"] = env_vars
-        return deploy_data
-
-    def deploy(
-        self,
-        tag: str = "latest",
-        build_only: bool = False,
-        warmup: bool = False,
-        detach: bool = False,
-        docker_args: str | None = None,
-        existing_image: str | None = None,
-    ) -> None:
-        self._ensure_registry()
-
-        if existing_image:
-            deployment_image = existing_image
-        else:
-            self.build(tag, warmup, docker_args)
-            self.push(tag)
-            deployment_image = self._image_with_digest(tag)
-
-        if build_only:
-            echo("\N{CHECK MARK} Build complete (--build-only)")
-            return
-
-        deploy_data = self._build_deploy_data(deployment_image)
+        env_list = [{"name": k, "value": v} for k, v in env_dict.items()]
+        secret_list = [{"name": k, "value_from_secret": v} for k, v in self.state.secrets.items()]
+        deploy_data["environment_variables"] = env_list + secret_list
 
         if DEBUG:
             echo(json.dumps(deploy_data, indent=2))
-        echo(f"Deploying model: {self.config.model_name}")
+        echo(f"Deploying model: {self.name}")
 
         try:
-            existing = self.api.retrieve(self.config.model_name)
-            old_revision_id = _get_current_revision_id(existing)
-            was_scaled_to_zero = existing.ready_replicas == 0
-            response = self.api.update(self.config.model_name, **deploy_data)
-            echo("\N{CHECK MARK}  Applied new deployment configuration")
-        except APIStatusError as e:
-            if e.status_code != 404:
-                raise
-            old_revision_id = ""
-            was_scaled_to_zero = False
-            echo("\N{ROCKET} Creating new deployment")
+            response = self.api.update(self.name, **deploy_data)
+            echo("\N{CHECK MARK} Applied new deployment configuration")
+        except NotFoundError:
             try:
                 response = self.api.deploy(**deploy_data)
-                echo(f"\N{CHECK MARK} Deployed: {self.config.model_name}")
-            except APIStatusError as e:
-                if _is_not_unique_error(e):
-                    raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_tip}") from None
-                # TODO: helpful tips for more error cases
+                echo(f"\N{CHECK MARK} Deployed: {self.name}")
+            except APIError as e:
+                if "already exists" in e.message:
+                    raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
 
         if detach:
             echo(json.dumps(response.model_dump(), indent=2))
             return
 
-        new_revision_id = _get_current_revision_id(response)
-        scaling_up = was_scaled_to_zero and response.min_replicas and response.min_replicas > 0
-        if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
+        if str(response.status) == "Updating":
+            self.track(response)
+
+    def track(self, d: Deployment) -> None:
+        """Poll deployment until first replica ready, failure, or timeout"""
+        rev = next(v.value for v in d.environment_variables or [] if v.name == "TOGETHER_DEPLOYMENT_REVISION_ID")
+        wait_start: dict[str, float] = {}
+        printed: set[str] = set()
+        start = time.time()
+
+        if d.min_replicas == 0 and d.desired_replicas == 0 and d.status == "ScaledToZero":
+            echo("\N{CHECK MARK} Deployment scaled to zero replicas")
             return
 
-        Tracker(self.api, self.config.model_name).track_deployment_progress()
+        def once(msg: str, detail: str | None = None) -> None:
+            if msg not in printed:
+                printed.add(msg)
+                echo(f"{msg}\n  {detail}" if detail else msg)
 
-    # == Query commands ==
-
-    def logs(self, follow: bool = False) -> None:
-        if not follow:
-            if lines := self.api.retrieve_logs(self.config.model_name).lines:
-                for line in lines:
-                    echo(line)
-            else:
-                echo("No logs available")
-            return
-
+        echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
         try:
-            with self.api.with_streaming_response.retrieve_logs(self.config.model_name) as stream:
+            while time.time() - start < _TRACK_TIMEOUT:
+                d = self.api.retrieve(self.name)
+
+                for rid, event in (d.replica_events or {}).items():
+                    if event.revision_id != rev:
+                        continue
+
+                    if event.replica_status == "Running" and event.replica_ready_since:
+                        echo(f"""\N{CHECK MARK} [{rid}] Container is running and ready
+\N{ROCKET} Deployment successful!
+Note: Additional replicas may still be scaling up.""")
+                        return
+
+                    if event.replica_status_reason == "CrashLoopBackOff":
+                        echo(f"\N{CROSS MARK} [{rid}] Container is crash looping")
+                        echo(self.logs(rid))
+                        raise Exit(1) from None
+
+                    if event.volume_preload_status:
+                        if not event.volume_preload_completed_at:
+                            once(f"\N{PACKAGE} [{rid}] Preloading volume contents...")
+                            continue
+                        once(
+                            f"\N{CHECK MARK} [{rid}] Successfully preloaded volume contents. Attaching the volume to the container..."
+                        )
+
+                    if event.replica_status_reason:
+                        once(
+                            f"\N{HOURGLASS WITH FLOWING SAND} [{rid}] {event.replica_status}: {event.replica_status_reason}",
+                            event.replica_status_message,
+                        )
+
+                    if event.replica_status == "Running":
+                        if rid not in wait_start:
+                            wait_start[rid] = time.time()
+                        if time.time() - wait_start[rid] > _TRACK_READY_TIMEOUT:
+                            echo(f"Deployment '{self.name}' may still be in progress.")
+                            echo(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
+                            echo(self.logs(rid))
+                            raise Exit(1) from None
+
+                time.sleep(_TRACK_POLL_INTERVAL)
+
+            echo(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
+Deployment '{self.name}' may still be in progress.
+Run 'jig status' to check current state.""")
+            raise Exit(1)
+        except KeyboardInterrupt:
+            echo(f"""
+\N{WARNING SIGN} Deployment tracking interrupted
+Deployment '{self.name}' may still be in progress.
+Run 'jig status' to check current state.""")
+            raise Exit(130) from None
+
+    # == Query ==
+
+    def logs(self, rid: str | None = None) -> str:
+        if not rid:
+            return "\n".join(self.api.retrieve_logs(self.name).lines or []) or "No logs available"
+        body = "\n".join(self.api.retrieve_logs(self.name, replica_id=rid).lines or [])
+        return f"\n--- Logs for {rid} ---\n{body or 'No logs available'}\n--- End of logs ---\n"
+
+    def follow_logs(self) -> None:
+        try:
+            with self.api.with_streaming_response.retrieve_logs(self.name) as stream:
                 for line in stream.iter_lines():
                     if line:
-                        for log_line in json.loads(line).get("lines", []):
-                            echo(log_line)
+                        log_lines = json.loads(line).get("lines", [])
+                        echo("\n".join(log_lines))
         except KeyboardInterrupt:
             echo("\nStopped following logs")
-        except Exception as e:
+        except (ConnectionError, OSError) as e:
             echo(f"\nConnection ended: {e}")
 
     def submit(self, prompt: str | None, payload: str | None, watch: bool) -> None:
-        """Submit a job and optionally watch for completion."""
+        """Submit a job and optionally watch for completion"""
         if not prompt and not payload:
             raise click.UsageError("Either --prompt or --payload required")
 
-        raw_response = self.api.queue.with_raw_response.submit(
-            model=self.config.model_name,
-            payload=json.loads(payload) if payload else {"prompt": prompt},
-            priority=1,
-        )
-
-        # Raw response due to Stainless limitation with Pydantic aliases
-        submit_response = QueueSubmitResponse.model_validate_json(raw_response.read())
+        body: dict[str, Any] = json.loads(payload) if payload else {"prompt": prompt} # pyright: ignore
+        req = self.api.queue.with_raw_response.submit(model=self.name, payload=body, priority=1)
+        raw = typing.cast(dict[str, Any], req.json())
 
         echo("\N{CHECK MARK} Submitted job")
-        echo(submit_response.model_dump_json(indent=2))
+        echo(json.dumps(raw, indent=2))
 
-        if not watch or not submit_response.request_id:
+        if not watch or not (request_id := raw.get("requestId")):
             return
 
-        echo(f"\nWatching job {submit_response.request_id}...")
-        last_status: str | None = None
+        echo(f"\nWatching job {request_id}...")
+        last_status = raw["status"]
         while True:
             try:
-                response = self.api.queue.retrieve(
-                    model=self.config.model_name,
-                    request_id=submit_response.request_id,
-                )
-                current_status = response.status
-                if current_status != last_status:
+                response = self.api.queue.retrieve(model=self.name, request_id=request_id)
+                if response.status != last_status:
                     echo(response.model_dump_json(indent=2))
-                    last_status = current_status
-
-                if current_status in ["done", "failed", "finished", "error", "canceled"]:
-                    if current_status != "done":
-                        raise Exit(1)
+                    last_status = response.status
+                if response.status in ("done", "finished"):
                     return
-
+                if response.status in ("failed", "error", "canceled"):
+                    raise Exit(1)
                 time.sleep(1)
-
             except KeyboardInterrupt:
-                echo(f"\nStopped watching {submit_response.request_id}")
+                echo(f"\nStopped watching {request_id}")
                 raise Exit(130) from None
 
+    # == Display ==
 
-# --- CLI Commands ---
+    def short_image(self, image: str) -> str:
+        """Strip our registry prefix and truncate sha256 digests"""
+        name, sep, digest = image.removeprefix(self.registry()).partition("sha256:")
+        return f"{name}{sep}{digest[:8]}"
+
+    def format_status(self, d: Deployment) -> str:
+        """Format deployment status for CLI display"""
+        image = self.short_image(d.image or "-")
+        lines = [
+            f"""App:
+  Name    : {d.name} ┃ ID: {d.id}
+  Image   : {image}
+  Status  : {d.status}
+  Created : {_age(d.created_at)} ┃ Updated : {_age(d.updated_at)}"""
+        ]
+
+        if a := d.autoscaling:
+            lines.append(f"  Autoscaling: {a.get('metric', 'N/A')} {a.get('target', 'N/A')} (target)")
+        lines.append(f"""  Replicas: {d.ready_replicas}/{d.desired_replicas} ready (min {d.min_replicas}, max {d.max_replicas})
+
+Configuration:""")
+        if d.gpu_count and d.gpu_type:
+            lines.append(f"  GPU: {d.gpu_count}x {d.gpu_type}")
+        vol = d.volumes[0] if d.volumes else None
+        lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
+        storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
+        lines.append(f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory{storage}")
+
+        if d.command:
+            lines.append(f"  Command: {d.command}")
+        if d.args:
+            lines.append(f"  Args: {d.args}")
+        if d.port != 8000:
+            lines.append(f"  Port: {d.port}")
+        if d.health_check_path:
+            lines.append(f"  Health Check Path: {d.health_check_path}")
+
+        all_env = d.environment_variables or []
+        if secret_list := [e for e in all_env if e.value_from_secret]:
+            lines.append(f"  Secrets: {', '.join(s.name for s in secret_list)}")
+        if env_list := [e for e in all_env if e.value and e.name != "TOGETHER_DEPLOYMENT_REVISION_ID"]:
+            lines += ["  Environment Variables:", "    NAME                                     VALUE"]
+            lines += [f"    {e.name:<40} {e.value}" for e in env_list]
+        if d.replica_events:
+            sorted_replicas = sorted(d.replica_events.items(), key=lambda item: item[1].image or "-", reverse=True)
+            lines += ["", "Replica Events:"]
+            for image, group in groupby(sorted_replicas, key=lambda item: item[1].image or "-"):
+                lines.append(f"{self.short_image(image)}:")
+                for rid, r in group:
+                    if r.volume_preload_status and not r.volume_preload_completed_at:
+                        lines.append(f"  {rid}: Volume Preloading")
+                    elif r.replica_status == "Running" and r.replica_ready_since:
+                        lines.append(f"  {rid}: Running, ready since {_age(r.replica_ready_since)}")
+                    else:
+                        lines.append(f"  {rid}: {r.replica_status}")
+
+        return "\n".join(lines) + "\n"
 
 
-@click.command()
+# == CLI ==
+
+
+class JigGroup(click.Group):
+    """Click groups stop at the first non-option token (the subcommand), so
+    `jig --config foo deploy` would fail — --config is a per-command option, not
+    a group option. We move it past the subcommand before parsing."""
+
+    def parse_args(self, ctx: Context, args: list[str]) -> list[str]:
+        args = list(args)
+        for i, arg in enumerate(args):
+            if arg in ("-c", "--config") and i + 1 < len(args):
+                # move flag + value to end: [--config, foo, deploy, ...] -> [deploy, ..., --config, foo]
+                args.extend([args.pop(i), args.pop(i)])
+                break
+        return super().parse_args(ctx, args)
+
+
+def _command(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Wrap command: create Jig from context, catch errors, display return values"""
+
+    @click.pass_context
+    @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+    @wraps(f)
+    def wrapper(ctx: Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
+        try:
+            result = f(Jig(ctx.obj, config_path), *args, **kwargs)
+        except (Exit, click.Abort, click.ClickException):
+            raise
+        except AuthenticationError:
+            msg = "Invalid or missing API key. Set TOGETHER_API_KEY or use --api-key."
+        except APIError as e:
+            body = e.body
+            if isinstance(body, dict):
+                err = body.get("error", body)  # type: ignore
+                msg = str(err) if isinstance(err, str) else str(err.get("message", err))  # type: ignore
+            else:
+                msg = e.message
+        except JigError as e:
+            msg = str(e)
+        except Exception as e:
+            if DEBUG:
+                raise
+            msg = f"Unexpected error: {e}"
+        else:
+            if result is not None:
+                echo(result if isinstance(result, str) else json.dumps(result.json(), indent=2))
+            return
+        prefix = click.style("Jig: ", fg="blue")
+        echo(prefix + click.style("Failed", fg="red"), err=True)
+        echo(prefix + click.style(msg, fg="red"), err=True)
+        raise Exit(1) from None
+
+    return wrapper
+
+
+@click.group(cls=JigGroup)
+@click.pass_context
+def jig(ctx: Context) -> None:
+    """Deploy and manage containers on Together AI"""
+    if ctx.obj is None:
+        ctx.obj = Together()
+
+
+def _jig_command(f: Callable[..., Any]) -> click.Command:
+    return jig.command()(_command(f))
+
+
+@jig.command()
 def init() -> None:
     """Initialize jig configuration"""
     if (pyproject := Path("pyproject.toml")).exists():
@@ -1313,52 +928,46 @@ gpu_type = "h100-80gb"
 gpu_count = 1
 """
     pyproject.write_text(content)
-    echo("\N{CHECK MARK} Created pyproject.toml")
-    echo("  Edit the configuration and run 'jig deploy'")
+    echo("""\N{CHECK MARK} Created pyproject.toml
+  Edit the configuration and run 'jig deploy'""")
 
 
-@click.command()
 @_jig_command
 def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
-    if _dockerfile(jig.config):
-        echo("\N{CHECK MARK} Generated Dockerfile")
-    else:
-        msg = f"ERROR: {jig.config.dockerfile} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
-        echo(msg, err=True)
+    if not _dockerfile(jig.config):
+        msg = f"{jig.config.dockerfile} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
+        raise JigError(msg)
 
 
-tag_option = click.option("--tag", default="latest", help="Image tag")
-warmup_option = click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")
-docker_args_option = click.option(
-    "--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)"
-)
+_tag_option = click.option("--tag", default="latest", help="Image tag")
 
 
-@click.command()
+def _build_options(f: Callable[..., Any]) -> Callable[..., Any]:
+    f = click.option(
+        "--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)"
+    )(f)
+    f = click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")(f)
+    return _tag_option(f)
+
+
 @_jig_command
-@tag_option
-@warmup_option
-@docker_args_option
+@_build_options
 def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     """Build container image"""
     jig.build(tag, warmup, docker_args)
 
 
-@click.command()
 @_jig_command
-@tag_option
+@_tag_option
 def push(jig: Jig, tag: str) -> None:
     """Push image to registry"""
     jig.push(tag)
 
 
-@click.command()
 @_jig_command
-@tag_option
+@_build_options
 @click.option("--build-only", is_flag=True, help="Build and push only")
-@warmup_option
-@docker_args_option
 @click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
 @click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
@@ -1374,42 +983,36 @@ def deploy(
     jig.deploy(tag, build_only, warmup, detach, docker_args, existing_image)
 
 
-@click.command()
 @_jig_command
 @click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
-def status(jig: Jig, json_output: bool = False) -> None:
+def status(jig: Jig, json_output: bool = False) -> Any:
     """Get deployment status"""
-    response = jig.api.retrieve(jig.config.model_name)
+    raw = jig.api.with_raw_response.retrieve(jig.name)
     if json_output:
-        echo(response.model_dump_json(indent=2))
-    else:
-        echo(format_deployment_status(response))
+        return raw
+    return jig.format_status(raw.parse())
 
 
-@click.command()
 @_jig_command
-def endpoint(jig: Jig) -> None:
+def endpoint(jig: Jig) -> str:
     """Get deployment endpoint URL"""
-    echo(f"{_get_api_base_url(jig.together)}/v1/deployment-request/{jig.config.model_name}")
+    return f"https://api.together.ai/v1/deployment-request/{jig.name}"
 
 
-@click.command()
 @_jig_command
 @click.option("--follow", is_flag=True, help="Follow log output")
-def logs(jig: Jig, follow: bool) -> None:
+def logs(jig: Jig, follow: bool) -> str | None:
     """Get deployment logs"""
-    jig.logs(follow)
+    return jig.follow_logs() if follow else jig.logs()
 
 
-@click.command()
 @_jig_command
-def destroy(jig: Jig) -> None:
+def destroy(jig: Jig) -> str:
     """Destroy deployment"""
-    jig.api.destroy(jig.config.model_name)
-    echo(f"\N{WASTEBASKET} Destroyed {jig.config.model_name}")
+    jig.api.destroy(jig.name)
+    return f"\N{WASTEBASKET} Destroyed {jig.name}"
 
 
-@click.command()
 @_jig_command
 @click.option("--prompt", default=None, help="Job prompt")
 @click.option("--payload", default=None, help="Job payload JSON")
@@ -1419,27 +1022,188 @@ def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> No
     jig.submit(prompt, payload, watch)
 
 
-@click.command()
 @_jig_command
 @click.option("--request-id", required=True, help="Job request ID")
-def job_status(jig: Jig, request_id: str) -> None:
+def job_status(jig: Jig, request_id: str) -> Any:
     """Get status of a specific job"""
-    response = jig.api.queue.retrieve(model=jig.config.model_name, request_id=request_id)
-    echo(response.model_dump_json(indent=2))
+    return jig.api.queue.with_raw_response.retrieve(model=jig.name, request_id=request_id)
 
 
-@click.command()
 @_jig_command
-def queue_status(jig: Jig) -> None:
+def queue_status(jig: Jig) -> Any:
     """Get queue metrics for the deployment"""
-    response = jig.api.queue.with_raw_response.metrics(model=jig.config.model_name)
-    echo(json.dumps(response.json(), indent=2))
+    return jig.api.queue.with_raw_response.metrics(model=jig.name)
 
 
-@click.command("list")
-@_handle_jig_errors
-@click.pass_context
-def list_deployments(ctx: Context) -> None:
+@jig.command("list")
+@_command
+def list_deployments(jig: Jig) -> Any:
     """List all deployments"""
-    response = ctx.obj.beta.jig.with_raw_response.list()
-    echo(json.dumps(response.json(), indent=2))
+    return jig.api.with_raw_response.list()
+
+
+# -- Secrets --
+
+
+@jig.group()
+def secrets() -> None:
+    """Manage deployment secrets"""
+
+
+@secrets.command("set")
+@_command
+@click.option("--name", required=True, help="Secret name")
+@click.option("--value", required=True, help="Secret value")
+@click.option("--description", default="", help="Secret description")
+def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
+    """Set a secret (create or update)"""
+    jig.set_secret(name, value, description)
+
+
+@secrets.command("unset")
+@_command
+@click.option("--name", required=True, help="Secret name to remove")
+def secrets_unset(jig: Jig, name: str) -> None:
+    """Remove a secret from local state"""
+    try:
+        del jig.state.secrets[name]
+        jig.state.save()
+        echo(f"\N{CHECK MARK} Deleted secret {name}")
+    except KeyError:
+        echo(f"\N{CROSS MARK} Secret {name} is not set")
+
+
+@secrets.command("list")
+@_command
+def secrets_list(jig: Jig) -> None:
+    """List all secrets with sync status"""
+    prefix = f"{jig.name}-"
+
+    local_secrets = set(jig.state.secrets.keys())
+    remote_secrets: set[str] = set()
+    # get all remote secrets then filter for this deployment
+    for secret in jig.api.secrets.list().data or []:
+        if (name := secret.name) and name.startswith(prefix):
+            # strip prefix to get local name
+            remote_secrets.add(name.removeprefix(prefix))
+
+    if not local_secrets and not remote_secrets:
+        echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment {jig.name}")
+        return
+
+    echo(f"\N{INFORMATION SOURCE} Secrets for deployment {jig.name}:\n")
+
+    for name in sorted(local_secrets | remote_secrets):
+        in_local = name in local_secrets
+        in_remote = name in remote_secrets
+
+        if in_local and in_remote:
+            status = click.style("synced", fg="green")
+        elif in_local:
+            status = click.style("local only", fg="yellow")
+        else:
+            status = click.style("remote only", fg="yellow")
+
+        echo(f"  - {name} [{status}]")
+
+
+# -- Volumes --
+
+
+@jig.group()
+def volumes() -> None:
+    """Manage volumes"""
+
+
+_volume_name_option = click.option("--name", required=True, help="Volume name")
+
+
+_source_dir = click.Path(exists=True, file_okay=False, path_type=Path)
+
+
+@volumes.command("create")
+@_command
+@_volume_name_option
+@click.option("--source", required=True, type=_source_dir, help="Source directory path")
+def volumes_create(jig: Jig, name: str, source: Path) -> None:
+    """Create a volume and upload files"""
+    client = jig.api
+    source_prefix = f"{name}/{source.name}"
+
+    echo(f"\N{ROCKET} Creating volume {name} with source prefix {source_prefix}")
+    try:
+        volume = client.volumes.create(
+            name=name, type="readOnly", content={"type": "files", "source_prefix": source_prefix}
+        )
+        echo(f"\N{CHECK MARK} Volume created: {volume.id}")
+    except APIError as e:
+        if "already exists" in e.message:
+            raise JigError(f"Volume {name} already exists, use 'jig volumes update' instead") from None
+        raise JigError(f"Failed to create volume: {e}") from e
+
+    try:
+        asyncio.run(Uploader(client._client).upload_files(source, source_prefix))
+    except Exception as e:
+        echo(f"\N{CROSS MARK} Upload failed: {e}")
+        echo(f"\N{WASTEBASKET} Cleaning up volume {name}")
+        try:
+            client.volumes.delete(name)
+        except Exception as cleanup_error:
+            echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
+        raise Exit(1) from None
+
+
+@volumes.command("update")
+@_command
+@_volume_name_option
+@click.option("--source", required=True, type=_source_dir, help="New source directory path")
+def volumes_update(jig: Jig, name: str, source: Path) -> None:
+    """Update a volume and re-upload files"""
+    client = jig.api
+    source_prefix = f"{name}/{source.name}"
+
+    try:
+        client.volumes.retrieve(name)
+    except NotFoundError:
+        raise JigError(f"Volume {name} not found") from None
+
+    echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
+    asyncio.run(Uploader(client._client).upload_files(source, source_prefix))
+
+    echo(f"\N{INFORMATION SOURCE} Updating volume {name} with source prefix {source_prefix}")
+    client.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
+    echo("\N{CHECK MARK} Volume updated successfully")
+
+
+@volumes.command("delete")
+@_command
+@_volume_name_option
+def volumes_delete(jig: Jig, name: str) -> None:
+    """Delete a volume"""
+    try:
+        jig.api.volumes.delete(name)
+    except NotFoundError:
+        raise JigError(f"Volume {name} not found") from None
+    echo(f"\N{CHECK MARK} Deleted volume {name}")
+
+
+@volumes.command("describe")
+@_command
+@_volume_name_option
+def volumes_describe(jig: Jig, name: str) -> Any:
+    """Describe a volume"""
+    try:
+        return jig.api.volumes.with_raw_response.retrieve(name)
+    except NotFoundError:
+        raise JigError(f"Volume {name} not found") from None
+
+
+@volumes.command("list")
+@_command
+def volumes_list(jig: Jig) -> Any:
+    """List all volumes"""
+    return jig.api.volumes.with_raw_response.list()
+
+
+if __name__ == "__main__":
+    jig()
