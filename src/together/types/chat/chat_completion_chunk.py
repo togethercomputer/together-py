@@ -53,6 +53,7 @@ class ChatCompletionChunk(BaseModel):
     model: str
 
     object: Literal["chat.completion.chunk"]
+    """The object type, which is always `chat.completion.chunk`."""
 
     system_fingerprint: Optional[str] = None
 

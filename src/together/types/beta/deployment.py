@@ -150,8 +150,8 @@ class Deployment(BaseModel):
     name: Optional[str] = None
     """Name is the name of the deployment"""
 
-    object: Optional[str] = None
-    """Object is the type identifier for this response (always "deployment")"""
+    object: Optional[Literal["deployment"]] = None
+    """The object type, which is always `deployment`."""
 
     port: Optional[int] = None
     """Port is the container port that the deployment exposes"""

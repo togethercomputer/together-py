@@ -6,6 +6,8 @@ from together import Together
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
 
+NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed", "user_error"]
+
 
 @click.command()
 @click.pass_context
@@ -15,6 +17,15 @@ from together.lib.utils.serializer import datetime_serializer
 def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     """Cancel fine-tuning job"""
     client: Together = ctx.obj
+    job = client.fine_tuning.retrieve(fine_tune_id)
+    if job.status in NON_CANCELLABLE_STATES:
+        click.echo(
+            click.style(f"Fine-tuning: ", fg="blue")
+            + f"Training is not currently cancellable. Current status is "
+            + click.style(job.status, fg="yellow")
+        )
+        return
+
     if not quiet:
         confirm_response = input(
             "You will be billed for any completed training steps upon cancellation. "

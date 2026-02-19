@@ -30,7 +30,7 @@ class TestClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
 
@@ -42,7 +42,7 @@ class TestClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
             cluster_type="KUBERNETES",
             duration_days=0,
             shared_volume={
@@ -62,7 +62,7 @@ class TestClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
         )
 
         assert response.is_closed is True
@@ -78,7 +78,7 @@ class TestClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -275,7 +275,7 @@ class TestAsyncClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
 
@@ -287,7 +287,7 @@ class TestAsyncClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
             cluster_type="KUBERNETES",
             duration_days=0,
             shared_volume={
@@ -307,7 +307,7 @@ class TestAsyncClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
         )
 
         assert response.is_closed is True
@@ -323,7 +323,7 @@ class TestAsyncClusters:
             driver_version="CUDA_12_5_555",
             gpu_type="H100_SXM",
             num_gpus=0,
-            region="us-central-8",
+            region="region",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"

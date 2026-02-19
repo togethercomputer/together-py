@@ -10,6 +10,7 @@ import httpx
 import together
 from together._version import __version__
 from together._constants import DEFAULT_TIMEOUT
+from together._utils._logs import setup_logging
 from together.lib.cli.api.beta import beta
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
@@ -58,7 +59,10 @@ def main(
     max_retries: int | None,
 ) -> None:
     """This is a sample CLI tool."""
-    os.environ.setdefault("TOGETHER_LOG", "debug" if debug else "info")
+    if debug:
+        os.environ.setdefault("TOGETHER_LOG", "debug")
+        setup_logging()  # Must run this again here to allow the new logging configuration to take effect
+
     try:
         ctx.obj = together.Together(
             api_key=api_key,

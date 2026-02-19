@@ -66,7 +66,7 @@ class ClustersResource(SyncAPIResource):
         driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
-        region: Literal["us-central-8", "us-central-4"],
+        region: str,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         duration_days: int | Omit = omit,
         shared_volume: cluster_create_params.SharedVolume | Omit = omit,
@@ -87,6 +87,10 @@ class ClustersResource(SyncAPIResource):
         management.
 
         Args:
+          billing_type: RESERVED billing types allow you to specify the duration of the cluster
+              reservation via the duration_days field. ON_DEMAND billing types will give you
+              ownership of the cluster until you delete it.
+
           cluster_name: Name of the GPU cluster.
 
           driver_version: NVIDIA driver version to use in the cluster.
@@ -96,10 +100,16 @@ class ClustersResource(SyncAPIResource):
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
-          region: Region to create the GPU cluster in. Valid values are us-central-8 and
-              us-central-4.
+          region: Region to create the GPU cluster in. Usable regions can be found from
+              `client.clusters.list_regions()`
+
+          cluster_type: Type of cluster to create.
 
           duration_days: Duration in days to keep the cluster running.
+
+          shared_volume: Inline configuration to create a shared volume with the cluster creation.
+
+          volume_id: ID of an existing volume to use with the cluster creation.
 
           extra_headers: Send extra headers
 
@@ -147,6 +157,8 @@ class ClustersResource(SyncAPIResource):
         Retrieve information about a specific GPU cluster.
 
         Args:
+          cluster_id: The ID of the cluster to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -182,6 +194,13 @@ class ClustersResource(SyncAPIResource):
         Update the configuration of an existing GPU cluster.
 
         Args:
+          cluster_id: The ID of the cluster to update
+
+          cluster_type: Type of cluster to update.
+
+          num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
+              example, 8, 16 or 24
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -241,6 +260,8 @@ class ClustersResource(SyncAPIResource):
         Delete a GPU cluster by cluster ID.
 
         Args:
+          cluster_id: The ID of the cluster to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -311,7 +332,7 @@ class AsyncClustersResource(AsyncAPIResource):
         driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
-        region: Literal["us-central-8", "us-central-4"],
+        region: str,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         duration_days: int | Omit = omit,
         shared_volume: cluster_create_params.SharedVolume | Omit = omit,
@@ -332,6 +353,10 @@ class AsyncClustersResource(AsyncAPIResource):
         management.
 
         Args:
+          billing_type: RESERVED billing types allow you to specify the duration of the cluster
+              reservation via the duration_days field. ON_DEMAND billing types will give you
+              ownership of the cluster until you delete it.
+
           cluster_name: Name of the GPU cluster.
 
           driver_version: NVIDIA driver version to use in the cluster.
@@ -341,10 +366,16 @@ class AsyncClustersResource(AsyncAPIResource):
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
-          region: Region to create the GPU cluster in. Valid values are us-central-8 and
-              us-central-4.
+          region: Region to create the GPU cluster in. Usable regions can be found from
+              `client.clusters.list_regions()`
+
+          cluster_type: Type of cluster to create.
 
           duration_days: Duration in days to keep the cluster running.
+
+          shared_volume: Inline configuration to create a shared volume with the cluster creation.
+
+          volume_id: ID of an existing volume to use with the cluster creation.
 
           extra_headers: Send extra headers
 
@@ -392,6 +423,8 @@ class AsyncClustersResource(AsyncAPIResource):
         Retrieve information about a specific GPU cluster.
 
         Args:
+          cluster_id: The ID of the cluster to retrieve
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -427,6 +460,13 @@ class AsyncClustersResource(AsyncAPIResource):
         Update the configuration of an existing GPU cluster.
 
         Args:
+          cluster_id: The ID of the cluster to update
+
+          cluster_type: Type of cluster to update.
+
+          num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
+              example, 8, 16 or 24
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -486,6 +526,8 @@ class AsyncClustersResource(AsyncAPIResource):
         Delete a GPU cluster by cluster ID.
 
         Args:
+          cluster_id: The ID of the cluster to delete
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request

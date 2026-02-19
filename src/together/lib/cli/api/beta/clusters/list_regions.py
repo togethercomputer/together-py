@@ -30,7 +30,9 @@ def list_regions(ctx: click.Context, json: bool) -> None:
             data.append(
                 {
                     "Name": region.name,
-                    "Availability Zones": ", ".join(region.availability_zones) if region.availability_zones else "",
+                    "Supported GPU Types": ", ".join(region.supported_instance_types)
+                    if region.supported_instance_types
+                    else "",
                     "Driver Versions": ", ".join(region.driver_versions) if region.driver_versions else "",
                 }
             )

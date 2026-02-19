@@ -62,6 +62,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
     chat_template_kwargs: object
+    """Additional configuration to pass to model engine."""
 
     compliance: Literal["hipaa"]
 
@@ -113,6 +114,10 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """
 
     reasoning: Reasoning
+    """
+    For models that support toggling reasoning functionality, this object can be
+    used to control that functionality.
+    """
 
     reasoning_effort: Literal["low", "medium", "high"]
     """
@@ -318,11 +323,11 @@ FunctionCall: TypeAlias = Union[Literal["none", "auto"], FunctionCallName]
 
 
 class Reasoning(TypedDict, total=False):
+    """
+    For models that support toggling reasoning functionality, this object can be used to control that functionality.
+    """
+
     enabled: bool
-    """
-    For models that support toggling reasoning functionality, this object can be
-    used to control that functionality.
-    """
 
 
 class ResponseFormatText(TypedDict, total=False):

@@ -7,6 +7,7 @@ import time
 import uuid
 import shutil
 import asyncio
+import hashlib
 import logging
 import tempfile
 from typing import IO, Any, Dict, List, Tuple, cast
@@ -287,6 +288,7 @@ class UploadManager(SyncAPIResource):
         self,
         url: str,
         file: Path,
+        checksum: str,
         purpose: FilePurpose,
         filetype: FileType,
     ) -> Tuple[str, str]:
@@ -294,6 +296,7 @@ class UploadManager(SyncAPIResource):
             "purpose": purpose,
             "file_name": file.name,
             "file_type": filetype,
+            "checksum": checksum,
         }
 
         try:
@@ -304,6 +307,8 @@ class UploadManager(SyncAPIResource):
                 options={"headers": {"Content-Type": "multipart/form-data"}, "follow_redirects": False},
             )
         except APIStatusError as e:
+            if e.response.status_code == 409:
+                raise FileAlreadyExistsError(e.response.json()["file_id"]) from e
             if e.response.status_code == 401:
                 raise AuthenticationError(
                     "This job would exceed your free trial credits. "
@@ -354,16 +359,19 @@ class UploadManager(SyncAPIResource):
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
 
+        checksum = _calculate_file_checksum(file)
+
         if file_size_gb > MULTIPART_THRESHOLD_GB:
             multipart_manager = MultipartUploadManager(self._client)
-            return multipart_manager.upload(url, file, purpose)
+            return multipart_manager.upload(url, file, checksum, purpose)
         else:
-            return self._upload_single_file(url, file, purpose)
+            return self._upload_single_file(url, file, checksum, purpose)
 
     def _upload_single_file(
         self,
         url: str,
         file: Path,
+        checksum: str,
         purpose: FilePurpose,
     ) -> FileResponse:
         file_id = None
@@ -377,7 +385,7 @@ class UploadManager(SyncAPIResource):
             raise FileTypeError(
                 f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
             )
-        redirect_url, file_id = self.get_upload_url(url, file, purpose, filetype)  # type: ignore
+        redirect_url, file_id = self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
 
@@ -432,6 +440,7 @@ class MultipartUploadManager(SyncAPIResource):
         self,
         url: str,
         file: Path,
+        checksum: str,
         purpose: FilePurpose,
     ) -> FileResponse:
         """Upload large file using multipart upload"""
@@ -449,7 +458,7 @@ class MultipartUploadManager(SyncAPIResource):
         upload_info = None
 
         try:
-            upload_info = self._initiate_upload(url, file, file_size, num_parts, purpose, file_type)
+            upload_info = self._initiate_upload(url, file, checksum, file_size, num_parts, purpose, file_type)
 
             completed_parts = self._upload_parts_concurrent(file, upload_info, part_size)
 
@@ -460,6 +469,10 @@ class MultipartUploadManager(SyncAPIResource):
 
             return self._complete_upload(url, upload_id, file_id, completed_parts)
 
+        # If the server says the file already exists, raise the error to the files.upload resource
+        # This should be silently handled by fetching down the file and returning it
+        except FileAlreadyExistsError as e:
+            raise e
         except Exception as e:
             if upload_info is not None:
                 upload_id = upload_info.get("upload_id")
@@ -485,6 +498,7 @@ class MultipartUploadManager(SyncAPIResource):
         self,
         url: str,
         file: Path,
+        checksum: str,
         file_size: int,
         num_parts: int,
         purpose: FilePurpose,
@@ -498,6 +512,7 @@ class MultipartUploadManager(SyncAPIResource):
             "num_parts": num_parts,
             "purpose": str(purpose),
             "file_type": file_type,
+            "checksum": checksum,
         }
 
         try:
@@ -508,6 +523,8 @@ class MultipartUploadManager(SyncAPIResource):
                 options={"headers": {"Content-Type": "application/json"}},
             )
         except APIStatusError as e:
+            if e.response.status_code == 409:
+                raise FileAlreadyExistsError(e.response.json()["file_id"]) from e
             if e.response.status_code == 400:
                 response = e.response
             else:
@@ -664,6 +681,7 @@ class AsyncUploadManager(AsyncAPIResource):
         self,
         url: str,
         file: Path,
+        checksum: str,
         purpose: FilePurpose,
         filetype: FileType,
     ) -> Tuple[str, str]:
@@ -671,6 +689,7 @@ class AsyncUploadManager(AsyncAPIResource):
             "purpose": str(purpose),
             "file_name": file.name,
             "file_type": filetype,
+            "checksum": checksum,
         }
 
         try:
@@ -681,6 +700,8 @@ class AsyncUploadManager(AsyncAPIResource):
                 options={"headers": {"Content-Type": "multipart/form-data"}, "follow_redirects": False},
             )
         except APIStatusError as e:
+            if e.response.status_code == 409:
+                raise FileAlreadyExistsError(e.response.json()["file_id"]) from e
             if e.response.status_code == 401:
                 raise AuthenticationError(
                     "This job would exceed your free trial credits. "
@@ -735,16 +756,19 @@ class AsyncUploadManager(AsyncAPIResource):
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
 
+        checksum = _calculate_file_checksum(file)
+
         if file_size_gb > MULTIPART_THRESHOLD_GB:
             multipart_manager = AsyncMultipartUploadManager(self._client)
-            return await multipart_manager.upload(url, file, purpose)
+            return await multipart_manager.upload(url, file, checksum, purpose)
         else:
-            return await self._upload_single_file(url, file, purpose)
+            return await self._upload_single_file(url, file, checksum, purpose)
 
     async def _upload_single_file(
         self,
         url: str,
         file: Path,
+        checksum: str,
         purpose: FilePurpose,
     ) -> FileResponse:
         file_id = None
@@ -758,7 +782,8 @@ class AsyncUploadManager(AsyncAPIResource):
             raise FileTypeError(
                 f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
             )
-        redirect_url, file_id = await self.get_upload_url(url, file, purpose, filetype)  # type: ignore
+
+        redirect_url, file_id = await self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
 
@@ -813,6 +838,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         self,
         url: str,
         file: Path,
+        checksum: str,
         purpose: FilePurpose,
     ) -> FileResponse:
         """Upload large file using multipart upload via ThreadPoolExecutor"""
@@ -830,7 +856,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_info = None
 
         try:
-            upload_info = await self._initiate_upload(url, file, file_size, num_parts, purpose, file_type)
+            upload_info = await self._initiate_upload(url, file, checksum, file_size, num_parts, purpose, file_type)
 
             completed_parts = await self._upload_parts_concurrent(file, upload_info, part_size)
 
@@ -841,6 +867,10 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
             return await self._complete_upload(url, upload_id, file_id, completed_parts)
 
+        # If the server says the file already exists, raise the error to the files.upload resource
+        # This should be silently handled by fetching down the file and returning it
+        except FileAlreadyExistsError as e:
+            raise e
         except Exception as e:
             if upload_info is not None:
                 upload_id = upload_info.get("upload_id")
@@ -866,6 +896,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         self,
         url: str,
         file: Path,
+        checksum: str,
         file_size: int,
         num_parts: int,
         purpose: FilePurpose,
@@ -879,6 +910,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
             "num_parts": num_parts,
             "purpose": str(purpose),
             "file_type": file_type,
+            "checksum": checksum,
         }
 
         try:
@@ -889,6 +921,8 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
                 options={"headers": {"Content-Type": "application/json"}},
             )
         except APIStatusError as e:
+            if e.response.status_code == 409:
+                raise FileAlreadyExistsError(e.response.json()["file_id"]) from e
             if e.response.status_code == 400:
                 response = e.response
             else:
@@ -1056,3 +1090,37 @@ def _calculate_parts(file_size: int) -> Tuple[int, int]:
         num_parts = math.ceil(file_size / part_size)
 
     return part_size, num_parts
+
+
+def _calculate_file_checksum(file_path: Path, algorithm: str = "sha256", block_size: int = 65536) -> str:
+    """
+    Calculates the checksum of a file using a specified hashing algorithm.
+
+    Args:
+        file_path (str or Path): The path to the file.
+        algorithm (str): The name of the hashing algorithm (e.g., 'md5', 'sha256').
+        block_size (int): The size of chunks to read the file in (for large files).
+
+    Returns:
+        str: The hexadecimal representation of the file checksum.
+    """
+    # Create a hash object with the specified algorithm name
+    try:
+        hasher = hashlib.new(algorithm)
+    except ValueError:
+        return f"Error: Invalid algorithm name '{algorithm}'"
+
+    # Open the file in binary read mode
+    with open(file_path, "rb") as f:
+        # Read the file in chunks and update the hash object
+        for chunk in iter(lambda: f.read(block_size), b""):
+            hasher.update(chunk)
+
+    # Return the hexadecimal digest of the hash
+    return hasher.hexdigest()
+
+
+class FileAlreadyExistsError(Exception):
+    def __init__(self, file_id: str):
+        self.file_id = file_id
+        super().__init__(f"File already exists: {file_id}")

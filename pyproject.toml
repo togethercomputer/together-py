@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.1.1"
+version = "2.2.0"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -49,6 +49,8 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/togethercomputer/together-py"
 Repository = "https://github.com/togethercomputer/together-py"
+Documentation = "https://docs.together.ai/"
+Changelog = "https://github.com/togethercomputer/together-py/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]

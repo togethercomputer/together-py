@@ -26,7 +26,6 @@ def list(ctx: click.Context) -> None:
                 "File ID": i.id,
                 "Size": convert_bytes(float(str(i.bytes))),  # convert to string for mypy typing
                 "Created At": convert_unix_timestamp(i.created_at or 0),
-                "Line Count": i.line_count,
             }
         )
     table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)

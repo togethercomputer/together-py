@@ -8,16 +8,24 @@ from tabulate import tabulate
 from together import Together
 from together.lib.utils import finetune_price_to_dollars
 from together.lib.cli.api._utils import handle_api_errors, generate_progress_bar
+from together.lib.utils.serializer import datetime_serializer
 
 
 @click.command()
 @click.pass_context
+@click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
-def list(ctx: click.Context) -> None:
+def list(ctx: click.Context, json: bool) -> None:
     """List fine-tuning jobs"""
     client: Together = ctx.obj
 
     response = client.fine_tuning.list()
+
+    if json:
+        from json import dumps
+
+        click.echo(dumps(response.model_dump(exclude_none=True), indent=2, default=datetime_serializer))
+        return
 
     response.data = response.data or []
 

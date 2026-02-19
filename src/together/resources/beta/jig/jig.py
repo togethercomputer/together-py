@@ -97,6 +97,8 @@ class JigResource(SyncAPIResource):
         Retrieve details of a specific deployment by its ID or name
 
         Args:
+          id: Deployment ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -148,6 +150,8 @@ class JigResource(SyncAPIResource):
         Update an existing deployment configuration
 
         Args:
+          id: Deployment ID or name
+
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
@@ -395,6 +399,8 @@ class JigResource(SyncAPIResource):
         Delete an existing deployment
 
         Args:
+          id: Deployment ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -429,6 +435,8 @@ class JigResource(SyncAPIResource):
         Retrieve logs from a deployment, optionally filtered by replica ID.
 
         Args:
+          id: Deployment ID or name
+
           replica_id: Replica ID to filter logs
 
           extra_headers: Send extra headers
@@ -501,6 +509,8 @@ class AsyncJigResource(AsyncAPIResource):
         Retrieve details of a specific deployment by its ID or name
 
         Args:
+          id: Deployment ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -552,6 +562,8 @@ class AsyncJigResource(AsyncAPIResource):
         Update an existing deployment configuration
 
         Args:
+          id: Deployment ID or name
+
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
@@ -799,6 +811,8 @@ class AsyncJigResource(AsyncAPIResource):
         Delete an existing deployment
 
         Args:
+          id: Deployment ID or name
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -833,6 +847,8 @@ class AsyncJigResource(AsyncAPIResource):
         Retrieve logs from a deployment, optionally filtered by replica ID.
 
         Args:
+          id: Deployment ID or name
+
           replica_id: Replica ID to filter logs
 
           extra_headers: Send extra headers

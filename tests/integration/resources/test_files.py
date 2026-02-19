@@ -42,7 +42,6 @@ class TestTogetherFiles:
         assert isinstance(response, FileResponse)
         assert response.filename == "valid.jsonl"
         assert response.file_type == "jsonl"
-        assert response.line_count == 0
         assert response.object == "file"
         assert response.processed == True
         assert response.purpose == "fine-tune"
