@@ -1034,7 +1034,7 @@ class Jig:
 
     def __init__(self, client: Together, config_path: str | None = None) -> None:
         self.together = client
-        self.jig: JigResource = client.beta.jig
+        self.api: JigResource = client.beta.jig
         self.config = Config.find(config_path)
         self.state = State.load(self.config._path.parent, self.config.model_name)
 
@@ -1141,7 +1141,7 @@ class Jig:
 
         if "TOGETHER_API_KEY" not in self.state.secrets:
             _set_secret(
-                self.jig, self.config, self.state, "TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API"
+                self.api, self.config, self.state, "TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API"
             )
 
         for name, secret_id in self.state.secrets.items():
@@ -1179,10 +1179,10 @@ class Jig:
         click.echo(f"Deploying model: {self.config.model_name}")
 
         try:
-            existing = self.jig.retrieve(self.config.model_name)
+            existing = self.api.retrieve(self.config.model_name)
             old_revision_id = _get_current_revision_id(existing)
             was_scaled_to_zero = existing.ready_replicas == 0
-            response = self.jig.update(self.config.model_name, **deploy_data)
+            response = self.api.update(self.config.model_name, **deploy_data)
             click.echo("\N{CHECK MARK}  Applied new deployment configuration")
         except APIStatusError as e:
             if e.status_code != 404:
@@ -1191,7 +1191,7 @@ class Jig:
             was_scaled_to_zero = False
             click.echo("\N{ROCKET} Creating new deployment")
             try:
-                response = self.jig.deploy(**deploy_data)
+                response = self.api.deploy(**deploy_data)
                 click.echo(f"\N{CHECK MARK} Deployed: {self.config.model_name}")
             except APIStatusError as e:
                 if _is_not_unique_error(e):
@@ -1208,12 +1208,12 @@ class Jig:
         if old_revision_id and old_revision_id == new_revision_id and not scaling_up:
             return
 
-        Tracker(self.jig, self.config.model_name).track_deployment_progress()
+        Tracker(self.api, self.config.model_name).track_deployment_progress()
 
     # == Query commands ==
 
     def status(self, json_output: bool = False) -> None:
-        response = self.jig.retrieve(self.config.model_name)
+        response = self.api.retrieve(self.config.model_name)
         if json_output:
             click.echo(response.model_dump_json(indent=2))
         else:
@@ -1225,7 +1225,7 @@ class Jig:
 
     def logs(self, follow: bool = False) -> None:
         if not follow:
-            if lines := self.jig.retrieve_logs(self.config.model_name).lines:
+            if lines := self.api.retrieve_logs(self.config.model_name).lines:
                 for line in lines:
                     click.echo(line)
             else:
@@ -1233,7 +1233,7 @@ class Jig:
             return
 
         try:
-            with self.jig.with_streaming_response.retrieve_logs(self.config.model_name) as stream:
+            with self.api.with_streaming_response.retrieve_logs(self.config.model_name) as stream:
                 for line in stream.iter_lines():
                     if line:
                         for log_line in json.loads(line).get("lines", []):
@@ -1244,7 +1244,7 @@ class Jig:
             click.echo(f"\nConnection ended: {e}")
 
     def destroy(self) -> None:
-        self.jig.destroy(self.config.model_name)
+        self.api.destroy(self.config.model_name)
         click.echo(f"\N{WASTEBASKET} Destroyed {self.config.model_name}")
 
     def submit(self, prompt: str | None, payload: str | None, watch: bool) -> None:
@@ -1252,7 +1252,7 @@ class Jig:
         if not prompt and not payload:
             raise click.UsageError("Either --prompt or --payload required")
 
-        raw_response = self.jig.queue.with_raw_response.submit(
+        raw_response = self.api.queue.with_raw_response.submit(
             model=self.config.model_name,
             payload=json.loads(payload) if payload else {"prompt": prompt},
             priority=1,
@@ -1271,7 +1271,7 @@ class Jig:
         last_status: str | None = None
         while True:
             try:
-                response = self.jig.queue.retrieve(
+                response = self.api.queue.retrieve(
                     model=self.config.model_name,
                     request_id=submit_response.request_id,
                 )
@@ -1292,14 +1292,14 @@ class Jig:
                 raise SystemExit(130) from None
 
     def job_status(self, request_id: str) -> None:
-        response = self.jig.queue.retrieve(
+        response = self.api.queue.retrieve(
             model=self.config.model_name,
             request_id=request_id,
         )
         click.echo(response.model_dump_json(indent=2))
 
     def queue_status(self) -> None:
-        response = self.jig.queue.with_raw_response.metrics(model=self.config.model_name)
+        response = self.api.queue.with_raw_response.metrics(model=self.config.model_name)
         click.echo(json.dumps(response.json(), indent=2))
 
 
