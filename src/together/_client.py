@@ -110,11 +110,11 @@ class Together(SyncAPIClient):
 
         This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
         """
-        if api_key is None:
+        if not api_key:
             api_key = os.environ.get("TOGETHER_API_KEY")
-        if api_key is None and "google.colab" in sys.modules:
+        if not api_key and "google.colab" in sys.modules:
             api_key = get_google_colab_secret("TOGETHER_API_KEY")
-        if api_key is None:
+        if not api_key:
             raise TogetherError(
                 "The api_key client option must be set either by passing api_key to the client or by setting the TOGETHER_API_KEY environment variable"
             )
