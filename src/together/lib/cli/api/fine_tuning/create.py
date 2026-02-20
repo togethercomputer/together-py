@@ -285,7 +285,10 @@ def create(
     )
 
     if model is None and from_checkpoint is None:
-        raise click.BadParameter("You must specify either a model or a checkpoint")
+        raise click.MissingParameter(
+            "",
+            param_type="option --model or --from-checkpoint",
+        )
 
     model_name = model
     if from_checkpoint is not None:
