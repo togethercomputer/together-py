@@ -4,7 +4,6 @@ from typing import Any, Literal
 from pathlib import Path
 
 import click
-from rich import print as rprint
 from click.core import ParameterSource
 
 from together import Together
@@ -13,19 +12,21 @@ from together.lib.utils import log_warn
 from together.lib.cli.api._utils import INT_WITH_MAX, BOOL_WITH_AUTO, handle_api_errors
 from together.lib.resources.fine_tuning import get_model_limits
 
-_CONFIRMATION_MESSAGE = (
-    "You are about to create a fine-tuning job. "
-    "The estimated price of this job is {price}. "
-    "The actual cost of your job will be determined by the model size, the number of tokens "
-    "in the training file, the number of tokens in the validation file, the number of epochs, and "
-    "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
-    "{warning}"
-    "You can pass `-y` or `--confirm` to your command to skip this message.\n\n"
-    "Do you want to proceed?"
-)
+
+def get_confirmation_message(price: str, warning: str) -> str:
+    return (
+        "\nYou are about to create a fine-tuning job. The estimated price of this job is "
+        + f"{click.style(f'{price}', fg='blue', bold=True)}\n\n"
+        + "The actual cost of your job will be determined by the model size, the number of tokens"
+        + "in the training file, the number of tokens in the validation file, the number of epochs, and "
+        + "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
+        + warning
+        + "\nDo you want to proceed?"
+    )
+
 
 _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
-    "The estimated price of this job is significantly greater than your current credit limit and balance combined. "
+    "\nThe estimated price of this job is significantly greater than your current credit limit and balance combined. "
     "It will likely get cancelled due to insufficient funds. "
     "Consider increasing your credit limit at https://api.together.xyz/settings/profile\n"
 )
@@ -346,9 +347,11 @@ def create(
 
     training_method_cls: pe_params.TrainingMethod
     if training_method == "sft":
+        train_on_inputs = train_on_inputs or "auto"
+        training_args["train_on_inputs"] = train_on_inputs
         training_method_cls = pe_params.TrainingMethodTrainingMethodSft(
             method="sft",
-            train_on_inputs=train_on_inputs or "auto",
+            train_on_inputs=train_on_inputs,
         )
     else:
         training_method_cls = pe_params.TrainingMethodTrainingMethodDpo(
@@ -399,7 +402,7 @@ def create(
     else:
         warning = ""
 
-    confirmation_message = _CONFIRMATION_MESSAGE.format(
+    confirmation_message = get_confirmation_message(
         price=price,
         warning=warning,
     )
@@ -410,13 +413,12 @@ def create(
             verbose=True,
         )
 
-        report_string = f"Successfully submitted a fine-tuning job {response.id}"
-        # created_at reports UTC time, we use .astimezone() to convert to local time
-        formatted_time = response.created_at.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
-        report_string += f" at {formatted_time}"
-        rprint(report_string)
-    else:
-        click.echo("No confirmation received, stopping job launch")
+        click.echo(
+            click.style(f"\n\nSuccess!", fg="green", bold=True)
+            + click.style(" Your fine-tuning job ", fg="green")
+            + click.style(response.id, fg="blue", bold=True)
+            + click.style(" has been submitted.", fg="green")
+        )
 
 
 def _check_path_exists(path_string: str) -> bool:
