@@ -7,8 +7,9 @@ from pathlib import Path
 
 import click
 
-from together import NOT_GIVEN, NotGiven, Together
+from together import NOT_GIVEN, APIError, NotGiven, Together, APIStatusError
 from together.lib import DownloadManager
+from together.lib.cli.api._utils import handle_api_errors
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
@@ -40,6 +41,7 @@ _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
     default="merged",
     help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
 )
+@handle_api_errors("Fine-tuning")
 def download(
     ctx: click.Context,
     fine_tune_id: str,
@@ -84,11 +86,20 @@ def download(
     if isinstance(output_dir, str):
         output = Path(output_dir)
 
-    file_path, file_size = DownloadManager(client).download(
-        url=url,
-        output=output,
-        remote_name=remote_name,
-        fetch_metadata=True,
-    )
+    try:
+        file_path, file_size = DownloadManager(client).download(
+            url=url,
+            output=output,
+            remote_name=remote_name,
+            fetch_metadata=True,
+        )
 
-    click.echo(json.dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}, indent=4))
+        click.echo(
+            json.dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}, indent=4)
+        )
+    except APIStatusError as e:
+        raise APIError(
+            "Training job is not downloadable. This may be because the job is not in a completed state.",
+            request=e.request,
+            body=None,
+        ) from e
