@@ -63,6 +63,14 @@ def main(
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()  # Must run this again here to allow the new logging configuration to take effect
 
+    if api_key == "":
+        click.secho(
+            "Error: api key missing.\n\nThe api_key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
+            fg="red",
+        )
+        click.secho("\nYou can find your api key at https://api.together.xyz/settings/api-keys", fg="yellow")
+        sys.exit(1)
+
     try:
         ctx.obj = together.Together(
             api_key=api_key,
