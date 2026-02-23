@@ -1,48 +1,33 @@
-import json as json_lib
-from typing import Any, Dict, List
+from __future__ import annotations
 
-import click
-from rich import print
-from tabulate import tabulate
-
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
 
 
-@click.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-@auto_track_command
-def list_regions(ctx: click.Context, json: bool) -> None:
-    """List regions"""
-    client: Together = ctx.obj
+async def list_regions(
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """List regions."""
+    response = await config.client.beta.clusters.list_regions()
 
-    response = client.beta.clusters.list_regions()
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
+        return
 
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
-    else:
-        data: List[Dict[str, Any]] = []
-        for region in response.regions:
-            driver_versions: list[str] = []
-            for driver_version in region.driver_versions:
-                driver_versions.append(
-                    f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue] [dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]"
-                )
-
-            data.append(
-                {
-                    "Name": region.name,
-                    "Supported GPU Types": ", ".join(region.supported_instance_types)
-                    if region.supported_instance_types
-                    else "",
-                    "Driver Versions": "\n".join(driver_versions) if driver_versions else "",
-                }
+    table = ListTable()
+    table.add_primary_column("Region")
+    table.add_primary_column("GPU Options")
+    table.add_primary_column("Driver Versions")
+    for region in response.regions:
+        driver_versions: list[str] = []
+        for driver_version in region.driver_versions or []:
+            driver_versions.append(
+                f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue] [dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]"
             )
-        print(tabulate(data, headers="keys", tablefmt="grid"))
+
+        table.add_row(region.name, "\n".join(region.supported_instance_types or []), "\n".join(driver_versions))
+
+    console.print(table)

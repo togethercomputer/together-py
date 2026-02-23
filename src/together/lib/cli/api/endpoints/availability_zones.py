@@ -1,31 +1,26 @@
-import click
+from __future__ import annotations
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
-@click.command()
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_obj
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command
-def availability_zones(client: Together, json: bool) -> None:
+async def availability_zones(
+    *,
+    config: CLIConfigParameter,
+) -> None:
     """List all availability zones."""
-    avzones = client.endpoints.list_avzones()
 
-    if json:
-        import json as json_lib
-
-        click.echo(json_lib.dumps(avzones.model_dump(), indent=2))
+    avzones = await show_loading_status("Loading availability zones...", config.client.endpoints.list_avzones())
+    if config.json:
+        console.print_json(openapi_dumps(avzones).decode("utf-8"))
         return
-
-    if not avzones:
-        click.echo("No availability zones found", err=True)
+    if not avzones or not avzones.avzones:
+        console.print("No availability zones found")
         return
-
-    click.echo("Available zones:", err=True)
-    for availability_zone in sorted(avzones.avzones):
-        click.echo(f"  {availability_zone}")
+    console.print("Available zones:")
+    for zone in sorted(avzones.avzones):
+        console.print(f"  {zone}")

@@ -1,52 +1,44 @@
-from typing import Any, Dict, List
+from __future__ import annotations
 
-import click
-from rich import print_json
-from tabulate import tabulate
-
-from together import Together
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_timestamp
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
 
 
-@click.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@handle_api_errors("Fine-tuning")
-@auto_track_command
-def list_checkpoints(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
-    """List available checkpoints for a fine-tuning job"""
-    client: Together = ctx.obj
+async def list_checkpoints(
+    fine_tune_id: str,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """List available checkpoints for a fine-tuning job."""
 
-    checkpoints = client.fine_tuning.list_checkpoints(fine_tune_id)
+    checkpoints = await config.client.fine_tuning.list_checkpoints(fine_tune_id)
     checkpoints.data = checkpoints.data or []
 
-    if json:
-        print_json(openapi_dumps(checkpoints.data).decode("utf-8"))
+    if config.json:
+        console.print_json(openapi_dumps(checkpoints.data).decode("utf-8"))
         return
 
-    display_list: List[Dict[str, Any]] = []
+    table = ListTable(title="Checkpoints")
+    table.add_column("ID")
+    table.add_column("Timestamp")
+    table.add_primary_column("Type")
+
     for checkpoint in checkpoints.data:
         name = (
             f"{fine_tune_id}:{checkpoint.step}"
             if "intermediate" in checkpoint.checkpoint_type.lower()
             else fine_tune_id
         )
-        display_list.append(
-            {
-                "Type": checkpoint.checkpoint_type,
-                "Timestamp": format_timestamp(checkpoint.created_at),
-                "Name": name,
-            }
-        )
+        table.add_row(name, format_timestamp(checkpoint.created_at), checkpoint.checkpoint_type)
 
-    if display_list:
-        click.echo(f"Job {fine_tune_id} contains the following checkpoints:")
-        table = tabulate(display_list, headers="keys", tablefmt="grid")
-        click.echo(table)
-        click.echo("\nTo download a checkpoint, use `together fine-tuning download`")
-    else:
-        click.echo(f"No checkpoints found for job {fine_tune_id}")
+    if len(checkpoints.data) == 0:
+        console.print(f"No checkpoints found for job {fine_tune_id}")
+        return
+
+    console.print(table)
+    console.print(
+        "\n[bold dim]To download a checkpoint, use `together fine-tuning download \\[checkpoint-id]`[/bold dim]"
+    )

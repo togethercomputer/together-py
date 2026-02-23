@@ -1,31 +1,21 @@
-import click
-from rich import print, print_json
+from __future__ import annotations
 
-from together import Together
 from together._utils._json import openapi_dumps
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 
-@click.command()
-@click.pass_context
-@click.argument("id", type=str, required=True)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output the response in JSON format",
-)
-@handle_api_errors("Files")
-@auto_track_command
-def delete(ctx: click.Context, id: str, json: bool) -> None:
+async def delete(
+    id: str,
+    *,
+    config: CLIConfigParameter,
+) -> None:
     """Delete remote file"""
+    await show_loading_status("Deleting file", config.client.files.delete(id))
 
-    client: Together = ctx.obj
-
-    response = client.files.delete(id=id)
-
-    if json:
-        print_json(openapi_dumps(response).decode("utf-8"))
+    if config.json:
+        console.print_json(openapi_dumps({"success": True}).decode("utf-8"))
         return
 
-    print(f"[green]File {id} deleted[/green]")
+    console.print(f"[green]√[/green] File deleted")

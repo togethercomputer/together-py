@@ -1,33 +1,22 @@
-import json as json_lib
+from __future__ import annotations
 
-import click
-from rich import print
-
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 
-@click.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-@auto_track_command
-def retrieve(ctx: click.Context, cluster_id: str, json: bool) -> None:
-    """Retrieve a cluster by ID"""
-    client: Together = ctx.obj
+async def retrieve(
+    cluster_id: str,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Retrieve a cluster by ID."""
 
-    if not json:
-        click.echo(f"Clusters: Retrieving cluster...")
+    response = await show_loading_status("Retrieving cluster...", config.client.beta.clusters.retrieve(cluster_id))
 
-    response = client.beta.clusters.retrieve(cluster_id)
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
     else:
-        print(response)
+        # TODO: Add a pretty print for the cluster
+        console.print(response)

@@ -1,37 +1,28 @@
-import json as json_lib
+from __future__ import annotations
 
-import click
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.beta.clusters._util import print_clusters
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
 
+async def delete(
+    cluster_id: str,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Delete a cluster by ID."""
 
-@click.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-@auto_track_command
-def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
-    """Delete a cluster by ID"""
-    client: Together = ctx.obj
-
-    if json:
-        response = client.beta.clusters.delete(cluster_id=cluster_id)
-        click.echo(json_lib.dumps(response.model_dump(), indent=2))
+    if config.json:
+        response = await config.client.beta.clusters.delete(cluster_id=cluster_id)
+        console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    cluster = client.beta.clusters.retrieve(cluster_id=cluster_id)
-    ctx.obj.print_clusters([cluster])
-    if not click.confirm(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}?"):
+    cluster = await show_loading_status("", config.client.beta.clusters.retrieve(cluster_id=cluster_id))
+    print_clusters([cluster])
+    resp = input(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}? [y/N] ").strip().lower()
+    if resp != "y" and resp != "yes":
         return
-
-    click.echo("Clusters: Deleting cluster...")
-    response = client.beta.clusters.delete(cluster_id=cluster_id)
-
-    click.echo(f"Clusters: Deleted cluster {cluster.cluster_name}")
+    await show_loading_status("Deleting cluster...", config.client.beta.clusters.delete(cluster_id))
+    console.print(f"Deleted {cluster.cluster_name} ({cluster_id})")
