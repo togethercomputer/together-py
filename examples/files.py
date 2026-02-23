@@ -1,20 +1,51 @@
-from together import Together
+########################################################
+# Together Files are used in various features like fine-tuning, evals, and batches.
+#
+# This example demonstrates how to upload, retrieve, and delete files.
+# You can also download the contents of a file and stream it to write to a file.
+#
+########################################################
 
+from together import Together
 client = Together()
 
-print("Listing all files")
-
-# Print all files
+########################################################
+# List all files currently uploaded
+#
 files = client.files.list()
-for file in files.data:
-    print(file)
+print(f"Total files uploaded: {len(files.data)}")
 
+
+########################################################
+# Upload a file
+#
+# File uploads are idempotent, so you can upload the same file multiple times. It will result in one singular file upload ultimately.
+#
+uploaded_file = client.files.upload(
+    file="examples/coqa-small.jsonl",
+    # Other use cases are for features like evals and batches.
+    purpose="fine-tune"
+)
+print("File uploaded successfully")
+
+########################################################
 # Retrieve a file
-if files.data and files.data[0]:
-    print("Retrieving a file")
+#
+fileData = client.files.retrieve(uploaded_file.id)
+print(f"File ID: {fileData.id}")
 
-    file_id = files.data[0].id
+########################################################
+# Delete a file
+#
+client.files.delete(uploaded_file.id)
+print("File deleted successfully")
 
-    fileData = client.files.retrieve(file_id)
+########################################################
+# Download contents of the file
+#
+# Using the with_streaming_response context manager, we can stream the response and write to a file.
+with client.files.with_streaming_response.content(uploaded_file.id) as response:
+  with open("downloaded_file.jsonl", "wb") as f:
+    for chunk in response.iter_bytes():
+      f.write(chunk)
 
-    print(fileData)
