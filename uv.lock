@@ -3,11 +3,14 @@ revision = 3
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
     "python_full_version < '3.10' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
     "python_full_version < '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
     "python_full_version < '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 conflicts = [[
@@ -234,6 +237,20 @@ wheels = [
 ]
 
 [[package]]
+name = "cappa"
+version = "0.31.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "rich" },
+    { name = "type-lens" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e2/42/c63e45ba87862c63d5cdf2146ad1b00c2e9d4da4be08309518d4401cd6ba/cappa-0.31.0.tar.gz", hash = "sha256:070ccdefa418c8cad81c282d265196b0a03f2ad0c159a84f7f75b7b24ab0f317", size = 319910, upload-time = "2025-12-04T15:59:38.373Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d8/2e/fa028f325e51a37ca22099a628ef30b40fe12b9b3dbdb66b396446696267/cappa-0.31.0-py3-none-any.whl", hash = "sha256:e8575e383b42c67c797ec0c15fc7b1debcc7249e42147c294a867baffde9b841", size = 68922, upload-time = "2025-12-04T15:59:36.805Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -263,9 +280,12 @@ version = "8.3.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 dependencies = [
     { name = "colorama", marker = "(python_full_version >= '3.10' and sys_platform == 'win32') or (python_full_version < '3.10' and extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2') or (sys_platform != 'win32' and extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -300,6 +320,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload-time = "2023-12-24T09:54:32.31Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload-time = "2023-12-24T09:54:30.421Z" },
+]
+
+[[package]]
+name = "eval-type-backport"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/a3/cafafb4558fd638aadfe4121dc6cefb8d743368c085acb2f521df0f3d9d7/eval_type_backport-0.3.1.tar.gz", hash = "sha256:57e993f7b5b69d271e37482e62f74e76a0276c82490cf8e4f0dffeb6b332d5ed", size = 9445, upload-time = "2025-12-02T11:51:42.987Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cf/22/fdc2e30d43ff853720042fa15baa3e6122722be1a7950a98233ebb55cd71/eval_type_backport-0.3.1-py3-none-any.whl", hash = "sha256:279ab641905e9f11129f56a8a78f493518515b83402b860f6f06dd7c011fdfa8", size = 6063, upload-time = "2025-12-02T11:51:41.665Z" },
 ]
 
 [[package]]
@@ -341,9 +370,12 @@ version = "3.20.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1d/65/ce7f1b70157833bf3cb851b556a37d4547ceafc158aa9b34b36782f23696/filelock-3.20.3.tar.gz", hash = "sha256:18c57ee915c7ec61cff0ecf7f0f869936c7c30191bb0cf406f1341778d0834e1", size = 19485, upload-time = "2026-01-09T17:55:05.421Z" }
 wheels = [
@@ -576,9 +608,12 @@ version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
@@ -606,9 +641,12 @@ version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 dependencies = [
     { name = "mdurl", marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -986,9 +1024,12 @@ version = "12.1.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d0/02/d52c733a2452ef1ffcc123b68e6606d07276b0e358db70eabad7e40042b7/pillow-12.1.0.tar.gz", hash = "sha256:5c5ae0a06e9ea030ab786b0251b32c7e4ce10e58d983c0d5c56029455180b5b9", size = 46977283, upload-time = "2026-01-02T09:13:29.892Z" }
 wheels = [
@@ -1281,9 +1322,12 @@ version = "23.0.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/01/33/ffd9c3eb087fa41dd79c3cf20c4c0ae3cdb877c4f8e1107a446006344924/pyarrow-23.0.0.tar.gz", hash = "sha256:180e3150e7edfcd182d3d9afba72f7cf19839a497cc76555a8dce998a8f67615", size = 1167185, upload-time = "2026-01-18T16:19:42.218Z" }
 wheels = [
@@ -1356,7 +1400,8 @@ name = "pydantic"
 version = "1.10.26"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.10'",
+    "python_full_version >= '3.13'",
+    "python_full_version >= '3.10' and python_full_version < '3.13'",
     "python_full_version < '3.10'",
 ]
 dependencies = [
@@ -1403,9 +1448,11 @@ version = "2.12.5"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
     "python_full_version < '3.10' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
     "python_full_version < '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 dependencies = [
@@ -1599,9 +1646,12 @@ version = "9.0.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 dependencies = [
     { name = "colorama", marker = "(python_full_version >= '3.10' and sys_platform == 'win32') or (python_full_version < '3.10' and extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2') or (sys_platform != 'win32' and extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -1640,9 +1690,12 @@ version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 dependencies = [
     { name = "backports-asyncio-runner", marker = "python_full_version == '3.10.*' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -1953,9 +2006,12 @@ version = "3.2.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and python_full_version < '3.14' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
-    "python_full_version >= '3.10' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version == '3.13.*' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra == 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
+    "python_full_version >= '3.10' and python_full_version < '3.13' and extra != 'group-8-together-pydantic-v1' and extra != 'group-8-together-pydantic-v2'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/fc/37b02f6094dbb1f851145330460532176ed2f1dc70511a35828166c41e52/time_machine-3.2.0.tar.gz", hash = "sha256:a4ddd1cea17b8950e462d1805a42b20c81eb9aafc8f66b392dd5ce997e037d79", size = 14804, upload-time = "2025-12-17T23:33:02.599Z" }
 wheels = [
@@ -2044,6 +2100,7 @@ version = "2.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
+    { name = "cappa" },
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "click", version = "8.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "distro" },
@@ -2114,6 +2171,7 @@ requires-dist = [
     { name = "aiofiles", marker = "extra == 'aiofiles'", specifier = ">=25.0.0" },
     { name = "aiohttp", marker = "extra == 'aiohttp'" },
     { name = "anyio", specifier = ">=3.5.0,<5" },
+    { name = "cappa", specifier = ">=0.31.0" },
     { name = "click", specifier = ">=8.1.7" },
     { name = "distro", specifier = ">=1.7.0,<2" },
     { name = "filelock", specifier = ">=3.13.1" },
@@ -2223,6 +2281,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
+]
+
+[[package]]
+name = "type-lens"
+version = "0.2.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "eval-type-backport", marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f8/55/8846322acedf26cafb4a66dd23fdca6bc73cb3f8c0029040a9b96f5aa0dd/type_lens-0.2.6.tar.gz", hash = "sha256:5d46ab3bc2dfafc174cad702eccb4418c31e38e258e87945a19d86ebc204d08b", size = 362277, upload-time = "2025-10-20T20:08:28.07Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/c5/30de077e06f7ffc3fe21d45ce26b8088816227b678a7157f6b9e080ff2db/type_lens-0.2.6-py3-none-any.whl", hash = "sha256:aade6beb3eca337c90d1b627b509768473bbd591e233ed6b57fb93ec2a01bca6", size = 14451, upload-time = "2025-10-20T20:08:26.936Z" },
 ]
 
 [[package]]
