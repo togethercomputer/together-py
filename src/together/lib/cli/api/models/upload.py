@@ -1,64 +1,25 @@
-import json as json_lib
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
-import click
+import typer
+from rich.console import Console
 
 from together import Together, TogetherError, omit
 from together._response import APIResponse as APIResponse
-from together.lib.cli.api._utils import handle_api_errors
-from together.types.model_upload_response import ModelUploadResponse
+from together._utils._json import openapi_dumps
+from together.types import ModelUploadResponse
 
+console = Console()
 
-@click.command()
-@click.option(
-    "--model-name",
-    required=True,
-    help="The name to give to your uploaded model",
-)
-@click.option(
-    "--model-source",
-    required=True,
-    help="The source location of the model (Hugging Face repo or S3 path)",
-)
-@click.option(
-    "--model-type",
-    type=click.Choice(["model", "adapter"]),
-    default="model",
-    help="Whether the model is a full model or an adapter",
-)
-@click.option(
-    "--hf-token",
-    help="Hugging Face token (if uploading from Hugging Face)",
-)
-@click.option(
-    "--description",
-    help="A description of your model",
-)
-@click.option(
-    "--base-model",
-    help="The base model to use for an adapter if setting it to run against a serverless pool. Only used for model_type 'adapter'.",
-)
-@click.option(
-    "--lora-model",
-    help="The lora pool to use for an adapter if setting it to run against, say, a dedicated pool. Only used for model_type 'adapter'.",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Models")
 def upload(
-    ctx: click.Context,
-    model_name: str,
-    model_source: str,
-    hf_token: Optional[str],
-    description: Optional[str],
-    base_model: Optional[str],
-    lora_model: Optional[str],
-    json: bool,
-    model_type: Optional[Literal["model", "adapter"]] = "model",
+    ctx: typer.Context,
+    model_name: Annotated[str, typer.Option("--model-name", help="The name to give to your uploaded model")],
+    model_source: Annotated[str, typer.Option("--model-source", help="The source location of the model (Hugging Face repo or S3 path)")],
+    model_type: Optional[Literal["model", "adapter"]] = typer.Option("model", "--model-type", help="Whether the model is a full model or an adapter"),
+    hf_token: Optional[str] = typer.Option(None, "--hf-token", help="Hugging Face token (if uploading from Hugging Face)"),
+    description: Optional[str] = typer.Option(None, "--description", help="A description of your model"),
+    base_model: Optional[str] = typer.Option(None, "--base-model", help="The base model to use for an adapter if setting it to run against a serverless pool. Only used for model_type 'adapter'."),
+    lora_model: Optional[str] = typer.Option(None, "--lora-model", help="The lora pool to use for an adapter if setting it to run against, say, a dedicated pool. Only used for model_type 'adapter'."),
+    json: bool = typer.Option(False, "--json", help="Output in JSON format"),
 ) -> None:
     """Upload a custom model or adapter from Hugging Face or S3"""
     client: Together = ctx.obj
@@ -74,19 +35,13 @@ def upload(
     )
 
     if json:
-        click.echo(json_lib.dumps(response.model_dump(), indent=2))
+        print(openapi_dumps(response))
     else:
         # If the model weights already exist, the api is returning 200 but with no data
         if response.data is None:  # type: ignore
             raise TogetherError(response.message)
 
-        click.echo(f"Model upload job created successfully!")
+
+        console.print("[green]Model upload job created.[/green]")
         if response.data.job_id:
-            click.echo(f"Job ID: {response.data.job_id}")
-        if response.data.x_model_name:
-            click.echo(f"Model Name: {response.data.x_model_name}")
-        if response.data.x_model_id:
-            click.echo(f"Model ID: {response.data.x_model_id}")
-        if response.data.x_model_source:
-            click.echo(f"Model Source: {response.data.x_model_source}")
-        click.echo(f"Message: {response.message}")
+            console.print(f"Upload job ID: [bold]{response.data.job_id}[/bold]")

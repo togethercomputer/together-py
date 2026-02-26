@@ -3,12 +3,14 @@ from __future__ import annotations
 import re
 import sys
 import math
+from rich import print
 from typing import Any, List, Union, Literal, TypeVar, Callable
 from gettext import gettext as _
 from datetime import datetime
 from functools import wraps
 
 import click
+import typer
 
 from together import APIError
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
@@ -166,34 +168,23 @@ def generate_progress_bar(
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def handle_api_errors(prefix: str) -> Callable[[F], F]:
+def handle_api_errors(f: F) -> F:
     """Decorator to handle common API errors in CLI commands."""
 
-    prefix_styled = click.style(f"{prefix}: ", fg="blue")
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return f(*args, **kwargs)
+        except APIError as e:
+            error_msg = ""
+            if e.body is not None:
+                error_msg = getattr(e.body, "message", str(e.body))
+            else:
+                error_msg = str(e)
+            print(f"[bold red]{e.__class__.__name__}:[/bold red] {error_msg}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"[bold red]{e.__class__.__name__}:[/bold red] An unexpected error occurred - {str(e)}")
+            sys.exit(1)
 
-    def decorator(f: F) -> F:
-        @wraps(f)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            try:
-                return f(*args, **kwargs)
-            # User aborted the command
-            # Re-raise abort and usage errore so it displays a proper click message
-            except (click.Abort, click.UsageError) as e:
-                raise e
-            except APIError as e:
-                error_msg = ""
-                if e.body is not None:
-                    error_msg = getattr(e.body, "message", str(e.body))
-                else:
-                    error_msg = str(e)
-                click.echo(prefix_styled + click.style("Failed", fg="red"))
-                click.echo(prefix_styled + click.style(error_msg, fg="red"))
-                sys.exit(1)
-            except Exception as e:
-                click.echo(prefix_styled + click.style("Failed", fg="red"))
-                click.echo(prefix_styled + click.style(f"An unexpected error occurred - {str(e)}", fg="red"))
-                sys.exit(1)
-
-        return wrapper  # type: ignore
-
-    return decorator  # type: ignore
+    return wrapper  # type: ignore

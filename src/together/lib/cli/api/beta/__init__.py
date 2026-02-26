@@ -1,14 +1,16 @@
-import click
+import typer
 
-from together.lib.cli.api.beta.jig import jig
-from together.lib.cli.api.beta.clusters import clusters
+# from together.lib.cli.api.beta.jig import jig
+# from together.lib.cli.api.beta.clusters import clusters
 
-
-@click.group()
-def beta() -> None:
-    """Beta API commands"""
-    pass
+beta = typer.Typer(help="Beta API commands", no_args_is_help=True, context_settings={"help_option_names": []})
 
 
-beta.add_command(clusters)
-beta.add_command(jig)
+# @click.group()
+# def beta() -> None:
+#     """Beta API commands"""
+#     pass
+
+
+# beta.add_command(clusters)
+# beta.add_command(jig)

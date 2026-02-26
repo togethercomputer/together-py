@@ -1,40 +1,32 @@
-import json as json_lib
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-import click
-from tabulate import tabulate
+import typer
+from rich import table as rich_table, print
 
 from together import Together, omit
 from together._response import APIResponse as APIResponse
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
+from together._utils._json import openapi_dumps
 
-
-@click.command()
-@click.option(
-    "--type",
-    type=click.Choice(["dedicated"]),
-    help="Filter models by type (dedicated: models that can be deployed as dedicated endpoints)",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Models")
-def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
+def list(
+    ctx: typer.Context,
+    type: Optional[str] = typer.Option(None, "--type", help="Filter models by type (dedicated: models that can be deployed as dedicated endpoints)"),
+    json: bool = typer.Option(False, "--json", help="Output in JSON format")
+) -> None:
     """List models"""
     client: Together = ctx.obj
 
-    models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
+    models_list = client.models.list(dedicated=type == "dedicated" if type else omit, timeout=1)
 
     if json:
-        items = [model.model_dump() for model in models_list]
-        click.echo(json_lib.dumps(items, indent=2, default=datetime_serializer))
+        print(openapi_dumps(models_list))
         return
 
-    display_list: List[Dict[str, Any]] = []
+
+    table = rich_table.Table()
+    table.add_column("Model")
+    table.add_column("Type")
+    table.add_column("Context length")
+    table.add_column("Price per 1M Tokens (input/output)")
 
     # If the server has a bug and returns an empty .type this will crash if we don't do the or "".
     for model in sorted(models_list, key=lambda x: x.type or ""):  # type: ignore
@@ -45,13 +37,6 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
             price_parts.append(f"${model.pricing.input:.2f}")
             price_parts.append(f"${model.pricing.output:.2f}")
 
-        display_list.append(
-            {
-                "Model": model.id,
-                "Type": model.type,
-                "Context length": model.context_length if model.context_length else None,
-                "Price per 1M Tokens (input/output)": "/".join(price_parts),
-            }
-        )
+        table.add_row(model.id, model.type, str(model.context_length) if model.context_length else None, "/".join(price_parts))
 
-    click.echo(tabulate(display_list, headers="keys"))
+    print(table)

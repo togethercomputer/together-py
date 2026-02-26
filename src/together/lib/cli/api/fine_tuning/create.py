@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Annotated
 from pathlib import Path
 
 import click
 from click.core import ParameterSource
+import typer
 
 from together import Together
 from together.types import fine_tuning_estimate_price_params as pe_params
@@ -32,180 +33,178 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 )
 
 
-@click.command()
-@click.pass_context
-@click.option(
-    "--training-file",
-    "-t",
-    type=str,
-    required=True,
-    help="Training file ID from Files API or local path to a file to be uploaded.",
-)
-@click.option("--model", "-m", type=str, help="Base model name")
-@click.option("--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for")
-@click.option(
-    "--validation-file",
-    type=str,
-    default="",
-    help="Validation file ID from Files API or local path to a file to be uploaded.",
-)
-@click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
-@click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
-@click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
-@click.option("--learning-rate", "-lr", type=float, default=1e-5, help="Learning rate")
-@click.option(
-    "--lr-scheduler-type",
-    type=click.Choice(["linear", "cosine"]),
-    default="cosine",
-    help="Learning rate scheduler type",
-)
-@click.option(
-    "--min-lr-ratio",
-    type=float,
-    default=0.0,
-    help="The ratio of the final learning rate to the peak learning rate",
-)
-@click.option(
-    "--scheduler-num-cycles",
-    type=float,
-    default=0.5,
-    help="Number or fraction of cycles for the cosine learning rate scheduler.",
-)
-@click.option(
-    "--warmup-ratio",
-    type=float,
-    default=0.0,
-    help="Warmup ratio for the learning rate scheduler.",
-)
-@click.option(
-    "--max-grad-norm",
-    type=float,
-    default=1.0,
-    help="Max gradient norm to be used for gradient clipping. Set to 0 to disable.",
-)
-@click.option(
-    "--weight-decay",
-    type=float,
-    default=0.0,
-    help="Weight decay",
-)
-@click.option(
-    "--lora/--no-lora",
-    type=bool,
-    default=True,
-    help="Whether to use LoRA adapters for fine-tuning",
-)
-@click.option("--lora-r", type=int, default=8, help="LoRA adapters' rank")
-@click.option("--lora-dropout", type=float, default=0, help="LoRA adapters' dropout")
-@click.option("--lora-alpha", type=float, default=8, help="LoRA adapters' alpha")
-@click.option(
-    "--lora-trainable-modules",
-    type=str,
-    default="all-linear",
-    help="Trainable modules for LoRA adapters. For example, 'all-linear', 'q_proj,v_proj'",
-)
-@click.option(
-    "--training-method",
-    type=click.Choice(["sft", "dpo"]),
-    default="sft",
-    help="Training method to use. Options: sft (supervised fine-tuning), dpo (Direct Preference Optimization)",
-)
-@click.option(
-    "--dpo-beta",
-    type=float,
-    default=None,
-    help="Beta parameter for DPO training (only used when '--training-method' is 'dpo')",
-)
-@click.option(
-    "--dpo-normalize-logratios-by-length",
-    type=bool,
-    default=False,
-    help=("Whether to normalize logratios by sample length (only used when '--training-method' is 'dpo')"),
-)
-@click.option(
-    "--rpo-alpha",
-    type=float,
-    default=None,
-    help=(
-        "RPO alpha parameter of DPO training to include NLL in the loss (only used when '--training-method' is 'dpo')"
-    ),
-)
-@click.option(
-    "--simpo-gamma",
-    type=float,
-    default=None,
-    help="SimPO gamma parameter (only used when '--training-method' is 'dpo')",
-)
-@click.option(
-    "--suffix",
-    "-s",
-    type=str,
-    default=None,
-    help="Suffix for the fine-tuned model name",
-)
-@click.option("--wandb-api-key", type=str, default=None, help="Wandb API key")
-@click.option("--wandb-base-url", type=str, default=None, help="Wandb base URL")
-@click.option("--wandb-project-name", type=str, default=None, help="Wandb project name")
-@click.option("--wandb-name", type=str, default=None, help="Wandb run name")
-@click.option(
-    "--confirm",
-    "-y",
-    type=bool,
-    is_flag=True,
-    default=False,
-    help="Whether to skip the launch confirmation message",
-)
-@click.option(
-    "--train-on-inputs",
-    type=BOOL_WITH_AUTO,
-    default=None,
-    help="Whether to mask the user messages in conversational data or prompts in instruction data. "
-    "`auto` will automatically determine whether to mask the inputs based on the data format.",
-)
-@click.option(
-    "--train-vision",
-    type=bool,
-    default=False,
-    help="Whether to train the vision encoder. Only supported for multimodal models.",
-)
-@click.option(
-    "--from-checkpoint",
-    type=str,
-    default=None,
-    help="The checkpoint identifier to continue training from a previous fine-tuning job. "
-    "The format: {$JOB_ID/$OUTPUT_MODEL_NAME}:{$STEP}. "
-    "The step value is optional, without it the final checkpoint will be used.",
-)
-@click.option(
-    "--from-hf-model",
-    type=str,
-    help="The Hugging Face Hub repo to start training from. "
-    "Should be as close as possible to the base model (specified by the `model` argument) "
-    "in terms of architecture and size",
-)
-@click.option(
-    "--hf-model-revision",
-    type=str,
-    help="The revision of the Hugging Face Hub model to continue training from. "
-    "Example: hf_model_revision=None (defaults to the latest revision in `main`) "
-    "or hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).",
-)
-@click.option(
-    "--hf-api-token",
-    type=str,
-    default=None,
-    help="HF API token to use for uploading a checkpoint to a private repo",
-)
-@click.option(
-    "--hf-output-repo-name",
-    type=str,
-    default=None,
-    help="HF repo to upload the fine-tuned model to",
-)
-@handle_api_errors("Fine-tuning")
+# @click.command()
+# @click.pass_context
+# @click.option(
+#     "--training-file",
+#     "-t",
+#     type=str,
+#     required=True,
+#     help="Training file ID from Files API or local path to a file to be uploaded.",
+# )
+# @click.option("--model", "-m", type=str, help="Base model name")
+# @click.option("--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for")
+# @click.option(
+#     "--validation-file",
+#     type=str,
+#     default="",
+#     help="Validation file ID from Files API or local path to a file to be uploaded.",
+# )
+# @click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
+# @click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
+# @click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
+# @click.option("--learning-rate", "-lr", type=float, default=1e-5, help="Learning rate")
+# @click.option(
+#     "--lr-scheduler-type",
+#     type=click.Choice(["linear", "cosine"]),
+#     default="cosine",
+#     help="Learning rate scheduler type",
+# )
+# @click.option(
+#     "--min-lr-ratio",
+#     type=float,
+#     default=0.0,
+#     help="The ratio of the final learning rate to the peak learning rate",
+# )
+# @click.option(
+#     "--scheduler-num-cycles",
+#     type=float,
+#     default=0.5,
+#     help="Number or fraction of cycles for the cosine learning rate scheduler.",
+# )
+# @click.option(
+#     "--warmup-ratio",
+#     type=float,
+#     default=0.0,
+#     help="Warmup ratio for the learning rate scheduler.",
+# )
+# @click.option(
+#     "--max-grad-norm",
+#     type=float,
+#     default=1.0,
+#     help="Max gradient norm to be used for gradient clipping. Set to 0 to disable.",
+# )
+# @click.option(
+#     "--weight-decay",
+#     type=float,
+#     default=0.0,
+#     help="Weight decay",
+# )
+# @click.option(
+#     "--lora/--no-lora",
+#     type=bool,
+#     default=True,
+#     help="Whether to use LoRA adapters for fine-tuning",
+# )
+# @click.option("--lora-r", type=int, default=8, help="LoRA adapters' rank")
+# @click.option("--lora-dropout", type=float, default=0, help="LoRA adapters' dropout")
+# @click.option("--lora-alpha", type=float, default=8, help="LoRA adapters' alpha")
+# @click.option(
+#     "--lora-trainable-modules",
+#     type=str,
+#     default="all-linear",
+#     help="Trainable modules for LoRA adapters. For example, 'all-linear', 'q_proj,v_proj'",
+# )
+# @click.option(
+#     "--dpo-beta",
+#     type=float,
+#     default=None,
+#     help="Beta parameter for DPO training (only used when '--training-method' is 'dpo')",
+# )
+# @click.option(
+#     "--dpo-normalize-logratios-by-length",
+#     type=bool,
+#     default=False,
+#     help=("Whether to normalize logratios by sample length (only used when '--training-method' is 'dpo')"),
+# )
+# @click.option(
+#     "--rpo-alpha",
+#     type=float,
+#     default=None,
+#     help=(
+#         "RPO alpha parameter of DPO training to include NLL in the loss (only used when '--training-method' is 'dpo')"
+#     ),
+# )
+# @click.option(
+#     "--simpo-gamma",
+#     type=float,
+#     default=None,
+#     help="SimPO gamma parameter (only used when '--training-method' is 'dpo')",
+# )
+# @click.option(
+#     "--suffix",
+#     "-s",
+#     type=str,
+#     default=None,
+#     help="Suffix for the fine-tuned model name",
+# )
+# @click.option("--wandb-api-key", type=str, default=None, help="Wandb API key")
+# @click.option("--wandb-base-url", type=str, default=None, help="Wandb base URL")
+# @click.option("--wandb-project-name", type=str, default=None, help="Wandb project name")
+# @click.option("--wandb-name", type=str, default=None, help="Wandb run name")
+# @click.option(
+#     "--confirm",
+#     "-y",
+#     type=bool,
+#     is_flag=True,
+#     default=False,
+#     help="Whether to skip the launch confirmation message",
+# )
+# @click.option(
+#     "--train-on-inputs",
+#     type=BOOL_WITH_AUTO,
+#     default=None,
+#     help="Whether to mask the user messages in conversational data or prompts in instruction data. "
+#     "`auto` will automatically determine whether to mask the inputs based on the data format.",
+# )
+# @click.option(
+#     "--train-vision",
+#     type=bool,
+#     default=False,
+#     help="Whether to train the vision encoder. Only supported for multimodal models.",
+# )
+# @click.option(
+#     "--from-checkpoint",
+#     type=str,
+#     default=None,
+#     help="The checkpoint identifier to continue training from a previous fine-tuning job. "
+#     "The format: {$JOB_ID/$OUTPUT_MODEL_NAME}:{$STEP}. "
+#     "The step value is optional, without it the final checkpoint will be used.",
+# )
+# @click.option(
+#     "--from-hf-model",
+#     type=str,
+#     help="The Hugging Face Hub repo to start training from. "
+#     "Should be as close as possible to the base model (specified by the `model` argument) "
+#     "in terms of architecture and size",
+# )
+# @click.option(
+#     "--hf-model-revision",
+#     type=str,
+#     help="The revision of the Hugging Face Hub model to continue training from. "
+#     "Example: hf_model_revision=None (defaults to the latest revision in `main`) "
+#     "or hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).",
+# )
+# @click.option(
+#     "--hf-api-token",
+#     type=str,
+#     default=None,
+#     help="HF API token to use for uploading a checkpoint to a private repo",
+# )
+# @click.option(
+#     "--hf-output-repo-name",
+#     type=str,
+#     default=None,
+#     help="HF repo to upload the fine-tuned model to",
+# )
 def create(
-    ctx: click.Context,
-    training_file: str,
+    ctx: typer.Context,
+    training_file: Annotated[str, typer.Option(
+        "--training-method",
+        # type=typer.Choice(["sft", "dpo"]),
+        # default="sft",
+        help="Training method to use. Options: sft (supervised fine-tuning), dpo (Direct Preference Optimization)",
+    )],
     validation_file: str,
     model: str | None,
     n_epochs: int,
