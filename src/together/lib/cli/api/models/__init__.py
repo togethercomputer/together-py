@@ -1,15 +1,16 @@
-import click
+from __future__ import annotations
 
-from .list import list
-from .upload import upload
+from typing_extensions import override
 
+from clypi import Command
 
-@click.group()
-@click.pass_context
-def models(ctx: click.Context) -> None:
-    """Models API commands"""
-    pass
+from .list import List
+from .upload import Upload
 
 
-models.add_command(list)
-models.add_command(upload)
+class Models(Command):
+    subcommand: List | Upload | None
+
+    @override
+    async def run(self):
+        self.print_help()

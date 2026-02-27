@@ -1,23 +1,9 @@
-import click
+from typing_extensions import override
 
-from .list import list
-from .check import check
-from .delete import delete
-from .upload import upload
-from .retrieve import retrieve
-from .retrieve_content import retrieve_content
+from clypi import Command
 
 
-@click.group()
-@click.pass_context
-def files(ctx: click.Context) -> None:
-    """File API commands"""
-    pass
-
-
-files.add_command(upload)
-files.add_command(list)
-files.add_command(retrieve)
-files.add_command(retrieve_content)
-files.add_command(delete)
-files.add_command(check)
+class Files(Command):
+    @override
+    async def run(self):
+        self.print_help()

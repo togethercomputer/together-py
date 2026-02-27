@@ -1,57 +1,50 @@
-import json as json_lib
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-import click
-from tabulate import tabulate
+from typing_extensions import override
+
+from rich import print, table as rich_table
+from clypi import Command, arg
 
 from together import Together, omit
 from together._response import APIResponse as APIResponse
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
+from together._utils._json import openapi_dumps
 
 
-@click.command()
-@click.option(
-    "--type",
-    type=click.Choice(["dedicated"]),
-    help="Filter models by type (dedicated: models that can be deployed as dedicated endpoints)",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Models")
-def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
+class List(Command):
     """List models"""
-    client: Together = ctx.obj
 
-    models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
+    type: str | None = arg(
+        default=None, help="Filter models by type (dedicated: models that can be deployed as dedicated endpoints)"
+    )
+    json: bool = arg(default=False, help="Output in JSON format")
 
-    if json:
-        items = [model.model_dump() for model in models_list]
-        click.echo(json_lib.dumps(items, indent=2, default=datetime_serializer))
-        return
+    @override
+    async def run(self):
+        client = Together(timeout=1)
 
-    display_list: List[Dict[str, Any]] = []
+        models_list = client.models.list(dedicated=self.type == "dedicated" if self.type else omit)
 
-    # If the server has a bug and returns an empty .type this will crash if we don't do the or "".
-    for model in sorted(models_list, key=lambda x: x.type or ""):  # type: ignore
-        price_parts: List[str] = []
+        if self.json:
+            print(openapi_dumps(models_list))
+            return
 
-        # Only show pricing if a value actually exists
-        if model.pricing and model.pricing.input > 0 and model.pricing.output > 0:
-            price_parts.append(f"${model.pricing.input:.2f}")
-            price_parts.append(f"${model.pricing.output:.2f}")
+        table = rich_table.Table()
+        table.add_column("Model")
+        table.add_column("Type")
+        table.add_column("Context length")
+        table.add_column("Price per 1M Tokens (input/output)")
 
-        display_list.append(
-            {
-                "Model": model.id,
-                "Type": model.type,
-                "Context length": model.context_length if model.context_length else None,
-                "Price per 1M Tokens (input/output)": "/".join(price_parts),
-            }
-        )
+        # If the server has a bug and returns an empty .type this will crash if we don't do the or "".
+        for model in sorted(models_list, key=lambda x: x.type or ""):  # type: ignore
+            price_parts: list[str] = []
 
-    click.echo(tabulate(display_list, headers="keys"))
+            # Only show pricing if a value actually exists
+            if model.pricing and model.pricing.input > 0 and model.pricing.output > 0:
+                price_parts.append(f"${model.pricing.input:.2f}")
+                price_parts.append(f"${model.pricing.output:.2f}")
+
+            table.add_row(
+                model.id, model.type, str(model.context_length) if model.context_length else None, "/".join(price_parts)
+            )
+
+        print(table)

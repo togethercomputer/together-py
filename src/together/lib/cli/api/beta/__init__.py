@@ -1,14 +1,9 @@
-import click
+from typing_extensions import override
 
-from together.lib.cli.api.beta.jig import jig
-from together.lib.cli.api.beta.clusters import clusters
-
-
-@click.group()
-def beta() -> None:
-    """Beta API commands"""
-    pass
+from clypi import Command
 
 
-beta.add_command(clusters)
-beta.add_command(jig)
+class Beta(Command):
+    @override
+    async def run(self):
+        self.print_help()
