@@ -18,6 +18,7 @@ from datetime import datetime as dt
 from functools import wraps, cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
+from typing_extensions import override
 
 import click
 from click import Context, echo
@@ -742,7 +743,7 @@ Run 'jig status' to check current state.""")
         if not prompt and not payload:
             raise click.UsageError("Either --prompt or --payload required")
 
-        body: dict[str, Any] = json.loads(payload) if payload else {"prompt": prompt} # pyright: ignore
+        body: dict[str, Any] = json.loads(payload) if payload else {"prompt": prompt}  # pyright: ignore
         req = self.api.queue.with_raw_response.submit(model=self.name, payload=body, priority=1)
         raw = typing.cast(dict[str, Any], req.json())
 
@@ -838,6 +839,7 @@ class JigGroup(click.Group):
     `jig --config foo deploy` would fail — --config is a per-command option, not
     a group option. We move it past the subcommand before parsing."""
 
+    @override
     def parse_args(self, ctx: Context, args: list[str]) -> list[str]:
         args = list(args)
         for i, arg in enumerate(args):
