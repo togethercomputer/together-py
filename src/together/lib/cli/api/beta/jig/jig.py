@@ -1170,7 +1170,7 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     except NotFoundError:
         raise JigError(f"Volume {name} not found") from None
 
-    new_version = int(volume_data.get("current_version", 0)) + 1
+    new_version = int(volume_data.get("current_version", 0)) + 1 # type: ignore
     remote_prefix = f"{name}/{new_version}"
 
     echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
