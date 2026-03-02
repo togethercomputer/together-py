@@ -1,4 +1,8 @@
 """Main jig CLI commands (deploy, build, push, etc.)"""
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["together"]
+# ///
 
 from __future__ import annotations
 
