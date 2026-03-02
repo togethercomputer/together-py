@@ -638,10 +638,9 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
+        self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
             self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
-
-        self.sync_secrets_from_deployment()
 
         env_dict = dict(self.config.deploy.environment_variables)
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
