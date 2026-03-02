@@ -108,7 +108,7 @@ class DeployConfig:
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: list[str] | None = None
-    autoscaling: dict[str, str | float] = field(default_factory=dict) # type: ignore
+    autoscaling: dict[str, str | float] = field(default_factory=dict)  # type: ignore
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
@@ -829,7 +829,7 @@ Configuration:""")
                     if r.volume_preload_status and not r.volume_preload_completed_at:
                         lines.append(f"  {rid}: Volume Preloading")
                     elif r.replica_status == "Running" and r.replica_ready_since:
-                        lines.append(f"  {rid}: Running, ready since {_age(r.replica_ready_since)}")
+                        lines.append(f"  {rid}: Running, ready {_age(r.replica_ready_since)}")
                     else:
                         lines.append(f"  {rid}: {r.replica_status}")
 
@@ -1170,7 +1170,7 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     except NotFoundError:
         raise JigError(f"Volume {name} not found") from None
 
-    new_version = int(volume_data.get("current_version", 0)) + 1 # type: ignore
+    new_version = int(volume_data.get("current_version", 0)) + 1  # type: ignore
     remote_prefix = f"{name}/{new_version}"
 
     echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
