@@ -85,6 +85,18 @@ def format_timestamp(timestamp_str: str) -> str:
     """
     try:
         timestamp = parse_timestamp(timestamp_str)
-        return timestamp.strftime("%m/%d/%Y, %I:%M %p")
+        return format_datetime(timestamp)
     except ValueError:
         return ""
+
+
+def format_datetime(datetime_obj: datetime) -> str:
+    """Format datetime object to a readable date string.
+
+    Args:
+        datetime_obj: A datetime object
+
+    Returns:
+        str: Formatted timestamp string (MM/DD/YYYY, HH:MM AM/PM)
+    """
+    return datetime_obj.strftime("%m/%d/%Y, %I:%M %p")

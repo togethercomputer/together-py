@@ -108,7 +108,7 @@ class DeployConfig:
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: list[str] | None = None
-    autoscaling: dict[str, str | float] = field(default_factory=dict[str, str | float])
+    autoscaling: dict[str, str | float] = field(default_factory=dict) # type: ignore
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])

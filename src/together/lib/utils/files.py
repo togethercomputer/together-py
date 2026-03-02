@@ -510,14 +510,16 @@ def validate_preference_openai(example: Dict[str, Any], idx: int = 0) -> None:
                 error_source="key_value",
             )
 
-        if "content" not in example[key][0]:
+        contains_response_field = "content" in example[key][0] or "tool_calls" in example[key][0]
+        if not contains_response_field:
             raise InvalidFileFormatError(
-                message=f"The dataset is malformed, the first element of `{key}` must have a 'content' field on line {idx + 1}.",
+                message=f"The dataset is malformed, the first element of `{key}` must have a 'content' or 'tool_calls' field on line {idx + 1}.",
                 line_number=idx + 1,
                 error_source="key_value",
             )
 
-        _check_message_content(example[key][0]["content"], role="assistant", idx=idx)
+        if "content" in example[key][0]:
+            _check_message_content(example[key][0]["content"], role="assistant", idx=idx)
 
 
 def _check_utf8(file: Path) -> Dict[str, Any]:

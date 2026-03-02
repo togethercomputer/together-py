@@ -6,7 +6,7 @@ import os
 import time
 import asyncio
 import itertools
-from typing import Any
+from typing import Any, cast
 from pathlib import Path
 
 import click
