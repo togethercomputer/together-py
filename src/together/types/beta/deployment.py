@@ -88,6 +88,13 @@ class Volume(BaseModel):
     Must reference an existing volume by name or ID
     """
 
+    version: Optional[int] = None
+    """Version is the volume version to mount.
+
+    On create, defaults to the latest version. On update, defaults to the currently
+    mounted version.
+    """
+
 
 class Deployment(BaseModel):
     id: Optional[str] = None

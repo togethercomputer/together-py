@@ -97,6 +97,7 @@ class TestJig:
                 {
                     "mount_path": "mount_path",
                     "name": "name",
+                    "version": 0,
                 }
             ],
         )
@@ -197,6 +198,7 @@ class TestJig:
                 {
                     "mount_path": "mount_path",
                     "name": "name",
+                    "version": 0,
                 }
             ],
         )
@@ -396,6 +398,7 @@ class TestAsyncJig:
                 {
                     "mount_path": "mount_path",
                     "name": "name",
+                    "version": 0,
                 }
             ],
         )
@@ -496,6 +499,7 @@ class TestAsyncJig:
                 {
                     "mount_path": "mount_path",
                     "name": "name",
+                    "version": 0,
                 }
             ],
         )
