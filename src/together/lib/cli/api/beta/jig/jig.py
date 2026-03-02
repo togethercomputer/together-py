@@ -1129,12 +1129,11 @@ _source_dir = click.Path(exists=True, file_okay=False, path_type=Path)
 @click.option("--source", required=True, type=_source_dir, help="Source directory path")
 def volumes_create(jig: Jig, name: str, source: Path) -> None:
     """Create a volume and upload files"""
-    client = jig.api
     source_prefix = f"{name}/{source.name}"
 
     echo(f"\N{ROCKET} Creating volume {name} with source prefix {source_prefix}")
     try:
-        volume = client.volumes.create(
+        volume = jig.api.volumes.create(
             name=name, type="readOnly", content={"type": "files", "source_prefix": source_prefix}
         )
         echo(f"\N{CHECK MARK} Volume created: {volume.id}")
@@ -1144,12 +1143,12 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
         raise JigError(f"Failed to create volume: {e}") from e
 
     try:
-        asyncio.run(Uploader(client._client).upload_files(source, source_prefix))
+        asyncio.run(Uploader(jig.together).upload_files(source, source_prefix))
     except Exception as e:
         echo(f"\N{CROSS MARK} Upload failed: {e}")
         echo(f"\N{WASTEBASKET} Cleaning up volume {name}")
         try:
-            client.volumes.delete(name)
+            jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
         raise Exit(1) from None
@@ -1161,19 +1160,18 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
 @click.option("--source", required=True, type=_source_dir, help="New source directory path")
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
     """Update a volume and re-upload files"""
-    client = jig.api
     source_prefix = f"{name}/{source.name}"
 
     try:
-        client.volumes.retrieve(name)
+        jig.api.volumes.retrieve(name)
     except NotFoundError:
         raise JigError(f"Volume {name} not found") from None
 
     echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
-    asyncio.run(Uploader(client._client).upload_files(source, source_prefix))
+    asyncio.run(Uploader(jig.together).upload_files(source, source_prefix))
 
     echo(f"\N{INFORMATION SOURCE} Updating volume {name} with source prefix {source_prefix}")
-    client.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
+    jig.api.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
     echo("\N{CHECK MARK} Volume updated successfully")
 
 
