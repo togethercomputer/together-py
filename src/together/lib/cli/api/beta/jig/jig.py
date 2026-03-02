@@ -222,11 +222,13 @@ class Config:
                 echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
 
         # support volume_mounts at jig level (merge into deploy config)
-        jig_config.setdefault("deploy", {})["volume_mounts"] = jig_config.get("volume_mounts", [])
-
-        if autoscaling := jig_config.get("autoscaling", {}):
+        deploy_config = jig_config.setdefault("deploy", {})
+        allow_top_level = ["volume_mounts", "autoscaling"]
+        for key in allow_top_level:
+            if key in jig_config:
+                deploy_config[key] = jig_config[key]
+        if autoscaling := deploy_config.get("autoscaling"):
             autoscaling["model"] = name
-            jig_config["deploy"]["autoscaling"] = autoscaling
 
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
