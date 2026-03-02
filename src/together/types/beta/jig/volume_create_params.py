@@ -9,7 +9,7 @@ __all__ = ["VolumeCreateParams", "Content"]
 
 class VolumeCreateParams(TypedDict, total=False):
     content: Required[Content]
-    """Content specifies the content configuration for this volume"""
+    """Content specifies the new content that will be preloaded to this volume"""
 
     name: Required[str]
     """Name is the unique identifier for the volume within the project"""
@@ -19,7 +19,7 @@ class VolumeCreateParams(TypedDict, total=False):
 
 
 class Content(TypedDict, total=False):
-    """Content specifies the content configuration for this volume"""
+    """Content specifies the new content that will be preloaded to this volume"""
 
     source_prefix: str
     """
