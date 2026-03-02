@@ -6,7 +6,7 @@ import json
 import time
 import asyncio
 import itertools
-from typing import Any
+from typing import Any, cast
 from pathlib import Path
 
 import click
@@ -107,13 +107,13 @@ class Uploader:
                 self.update_progress()
             await asyncio.sleep(0.1)
 
-    async def upload_files(self, source_path: Path, volume_name: str) -> None:
+    async def upload_files(self, source_path: Path, volume_name: str, content_version: int) -> None:
         """Upload all files from source directory with progress tracking"""
         # these require a running event loop
         self.semaphore = asyncio.Semaphore(UPLOAD_CONCURRENCY_LIMIT)
         self.progress_lock = asyncio.Lock()
 
-        source_prefix = f"{volume_name}/{source_path.name}"
+        source_prefix = f"{volume_name}/{content_version}"
         files_to_upload: list[tuple[Path, str, int]] = []
 
         for file_path in source_path.rglob("*"):
@@ -296,7 +296,8 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
     if not source_path.is_dir():
         raise ValueError(f"Source path must be a directory: {source}")
 
-    source_prefix = f"{name}/{source_path.name}"
+    content_version = 0
+    source_prefix = f"{name}/{content_version}"
 
     click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
     try:
@@ -310,7 +311,7 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
         raise RuntimeError(f"Failed to create volume: {e}") from e
 
     try:
-        await Uploader(client).upload_files(source_path, volume_name=name)
+        await Uploader(client).upload_files(source_path, volume_name=name, content_version=content_version)
     except Exception as e:
         click.echo(f"\N{CROSS MARK} Upload failed: {e}")
         click.echo(f"\N{WASTEBASKET} Cleaning up volume '{name}'")
@@ -330,16 +331,20 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
         raise ValueError(f"Source path must be a directory: {source}")
 
     try:
-        client.beta.jig.volumes.retrieve(name)
+        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
+        volume_data = response.json()
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             raise ValueError(f"Volume '{name}' does not exist") from e
         raise
 
-    source_prefix = f"{name}/{source_path.name}"
+    volume_dict = cast(dict[str, Any], volume_data)
+    current_version: int = int(volume_dict.get("current_version", 0))
+    version: int = current_version + 1
+    source_prefix = f"{name}/{version}"
 
     click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
-    await Uploader(client).upload_files(source_path, volume_name=name)
+    await Uploader(client).upload_files(source_path, volume_name=name, content_version=version)
 
     click.echo(f"\N{INFORMATION SOURCE} Updating volume '{name}' with source prefix '{source_prefix}'")
     client.beta.jig.volumes.update(

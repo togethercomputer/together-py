@@ -89,7 +89,7 @@ def format_deployment_status(d: Deployment) -> str:
         events_status = "\nReplica Events:\n"
         images = set(map(lambda x: x.image or "-", d.replica_events.values()))
         for image in reversed(sorted(images)):
-            events = filter(lambda x: ((x[1].image or "-") == image), d.replica_events.items())
+            events = filter(lambda x: (x[1].image or "-") == image, d.replica_events.items())
             events_status += f"{_image_tag(image)}:\n"
             for replica_id, event in events:
                 events_status += f"  {replica_id}: "
