@@ -1,8 +1,9 @@
-"""Main jig CLI commands (deploy, build, push, etc.)"""
+#!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["together"]
+# dependencies = ["together @ git+https://github.com/togethercomputer/together-py@next"]
 # ///
+"""Main jig CLI commands (deploy, build, push, etc.)"""
 
 from __future__ import annotations
 
@@ -83,7 +84,7 @@ class VolumeMount:
 
     name: str
     mount_path: str
-    version: int | None
+    version: int = 0
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
