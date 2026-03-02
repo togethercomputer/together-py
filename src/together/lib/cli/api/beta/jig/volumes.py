@@ -6,7 +6,7 @@ import json
 import time
 import asyncio
 import itertools
-from typing import Any
+from typing import Any, cast
 from pathlib import Path
 
 import click
@@ -338,8 +338,9 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
             raise ValueError(f"Volume '{name}' does not exist") from e
         raise
 
-    current_version = volume_data.get("current_version", 0)
-    version = current_version + 1
+    volume_dict = cast(dict[str, Any], volume_data)
+    current_version: int = int(volume_dict.get("current_version", 0))
+    version: int = current_version + 1
     source_prefix = f"{name}/{version}"
 
     click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")

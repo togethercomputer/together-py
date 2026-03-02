@@ -85,7 +85,7 @@ class DeployConfig:
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: Optional[list[str]] = None
-    autoscaling: dict[str, Union[str, float]] = field(default_factory=dict)
+    autoscaling: dict[str, Union[str, float]] = field(default_factory=dict[str, Union[str, float]])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
@@ -95,8 +95,8 @@ class DeployConfig:
         deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
         if isinstance((mounts := deploy_config.get("volume_mounts")), list):
             deploy_config["volume_mounts"] = [
-                VolumeMount.from_dict(vm) for vm in mounts
-            ]  # pyright: ignore
+                VolumeMount.from_dict(vm) for vm in mounts  # type: ignore[arg-type]
+            ]
         return cls(**deploy_config)
 
 
@@ -138,7 +138,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
 
     if not isinstance(value, value_type):
-        return f"{path}: expected {value_type.__name__}, got {value!r}"
+        return f"{path}: expected {value_type.__name__}, got {value!r}"  # type: ignore[union-attr]
     return None
 
 
