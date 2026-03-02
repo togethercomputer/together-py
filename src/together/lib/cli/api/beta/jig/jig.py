@@ -246,7 +246,6 @@ class State:
     _secrets_initialized: bool = False
     registry_base_path: str = ""
     secrets: dict[str, str] = field(default_factory=dict[str, str])
-    volumes: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
@@ -263,8 +262,7 @@ class State:
         {
           "project-name-1": {
             "registry_base_path": "...",
-            "secrets": {...},
-            "volumes": {...}
+            "secrets": {...}
           },
           "project-name-2": {...}
         }
@@ -274,9 +272,9 @@ class State:
             # is our project in the nested state format?
             if isinstance(project_data := all_data.get(project_name), dict):
                 return cls.from_dict(config_dir, project_name, **project_data)
-            # top-level secrets/volumes project fields are set, but not migrated
+            # top-level secrets project field is set, but not migrated
             # (don't care about registry base path)
-            if "secrets" in all_data or "volumes" in all_data:
+            if "secrets" in all_data:
                 return cls.from_dict(config_dir, project_name, **all_data)
             # state exists but our project isn't in it
             return cls(_config_dir=config_dir, _project_name=project_name)
