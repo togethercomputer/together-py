@@ -1,25 +1,27 @@
-import click
+from __future__ import annotations
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
+import json as json_lib
+from typing import Annotated, Callable
+
+from cyclopts import Parameter
+
+from together import AsyncTogether
+
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from together.lib.utils.serializer import datetime_serializer
+from together.lib.cli.api.endpoints._utils import print_endpoint
 
 
-@click.command()
-@click.argument("endpoint-id", required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_context
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-def retrieve(ctx: click.Context, endpoint_id: str, json: bool) -> None:
+async def retrieve(
+    endpoint_id: str,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
     """Get a dedicated inference endpoint."""
-    client: Together = ctx.obj
-
-    endpoint = client.endpoints.retrieve(endpoint_id)
-    if json:
-        import json as json_lib
-
-        click.echo(json_lib.dumps(endpoint.model_dump(), indent=2, default=datetime_serializer))
+    endpoint = await client.endpoints.retrieve(endpoint_id)
+    if json_output:
+        print(json_lib.dumps(endpoint.model_dump(), indent=2, default=datetime_serializer))
     else:
-        ctx.obj.print_endpoint(endpoint)
+        print_endpoint(endpoint)

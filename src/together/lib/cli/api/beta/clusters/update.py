@@ -1,54 +1,34 @@
 from __future__ import annotations
 
 import json as json_lib
-from typing import Literal
+from typing import Annotated, Literal, Optional
 
-import click
+from cyclopts import Parameter
 
-from together import Together, omit
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether, omit
 
 
-@click.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--num-gpus",
-    type=int,
-    help="Number of GPUs to allocate in the cluster",
-)
-@click.option(
-    "--cluster-type",
-    type=click.Choice(["KUBERNETES", "SLURM"]),
-    help="Cluster type",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def update(
-    ctx: click.Context,
+
+async def update(
     cluster_id: str,
-    num_gpus: int | None = None,
-    cluster_type: Literal["KUBERNETES", "SLURM"] | None = None,
-    json: bool = False,
+    num_gpus: Optional[int] = None,
+    cluster_type: Optional[Literal["KUBERNETES", "SLURM"]] = None,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
 ) -> None:
-    """Update a cluster"""
-    client: Together = ctx.obj
+    """Update a cluster."""
+    import sys
 
-    if not json:
-        click.echo("Clusters: Updating cluster...")
-
-    client.beta.clusters.update(
+    if not json_output:
+        print("Clusters: Updating cluster...", file=sys.stderr)
+    await client.beta.clusters.update(
         cluster_id,
         num_gpus=num_gpus if num_gpus is not None else omit,
         cluster_type=cluster_type if cluster_type is not None else omit,
     )
-
-    if json:
-        cluster = client.beta.clusters.retrieve(cluster_id)
-        click.echo(json_lib.dumps(cluster.model_dump(exclude_none=True), indent=4))
+    if json_output:
+        cluster = await client.beta.clusters.retrieve(cluster_id)
+        print(json_lib.dumps(cluster.model_dump(exclude_none=True), indent=4))
     else:
-        click.echo("Clusters: Done")
+        print("Clusters: Done", file=sys.stderr)

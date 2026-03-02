@@ -14,7 +14,7 @@ import httpx
 
 from together import Together
 from together._exceptions import APIStatusError
-from together.lib.cli.api._utils import handle_api_errors
+
 from together.lib.cli.api.beta.jig._config import (
     DEBUG,
     MAX_UPLOAD_RETRIES,
@@ -356,7 +356,6 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="Source directory path")
-@handle_api_errors("Volumes")
 def volumes_create(
     ctx: click.Context,
     name: str,
@@ -371,7 +370,6 @@ def volumes_create(
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
 @click.option("--source", required=True, help="New source directory path")
-@handle_api_errors("Volumes")
 def volumes_update(
     ctx: click.Context,
     name: str,
@@ -385,7 +383,6 @@ def volumes_update(
 @volumes.command("delete")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")
 def volumes_delete(
     ctx: click.Context,
     name: str,
@@ -406,7 +403,6 @@ def volumes_delete(
 @volumes.command("describe")
 @click.pass_context
 @click.option("--name", required=True, help="Volume name")
-@handle_api_errors("Volumes")
 def volumes_describe(
     ctx: click.Context,
     name: str,
@@ -426,7 +422,6 @@ def volumes_describe(
 
 @volumes.command("list")
 @click.pass_context
-@handle_api_errors("Volumes")
 def volumes_list(ctx: click.Context) -> None:
     """List all volumes"""
     client: Together = ctx.obj

@@ -1,70 +1,42 @@
 from __future__ import annotations
 
-import re
+import asyncio
 import json
-from typing import Union, Literal
+import re
 from pathlib import Path
+from typing import Annotated, Literal, Optional
 
-import click
+from cyclopts import Parameter
 
-from together import NOT_GIVEN, APIError, NotGiven, Together, APIStatusError
+from together import APIError, APIStatusError, AsyncTogether, Together
 from together.lib import DownloadManager
-from together.lib.cli.api._utils import handle_api_errors
+
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 
 
-@click.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option(
-    "--output_dir",
-    "-o",
-    type=click.Path(exists=True, file_okay=False, resolve_path=True),
-    required=False,
-    default=None,
-    help="Output directory",
-)
-@click.option(
-    "--checkpoint-step",
-    "-s",
-    type=int,
-    required=False,
-    default=None,
-    help="Download fine-tuning checkpoint. Defaults to latest.",
-)
-@click.option(
-    "--checkpoint-type",
-    type=click.Choice(["merged", "adapter", "default"]),
-    required=False,
-    default="merged",
-    help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
-)
-@handle_api_errors("Fine-tuning")
-def download(
-    ctx: click.Context,
+async def download(
     fine_tune_id: str,
-    output_dir: str | None = None,
-    checkpoint_step: Union[int, NotGiven] = NOT_GIVEN,
-    checkpoint_type: Literal["default", "merged", "adapter"] | NotGiven = NOT_GIVEN,
+    output_dir: Optional[Path] = None,
+    checkpoint_step: Optional[int] = None,
+    checkpoint_type: Literal["merged", "adapter", "default"] = "merged",
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
 ) -> None:
-    """Download fine-tuning checkpoint"""
-    client: Together = ctx.obj
-
-    if re.match(_FT_JOB_WITH_STEP_REGEX, fine_tune_id) is not None:
-        if checkpoint_step is NOT_GIVEN:
+    """Download fine-tuning checkpoint."""
+    if re.match(_FT_JOB_WITH_STEP_REGEX, fine_tune_id):
+        if checkpoint_step is None:
             checkpoint_step = int(fine_tune_id.split(":")[1])
             fine_tune_id = fine_tune_id.split(":")[0]
         else:
             raise ValueError(
-                "Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, but `checkpoint_step` "
-                "was also set. Remove one of the step specifiers to proceed."
+                f"Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, "
+                "but checkpoint_step was also set. Remove one of the step specifiers to proceed."
             )
 
-    ft_job = client.fine_tuning.retrieve(fine_tune_id)
-
-    loosely_typed_checkpoint_type: str | NotGiven = checkpoint_type
+    ft_job = await client.fine_tuning.retrieve(fine_tune_id)
+    loosely_typed_checkpoint_type: str = checkpoint_type
     if isinstance(ft_job.training_type, TrainingTypeFullTrainingType):
         if checkpoint_type != "default":
             raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
@@ -72,31 +44,29 @@ def download(
     elif isinstance(ft_job.training_type, TrainingTypeLoRaTrainingType):
         if checkpoint_type == "default":
             loosely_typed_checkpoint_type = "merged"
-
-        if checkpoint_type not in {
-            "merged",
-            "adapter",
-        }:
+        if checkpoint_type not in {"merged", "adapter"}:
             raise ValueError(f"Invalid checkpoint type for LoRATrainingType: {checkpoint_type}")
 
-    remote_name = ft_job.x_model_output_name
-
     url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={loosely_typed_checkpoint_type}"
-    output: Path | None = None
-    if isinstance(output_dir, str):
-        output = Path(output_dir)
-
+    output = Path(output_dir) if output_dir else None
+    sync_client = Together(
+        api_key=client.api_key,
+        base_url=client.base_url,
+        timeout=client.timeout,
+        max_retries=client.max_retries,
+    )
     try:
-        file_path, file_size = DownloadManager(client).download(
-            url=url,
-            output=output,
-            remote_name=remote_name,
-            fetch_metadata=True,
-        )
 
-        click.echo(
-            json.dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}, indent=4)
-        )
+        def _sync_download() -> tuple:
+            return DownloadManager(sync_client).download(
+                url=url,
+                output=output,
+                remote_name=ft_job.x_model_output_name,
+                fetch_metadata=True,
+            )
+
+        file_path, file_size = await asyncio.to_thread(_sync_download)
+        print(json.dumps({"object": "local", "id": fine_tune_id, "filename": str(file_path), "size": file_size}, indent=4))
     except APIStatusError as e:
         raise APIError(
             "Training job is not downloadable. This may be because the job is not in a completed state.",

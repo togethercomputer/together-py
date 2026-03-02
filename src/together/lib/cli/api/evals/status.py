@@ -1,20 +1,19 @@
+from __future__ import annotations
+
 import json
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
 
 
-@click.command()
-@click.pass_context
-@click.argument("evaluation_id", type=str, required=True)
-@handle_api_errors("Evals")
-def status(ctx: click.Context, evaluation_id: str) -> None:
-    """Get the status and results of a specific evaluation job"""
 
-    client: Together = ctx.obj
-
-    response = client.evals.status(evaluation_id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+async def status(
+    evaluation_id: str,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """Get the status and results of a specific evaluation job."""
+    response = await client.evals.status(evaluation_id)
+    print(json.dumps(response.model_dump(exclude_none=True), indent=4))

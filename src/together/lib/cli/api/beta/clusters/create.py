@@ -1,183 +1,98 @@
 from __future__ import annotations
 
-import json as json_lib
 import getpass
-from typing import List, Literal
+import json as json_lib
+from typing import Annotated, List, Literal, Optional
 
-import click
-from rich import print
+from cyclopts import Parameter
+from rich import print as rprint
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
-from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
+from together import AsyncTogether
+
+from together.types.beta.cluster_create_params import ClusterCreateParams, SharedVolume
 
 
-@click.command()
-@click.option(
-    "--name",
-    type=str,
-    help="Name of the cluster",
-)
-@click.option(
-    "--num-gpus",
-    type=int,
-    help="Number of GPUs to allocate in the cluster",
-)
-@click.option(
-    "--region",
-    type=str,
-    help="Region to create the cluster in",
-)
-@click.option(
-    "--billing-type",
-    type=str,
-    help="Billing type to use for the cluster",
-)
-@click.option(
-    "--driver-version",
-    type=str,
-    help="Driver version to use for the cluster",
-)
-@click.option(
-    "--duration-days",
-    type=int,
-    help="Duration in days to keep the cluster running for reserved clusters",
-)
-@click.option(
-    "--gpu-type",
-    type=str,
-    help="GPU type to use for the cluster. Find available gpu types for each region with the `list-regions` command.",
-)
-@click.option("--cluster-type", type=click.Choice(["KUBERNETES", "SLURM"]), help="Cluster type")
-@click.option(
-    "--volume",
-    type=str,
-    help="Storage volume ID to use for the cluster",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def create(
-    ctx: click.Context,
-    name: str | None = None,
-    num_gpus: int | None = None,
-    region: str | None = None,
-    billing_type: Literal["RESERVED", "ON_DEMAND"] | None = None,
-    driver_version: str | None = None,
-    duration_days: int | None = None,
-    gpu_type: str | None = None,
-    cluster_type: Literal["KUBERNETES", "SLURM"] | None = None,
-    volume: str | None = None,
-    json: bool = False,
+async def create(
+    name: Optional[str] = None,
+    num_gpus: Optional[int] = None,
+    region: Optional[str] = None,
+    billing_type: Optional[Literal["RESERVED", "ON_DEMAND"]] = None,
+    driver_version: Optional[str] = None,
+    duration_days: Optional[int] = None,
+    gpu_type: Optional[str] = None,
+    cluster_type: Optional[Literal["KUBERNETES", "SLURM"]] = None,
+    volume: Optional[str] = None,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
 ) -> None:
-    """Create a cluster"""
-    client: Together = ctx.obj
-
-    params = ClusterCreateParams(
-        cluster_name=name,  # type: ignore
-        num_gpus=num_gpus,  # type: ignore
-        region=region,  # type: ignore
-        billing_type=billing_type,  # type: ignore
-        driver_version=driver_version,  # type: ignore
-        duration_days=duration_days,  # type: ignore
-        gpu_type=gpu_type,  # type: ignore
-        cluster_type=cluster_type,  # type: ignore
+    """Create a cluster."""
+    params: dict = dict(
+        cluster_name=name,
+        num_gpus=num_gpus,
+        region=region,
+        billing_type=billing_type,
+        driver_version=driver_version,
+        duration_days=duration_days,
+        gpu_type=gpu_type,
+        cluster_type=cluster_type,
     )
-
-    # Lazily add this so its not put in the object as None - just looks bad aesthetically
     if volume:
         params["volume_id"] = volume
 
-    # JSON Mode skips hand holding through the argument setup
-    if not json:
+    if not json_output:
         if not name:
-            params["cluster_name"] = click.prompt("Clusters: Cluster name:", default=getpass.getuser(), type=str)
-
-        # TODO
-        # GPU should be queried first
-        # Validate region has the gpu selected.
-
+            params["cluster_name"] = input(f"Clusters: Cluster name: [{getpass.getuser()}] ").strip() or getpass.getuser()
         if not gpu_type:
-            # TODO: Pull GPUS from region list and the region selected.
-            # TODO: Add instance_types to region list api
-            params["gpu_type"] = click.prompt(
-                "Clusters: Cluster GPU type:",
-                type=click.Choice(["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"]),
-            )
-
+            params["gpu_type"] = input(
+                "Clusters: Cluster GPU type (H100_SXM, H200_SXM, RTX_6000_PCI, L40_PCIE, B200_SXM, H100_SXM_INF): "
+            ).strip()
         if not region:
-            regions = client.beta.clusters.list_regions()
-            params["region"] = click.prompt(
-                "Clusters: Cluster region:",
-                default=regions.regions[0].name,
-                type=click.Choice([region.name for region in regions.regions]),
-            )
-
+            regions = await client.beta.clusters.list_regions()
+            params["region"] = input(
+                f"Clusters: Cluster region [{regions.regions[0].name}]: "
+            ).strip() or regions.regions[0].name
         if num_gpus is None:
-            params["num_gpus"] = click.prompt("Clusters: Cluster GPUs count", type=click.IntRange(min=8, max=64))
-
+            n = input("Clusters: Cluster GPUs count (8-64): ").strip()
+            params["num_gpus"] = int(n) if n else 8
         if not billing_type:
-            params["billing_type"] = click.prompt(
-                "Clusters: Cluster billing type:", default="ON_DEMAND", type=click.Choice(["RESERVED", "ON_DEMAND"])
-            )
-
+            params["billing_type"] = input("Clusters: Cluster billing type [ON_DEMAND]: ").strip() or "ON_DEMAND"
         if not driver_version:
-            regions = client.beta.clusters.list_regions()
-
-            # Get the driver versions for the selected region
+            regions = await client.beta.clusters.list_regions()
             driver_versions: List[str] = []
-            for region_obj in regions.regions:
-                if region_obj.name == params["region"]:
-                    driver_versions.extend(region_obj.driver_versions)
-
-            params["driver_version"] = click.prompt(
-                "Clusters: Cluster driver version:", default="CUDA_12_5_555", type=click.Choice(driver_versions)
-            )
-
-        if not duration_days and params["billing_type"] == "RESERVED":
-            params["duration_days"] = click.prompt("Clusters: Cluster reserved duration (1-90 days):", default=3)
-
+            for r in regions.regions:
+                if r.name == params.get("region"):
+                    driver_versions.extend(r.driver_versions or [])
+            params["driver_version"] = input(
+                f"Clusters: Cluster driver version [CUDA_12_5_555]: "
+            ).strip() or "CUDA_12_5_555"
+        if duration_days is None and params.get("billing_type") == "RESERVED":
+            d = input("Clusters: Cluster reserved duration (1-90 days) [3]: ").strip()
+            params["duration_days"] = int(d) if d else 3
         if not cluster_type:
-            params["cluster_type"] = click.prompt(
-                "Clusters: Cluster type:", default="KUBERNETES", type=click.Choice(["KUBERNETES", "SLURM"])
-            )
-
-        # In our QA environment, we don't accept storage volume creation, so we skip the prompt
-        if not volume and "qa" not in client.base_url.host:
-            if click.confirm("Clusters: Create a new storage volume?"):
+            params["cluster_type"] = input("Clusters: Cluster type [KUBERNETES]: ").strip() or "KUBERNETES"
+        if not volume and "qa" not in str(client.base_url):
+            if input("Clusters: Create a new storage volume? [y/N] ").strip().lower() in ("y", "yes"):
                 default_volume_name = f"{params['cluster_name']}-storage"
+                vol_name = input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
+                size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
                 params["shared_volume"] = SharedVolume(
-                    region=f"{params['region']}",
-                    size_tib=1,
-                    volume_name=default_volume_name,
-                )
-                params["shared_volume"]["volume_name"] = click.prompt(
-                    "Clusters: Storage volume name:", default=default_volume_name, type=str
-                )
-                params["shared_volume"]["size_tib"] = click.prompt(
-                    "Clusters: Storage volume size (TiB):", default=1, type=click.IntRange(min=1, max=1024)
+                    region=params["region"],
+                    size_tib=int(size) if size else 1,
+                    volume_name=vol_name,
                 )
             else:
-                # TODO: We need bound status and region on the volume list from the API.
-                # Only show volumes in the region selected and that are not attached to a cluster.
-                volumes = client.beta.clusters.storage.list()
-                params["volume_id"] = click.prompt(
-                    "Clusters: Which storage volume to use?",
-                    default=volumes.volumes[0].volume_id,
-                    type=click.Choice([volume.volume_id for volume in volumes.volumes]),
-                )
+                volumes = await client.beta.clusters.storage.list()
+                if volumes.volumes:
+                    params["volume_id"] = input(
+                        f"Clusters: Which storage volume to use? ({', '.join(v.volume_id for v in volumes.volumes)}): "
+                    ).strip()
+        print("Clusters: Creating cluster with the following parameters:", flush=True)
+        rprint(ClusterCreateParams(**params))
 
-        click.echo("Clusters: Creating cluster with the following parameters:")
-        print(ClusterCreateParams(**params))  # type: ignore
-
-    response = client.beta.clusters.create(**params)
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
+    response = await client.beta.clusters.create(**params)
+    if json_output:
+        print(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
     else:
-        click.echo(f"Clusters: Cluster created successfully")
-        click.echo(f"Clusters: {response.cluster_id}")
+        print("Clusters: Cluster created successfully")
+        print(f"Clusters: {response.cluster_id}")

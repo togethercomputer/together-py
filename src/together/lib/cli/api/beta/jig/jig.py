@@ -17,7 +17,7 @@ import click
 
 from together import Together
 from together._exceptions import APIStatusError
-from together.lib.cli.api._utils import handle_api_errors
+
 from together.types.beta.deployment import Deployment
 from together.lib.cli.api.beta.jig._utils import format_deployment_status
 from together.lib.cli.api.beta.jig._config import (
@@ -505,7 +505,6 @@ def _track_deployment_progress(deployment_name: str, client: Together) -> Option
 # Shared CLI decorator: pass_context + config option + api error handling
 def jig_command(f: Callable[..., Any]) -> Any:
     f = click.option("-c", "--config", "config_path", default=None, help="Configuration file path")(f)
-    f = handle_api_errors("Jig")(f)
     f = click.pass_context(f)
     f = click.command()(f)
     return f
@@ -548,7 +547,6 @@ gpu_count = 1
 
 @click.command()
 @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-@handle_api_errors("Jig")
 def dockerfile(config_path: str | None) -> None:
     """Generate Dockerfile"""
     config = Config.find(config_path)
@@ -925,7 +923,6 @@ def queue_status(ctx: click.Context, config_path: str | None) -> None:
 
 
 @click.command("list")
-@handle_api_errors("Jig")
 @click.pass_context
 def list_deployments(ctx: click.Context) -> None:
     """List all deployments"""

@@ -1,36 +1,25 @@
-from typing import Any, Dict, List, Union, Literal
+from __future__ import annotations
 
-import click
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
+
 from tabulate import tabulate
 
-from together import Together, omit
-from together.lib.cli.api._utils import handle_api_errors
+from cyclopts import Parameter
+
+from together import AsyncTogether, omit
 
 
-@click.command()
-@click.option(
-    "--status",
-    type=click.Choice(["pending", "queued", "running", "completed", "error", "user_error"]),
-    help="Filter by job status.",
-)
-@click.option(
-    "--limit",
-    type=int,
-    help="Limit number of results (max 100).",
-)
-@click.pass_context
-@handle_api_errors("Evals")
-def list(
-    ctx: click.Context,
-    status: Union[Literal["pending", "queued", "running", "completed", "error", "user_error"], None],
-    limit: Union[int, None],
+
+async def list_(
+    status: Optional[
+        Literal["pending", "queued", "running", "completed", "error", "user_error"]
+    ] = None,
+    limit: Optional[int] = None,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
 ) -> None:
-    """List evals"""
-
-    client: Together = ctx.obj
-
-    response = client.evals.list(status=status or omit, limit=limit or omit)
-
+    """List evals."""
+    response = await client.evals.list(status=status or omit, limit=limit or omit)
     display_list: List[Dict[str, Any]] = []
     for job in response:
         if job.parameters:
@@ -41,7 +30,6 @@ def list(
             model = ""
             model_a = ""
             model_b = ""
-
         display_list.append(
             {
                 "Workflow ID": job.workflow_id or "",
@@ -53,6 +41,4 @@ def list(
                 "Model B": model_b,
             }
         )
-
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
-    click.echo(table)
+    print(tabulate(display_list, headers="keys", tablefmt="grid", showindex=True))

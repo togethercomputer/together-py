@@ -1,39 +1,33 @@
-import json as json_lib
-from typing import Any, Dict, List
+from __future__ import annotations
 
-import click
+import json as json_lib
+from typing import Annotated, Any, Dict, List
+
 from tabulate import tabulate
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from cyclopts import Parameter
+
+from together import AsyncTogether
 
 
-@click.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def list_regions(ctx: click.Context, json: bool) -> None:
-    """List regions"""
-    client: Together = ctx.obj
 
-    response = client.beta.clusters.list_regions()
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
+async def list_regions(
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """List regions."""
+    response = await client.beta.clusters.list_regions()
+    if json_output:
+        print(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
     else:
         data: List[Dict[str, Any]] = []
         for region in response.regions:
             data.append(
                 {
                     "Name": region.name,
-                    "Supported GPU Types": ", ".join(region.supported_instance_types)
-                    if region.supported_instance_types
-                    else "",
-                    "Driver Versions": ", ".join(region.driver_versions) if region.driver_versions else "",
+                    "Supported GPU Types": ", ".join(region.supported_instance_types or []),
+                    "Driver Versions": ", ".join(region.driver_versions or []),
                 }
             )
-        click.echo(tabulate(data, headers="keys", tablefmt="grid"))
+        print(tabulate(data, headers="keys", tablefmt="grid"))

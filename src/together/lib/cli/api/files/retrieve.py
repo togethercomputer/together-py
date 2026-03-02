@@ -1,20 +1,19 @@
+from __future__ import annotations
+
 import json
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
 
 
-@click.command()
-@click.pass_context
-@click.argument("id", type=str, required=True)
-@handle_api_errors("Files")
-def retrieve(ctx: click.Context, id: str) -> None:
-    """Upload file"""
 
-    client: Together = ctx.obj
-
-    response = client.files.retrieve(id=id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+async def retrieve(
+    id: str,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """Retrieve file metadata."""
+    response = await client.files.retrieve(id=id)
+    print(json.dumps(response.model_dump(exclude_none=True), indent=4))

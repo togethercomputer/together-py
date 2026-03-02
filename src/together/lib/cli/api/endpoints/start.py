@@ -1,36 +1,38 @@
+from __future__ import annotations
+
 import json as json_lib
+import sys
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
+import asyncio
+
+from together import AsyncTogether
+
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from together.lib.utils.serializer import datetime_serializer
 
 
-@click.command()
-@click.argument("endpoint-id", required=True)
-@click.option("--wait", is_flag=True, help="Wait for the endpoint to start")
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_obj
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-def start(client: Together, endpoint_id: str, wait: bool, json: bool) -> None:
+async def start(
+    endpoint_id: str,
+    wait: bool = False,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
     """Start a dedicated inference endpoint."""
-    response = client.endpoints.update(endpoint_id, state="STARTED")
+    response = await client.endpoints.update(endpoint_id, state="STARTED")
 
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(), default=datetime_serializer, indent=2))
+    if json_output:
+        print(json_lib.dumps(response.model_dump(), default=datetime_serializer, indent=2))
         return
 
-    click.echo("Successfully marked endpoint as starting", err=True)
-
+    print("Successfully marked endpoint as starting", file=sys.stderr)
     if wait:
-        import time
-
-        click.echo("Waiting for endpoint to start...", err=True)
-        while client.endpoints.retrieve(endpoint_id).state != "STARTED":
-            time.sleep(1)
-        click.echo("Endpoint started", err=True)
-
-    click.echo(endpoint_id)
+        print("Waiting for endpoint to start...", file=sys.stderr)
+        while (await client.endpoints.retrieve(endpoint_id)).state != "STARTED":
+            await asyncio.sleep(1)
+        print("Endpoint started", file=sys.stderr)
+    print(endpoint_id)

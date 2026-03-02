@@ -1,115 +1,205 @@
 from __future__ import annotations
 
+import inspect
 import os
 import sys
-from typing import Any
+from pathlib import Path
+from typing import Annotated, Optional
 
-import click
 import httpx
+from cyclopts import App, Parameter
 
-import together
+from together import AsyncTogether
+from together._exceptions import APIError
 from together._version import __version__
-from together._constants import DEFAULT_TIMEOUT
 from together._utils._logs import setup_logging
-from together.lib.cli.api.beta import beta
-from together.lib.cli.api.evals import evals
-from together.lib.cli.api.files import files
-from together.lib.cli.api.models import models
-from together.lib.cli.api.endpoints import endpoints
-from together.lib.cli.api.fine_tuning import fine_tuning
 
-
-def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(f"Version {__version__}")
-    ctx.exit()
-
-
-@click.group()
-@click.pass_context
-@click.option(
-    "--api-key",
-    type=str,
-    help="API Key. Defaults to environment variable `TOGETHER_API_KEY`",
-    default=os.getenv("TOGETHER_API_KEY"),
+app = App(
+    name="together",
+    help="Together AI CLI",
+    version=__version__,
+    default_parameter=Parameter(negative=())
 )
-@click.option("--base-url", type=str, help="API Base URL. Defaults to Together AI endpoint.")
-@click.option("--timeout", type=int, help=f"Request timeout. Defaults to {DEFAULT_TIMEOUT} seconds")
-@click.option(
-    "--max-retries",
-    type=int,
-    help=f"Maximum number of HTTP retries.",
-)
-@click.option(
-    "--version",
-    is_flag=True,
-    callback=print_version,
-    expose_value=False,
-    is_eager=True,
-    help="Print version",
-)
-@click.option("--debug", help="Debug mode", is_flag=True)
-def main(
-    ctx: click.Context,
-    api_key: str | None,
-    base_url: str | None,
-    timeout: int | None,
-    debug: bool | None,
-    max_retries: int | None,
-) -> None:
-    """This is a sample CLI tool."""
-    if debug:
-        os.environ.setdefault("TOGETHER_LOG", "debug")
-        setup_logging()  # Must run this again here to allow the new logging configuration to take effect
 
+app['--version'].group = "Parameters"
+app['--help'].group = "Parameters"
+
+def _create_client(
+    api_key: Optional[str],
+    base_url: Optional[str],
+    timeout: Optional[int],
+    max_retries: Optional[int],
+) -> AsyncTogether:
     try:
-        ctx.obj = together.Together(
+        return AsyncTogether(
             api_key=api_key,
             base_url=base_url,
             timeout=timeout,
             max_retries=max_retries if max_retries is not None else 0,
         )
-
-    # This implementation is indeed strange, but it's the best user experience for the CLI when the api key is not set
-    # The constructor will raise an error if there is no api key set. We catch the error and you may think a simpler implementation
-    # would be just to print the error right away and exit. Unfortunately that means that the user would not be able to see any usage commands.
-    # E.g. if they type `together models` it would print the error and exit without showing any usage commands.
-    #
-    # Instead we opt to create a dummy client and hook into any requests performed by the client. We take that moment to print the error and exit.
     except Exception as e:
         if "api_key" in str(e):
-            ctx.obj = together.Together(
+            client = AsyncTogether(
                 api_key="0000000000000000000000000000000000000000",
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries if max_retries is not None else 0,
             )
 
-            # Wrap the client's httpx requests to track the parameters sent on api requests
             def block_requests_for_api_key(_: httpx.Request) -> None:
-                invoked_command = click.get_current_context().command_path
-                invoked_command_name = invoked_command.split("together ")[1]
-                click.secho(
-                    "Error: api key missing.\n\nThe api_key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-                    fg="red",
+                print("Error: api key missing.", file=sys.stderr)
+                print(
+                    "The api_key must be set either by passing --api-key or by setting TOGETHER_API_KEY.",
+                    file=sys.stderr,
                 )
-                click.secho("\nYou can find your api key at https://api.together.xyz/settings/api-keys", fg="yellow")
-                click.secho(f"\nUsage: together --api-key <your-api-key> {invoked_command_name}", fg="yellow")
+                print("You can find your api key at https://api.together.xyz/settings/api-keys", file=sys.stderr)
                 sys.exit(1)
 
-            ctx.obj._client.event_hooks["request"].append(block_requests_for_api_key)
-            return
-
+            client._client.event_hooks["request"].append(block_requests_for_api_key)
+            return client
         raise e
 
 
-main.add_command(files)
-main.add_command(fine_tuning)
-main.add_command(models)
-main.add_command(endpoints)
-main.add_command(evals)
-main.add_command(beta)
+@app.meta.default
+async def _launcher(
+    *tokens: Annotated[str, Parameter(show=False, allow_leading_hyphen=True)],
+    api_key: Annotated[Optional[str], Parameter(show=False)] = None,
+    base_url: Annotated[Optional[str], Parameter(show=False)] = None,
+    timeout: Annotated[Optional[int], Parameter(show=False)] = None,
+    max_retries: Annotated[Optional[int], Parameter(show=False)] = None,
+    debug: Annotated[Optional[bool], Parameter(show=False)] = False,
+) -> None:
+    if debug:
+        os.environ.setdefault("TOGETHER_LOG", "debug")
+        setup_logging()
+    client = _create_client(api_key, base_url, timeout, max_retries)
+    try:
+        remaining = list(tokens)
+        command, bound, ignored = app.parse_args(remaining, print_error=False, help_on_error=True)
+        kwargs = dict(bound.kwargs)
+        if "client" in ignored:
+            kwargs["client"] = client
+        result = command(*bound.args, **kwargs)
+        if inspect.iscoroutine(result):
+            await result
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except APIError as e:
+        error_msg = ""
+        if e.body is not None:
+            error_msg = getattr(e.body, "message", str(e.body))
+        else:
+            error_msg = str(e)
+        print(f"Failed", file=sys.stderr)
+        print(f"{error_msg}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Failed", file=sys.stderr)
+        print(f"An unexpected error occurred - {e!s}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        await client.close()
 
-if __name__ == "__main__":
-    main()
+
+# Register commands
+_CLI = "together.lib.cli.api"
+
+## Files API commands
+files_app = app.command(App(name="files", help="File API commands"))
+files_app.command(f"{_CLI}.files.upload:upload")
+files_app.command(f"{_CLI}.files.list:list_", name="list")
+files_app.command((f"{_CLI}.files.retrieve:retrieve"))
+files_app.command((f"{_CLI}.files.retrieve_content:retrieve_content"))
+files_app.command((f"{_CLI}.files.delete:delete"))
+files_app.command((f"{_CLI}.files.check:check"))
+
+# Fine-tuning API commands
+fine_tuning_app = app.command(App(name="fine-tuning", help="Fine-tuning API commands"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list_"), name="list")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.list_events:list_events"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.list_checkpoints:list_checkpoints"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.download:download"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"))
+
+## Models API commands
+models_app = app.command(App(name="models", help="Models API commands"))
+models_app.command((f"{_CLI}.models.list:list_"), name="list")
+models_app.command((f"{_CLI}.models.upload:upload"))
+
+## Endpoints API commands
+endpoints_app = app.command(App(name="endpoints", help="Endpoints API commands"))
+endpoints_app.command((f"{_CLI}.endpoints.hardware:hardware"))
+endpoints_app.command((f"{_CLI}.endpoints.create:create"))
+endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"))
+endpoints_app.command((f"{_CLI}.endpoints.stop:stop"))
+endpoints_app.command((f"{_CLI}.endpoints.start:start"))
+endpoints_app.command((f"{_CLI}.endpoints.delete:delete"))
+endpoints_app.command((f"{_CLI}.endpoints.list:list_"), name="list")
+endpoints_app.command((f"{_CLI}.endpoints.update:update"))
+endpoints_app.command((f"{_CLI}.endpoints.availability_zones:availability_zones"))
+
+## Evals API commands
+evals_app = app.command(App(name="evals", help="Evals API commands"))
+evals_app.command((f"{_CLI}.evals.create:create"))
+evals_app.command((f"{_CLI}.evals.list:list_"), name="list")
+evals_app.command((f"{_CLI}.evals.retrieve:retrieve"))
+evals_app.command((f"{_CLI}.evals.status:status"))
+
+## Beta API commands
+beta_app = app.command(App(name="beta", help="Beta API commands"))
+
+### Clusters API commands
+clusters_app = beta_app.command(App(name="clusters", help="Clusters API commands"))
+clusters_app.command((f"{_CLI}.beta.clusters.list:list_"), name="list")
+clusters_app.command((f"{_CLI}.beta.clusters.create:create"))
+clusters_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"))
+clusters_app.command((f"{_CLI}.beta.clusters.update:update"))
+clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"))
+clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"))
+clusters_app.command((f"{_CLI}.beta.clusters.get_credentials:get_credentials"))
+
+### Clusters > Storage API commands
+storage_app = clusters_app.command(App(name="storage", help="Clusters Storage API commands"))
+storage_app.command((f"{_CLI}.beta.clusters.storage.list:list_"), name="list")
+storage_app.command((f"{_CLI}.beta.clusters.storage.create:create"))
+storage_app.command((f"{_CLI}.beta.clusters.storage.retrieve:retrieve"))
+storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"))
+
+### JIG API COMMANDS - TODO
+
+
+def _maybe_auto_install_completion() -> None:
+    if os.environ.get("TOGETHER_NO_AUTO_COMPLETION"):
+        return
+    sentinel = Path.home() / ".config" / "together" / "completion_installed"
+    if sentinel.exists():
+        return
+    try:
+        shell = os.environ.get("SHELL", "")
+        zsh = shell.endswith("zsh")
+        bash = shell.endswith("bash")
+        fish = shell.endswith("fish")
+        if not any((zsh, bash, fish)):
+            return
+        if zsh:
+            shell = "zsh"
+        elif bash:
+            shell = "bash"
+        elif fish:
+            shell = "fish"
+        print(f"Installing tab completion for {shell}...", file=sys.stderr)
+        app.install_completion(shell=shell, add_to_startup=True)
+        sentinel.parent.mkdir(parents=True, exist_ok=True)
+        sentinel.touch()
+        print("Together shell command completion installed. Restart your shell or source your rc file to start using it.", file=sys.stderr)
+    except Exception:
+        pass
+
+
+def main() -> None:
+    _maybe_auto_install_completion()
+    app.meta()
+

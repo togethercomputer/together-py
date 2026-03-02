@@ -1,24 +1,22 @@
+from __future__ import annotations
+
 import json as json_lib
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
+from together import AsyncTogether
+from together.lib.cli.api.beta.clusters._util import print_clusters
 
 
-@click.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-def list(ctx: click.Context, json: bool) -> None:
-    """List clusters"""
-    client: Together = ctx.obj
-
-    response = client.beta.clusters.list()
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
+async def list_(
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """List clusters."""
+    response = await client.beta.clusters.list()
+    if json_output:
+        print(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
     else:
-        ctx.obj.print_clusters(response.clusters)
+        print_clusters(response.clusters)

@@ -1,137 +1,72 @@
 from __future__ import annotations
 
+import asyncio
 import sys
+from typing import Annotated, Optional
 
-import click
+from cyclopts import Parameter
 
-from together import APIError, Together, omit
-from together.lib.cli.api._utils import handle_api_errors
+from together import APIError, AsyncTogether, omit
+
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 from .hardware import hardware as list_hardware
 
 
-@click.command()
-@click.option(
-    "--model",
-    required=True,
-    help="The model to deploy (e.g. meta-llama/Llama-4-Scout-17B-16E-Instruct)",
-)
-@click.option(
-    "--min-replicas",
-    type=click.IntRange(min=0),
-    default=1,
-    help="Minimum number of replicas to deploy (must be >= 0)",
-)
-@click.option(
-    "--max-replicas",
-    type=click.IntRange(min=0),
-    default=1,
-    help="Maximum number of replicas to deploy (must be >= 0)",
-)
-@click.option(
-    "--hardware",
-    type=str,
-    help="Hardware configuration to use for inference",
-)
-@click.option(
-    "--display-name",
-    help="A human-readable name for the endpoint",
-)
-@click.option(
-    "--no-prompt-cache",
-    is_flag=True,
-    default=None,
-    help="Deprecated and no longer has any effect.",
-)
-@click.option(
-    "--no-speculative-decoding",
-    is_flag=True,
-    help="Disable speculative decoding for this endpoint",
-)
-@click.option(
-    "--no-auto-start",
-    is_flag=True,
-    help="Create the endpoint in STOPPED state instead of auto-starting it",
-)
-@click.option(
-    "--inactive-timeout",
-    type=int,
-    help="Number of minutes of inactivity after which the endpoint will be automatically stopped. Set to 0 to disable.",
-)
-@click.option(
-    "--availability-zone",
-    help="Start endpoint in specified availability zone (e.g., us-central-4b)",
-)
-@click.option(
-    "--wait",
-    is_flag=True,
-    help="Wait for the endpoint to be ready after creation",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Print output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-def create(
-    ctx: click.Context,
+async def create(
     model: str,
-    min_replicas: int,
-    max_replicas: int,
-    hardware: str,
-    display_name: str | None,
-    no_prompt_cache: bool | None,
-    no_speculative_decoding: bool | None,
-    no_auto_start: bool,
-    inactive_timeout: int | None,
-    availability_zone: str | None,
-    wait: bool,
-    json: bool,
+    min_replicas: int = 1,
+    max_replicas: int = 1,
+    hardware: Optional[str] = None,
+    display_name: Optional[str] = None,
+    no_prompt_cache: Optional[bool] = None,
+    no_speculative_decoding: bool = False,
+    no_auto_start: bool = False,
+    inactive_timeout: Optional[int] = None,
+    availability_zone: Optional[str] = None,
+    wait: bool = False,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
 ) -> None:
     """Create a new dedicated inference endpoint."""
-    client: Together = ctx.obj
-
-    # Validate min <= max replicas
     if min_replicas > max_replicas:
-        click.echo(
+        print(
             f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})",
-            err=True,
+            file=sys.stderr,
         )
         sys.exit(1)
 
-    # Validate availability zone if specified
     if availability_zone:
         try:
-            valid_zones = client.endpoints.list_avzones()
+            valid_zones = await client.endpoints.list_avzones()
             if availability_zone not in valid_zones.avzones:
-                click.echo(f"Error: Invalid availability zone '{availability_zone}'", err=True)
+                print(f"Error: Invalid availability zone '{availability_zone}'", file=sys.stderr)
                 if valid_zones.avzones:
-                    click.echo("Available zones:", err=True)
+                    print("Available zones:", file=sys.stderr)
                     for zone in sorted(valid_zones.avzones):
-                        click.echo(f"  {zone}", err=True)
+                        print(f"  {zone}", file=sys.stderr)
                 sys.exit(1)
         except Exception:
-            # If we can't fetch zones, let the API validate it
             pass
 
-    if json is True and wait is True:
-        click.secho("Error: --json and --wait cannot be used together.", fg="red", err=True)
+    if json_output and wait:
+        print("Error: --json and --wait cannot be used together.", file=sys.stderr)
         return
 
-    if no_prompt_cache is not None and not json:
-        click.echo("Warning: --no-prompt-cache is deprecated and no longer has any effect.", err=True)
+    if no_prompt_cache is not None and not json_output:
+        print("Warning: --no-prompt-cache is deprecated and no longer has any effect.", file=sys.stderr)
+
+    if hardware is None:
+        print("Error: --hardware is required", file=sys.stderr)
+        sys.exit(1)
 
     try:
-        response = client.endpoints.create(
+        response = await client.endpoints.create(
             model=model,
             hardware=hardware,
-            autoscaling={
-                "min_replicas": min_replicas,
-                "max_replicas": max_replicas,
-            },
+            autoscaling={"min_replicas": min_replicas, "max_replicas": max_replicas},
             display_name=display_name or omit,
             disable_speculative_decoding=no_speculative_decoding or omit,
             state="STOPPED" if no_auto_start else "STARTED",
@@ -139,9 +74,8 @@ def create(
             extra_query={"availability_zone": availability_zone or omit},
         )
     except APIError as e:
-        if json:
+        if json_output:
             raise e
-
         error_msg = str(e.args[0]).lower() if e.args else ""
         if (
             "check the hardware api" in error_msg
@@ -149,9 +83,9 @@ def create(
             or "the selected configuration" in error_msg
             or "hardware is required" in error_msg
         ):
-            click.secho("Invalid hardware selected.", fg="red", err=True)
-            click.echo("\nAvailable hardware options:")
-            ctx.invoke(list_hardware, available=True, model=model, json=False)
+            print("Invalid hardware selected.", file=sys.stderr)
+            print("\nAvailable hardware options:", file=sys.stderr)
+            await list_hardware(model=model, json_output=False, available=True, client=client)
             sys.exit(1)
         elif "model" in error_msg and (
             "not found" in error_msg
@@ -159,51 +93,36 @@ def create(
             or "does not exist" in error_msg
             or "not supported" in error_msg
         ):
-            click.echo(
-                f"Error: Model '{model}' was not found or is not available for dedicated endpoints.",
-                err=True,
-            )
-            click.echo(
-                "Please check that the model name is correct and that it supports dedicated endpoint deployment.",
-                err=True,
-            )
-            click.echo(
-                "You can browse available models at: https://api.together.ai/models",
-                err=True,
-            )
+            print(f"Error: Model '{model}' was not found or is not available for dedicated endpoints.", file=sys.stderr)
+            print("Please check that the model name is correct and that it supports dedicated endpoint deployment.", file=sys.stderr)
+            print("You can browse available models at: https://api.together.ai/models", file=sys.stderr)
             sys.exit(1)
         raise e
 
-    # Print detailed information to stderr
-    if json:
-        click.echo(response.model_dump_json(indent=2))
+    if json_output:
+        print(response.model_dump_json(indent=2))
         return
 
-    click.echo("Created dedicated endpoint with:", err=True)
-    click.echo(f"  Model: {model}", err=True)
-    click.echo(f"  Min replicas: {min_replicas}", err=True)
-    click.echo(f"  Max replicas: {max_replicas}", err=True)
-    click.echo(f"  Hardware: {hardware}", err=True)
+    print("Created dedicated endpoint with:", file=sys.stderr)
+    print(f"  Model: {model}", file=sys.stderr)
+    print(f"  Min replicas: {min_replicas}", file=sys.stderr)
+    print(f"  Max replicas: {max_replicas}", file=sys.stderr)
+    print(f"  Hardware: {hardware}", file=sys.stderr)
     if display_name:
-        click.echo(f"  Display name: {display_name}", err=True)
+        print(f"  Display name: {display_name}", file=sys.stderr)
     if no_speculative_decoding:
-        click.echo("  Speculative decoding: disabled", err=True)
+        print("  Speculative decoding: disabled", file=sys.stderr)
     if no_auto_start:
-        click.echo("  Auto-start: disabled", err=True)
+        print("  Auto-start: disabled", file=sys.stderr)
     if inactive_timeout is not None:
-        click.echo(f"  Inactive timeout: {inactive_timeout} minutes", err=True)
+        print(f"  Inactive timeout: {inactive_timeout} minutes", file=sys.stderr)
     if availability_zone:
-        click.echo(f"  Availability zone: {availability_zone}", err=True)
-
-    click.echo(f"Endpoint created successfully, id: {response.id}", err=True)
+        print(f"  Availability zone: {availability_zone}", file=sys.stderr)
+    print(f"Endpoint created successfully, id: {response.id}", file=sys.stderr)
 
     if wait:
-        import time
-
-        click.echo("Waiting for endpoint to be ready...", err=True)
-        while client.endpoints.retrieve(response.id).state != "STARTED":
-            time.sleep(1)
-        click.echo("Endpoint ready", err=True)
-
-    # Print only the endpoint ID to stdout
-    click.echo(response.id)
+        print("Waiting for endpoint to be ready...", file=sys.stderr)
+        while (await client.endpoints.retrieve(response.id)).state != "STARTED":
+            await asyncio.sleep(1)
+        print("Endpoint ready", file=sys.stderr)
+    print(response.id)

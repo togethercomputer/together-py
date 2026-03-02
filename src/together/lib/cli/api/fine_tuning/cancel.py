@@ -1,39 +1,35 @@
+from __future__ import annotations
+
 import json
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
+
 from together.lib.utils.serializer import datetime_serializer
 
 NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed", "user_error"]
 
 
-@click.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
-@handle_api_errors("Fine-tuning")
-def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
-    """Cancel fine-tuning job"""
-    client: Together = ctx.obj
-    job = client.fine_tuning.retrieve(fine_tune_id)
+async def cancel(
+    fine_tune_id: str,
+    quiet: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """Cancel fine-tuning job."""
+    job = await client.fine_tuning.retrieve(fine_tune_id)
     if job.status in NON_CANCELLABLE_STATES:
-        click.echo(
-            click.style(f"Fine-tuning: ", fg="blue")
-            + f"Training is not currently cancellable. Current status is "
-            + click.style(job.status, fg="yellow")
-        )
+        print(f"Fine-tuning: Training is not currently cancellable. Current status is {job.status}")
         return
-
     if not quiet:
         confirm_response = input(
             "You will be billed for any completed training steps upon cancellation. "
             f"Do you want to cancel job {fine_tune_id}? [y/N]"
         )
         if "y" not in confirm_response.lower():
-            click.echo({"status": "Cancel not submitted"})
+            print(json.dumps({"status": "Cancel not submitted"}))
             return
-    response = client.fine_tuning.cancel(fine_tune_id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
+    response = await client.fine_tuning.cancel(fine_tune_id)
+    print(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))

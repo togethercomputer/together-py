@@ -1,20 +1,19 @@
+from __future__ import annotations
+
 import json
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
 
 
-@click.command()
-@click.pass_context
-@click.argument("id", type=str, required=True)
-@handle_api_errors("Files")
-def delete(ctx: click.Context, id: str) -> None:
-    """Delete remote file"""
 
-    client: Together = ctx.obj
-
-    response = client.files.delete(id=id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+async def delete(
+    id: str,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """Delete remote file."""
+    response = await client.files.delete(id=id)
+    print(json.dumps(response.model_dump(exclude_none=True), indent=4))

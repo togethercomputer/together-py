@@ -1,71 +1,50 @@
 from __future__ import annotations
 
 import json as json_lib
-from typing import Literal
+from typing import Annotated, Literal, Optional
 
-import click
+from cyclopts import Parameter
 
-from together import Together, omit
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
+from together import AsyncTogether, omit
+
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from together.lib.utils.serializer import datetime_serializer
+from together.lib.cli.api.endpoints._utils import print_endpoint
 
-
-@click.command()
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.option(
-    "--type",
-    type=click.Choice(["dedicated", "serverless"]),
-    help="Filter by endpoint type",
-)
-@click.option(
-    "--mine",
-    is_flag=True,
-    default=None,
-    help="true (only mine), default=all",
-)
-@click.option(
-    "--usage-type",
-    type=click.Choice(["on-demand", "reserved"]),
-    help="Filter by endpoint usage type",
-)
-@click.pass_context
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-def list(
-    ctx: click.Context,
-    json: bool,
-    type: Literal["dedicated", "serverless"] | None,
-    usage_type: Literal["on-demand", "reserved"] | None,
-    mine: bool | None,
+async def list_(
+    json_output: bool = False,
+    type: Optional[Literal["dedicated", "serverless"]] = None,
+    mine: Optional[bool] = None,
+    usage_type: Optional[Literal["on-demand", "reserved"]] = None,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
 ) -> None:
     """List all inference endpoints (includes both dedicated and serverless endpoints)."""
-    client: Together = ctx.obj
+    import sys
 
-    endpoints = client.endpoints.list(
+    endpoints = await client.endpoints.list(
         type=type or omit,
         usage_type=usage_type or omit,
         mine=mine if mine is not None else omit,
     )
 
-    if json:
-        click.echo(
+    if json_output:
+        print(
             json_lib.dumps(
-                [endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2
+                [endpoint.model_dump() for endpoint in endpoints.data],
+                default=datetime_serializer,
+                indent=2,
             )
         )
         return
 
     if not endpoints:
-        click.echo("No dedicated endpoints found", err=True)
+        print("No dedicated endpoints found", file=sys.stderr)
         return
 
-    click.echo("Endpoints:", err=True)
-    # Only show autoscaling for user's own endpoints (when --mine is set)
+    print("Endpoints:", file=sys.stderr)
     show_autoscaling = mine is True
     for endpoint in endpoints.data:
-        ctx.obj.print_endpoint(
-            endpoint,
-            show_autoscaling=show_autoscaling,
-        )
-        click.echo()
+        print_endpoint(endpoint, show_autoscaling=show_autoscaling)
+        print(file=sys.stderr)

@@ -1,24 +1,26 @@
+from __future__ import annotations
+
 import json as json_lib
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
+
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
-@click.command()
-@click.argument("endpoint-id", required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_obj
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-def delete(client: Together, endpoint_id: str, json: bool) -> None:
+async def delete(
+    endpoint_id: str,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
     """Delete a dedicated inference endpoint."""
-    client.endpoints.delete(endpoint_id)
-    if json:
-        click.echo(json_lib.dumps({"message": "Successfully deleted endpoint"}, indent=2))
+    await client.endpoints.delete(endpoint_id)
+    if json_output:
+        print(json_lib.dumps({"message": "Successfully deleted endpoint"}, indent=2))
         return
-
-    click.echo("Successfully deleted endpoint", err=True)
-    click.echo(endpoint_id)
+    print("Successfully deleted endpoint", file=__import__("sys").stderr)
+    print(endpoint_id)

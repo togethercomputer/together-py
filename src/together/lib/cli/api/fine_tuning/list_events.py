@@ -1,25 +1,24 @@
-from typing import Any, Dict, List
-from textwrap import wrap
+from __future__ import annotations
 
-import click
+from textwrap import wrap
+from typing import Annotated, Any, Dict, List
+
 from tabulate import tabulate
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from cyclopts import Parameter
+
+from together import AsyncTogether
 
 
-@click.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@handle_api_errors("Fine-tuning")
-def list_events(ctx: click.Context, fine_tune_id: str) -> None:
-    """List fine-tuning events"""
-    client: Together = ctx.obj
 
-    response = client.fine_tuning.list_events(fine_tune_id)
-
+async def list_events(
+    fine_tune_id: str,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """List fine-tuning events."""
+    response = await client.fine_tuning.list_events(fine_tune_id)
     response.data = response.data or []
-
     display_list: List[Dict[str, Any]] = []
     for i in response.data:
         display_list.append(
@@ -30,6 +29,4 @@ def list_events(ctx: click.Context, fine_tune_id: str) -> None:
                 "Hash": i.hash,
             }
         )
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
-
-    click.echo(table)
+    print(tabulate(display_list, headers="keys", tablefmt="grid", showindex=True))

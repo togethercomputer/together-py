@@ -1,27 +1,28 @@
 from __future__ import annotations
 
-from typing import Any, Literal
 from pathlib import Path
+from typing import Annotated, Any, Literal, Optional
 
-import click
-from click.core import ParameterSource
+from cyclopts import Parameter
 
-from together import Together
+from together import AsyncTogether
 from together.types import fine_tuning_estimate_price_params as pe_params
+from together.lib.resources.fine_tuning import async_get_model_limits
 from together.lib.utils import log_warn
-from together.lib.cli.api._utils import INT_WITH_MAX, BOOL_WITH_AUTO, handle_api_errors
-from together.lib.resources.fine_tuning import get_model_limits
+from together.lib.cli.api._utils import (
+    int_or_max_converter,
+    bool_or_auto_converter,
+)
 
 
 def get_confirmation_message(price: str, warning: str) -> str:
     return (
         "\nYou are about to create a fine-tuning job. The estimated price of this job is "
-        + f"{click.style(f'{price}', fg='blue', bold=True)}\n\n"
-        + "The actual cost of your job will be determined by the model size, the number of tokens"
-        + "in the training file, the number of tokens in the validation file, the number of epochs, and "
-        + "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
-        + warning
-        + "\nDo you want to proceed?"
+        f"{price}\n\n"
+        "The actual cost of your job will be determined by the model size, the number of tokens "
+        "in the training file, the number of tokens in the validation file, the number of epochs, and "
+        "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
+        f"{warning}\nDo you want to proceed? [Y/n]"
     )
 
 
@@ -32,220 +33,61 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 )
 
 
-@click.command()
-@click.pass_context
-@click.option(
-    "--training-file",
-    "-t",
-    type=str,
-    required=True,
-    help="Training file ID from Files API or local path to a file to be uploaded.",
-)
-@click.option("--model", "-m", type=str, help="Base model name")
-@click.option("--n-epochs", "-ne", type=int, default=1, help="Number of epochs to train for")
-@click.option(
-    "--validation-file",
-    type=str,
-    default="",
-    help="Validation file ID from Files API or local path to a file to be uploaded.",
-)
-@click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
-@click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
-@click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
-@click.option("--learning-rate", "-lr", type=float, default=1e-5, help="Learning rate")
-@click.option(
-    "--lr-scheduler-type",
-    type=click.Choice(["linear", "cosine"]),
-    default="cosine",
-    help="Learning rate scheduler type",
-)
-@click.option(
-    "--min-lr-ratio",
-    type=float,
-    default=0.0,
-    help="The ratio of the final learning rate to the peak learning rate",
-)
-@click.option(
-    "--scheduler-num-cycles",
-    type=float,
-    default=0.5,
-    help="Number or fraction of cycles for the cosine learning rate scheduler.",
-)
-@click.option(
-    "--warmup-ratio",
-    type=float,
-    default=0.0,
-    help="Warmup ratio for the learning rate scheduler.",
-)
-@click.option(
-    "--max-grad-norm",
-    type=float,
-    default=1.0,
-    help="Max gradient norm to be used for gradient clipping. Set to 0 to disable.",
-)
-@click.option(
-    "--weight-decay",
-    type=float,
-    default=0.0,
-    help="Weight decay",
-)
-@click.option(
-    "--lora/--no-lora",
-    type=bool,
-    default=True,
-    help="Whether to use LoRA adapters for fine-tuning",
-)
-@click.option("--lora-r", type=int, default=8, help="LoRA adapters' rank")
-@click.option("--lora-dropout", type=float, default=0, help="LoRA adapters' dropout")
-@click.option("--lora-alpha", type=float, default=8, help="LoRA adapters' alpha")
-@click.option(
-    "--lora-trainable-modules",
-    type=str,
-    default="all-linear",
-    help="Trainable modules for LoRA adapters. For example, 'all-linear', 'q_proj,v_proj'",
-)
-@click.option(
-    "--training-method",
-    type=click.Choice(["sft", "dpo"]),
-    default="sft",
-    help="Training method to use. Options: sft (supervised fine-tuning), dpo (Direct Preference Optimization)",
-)
-@click.option(
-    "--dpo-beta",
-    type=float,
-    default=None,
-    help="Beta parameter for DPO training (only used when '--training-method' is 'dpo')",
-)
-@click.option(
-    "--dpo-normalize-logratios-by-length",
-    type=bool,
-    default=False,
-    help=("Whether to normalize logratios by sample length (only used when '--training-method' is 'dpo')"),
-)
-@click.option(
-    "--rpo-alpha",
-    type=float,
-    default=None,
-    help=(
-        "RPO alpha parameter of DPO training to include NLL in the loss (only used when '--training-method' is 'dpo')"
-    ),
-)
-@click.option(
-    "--simpo-gamma",
-    type=float,
-    default=None,
-    help="SimPO gamma parameter (only used when '--training-method' is 'dpo')",
-)
-@click.option(
-    "--suffix",
-    "-s",
-    type=str,
-    default=None,
-    help="Suffix for the fine-tuned model name",
-)
-@click.option("--wandb-api-key", type=str, default=None, help="Wandb API key")
-@click.option("--wandb-base-url", type=str, default=None, help="Wandb base URL")
-@click.option("--wandb-project-name", type=str, default=None, help="Wandb project name")
-@click.option("--wandb-name", type=str, default=None, help="Wandb run name")
-@click.option(
-    "--confirm",
-    "-y",
-    type=bool,
-    is_flag=True,
-    default=False,
-    help="Whether to skip the launch confirmation message",
-)
-@click.option(
-    "--train-on-inputs",
-    type=BOOL_WITH_AUTO,
-    default=None,
-    help="Whether to mask the user messages in conversational data or prompts in instruction data. "
-    "`auto` will automatically determine whether to mask the inputs based on the data format.",
-)
-@click.option(
-    "--train-vision",
-    type=bool,
-    default=False,
-    help="Whether to train the vision encoder. Only supported for multimodal models.",
-)
-@click.option(
-    "--from-checkpoint",
-    type=str,
-    default=None,
-    help="The checkpoint identifier to continue training from a previous fine-tuning job. "
-    "The format: {$JOB_ID/$OUTPUT_MODEL_NAME}:{$STEP}. "
-    "The step value is optional, without it the final checkpoint will be used.",
-)
-@click.option(
-    "--from-hf-model",
-    type=str,
-    help="The Hugging Face Hub repo to start training from. "
-    "Should be as close as possible to the base model (specified by the `model` argument) "
-    "in terms of architecture and size",
-)
-@click.option(
-    "--hf-model-revision",
-    type=str,
-    help="The revision of the Hugging Face Hub model to continue training from. "
-    "Example: hf_model_revision=None (defaults to the latest revision in `main`) "
-    "or hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).",
-)
-@click.option(
-    "--hf-api-token",
-    type=str,
-    default=None,
-    help="HF API token to use for uploading a checkpoint to a private repo",
-)
-@click.option(
-    "--hf-output-repo-name",
-    type=str,
-    default=None,
-    help="HF repo to upload the fine-tuned model to",
-)
-@handle_api_errors("Fine-tuning")
-def create(
-    ctx: click.Context,
-    training_file: str,
-    validation_file: str,
-    model: str | None,
-    n_epochs: int,
-    n_evals: int,
-    n_checkpoints: int,
-    batch_size: int | Literal["max"],
-    learning_rate: float,
-    lr_scheduler_type: Literal["linear", "cosine"],
-    min_lr_ratio: float,
-    scheduler_num_cycles: float,
-    warmup_ratio: float,
-    max_grad_norm: float,
-    weight_decay: float,
-    lora: bool | None,
-    lora_r: int | None,
-    lora_dropout: float | None,
-    lora_alpha: float | None,
-    lora_trainable_modules: str | None,
-    train_vision: bool,
-    suffix: str | None,
-    wandb_api_key: str | None,
-    wandb_base_url: str | None,
-    wandb_project_name: str | None,
-    wandb_name: str | None,
-    confirm: bool | None,
-    train_on_inputs: bool | Literal["auto"] | None,
-    training_method: str | None,
-    dpo_beta: float | None,
-    dpo_normalize_logratios_by_length: bool | None,
-    rpo_alpha: float | None,
-    simpo_gamma: float | None,
-    from_checkpoint: str | None,
-    from_hf_model: str | None,
-    hf_model_revision: str | None,
-    hf_api_token: str | None,
-    hf_output_repo_name: str | None,
-) -> None:
-    """Start fine-tuning"""
-    client: Together = ctx.obj
+def _check_path_exists(path_string: str) -> bool:
+    if path_string == "":
+        return False
+    p = Path(path_string)
+    return p.exists() and (p.is_file() or p.is_dir())
 
+
+async def create(
+    training_file: Annotated[str, Parameter(name=["--training-file", "-t"])],
+    validation_file: str = "",
+    model: Optional[str] = None,
+    n_epochs: int = 1,
+    n_evals: int = 0,
+    n_checkpoints: int = 1,
+    batch_size: Annotated[
+        int | Literal["max"],
+        Parameter(converter=int_or_max_converter, name=["--batch-size", "-b"]),
+    ] = "max",
+    learning_rate: float = 1e-5,
+    lr_scheduler_type: Literal["linear", "cosine"] = "cosine",
+    min_lr_ratio: float = 0.0,
+    scheduler_num_cycles: float = 0.5,
+    warmup_ratio: float = 0.0,
+    max_grad_norm: float = 1.0,
+    weight_decay: float = 0.0,
+    lora: bool = True,
+    lora_r: int = 8,
+    lora_dropout: float = 0,
+    lora_alpha: float = 8,
+    lora_trainable_modules: str = "all-linear",
+    training_method: Literal["sft", "dpo"] = "sft",
+    dpo_beta: Optional[float] = None,
+    dpo_normalize_logratios_by_length: bool = False,
+    rpo_alpha: Optional[float] = None,
+    simpo_gamma: Optional[float] = None,
+    suffix: Optional[str] = None,
+    wandb_api_key: Optional[str] = None,
+    wandb_base_url: Optional[str] = None,
+    wandb_project_name: Optional[str] = None,
+    wandb_name: Optional[str] = None,
+    confirm: bool = False,
+    train_on_inputs: Annotated[
+        Optional[tuple[bool | None, Literal["auto"] | None]],
+        Parameter(converter=bool_or_auto_converter),
+    ] = (None, None),
+    train_vision: bool = False,
+    from_checkpoint: Optional[str] = None,
+    from_hf_model: Optional[str] = None,
+    hf_model_revision: Optional[str] = None,
+    hf_api_token: Optional[str] = None,
+    hf_output_repo_name: Optional[str] = None,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """Start fine-tuning."""
     training_args: dict[str, Any] = dict(
         training_file=training_file,
         model=model,
@@ -286,104 +128,75 @@ def create(
     )
 
     if model is None and from_checkpoint is None:
-        raise click.MissingParameter(
-            "",
-            param_type="option --model or --from-checkpoint",
-        )
+        raise ValueError("Either --model or --from-checkpoint is required")
 
     model_name = model
     if from_checkpoint is not None:
         model_name = from_checkpoint.split(":")[0]
-
-    model_limits = get_model_limits(client, str(model_name))
+    model_limits = await async_get_model_limits(client, str(model_name))
 
     if lora:
         if model_limits.lora_training is None:
-            raise click.BadParameter(f"LoRA fine-tuning is not supported for the model `{model}`")
-        default_values = {
-            "lora_r": model_limits.lora_training.max_rank,
-            "learning_rate": 1e-3,
-        }
-
-        for arg in default_values:
-            arg_source = ctx.get_parameter_source("arg")  # type: ignore[attr-defined]
-            if arg_source == ParameterSource.DEFAULT:
-                training_args[arg] = default_values[str(arg_source)]
-
-        if ctx.get_parameter_source("lora_alpha") == ParameterSource.DEFAULT:  # type: ignore[attr-defined]
-            training_args["lora_alpha"] = training_args["lora_r"] * 2
+            raise ValueError(f"LoRA fine-tuning is not supported for the model `{model}`")
+        training_args["lora_r"] = model_limits.lora_training.max_rank
+        training_args["learning_rate"] = 1e-3
+        training_args["lora_alpha"] = training_args["lora_r"] * 2
     else:
         if model_limits.full_training is None:
-            raise click.BadParameter(f"Full fine-tuning is not supported for the model `{model}`")
-
-        for param in ["lora_r", "lora_dropout", "lora_alpha", "lora_trainable_modules"]:
-            param_source = ctx.get_parameter_source(param)  # type: ignore[attr-defined]
-            if param_source != ParameterSource.DEFAULT:
-                raise click.BadParameter(
-                    f"You set LoRA parameter `{param}` for a full fine-tuning job. "
-                    f"Please change the job type with --lora or remove `{param}` from the arguments"
-                )
+            raise ValueError(f"Full fine-tuning is not supported for the model `{model}`")
+        if any([lora_r != 8, lora_dropout != 0, lora_alpha != 8, lora_trainable_modules != "all-linear"]):
+            raise ValueError(
+                "You set LoRA parameters for a full fine-tuning job. "
+                "Please use --lora or remove LoRA parameters."
+            )
 
     if n_evals <= 0 and validation_file:
         log_warn(
-            "Warning: You have specified a validation file but the number of evaluation loops is set to 0. No evaluations will be performed."
+            "Warning: You have specified a validation file but the number of evaluation loops is set to 0. "
+            "No evaluations will be performed."
         )
     elif n_evals > 0 and not validation_file:
-        raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
+        raise ValueError("You have specified a number of evaluation loops but no validation file.")
 
-    training_type_cls: pe_params.TrainingType
     if lora:
         training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
-            lora_alpha=int(lora_alpha or 0),
-            lora_r=lora_r or 0,
-            lora_dropout=lora_dropout or 0,
-            lora_trainable_modules=lora_trainable_modules or "all-linear",
+            lora_alpha=int(training_args["lora_alpha"]),
+            lora_r=training_args["lora_r"],
+            lora_dropout=training_args["lora_dropout"],
+            lora_trainable_modules=training_args["lora_trainable_modules"],
             type="Lora",
         )
     else:
-        training_type_cls = pe_params.TrainingTypeFullTrainingType(
-            type="Full",
-        )
+        training_type_cls = pe_params.TrainingTypeFullTrainingType(type="Full")
 
-    training_method_cls: pe_params.TrainingMethod
     if training_method == "sft":
-        train_on_inputs = train_on_inputs or "auto"
-        training_args["train_on_inputs"] = train_on_inputs
+        train_on_inputs_val = train_on_inputs or "auto"
+        training_args["train_on_inputs"] = train_on_inputs_val
         training_method_cls = pe_params.TrainingMethodTrainingMethodSft(
             method="sft",
-            train_on_inputs=train_on_inputs,
+            train_on_inputs=train_on_inputs_val,
         )
     else:
         training_method_cls = pe_params.TrainingMethodTrainingMethodDpo(
             method="dpo",
             dpo_beta=dpo_beta or 0,
-            dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length or False,
+            dpo_normalize_logratios_by_length=dpo_normalize_logratios_by_length,
             dpo_reference_free=False,
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
 
     if model_limits.supports_vision:
-        # Don't show price estimation for multimodal models yet
         confirm = True
 
-    # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idompotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
-        file_upload = client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
-
-        # Update the local variables to the uploaded file ID.
+        file_upload = await client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
         training_args["training_file"] = file_upload.id
-
-    # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idompotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["validation_file"]):
-        file_upload = client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
-
-        # Update the local variables to the uploaded file ID.
+        file_upload = await client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
         training_args["validation_file"] = file_upload.id
 
-    finetune_price_estimation_result = client.fine_tuning.estimate_price(
+    finetune_price_estimation_result = await client.fine_tuning.estimate_price(
         training_file=training_args["training_file"],
         validation_file=training_args["validation_file"],
         model=model or "",
@@ -393,43 +206,13 @@ def create(
         training_type=training_type_cls,
         training_method=training_method_cls,
     )
-    price = click.style(
-        f"${finetune_price_estimation_result.estimated_total_price:.2f}",
-        bold=True,
-    )
-    if not finetune_price_estimation_result.allowed_to_proceed:
-        warning = click.style(_WARNING_MESSAGE_INSUFFICIENT_FUNDS, fg="red", bold=True)
-    else:
-        warning = ""
+    price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
+    warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
+    confirmation_message = get_confirmation_message(price=price_str, warning=warning)
 
-    confirmation_message = get_confirmation_message(
-        price=price,
-        warning=warning,
-    )
-
-    if confirm or click.confirm(confirmation_message, default=True, show_default=True):
-        response = client.fine_tuning.create(
-            **training_args,
-            verbose=True,
-        )
-
-        click.echo(
-            click.style(f"\n\nSuccess!", fg="green", bold=True)
-            + click.style(" Your fine-tuning job ", fg="green")
-            + click.style(response.id, fg="blue", bold=True)
-            + click.style(" has been submitted.", fg="green")
-        )
-
-
-def _check_path_exists(path_string: str) -> bool:
-    # Empty string is not considerd a path.
-    if path_string == "":
-        return False
-
-    my_path = Path(path_string)
-    if my_path.exists():
-        if my_path.is_file():
-            return True
-        elif my_path.is_dir():
-            return True
-    return False
+    if not confirm:
+        resp = input(confirmation_message).strip().lower()
+        if resp and resp != "y" and resp != "yes":
+            return
+    response = await client.fine_tuning.create(**training_args, verbose=True)
+    print(f"\n\nSuccess! Your fine-tuning job {response.id} has been submitted.")

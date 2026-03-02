@@ -1,35 +1,33 @@
+from __future__ import annotations
+
 import json as json_lib
+from typing import Annotated
 
-import click
+from cyclopts import Parameter
 
-from together import Together
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
+
+from together.lib.cli.api.beta.clusters._util import print_clusters
 
 
-@click.command()
-@click.argument("cluster-id", required=True)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
-    """Delete a cluster by ID"""
-    client: Together = ctx.obj
+async def delete(
+    cluster_id: str,
+    json_output: bool = False,
+    *,
+    client: Annotated[AsyncTogether, Parameter(parse=False)],
+) -> None:
+    """Delete a cluster by ID."""
+    import sys
 
-    if json:
-        response = client.beta.clusters.delete(cluster_id=cluster_id)
-        click.echo(json_lib.dumps(response.model_dump(), indent=2))
+    if json_output:
+        response = await client.beta.clusters.delete(cluster_id=cluster_id)
+        print(json_lib.dumps(response.model_dump(), indent=2))
         return
-
-    cluster = client.beta.clusters.retrieve(cluster_id=cluster_id)
-    ctx.obj.print_clusters([cluster])
-    if not click.confirm(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}?"):
+    cluster = await client.beta.clusters.retrieve(cluster_id=cluster_id)
+    print_clusters([cluster])
+    resp = input(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}? [y/N] ").strip().lower()
+    if resp != "y" and resp != "yes":
         return
-
-    click.echo("Clusters: Deleting cluster...")
-    response = client.beta.clusters.delete(cluster_id=cluster_id)
-
-    click.echo(f"Clusters: Deleted cluster {cluster.cluster_name}")
+    print("Clusters: Deleting cluster...", file=sys.stderr)
+    await client.beta.clusters.delete(cluster_id=cluster_id)
+    print(f"Clusters: Deleted cluster {cluster.cluster_name}", file=sys.stderr)
