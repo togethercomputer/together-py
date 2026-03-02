@@ -243,6 +243,7 @@ class State:
 
     _config_dir: Path
     _project_name: str
+    _secrets_initialized: bool = False
     registry_base_path: str = ""
     secrets: dict[str, str] = field(default_factory=dict[str, str])
     volumes: dict[str, str] = field(default_factory=dict[str, str])
@@ -250,7 +251,9 @@ class State:
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
         filtered = {k: v for k, v in data.items() if k in cls.__annotations__ and not k.startswith("_")}
-        return cls(_config_dir=config_dir, _project_name=project_name, **filtered)
+        state = cls(_config_dir=config_dir, _project_name=project_name, **filtered)
+        state._secrets_initialized = "secrets" in data
+        return state
 
     @classmethod
     def load(cls, config_dir: Path, project_name: str) -> State:
@@ -525,8 +528,27 @@ class Jig:
             raise JigError(f"Failed to get digest for {image}: {msg}") from e
         raise JigError(f"No registry digest found for {image}. Make sure the image was pushed to registry first")
 
+    def sync_secrets_from_deployment(self) -> None:
+        """Sync remote secrets into local state if secrets have never been tracked.
+
+        On a fresh checkout (no "secrets" key in .jig.json), fetches the deployment's
+        env vars from the API and populates state.secrets so they aren't silently
+        removed on the next deploy.  Once state has been initialized, it is authoritative.
+        """
+        if self.state._secrets_initialized:
+            return
+        try:
+            for var in self.api.retrieve(self.name).environment_variables or []:
+                if var.value_from_secret:
+                    self.state.secrets.setdefault(var.name, var.value_from_secret)
+        except NotFoundError:
+            pass
+        self.state._secrets_initialized = True
+        self.state.save()
+
     def set_secret(self, name: str, value: str, description: str) -> None:
         """Set secret for the deployment (create or update)"""
+        self.sync_secrets_from_deployment()
         scoped_name = f"{self.name}-{name}"
 
         try:
@@ -619,6 +641,8 @@ class Jig:
 
         if "TOGETHER_API_KEY" not in self.state.secrets:
             self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
+
+        self.sync_secrets_from_deployment()
 
         env_dict = dict(self.config.deploy.environment_variables)
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
@@ -1072,6 +1096,7 @@ def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
 @click.option("--name", required=True, help="Secret name to remove")
 def secrets_unset(jig: Jig, name: str) -> None:
     """Remove a secret from local state"""
+    jig.sync_secrets_from_deployment()
     try:
         del jig.state.secrets[name]
         jig.state.save()
