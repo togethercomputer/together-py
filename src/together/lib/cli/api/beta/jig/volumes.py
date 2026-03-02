@@ -113,7 +113,7 @@ class Uploader:
         self.semaphore = asyncio.Semaphore(UPLOAD_CONCURRENCY_LIMIT)
         self.progress_lock = asyncio.Lock()
 
-        source_prefix = f"{volume_name}/{content_version}/{source_path.name}"
+        source_prefix = f"{volume_name}/{content_version}"
         files_to_upload: list[tuple[Path, str, int]] = []
 
         for file_path in source_path.rglob("*"):
@@ -296,8 +296,8 @@ async def _create_volume(client: Together, name: str, source: str) -> None:
     if not source_path.is_dir():
         raise ValueError(f"Source path must be a directory: {source}")
 
-    content_version = 1
-    source_prefix = f"{name}/{content_version}/{source_path.name}"
+    content_version = 0
+    source_prefix = f"{name}/{content_version}"
 
     click.echo(f"\N{ROCKET} Creating volume '{name}' with source prefix '{source_prefix}'")
     try:
@@ -331,24 +331,16 @@ async def _update_volume(client: Together, name: str, source: str) -> None:
         raise ValueError(f"Source path must be a directory: {source}")
 
     try:
-        volume = client.beta.jig.volumes.retrieve(name)
+        response = client.beta.jig.volumes.with_raw_response.retrieve(name)
+        volume_data = response.json()
     except APIStatusError as e:
         if hasattr(e, "status_code") and e.status_code == 404:
             raise ValueError(f"Volume '{name}' does not exist") from e
         raise
 
-    old_version = 1
-    if volume.content and volume.content.type == "files" and volume.content.source_prefix:
-        prefix_parts = volume.content.source_prefix.split("/")
-        if len(prefix_parts) > 2 and prefix_parts[0] == name:
-            try:
-                old_version = int(prefix_parts[1])
-            except ValueError:
-                # version is not encoded in the prefix, default to 1
-                pass
-
-    version = old_version + 1
-    source_prefix = f"{name}/{version}/{source_path.name}"
+    current_version = volume_data.get("current_version", 0)
+    version = current_version + 1
+    source_prefix = f"{name}/{version}"
 
     click.echo(f"\N{INFORMATION SOURCE} Uploading files for volume '{name}'")
     await Uploader(client).upload_files(source_path, volume_name=name, content_version=version)

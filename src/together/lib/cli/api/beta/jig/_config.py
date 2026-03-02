@@ -60,6 +60,7 @@ class VolumeMount:
 
     name: str
     mount_path: str
+    version: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
@@ -84,7 +85,7 @@ class DeployConfig:
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: Optional[list[str]] = None
-    autoscaling: dict[str, str] = field(default_factory=dict[str, str])
+    autoscaling: dict[str, Union[str, float]] = field(default_factory=dict)
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
@@ -93,7 +94,9 @@ class DeployConfig:
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
         deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
         if isinstance((mounts := deploy_config.get("volume_mounts")), list):
-            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]  # pyright: ignore
+            deploy_config["volume_mounts"] = [
+                VolumeMount.from_dict(vm) for vm in mounts
+            ]  # pyright: ignore
         return cls(**deploy_config)
 
 
@@ -120,7 +123,9 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
 
     if origin is Union:
-        if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
+        if value is None or any(
+            validate(value, a, path) is None for a in args if a is not type(None)
+        ):
             return None
         return f"{path}: expected {value_type}, got {type(value).__name__}"
 
@@ -133,7 +138,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
 
     if not isinstance(value, value_type):
-        return f"{path}: expected {type(value).__name__}, got {value!r}"
+        return f"{path}: expected {value_type.__name__}, got {value!r}"
     return None
 
 
@@ -158,7 +163,9 @@ class Config:
         if config_path:
             found_path = Path(config_path)
             if not found_path.exists():
-                click.echo(f"ERROR: Configuration file not found: {config_path}", err=True)
+                click.echo(
+                    f"ERROR: Configuration file not found: {config_path}", err=True
+                )
                 sys.exit(1)
             return cls.load(tomllib.load(found_path.open("rb")), found_path)
 
@@ -196,7 +203,7 @@ class Config:
         else:
             jig_config = data
             if name := jig_config.get("name"):
-                tip = "update `name` in {path}"
+                tip = f"update `name` in {path}"
             else:
                 name = path.resolve().parent.name
                 tip = f"rename your folder or add `name` to {path}"
@@ -234,7 +241,11 @@ class State:
 
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
-        filtered = {k: v for k, v in data.items() if k in cls.__annotations__ and not k.startswith("_")}
+        filtered = {
+            k: v
+            for k, v in data.items()
+            if k in cls.__annotations__ and not k.startswith("_")
+        }
         return cls(_config_dir=config_dir, _project_name=project_name, **filtered)
 
     @classmethod
@@ -258,7 +269,9 @@ class State:
                 all_data = json.load(f)
 
                 # Check if this is the new nested structure (project_name as key)
-                if project_name in all_data and isinstance(all_data[project_name], dict):
+                if project_name in all_data and isinstance(
+                    all_data[project_name], dict
+                ):
                     # New structure: extract project-specific state
                     project_data = all_data[project_name]
                     return cls.from_dict(config_dir, project_name, **project_data)
