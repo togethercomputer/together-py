@@ -83,6 +83,7 @@ class VolumeMount:
 
     name: str
     mount_path: str
+    version: int | None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
@@ -107,7 +108,7 @@ class DeployConfig:
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: list[str] | None = None
-    autoscaling: dict[str, str] = field(default_factory=dict[str, str])
+    autoscaling: dict[str, str | float] = field(default_factory=dict[str, str | float])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
@@ -1133,7 +1134,7 @@ _source_dir = click.Path(exists=True, file_okay=False, path_type=Path)
 @click.option("--source", required=True, type=_source_dir, help="Source directory path")
 def volumes_create(jig: Jig, name: str, source: Path) -> None:
     """Create a volume and upload files"""
-    source_prefix = f"{name}/{source.name}"
+    source_prefix = f"{name}/0"
 
     echo(f"\N{ROCKET} Creating volume {name} with source prefix {source_prefix}")
     try:
@@ -1164,18 +1165,19 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
 @click.option("--source", required=True, type=_source_dir, help="New source directory path")
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
     """Update a volume and re-upload files"""
-    source_prefix = f"{name}/{source.name}"
-
     try:
-        jig.api.volumes.retrieve(name)
+        volume_data = jig.api.volumes.with_raw_response.retrieve(name).json()
     except NotFoundError:
         raise JigError(f"Volume {name} not found") from None
 
-    echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
-    asyncio.run(Uploader(jig.together).upload_files(source, source_prefix))
+    new_version = int(volume_data.get("current_version", 0)) + 1
+    remote_prefix = f"{name}/{new_version}"
 
-    echo(f"\N{INFORMATION SOURCE} Updating volume {name} with source prefix {source_prefix}")
-    jig.api.volumes.update(name, content={"type": "files", "source_prefix": source_prefix})
+    echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
+    asyncio.run(Uploader(jig.together).upload_files(source, remote_prefix))
+
+    echo(f"\N{INFORMATION SOURCE} Updating volume {name}, version {new_version} from {source}")
+    jig.api.volumes.update(name, content={"type": "files", "source_prefix": remote_prefix})
     echo("\N{CHECK MARK} Volume updated successfully")
 
 
