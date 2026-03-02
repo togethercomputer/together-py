@@ -1,18 +1,19 @@
-import json as json_lib
-from typing import Any, Dict, List
+from __future__ import annotations
 
-import click
+from typing import Any, Dict, List, Annotated
+
+from rich import print, print_json
+from cyclopts import Parameter
 from tabulate import tabulate
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together._utils._json import openapi_dumps
 from together.types.beta.clusters import ClusterStorage
+from together.lib.cli.utils.config import CLIConfig
 
 
-def print_storage(storage: List[ClusterStorage]) -> None:
+def _print_storage(storage_list: List[ClusterStorage]) -> None:
     data: List[Dict[str, Any]] = []
-    for volume in storage:
+    for volume in storage_list:
         data.append(
             {
                 "ID": volume.volume_id,
@@ -20,25 +21,16 @@ def print_storage(storage: List[ClusterStorage]) -> None:
                 "Size": volume.size_tib,
             }
         )
-    click.echo(tabulate(data, headers="keys", tablefmt="grid"))
+    print(tabulate(data, headers="keys", tablefmt="grid"))
 
 
-@click.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters Storage")
-@auto_track_command
-def list(ctx: click.Context, json: bool) -> None:
-    """List storage volumes"""
-    client: Together = ctx.obj
-
-    response = client.beta.clusters.storage.list()
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(), indent=2))
+async def list(
+    *,
+    config: Annotated[CLIConfig, Parameter(parse=False)],
+) -> None:
+    """List storage volumes."""
+    response = await config.client.beta.clusters.storage.list()
+    if config.json:
+        print_json(openapi_dumps(response).decode())
     else:
-        print_storage(response.volumes)
+        _print_storage(response.volumes)

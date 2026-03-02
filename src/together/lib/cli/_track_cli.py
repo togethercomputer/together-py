@@ -13,10 +13,7 @@ import urllib.request
 from enum import Enum
 from typing import Any, TypeVar, Callable, cast
 from pathlib import Path
-from functools import wraps
 
-import click
-from click.core import ParameterSource
 from detect_agent import determine_agent
 
 from together import __version__
@@ -94,37 +91,6 @@ class CliTrackingEvents(Enum):
     ApiRequest = "cli_command_api_request"
 
 
-def invoked_subcommand_path() -> str:
-    """Subcommand path after the top-level program name (e.g. ``evals list`` for ``together evals list``).
-
-    Uses :attr:`click.Context.command_path` and strips the root context's ``info_name`` so the
-    binary name can differ from ``together`` (entry points, ``python -m``, etc.).
-    """
-    ctx = click.get_current_context(silent=True)
-    if ctx is None:
-        return ""
-    path = ctx.command_path
-    root_name = (ctx.find_root().info_name or "").strip()
-    if not root_name:
-        return path
-    prefix = root_name + " "
-    if path.startswith(prefix):
-        return path[len(prefix) :]
-    return path
-
-
-def flush_pending_events(f: Callable[..., Any]) -> Callable[..., Any]:
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return f(*args, **kwargs)
-        finally:
-            for thread in _thread_pool:
-                thread.join()
-
-    return wrapper
-
-
 def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     """
     Track a CLI event. Non-Blocking.
@@ -196,74 +162,42 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     thread.start()
 
 
-def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
+def parse_command_and_flags(tokens: list[str]) -> tuple[str, list[str], bool]:
     """
-    Decorator for click commands to automatically track CLI commands start/completion/failure.
+    When given a list of tokens from the command line
+    It will return the command name, the flag names normalized without the -- prefix, and whether the command is a beta command.
 
-    Every command should be decorated with this decorator.
+    E.g.,
+    "tg files upload --file myfile.txt --name myfile"
+    will return:
+    ("files upload", ["file", "name"], False)
+
+    E.g.,
+    "tg beta files upload --file myfile.txt --name myfile"
+    will return:
+    ("files upload", ["file", "name"], True)
     """
+    parsing = True
+    flags: list[str] = []
+    command: list[str] = []
+    is_beta_command = False
+    while tokens:
+        token = tokens.pop(0)
+        if token.startswith("--"):
+            flags.append(token.removeprefix("--"))
+            parsing = False
 
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        cmd = invoked_subcommand_path()
-        explicit = _get_explicit_cli_parameter_names()
-        is_beta_command = cmd.startswith("beta ")
-        # If command starts with "beta " remove that from the start of the command name
-        if is_beta_command:
-            cmd = cmd[len("beta ") :]
-        track_cli(CliTrackingEvents.CommandStarted, {"command": cmd, "arguments": explicit})
-        try:
-            result = f(*args, **kwargs)
-        except KeyboardInterrupt as e:
-            track_cli(
-                CliTrackingEvents.CommandUserAborted,
-                {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
-            )
-            raise e
+        elif parsing:
+            command.append(token)
 
-        # Some commands use sys.exit(1) to exit the program.
-        # We need to track these so we can see if they are failing.
-        except SystemExit as e:
-            if e.code == 0:
-                track_cli(
-                    CliTrackingEvents.CommandCompleted,
-                    {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
-                )
-                raise e
+    if command and command[0].startswith("beta "):
+        is_beta_command = True
+        command[0] = command[0][len("beta ") :]
 
-            track_cli(
-                CliTrackingEvents.CommandFailed,
-                {
-                    "command": cmd,
-                    "arguments": explicit,
-                    "is_beta_command": is_beta_command,
-                    "error": _sanitize_cli_error_message(str(e)),
-                },
-            )
-            raise e
-
-        except Exception as e:
-            track_cli(
-                CliTrackingEvents.CommandFailed,
-                {
-                    "command": cmd,
-                    "arguments": explicit,
-                    "is_beta_command": is_beta_command,
-                    "error": _sanitize_cli_error_message(str(e)),
-                },
-            )
-            raise e
-
-        track_cli(
-            CliTrackingEvents.CommandCompleted,
-            {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
-        )
-        return result
-
-    return wrapper  # type: ignore
+    return (" ".join(command), flags, is_beta_command)
 
 
-def _sanitize_cli_error_message(msg: str) -> str:
+def sanitize_cli_error_message(msg: str) -> str:
     """Sanitize the error messages caught for telemetry to remove sensitive information."""
     s = msg.strip()
     if len(s) > _ERROR_MESSAGE_MAX_LEN:
@@ -287,21 +221,6 @@ def _env_telemetry_disabled() -> bool:
 def _config_telemetry_disabled() -> bool:
     """Check if telemetry is disabled by the config file."""
     return load_telemetry_config().get("telemetry_enabled") is False
-
-
-def _get_explicit_cli_parameter_names() -> list[str]:
-    """Names of Click options/arguments whose values came from the user's argv (not defaults/env).
-
-    These are Python parameter names (e.g. ``json`` for ``--json``), not the literal flag spellings.
-    """
-    ctx = click.get_current_context(silent=True)
-    if ctx is None:
-        return []
-    names: list[str] = []
-    for name in ctx.params:
-        if ctx.get_parameter_source(name) == ParameterSource.COMMANDLINE:
-            names.append(name)
-    return sorted(names)
 
 
 _CATCH_ALL_DEVICE_ID = "1a41ab33-35d0-420a-ba28-182fddd249c9"

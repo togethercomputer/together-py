@@ -1,27 +1,52 @@
-import json as json_lib
+from __future__ import annotations
 
-import click
+from typing import Annotated
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from cyclopts import Parameter
+
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfig
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
+
+# class ForcePrompt(PromptParameter):
+#     type = "confirm"
+
+#     @override
+#     async def preprompt(self, config: CLIConfig, *, missing_error: MissingArgumentError | None = None) -> None:
+#         if config.json:
+#             raise ValidationError(
+#                 verbose=False,
+#                 command_chain=("endpoints", "delete"),
+#                 exception_message="When using --json, pass --force or --yes to confirm deletion without a prompt.",
+#             )
+
+#         endpoint_id = "endpoint-f38f0dbb-351b-456f-b05b-537ccbb4342f"
+
+#         endpoint = await show_loading_status(
+#             "Loading endpoint...", config.client.endpoints.retrieve(endpoint_id)
+#         )
+
+#         console.capture()
+#         console.print("Endpoint to delete:")
+#         print_endpoint(endpoint)
+
+#         console.print("\n")
+#         console.print("[dim]This action cannot be undone.[/dim]")
+#         output = console.end_capture()
+#         self.message = output + "Are you sure you want to delete this endpoint?"
 
 
-@click.command()
-@click.argument("endpoint-id", required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_obj
-@handle_api_errors("Endpoints")
-@handle_endpoint_api_errors("Endpoints")
-@auto_track_command
-def delete(client: Together, endpoint_id: str, json: bool) -> None:
+async def delete(
+    endpoint_id: str,
+    *,
+    config: Annotated[CLIConfig, Parameter(parse=False)],
+) -> None:
     """Delete a dedicated inference endpoint."""
-    client.endpoints.delete(endpoint_id)
+    await show_loading_status("Deleting endpoint...", config.client.endpoints.delete(endpoint_id))
 
-    if json:
-        click.echo(json_lib.dumps({"message": "Successfully deleted endpoint"}, indent=2))
+    if config.json:
+        console.print_json(openapi_dumps({"message": "Successfully deleted endpoint"}).decode("utf-8"))
         return
 
-    click.echo("Successfully deleted endpoint", err=True)
-    click.echo(endpoint_id)
+    console.print("[green]√[/green] Endpoint deleted")

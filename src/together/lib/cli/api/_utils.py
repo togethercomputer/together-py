@@ -1,19 +1,10 @@
 from __future__ import annotations
 
-import os
 import re
-import sys
 import math
-from typing import Any, List, Union, Literal, TypeVar, Callable
-from gettext import gettext as _
+from typing import Any, List, Union, Literal, Sequence
 from datetime import datetime
-from functools import wraps
 
-import click
-from rich import print_json
-
-from together import APIError
-from together._utils._json import openapi_dumps
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
 from together.types.fine_tuning_list_response import Data
@@ -21,45 +12,31 @@ from together.types.fine_tuning_list_response import Data
 _PROGRESS_BAR_WIDTH = 40
 
 
-class AutoIntParamType(click.ParamType):
-    name = "integer_or_max"
-    _number_class = int
+def _int_or_max_converter(_type: type, tokens: Sequence[Any]) -> int | Literal["max"]:
 
-    def convert(  # pyright: ignore[reportImplicitOverride]
-        self, value: str, param: click.Parameter | None, ctx: click.Context | None
-    ) -> int | Literal["max"] | None:
-        if value == "max":
-            return "max"
-        try:
-            return int(value)
-        except ValueError:
-            self.fail(
-                _("{value!r} is not a valid {number_type}.").format(value=value, number_type=self.name),
-                param,
-                ctx,
-            )
+    val = tokens[0].value if tokens else ""
+    if val == "max":
+        return "max"
+    try:
+        return int(val)
+    except ValueError as e:
+        raise ValueError(f"{val!r} is not a valid integer or 'max'.") from e
 
 
-class BooleanWithAutoParamType(click.ParamType):
-    name = "boolean_or_auto"
-
-    def convert(  # pyright: ignore[reportImplicitOverride]
-        self, value: str, param: click.Parameter | None, ctx: click.Context | None
-    ) -> bool | Literal["auto"] | None:
-        if value == "auto":
-            return "auto"
-        try:
-            return bool(value)
-        except ValueError:
-            self.fail(
-                _("{value!r} is not a valid {type}.").format(value=value, type=self.name),
-                param,
-                ctx,
-            )
+def _bool_or_auto_converter(_type: type, tokens: Sequence[Any]) -> tuple[bool | None, Literal["auto"] | None]:
+    val = tokens[0].value if tokens else ""
+    if val == "auto":
+        return None, "auto"
+    if val.lower() in ("true", "1", "yes"):
+        return True, None
+    if val.lower() in ("false", "0", "no"):
+        return False, None
+    raise ValueError(f"{val!r} is not a valid boolean or 'auto'.")
 
 
-INT_WITH_MAX = AutoIntParamType()
-BOOL_WITH_AUTO = BooleanWithAutoParamType()
+# For use in fine_tuning create (batch_size, train_on_inputs)
+int_or_max_converter = _int_or_max_converter
+bool_or_auto_converter = _bool_or_auto_converter
 
 
 def _human_readable_time(timedelta: float) -> str:
@@ -164,53 +141,3 @@ def generate_progress_bar(
         return progress
 
     return re.sub(r"\[/?[^\]]+\]", "", progress)
-
-
-F = TypeVar("F", bound=Callable[..., Any])
-
-
-def handle_api_errors(prefix: str) -> Callable[[F], F]:
-    """Decorator to handle common API errors in CLI commands."""
-
-    prefix_styled = click.style(f"{prefix}: ", fg="blue")
-
-    def decorator(f: F) -> F:
-        @wraps(f)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            json_mode = kwargs.get("json", False)
-            try:
-                return f(*args, **kwargs)
-            # User aborted the command
-            # Re-raise abort and usage errore so it displays a proper click message
-            except (click.Abort, click.UsageError) as e:
-                raise e
-            except APIError as e:
-                error_msg = ""
-                if e.body is not None:
-                    error_msg = getattr(e.body, "message", str(e.body))
-                else:
-                    error_msg = str(e)
-
-                if json_mode:
-                    print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
-                else:
-                    click.echo(prefix_styled + click.style("Failed", fg="red"), file=sys.stderr)
-                    click.echo(prefix_styled + click.style(error_msg, fg="red"), file=sys.stderr)
-                sys.exit(1)
-            except Exception as e:
-                if os.getenv("TOGETHER_LOG", "").lower() == "debug":
-                    # Raise the error with the full traceback
-                    raise
-                if json_mode:
-                    print_json(openapi_dumps({"error": str(e)}).decode("utf-8"))
-                else:
-                    click.echo(prefix_styled + click.style("Failed", fg="red"), file=sys.stderr)
-                    click.echo(
-                        prefix_styled + click.style(f"An unexpected error occurred - {str(e)}", fg="red"),
-                        file=sys.stderr,
-                    )
-                sys.exit(1)
-
-        return wrapper  # type: ignore
-
-    return decorator  # type: ignore

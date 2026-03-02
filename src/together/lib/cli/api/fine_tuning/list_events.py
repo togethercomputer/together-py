@@ -1,44 +1,35 @@
-from typing import Any, Dict, List
-from textwrap import wrap
+from __future__ import annotations
 
-import click
-from rich import print_json
-from tabulate import tabulate
+from typing import Annotated
 
-from together import Together
+from cyclopts import Parameter
+
 from together._utils._json import openapi_dumps
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together.lib.utils.tools import format_timestamp
+from together.lib.cli.utils.config import CLIConfig
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
 
 
-@click.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@handle_api_errors("Fine-tuning")
-@auto_track_command
-def list_events(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
-    """List fine-tuning events"""
-    client: Together = ctx.obj
-
-    response = client.fine_tuning.list_events(fine_tune_id)
-
+async def list_events(
+    fine_tune_id: str,
+    *,
+    config: Annotated[CLIConfig, Parameter(parse=False)],
+) -> None:
+    """List fine-tuning events."""
+    response = await config.client.fine_tuning.list_events(fine_tune_id)
     response.data = response.data or []
 
-    if json:
-        print_json(openapi_dumps(response.data).decode("utf-8"))
+    if config.json:
+        console.print_json(openapi_dumps(response.data).decode("utf-8"))
         return
 
-    display_list: List[Dict[str, Any]] = []
-    for i in response.data:
-        display_list.append(
-            {
-                "Message": "\n".join(wrap(i.message or "", width=50)),
-                "Type": i.type,
-                "Created At": i.created_at,
-                "Hash": i.hash,
-            }
-        )
-    table = tabulate(display_list, headers="keys", tablefmt="grid", showindex=True)
+    table = ListTable()
+    table.add_primary_column("Type")
+    table.add_column("Message")
+    table.add_column("Created At")
 
-    click.echo(table)
+    for i in response.data:
+        table.add_row(i.type, i.message, format_timestamp(i.created_at))
+
+    console.print(table)
