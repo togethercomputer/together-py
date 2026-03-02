@@ -6,7 +6,7 @@ import os
 import sys
 import json
 import typing
-from typing import TYPE_CHECKING, Any, Union, Optional
+from typing import TYPE_CHECKING, Any, Union, Optional, cast
 from pathlib import Path
 from dataclasses import field, asdict, dataclass, is_dataclass
 
@@ -94,9 +94,7 @@ class DeployConfig:
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
         deploy_config = {k: v for k, v in data.items() if k in cls.__annotations__}
         if isinstance((mounts := deploy_config.get("volume_mounts")), list):
-            deploy_config["volume_mounts"] = [
-                VolumeMount.from_dict(vm) for vm in mounts  # type: ignore[arg-type]
-            ]
+            deploy_config["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in cast(list[dict[str, Any]], mounts)]
         return cls(**deploy_config)
 
 
@@ -123,9 +121,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
 
     if origin is Union:
-        if value is None or any(
-            validate(value, a, path) is None for a in args if a is not type(None)
-        ):
+        if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
             return None
         return f"{path}: expected {value_type}, got {type(value).__name__}"
 
@@ -163,9 +159,7 @@ class Config:
         if config_path:
             found_path = Path(config_path)
             if not found_path.exists():
-                click.echo(
-                    f"ERROR: Configuration file not found: {config_path}", err=True
-                )
+                click.echo(f"ERROR: Configuration file not found: {config_path}", err=True)
                 sys.exit(1)
             return cls.load(tomllib.load(found_path.open("rb")), found_path)
 
@@ -241,11 +235,7 @@ class State:
 
     @classmethod
     def from_dict(cls, config_dir: Path, project_name: str, **data: Any) -> State:
-        filtered = {
-            k: v
-            for k, v in data.items()
-            if k in cls.__annotations__ and not k.startswith("_")
-        }
+        filtered = {k: v for k, v in data.items() if k in cls.__annotations__ and not k.startswith("_")}
         return cls(_config_dir=config_dir, _project_name=project_name, **filtered)
 
     @classmethod
@@ -269,9 +259,7 @@ class State:
                 all_data = json.load(f)
 
                 # Check if this is the new nested structure (project_name as key)
-                if project_name in all_data and isinstance(
-                    all_data[project_name], dict
-                ):
+                if project_name in all_data and isinstance(all_data[project_name], dict):
                     # New structure: extract project-specific state
                     project_data = all_data[project_name]
                     return cls.from_dict(config_dir, project_name, **project_data)
