@@ -1,8 +1,9 @@
-"""Main jig CLI commands (deploy, build, push, etc.)"""
+#!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["together"]
+# dependencies = ["together @ git+https://github.com/togethercomputer/together-py@next"]
 # ///
+"""Main jig CLI commands (deploy, build, push, etc.)"""
 
 from __future__ import annotations
 
@@ -83,7 +84,7 @@ class VolumeMount:
 
     name: str
     mount_path: str
-    version: int | None
+    version: int = 0
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
@@ -221,11 +222,13 @@ class Config:
                 echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
 
         # support volume_mounts at jig level (merge into deploy config)
-        jig_config.setdefault("deploy", {})["volume_mounts"] = jig_config.get("volume_mounts", [])
-
-        if autoscaling := jig_config.get("autoscaling", {}):
+        deploy_config = jig_config.setdefault("deploy", {})
+        allow_top_level = ["volume_mounts", "autoscaling"]
+        for key in allow_top_level:
+            if key in jig_config:
+                deploy_config[key] = jig_config[key]
+        if autoscaling := deploy_config.get("autoscaling"):
             autoscaling["model"] = name
-            jig_config["deploy"]["autoscaling"] = autoscaling
 
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
@@ -637,10 +640,9 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
+        self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
             self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
-
-        self.sync_secrets_from_deployment()
 
         env_dict = dict(self.config.deploy.environment_variables)
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
