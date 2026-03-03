@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 from typing_extensions import Literal
 
 from ..._models import BaseModel
@@ -9,7 +9,7 @@ from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
 from .chat_completion_warning import ChatCompletionWarning
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall"]
+__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall", "Prompt"]
 
 
 class ChoiceMessageFunctionCall(BaseModel):
@@ -43,6 +43,15 @@ class Choice(BaseModel):
 
     text: Optional[str] = None
 
+    top_logprobs: Optional[Dict[str, float]] = None
+    """Top log probabilities for the tokens."""
+
+
+class Prompt(BaseModel):
+    logprobs: Optional[LogProbs] = None
+
+    text: Optional[str] = None
+
 
 class ChatCompletion(BaseModel):
     id: str
@@ -55,6 +64,13 @@ class ChatCompletion(BaseModel):
 
     object: Literal["chat.completion"]
     """The object type, which is always `chat.completion`."""
+
+    prompt: List[Prompt]
+    """When `echo` is true, the prompt is included in the response.
+
+    Additionally, when `logprobs` is also provided, log probability information is
+    provided on the prompt.
+    """
 
     usage: Optional[ChatCompletionUsage] = None
 
