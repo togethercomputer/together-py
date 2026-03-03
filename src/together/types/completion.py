@@ -38,6 +38,11 @@ class Completion(BaseModel):
     object: Literal["text.completion"]
     """The object type, which is always `text.completion`."""
 
-    usage: Optional[ChatCompletionUsage] = None
+    prompt: List[Prompt]
+    """When `echo` is true, the prompt is included in the response.
 
-    prompt: Optional[List[Prompt]] = None
+    Additionally, when `logprobs` is also provided, log probability information is
+    provided on the prompt.
+    """
+
+    usage: Optional[ChatCompletionUsage] = None

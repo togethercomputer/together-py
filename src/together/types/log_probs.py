@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .._models import BaseModel
 
@@ -16,3 +16,6 @@ class LogProbs(BaseModel):
 
     tokens: Optional[List[str]] = None
     """List of token strings"""
+
+    top_logprobs: Optional[Dict[str, float]] = None
+    """Top log probabilities for the tokens."""
