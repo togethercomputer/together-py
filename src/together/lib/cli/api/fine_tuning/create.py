@@ -333,19 +333,25 @@ def create(
     elif n_evals > 0 and not validation_file:
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
-    training_type_cls: pe_params.TrainingType | None = None
-    # if lora:
-    #     training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
-    #         lora_alpha=int(lora_alpha or 0),
-    #         lora_r=lora_r or 0,
-    #         lora_dropout=lora_dropout or 0,
-    #         lora_trainable_modules=lora_trainable_modules or "all-linear",
-    #         type="Lora",
-    #     )
-    # else:
-    #     training_type_cls = pe_params.TrainingTypeFullTrainingType(
-    #         type="Full",
-    #     )
+    training_type_cls: pe_params.TrainingType | None
+    if lora is None:
+        # User did not provide --lora/--no-lora, so the training type will be determined automatically.
+        # By default, the API uses LoRA, or inherits the training type from the parent job
+        # when --from-checkpoint is specified.
+        # This logic is handled on the Together API backend.
+        training_type_cls = None
+    elif lora:
+        training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
+            lora_alpha=int(lora_alpha or 0),
+            lora_r=lora_r or 0,
+            lora_dropout=lora_dropout or 0,
+            lora_trainable_modules=lora_trainable_modules or "all-linear",
+            type="Lora",
+        )
+    else:
+        training_type_cls = pe_params.TrainingTypeFullTrainingType(
+            type="Full",
+        )
 
     training_method_cls: pe_params.TrainingMethod
     if training_method == "sft":

@@ -90,9 +90,13 @@ def create_finetune_request(
     if warmup_ratio is None:
         warmup_ratio = 0.0
 
-    training_type: TrainingType | None = None
+    training_type: TrainingType | None
     if lora is None:
-        pass
+        # User did not provide a value for lora, so the training type will be determined automatically.
+        # By default, the API uses LoRA, or inherits the training type from the parent job
+        # when from_checkpoint is specified.
+        # This logic is handled on the Together API backend.
+        training_type = None
     elif lora:
         if model_limits.lora_training is None:
             raise ValueError(f"LoRA adapters are not supported for the selected model ({model_or_checkpoint}).")
@@ -257,6 +261,7 @@ def create_price_estimation_params(
 ) -> tuple[pe_params.TrainingType | None, pe_params.TrainingMethod]:
     training_type_cls: pe_params.TrainingType | None = None
     if finetune_request.training_type is None:
+        # Training type was not specified; the API backend will apply its default.
         pass
     elif isinstance(finetune_request.training_type, FullTrainingType):
         training_type_cls = pe_params.TrainingTypeFullTrainingType(
