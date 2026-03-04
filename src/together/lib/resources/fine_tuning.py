@@ -69,7 +69,7 @@ def create_finetune_request(
     hf_model_revision: str | None = None,
     hf_api_token: str | None = None,
     hf_output_repo_name: str | None = None,
-) -> tuple[FinetuneRequest, pe_params.TrainingType, pe_params.TrainingMethod]:
+) -> tuple[FinetuneRequest, pe_params.TrainingType | None, pe_params.TrainingMethod]:
     if model is not None and from_checkpoint is not None:
         raise ValueError("You must specify either a model or a checkpoint to start a job from, not both")
 
