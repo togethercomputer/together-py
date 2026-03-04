@@ -147,6 +147,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 @click.option("--wandb-base-url", type=str, default=None, help="Wandb base URL")
 @click.option("--wandb-project-name", type=str, default=None, help="Wandb project name")
 @click.option("--wandb-name", type=str, default=None, help="Wandb run name")
+@click.option("--wandb-entity", type=str, default=None, help="Wandb entity name")
 @click.option(
     "--confirm",
     "-y",
@@ -230,6 +231,7 @@ def create(
     wandb_base_url: str | None,
     wandb_project_name: str | None,
     wandb_name: str | None,
+    wandb_entity: str | None,
     confirm: bool | None,
     train_on_inputs: bool | Literal["auto"] | None,
     training_method: str | None,
@@ -272,6 +274,7 @@ def create(
         wandb_base_url=wandb_base_url,
         wandb_project_name=wandb_project_name,
         wandb_name=wandb_name,
+        wandb_entity=wandb_entity,
         train_on_inputs=train_on_inputs,
         training_method=training_method,
         dpo_beta=dpo_beta,
