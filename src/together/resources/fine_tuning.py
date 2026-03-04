@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Optional
 from typing_extensions import Literal
 
 import httpx
@@ -472,7 +473,7 @@ class FineTuningResource(SyncAPIResource):
         n_epochs: int | Omit = omit,
         n_evals: int | Omit = omit,
         training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
-        training_type: fine_tuning_estimate_price_params.TrainingType | Omit = omit,
+        training_type: Optional[fine_tuning_estimate_price_params.TrainingType] | Omit = omit,
         validation_file: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -1020,7 +1021,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         n_epochs: int | Omit = omit,
         n_evals: int | Omit = omit,
         training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
-        training_type: fine_tuning_estimate_price_params.TrainingType | Omit = omit,
+        training_type: Optional[fine_tuning_estimate_price_params.TrainingType] | Omit = omit,
         validation_file: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
