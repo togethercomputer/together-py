@@ -783,7 +783,7 @@ Run 'jig status' to check current state.""")
             return
 
         echo(f"\nWatching job {request_id}...")
-        last_status = raw["status"]
+        last_status = raw.get("status")
         while True:
             try:
                 response = self.api.queue.retrieve(model=self.name, request_id=request_id)
