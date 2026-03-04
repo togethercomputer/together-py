@@ -47,6 +47,10 @@ class FineTuningEstimatePriceParams(TypedDict, total=False):
     """
 
     training_type: TrainingType
+    """The training type to use.
+
+    If not provided, the job will default to LoRA training type.
+    """
 
     validation_file: str
     """File-ID of a validation file uploaded to the Together API"""

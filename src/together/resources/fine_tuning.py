@@ -286,6 +286,9 @@ class FineTuningResource(SyncAPIResource):
           training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
               Preference Optimization.
 
+          training_type: The training type to use. If not provided, the job will default to LoRA training
+              type.
+
           validation_file: File-ID of a validation file uploaded to the Together API
 
           extra_headers: Send extra headers
@@ -636,6 +639,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
               Preference Optimization.
+
+          training_type: The training type to use. If not provided, the job will default to LoRA training
+              type.
 
           validation_file: File-ID of a validation file uploaded to the Together API
 
