@@ -221,7 +221,7 @@ class Config:
                 hint = f"rename your folder or add `name` to {path}"
                 echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
 
-        # support volume_mounts at jig level (merge into deploy config)
+        # support volume_mounts, autoscaling at jig level (merge into deploy config)
         deploy_config = jig_config.setdefault("deploy", {})
         allow_top_level = ["volume_mounts", "autoscaling"]
         for key in allow_top_level:
