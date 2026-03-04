@@ -47,7 +47,7 @@ def create_finetune_request(
     warmup_ratio: float | None = None,
     max_grad_norm: float = 1.0,
     weight_decay: float | None = 0.0,
-    lora: bool = False,
+    lora: bool | None = None,
     lora_r: int | None = None,
     lora_dropout: float | None = 0,
     lora_alpha: float | None = None,
@@ -90,8 +90,10 @@ def create_finetune_request(
     if warmup_ratio is None:
         warmup_ratio = 0.0
 
-    training_type: TrainingType = FullTrainingType()
-    if lora:
+    training_type: TrainingType | None = None
+    if lora is None:
+        pass
+    elif lora:
         if model_limits.lora_training is None:
             raise ValueError(f"LoRA adapters are not supported for the selected model ({model_or_checkpoint}).")
 
@@ -118,6 +120,7 @@ def create_finetune_request(
         max_batch_size = model_limits.full_training.max_batch_size
         min_batch_size = model_limits.full_training.min_batch_size
         max_batch_size_dpo = model_limits.full_training.max_batch_size_dpo
+        training_type = FullTrainingType()
 
     if batch_size != "max":
         if training_method == "sft":
@@ -251,9 +254,11 @@ def create_finetune_request(
 
 def create_price_estimation_params(
     finetune_request: FinetuneRequest,
-) -> tuple[pe_params.TrainingType, pe_params.TrainingMethod]:
-    training_type_cls: pe_params.TrainingType
-    if isinstance(finetune_request.training_type, FullTrainingType):
+) -> tuple[pe_params.TrainingType | None, pe_params.TrainingMethod]:
+    training_type_cls: pe_params.TrainingType | None = None
+    if finetune_request.training_type is None:
+        pass
+    elif isinstance(finetune_request.training_type, FullTrainingType):
         training_type_cls = pe_params.TrainingTypeFullTrainingType(
             type="Full",
         )

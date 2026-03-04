@@ -92,7 +92,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 @click.option(
     "--lora/--no-lora",
     type=bool,
-    default=True,
+    default=None,
     help="Whether to use LoRA adapters for fine-tuning",
 )
 @click.option("--lora-r", type=int, default=8, help="LoRA adapters' rank")
@@ -297,7 +297,9 @@ def create(
 
     model_limits = get_model_limits(client, str(model_name))
 
-    if lora:
+    if lora is None:
+        pass
+    elif lora:
         if model_limits.lora_training is None:
             raise click.BadParameter(f"LoRA fine-tuning is not supported for the model `{model}`")
         default_values = {
@@ -331,19 +333,19 @@ def create(
     elif n_evals > 0 and not validation_file:
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
-    training_type_cls: pe_params.TrainingType
-    if lora:
-        training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
-            lora_alpha=int(lora_alpha or 0),
-            lora_r=lora_r or 0,
-            lora_dropout=lora_dropout or 0,
-            lora_trainable_modules=lora_trainable_modules or "all-linear",
-            type="Lora",
-        )
-    else:
-        training_type_cls = pe_params.TrainingTypeFullTrainingType(
-            type="Full",
-        )
+    training_type_cls: pe_params.TrainingType | None = None
+    # if lora:
+    #     training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
+    #         lora_alpha=int(lora_alpha or 0),
+    #         lora_r=lora_r or 0,
+    #         lora_dropout=lora_dropout or 0,
+    #         lora_trainable_modules=lora_trainable_modules or "all-linear",
+    #         type="Lora",
+    #     )
+    # else:
+    #     training_type_cls = pe_params.TrainingTypeFullTrainingType(
+    #         type="Full",
+    #     )
 
     training_method_cls: pe_params.TrainingMethod
     if training_method == "sft":
