@@ -109,7 +109,7 @@ class DeployConfig:
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: list[str] | None = None
-    autoscaling: dict[str, str | float] | None = None
+    autoscaling: dict[str, str | float | int] | None = None
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
@@ -123,12 +123,14 @@ class DeployConfig:
 
 
 def validate(value: Any, value_type: type, path: str = "") -> str | None:
+    if value is None:  # toml can't produce None, must be default
+        return None
     origin = typing.get_origin(value_type)
     args = typing.get_args(value_type)
 
     if origin is list:
         if not isinstance(value, list):
-            return f"{path}: expected list, got {type(value).__name__}"
+            return f"{path}: expected list, got {value!r}"
         for i, v in enumerate(value):  # pyright: ignore
             if err := validate(v, args[0], f"{path}[{i}]"):
                 return err
@@ -136,7 +138,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
 
     if origin is dict:
         if not isinstance(value, dict):
-            return f"{path}: expected dict, got {type(value).__name__}"
+            return f"{path}: expected dict, got {value!r}"
         for k, v in value.items():  # pyright: ignore
             if err := validate(k, args[0], f"{path}.key({k!r})"):
                 return err
@@ -145,13 +147,14 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
 
     if origin is Union or origin is getattr(types, "UnionType", None):
-        if value is None or any(validate(value, a, path) is None for a in args if a is not type(None)):
+        errs = [validate(value, a, path) for a in args if a is not type(None)]
+        if not all(errs):
             return None
-        return f"{path}: expected {value_type}, got {type(value).__name__}"
+        return errs[0] if len(errs) == 1 else f"{path}: expected {value_type}, got {value!r}"
 
     if is_dataclass(value_type):
         if not isinstance(value, value_type):
-            return f"{path}: expected {value_type.__name__}, got {type(value).__name__}"
+            return f"{path}: expected {value_type.__name__}, got {value}"
         for k, t in typing.get_type_hints(value_type, globalns=globals()).items():
             if err := validate(getattr(value, k), t, f"{path}.{k}" if path else k):
                 return err
