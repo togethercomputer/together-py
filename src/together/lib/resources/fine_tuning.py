@@ -58,6 +58,7 @@ def create_finetune_request(
     wandb_base_url: str | None = None,
     wandb_project_name: str | None = None,
     wandb_name: str | None = None,
+    wandb_entity: str | None = None,
     train_on_inputs: bool | Literal["auto"] | None = None,
     training_method: str = "sft",
     dpo_beta: float | None = None,
@@ -235,6 +236,7 @@ def create_finetune_request(
         wandb_base_url=wandb_base_url,
         wandb_project_name=wandb_project_name,
         wandb_name=wandb_name,
+        wandb_entity=wandb_entity,
         training_method=training_method_cls,  # pyright: ignore[reportPossiblyUnboundVariable]
         multimodal_params=multimodal_params,
         from_checkpoint=from_checkpoint,
