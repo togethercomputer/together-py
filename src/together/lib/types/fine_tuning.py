@@ -383,6 +383,9 @@ class FinetuneResponse(BaseModel):
     wandb_name: Optional[str] = None
     """Weights & Biases run name"""
 
+    wandb_entity: Optional[str] = None
+    """Weights & Biases entity name"""
+
     wandb_project_name: Optional[str] = None
     """Weights & Biases project name"""
 
@@ -478,6 +481,8 @@ class FinetuneRequest(BaseModel):
     wandb_project_name: Union[str, None] = None
     # wandb run name
     wandb_name: Union[str, None] = None
+    # wandb entity
+    wandb_entity: Union[str, None] = None
     # training type
     training_type: Union[TrainingType, None] = None
     # training method
