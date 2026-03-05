@@ -91,6 +91,9 @@ def create_finetune_request(
         warmup_ratio = 0.0
 
     training_type: TrainingType | None
+    max_batch_size: int = 0
+    min_batch_size: int = 0
+    max_batch_size_dpo: int = 0
     if lora is None:
         # User did not provide a value for lora, so the training type will be determined automatically.
         # By default, the API uses LoRA, or inherits the training type from the parent job
@@ -126,7 +129,9 @@ def create_finetune_request(
         max_batch_size_dpo = model_limits.full_training.max_batch_size_dpo
         training_type = FullTrainingType()
 
-    if batch_size != "max":
+    # Skip batch size validation when training_type is None, because the training type
+    # will be determined on the backend and we don't know the correct limits to check against.
+    if batch_size != "max" and training_type is not None:
         if training_method == "sft":
             if batch_size > max_batch_size:
                 raise ValueError(
