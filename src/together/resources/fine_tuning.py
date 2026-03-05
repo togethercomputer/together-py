@@ -92,7 +92,7 @@ class FineTuningResource(SyncAPIResource):
         warmup_ratio: float = 0.0,
         max_grad_norm: float = 1.0,
         weight_decay: float = 0.0,
-        lora: bool = True,
+        lora: bool | None = None,
         lora_r: int | None = None,
         lora_dropout: float | None = 0,
         lora_alpha: float | None = None,
