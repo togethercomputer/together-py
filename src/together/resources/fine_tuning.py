@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Optional
 from typing_extensions import Literal
 
 import httpx
@@ -91,7 +92,7 @@ class FineTuningResource(SyncAPIResource):
         warmup_ratio: float = 0.0,
         max_grad_norm: float = 1.0,
         weight_decay: float = 0.0,
-        lora: bool = True,
+        lora: bool | None = None,
         lora_r: int | None = None,
         lora_dropout: float | None = 0,
         lora_alpha: float | None = None,
@@ -102,6 +103,7 @@ class FineTuningResource(SyncAPIResource):
         wandb_base_url: str | None = None,
         wandb_project_name: str | None = None,
         wandb_name: str | None = None,
+        wandb_entity: str | None = None,
         verbose: bool = False,
         model_limits: FinetuneTrainingLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
@@ -152,6 +154,8 @@ class FineTuningResource(SyncAPIResource):
             wandb_project_name (str, optional): Project name for Weights & Biases integration.
                 Defaults to None.
             wandb_name (str, optional): Run name for Weights & Biases integration.
+                Defaults to None.
+            wandb_entity (str, optional): Entity name for Weights & Biases integration.
                 Defaults to None.
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
@@ -223,6 +227,7 @@ class FineTuningResource(SyncAPIResource):
             wandb_base_url=wandb_base_url,
             wandb_project_name=wandb_project_name,
             wandb_name=wandb_name,
+            wandb_entity=wandb_entity,
             train_on_inputs=train_on_inputs,
             training_method=training_method,
             dpo_beta=dpo_beta,
@@ -472,7 +477,7 @@ class FineTuningResource(SyncAPIResource):
         n_epochs: int | Omit = omit,
         n_evals: int | Omit = omit,
         training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
-        training_type: fine_tuning_estimate_price_params.TrainingType | Omit = omit,
+        training_type: Optional[fine_tuning_estimate_price_params.TrainingType] | Omit = omit,
         validation_file: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -501,6 +506,9 @@ class FineTuningResource(SyncAPIResource):
 
           training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
               Preference Optimization.
+
+          training_type: The training type to use. If not provided, the job will default to LoRA training
+              type.
 
           validation_file: File-ID of a validation file uploaded to the Together API
 
@@ -652,6 +660,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         wandb_base_url: str | None = None,
         wandb_project_name: str | None = None,
         wandb_name: str | None = None,
+        wandb_entity: str | None = None,
         verbose: bool = False,
         model_limits: FinetuneTrainingLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
@@ -702,6 +711,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
             wandb_project_name (str, optional): Project name for Weights & Biases integration.
                 Defaults to None.
             wandb_name (str, optional): Run name for Weights & Biases integration.
+                Defaults to None.
+            wandb_entity (str, optional): Entity name for Weights & Biases integration.
                 Defaults to None.
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
@@ -773,6 +784,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             wandb_base_url=wandb_base_url,
             wandb_project_name=wandb_project_name,
             wandb_name=wandb_name,
+            wandb_entity=wandb_entity,
             train_on_inputs=train_on_inputs,
             training_method=training_method,
             dpo_beta=dpo_beta,
@@ -1017,7 +1029,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         n_epochs: int | Omit = omit,
         n_evals: int | Omit = omit,
         training_method: fine_tuning_estimate_price_params.TrainingMethod | Omit = omit,
-        training_type: fine_tuning_estimate_price_params.TrainingType | Omit = omit,
+        training_type: Optional[fine_tuning_estimate_price_params.TrainingType] | Omit = omit,
         validation_file: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -1046,6 +1058,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
               Preference Optimization.
+
+          training_type: The training type to use. If not provided, the job will default to LoRA training
+              type.
 
           validation_file: File-ID of a validation file uploaded to the Together API
 

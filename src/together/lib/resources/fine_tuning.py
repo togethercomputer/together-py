@@ -47,7 +47,7 @@ def create_finetune_request(
     warmup_ratio: float | None = None,
     max_grad_norm: float = 1.0,
     weight_decay: float | None = 0.0,
-    lora: bool = False,
+    lora: bool | None = None,
     lora_r: int | None = None,
     lora_dropout: float | None = 0,
     lora_alpha: float | None = None,
@@ -58,6 +58,7 @@ def create_finetune_request(
     wandb_base_url: str | None = None,
     wandb_project_name: str | None = None,
     wandb_name: str | None = None,
+    wandb_entity: str | None = None,
     train_on_inputs: bool | Literal["auto"] | None = None,
     training_method: str = "sft",
     dpo_beta: float | None = None,
@@ -69,7 +70,7 @@ def create_finetune_request(
     hf_model_revision: str | None = None,
     hf_api_token: str | None = None,
     hf_output_repo_name: str | None = None,
-) -> tuple[FinetuneRequest, pe_params.TrainingType, pe_params.TrainingMethod]:
+) -> tuple[FinetuneRequest, pe_params.TrainingType | None, pe_params.TrainingMethod]:
     if model is not None and from_checkpoint is not None:
         raise ValueError("You must specify either a model or a checkpoint to start a job from, not both")
 
@@ -90,8 +91,17 @@ def create_finetune_request(
     if warmup_ratio is None:
         warmup_ratio = 0.0
 
-    training_type: TrainingType = FullTrainingType()
-    if lora:
+    training_type: TrainingType | None
+    max_batch_size: int = 0
+    min_batch_size: int = 0
+    max_batch_size_dpo: int = 0
+    if lora is None:
+        # User did not provide a value for lora, so the training type will be determined automatically.
+        # By default, the API uses LoRA, or inherits the training type from the parent job
+        # when from_checkpoint is specified.
+        # This logic is handled on the Together API backend.
+        training_type = None
+    elif lora:
         if model_limits.lora_training is None:
             raise ValueError(f"LoRA adapters are not supported for the selected model ({model_or_checkpoint}).")
 
@@ -118,8 +128,11 @@ def create_finetune_request(
         max_batch_size = model_limits.full_training.max_batch_size
         min_batch_size = model_limits.full_training.min_batch_size
         max_batch_size_dpo = model_limits.full_training.max_batch_size_dpo
+        training_type = FullTrainingType()
 
-    if batch_size != "max":
+    # Skip batch size validation when training_type is None, because the training type
+    # will be determined on the backend and we don't know the correct limits to check against.
+    if batch_size != "max" and training_type is not None:
         if training_method == "sft":
             if batch_size > max_batch_size:
                 raise ValueError(
@@ -235,6 +248,7 @@ def create_finetune_request(
         wandb_base_url=wandb_base_url,
         wandb_project_name=wandb_project_name,
         wandb_name=wandb_name,
+        wandb_entity=wandb_entity,
         training_method=training_method_cls,  # pyright: ignore[reportPossiblyUnboundVariable]
         multimodal_params=multimodal_params,
         from_checkpoint=from_checkpoint,
@@ -251,9 +265,12 @@ def create_finetune_request(
 
 def create_price_estimation_params(
     finetune_request: FinetuneRequest,
-) -> tuple[pe_params.TrainingType, pe_params.TrainingMethod]:
-    training_type_cls: pe_params.TrainingType
-    if isinstance(finetune_request.training_type, FullTrainingType):
+) -> tuple[pe_params.TrainingType | None, pe_params.TrainingMethod]:
+    training_type_cls: pe_params.TrainingType | None = None
+    if finetune_request.training_type is None:
+        # Training type was not specified; the API backend will apply its default.
+        pass
+    elif isinstance(finetune_request.training_type, FullTrainingType):
         training_type_cls = pe_params.TrainingTypeFullTrainingType(
             type="Full",
         )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Optional
 from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 __all__ = [
@@ -46,7 +46,11 @@ class FineTuningEstimatePriceParams(TypedDict, total=False):
     'sft' for Supervised Fine-Tuning or 'dpo' for Direct Preference Optimization.
     """
 
-    training_type: TrainingType
+    training_type: Optional[TrainingType]
+    """The training type to use.
+
+    If not provided, the job will default to LoRA training type.
+    """
 
     validation_file: str
     """File-ID of a validation file uploaded to the Together API"""

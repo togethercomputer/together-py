@@ -88,6 +88,13 @@ class Volume(BaseModel):
     Must reference an existing volume by name or ID
     """
 
+    version: Optional[int] = None
+    """Version is the volume version to mount.
+
+    On create, defaults to the latest version. On update, defaults to the currently
+    mounted version.
+    """
+
 
 class Deployment(BaseModel):
     id: Optional[str] = None
@@ -162,7 +169,7 @@ class Deployment(BaseModel):
     replica_events: Optional[Dict[str, ReplicaEvents]] = None
     """ReplicaEvents is a mapping of replica names or IDs to their status events"""
 
-    status: Optional[Literal["Updating", "Scaling", "Ready", "Failed"]] = None
+    status: Optional[Literal["Updating", "Scaling", "Ready", "Failed", "ScaledToZero"]] = None
     """
     Status represents the overall status of the deployment (e.g., Updating, Scaling,
     Ready, Failed)

@@ -207,6 +207,9 @@ class FineTuningCancelResponse(BaseModel):
     wandb_name: Optional[str] = None
     """Weights & Biases run name"""
 
+    wandb_entity: Optional[str] = None
+    """Weights & Biases entity name"""
+
     wandb_project_name: Optional[str] = None
     """Weights & Biases project name"""
 

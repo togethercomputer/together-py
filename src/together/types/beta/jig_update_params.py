@@ -139,3 +139,10 @@ class Volume(TypedDict, total=False):
 
     Must reference an existing volume by name or ID
     """
+
+    version: int
+    """Version is the volume version to mount.
+
+    On create, defaults to the latest version. On update, defaults to the currently
+    mounted version.
+    """

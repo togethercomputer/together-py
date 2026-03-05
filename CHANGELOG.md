@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.3.0 (2026-03-05)
+
+Full Changelog: [v2.2.0...v2.3.0](https://github.com/togethercomputer/together-py/compare/v2.2.0...v2.3.0)
+
+### Features
+
+* Add typing for completion responses related to logprobs ([d81683a](https://github.com/togethercomputer/together-py/commit/d81683af427008e471ea9b4a26348a143db2ac9b))
+* Another try ([d16cbaa](https://github.com/togethercomputer/together-py/commit/d16cbaa208ec913b14e6784b36078d783397614d))
+* **cli:** Add --json to `fine-tuning retrieve` ([#272](https://github.com/togethercomputer/together-py/issues/272)) ([b9bb6e0](https://github.com/togethercomputer/together-py/commit/b9bb6e0188373ee882781d0259327985103abcfc))
+* update deployments schemas to include volume versions ([b4dfb3d](https://github.com/togethercomputer/together-py/commit/b4dfb3dc9228fd3885b5e3169693c8d753ecd1d3))
+* Update training type for price estimation too ([a430a3a](https://github.com/togethercomputer/together-py/commit/a430a3a87961d2bc7cf5745efcd539d843b0bc7a))
+
+
+### Bug Fixes
+
+* **cli:** Improve error output message when model/checkpoint is not provided in finetune create ([#271](https://github.com/togethercomputer/together-py/issues/271)) ([bae0065](https://github.com/togethercomputer/together-py/commit/bae00658a55f112e5f5d9a548b379129ed1d5f2c))
+* **cli:** Improve output when downloading an incomplete finetune job ([#273](https://github.com/togethercomputer/together-py/issues/273)) ([eae629e](https://github.com/togethercomputer/together-py/commit/eae629e457d4433974c1ccd75012684a962b3f42))
+* jig autoscaling config should be nullable ([#286](https://github.com/togethercomputer/together-py/issues/286)) ([589215f](https://github.com/togethercomputer/together-py/commit/589215f6187fbefc3222ce42c20b856d552d979a))
+* **jig:** minor improvements ([#283](https://github.com/togethercomputer/together-py/issues/283)) ([98cb9fb](https://github.com/togethercomputer/together-py/commit/98cb9fb9948a5b9b33f7d963531328f9cb46779d))
+* remove dependency from .jig.json managing setting secrets ([#282](https://github.com/togethercomputer/together-py/issues/282)) ([5470ade](https://github.com/togethercomputer/together-py/commit/5470ade6a6488f2de970ab93be1620b9a4483afb))
+* use volume version metadata when updating volumes ([#279](https://github.com/togethercomputer/together-py/issues/279)) ([20304af](https://github.com/togethercomputer/together-py/commit/20304afd4e7d9b19804e85c1939cd24dd764ab3a))
+
+
+### Chores
+
+* **ci:** bump uv version ([8b138b5](https://github.com/togethercomputer/together-py/commit/8b138b5d12cd00f1f03b75dc43d0543f71efa424))
+* **cli:** Improve output for `fine-tuning list` and `files list` commands ([#274](https://github.com/togethercomputer/together-py/issues/274)) ([a73f525](https://github.com/togethercomputer/together-py/commit/a73f525550fa19268c1e222076e0618345ca3910))
+* **cli:** Improve output for file uploads and fine-tuning create ([#277](https://github.com/togethercomputer/together-py/issues/277)) ([089d4b9](https://github.com/togethercomputer/together-py/commit/089d4b9705b3f01fc1de67c395ada62dd69c21b7))
+* **internal:** add request options to SSE classes ([174bf4d](https://github.com/togethercomputer/together-py/commit/174bf4dd0c704ad2744d294ae6cb5ed4c9099bee))
+* **internal:** make `test_proxy_environment_variables` more resilient ([eb89afd](https://github.com/togethercomputer/together-py/commit/eb89afdd88624b69df0cf27a8aeff85ba2071812))
+* **internal:** make `test_proxy_environment_variables` more resilient to env ([0bf71ae](https://github.com/togethercomputer/together-py/commit/0bf71ae8af070a04d6257e7fbe5c10faccd18f13))
+* **test:** do not count install time for mock server timeout ([bbf3f2d](https://github.com/togethercomputer/together-py/commit/bbf3f2d858f6cb93def57e39472ce21c724a0e6b))
+
 ## 2.2.0 (2026-02-19)
 
 Full Changelog: [v2.1.1...v2.2.0](https://github.com/togethercomputer/together-py/compare/v2.1.1...v2.2.0)

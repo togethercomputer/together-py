@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 from typing_extensions import Literal
 
 from ..._models import BaseModel
@@ -41,6 +41,9 @@ class Choice(BaseModel):
     logprobs: Optional[float] = None
 
     seed: Optional[int] = None
+
+    top_logprobs: Optional[Dict[str, float]] = None
+    """Top log probabilities for the tokens."""
 
 
 class ChatCompletionChunk(BaseModel):

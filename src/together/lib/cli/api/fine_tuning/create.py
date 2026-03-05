@@ -4,7 +4,6 @@ from typing import Any, Literal
 from pathlib import Path
 
 import click
-from rich import print as rprint
 from click.core import ParameterSource
 
 from together import Together
@@ -13,19 +12,21 @@ from together.lib.utils import log_warn
 from together.lib.cli.api._utils import INT_WITH_MAX, BOOL_WITH_AUTO, handle_api_errors
 from together.lib.resources.fine_tuning import get_model_limits
 
-_CONFIRMATION_MESSAGE = (
-    "You are about to create a fine-tuning job. "
-    "The estimated price of this job is {price}. "
-    "The actual cost of your job will be determined by the model size, the number of tokens "
-    "in the training file, the number of tokens in the validation file, the number of epochs, and "
-    "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
-    "{warning}"
-    "You can pass `-y` or `--confirm` to your command to skip this message.\n\n"
-    "Do you want to proceed?"
-)
+
+def get_confirmation_message(price: str, warning: str) -> str:
+    return (
+        "\nYou are about to create a fine-tuning job. The estimated price of this job is "
+        + f"{click.style(f'{price}', fg='blue', bold=True)}\n\n"
+        + "The actual cost of your job will be determined by the model size, the number of tokens"
+        + "in the training file, the number of tokens in the validation file, the number of epochs, and "
+        + "the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.\n"
+        + warning
+        + "\nDo you want to proceed?"
+    )
+
 
 _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
-    "The estimated price of this job is significantly greater than your current credit limit and balance combined. "
+    "\nThe estimated price of this job is significantly greater than your current credit limit and balance combined. "
     "It will likely get cancelled due to insufficient funds. "
     "Consider increasing your credit limit at https://api.together.xyz/settings/profile\n"
 )
@@ -91,7 +92,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 @click.option(
     "--lora/--no-lora",
     type=bool,
-    default=True,
+    default=None,
     help="Whether to use LoRA adapters for fine-tuning",
 )
 @click.option("--lora-r", type=int, default=8, help="LoRA adapters' rank")
@@ -146,6 +147,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 @click.option("--wandb-base-url", type=str, default=None, help="Wandb base URL")
 @click.option("--wandb-project-name", type=str, default=None, help="Wandb project name")
 @click.option("--wandb-name", type=str, default=None, help="Wandb run name")
+@click.option("--wandb-entity", type=str, default=None, help="Wandb entity name")
 @click.option(
     "--confirm",
     "-y",
@@ -229,6 +231,7 @@ def create(
     wandb_base_url: str | None,
     wandb_project_name: str | None,
     wandb_name: str | None,
+    wandb_entity: str | None,
     confirm: bool | None,
     train_on_inputs: bool | Literal["auto"] | None,
     training_method: str | None,
@@ -271,6 +274,7 @@ def create(
         wandb_base_url=wandb_base_url,
         wandb_project_name=wandb_project_name,
         wandb_name=wandb_name,
+        wandb_entity=wandb_entity,
         train_on_inputs=train_on_inputs,
         training_method=training_method,
         dpo_beta=dpo_beta,
@@ -285,7 +289,10 @@ def create(
     )
 
     if model is None and from_checkpoint is None:
-        raise click.BadParameter("You must specify either a model or a checkpoint")
+        raise click.MissingParameter(
+            "",
+            param_type="option --model or --from-checkpoint",
+        )
 
     model_name = model
     if from_checkpoint is not None:
@@ -293,7 +300,9 @@ def create(
 
     model_limits = get_model_limits(client, str(model_name))
 
-    if lora:
+    if lora is None:
+        pass
+    elif lora:
         if model_limits.lora_training is None:
             raise click.BadParameter(f"LoRA fine-tuning is not supported for the model `{model}`")
         default_values = {
@@ -327,8 +336,14 @@ def create(
     elif n_evals > 0 and not validation_file:
         raise click.BadParameter("You have specified a number of evaluation loops but no validation file.")
 
-    training_type_cls: pe_params.TrainingType
-    if lora:
+    training_type_cls: pe_params.TrainingType | None
+    if lora is None:
+        # User did not provide --lora/--no-lora, so the training type will be determined automatically.
+        # By default, the API uses LoRA, or inherits the training type from the parent job
+        # when --from-checkpoint is specified.
+        # This logic is handled on the Together API backend.
+        training_type_cls = None
+    elif lora:
         training_type_cls = pe_params.TrainingTypeLoRaTrainingType(
             lora_alpha=int(lora_alpha or 0),
             lora_r=lora_r or 0,
@@ -343,9 +358,11 @@ def create(
 
     training_method_cls: pe_params.TrainingMethod
     if training_method == "sft":
+        train_on_inputs = train_on_inputs or "auto"
+        training_args["train_on_inputs"] = train_on_inputs
         training_method_cls = pe_params.TrainingMethodTrainingMethodSft(
             method="sft",
-            train_on_inputs=train_on_inputs or "auto",
+            train_on_inputs=train_on_inputs,
         )
     else:
         training_method_cls = pe_params.TrainingMethodTrainingMethodDpo(
@@ -396,7 +413,7 @@ def create(
     else:
         warning = ""
 
-    confirmation_message = _CONFIRMATION_MESSAGE.format(
+    confirmation_message = get_confirmation_message(
         price=price,
         warning=warning,
     )
@@ -407,13 +424,12 @@ def create(
             verbose=True,
         )
 
-        report_string = f"Successfully submitted a fine-tuning job {response.id}"
-        # created_at reports UTC time, we use .astimezone() to convert to local time
-        formatted_time = response.created_at.astimezone().strftime("%m/%d/%Y, %H:%M:%S")
-        report_string += f" at {formatted_time}"
-        rprint(report_string)
-    else:
-        click.echo("No confirmation received, stopping job launch")
+        click.echo(
+            click.style(f"\n\nSuccess!", fg="green", bold=True)
+            + click.style(" Your fine-tuning job ", fg="green")
+            + click.style(response.id, fg="blue", bold=True)
+            + click.style(" has been submitted.", fg="green")
+        )
 
 
 def _check_path_exists(path_string: str) -> bool:

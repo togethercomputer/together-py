@@ -90,6 +90,38 @@ def _human_readable_time(timedelta: float) -> str:
     return " ".join(parts) if parts else "0s"
 
 
+def generate_progress_text(
+    finetune_job: Union[Data, FinetuneResponse, _FinetuneResponse], current_time: datetime
+) -> str:
+    """Generate a progress text for a finetune job.
+    Args:
+        finetune_job: The finetune job to generate a progress text for.
+        current_time: The current time.
+    Returns:
+        A string representing the progress text.
+    """
+    time_text = ""
+    if getattr(finetune_job, "started_at", None) is not None and isinstance(finetune_job.started_at, datetime):
+        started_at = finetune_job.started_at.astimezone()
+
+        if finetune_job.progress is not None:
+            if current_time < started_at:
+                return ""
+
+            if not finetune_job.progress.estimate_available:
+                return ""
+
+            if finetune_job.progress.seconds_remaining <= 0:
+                return ""
+
+            elapsed_time = (current_time - started_at).total_seconds()
+            time_left = "N/A"
+            if finetune_job.progress.seconds_remaining > elapsed_time:
+                time_left = _human_readable_time(finetune_job.progress.seconds_remaining - elapsed_time)
+            time_text = f"{time_left} left"
+    return time_text
+
+
 def generate_progress_bar(
     finetune_job: Union[Data, FinetuneResponse, _FinetuneResponse], current_time: datetime, use_rich: bool = False
 ) -> str:
@@ -122,10 +154,7 @@ def generate_progress_bar(
             percentage = ratio_filled * 100
             filled = math.ceil(ratio_filled * _PROGRESS_BAR_WIDTH)
             bar = "█" * filled + "░" * (_PROGRESS_BAR_WIDTH - filled)
-            time_left = "N/A"
-            if finetune_job.progress.seconds_remaining > elapsed_time:
-                time_left = _human_readable_time(finetune_job.progress.seconds_remaining - elapsed_time)
-            time_text = f"{time_left} left"
+            time_text = generate_progress_text(finetune_job, current_time)
             progress = f"Progress: {bar} [bold]{percentage:>3.0f}%[/bold] [yellow]{time_text}[/yellow]"
 
     if use_rich:
