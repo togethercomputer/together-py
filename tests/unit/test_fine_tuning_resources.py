@@ -35,6 +35,19 @@ _MODEL_LIMITS = FinetuneTrainingLimits(
 )
 
 
+def test_full_training_request():
+    request, _, _ = create_finetune_request(
+        model_limits=_MODEL_LIMITS,
+        model=_MODEL_NAME,
+        training_file=_TRAINING_FILE,
+        lora=False,
+    )
+
+    assert isinstance(request.training_type, FullTrainingType)
+    assert request.training_type.type == "Full"
+    assert request.batch_size == "max"
+
+
 def test_simple_request():
     request, _, _ = create_finetune_request(
         model_limits=_MODEL_LIMITS,
@@ -47,8 +60,8 @@ def test_simple_request():
     assert request.learning_rate > 0
     assert request.n_epochs > 0
     assert request.warmup_ratio == 0.0
-    assert request.training_type is not None
-    assert request.training_type.type == "Full"
+    # When lora is not specified, training_type is None because the backend decides.
+    assert request.training_type is None
     assert request.batch_size == "max"
 
 
