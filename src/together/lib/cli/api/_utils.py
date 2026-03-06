@@ -1,16 +1,22 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+import os
 import re
 import sys
 import math
-from typing import Any, List, Union, Literal, TypeVar, Callable
+from typing import Annotated, Any, List, Optional, Union, Literal, TypeVar, Callable
 from gettext import gettext as _
 from datetime import datetime
 from functools import wraps
 
 import click
+from cyclopts import Parameter
+import httpx
 
 from together import APIError
+from together import AsyncTogether
+from together._utils._logs import setup_logging
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
 from together.types.fine_tuning_list_response import Data
@@ -197,3 +203,61 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
         return wrapper  # type: ignore
 
     return decorator  # type: ignore
+
+
+@dataclass
+class Config:
+    api_key: Annotated[Optional[str], Parameter(help="Default is environment variable `TOGETHER_API_KEY`.", env_var="TOGETHER_API_KEY", show_env_var=False)] = None
+    base_url: Annotated[Optional[str], Parameter(show=False)] = None
+    timeout: Annotated[Optional[int], Parameter(show=False)] = None
+    max_retries: Annotated[Optional[int], Parameter(show=False)] = None
+    debug: Annotated[Optional[bool], Parameter(show=False)] = None
+
+    def __call__(self) -> None:
+        print("...", self.api_key)
+        if self.debug:
+            os.environ.setdefault("TOGETHER_LOG", "debug")
+            setup_logging()
+
+    def client(self) -> AsyncTogether:
+        client: AsyncTogether = AsyncTogether()
+        try:
+            client = AsyncTogether(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                timeout=self.timeout,
+                max_retries=self.max_retries if self.max_retries is not None else 0,
+            )
+        # This implementation is indeed strange, but it's the best user experience for the CLI when the api key is not set
+        # The constructor will raise an error if there is no api key set. We catch the error and you may think a simpler implementation
+        # would be just to print the error right away and exit. Unfortunately that means that the user would not be able to see any usage commands.
+        # E.g. if they type `together models` it would print the error and exit without showing any usage commands.
+        #
+        # Instead we opt to create a dummy client and hook into any requests performed by the client. We take that moment to print the error and exit.
+        except Exception as e:
+            if "api_key" in str(e):
+                client = AsyncTogether(
+                    api_key="0000000000000000000000000000000000000000",
+                    base_url=self.base_url,
+                    timeout=self.timeout,
+                    max_retries=self.max_retries if self.max_retries is not None else 0,
+                )
+
+                # Wrap the client's httpx requests to track the parameters sent on api requests
+                def block_requests_for_api_key(_: httpx.Request) -> None:
+                    # invoked_command = click.get_current_context().command_path
+                    # invoked_command_name = invoked_command.split("together ")[1]
+                    # click.secho(
+                    #     "Error: api key missing.\n\nThe api_key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
+                    #     fg="red",
+                    # )
+                    # click.secho("\nYou can find your api key at https://api.together.xyz/settings/api-keys", fg="yellow")
+                    # click.secho(f"\nUsage: together --api-key <your-api-key> {invoked_command_name}", fg="yellow")
+                    sys.exit(1)
+
+                client._client.event_hooks["request"].append(block_requests_for_api_key)
+                return client
+
+            raise e
+
+        return client

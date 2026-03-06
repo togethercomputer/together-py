@@ -25,6 +25,7 @@ dependencies = [
   "filelock>=3.13.1",
   "types-pyyaml>=6.0.12.20250915",
   "tomli>=2.0.0; python_version < '3.11'",
+  "cyclopts>=3.24.0",
 ]
 
 requires-python = ">= 3.9"
@@ -60,6 +61,8 @@ cli = ["PyYAML"]
 
 [project.scripts]
 together = "together.lib.cli:main"
+tg = "together.lib.cli:main"
+
 
 [tool.uv]
 managed = true
