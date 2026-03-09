@@ -6,13 +6,15 @@ import sys
 from pathlib import Path
 from typing import Annotated, Optional
 
+import cyclopts
 import httpx
-from cyclopts import App, Parameter
+from cyclopts import App, MissingArgumentError, Parameter
 
 from together import AsyncTogether
 from together._exceptions import APIError
 from together._version import __version__
 from together._utils._logs import setup_logging
+from together.lib.cli.logger.prompt import PromptParameter, prompt
 
 app = App(
     name="together",
@@ -23,6 +25,16 @@ app = App(
 
 app['--version'].group = "Parameters"
 app['--help'].group = "Parameters"
+
+class Config:
+    client: AsyncTogether
+    non_interactive: bool
+    json: bool
+
+    def __init__(self, client: AsyncTogether, non_interactive: bool, json: bool):
+        self.client = client
+        self.non_interactive = non_interactive
+        self.json = json
 
 def _create_client(
     api_key: Optional[str],
@@ -68,35 +80,64 @@ async def _launcher(
     timeout: Annotated[Optional[int], Parameter(show=False)] = None,
     max_retries: Annotated[Optional[int], Parameter(show=False)] = None,
     debug: Annotated[Optional[bool], Parameter(show=False)] = False,
+    non_interactive: Annotated[Optional[bool], Parameter()] = False,
+    json: Annotated[Optional[bool], Parameter()] = False,
 ) -> None:
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
     client = _create_client(api_key, base_url, timeout, max_retries)
+    config = Config(
+        client=client,
+        non_interactive=non_interactive or False,
+        json=json or False,
+    )
+
+    remaining = list(tokens)
+
+    async def run_command():
+        try:
+            command, bound, _ignored, extra = app.parse_known_args(remaining)
+            for arg_name, arg_type in command.__annotations__.items():
+                if isinstance(arg_type, PromptParameter) and not config.non_interactive:
+                    value = await prompt(arg_name)
+                    remaining.append(arg_name)
+                    remaining.append(value)
+
+            kwargs = dict(bound.kwargs)
+            kwargs["config"] = config
+            if "config" in extra:
+                kwargs["config"] = config
+            # result = command(*bound.args, **kwargs)
+            if inspect.iscoroutine(result):
+                await result
+
+        except MissingArgumentError as e:
+            if config.non_interactive:
+                raise e
+            # auto prompt for missing arguments
+            arg_name = e.argument.parameter.name[0]
+            value = await prompt(arg_name)
+            remaining.append(arg_name)
+            remaining.append(value)
+            await run_command()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except APIError as e:
+            error_msg = ""
+            if e.body is not None:
+                error_msg = getattr(e.body, "message", str(e.body))
+            else:
+                error_msg = str(e)
+            print(f"Failed", file=sys.stderr)
+            print(f"{error_msg}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Failed", file=sys.stderr)
+            print(f"An unexpected error occurred - {e!s}", file=sys.stderr)
+            sys.exit(1)
     try:
-        remaining = list(tokens)
-        command, bound, ignored = app.parse_args(remaining, print_error=False, help_on_error=True)
-        kwargs = dict(bound.kwargs)
-        if "client" in ignored:
-            kwargs["client"] = client
-        result = command(*bound.args, **kwargs)
-        if inspect.iscoroutine(result):
-            await result
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except APIError as e:
-        error_msg = ""
-        if e.body is not None:
-            error_msg = getattr(e.body, "message", str(e.body))
-        else:
-            error_msg = str(e)
-        print(f"Failed", file=sys.stderr)
-        print(f"{error_msg}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Failed", file=sys.stderr)
-        print(f"An unexpected error occurred - {e!s}", file=sys.stderr)
-        sys.exit(1)
+        await run_command()
     finally:
         await client.close()
 
