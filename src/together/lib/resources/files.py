@@ -20,6 +20,8 @@ from tqdm import tqdm
 from filelock import FileLock
 from tqdm.utils import CallbackIOWrapper
 
+from together._utils._logs import logger
+
 from ...types import FileType, FilePurpose, FileResponse
 from ..._types import RequestOptions
 from ..constants import (
@@ -657,6 +659,7 @@ class MultipartUploadManager(SyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
+            file_data["object"] = "file"
             return FileResponse(**file_data)
         else:
             raise APIStatusError(
@@ -1059,6 +1062,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
+            file_data["object"] = "file"
             return FileResponse(**file_data)
         else:
             raise APIStatusError(
@@ -1114,6 +1118,7 @@ def _calculate_file_checksum(file_path: Path, algorithm: str = "sha256", block_s
         str: The hexadecimal representation of the file checksum.
     """
     # Create a hash object with the specified algorithm name
+    logger.debug("Starting file checksum calculation")
     try:
         hasher = hashlib.new(algorithm)
     except ValueError:
@@ -1123,8 +1128,10 @@ def _calculate_file_checksum(file_path: Path, algorithm: str = "sha256", block_s
     with open(file_path, "rb") as f:
         # Read the file in chunks and update the hash object
         for chunk in iter(lambda: f.read(block_size), b""):
+            logger.debug(f"Updating hash with chunk of size {len(chunk)}")
             hasher.update(chunk)
 
+    logger.debug(f"hash complete.")
     # Return the hexadecimal digest of the hash
     return hasher.hexdigest()
 
