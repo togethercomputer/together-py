@@ -59,7 +59,7 @@ def create_finetune_request(
     wandb_project_name: str | None = None,
     wandb_name: str | None = None,
     wandb_entity: str | None = None,
-    random_seed: int | None = None,
+    random_seed: str | None = None,
     train_on_inputs: bool | Literal["auto"] | None = None,
     training_method: str = "sft",
     dpo_beta: float | None = None,
