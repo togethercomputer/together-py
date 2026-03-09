@@ -25,7 +25,8 @@ MAX_CONCURRENT_PARTS = 4  # Maximum concurrent parts for multipart upload
 MIN_PART_SIZE_MB = 5  # Minimum part size (S3 requirement)
 TARGET_PART_SIZE_MB = 250  # Target part size for optimal performance
 MAX_MULTIPART_PARTS = 250  # Maximum parts per upload (S3 limit)
-MULTIPART_UPLOAD_TIMEOUT = 300  # Timeout in seconds for uploading each part
+MULTIPART_UPLOAD_TIMEOUT = 300  # Connect/read timeout in seconds for each part
+MULTIPART_UPLOAD_WRITE_TIMEOUT = 3600  # Write timeout in seconds (1h) for large part uploads
 MULTIPART_THRESHOLD_GB = 5.0  # threshold for switching to multipart upload
 
 # Minimum number of samples required for fine-tuning file
