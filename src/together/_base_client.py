@@ -1064,7 +1064,7 @@ class SyncAPIClient(BaseClient[httpx.Client, Stream[Any]]):
                     err.response.read()
 
                 log.debug("Re-raising status error")
-                raise self._make_status_error_from_response(err.response) from None
+                raise self._make_status_error_from_response(err.response) from err
 
             break
 
@@ -1648,7 +1648,7 @@ class AsyncAPIClient(BaseClient[httpx.AsyncClient, AsyncStream[Any]]):
                     await err.response.aread()
 
                 log.debug("Re-raising status error")
-                raise self._make_status_error_from_response(err.response) from None
+                raise self._make_status_error_from_response(err.response) from err
 
             break
 

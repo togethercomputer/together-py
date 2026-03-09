@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import sys
 import math
@@ -190,6 +191,9 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
                 click.echo(prefix_styled + click.style(error_msg, fg="red"))
                 sys.exit(1)
             except Exception as e:
+                if os.getenv("TOGETHER_LOG", "").lower() == "debug":
+                    # Raise the error with the full traceback
+                    raise
                 click.echo(prefix_styled + click.style("Failed", fg="red"))
                 click.echo(prefix_styled + click.style(f"An unexpected error occurred - {str(e)}", fg="red"))
                 sys.exit(1)

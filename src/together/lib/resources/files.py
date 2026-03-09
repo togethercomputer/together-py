@@ -652,6 +652,7 @@ class MultipartUploadManager(SyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
+            file_data["object"] = "file"
             return FileResponse(**file_data)
         else:
             raise APIStatusError(
@@ -670,7 +671,7 @@ class MultipartUploadManager(SyncAPIResource):
 
         self._client.post(
             path=f"{url}/multipart/abort",
-            cast_to=dict,
+            cast_to=httpx.Response,
             body=payload,
             options={"headers": {"Content-Type": "application/json"}},
         )
@@ -1050,6 +1051,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         if response.status_code == 200:
             response_data = response.json()
             file_data = response_data.get("file", response_data)
+            file_data["object"] = "file"
             return FileResponse(**file_data)
         else:
             raise APIStatusError(
@@ -1068,7 +1070,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
         await self._client.post(
             path=f"{url}/multipart/abort",
-            cast_to=dict,
+            cast_to=httpx.Response,
             body=payload,
             options={"headers": {"Content-Type": "application/json"}},
         )
