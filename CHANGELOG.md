@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.2 (2026-03-09)
+
+Full Changelog: [v2.3.1...v2.3.2](https://github.com/togethercomputer/together-py/compare/v2.3.1...v2.3.2)
+
+### Bug Fixes
+
+* Address pydantic validation error on file literal ([#291](https://github.com/togethercomputer/together-py/issues/291)) ([ecb8e7d](https://github.com/togethercomputer/together-py/commit/ecb8e7d1c7a3eda011c214fa5931c916ef188ad0))
+
 ## 2.3.1 (2026-03-09)
 
 Full Changelog: [v2.3.0...v2.3.1](https://github.com/togethercomputer/together-py/compare/v2.3.0...v2.3.1)
