@@ -420,10 +420,8 @@ def _build_warm_image(base_image: str) -> None:
     """
     cache_dir = Path(WARMUP_DEST)
     # clean any existing cache
-    try:
+    if cache_dir.exists():
         shutil.rmtree(cache_dir)
-    except FileNotFoundError:
-        pass
     cache_dir.mkdir(exist_ok=True)
 
     echo("\N{FIRE} Running warmup to generate compile cache...")
@@ -431,7 +429,8 @@ def _build_warm_image(base_image: str) -> None:
     # run container with GPU and RUN_AND_EXIT=1
     # mount current dir as /app so warmup_inputs can reference local weights
     # mount cache dir for compile artifacts
-    cmd = ["docker", "run", "--rm", "--gpus", "all", "-e", "RUN_AND_EXIT=1"]
+    # run as current user so cache files on the bind mount are not owned by root
+    cmd = ["docker", "run", "--rm", "--gpus", "all", "--user", f"{os.getuid()}:{os.getgid()}", "-e", "RUN_AND_EXIT=1"]
     cmd.extend(["-e", f"{WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"])
     cmd.extend(["-v", f"{Path.cwd()}:/app"])
     # if MODEL_PRELOAD_PATH is set, also mount that (e.g. ~/.cache/huggingface)

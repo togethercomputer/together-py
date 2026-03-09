@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.3.1 (2026-03-09)
+
+Full Changelog: [v2.3.0...v2.3.1](https://github.com/togethercomputer/together-py/compare/v2.3.0...v2.3.1)
+
+### Bug Fixes
+
+* Improve multipart file uploads ([#290](https://github.com/togethercomputer/together-py/issues/290)) ([b27d19c](https://github.com/togethercomputer/together-py/commit/b27d19c7d789fbdcd54a5aa47872a8c425ea3e47))
+* **jig:** compile cache should be owned by current user instead of root so cleanup works ([504717e](https://github.com/togethercomputer/together-py/commit/504717e21983ba7523326b7dafa64dd6b6fecb8d))
+
+
+### Chores
+
+* **ci:** skip uploading artifacts on stainless-internal branches ([e7d23c3](https://github.com/togethercomputer/together-py/commit/e7d23c36df459a47276f33b615301e8160231c32))
+* update placeholder string ([9b0a5b9](https://github.com/togethercomputer/together-py/commit/9b0a5b984f4fe74ab8967e0a6dfe620b203b309a))
+
 ## 2.3.0 (2026-03-05)
 
 Full Changelog: [v2.2.0...v2.3.0](https://github.com/togethercomputer/together-py/compare/v2.2.0...v2.3.0)

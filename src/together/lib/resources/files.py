@@ -36,6 +36,7 @@ from ..constants import (
     DOWNLOAD_MAX_RETRY_DELAY,
     MULTIPART_UPLOAD_TIMEOUT,
     DOWNLOAD_INITIAL_RETRY_DELAY,
+    MULTIPART_UPLOAD_WRITE_TIMEOUT,
 )
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ..types.error import DownloadError, FileTypeError
@@ -602,11 +603,15 @@ class MultipartUploadManager(SyncAPIResource):
 
         part_headers = part_info.get("Headers", {})
 
+        timeout = httpx.Timeout(
+            MULTIPART_UPLOAD_TIMEOUT,
+            write=MULTIPART_UPLOAD_WRITE_TIMEOUT,
+        )
         response = self._client._client.put(
             url=upload_url,
             content=part_data,
             headers=part_headers,
-            timeout=MULTIPART_UPLOAD_TIMEOUT,
+            timeout=timeout,
         )
         response.raise_for_status()
 
@@ -670,7 +675,7 @@ class MultipartUploadManager(SyncAPIResource):
 
         self._client.post(
             path=f"{url}/multipart/abort",
-            cast_to=dict,
+            cast_to=httpx.Response,
             body=payload,
             options={"headers": {"Content-Type": "application/json"}},
         )
@@ -1003,12 +1008,16 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
         part_headers = part_info.get("Headers", {})
 
+        timeout = httpx.Timeout(
+            MULTIPART_UPLOAD_TIMEOUT,
+            write=MULTIPART_UPLOAD_WRITE_TIMEOUT,
+        )
         with httpx.Client() as client:
             response = client.put(
                 url=upload_url,
                 content=part_data,
                 headers=part_headers,
-                timeout=MULTIPART_UPLOAD_TIMEOUT,
+                timeout=timeout,
             )
         response.raise_for_status()
 
@@ -1068,7 +1077,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
         await self._client.post(
             path=f"{url}/multipart/abort",
-            cast_to=dict,
+            cast_to=httpx.Response,
             body=payload,
             options={"headers": {"Content-Type": "application/json"}},
         )
