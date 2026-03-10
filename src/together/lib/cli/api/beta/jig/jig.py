@@ -822,7 +822,7 @@ Run 'jig status' to check current state.""")
         ]
 
         if a := d.autoscaling:
-            lines.append(f"  Autoscaling: {a.get('metric', 'N/A')} {a.get('target', 'N/A')} (target)")
+            lines.append(f"  Autoscaling: {a.metric or 'N/A'} {a.target or 'N/A'} (target)")
         lines.append(f"""  Replicas: {d.ready_replicas}/{d.desired_replicas} ready (min {d.min_replicas}, max {d.max_replicas})
 
 Configuration:""")
