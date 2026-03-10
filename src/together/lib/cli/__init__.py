@@ -4,7 +4,7 @@ import inspect
 import os
 import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, get_args, get_origin, get_type_hints
 
 import cyclopts
 import httpx
@@ -108,7 +108,7 @@ async def _launcher(
             kwargs["config"] = config
             if "config" in extra:
                 kwargs["config"] = config
-            # result = command(*bound.args, **kwargs)
+            result = command(*bound.args, **kwargs)
             if inspect.iscoroutine(result):
                 await result
 
@@ -116,9 +116,21 @@ async def _launcher(
             if config.non_interactive:
                 raise e
             # auto prompt for missing arguments
-            arg_name = e.argument.parameter.name[0]
-            value = await prompt(arg_name)
-            remaining.append(arg_name)
+            if e.argument is None:
+                raise e
+
+            annotation = (e.argument.field_info.annotation)
+            prompt_message = e.argument.name
+
+            if get_origin(annotation) is Annotated:
+                args = get_args(annotation)
+                metadata = args[1]
+                if isinstance(metadata, PromptParameter) and metadata.message is not None:
+                    prompt_message = metadata.message
+
+            value = await prompt(prompt_message)
+            print("") # Push a blank line for nicer output
+            remaining.append(e.argument.name)
             remaining.append(value)
             await run_command()
         except (KeyboardInterrupt, SystemExit):

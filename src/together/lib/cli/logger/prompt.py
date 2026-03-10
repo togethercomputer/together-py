@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, Type
 
 from cyclopts import Parameter
 import questionary
@@ -28,3 +30,8 @@ async def prompt(question: str) -> str:
 
 class PromptParameter(Parameter):
     prompt: bool = True
+    message: str | None = None
+
+    def __init__(self, message: str | None = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.message = message
