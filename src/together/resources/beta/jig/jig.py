@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable
+from typing import Iterable
 from typing_extensions import Literal
 
 import httpx
@@ -122,7 +122,7 @@ class JigResource(SyncAPIResource):
         id: str,
         *,
         args: SequenceNotStr[str] | Omit = omit,
-        autoscaling: Dict[str, str] | Omit = omit,
+        autoscaling: jig_update_params.Autoscaling | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -155,9 +155,8 @@ class JigResource(SyncAPIResource):
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
-          autoscaling:
-              Autoscaling configuration as key-value pairs. Example: {"metric":
-              "QueueBacklogPerWorker", "target": "10"} to scale based on queue backlog
+          autoscaling: Autoscaling configuration for the deployment. Omit or set to null to disable
+              autoscaling
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -268,7 +267,7 @@ class JigResource(SyncAPIResource):
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
-        autoscaling: Dict[str, str] | Omit = omit,
+        autoscaling: jig_deploy_params.Autoscaling | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -303,9 +302,9 @@ class JigResource(SyncAPIResource):
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
-          autoscaling:
-              Autoscaling configuration as key-value pairs. Example: {"metric":
-              "QueueBacklogPerWorker", "target": "10"} to scale based on queue backlog
+          autoscaling: Autoscaling configuration. Example: {"metric": "QueueBacklogPerWorker",
+              "target": 1.01} to scale based on queue backlog. Omit or set to null to disable
+              autoscaling
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -534,7 +533,7 @@ class AsyncJigResource(AsyncAPIResource):
         id: str,
         *,
         args: SequenceNotStr[str] | Omit = omit,
-        autoscaling: Dict[str, str] | Omit = omit,
+        autoscaling: jig_update_params.Autoscaling | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -567,9 +566,8 @@ class AsyncJigResource(AsyncAPIResource):
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
-          autoscaling:
-              Autoscaling configuration as key-value pairs. Example: {"metric":
-              "QueueBacklogPerWorker", "target": "10"} to scale based on queue backlog
+          autoscaling: Autoscaling configuration for the deployment. Omit or set to null to disable
+              autoscaling
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -680,7 +678,7 @@ class AsyncJigResource(AsyncAPIResource):
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
-        autoscaling: Dict[str, str] | Omit = omit,
+        autoscaling: jig_deploy_params.Autoscaling | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -715,9 +713,9 @@ class AsyncJigResource(AsyncAPIResource):
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
-          autoscaling:
-              Autoscaling configuration as key-value pairs. Example: {"metric":
-              "QueueBacklogPerWorker", "target": "10"} to scale based on queue backlog
+          autoscaling: Autoscaling configuration. Example: {"metric": "QueueBacklogPerWorker",
+              "target": 1.01} to scale based on queue backlog. Omit or set to null to disable
+              autoscaling
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])

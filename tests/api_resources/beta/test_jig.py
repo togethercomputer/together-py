@@ -71,7 +71,11 @@ class TestJig:
         jig = client.beta.jig.update(
             id="id",
             args=["string"],
-            autoscaling={"foo": "string"},
+            autoscaling={
+                "metric": "HTTPTotalRequests",
+                "target": 100,
+                "time_interval_minutes": 10,
+            },
             command=["string"],
             cpu=0.1,
             description="description",
@@ -175,7 +179,11 @@ class TestJig:
             image="image",
             name="x",
             args=["string"],
-            autoscaling={"foo": "string"},
+            autoscaling={
+                "metric": "HTTPTotalRequests",
+                "target": 100,
+                "time_interval_minutes": 10,
+            },
             command=["string"],
             cpu=0.1,
             description="description",
@@ -372,7 +380,11 @@ class TestAsyncJig:
         jig = await async_client.beta.jig.update(
             id="id",
             args=["string"],
-            autoscaling={"foo": "string"},
+            autoscaling={
+                "metric": "HTTPTotalRequests",
+                "target": 100,
+                "time_interval_minutes": 10,
+            },
             command=["string"],
             cpu=0.1,
             description="description",
@@ -476,7 +488,11 @@ class TestAsyncJig:
             image="image",
             name="x",
             args=["string"],
-            autoscaling={"foo": "string"},
+            autoscaling={
+                "metric": "HTTPTotalRequests",
+                "target": 100,
+                "time_interval_minutes": 10,
+            },
             command=["string"],
             cpu=0.1,
             description="description",
