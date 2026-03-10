@@ -1,11 +1,73 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Dict, List, Optional
-from typing_extensions import Literal
+from typing import Dict, List, Union, Optional
+from typing_extensions import Literal, TypeAlias
 
 from ..._models import BaseModel
 
-__all__ = ["Deployment", "EnvironmentVariable", "ReplicaEvents", "Volume"]
+__all__ = [
+    "Deployment",
+    "Autoscaling",
+    "AutoscalingHTTPAutoscalingConfig",
+    "AutoscalingQueueAutoscalingConfig",
+    "AutoscalingCustomMetricAutoscalingConfig",
+    "EnvironmentVariable",
+    "ReplicaEvents",
+    "Volume",
+]
+
+
+class AutoscalingHTTPAutoscalingConfig(BaseModel):
+    """Autoscaling config for HTTPTotalRequests and HTTPAvgRequestDuration metrics"""
+
+    metric: Optional[Literal["HTTPTotalRequests", "HTTPAvgRequestDuration"]] = None
+    """Metric must be HTTPTotalRequests or HTTPAvgRequestDuration"""
+
+    target: Optional[float] = None
+    """Target is the threshold value.
+
+    Default: 100 for HTTPTotalRequests, 500 (ms) for HTTPAvgRequestDuration
+    """
+
+    time_interval_minutes: Optional[int] = None
+    """TimeIntervalMinutes is the rate window in minutes. Default: 10"""
+
+
+class AutoscalingQueueAutoscalingConfig(BaseModel):
+    """Autoscaling config for QueueBacklogPerWorker metric"""
+
+    metric: Optional[Literal["QueueBacklogPerWorker"]] = None
+    """Metric must be QueueBacklogPerWorker"""
+
+    model: Optional[str] = None
+    """Model overrides the model name for queue status lookup.
+
+    Defaults to the deployment app name
+    """
+
+    target: Optional[float] = None
+    """Target is the threshold value. Default: 1.01"""
+
+
+class AutoscalingCustomMetricAutoscalingConfig(BaseModel):
+    """Autoscaling config for CustomMetric metric"""
+
+    custom_metric_name: Optional[str] = None
+    """CustomMetricName is the Prometheus metric name.
+
+    Required. Must match [a-zA-Z\\__:][a-zA-Z0-9_:]\\**
+    """
+
+    metric: Optional[Literal["CustomMetric"]] = None
+    """Metric must be CustomMetric"""
+
+    target: Optional[float] = None
+    """Target is the threshold value. Default: 500"""
+
+
+Autoscaling: TypeAlias = Union[
+    AutoscalingHTTPAutoscalingConfig, AutoscalingQueueAutoscalingConfig, AutoscalingCustomMetricAutoscalingConfig
+]
 
 
 class EnvironmentVariable(BaseModel):
@@ -103,8 +165,11 @@ class Deployment(BaseModel):
     args: Optional[List[str]] = None
     """Args are the arguments passed to the container's command"""
 
-    autoscaling: Optional[Dict[str, str]] = None
-    """Autoscaling contains autoscaling configuration parameters for this deployment"""
+    autoscaling: Optional[Autoscaling] = None
+    """Autoscaling contains autoscaling configuration parameters for this deployment.
+
+    Omitted when autoscaling is disabled (nil)
+    """
 
     command: Optional[List[str]] = None
     """Command is the entrypoint command run in the container"""
