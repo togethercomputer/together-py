@@ -72,10 +72,10 @@ def pack_sequences(
         Sequence 3:
         ['▁toys', '▁.', '</s>', '<s>', '▁but', '▁just', '▁one', '▁look']
     """
-    packed_sequences = []
-    packed_position_ids = []
-    buffer = []
-    position_buffer = []
+    packed_sequences: list[list[int]] = []
+    packed_position_ids: list[list[int]] = []
+    buffer: list[int] = []
+    position_buffer: list[int] = []
 
     for input_ids in batch["input_ids"]:
         # Truncate sequences that individually exceed max_seq_len (including EOS token).
