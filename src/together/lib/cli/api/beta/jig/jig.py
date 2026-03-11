@@ -658,7 +658,7 @@ class Jig:
             echo(json.dumps(deploy_data, indent=2))
         echo(f"Deploying model: {self.name}")
 
-        no_update = False
+        no_track = False
 
         try:
             response = self.api.update(self.name, **deploy_data)
@@ -666,14 +666,14 @@ class Jig:
         except NotFoundError:
             try:
                 response = self.api.deploy(**deploy_data)
-                no_update = str(response.status) != "Updating"
+                no_track = str(response.status) == "Ready"
                 echo(f"\N{CHECK MARK} Deployed: {self.name}")
             except APIError as e:
                 if "already exists" in e.message:
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
 
-        if detach or no_update:
+        if detach or no_track:
             echo(json.dumps(response.model_dump(), indent=2))
             return
 
