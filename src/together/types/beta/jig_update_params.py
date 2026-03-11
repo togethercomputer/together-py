@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable
-from typing_extensions import Literal, Required, TypedDict
+from typing import Union, Iterable
+from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 from ..._types import SequenceNotStr
 
-__all__ = ["JigUpdateParams", "EnvironmentVariable", "Volume"]
+__all__ = [
+    "JigUpdateParams",
+    "Autoscaling",
+    "AutoscalingHTTPAutoscalingConfig",
+    "AutoscalingQueueAutoscalingConfig",
+    "AutoscalingCustomMetricAutoscalingConfig",
+    "EnvironmentVariable",
+    "Volume",
+]
 
 
 class JigUpdateParams(TypedDict, total=False):
@@ -17,11 +25,10 @@ class JigUpdateParams(TypedDict, total=False):
     Provide as an array of arguments (e.g., ["python", "app.py"])
     """
 
-    autoscaling: Dict[str, str]
-    """Autoscaling configuration as key-value pairs.
+    autoscaling: Autoscaling
+    """Autoscaling configuration for the deployment.
 
-    Example: {"metric": "QueueBacklogPerWorker", "target": "10"} to scale based on
-    queue backlog
+    Omit or set to null to disable autoscaling
     """
 
     command: SequenceNotStr[str]
@@ -102,6 +109,59 @@ class JigUpdateParams(TypedDict, total=False):
 
     This will replace all existing volumes
     """
+
+
+class AutoscalingHTTPAutoscalingConfig(TypedDict, total=False):
+    """Autoscaling config for HTTPTotalRequests and HTTPAvgRequestDuration metrics"""
+
+    metric: Literal["HTTPTotalRequests", "HTTPAvgRequestDuration"]
+    """Metric must be HTTPTotalRequests or HTTPAvgRequestDuration"""
+
+    target: float
+    """Target is the threshold value.
+
+    Default: 100 for HTTPTotalRequests, 500 (ms) for HTTPAvgRequestDuration
+    """
+
+    time_interval_minutes: int
+    """TimeIntervalMinutes is the rate window in minutes. Default: 10"""
+
+
+class AutoscalingQueueAutoscalingConfig(TypedDict, total=False):
+    """Autoscaling config for QueueBacklogPerWorker metric"""
+
+    metric: Literal["QueueBacklogPerWorker"]
+    """Metric must be QueueBacklogPerWorker"""
+
+    model: str
+    """Model overrides the model name for queue status lookup.
+
+    Defaults to the deployment app name
+    """
+
+    target: float
+    """Target is the threshold value. Default: 1.01"""
+
+
+class AutoscalingCustomMetricAutoscalingConfig(TypedDict, total=False):
+    """Autoscaling config for CustomMetric metric"""
+
+    custom_metric_name: str
+    """CustomMetricName is the Prometheus metric name.
+
+    Required. Must match [a-zA-Z\\__:][a-zA-Z0-9_:]\\**
+    """
+
+    metric: Literal["CustomMetric"]
+    """Metric must be CustomMetric"""
+
+    target: float
+    """Target is the threshold value. Default: 500"""
+
+
+Autoscaling: TypeAlias = Union[
+    AutoscalingHTTPAutoscalingConfig, AutoscalingQueueAutoscalingConfig, AutoscalingCustomMetricAutoscalingConfig
+]
 
 
 class EnvironmentVariable(TypedDict, total=False):

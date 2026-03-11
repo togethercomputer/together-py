@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.4.0 (2026-03-11)
+
+Full Changelog: [v2.3.2...v2.4.0](https://github.com/togethercomputer/together-py/compare/v2.3.2...v2.4.0)
+
+### Features
+
+* **jig:** move config.dockerfile to config.image.dockerfile_path and add an config.deploy.image option so that you don't have to always pass it as a flag ([#287](https://github.com/togethercomputer/together-py/issues/287)) ([16f64a5](https://github.com/togethercomputer/together-py/commit/16f64a58d8b83f137474ea3eabb31abdc7d38a5f))
+
+
+### Bug Fixes
+
+* fix autoscaling config usage in jig ([#298](https://github.com/togethercomputer/together-py/issues/298)) ([a3b6657](https://github.com/togethercomputer/together-py/commit/a3b6657efb440bed6cc9f722e54bffd264a95270))
+* fixed autoscaling configs in deployments api ([d31204c](https://github.com/togethercomputer/together-py/commit/d31204c3e78340bb362ec8b44da9ee8b09e8f6ac))
+* **jig:** deployment tracking ([#300](https://github.com/togethercomputer/together-py/issues/300)) ([f80a2b0](https://github.com/togethercomputer/together-py/commit/f80a2b05ec9c5d917a5a327ac002e44dddd96b84))
+* **jig:** send {} for deployment autoscaling to unset if unset in config ([#294](https://github.com/togethercomputer/together-py/issues/294)) ([7657de3](https://github.com/togethercomputer/together-py/commit/7657de3ccc5ef077f8b413f67399d35724af21fd))
+
+
+### Chores
+
+* fix lints ([#299](https://github.com/togethercomputer/together-py/issues/299)) ([2b35ec4](https://github.com/togethercomputer/together-py/commit/2b35ec46fa2414b14b589b16781c42990e697dd4))
+
 ## 2.3.2 (2026-03-09)
 
 Full Changelog: [v2.3.1...v2.3.2](https://github.com/togethercomputer/together-py/compare/v2.3.1...v2.3.2)
