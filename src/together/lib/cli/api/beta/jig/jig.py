@@ -662,11 +662,11 @@ class Jig:
 
         try:
             response = self.api.update(self.name, **deploy_data)
+            no_track = str(response.status) == "Ready"
             echo("\N{CHECK MARK} Applied new deployment configuration")
         except NotFoundError:
             try:
                 response = self.api.deploy(**deploy_data)
-                no_track = str(response.status) == "Ready"
                 echo(f"\N{CHECK MARK} Deployed: {self.name}")
             except APIError as e:
                 if "already exists" in e.message:
@@ -677,8 +677,7 @@ class Jig:
             echo(json.dumps(response.model_dump(), indent=2))
             return
 
-        if str(response.status) == "Updating":
-            self.track(response)
+        self.track(response)
 
     def track(self, d: Deployment) -> None:
         """Poll deployment until first replica ready, failure, or timeout"""
