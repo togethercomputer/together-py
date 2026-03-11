@@ -72,6 +72,7 @@ class ImageConfig:
     cmd: str = "python app.py"
     copy: list[str] = field(default_factory=list[str])
     auto_include_git: bool = False
+    dockerfile_path: str = "Dockerfile"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ImageConfig:
@@ -113,6 +114,7 @@ class DeployConfig:
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
+    image: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -170,7 +172,6 @@ class Config:
     """Main configuration from jig.toml or pyproject.toml"""
 
     model_name: str = ""
-    dockerfile: str = "Dockerfile"
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
@@ -236,7 +237,6 @@ class Config:
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
             deploy=DeployConfig.from_dict(jig_config.get("deploy", {})),
-            dockerfile=jig_config.get("dockerfile", "Dockerfile"),
             model_name=name,
             _path=path,
             _unique_name_hint=hint,
@@ -394,7 +394,7 @@ CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
 def _dockerfile(config: Config) -> bool:
     """Generate or update managed Dockerfile, returns False if user-managed"""
-    dockerfile_path = Path(config.dockerfile)
+    dockerfile_path = Path(config.image.dockerfile_path)
     if not dockerfile_path.exists():
         dockerfile_path.write_text(_generate_dockerfile(config))
         echo("\N{CHECK MARK} Generated Dockerfile")
@@ -570,12 +570,12 @@ class Jig:
         image = self.image(tag)
 
         if not _dockerfile(self.config):
-            echo(f"\N{INFORMATION SOURCE} Using existing {self.config.dockerfile} (not managed by jig)")
+            echo(f"\N{INFORMATION SOURCE} Using existing {self.config.image.dockerfile_path} (not managed by jig)")
 
         echo(f"Building {image}")
         cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
-        if self.config.dockerfile != "Dockerfile":
-            cmd.extend(["-f", self.config.dockerfile])
+        if self.config.image.dockerfile_path != "Dockerfile":
+            cmd.extend(["-f", self.config.image.dockerfile_path])
 
         extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
         if extra_args:
@@ -609,8 +609,10 @@ class Jig:
         docker_args: str | None = None,
         existing_image: str | None = None,
     ) -> None:
-        if existing_image:
-            deployment_image = existing_image
+        if deployment_image := existing_image:
+            echo(f"Deploying provided image {deployment_image}")
+        elif deployment_image := self.config.deploy.image:
+            echo(f"Deploying configured image {deployment_image}")
         else:
             self.build(tag, warmup, docker_args)
             self.push(tag)
@@ -969,7 +971,7 @@ gpu_count = 1
 def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
     if not _dockerfile(jig.config):
-        msg = f"{jig.config.dockerfile} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
+        msg = f"{jig.config.image.dockerfile_path} exists and is not managed by jig. Remove or rename the file to allow jig to manage dockerfile."
         raise JigError(msg)
 
 
