@@ -674,8 +674,7 @@ class Jig:
             echo(json.dumps(response.model_dump(), indent=2))
             return
 
-        if str(response.status) == "Updating":
-            self.track(response)
+        self.track(response)
 
     def track(self, d: Deployment) -> None:
         """Poll deployment until first replica ready, failure, or timeout"""
