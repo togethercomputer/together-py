@@ -45,7 +45,7 @@ MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10MB
 MAX_BASE64_IMAGE_LENGTH = len("data:image/jpeg;base64,") + 4 * MAX_IMAGE_BYTES // 3
 
 # expected columns for Parquet files
-PARQUET_EXPECTED_COLUMNS = ["input_ids", "attention_mask", "labels"]
+PARQUET_EXPECTED_COLUMNS = ["input_ids", "attention_mask", "labels", "position_ids"]
 
 
 class DatasetFormat(enum.Enum):
