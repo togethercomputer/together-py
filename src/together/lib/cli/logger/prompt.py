@@ -24,17 +24,21 @@ class NameValidator(questionary.Validator):
                 cursor_position=len(document.text),
             )
 
-async def prompt(question: str, instructions: str | None = None) -> str:
-    if instructions is not None:
-        print(f"[dim]{instructions}[/dim]")
-    
-    return await questionary.text(question, instruction="\n→", style=custom_style_fancy, validate=NameValidator).ask_async()
-
 class PromptParameter:
-    prompt: bool = True
     message: str | None = None
     instructions: str | None = None
+    choices: list[str] | None = None
 
-    def __init__(self, message: str | None = None, instructions: str | None = None):
+    def __init__(self, message: str | None = None, instructions: str | None = None, choices: list[str] | None = None):
         self.message = message
         self.instructions = instructions
+        self.choices = choices
+
+    async def prompt(self, field: str) -> str:
+        if self.instructions is not None:
+            print(f"[dim]{self.instructions}[/dim]")
+        
+        if self.choices is not None:
+            return await questionary.select(self.message or field, choices=self.choices, style=custom_style_fancy).unsafe_ask_async()
+
+        return await questionary.text(self.message or field, instruction="\n→", style=custom_style_fancy, validate=NameValidator).unsafe_ask_async()

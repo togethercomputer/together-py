@@ -4,9 +4,8 @@ import inspect
 import os
 import sys
 from pathlib import Path
-from typing import Annotated, Optional, get_args, get_origin, get_type_hints
+from typing import Annotated, Optional, get_args, get_origin
 
-import cyclopts
 import httpx
 from cyclopts import App, MissingArgumentError, Parameter
 
@@ -14,7 +13,7 @@ from together import AsyncTogether
 from together._exceptions import APIError
 from together._version import __version__
 from together._utils._logs import setup_logging
-from together.lib.cli.logger.prompt import PromptParameter, prompt
+from together.lib.cli.logger.prompt import PromptParameter
 
 app = App(
     name="together",
@@ -120,24 +119,24 @@ async def _launcher(
                 raise e
 
             annotation = (e.argument.field_info.annotation)
-            prompt_message = e.argument.name
-            instructions: str | None = None
+            prompt: PromptParameter | None = None
 
             if get_origin(annotation) is Annotated:
                 args = get_args(annotation)
                 metadata = args[1:]
                 for metadata in metadata:
-                    if isinstance(metadata, PromptParameter) and metadata.message is not None:
-                        prompt_message = metadata.message
-                        instructions = metadata.instructions
+                    if isinstance(metadata, PromptParameter):
+                        prompt = metadata
 
-            value = await prompt(prompt_message, instructions=instructions)
-            print("") # Push a blank line for nicer output
-            remaining.append(e.argument.name)
-            remaining.append(value)
-            await run_command()
+            value: str | None = None
+            if prompt is not None:
+                value = await prompt.prompt(e.argument.name)
+                print("") # Push a blank line for nicer output
+                remaining.append(e.argument.name)
+                remaining.append(value)
+                await run_command()
         except (KeyboardInterrupt, SystemExit):
-            raise
+            pass
         except APIError as e:
             error_msg = ""
             if e.body is not None:
