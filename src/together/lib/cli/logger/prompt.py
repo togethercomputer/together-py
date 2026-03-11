@@ -1,7 +1,6 @@
 from __future__ import annotations
-from typing import Optional, Type
+from rich import print
 
-from cyclopts import Parameter
 import questionary
 
 custom_style_fancy = questionary.Style([
@@ -25,13 +24,17 @@ class NameValidator(questionary.Validator):
                 cursor_position=len(document.text),
             )
 
-async def prompt(question: str) -> str:
+async def prompt(question: str, instructions: str | None = None) -> str:
+    if instructions is not None:
+        print(f"[dim]{instructions}[/dim]")
+    
     return await questionary.text(question, instruction="\n→", style=custom_style_fancy, validate=NameValidator).ask_async()
 
-class PromptParameter(Parameter):
+class PromptParameter:
     prompt: bool = True
     message: str | None = None
+    instructions: str | None = None
 
-    def __init__(self, message: str | None = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, message: str | None = None, instructions: str | None = None):
         self.message = message
+        self.instructions = instructions

@@ -121,14 +121,17 @@ async def _launcher(
 
             annotation = (e.argument.field_info.annotation)
             prompt_message = e.argument.name
+            instructions: str | None = None
 
             if get_origin(annotation) is Annotated:
                 args = get_args(annotation)
-                metadata = args[1]
-                if isinstance(metadata, PromptParameter) and metadata.message is not None:
-                    prompt_message = metadata.message
+                metadata = args[1:]
+                for metadata in metadata:
+                    if isinstance(metadata, PromptParameter) and metadata.message is not None:
+                        prompt_message = metadata.message
+                        instructions = metadata.instructions
 
-            value = await prompt(prompt_message)
+            value = await prompt(prompt_message, instructions=instructions)
             print("") # Push a blank line for nicer output
             remaining.append(e.argument.name)
             remaining.append(value)

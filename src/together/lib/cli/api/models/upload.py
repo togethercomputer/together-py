@@ -48,8 +48,8 @@ custom_theme = Theme({
 console = Console(theme=custom_theme)
 
 async def upload(
-    model_name: Annotated[str, PromptParameter(required=True, message="What model name identifier would you like to use?")],
-    model_source: Annotated[str, PromptParameter(required=True, alias="hi", message="What is the source location of the model (Hugging Face repo or S3 path)?")],
+    model_name: Annotated[str, Parameter(required=True), PromptParameter(instructions="What model name identifier would you like to use?", message="Model Name")],
+    model_source: Annotated[str, Parameter(required=True), PromptParameter(instructions="What is the source location of the model (Hugging Face repo or S3 path)?", message="Model Source")],
     model_type: Literal["model", "adapter"] = "model",
     hf_token: Optional[str] = None,
     description: Optional[str] = None,
