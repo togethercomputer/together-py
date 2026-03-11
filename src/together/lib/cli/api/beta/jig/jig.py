@@ -658,8 +658,11 @@ class Jig:
             echo(json.dumps(deploy_data, indent=2))
         echo(f"Deploying model: {self.name}")
 
+        no_track = False
+
         try:
             response = self.api.update(self.name, **deploy_data)
+            no_track = str(response.status) == "Ready"
             echo("\N{CHECK MARK} Applied new deployment configuration")
         except NotFoundError:
             try:
@@ -670,12 +673,11 @@ class Jig:
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
 
-        if detach:
+        if detach or no_track:
             echo(json.dumps(response.model_dump(), indent=2))
             return
 
-        if str(response.status) == "Updating":
-            self.track(response)
+        self.track(response)
 
     def track(self, d: Deployment) -> None:
         """Poll deployment until first replica ready, failure, or timeout"""
