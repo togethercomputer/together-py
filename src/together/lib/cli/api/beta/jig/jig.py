@@ -358,7 +358,7 @@ def _generate_dockerfile(config: Config) -> str:
     if Path("pyproject.toml").exists():
         pip = """COPY pyproject.toml .
 RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv pip install --system --compile-bytecode . && \\
+    uv export | uv pip install --system --compile-bytecode --requirement=- && \\
     (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
 """
 
