@@ -505,11 +505,9 @@ class Jig:
     def registry(self) -> str:
         """Get registry and namespace for current user"""
         if not self.state.registry_base_path:
-            response = self.together._client.get("/image-repositories/base-path", headers=self.together.auth_headers)
-            if not response.is_success:
-                raise JigError(f"Failed to get registry path (HTTP {response.status_code})")
+            response = self.together.get("/image-repositories/base-path", cast_to=dict[str, str])
             # strip protocol for docker image format
-            self.state.registry_base_path = response.json()["base-path"].split("://", 1)[-1]
+            self.state.registry_base_path = response["base-path"].split("://", 1)[-1]
             self.state.save()
         return self.state.registry_base_path + "/"
 
