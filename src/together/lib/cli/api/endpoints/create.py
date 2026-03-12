@@ -6,14 +6,12 @@ from typing import Annotated, Optional
 
 from cyclopts import Parameter
 
-from together import APIError, AsyncTogether, omit
+from together import APIError, omit
+from together.lib.cli.logger.config import CLIConfig
 
-from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 from .hardware import hardware as list_hardware
 
-
-@handle_endpoint_api_errors("Endpoints")
 async def create(
     model: str,
     min_replicas: int = 1,
@@ -26,9 +24,8 @@ async def create(
     inactive_timeout: Optional[int] = None,
     availability_zone: Optional[str] = None,
     wait: bool = False,
-    json_output: bool = False,
     *,
-    client: Annotated[AsyncTogether, Parameter(parse=False)],
+    config: Annotated[CLIConfig, Parameter(parse=False)],
 ) -> None:
     """Create a new dedicated inference endpoint."""
     if min_replicas > max_replicas:
@@ -40,7 +37,7 @@ async def create(
 
     if availability_zone:
         try:
-            valid_zones = await client.endpoints.list_avzones()
+            valid_zones = await config.client.endpoints.list_avzones()
             if availability_zone not in valid_zones.avzones:
                 print(f"Error: Invalid availability zone '{availability_zone}'", file=sys.stderr)
                 if valid_zones.avzones:
@@ -51,11 +48,11 @@ async def create(
         except Exception:
             pass
 
-    if json_output and wait:
+    if config.json and wait:
         print("Error: --json and --wait cannot be used together.", file=sys.stderr)
         return
 
-    if no_prompt_cache is not None and not json_output:
+    if no_prompt_cache is not None and not config.json:
         print("Warning: --no-prompt-cache is deprecated and no longer has any effect.", file=sys.stderr)
 
     if hardware is None:
@@ -63,7 +60,7 @@ async def create(
         sys.exit(1)
 
     try:
-        response = await client.endpoints.create(
+        response = await config.client.endpoints.create(
             model=model,
             hardware=hardware,
             autoscaling={"min_replicas": min_replicas, "max_replicas": max_replicas},
@@ -74,7 +71,7 @@ async def create(
             extra_query={"availability_zone": availability_zone or omit},
         )
     except APIError as e:
-        if json_output:
+        if config.json:
             raise e
         error_msg = str(e.args[0]).lower() if e.args else ""
         if (
@@ -85,7 +82,7 @@ async def create(
         ):
             print("Invalid hardware selected.", file=sys.stderr)
             print("\nAvailable hardware options:", file=sys.stderr)
-            await list_hardware(model=model, json_output=False, available=True, client=client)
+            await list_hardware(model=model, json_output=False, available=True, client=config.client)
             sys.exit(1)
         elif "model" in error_msg and (
             "not found" in error_msg
@@ -99,7 +96,7 @@ async def create(
             sys.exit(1)
         raise e
 
-    if json_output:
+    if config.json:
         print(response.model_dump_json(indent=2))
         return
 
@@ -122,7 +119,7 @@ async def create(
 
     if wait:
         print("Waiting for endpoint to be ready...", file=sys.stderr)
-        while (await client.endpoints.retrieve(response.id)).state != "STARTED":
+        while (await config.client.endpoints.retrieve(response.id)).state != "STARTED":
             await asyncio.sleep(1)
         print("Endpoint ready", file=sys.stderr)
     print(response.id)

@@ -5,24 +5,23 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from tabulate import tabulate
 
 from cyclopts import Parameter
+from rich import print_json
 
-from together import AsyncTogether, omit
-from together.lib.utils.serializer import datetime_serializer
+
+from together import omit
+from together.lib.cli.logger.config import CLIConfig
+from together._utils._json import openapi_dumps
 
 async def list_(
     type_: Annotated[Optional[Literal["dedicated"]], Parameter(name="type")] = None,
-    json_output: bool = False,
     *,
-    client: Annotated[AsyncTogether, Parameter(parse=False)],
+    config: Annotated[CLIConfig, Parameter(parse=False)],
 ) -> None:
     """List models."""
-    models_list = await client.models.list(dedicated=type_ == "dedicated" if type_ else omit)
+    models_list = await config.client.models.list(dedicated=type_ == "dedicated" if type_ else omit)
 
-    if json_output:
-        import json as json_lib
-
-        items = [model.model_dump() for model in models_list]
-        print(json_lib.dumps(items, indent=2, default=datetime_serializer))
+    if config.json:
+        print_json(openapi_dumps(models_list).decode())
         return
 
     display_list: List[Dict[str, Any]] = []

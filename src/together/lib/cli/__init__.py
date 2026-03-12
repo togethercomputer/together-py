@@ -9,11 +9,12 @@ from typing import Annotated, Optional, get_args, get_origin
 import httpx
 from cyclopts import App, MissingArgumentError, Parameter
 
+from together.lib.cli.logger.config import CLIConfig
 from together import AsyncTogether
 from together._exceptions import APIError
 from together._version import __version__
 from together._utils._logs import setup_logging
-from together.lib.cli.logger.prompt import PromptParameter
+from together.lib.cli.logger.prompt import PromptParameter, console
 
 app = App(
     name="together",
@@ -24,16 +25,6 @@ app = App(
 
 app['--version'].group = "Parameters"
 app['--help'].group = "Parameters"
-
-class Config:
-    client: AsyncTogether
-    non_interactive: bool
-    json: bool
-
-    def __init__(self, client: AsyncTogether, non_interactive: bool, json: bool):
-        self.client = client
-        self.non_interactive = non_interactive
-        self.json = json
 
 def _create_client(
     api_key: Optional[str],
@@ -86,7 +77,7 @@ async def _launcher(
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
     client = _create_client(api_key, base_url, timeout, max_retries)
-    config = Config(
+    config = CLIConfig(
         client=client,
         non_interactive=non_interactive or False,
         json=json or False,
@@ -104,7 +95,6 @@ async def _launcher(
                     remaining.append(value)
 
             kwargs = dict(bound.kwargs)
-            kwargs["config"] = config
             if "config" in extra:
                 kwargs["config"] = config
             result = command(*bound.args, **kwargs)
@@ -130,12 +120,17 @@ async def _launcher(
 
             value: str | None = None
             if prompt is not None:
+                await prompt.preprompt(config)
                 value = await prompt.prompt(e.argument.name)
                 print("") # Push a blank line for nicer output
                 remaining.append(e.argument.name)
                 remaining.append(value)
                 await run_command()
-        except (KeyboardInterrupt, SystemExit):
+            else:
+                # TODO: Better design this
+                print("Missing required argument", e.argument.name)
+                sys.exit(1)
+        except KeyboardInterrupt:
             pass
         except APIError as e:
             error_msg = ""
@@ -146,12 +141,16 @@ async def _launcher(
             print(f"Failed", file=sys.stderr)
             print(f"{error_msg}", file=sys.stderr)
             sys.exit(1)
-        except Exception as e:
-            print(f"Failed", file=sys.stderr)
-            print(f"An unexpected error occurred - {e!s}", file=sys.stderr)
-            sys.exit(1)
+        # except Exception as e:
+            # print(f"Failed", file=sys.stderr)
+            # print(f"An unexpected error occurred - {e!s}", file=sys.stderr)
+            # sys.exit(1)
     try:
         await run_command()
+    # except Exception as e:
+    #     print(f"Failed", file=sys.stderr)
+    #     print(f"An unexpected error occurred - {e!s}", file=sys.stderr)
+    #     sys.exit(1)
     finally:
         await client.close()
 

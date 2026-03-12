@@ -8,7 +8,7 @@ from rich.theme import Theme
 
 from together import TogetherError, omit
 
-from together.lib.cli import Config
+from together.lib.cli.logger.config import CLIConfig
 from together.lib.cli.logger.prompt import PromptParameter
 from together.types.model_upload_response import ModelUploadResponse
 from together._utils._json import openapi_dumps
@@ -56,7 +56,7 @@ async def upload(
     base_model: Optional[str] = None,
     lora_model: Optional[str] = None,
     *,
-    config: Annotated[Config, Parameter(parse=False)],
+    config: Annotated[CLIConfig, Parameter(parse=False)],
 ) -> None:
     """Upload a custom model or adapter from Hugging Face or S3."""
     response: ModelUploadResponse = await config.client.models.upload(
