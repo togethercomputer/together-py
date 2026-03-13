@@ -31,7 +31,7 @@ class TestBatches:
             endpoint="/v1/chat/completions",
             input_file_id="file-abc123def456ghi789",
             completion_window="24h",
-            model_id="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model_id="Qwen/Qwen3.5-9B",
             priority=1,
         )
         assert_matches_type(BatchCreateResponse, batch, path=["response"])
@@ -183,7 +183,7 @@ class TestAsyncBatches:
             endpoint="/v1/chat/completions",
             input_file_id="file-abc123def456ghi789",
             completion_window="24h",
-            model_id="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model_id="Qwen/Qwen3.5-9B",
             priority=1,
         )
         assert_matches_type(BatchCreateResponse, batch, path=["response"])
