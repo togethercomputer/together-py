@@ -15,9 +15,6 @@ async def list(
     after: Annotated[Optional[str], Parameter(name="--after", help="Continue pagination from a specific model ID.")] = None,
     json: Annotated[Optional[bool], Parameter(name="--json", negative_bool="", help="Print output in JSON format", group="General")] = None
 ) -> None:
-    """
-    List models
-    """
     client = config.client()
 
     models_list = await show_loading_status(client.models.list(dedicated=type == "dedicated" if type else omit))

@@ -7,12 +7,13 @@ from together._version import __version__
 # from together.lib.cli.api.beta import beta
 # from together.lib.cli.api.evals import evals
 # from together.lib.cli.api.files import files
+from together.lib.cli._detect_agent import determine_agent
 from together.lib.cli.api.models.upload import upload
 from together.lib.cli.api.models.list import list
 # from together.lib.cli.api.endpoints import endpoints
 # from together.lib.cli.api.fine_tuning import fine_tuning
 from cyclopts import App, Parameter
-from cyclopts.help import DefaultFormatter, ColumnSpec, HelpEntry
+from cyclopts.help import PlainFormatter, DefaultFormatter, ColumnSpec, HelpEntry
 
 from together.lib.cli.api._utils import Config
 from together.lib.cli.logger.console import console
@@ -38,13 +39,7 @@ def type_renderer(entry: HelpEntry) -> str:
     type = get_hint_name(entry.type) if entry.type else ""
     return type.replace("|None", "").replace("|None", "")
 
-app = App(
-    help_format="rich",
-    help=f"[dim]Together CLI (v{__version__})[/dim]",
-    version_flags=[],
-    console=console,
-    usage="",
-    help_formatter=DefaultFormatter(
+human_formatter = DefaultFormatter(
         column_specs=(
             ColumnSpec(
                 renderer=lambda entry: "★" if entry.required else " ",
@@ -71,6 +66,19 @@ app = App(
             ),
         )
     )
+
+agent_formatter = PlainFormatter()
+
+help_formatter = agent_formatter if determine_agent()["is_agent"] else human_formatter
+
+app = App(
+    name="tg",
+    help_format="rich",
+    help=f"[dim]Together CLI (v{__version__})[/dim]",
+    version_flags=[],
+    console=console,
+    usage="",
+    help_formatter=help_formatter,
 )
 
 @app.default()
@@ -87,7 +95,19 @@ models_app = App(name="models", help=f"Model management commands",
     usage="",
     help_on_error=True,
 )
-models_app.command(list)
+models_app.command(list, help_epilogue="""Examples:
+  - List all models
+    [primary]$ tg models list[/primary]
+
+  - List all models that can be deployed on an endpoint:
+    [primary]$ tg models list --type dedicated[/primary]
+
+  - Continue pagination from a specific model ID:
+    [primary]$ tg models list --after model.id[/primary]
+
+  - Pipe the output in json format to jq for filtering (for example grabbing all the model ids):
+    [primary]$ tg models list --json | jq '.[].id'[/primary]
+""".strip())
 models_app.command(upload, exit_on_error=False, help_on_error=True)
 
 # models_app.command("together.lib.cli.api.models.list:app", name="list")

@@ -2,10 +2,11 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.color import Color
 from rich.style import Style
+from together.lib.cli._detect_agent import determine_agent
 
 PRIMARY = "#FEA595"
 
-custom_theme = Theme({
+styles = {
     # "dim": Style(color=Color.from_rgb(196, 201, 212)),
     # "info": Style(color=Color.from_rgb(202, 174, 245)),
     # "default": Style(color=Color.from_rgb(202, 174, 245)),
@@ -48,7 +49,8 @@ custom_theme = Theme({
     "bar.complete": "#ba92ff",             # Purple 500 ⭐ (no bold)
     "bar.finished": "#0dce74",             # Green 400 ⭐
     "bar.pulse": "#ff68d4",                # Pink 500 ⭐
-}, inherit=False)
+} 
+custom_theme = Theme({} if determine_agent()["is_agent"] else styles , inherit=False)
 
-console = Console(theme=custom_theme)
+console = Console(theme=custom_theme) if determine_agent()["is_agent"] else Console()
 # console = Console()
