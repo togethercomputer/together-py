@@ -29,7 +29,7 @@ class TestEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                 },
@@ -47,7 +47,7 @@ class TestEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                     "external_api_token": "external_api_token",
@@ -68,7 +68,7 @@ class TestEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                 },
@@ -90,7 +90,7 @@ class TestEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                 },
@@ -229,7 +229,7 @@ class TestAsyncEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                 },
@@ -247,7 +247,7 @@ class TestAsyncEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                     "external_api_token": "external_api_token",
@@ -268,7 +268,7 @@ class TestAsyncEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                 },
@@ -290,7 +290,7 @@ class TestAsyncEvals:
             parameters={
                 "input_data_file_path": "file-1234-aefd",
                 "judge": {
-                    "model": "meta-llama/Llama-3-70B-Instruct-Turbo",
+                    "model": "Qwen/Qwen3.5-9B",
                     "model_source": "serverless",
                     "system_template": "Imagine you are a helpful assistant",
                 },
