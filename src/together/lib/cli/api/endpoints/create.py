@@ -15,7 +15,7 @@ from .hardware import hardware as list_hardware
 @click.option(
     "--model",
     required=True,
-    help="The model to deploy (e.g. meta-llama/Llama-4-Scout-17B-16E-Instruct)",
+    help="The model to deploy",
 )
 @click.option(
     "--min-replicas",
