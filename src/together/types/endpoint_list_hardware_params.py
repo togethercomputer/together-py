@@ -13,4 +13,5 @@ class EndpointListHardwareParams(TypedDict, total=False):
 
     When provided, the response includes availability status for each compatible
     configuration.
+    [See all of Together AI's dedicated models](https://docs.together.ai/docs/dedicated-models)
     """

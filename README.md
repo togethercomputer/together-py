@@ -190,7 +190,7 @@ chat_completion = client.chat.completions.create(
             "role": "system",
         }
     ],
-    model="Qwen/Qwen3.5-9B",
+    model="model",
     reasoning={},
 )
 print(chat_completion.reasoning)
