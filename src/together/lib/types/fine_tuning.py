@@ -483,6 +483,7 @@ class FinetuneRequest(BaseModel):
     wandb_name: Union[str, None] = None
     # wandb entity
     wandb_entity: Union[str, None] = None
+    random_seed: Union[int, None] = None
     # training type
     training_type: Union[TrainingType, None] = None
     # training method
