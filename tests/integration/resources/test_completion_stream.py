@@ -33,7 +33,7 @@ class TestTogetherCompletionStream:
         random_repetition_penalty: float,
     ) -> None:
         prompt = "The space robots have"
-        model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+        model = "Qwen/Qwen2.5-7B-Instruct-Turbo"
         stop = ["</s>"]
 
         # max_tokens should be a reasonable number for this test
