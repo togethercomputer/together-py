@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import click
 from rich import print as rprint
@@ -29,6 +29,6 @@ def retrieve(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
     response.events = None
 
     rprint(JSON.from_data(response.model_dump(exclude_none=True), default=datetime_serializer))
-    progress_text = generate_progress_bar(response, datetime.now().astimezone(), use_rich=True)
+    progress_text = generate_progress_bar(response, datetime.now(timezone.utc), use_rich=True)
     prefix = f"Status: [bold]{response.status}[/bold],"
     rprint(f"{prefix} {progress_text}")
