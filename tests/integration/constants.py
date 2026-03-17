@@ -1,7 +1,8 @@
 from typing import List
 
 completion_test_model_list: List[str] = [
-    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    # Instruct-Turbo is dedicated-endpoint only; Reference is serverless for integration tests.
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference",
 ]
 chat_test_model_list: List[str] = []
 embedding_test_model_list: List[str] = []
