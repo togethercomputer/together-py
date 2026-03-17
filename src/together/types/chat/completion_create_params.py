@@ -49,9 +49,9 @@ class CompletionCreateParamsBase(TypedDict, total=False):
             Literal[
                 "Qwen/Qwen2.5-72B-Instruct-Turbo",
                 "Qwen/Qwen2.5-7B-Instruct-Turbo",
+                "Qwen/Qwen3.5-9B",
                 "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
                 "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             ],
             str,
         ]
