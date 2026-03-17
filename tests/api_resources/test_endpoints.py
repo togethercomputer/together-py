@@ -30,7 +30,7 @@ class TestEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         )
         assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
@@ -42,7 +42,7 @@ class TestEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
             availability_zone="availability_zone",
             disable_prompt_cache=True,
             disable_speculative_decoding=True,
@@ -60,7 +60,7 @@ class TestEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         )
 
         assert response.is_closed is True
@@ -76,7 +76,7 @@ class TestEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -281,7 +281,7 @@ class TestEndpoints:
     @parametrize
     def test_method_list_hardware_with_all_params(self, client: Together) -> None:
         endpoint = client.endpoints.list_hardware(
-            model="meta-llama/Llama-3-70b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         )
         assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
 
@@ -319,7 +319,7 @@ class TestAsyncEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         )
         assert_matches_type(DedicatedEndpoint, endpoint, path=["response"])
 
@@ -331,7 +331,7 @@ class TestAsyncEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
             availability_zone="availability_zone",
             disable_prompt_cache=True,
             disable_speculative_decoding=True,
@@ -349,7 +349,7 @@ class TestAsyncEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         )
 
         assert response.is_closed is True
@@ -365,7 +365,7 @@ class TestAsyncEndpoints:
                 "min_replicas": 2,
             },
             hardware="1x_nvidia_a100_80gb_sxm",
-            model="meta-llama/Llama-3-8b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -570,7 +570,7 @@ class TestAsyncEndpoints:
     @parametrize
     async def test_method_list_hardware_with_all_params(self, async_client: AsyncTogether) -> None:
         endpoint = await async_client.endpoints.list_hardware(
-            model="meta-llama/Llama-3-70b-chat-hf",
+            model="deepseek-ai/DeepSeek-R1",
         )
         assert_matches_type(EndpointListHardwareResponse, endpoint, path=["response"])
 
