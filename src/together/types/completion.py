@@ -6,8 +6,9 @@ from typing_extensions import Literal
 from .._models import BaseModel
 from .log_probs import LogProbs
 from .chat.chat_completion_usage import ChatCompletionUsage
+from .chat.chat_completion_prompt import ChatCompletionPrompt
 
-__all__ = ["Completion", "Choice", "Prompt"]
+__all__ = ["Completion", "Choice"]
 
 
 class Choice(BaseModel):
@@ -16,12 +17,6 @@ class Choice(BaseModel):
     logprobs: Optional[LogProbs] = None
 
     seed: Optional[int] = None
-
-    text: Optional[str] = None
-
-
-class Prompt(BaseModel):
-    logprobs: Optional[LogProbs] = None
 
     text: Optional[str] = None
 
@@ -38,7 +33,7 @@ class Completion(BaseModel):
     object: Literal["text.completion"]
     """The object type, which is always `text.completion`."""
 
-    prompt: List[Prompt]
+    prompt: ChatCompletionPrompt
     """When `echo` is true, the prompt is included in the response.
 
     Additionally, when `logprobs` is also provided, log probability information is

@@ -7,9 +7,10 @@ from ..._models import BaseModel
 from ..log_probs import LogProbs
 from ..tool_choice import ToolChoice
 from .chat_completion_usage import ChatCompletionUsage
+from .chat_completion_prompt import ChatCompletionPrompt
 from .chat_completion_warning import ChatCompletionWarning
 
-__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall", "Prompt"]
+__all__ = ["ChatCompletion", "Choice", "ChoiceMessage", "ChoiceMessageFunctionCall"]
 
 
 class ChoiceMessageFunctionCall(BaseModel):
@@ -47,12 +48,6 @@ class Choice(BaseModel):
     """Top log probabilities for the tokens."""
 
 
-class Prompt(BaseModel):
-    logprobs: Optional[LogProbs] = None
-
-    text: Optional[str] = None
-
-
 class ChatCompletion(BaseModel):
     id: str
 
@@ -65,7 +60,7 @@ class ChatCompletion(BaseModel):
     object: Literal["chat.completion"]
     """The object type, which is always `chat.completion`."""
 
-    prompt: List[Prompt]
+    prompt: ChatCompletionPrompt
     """When `echo` is true, the prompt is included in the response.
 
     Additionally, when `logprobs` is also provided, log probability information is
