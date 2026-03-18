@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.5.0 (2026-03-18)
+
+Full Changelog: [v2.4.0...v2.5.0](https://github.com/togethercomputer/together-py/compare/v2.4.0...v2.5.0)
+
+### Features
+
+* **api:** manual updates ([9db2163](https://github.com/togethercomputer/together-py/commit/9db2163681520a95a54e03472ed6719abc40dc05))
+* **api:** manual updates ([a3436ea](https://github.com/togethercomputer/together-py/commit/a3436ea1f04273a0d91103cbd850136854389794))
+* **api:** manual updates ([ca7f97d](https://github.com/togethercomputer/together-py/commit/ca7f97de14718352cb990c281d3fa053e954fc42))
+* Update llama 3.1 8b w/ qwen 3.5 9b ([0680858](https://github.com/togethercomputer/together-py/commit/0680858c6f88e9e8ad72c76dc6d374e5074e12a2))
+
+
+### Bug Fixes
+
+* **deps:** bump minimum typing-extensions version ([94c9632](https://github.com/togethercomputer/together-py/commit/94c96328c13e6955f777e4c6a3517744b84a1d23))
+* **jig:** use Together.get instead of Together._client.get so that registry errors are handled correctly ([#302](https://github.com/togethercomputer/together-py/issues/302)) ([aefd483](https://github.com/togethercomputer/together-py/commit/aefd483f7c335232fe798be6f92f52a960f70e88))
+* **pydantic:** do not pass `by_alias` unless set ([dca687e](https://github.com/togethercomputer/together-py/commit/dca687e39cf86f80cfd051e4e1596e8f54753968))
+* **types:** remove model enum constraint in chat completions ([c30e2a0](https://github.com/togethercomputer/together-py/commit/c30e2a0929888955fe7bae94f38a024ff0a601ed))
+
+
+### Chores
+
+* Fix unit tests with recent model deprecations ([#305](https://github.com/togethercomputer/together-py/issues/305)) ([28902b4](https://github.com/togethercomputer/together-py/commit/28902b4f67f0f5158ea09589fe63de5e51efc9b7))
+* **internal:** tweak CI branches ([556c449](https://github.com/togethercomputer/together-py/commit/556c4491ed2c1ad39f4d587db2c25d94dd210192))
+
 ## 2.4.0 (2026-03-11)
 
 Full Changelog: [v2.3.2...v2.4.0](https://github.com/togethercomputer/together-py/compare/v2.3.2...v2.4.0)
