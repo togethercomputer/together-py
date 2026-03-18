@@ -149,8 +149,8 @@ def create(
             or "the selected configuration" in error_msg
             or "hardware is required" in error_msg
         ):
-            click.secho("Invalid hardware selected.", fg="red", err=True)
-            click.echo("\nAvailable hardware options:")
+            click.secho("Invalid hardware selected.", fg="red", err=True, file=sys.stderr)
+            click.echo("\nAvailable hardware options:", file=sys.stderr)
             ctx.invoke(list_hardware, available=True, model=model, json=False)
             sys.exit(1)
         elif "model" in error_msg and (
@@ -162,14 +162,17 @@ def create(
             click.echo(
                 f"Error: Model '{model}' was not found or is not available for dedicated endpoints.",
                 err=True,
+                file=sys.stderr,
             )
             click.echo(
                 "Please check that the model name is correct and that it supports dedicated endpoint deployment.",
                 err=True,
+                file=sys.stderr,
             )
             click.echo(
                 "You can browse available models at: https://api.together.ai/models",
                 err=True,
+                file=sys.stderr,
             )
             sys.exit(1)
         raise e
