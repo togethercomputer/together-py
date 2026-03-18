@@ -117,16 +117,10 @@ Types:
 from together.types.chat import (
     ChatCompletion,
     ChatCompletionChunk,
-    ChatCompletionFunctionMessageParam,
-    ChatCompletionMessage,
-    ChatCompletionMessageParam,
     ChatCompletionPrompt,
     ChatCompletionStructuredMessageImageURL,
     ChatCompletionStructuredMessageText,
     ChatCompletionStructuredMessageVideoURL,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionTool,
-    ChatCompletionToolMessageParam,
     ChatCompletionUsage,
     ChatCompletionWarning,
 )

@@ -8,10 +8,24 @@ from typing_extensions import Literal, Required, TypeAlias, TypedDict
 from ..._types import SequenceNotStr
 from ..tools_param import ToolsParam
 from ..tool_choice_param import ToolChoiceParam
-from .chat_completion_message_param import ChatCompletionMessageParam
+from .chat_completion_structured_message_text_param import ChatCompletionStructuredMessageTextParam
+from .chat_completion_structured_message_image_url_param import ChatCompletionStructuredMessageImageURLParam
+from .chat_completion_structured_message_video_url_param import ChatCompletionStructuredMessageVideoURLParam
 
 __all__ = [
     "CompletionCreateParamsBase",
+    "Message",
+    "MessageChatCompletionSystemMessageParam",
+    "MessageChatCompletionUserMessageParam",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudio",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudioAudioURL",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio",
+    "MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio",
+    "MessageChatCompletionAssistantMessageParam",
+    "MessageChatCompletionAssistantMessageParamFunctionCall",
+    "MessageChatCompletionToolMessageParam",
+    "MessageChatCompletionFunctionMessageParam",
     "FunctionCall",
     "FunctionCallName",
     "Reasoning",
@@ -27,7 +41,7 @@ __all__ = [
 
 
 class CompletionCreateParamsBase(TypedDict, total=False):
-    messages: Required[Iterable[ChatCompletionMessageParam]]
+    messages: Required[Iterable[Message]]
     """A list of messages comprising the conversation so far."""
 
     model: Required[str]
@@ -175,6 +189,119 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     tokens are filtered out. This technique helps maintain diversity and generate
     more fluent and natural-sounding text.
     """
+
+
+class MessageChatCompletionSystemMessageParam(TypedDict, total=False):
+    content: Required[str]
+
+    role: Required[Literal["system"]]
+
+    name: str
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudioAudioURL(
+    TypedDict, total=False
+):
+    url: Required[str]
+    """The URL of the audio"""
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudio(
+    TypedDict, total=False
+):
+    audio_url: Required[
+        MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudioAudioURL
+    ]
+
+    type: Required[Literal["audio_url"]]
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio(
+    TypedDict, total=False
+):
+    data: Required[str]
+    """The base64 encoded audio data"""
+
+    format: Required[Literal["wav"]]
+    """The format of the audio data"""
+
+
+class MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio(
+    TypedDict, total=False
+):
+    input_audio: Required[
+        MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudioInputAudio
+    ]
+
+    type: Required[Literal["input_audio"]]
+
+
+MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal: TypeAlias = Union[
+    ChatCompletionStructuredMessageTextParam,
+    ChatCompletionStructuredMessageImageURLParam,
+    ChatCompletionStructuredMessageVideoURLParam,
+    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalAudio,
+    MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodalInputAudio,
+]
+
+
+class MessageChatCompletionUserMessageParam(TypedDict, total=False):
+    content: Required[
+        Union[str, Iterable[MessageChatCompletionUserMessageParamContentChatCompletionUserMessageContentMultimodal]]
+    ]
+    """
+    The content of the message, which can either be a simple string or a structured
+    format.
+    """
+
+    role: Required[Literal["user"]]
+
+    name: str
+
+
+class MessageChatCompletionAssistantMessageParamFunctionCall(TypedDict, total=False):
+    arguments: Required[str]
+
+    name: Required[str]
+
+
+class MessageChatCompletionAssistantMessageParam(TypedDict, total=False):
+    role: Required[Literal["assistant"]]
+
+    content: Optional[str]
+
+    function_call: MessageChatCompletionAssistantMessageParamFunctionCall
+
+    name: str
+
+    tool_calls: Iterable[ToolChoiceParam]
+
+
+class MessageChatCompletionToolMessageParam(TypedDict, total=False):
+    content: Required[str]
+
+    role: Required[Literal["tool"]]
+
+    tool_call_id: Required[str]
+
+    name: str
+
+
+class MessageChatCompletionFunctionMessageParam(TypedDict, total=False):
+    content: Required[str]
+
+    name: Required[str]
+
+    role: Required[Literal["function"]]
+
+
+Message: TypeAlias = Union[
+    MessageChatCompletionSystemMessageParam,
+    MessageChatCompletionUserMessageParam,
+    MessageChatCompletionAssistantMessageParam,
+    MessageChatCompletionToolMessageParam,
+    MessageChatCompletionFunctionMessageParam,
+]
 
 
 class FunctionCallName(TypedDict, total=False):
