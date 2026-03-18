@@ -117,6 +117,7 @@ Types:
 from together.types.chat import (
     ChatCompletion,
     ChatCompletionChunk,
+    ChatCompletionPrompt,
     ChatCompletionStructuredMessageImageURL,
     ChatCompletionStructuredMessageText,
     ChatCompletionStructuredMessageVideoURL,
