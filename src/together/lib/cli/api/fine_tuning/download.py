@@ -58,7 +58,7 @@ def download(
             fine_tune_id = fine_tune_id.split(":")[0]
         else:
             raise ValueError(
-                "Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, but `checkpoint_step` "
+                f"Fine-tuning job ID {fine_tune_id} contains a colon to specify the step to download, but `checkpoint_step` "
                 "was also set. Remove one of the step specifiers to proceed."
             )
 
@@ -73,15 +73,21 @@ def download(
         if checkpoint_type == "default":
             loosely_typed_checkpoint_type = "merged"
 
-        if checkpoint_type not in {
+        if loosely_typed_checkpoint_type not in {
             "merged",
             "adapter",
         }:
             raise ValueError(f"Invalid checkpoint type for LoRATrainingType: {checkpoint_type}")
 
     remote_name = ft_job.x_model_output_name
+    if remote_name is None:
+        raise ValueError(
+            "Job has no model output name yet. Ensure the job is completed or specify an output path with --output_dir."
+        )
 
     url = f"/finetune/download?ft_id={fine_tune_id}&checkpoint={loosely_typed_checkpoint_type}"
+    if checkpoint_step is not NOT_GIVEN:
+        url = f"{url}&checkpoint_step={checkpoint_step}"
     output: Path | None = None
     if isinstance(output_dir, str):
         output = Path(output_dir)

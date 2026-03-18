@@ -32,7 +32,7 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
             f"Do you want to cancel job {fine_tune_id}? [y/N]"
         )
         if "y" not in confirm_response.lower():
-            click.echo({"status": "Cancel not submitted"})
+            click.echo(json.dumps({"status": "Cancel not submitted"}, indent=4))
             return
     response = client.fine_tuning.cancel(fine_tune_id)
 

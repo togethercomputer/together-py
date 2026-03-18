@@ -319,9 +319,9 @@ def create(
         }
 
         for arg in default_values:
-            arg_source = ctx.get_parameter_source("arg")  # type: ignore[attr-defined]
+            arg_source = ctx.get_parameter_source(arg)  # type: ignore[attr-defined]
             if arg_source == ParameterSource.DEFAULT:
-                training_args[arg] = default_values[str(arg_source)]
+                training_args[arg] = default_values[arg]
 
         if ctx.get_parameter_source("lora_alpha") == ParameterSource.DEFAULT:  # type: ignore[attr-defined]
             training_args["lora_alpha"] = training_args["lora_r"] * 2
@@ -387,7 +387,7 @@ def create(
         confirm = True
 
     # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idompotent so we can depend on this API always giving us a file ID
+    # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
         file_upload = client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
 
@@ -395,7 +395,7 @@ def create(
         training_args["training_file"] = file_upload.id
 
     # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idompotent so we can depend on this API always giving us a file ID
+    # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["validation_file"]):
         file_upload = client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
 

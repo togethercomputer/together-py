@@ -17,6 +17,7 @@ def list_checkpoints(ctx: click.Context, fine_tune_id: str) -> None:
     client: Together = ctx.obj
 
     checkpoints = client.fine_tuning.list_checkpoints(fine_tune_id)
+    checkpoints.data = checkpoints.data or []
 
     display_list: List[Dict[str, Any]] = []
     for checkpoint in checkpoints.data:
