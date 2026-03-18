@@ -149,6 +149,12 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 @click.option("--wandb-name", type=str, default=None, help="Wandb run name")
 @click.option("--wandb-entity", type=str, default=None, help="Wandb entity name")
 @click.option(
+    "--random-seed",
+    type=int,
+    default=None,
+    help="Random seed for reproducible training (e.g. 42). If not set, server default is used.",
+)
+@click.option(
     "--confirm",
     "-y",
     type=bool,
@@ -232,6 +238,7 @@ def create(
     wandb_project_name: str | None,
     wandb_name: str | None,
     wandb_entity: str | None,
+    random_seed: int | None,
     confirm: bool | None,
     train_on_inputs: bool | Literal["auto"] | None,
     training_method: str | None,
@@ -275,6 +282,7 @@ def create(
         wandb_project_name=wandb_project_name,
         wandb_name=wandb_name,
         wandb_entity=wandb_entity,
+        random_seed=random_seed,
         train_on_inputs=train_on_inputs,
         training_method=training_method,
         dpo_beta=dpo_beta,

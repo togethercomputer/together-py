@@ -104,6 +104,7 @@ class FineTuningResource(SyncAPIResource):
         wandb_project_name: str | None = None,
         wandb_name: str | None = None,
         wandb_entity: str | None = None,
+        random_seed: int | None = None,
         verbose: bool = False,
         model_limits: FinetuneTrainingLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
@@ -156,6 +157,9 @@ class FineTuningResource(SyncAPIResource):
             wandb_name (str, optional): Run name for Weights & Biases integration.
                 Defaults to None.
             wandb_entity (str, optional): Entity name for Weights & Biases integration.
+                Defaults to None.
+            random_seed (int, optional): Random seed for reproducible training (e.g. 42). When set, the same seed produces
+                the same run (e.g. data shuffle, init). If not provided (None), the server uses its default seed (42).
                 Defaults to None.
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
@@ -228,6 +232,7 @@ class FineTuningResource(SyncAPIResource):
             wandb_project_name=wandb_project_name,
             wandb_name=wandb_name,
             wandb_entity=wandb_entity,
+            random_seed=random_seed,
             train_on_inputs=train_on_inputs,
             training_method=training_method,
             dpo_beta=dpo_beta,
@@ -661,6 +666,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         wandb_project_name: str | None = None,
         wandb_name: str | None = None,
         wandb_entity: str | None = None,
+        random_seed: int | None = None,
         verbose: bool = False,
         model_limits: FinetuneTrainingLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
@@ -713,6 +719,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
             wandb_name (str, optional): Run name for Weights & Biases integration.
                 Defaults to None.
             wandb_entity (str, optional): Entity name for Weights & Biases integration.
+                Defaults to None.
+            random_seed (int, optional): Random seed for reproducible training (e.g. 42). When set, the same seed produces
+                the same run (e.g. data shuffle, init). If not provided (None), the server uses its default seed (42).
                 Defaults to None.
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
@@ -785,6 +794,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             wandb_project_name=wandb_project_name,
             wandb_name=wandb_name,
             wandb_entity=wandb_entity,
+            random_seed=random_seed,
             train_on_inputs=train_on_inputs,
             training_method=training_method,
             dpo_beta=dpo_beta,

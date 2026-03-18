@@ -44,18 +44,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     messages: Required[Iterable[Message]]
     """A list of messages comprising the conversation so far."""
 
-    model: Required[
-        Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ]
-    ]
+    model: Required[str]
     """The name of the model to query.
 
     [See all of Together AI's chat models](https://docs.together.ai/docs/serverless-models#chat-models)

@@ -26,7 +26,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         )
         assert_matches_type(ChatCompletion, completion, path=["response"])
 
@@ -40,7 +40,7 @@ class TestCompletions:
                     "name": "name",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             chat_template_kwargs={},
             compliance="hipaa",
             context_length_exceeded_behavior="truncate",
@@ -90,7 +90,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         )
 
         assert response.is_closed is True
@@ -107,7 +107,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -126,7 +126,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
         )
         completion_stream.response.close()
@@ -141,7 +141,7 @@ class TestCompletions:
                     "name": "name",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
             chat_template_kwargs={},
             compliance="hipaa",
@@ -191,7 +191,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
         )
 
@@ -208,7 +208,7 @@ class TestCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
         ) as response:
             assert not response.is_closed
@@ -234,7 +234,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         )
         assert_matches_type(ChatCompletion, completion, path=["response"])
 
@@ -248,7 +248,7 @@ class TestAsyncCompletions:
                     "name": "name",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             chat_template_kwargs={},
             compliance="hipaa",
             context_length_exceeded_behavior="truncate",
@@ -298,7 +298,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         )
 
         assert response.is_closed is True
@@ -315,7 +315,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -334,7 +334,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
         )
         await completion_stream.response.aclose()
@@ -349,7 +349,7 @@ class TestAsyncCompletions:
                     "name": "name",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
             chat_template_kwargs={},
             compliance="hipaa",
@@ -399,7 +399,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
         )
 
@@ -416,7 +416,7 @@ class TestAsyncCompletions:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             stream=True,
         ) as response:
             assert not response.is_closed

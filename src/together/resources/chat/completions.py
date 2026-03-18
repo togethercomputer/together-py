@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Union, Iterable
+from typing import Dict, Iterable
 from typing_extensions import Literal, overload
 
 import httpx
@@ -52,16 +52,7 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
         context_length_exceeded_behavior: Literal["truncate", "error"] | Omit = omit,
@@ -207,16 +198,7 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         stream: Literal[True],
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -362,16 +344,7 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         stream: bool,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -517,16 +490,7 @@ class CompletionsResource(SyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
         context_length_exceeded_behavior: Literal["truncate", "error"] | Omit = omit,
@@ -629,16 +593,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
         context_length_exceeded_behavior: Literal["truncate", "error"] | Omit = omit,
@@ -784,16 +739,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         stream: Literal[True],
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -939,16 +885,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         stream: bool,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
@@ -1094,16 +1031,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         self,
         *,
         messages: Iterable[completion_create_params.Message],
-        model: Union[
-            Literal[
-                "Qwen/Qwen2.5-72B-Instruct-Turbo",
-                "Qwen/Qwen2.5-7B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            ],
-            str,
-        ],
+        model: str,
         chat_template_kwargs: object | Omit = omit,
         compliance: Literal["hipaa"] | Omit = omit,
         context_length_exceeded_behavior: Literal["truncate", "error"] | Omit = omit,

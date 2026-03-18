@@ -193,7 +193,7 @@ chat_completion = client.chat.completions.create(
             "role": "system",
         }
     ],
-    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    model="model",
     reasoning={},
 )
 print(chat_completion.reasoning)

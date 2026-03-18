@@ -873,7 +873,7 @@ class TestTogether:
                         "role": "system",
                     }
                 ],
-                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+                model="model",
             ).__enter__()
 
         assert _get_open_connections(client) == 0
@@ -891,7 +891,7 @@ class TestTogether:
                         "role": "system",
                     }
                 ],
-                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+                model="model",
             ).__enter__()
         assert _get_open_connections(client) == 0
 
@@ -928,7 +928,7 @@ class TestTogether:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         )
 
         assert response.retries_taken == failures_before_success
@@ -960,7 +960,7 @@ class TestTogether:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             extra_headers={"x-stainless-retry-count": Omit()},
         )
 
@@ -992,7 +992,7 @@ class TestTogether:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             extra_headers={"x-stainless-retry-count": "42"},
         )
 
@@ -1834,7 +1834,7 @@ class TestAsyncTogether:
                         "role": "system",
                     }
                 ],
-                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+                model="model",
             ).__aenter__()
 
         assert _get_open_connections(async_client) == 0
@@ -1854,7 +1854,7 @@ class TestAsyncTogether:
                         "role": "system",
                     }
                 ],
-                model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+                model="model",
             ).__aenter__()
         assert _get_open_connections(async_client) == 0
 
@@ -1891,7 +1891,7 @@ class TestAsyncTogether:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
         )
 
         assert response.retries_taken == failures_before_success
@@ -1923,7 +1923,7 @@ class TestAsyncTogether:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             extra_headers={"x-stainless-retry-count": Omit()},
         )
 
@@ -1955,7 +1955,7 @@ class TestAsyncTogether:
                     "role": "system",
                 }
             ],
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            model="model",
             extra_headers={"x-stainless-retry-count": "42"},
         )
 

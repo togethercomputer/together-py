@@ -5,7 +5,7 @@ from together import Together
 client = Together()
 
 file_id = "file-bf72b951-fa1a-41af-a152-fe385dca0201"
-fine_tune_model = client.fine_tuning.create(model="meta-llama/Meta-Llama-3-8B", training_file=file_id)
+fine_tune_model = client.fine_tuning.create(model="openai/gpt-oss-20b", training_file=file_id)
 print(fine_tune_model)
 
 fine_tune_id = fine_tune_model.id
