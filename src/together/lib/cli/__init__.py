@@ -7,7 +7,7 @@ from together._version import __version__
 # from together.lib.cli.api.beta import beta
 # from together.lib.cli.api.evals import evals
 # from together.lib.cli.api.files import files
-from together.lib.cli._detect_agent import determine_agent
+from detect_agent import determine_agent
 from together.lib.cli.api.models.upload import upload
 from together.lib.cli.api.models.list import list
 # from together.lib.cli.api.endpoints import endpoints

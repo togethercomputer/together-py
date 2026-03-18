@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.color import Color
 from rich.style import Style
-from together.lib.cli._detect_agent import determine_agent
+from detect_agent import determine_agent
 
 PRIMARY = "#FEA595"
 

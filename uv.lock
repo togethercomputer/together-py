@@ -327,6 +327,15 @@ wheels = [
 ]
 
 [[package]]
+name = "detect-agent"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/96/1a8a3e0d59932ad26a60a594d11087116dc7d09ea5f2055a72375aa803e5/detect_agent-0.1.0.tar.gz", hash = "sha256:15b7eb3e627c822e0c4a972ae7bdc6940d80582d9ad5bf6968836dc5597c24f7", size = 14651, upload-time = "2026-03-18T00:58:36.013Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/42/d0/21f008ecba2f279feb6fc3168012545d6cc2a137c69a2103d55291ec58b4/detect_agent-0.1.0-py3-none-any.whl", hash = "sha256:63be6142bbfabb7aba2a48f0dfc0f13530733d8a4c459484a13f105b762559f9", size = 3439, upload-time = "2026-03-18T00:58:34.571Z" },
+]
+
+[[package]]
 name = "dirty-equals"
 version = "0.11"
 source = { registry = "https://pypi.org/simple" }
@@ -2120,6 +2129,7 @@ dependencies = [
     { name = "click", version = "8.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "cyclopts", version = "3.24.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "cyclopts", version = "4.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+    { name = "detect-agent" },
     { name = "distro" },
     { name = "filelock", version = "3.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "filelock", version = "3.24.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -2190,6 +2200,7 @@ requires-dist = [
     { name = "anyio", specifier = ">=3.5.0,<5" },
     { name = "click", specifier = ">=8.1.7" },
     { name = "cyclopts", specifier = ">=3.24.0" },
+    { name = "detect-agent", specifier = ">=0.1.0" },
     { name = "distro", specifier = ">=1.7.0,<2" },
     { name = "filelock", specifier = ">=3.13.1" },
     { name = "httpx", specifier = ">=0.23.0,<1" },
