@@ -178,6 +178,13 @@ class Data(BaseModel):
     progress: Optional[DataProgress] = None
     """Progress information for the fine-tuning job"""
 
+    random_seed: Optional[int] = None
+    """Random seed used for training.
+
+    Integer when set; null if not stored (e.g. legacy jobs) or no explicit seed was
+    recorded.
+    """
+
     started_at: Optional[datetime] = None
     """Start timestamp of the current stage of the fine-tune job"""
 
