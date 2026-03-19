@@ -148,7 +148,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
                 return err
         return None
 
-    if origin is Union or origin is getattr(types, "UnionType", None):
+    if origin is Union or origin is getattr(types, "UnionType", Union):
         errs = [validate(value, a, path) for a in args if a is not type(None)]
         if not all(errs):
             return None
@@ -505,7 +505,7 @@ class Jig:
     def registry(self) -> str:
         """Get registry and namespace for current user"""
         if not self.state.registry_base_path:
-            response = self.together.get("/image-repositories/base-path", cast_to=dict[str, str])
+            response = self.together.get("/image-repositories/base-path", cast_to=typing.Dict[str, str])
             # strip protocol for docker image format
             self.state.registry_base_path = response["base-path"].split("://", 1)[-1]
             self.state.save()
@@ -890,6 +890,9 @@ def _command(f: Callable[..., Any]) -> Callable[..., Any]:
     @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
     @wraps(f)
     def wrapper(ctx: Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
+        if sys.version_info  < (3, 10):
+            click.secho("Jig requires Python 3.10+", fg="red")
+            raise Exit(1)
         try:
             result = f(Jig(ctx.obj, config_path), *args, **kwargs)
         except (Exit, click.Abort, click.ClickException):
