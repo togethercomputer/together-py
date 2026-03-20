@@ -700,6 +700,10 @@ class Jig:
             while time.time() - start < _TRACK_TIMEOUT:
                 d = self.api.retrieve(self.name)
 
+                if d.status == "Failed":
+                    echo(f"\N{CROSS MARK} Deployment failed")
+                    raise Exit(1) from None
+
                 for rid, event in (d.replica_events or {}).items():
                     if event.revision_id != rev:
                         continue
