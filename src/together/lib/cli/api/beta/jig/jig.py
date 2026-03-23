@@ -818,7 +818,7 @@ Run 'jig status' to check current state.""")
   Name    : {d.name} ┃ ID: {d.id}
   Image   : {image}
   Status  : {d.status}
-  Created : {_age(d.created_at)} ┃ Updated : {_age(d.updated_at)}"""
+  Created : {_age(d.created_at.isoformat() if d.created_at else None)} ┃ Updated : {_age(d.updated_at.isoformat() if d.updated_at else None)}"""
         ]
 
         if a := d.autoscaling:
