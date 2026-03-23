@@ -1,10 +1,12 @@
+import sys
 import json
 
 import click
+from rich import print, print_json
 
 from together import Together
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
 
 NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed", "user_error"]
 
@@ -13,6 +15,7 @@ NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed",
 @click.pass_context
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
+@click.option("--json", is_flag=True, help="Print output in JSON format, must use --force to use this option")
 @handle_api_errors("Fine-tuning")
 def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
     """Cancel fine-tuning job"""
@@ -22,11 +25,15 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
         click.echo(
             click.style(f"Fine-tuning: ", fg="blue")
             + f"Training is not currently cancellable. Current status is "
-            + click.style(job.status, fg="yellow")
+            + click.style(job.status, fg="yellow"),
+            file=sys.stdout if json else None,
         )
         return
 
     if not quiet:
+        if json:
+            raise click.BadOptionUsage("json", "To use json mode, you must use --quiet")
+
         confirm_response = input(
             "You will be billed for any completed training steps upon cancellation. "
             f"Do you want to cancel job {fine_tune_id}? [y/N]"
@@ -34,6 +41,11 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False) -> None:
         if "y" not in confirm_response.lower():
             click.echo(json.dumps({"status": "Cancel not submitted"}, indent=4))
             return
+
     response = client.fine_tuning.cancel(fine_tune_id)
 
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4, default=datetime_serializer))
+    if json:
+        print_json(openapi_dumps(response).decode("utf-8"))
+        return
+
+    print("Cancelled fine-tuning job")

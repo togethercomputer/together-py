@@ -4,9 +4,9 @@ import os
 import sys
 from typing import Any
 
+import rich
 import click
 import httpx
-import rich
 
 import together
 from together._version import __version__
@@ -110,7 +110,6 @@ def main(
 
         raise e
 
-    
     # Dry run mode
     # This catches any mutating requests and blocks them. This is assuming that each command only makes one final request.
     # Some commands are more complex and may require special logic for dry run mode.
@@ -120,15 +119,19 @@ def main(
     # 2. CLI Tests to avoid making actual requests
     # 3. Agents that want to test their requests before making them
     if dry_run:
+
         def block_requests_for_dry_run(request: httpx.Request) -> None:
             if request.method in ["POST", "PUT", "DELETE"]:
                 # Print to stderr to ensure this is pipable to jq
-                click.secho(f"Dry run mode. Would have made a request with the following parameters:", fg="yellow", file=sys.stderr)
+                click.secho(
+                    f"Dry run mode. Would have made a request with the following parameters:",
+                    fg="yellow",
+                    file=sys.stderr,
+                )
                 rich.print_json(request.content.decode("utf-8"))
                 sys.exit(0)
-            
-        ctx.obj._client.event_hooks["request"].append(block_requests_for_dry_run)
 
+        ctx.obj._client.event_hooks["request"].append(block_requests_for_dry_run)
 
 
 main.add_command(files)

@@ -25,7 +25,6 @@ from together._utils._logs import logger
 from ...types import FileType, FilePurpose, FileResponse
 from ..._types import RequestOptions
 from ..constants import (
-    DISABLE_TQDM,
     NUM_BYTES_IN_GB,
     MAX_FILE_SIZE_GB,
     MIN_PART_SIZE_MB,
@@ -211,6 +210,8 @@ class DownloadManager(SyncAPIResource):
                 retry_count = 0
                 retry_delay = DOWNLOAD_INITIAL_RETRY_DELAY
 
+                DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
+
                 with tqdm(
                     total=file_size,
                     unit="B",
@@ -391,6 +392,7 @@ class UploadManager(SyncAPIResource):
         redirect_url, file_id = self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
         file_size = os.stat(file.as_posix()).st_size
+        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
 
         with tqdm(
             total=file_size,
@@ -563,6 +565,8 @@ class MultipartUploadManager(SyncAPIResource):
 
         parts = upload_info["parts"]
         completed_parts: List[Dict[str, Any]] = []
+
+        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
 
         with ThreadPoolExecutor(max_workers=self.max_concurrent_parts) as executor:
             with tqdm(total=len(parts), desc="Uploading parts", unit="part", disable=bool(DISABLE_TQDM)) as pbar:
@@ -795,6 +799,8 @@ class AsyncUploadManager(AsyncAPIResource):
 
         file_size = os.stat(file.as_posix()).st_size
 
+        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
+
         with tqdm(
             total=file_size,
             unit="B",
@@ -955,6 +961,8 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
         # Use ThreadPoolExecutor for HTTP I/O efficiency
         loop = asyncio.get_event_loop()
+
+        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
 
         with ThreadPoolExecutor(max_workers=self.max_concurrent_parts) as executor:
             with tqdm(total=len(parts), desc="Uploading parts", unit="part", disable=bool(DISABLE_TQDM)) as pbar:

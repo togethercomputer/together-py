@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import click
-from rich import print as rprint
+from rich import print as rprint, print_json
 from rich.json import JSON
 
 from together import Together
@@ -22,7 +22,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
     response = client.fine_tuning.retrieve(fine_tune_id)
 
     if json:
-        click.echo(openapi_dumps(response.model_dump(exclude_none=True)))
+        print_json(openapi_dumps(response).decode("utf-8"))
         return
 
     # remove events from response for cleaner output

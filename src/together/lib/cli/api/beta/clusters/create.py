@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import json as json_lib
 import getpass
 from typing import List, Literal
 
 import click
-from rich import print
+from rich import print, print_json
 
 from together import Together
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
 
@@ -59,6 +59,7 @@ from together.types.beta.cluster_create_params import SharedVolume, ClusterCreat
     is_flag=True,
     help="Output in JSON format",
 )
+@click.option("--non-interactive", is_flag=True, default=False, help="Disable interactive mode")
 @click.pass_context
 @handle_api_errors("Clusters")
 def create(
@@ -73,6 +74,7 @@ def create(
     cluster_type: Literal["KUBERNETES", "SLURM"] | None = None,
     volume: str | None = None,
     json: bool = False,
+    non_interactive: bool = False,
 ) -> None:
     """Create a cluster"""
     client: Together = ctx.obj
@@ -93,7 +95,7 @@ def create(
         params["volume_id"] = volume
 
     # JSON Mode skips hand holding through the argument setup
-    if not json:
+    if not json and not non_interactive:
         if not name:
             params["cluster_name"] = click.prompt("Clusters: Cluster name:", default=getpass.getuser(), type=str)
 
@@ -177,7 +179,7 @@ def create(
     response = client.beta.clusters.create(**params)
 
     if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
+        print_json(openapi_dumps(response).decode("utf-8"))
     else:
         click.echo(f"Clusters: Cluster created successfully")
         click.echo(f"Clusters: {response.cluster_id}")

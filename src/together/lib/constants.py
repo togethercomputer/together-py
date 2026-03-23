@@ -13,7 +13,6 @@ import enum
 
 # Download defaults
 DOWNLOAD_BLOCK_SIZE = 10 * 1024 * 1024  # 10 MB
-DISABLE_TQDM = False
 MAX_DOWNLOAD_RETRIES = 5  # Maximum retries for download failures
 DOWNLOAD_INITIAL_RETRY_DELAY = 1.0  # Initial retry delay in seconds
 DOWNLOAD_MAX_RETRY_DELAY = 30.0  # Maximum retry delay in seconds
@@ -75,3 +74,7 @@ JSONL_EXTRA_COLUMNS_MAP = {
 }
 REQUIRED_COLUMNS_MESSAGE = ["role"]
 POSSIBLE_ROLES_CONVERSATION = ["system", "user", "assistant", "tool"]
+
+# DO NOT USE THIS
+# Pull this from the environment variable TOGETHER_DISABLE_TQDM so cli can disable tqdm if needed
+DISABLE_TQDM = False

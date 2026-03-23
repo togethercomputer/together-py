@@ -1071,6 +1071,7 @@ def queue_status(jig: Jig) -> Any:
 
 
 @jig.command("list")
+@click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 @_command
 def list_deployments(jig: Jig) -> Any:
     """List all deployments"""

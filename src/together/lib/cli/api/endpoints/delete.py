@@ -16,6 +16,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 def delete(client: Together, endpoint_id: str, json: bool) -> None:
     """Delete a dedicated inference endpoint."""
     client.endpoints.delete(endpoint_id)
+
     if json:
         click.echo(json_lib.dumps({"message": "Successfully deleted endpoint"}, indent=2))
         return
