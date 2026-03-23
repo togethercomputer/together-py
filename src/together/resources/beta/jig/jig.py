@@ -128,7 +128,7 @@ class JigResource(SyncAPIResource):
         description: str | Omit = omit,
         environment_variables: Iterable[jig_update_params.EnvironmentVariable] | Omit = omit,
         gpu_count: int | Omit = omit,
-        gpu_type: Literal["h100-80gb", " a100-80gb"] | Omit = omit,
+        gpu_type: Literal["h100-80gb"] | Omit = omit,
         health_check_path: str | Omit = omit,
         image: str | Omit = omit,
         max_replicas: int | Omit = omit,
@@ -155,8 +155,7 @@ class JigResource(SyncAPIResource):
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
-          autoscaling: Autoscaling configuration for the deployment. Omit or set to null to disable
-              autoscaling
+          autoscaling: Autoscaling configuration for the deployment. Set to {} to disable autoscaling
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -263,7 +262,7 @@ class JigResource(SyncAPIResource):
     def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", "a100-80gb"],
+        gpu_type: Literal["h100-80gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -539,7 +538,7 @@ class AsyncJigResource(AsyncAPIResource):
         description: str | Omit = omit,
         environment_variables: Iterable[jig_update_params.EnvironmentVariable] | Omit = omit,
         gpu_count: int | Omit = omit,
-        gpu_type: Literal["h100-80gb", " a100-80gb"] | Omit = omit,
+        gpu_type: Literal["h100-80gb"] | Omit = omit,
         health_check_path: str | Omit = omit,
         image: str | Omit = omit,
         max_replicas: int | Omit = omit,
@@ -566,8 +565,7 @@ class AsyncJigResource(AsyncAPIResource):
           args: Args overrides the container's CMD. Provide as an array of arguments (e.g.,
               ["python", "app.py"])
 
-          autoscaling: Autoscaling configuration for the deployment. Omit or set to null to disable
-              autoscaling
+          autoscaling: Autoscaling configuration for the deployment. Set to {} to disable autoscaling
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -674,7 +672,7 @@ class AsyncJigResource(AsyncAPIResource):
     async def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", "a100-80gb"],
+        gpu_type: Literal["h100-80gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,

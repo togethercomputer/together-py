@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import Dict, List, Union, Optional
+from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
 from ..._models import BaseModel
@@ -180,7 +181,7 @@ class Deployment(BaseModel):
     value is allowed)
     """
 
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
     """CreatedAt is the ISO8601 timestamp when this deployment was created"""
 
     description: Optional[str] = None
@@ -246,7 +247,7 @@ class Deployment(BaseModel):
     allocated to each replica
     """
 
-    updated_at: Optional[str] = None
+    updated_at: Optional[datetime] = None
     """UpdatedAt is the ISO8601 timestamp when this deployment was last updated"""
 
     volumes: Optional[List[Volume]] = None
