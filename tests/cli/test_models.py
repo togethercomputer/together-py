@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import os
+import json
 
 import httpx
 import pytest
@@ -103,3 +103,16 @@ model/video  video
         runner = CliRunner(env={"TOGETHER_BASE_URL": base_url})
         result = runner.invoke(main, ["models", "list", "--json"])
         assert result.output.strip() == json.dumps(list_data, indent=2).strip()
+
+class TestModelsUpload:
+    # Test for endpoint create requiring the model
+    def test_upload(self) -> None:
+        runner = CliRunner(env={"TOGETHER_BASE_URL": base_url})
+        result = runner.invoke(main, ["models", "upload", "--model-name", "model-123", "--model-source", "s3://model-123"])
+        assert result.output.strip() == """Model upload job created successfully!
+Job ID: job-a15dad11-8d8e-4007-97c5-a211304de284
+Model Name: necolinehubner/Qwen2.5-72B-Instruct
+Model ID: model-c0e32dfc-637e-47b2-bf4e-e9b2e58c9da7
+Model Source: huggingface
+Message: Processing model weights. Job created.
+""".strip()
