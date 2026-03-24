@@ -30,7 +30,7 @@ model_data = {
             "updated_at": "2026-03-23T12:00:00Z",
             "availability": {
                 "status": "available",
-            }
+            },
         },
         {
             "id": "1x_nvidia_a100_80gb_sxm",
@@ -46,11 +46,12 @@ model_data = {
             "updated_at": "2026-03-23T12:00:00Z",
             "availability": {
                 "status": "unavailable",
-            }
-        }
+            },
+        },
     ],
-    "object": "list"
+    "object": "list",
 }
+
 
 class TestEndpointsCreate:
     # Test for endpoint create requiring the model
@@ -71,7 +72,6 @@ class TestEndpointsCreate:
         assert result.exit_code == 1
         assert "Invalid hardware selected." in result.output
 
-    
     # Test for when the API returns an error saying model not found
     @pytest.mark.respx(base_url=base_url)
     def test_invalid_model(self, respx_mock: MockRouter) -> None:
@@ -86,53 +86,59 @@ class TestEndpointsCreate:
             in result.output
         )
 
+
 class TestEndpointsHardware:
     def test_hardware_list(self) -> None:
         runner = CliRunner(env={"TOGETHER_BASE_URL": base_url})
         result = runner.invoke(main, ["endpoints", "hardware"])
         assert result.exit_code == 0
-        assert result.output.strip() == """
+        assert (
+            result.output.strip()
+            == """
 Hardware ID              GPU    Memory    Count    Price (per minute)
 -----------------------  -----  --------  -------  --------------------
 2x_nvidia_a100_80gb_sxm  a100   80GB      2        $0.05               
 """.strip()
+        )
 
     @pytest.mark.respx(base_url=base_url)
     def test_hardware_list_with_model(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/hardware").mock(
-            return_value=httpx.Response(200, json=model_data)
-        )
+        respx_mock.get("/hardware").mock(return_value=httpx.Response(200, json=model_data))
         runner = CliRunner(env={"TOGETHER_BASE_URL": base_url})
         result = runner.invoke(main, ["endpoints", "hardware", "--model", "deepseek-ai/DeepSeek-R1"])
         assert result.exit_code == 0
-        assert result.output.strip() == """
+        assert (
+            result.output.strip()
+            == """
 Hardware ID              GPU    Memory    Count    Price (per minute)    availability
 -----------------------  -----  --------  -------  --------------------  --------------
 2x_nvidia_a100_80gb_sxm  a100   80GB      2        $0.05                 ✓ available
 1x_nvidia_a100_80gb_sxm  a100   80GB      1        $0.05                 ✗ unavailable
 """.strip()
+        )
 
     @pytest.mark.respx(base_url=base_url)
     def test_hardware_list_with_model_and_available(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/hardware").mock(
-            return_value=httpx.Response(200, json=model_data)
-        )
+        respx_mock.get("/hardware").mock(return_value=httpx.Response(200, json=model_data))
         runner = CliRunner(env={"TOGETHER_BASE_URL": base_url})
         result = runner.invoke(main, ["endpoints", "hardware", "--model", "deepseek-ai/DeepSeek-R1", "--available"])
         assert result.exit_code == 0
-        assert result.output.strip() == """
+        assert (
+            result.output.strip()
+            == """
 Hardware ID              GPU    Memory    Count    Price (per minute)    availability
 -----------------------  -----  --------  -------  --------------------  --------------
 2x_nvidia_a100_80gb_sxm  a100   80GB      2        $0.05                 ✓ available
 """.strip()
+        )
 
     @pytest.mark.respx(base_url=base_url)
     def test_hardware_list_with_model_and_available_json(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/hardware").mock(
-            return_value=httpx.Response(200, json=model_data)
-        )
+        respx_mock.get("/hardware").mock(return_value=httpx.Response(200, json=model_data))
         runner = CliRunner(env={"TOGETHER_BASE_URL": base_url})
-        result = runner.invoke(main, ["endpoints", "hardware", "--model", "deepseek-ai/DeepSeek-R1", "--available", "--json"])
+        result = runner.invoke(
+            main, ["endpoints", "hardware", "--model", "deepseek-ai/DeepSeek-R1", "--available", "--json"]
+        )
 
         data = json.loads(result.output)
 
@@ -152,6 +158,7 @@ class TestEndpointsStart:
         result = runner.invoke(main, ["endpoints", "start", "endpoint-123"])
         assert result.exit_code == 0
         assert result.output.strip() == "Successfully marked endpoint as starting\nendpoint-123"
+
 
 class TestEndpointsStop:
     # TODO: add tests for the --wait
