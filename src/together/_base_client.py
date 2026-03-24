@@ -583,7 +583,7 @@ class BaseClient(Generic[_HttpxClientT, _DefaultStreamT]):
             # TODO: type ignore is required as stringify_items is well typed but we can't be
             # well typed without heavy validation.
             data,  # type: ignore
-            array_format="brackets",
+            array_format="repeat",
         )
         serialized: dict[str, object] = {}
         for key, value in items:
