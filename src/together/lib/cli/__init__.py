@@ -4,7 +4,6 @@ import os
 import sys
 from typing import Any
 
-import rich
 import click
 import httpx
 
@@ -35,11 +34,6 @@ def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
     help="API Key. Defaults to environment variable `TOGETHER_API_KEY`",
     default=os.getenv("TOGETHER_API_KEY"),
 )
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Dry run mode. No create/delete requests are made.",
-)
 @click.option("--base-url", type=str, help="API Base URL. Defaults to Together AI endpoint.")
 @click.option("--timeout", type=int, help=f"Request timeout. Defaults to {DEFAULT_TIMEOUT} seconds")
 @click.option(
@@ -59,7 +53,6 @@ def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
 def main(
     ctx: click.Context,
     api_key: str | None,
-    dry_run: bool | None,
     base_url: str | None,
     timeout: int | None,
     debug: bool | None,
@@ -109,30 +102,6 @@ def main(
             return
 
         raise e
-
-    # Dry run mode
-    # This catches any mutating requests and blocks them. This is assuming that each command only makes one final request.
-    # Some commands are more complex and may require special logic for dry run mode.
-    #
-    # This method is good for:
-    # 1. Users who want a sanity check before making a request
-    # 2. CLI Tests to avoid making actual requests
-    # 3. Agents that want to test their requests before making them
-    if dry_run:
-
-        def block_requests_for_dry_run(request: httpx.Request) -> None:
-            if request.method in ["POST", "PUT", "DELETE"]:
-                # Print to stderr to ensure this is pipable to jq
-                click.secho(
-                    f"Dry run mode. Would have made a request with the following parameters:",
-                    fg="yellow",
-                    file=sys.stderr,
-                )
-                rich.print_json(request.content.decode("utf-8"))
-                sys.exit(0)
-
-        ctx.obj._client.event_hooks["request"].append(block_requests_for_dry_run)
-
 
 main.add_command(files)
 main.add_command(fine_tuning)
