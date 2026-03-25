@@ -145,6 +145,22 @@ class TestFineTuningCancel:
         assert result.exit_code != 0
         assert "quiet" in result.output.lower()
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_cancel_not_cancellable_json(self, respx_mock: MockRouter) -> None:
+        body = {**_FT_RETRIEVE_BODY, "status": "completed"}
+        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
+        try:
+            runner = CliRunner(env=_ENV, mix_stderr=False)
+        except Exception:
+            # Python 3.14 doesnt have the mix_stderr parameter
+            runner = CliRunner(env=_ENV)
+        result = runner.invoke(main, ["fine-tuning", "cancel", "ft-1", "--quiet", "--json"])
+        assert result.exit_code == 0
+        assert result.stdout_bytes.decode("utf-8") == ""
+        assert result.stderr_bytes is not None
+        assert len(result.stderr_bytes) > 0
+        assert "Training is not currently cancellable" in result.stderr_bytes.decode("utf-8")
+
 
 class TestFineTuningDelete:
     def test_delete_json_requires_force(self) -> None:

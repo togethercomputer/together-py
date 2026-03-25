@@ -93,7 +93,7 @@ class TestJSONMode:
         fine_tuning.skip.run_and_assert("create")  # TODO:
         fine_tuning.run_and_assert("list")
         fine_tuning.run_and_assert("retrieve ft-123")
-        fine_tuning.run_and_assert("cancel ft-123")
+        fine_tuning.run_and_assert("cancel ft-123 --quiet")
         fine_tuning.run_and_assert("download ft-123")
         fine_tuning.run_and_assert("delete ft-123 --force")
         fine_tuning.run_and_assert("list-events ft-123")

@@ -21,19 +21,20 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False, json: boo
     """Cancel fine-tuning job"""
     client: Together = ctx.obj
     job = client.fine_tuning.retrieve(fine_tune_id)
+
+    if json and not quiet:
+        raise click.BadOptionUsage("json", "To use json mode, you must use --quiet")
+
     if job.status in NON_CANCELLABLE_STATES:
         click.echo(
             click.style(f"Fine-tuning: ", fg="blue")
             + f"Training is not currently cancellable. Current status is "
             + click.style(job.status, fg="yellow"),
-            file=sys.stdout if json else None,
+            file=sys.stderr if json else None,
         )
         return
 
     if not quiet:
-        if json:
-            raise click.BadOptionUsage("json", "To use json mode, you must use --quiet")
-
         confirm_response = input(
             "You will be billed for any completed training steps upon cancellation. "
             f"Do you want to cancel job {fine_tune_id}? [y/N]"
