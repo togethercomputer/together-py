@@ -60,7 +60,7 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: 
     response = client.files.upload(file=file, purpose=purpose, check=False)
 
     if json:
-        click.echo(openapi_dumps(response.model_dump(exclude_none=True)))
+        print_json(openapi_dumps(response).decode("utf-8"))
         return
 
     click.echo(
