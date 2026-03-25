@@ -18,7 +18,7 @@ from together.lib.cli.api._utils import handle_api_errors
 )
 @handle_api_errors("Files")
 def retrieve(ctx: click.Context, id: str, json: bool) -> None:
-    """Upload file"""
+    """Retrieve file details"""
 
     client: Together = ctx.obj
 
