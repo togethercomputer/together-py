@@ -91,7 +91,7 @@ def main(
                 invoked_command = click.get_current_context().command_path
                 invoked_command_name = invoked_command.split("together ")[1]
                 click.secho(
-                    "Error: api key missing.\n\nThe api_key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
+                    "Error: api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
                     fg="red",
                 )
                 click.secho("\nYou can find your api key at https://api.together.xyz/settings/api-keys", fg="yellow")

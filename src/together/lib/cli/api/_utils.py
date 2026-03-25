@@ -10,8 +10,10 @@ from datetime import datetime
 from functools import wraps
 
 import click
+from rich import print_json
 
 from together import APIError
+from together._utils._json import openapi_dumps
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
 from together.types.fine_tuning_list_response import Data
@@ -175,6 +177,7 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
     def decorator(f: F) -> F:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            json_mode = kwargs.get("json", False)
             try:
                 return f(*args, **kwargs)
             # User aborted the command
@@ -187,15 +190,25 @@ def handle_api_errors(prefix: str) -> Callable[[F], F]:
                     error_msg = getattr(e.body, "message", str(e.body))
                 else:
                     error_msg = str(e)
-                click.echo(prefix_styled + click.style("Failed", fg="red"))
-                click.echo(prefix_styled + click.style(error_msg, fg="red"))
+
+                if json_mode:
+                    print_json(openapi_dumps({"error": error_msg}).decode("utf-8"))
+                else:
+                    click.echo(prefix_styled + click.style("Failed", fg="red"), file=sys.stderr)
+                    click.echo(prefix_styled + click.style(error_msg, fg="red"), file=sys.stderr)
                 sys.exit(1)
             except Exception as e:
                 if os.getenv("TOGETHER_LOG", "").lower() == "debug":
                     # Raise the error with the full traceback
                     raise
-                click.echo(prefix_styled + click.style("Failed", fg="red"))
-                click.echo(prefix_styled + click.style(f"An unexpected error occurred - {str(e)}", fg="red"))
+                if json_mode:
+                    print_json(openapi_dumps({"error": str(e)}).decode("utf-8"))
+                else:
+                    click.echo(prefix_styled + click.style("Failed", fg="red"), file=sys.stderr)
+                    click.echo(
+                        prefix_styled + click.style(f"An unexpected error occurred - {str(e)}", fg="red"),
+                        file=sys.stderr,
+                    )
                 sys.exit(1)
 
         return wrapper  # type: ignore

@@ -1,8 +1,8 @@
-import json as json_lib
-
 import click
+from rich import print_json
 
 from together import Together
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
 
 
@@ -43,7 +43,7 @@ def create(ctx: click.Context, region: str, size_tib: int, volume_name: str, jso
     )
 
     if json:
-        click.echo(json_lib.dumps(response.model_dump_json(), indent=2))
+        print_json(openapi_dumps(response).decode("utf-8"))
     else:
         click.echo(f"Storage volume created successfully")
         click.echo(response.volume_id)
