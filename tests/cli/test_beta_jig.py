@@ -36,10 +36,15 @@ def _chdir(path: Path):
         os.chdir(prev)
 
 
+def _noop_config_post_init(_self: Any) -> None:
+    """Stub replacing Config.__post_init__ when skipping validation in tests."""
+    return None
+
+
 @contextmanager
 def _patched_jig_config(tmp_path: Path):
     """Avoid Config.find() + validate on py3.9 (DeployConfig uses PEP 604 hints)."""
-    with patch.object(_jig_mod.Config, "__post_init__", lambda: None):
+    with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
         cfg = _jig_mod.Config(
             model_name=_DEPLOY_NAME,
             image=_jig_mod.ImageConfig(),
