@@ -1,5 +1,4 @@
 import sys
-import json as json_lib
 
 import click
 from rich import print, print_json
@@ -41,7 +40,7 @@ def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False, json: boo
         )
         if "y" not in confirm_response.lower():
             if json:
-                print_json("{\"status\": \"Cancel not submitted\"}")
+                print_json('{"status": "Cancel not submitted"}')
             else:
                 click.echo("Cancel not submitted")
             return
