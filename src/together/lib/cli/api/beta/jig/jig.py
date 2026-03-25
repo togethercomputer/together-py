@@ -148,7 +148,8 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
                 return err
         return None
 
-    if origin is Union or origin is getattr(types, "UnionType", None):
+    union_type = getattr(types, "UnionType", None)
+    if origin is Union or (union_type is not None and origin is union_type):
         errs = [validate(value, a, path) for a in args if a is not type(None)]
         if not all(errs):
             return None
