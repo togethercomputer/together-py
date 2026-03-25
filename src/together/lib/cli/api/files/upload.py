@@ -52,8 +52,7 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: 
             if json:
                 print_json(json_lib.dumps(report))
             else:
-                icon = "✅" if report["is_check_passed"] else "❌"
-                print(f"{icon} {report['message']}")
+                print(f"❌ {report['message']}")
 
             # Make sure to exit
             sys.exit(1)
