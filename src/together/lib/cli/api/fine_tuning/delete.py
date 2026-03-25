@@ -30,7 +30,7 @@ def delete(ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bo
             click.echo("Deletion cancelled")
             return
 
-    response = client.fine_tuning.delete(fine_tune_id, force=True)
+    response = client.fine_tuning.delete(fine_tune_id)
 
     if json:
         print_json(openapi_dumps(response).decode("utf-8"))
