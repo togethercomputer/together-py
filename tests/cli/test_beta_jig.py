@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-import json
 import os
 import sys
-from contextlib import contextmanager
+import json
+from typing import Any, cast
 from pathlib import Path
+from contextlib import contextmanager
 from unittest.mock import patch
 
 import httpx
 import pytest
-from click.testing import CliRunner
 from respx import MockRouter
+from respx.models import Call
+from click.testing import CliRunner
 
 from together.lib.cli import main
 
@@ -37,7 +39,7 @@ def _chdir(path: Path):
 @contextmanager
 def _patched_jig_config(tmp_path: Path):
     """Avoid Config.find() + validate on py3.9 (DeployConfig uses PEP 604 hints)."""
-    with patch.object(_jig_mod.Config, "__post_init__", lambda self: None):
+    with patch.object(_jig_mod.Config, "__post_init__", lambda: None):
         cfg = _jig_mod.Config(
             model_name=_DEPLOY_NAME,
             image=_jig_mod.ImageConfig(),
@@ -46,11 +48,12 @@ def _patched_jig_config(tmp_path: Path):
             _unique_name_hint="h",
         )
 
-        def _find(cls, config_path=None, init=False):
+        def _find(*_args: Any):
             return cfg
 
         with patch.object(_jig_mod.Config, "find", classmethod(_find)):
             yield
+
 
 _PYPROJECT = f"""[project]
 name = "{_DEPLOY_NAME}"
@@ -121,7 +124,7 @@ class TestBetaJigSecretsSet:
             )
         assert result.exit_code == 0
         assert "Created secret apikey" in result.output
-        raw = post.calls[0].request.content.decode()
+        raw = cast(Call, post.calls[0]).request.content.decode()
         body = json.loads(raw)
         assert body["name"] == scoped
         assert body["value"] == "secret-val"
@@ -146,7 +149,7 @@ class TestBetaJigSecretsSet:
         assert result.exit_code == 0
         assert "Updated secret apikey" in result.output
         assert patch_route.called
-        raw = patch_route.calls[0].request.content.decode()
+        raw = cast(Call, patch_route.calls[0]).request.content.decode()
         assert json.loads(raw)["value"] == "v2"
 
 
@@ -224,9 +227,7 @@ class TestBetaJigVolumes:
     @pytest.mark.respx(base_url=base_url)
     def test_delete(self, respx_mock: MockRouter, tmp_path: Path) -> None:
         _write_jig_project(tmp_path)
-        respx_mock.delete("/deployments/storage/volumes/data-vol").mock(
-            return_value=httpx.Response(200, json={})
-        )
+        respx_mock.delete("/deployments/storage/volumes/data-vol").mock(return_value=httpx.Response(200, json={}))
 
         runner = CliRunner(env=_ENV)
         with _chdir(tmp_path):
@@ -320,7 +321,7 @@ class TestBetaJigVolumes:
             def __init__(self, _client: object) -> None:
                 pass
 
-            async def upload_files(self, source: Path, prefix: str) -> None:
+            async def upload_files(self, _source: Path, _prefix: str) -> None:
                 raise RuntimeError("upload boom")
 
         with patch.object(_jig_mod, "Uploader", _FakeUploader):
@@ -368,5 +369,5 @@ class TestBetaJigVolumes:
         assert result.exit_code == 0
         assert uploaded == [(src, "shared/4")]
         assert patch_r.called
-        patch_body = json.loads(patch_r.calls[0].request.content.decode())
+        patch_body = json.loads(cast(Call, patch_r.calls[0]).request.content.decode())
         assert patch_body["content"] == {"type": "files", "source_prefix": "shared/4"}

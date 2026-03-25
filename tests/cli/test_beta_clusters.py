@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import base64
-import json
 import os
+import json
+import base64
 from typing import Any, cast
 
 import httpx
 import pytest
-from click.testing import CliRunner
 from respx import MockRouter
+from respx.models import Call
+from click.testing import CliRunner
 
 from together.lib.cli import main
 
@@ -135,7 +136,7 @@ class TestBetaClustersCreate:
         )
         assert result.exit_code == 0
         assert "new-id" in result.output
-        raw = cast(str, route.calls[0].request.content.decode())
+        raw = cast(Call, route.calls[0]).request.content.decode()
         body = json.loads(raw)
         assert body["cluster_name"] == "together-py-testing-suite"
         assert body["volume_id"] == "vol-attach"
@@ -158,7 +159,7 @@ class TestBetaClustersUpdate:
         assert put.calls
         assert get.calls
         assert json.loads(result.output)["num_gpus"] == 16
-        put_body = json.loads(cast(str, put.calls[0].request.content.decode()))
+        put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
         assert put_body["num_gpus"] == 16
         assert put_body["cluster_type"] == "SLURM"
 
@@ -178,9 +179,7 @@ class TestBetaClustersDelete:
     def test_delete_confirm_yes(self, respx_mock: MockRouter) -> None:
         c = _cluster_body("c1", "to-delete")
         respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
-        respx_mock.delete("/compute/clusters/c1").mock(
-            return_value=httpx.Response(200, json={"cluster_id": "c1"})
-        )
+        respx_mock.delete("/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["beta", "clusters", "delete", "c1"], input="y\n")
         assert result.exit_code == 0
@@ -234,7 +233,7 @@ class TestBetaClustersStorage:
         assert result.exit_code == 0
         out = json.loads(result.output)
         assert out["volume_id"] == "vol-1"
-        raw = cast(str, route.calls[0].request.content.decode())
+        raw = cast(Call, route.calls[0]).request.content.decode()
         assert json.loads(raw) == {"region": "us-east-1", "size_tib": 1, "volume_name": "test-volume"}
 
     @pytest.mark.respx(base_url=base_url)

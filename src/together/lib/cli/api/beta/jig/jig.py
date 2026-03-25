@@ -1072,9 +1072,12 @@ def queue_status(jig: Jig) -> Any:
 
 
 @jig.command("list")
-@click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
+# This method is always outputting json, so it's a bit nebulous to have a --json option
+# Doing this for consistency with other commands and to have tests pass for this.
+# Eventually we should change this to output human text and json text.
+@click.option("--json", "_json_output", is_flag=True, help="Output raw JSON")
 @_command
-def list_deployments(jig: Jig) -> Any:
+def list_deployments(jig: Jig, _json_output: bool) -> Any:
     """List all deployments"""
     return jig.api.with_raw_response.list()
 

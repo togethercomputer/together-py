@@ -1,10 +1,9 @@
 import click
-
 from rich import print_json
 
 from together import Together
-from together.lib.cli.api._utils import handle_api_errors
 from together._utils._json import openapi_dumps
+from together.lib.cli.api._utils import handle_api_errors
 
 
 @click.command()

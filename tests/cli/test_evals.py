@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import json
 import os
+import json
+from typing import cast
 
 import httpx
 import pytest
-from click.testing import CliRunner
 from respx import MockRouter
+from respx.models import Call
+from click.testing import CliRunner
 
 from together.lib.cli import main
 
@@ -34,7 +36,7 @@ class TestEvalsList:
         result = runner.invoke(main, ["evals", "list", "--status", "completed", "--limit", "5"])
         assert result.exit_code == 0
         assert "eval-wf-1" in result.output
-        req = route.calls[0].request
+        req = cast(Call, route.calls[0]).request
         assert "status=completed" in str(req.url)
         assert "limit=5" in str(req.url)
 
@@ -56,9 +58,7 @@ class TestEvalsRetrieveAndStatus:
 
     @pytest.mark.respx(base_url=base_url)
     def test_status(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/evaluation/eval-wf-1/status").mock(
-            return_value=httpx.Response(200, json=_EVAL_STATUS)
-        )
+        respx_mock.get("/evaluation/eval-wf-1/status").mock(return_value=httpx.Response(200, json=_EVAL_STATUS))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["evals", "status", "eval-wf-1"])
         assert result.exit_code == 0

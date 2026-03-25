@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import json
 import os
 import sys
+import json
 from pathlib import Path
 from unittest.mock import patch
 
 import httpx
 import pytest
-from click.testing import CliRunner
 from respx import MockRouter
+from click.testing import CliRunner
 
 from together.lib.cli import main
 
@@ -147,8 +147,7 @@ class TestFineTuningCancel:
 
 
 class TestFineTuningDelete:
-    @pytest.mark.respx(base_url=base_url)
-    def test_delete_json_requires_force(self, respx_mock: MockRouter) -> None:
+    def test_delete_json_requires_force(self) -> None:
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["fine-tuning", "delete", "ft-1", "--json"])
         assert result.exit_code != 0
@@ -156,9 +155,7 @@ class TestFineTuningDelete:
 
     @pytest.mark.respx(base_url=base_url)
     def test_delete_force(self, respx_mock: MockRouter) -> None:
-        respx_mock.delete("/fine-tunes/ft-1").mock(
-            return_value=httpx.Response(200, json={"message": "deleted"})
-        )
+        respx_mock.delete("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["fine-tuning", "delete", "ft-1", "--force"])
         assert result.exit_code == 0
@@ -168,9 +165,7 @@ class TestFineTuningDelete:
 class TestFineTuningEventsAndCheckpoints:
     @pytest.mark.respx(base_url=base_url)
     def test_list_events_json(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/fine-tunes/ft-1/events").mock(
-            return_value=httpx.Response(200, json={"data": [_FT_EVENT]})
-        )
+        respx_mock.get("/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": [_FT_EVENT]}))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["fine-tuning", "list-events", "ft-1", "--json"])
         assert result.exit_code == 0
@@ -199,9 +194,7 @@ class TestFineTuningEventsAndCheckpoints:
 class TestFineTuningDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_invokes_download_manager(self, respx_mock: MockRouter, tmp_path: Path) -> None:
-        respx_mock.get("/fine-tunes/ft-abcd-12").mock(
-            return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY)
-        )
+        respx_mock.get("/fine-tunes/ft-abcd-12").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
         out_file = tmp_path / "weights.tar"
         out_file.write_bytes(b"x")
 

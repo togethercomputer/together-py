@@ -4,8 +4,8 @@ import os
 
 from click.testing import CliRunner
 
-from together._version import __version__
 from together.lib.cli import main
+from together._version import __version__
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 API_KEY = "0000000000000000000000000000000000000000"

@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import os
 import json
+from typing import cast
 
 import httpx
 import pytest
 from respx import MockRouter
+from respx.models import Call
 from click.testing import CliRunner
 
 from together.lib.cli import main
@@ -189,9 +191,7 @@ class TestEndpointsStart:
 
     @pytest.mark.respx(base_url=base_url)
     def test_start_endpoint(self, respx_mock: MockRouter) -> None:
-        respx_mock.patch("/endpoints/endpoint-123").mock(
-            return_value=httpx.Response(200, json=DEDICATED_EP)
-        )
+        respx_mock.patch("/endpoints/endpoint-123").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["endpoints", "start", "endpoint-123"])
         assert result.exit_code == 0
@@ -199,9 +199,7 @@ class TestEndpointsStart:
 
     @pytest.mark.respx(base_url=base_url)
     def test_start_json(self, respx_mock: MockRouter) -> None:
-        respx_mock.patch("/endpoints/endpoint-123").mock(
-            return_value=httpx.Response(200, json=DEDICATED_EP)
-        )
+        respx_mock.patch("/endpoints/endpoint-123").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["endpoints", "start", "endpoint-123", "--json"])
         assert result.exit_code == 0
@@ -214,9 +212,7 @@ class TestEndpointsStart:
         from unittest.mock import patch
 
         starting = {**DEDICATED_EP, "state": "STARTING"}
-        respx_mock.patch("/endpoints/endpoint-123").mock(
-            return_value=httpx.Response(200, json=DEDICATED_EP)
-        )
+        respx_mock.patch("/endpoints/endpoint-123").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
         respx_mock.get("/endpoints/endpoint-123").mock(
             side_effect=[
                 httpx.Response(200, json=starting),
@@ -287,7 +283,7 @@ class TestEndpointsListRetrieveDeleteUpdateAz:
             ).exit_code
             == 0
         )
-        url = str(route.calls[0].request.url)
+        url = str(cast(Call, route.calls[0]).request.url)
         assert "type=dedicated" in url
         assert "mine=true" in url
         assert "usage_type=on-demand" in url or "usage-type" in url
@@ -325,9 +321,7 @@ class TestEndpointsListRetrieveDeleteUpdateAz:
 
     @pytest.mark.respx(base_url=base_url)
     def test_update_min_max_replicas(self, respx_mock: MockRouter) -> None:
-        patch_route = respx_mock.patch("/endpoints/ep-1").mock(
-            return_value=httpx.Response(200, json=DEDICATED_EP)
-        )
+        patch_route = respx_mock.patch("/endpoints/ep-1").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
         runner = CliRunner(env=_ENV)
         result = runner.invoke(
             main,
@@ -335,7 +329,7 @@ class TestEndpointsListRetrieveDeleteUpdateAz:
         )
         assert result.exit_code == 0
         assert "ep-1" in result.output
-        req = patch_route.calls[0].request
+        req = cast(Call, patch_route.calls[0]).request
         body = json.loads(req.content.decode())
         assert body["autoscaling"] == {"min_replicas": 1, "max_replicas": 3}
 
