@@ -175,6 +175,9 @@ class Data(BaseModel):
     owner_address: Optional[str] = None
     """Owner address information"""
 
+    packing: Optional[bool] = None
+    """Whether sequence packing is being used for training."""
+
     progress: Optional[DataProgress] = None
     """Progress information for the fine-tuning job"""
 
