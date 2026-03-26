@@ -72,11 +72,11 @@ class TestJSONMode:
         evals.skip.run_and_assert(
             "create --type classify --judge-model deepseek-ai/DeepSeek-R1 --judge-model-source dedicated --judge-system-template 'You are a helpful assistant' --input-data-file-path data.json --model-field 'generated_text' --model-to-evaluate deepseek-ai/DeepSeek-R1 --model-to-evaluate-source dedicated --model-to-evaluate-system-template 'You are a helpful assistant' --model-to-evaluate-input-template 'You are a helpful assistant' --labels 'yes,no' --pass-labels 'yes' --min-score 0.5 --max-score 1.0 --pass-threshold 0.75"
         )
-        evals.skip.run_and_assert("list")
-        evals.skip.run_and_assert("list --status completed")
-        evals.skip.run_and_assert("list --limit 1")
-        evals.skip.run_and_assert("retrieve eval-123")
-        evals.skip.run_and_assert("status eval-123")
+        evals.run_and_assert("list")
+        evals.run_and_assert("list --status completed")
+        evals.run_and_assert("list --limit 1")
+        evals.run_and_assert("retrieve eval-123")
+        evals.run_and_assert("status eval-123")
 
     # All files commands
     def test_files_json_mode(self) -> None:

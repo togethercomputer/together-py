@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import json
 from typing import cast
 
 import httpx
@@ -54,7 +53,7 @@ class TestEvalsRetrieveAndStatus:
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["evals", "retrieve", "eval-wf-1"])
         assert result.exit_code == 0
-        assert json.loads(result.output)["workflow_id"] == "eval-wf-1"
+        assert "workflow_id: eval-wf-1" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_status(self, respx_mock: MockRouter) -> None:
@@ -62,4 +61,4 @@ class TestEvalsRetrieveAndStatus:
         runner = CliRunner(env=_ENV)
         result = runner.invoke(main, ["evals", "status", "eval-wf-1"])
         assert result.exit_code == 0
-        assert json.loads(result.output)["status"] == "completed"
+        assert "Status: completed" in result.output

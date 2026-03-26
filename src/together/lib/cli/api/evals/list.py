@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Union, Literal
 
 import click
+from rich import print_json
 from tabulate import tabulate
 
 from together import Together, omit
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
 
 
@@ -18,18 +20,24 @@ from together.lib.cli.api._utils import handle_api_errors
     type=int,
     help="Limit number of results (max 100).",
 )
+@click.option("--json", is_flag=True, help="Print output in JSON format")
 @click.pass_context
 @handle_api_errors("Evals")
 def list(
     ctx: click.Context,
     status: Union[Literal["pending", "queued", "running", "completed", "error", "user_error"], None],
     limit: Union[int, None],
+    json: bool,
 ) -> None:
     """List evals"""
 
     client: Together = ctx.obj
 
     response = client.evals.list(status=status or omit, limit=limit or omit)
+
+    if json:
+        print_json(openapi_dumps(response).decode("utf-8"))
+        return
 
     display_list: List[Dict[str, Any]] = []
     for job in response:

@@ -1,8 +1,9 @@
 import click
+from rich import print_json
 
 from together import Together
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
@@ -18,8 +19,6 @@ def retrieve(ctx: click.Context, endpoint_id: str, json: bool) -> None:
 
     endpoint = client.endpoints.retrieve(endpoint_id)
     if json:
-        import json as json_lib
-
-        click.echo(json_lib.dumps(endpoint.model_dump(), indent=2, default=datetime_serializer))
+        print_json(openapi_dumps(endpoint.model_dump()).decode("utf-8"))
     else:
         ctx.obj.print_endpoint(endpoint)

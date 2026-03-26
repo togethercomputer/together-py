@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import re
-import json as json_lib
 from typing import Any, Dict, List
 
 import click
+from rich import print_json
 from tabulate import tabulate
 
 from together import Together, omit
 from together.types import EndpointListHardwareResponse
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
@@ -36,8 +36,7 @@ def hardware(client: Together, model: str | None, json: bool, available: bool) -
             if hardware.availability is not None and hardware.availability.status == "available"
         ]
     if json:
-        json_output = [hardware.model_dump() for hardware in hardware_options.data]
-        click.echo(json_lib.dumps(json_output, default=datetime_serializer, indent=2))
+        print_json(openapi_dumps(hardware_options.data).decode("utf-8"))
     else:
         _format_hardware_options(hardware_options, show_availability=model is not None)
 

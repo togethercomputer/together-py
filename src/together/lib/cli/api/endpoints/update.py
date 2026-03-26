@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import sys
-import json as json_lib
 from typing import Any, Dict
 
 import click
+from rich import print_json
 
 from together import Together
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
@@ -69,7 +69,7 @@ def update(
     response = client.endpoints.update(endpoint_id, **kwargs)
 
     if json:
-        click.echo(json_lib.dumps(response.model_dump(), default=datetime_serializer, indent=2))
+        print_json(openapi_dumps(response.model_dump()).decode("utf-8"))
         return
 
     # Print what was updated

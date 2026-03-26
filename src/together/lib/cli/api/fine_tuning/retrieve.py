@@ -2,12 +2,10 @@ from datetime import datetime, timezone
 
 import click
 from rich import print as rprint, print_json
-from rich.json import JSON
 
 from together import Together
 from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors, generate_progress_bar
-from together.lib.utils.serializer import datetime_serializer
 
 
 @click.command()
@@ -28,7 +26,7 @@ def retrieve(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
     # remove events from response for cleaner output
     response.events = None
 
-    rprint(JSON.from_data(response.model_dump(exclude_none=True), default=datetime_serializer))
+    print_json(openapi_dumps(response).decode("utf-8"))
     progress_text = generate_progress_bar(response, datetime.now(timezone.utc), use_rich=True)
     prefix = f"Status: [bold]{response.status}[/bold],"
     rprint(f"{prefix} {progress_text}")

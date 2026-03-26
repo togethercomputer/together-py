@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import json as json_lib
 from typing import Literal
 
 import click
+from rich import print_json
 
 from together import Together, omit
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
@@ -49,11 +49,7 @@ def list(
     )
 
     if json:
-        click.echo(
-            json_lib.dumps(
-                [endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2
-            )
-        )
+        print_json(openapi_dumps(endpoints.data).decode("utf-8"))
         return
 
     if not endpoints:

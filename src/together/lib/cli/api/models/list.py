@@ -1,13 +1,13 @@
-import json as json_lib
 from typing import Any, Dict, List, Optional
 
 import click
+from rich import print_json
 from tabulate import tabulate
 
 from together import Together, omit
 from together._response import APIResponse as APIResponse
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
 
 
 @click.command()
@@ -30,8 +30,7 @@ def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
 
     if json:
-        items = [model.model_dump() for model in models_list]
-        click.echo(json_lib.dumps(items, indent=2, default=datetime_serializer))
+        print_json(openapi_dumps(models_list).decode("utf-8"))
         return
 
     display_list: List[Dict[str, Any]] = []
