@@ -53,6 +53,8 @@ else
 fi
 
 export DEFER_PYDANTIC_BUILD=false
+export TOGETHER_TELEMETRY_API=http://127.0.0.1:4010/arbitrary-url-not-gonna-work
+export TOGETHER_TELEMETRY_DISABLED=1
 
 # Note that we need to specify the patch version here so that uv
 # won't use unstable (alpha, beta, rc) releases for the tests
