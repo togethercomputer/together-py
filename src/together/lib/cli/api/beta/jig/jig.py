@@ -111,7 +111,7 @@ class DeployConfig:
     max_replicas: int = 1
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
-    command: Optional[list[str]] = None
+    command: list[str] = field(default_factory=list[str])
     autoscaling: dict[str, Union[str, float, int]] = field(default_factory=dict[str, Union[str, float, int]])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
