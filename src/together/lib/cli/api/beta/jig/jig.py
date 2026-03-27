@@ -348,6 +348,14 @@ def _generate_dockerfile(config: Config) -> str:
     if run := "\n".join(f"RUN {cmd}" for cmd in config.image.run):
         run += "\n"
 
+    pip = ""
+    if Path("pyproject.toml").exists():
+        pip = """COPY pyproject.toml .
+RUN --mount=type=cache,target=/root/.cache/uv \\
+    uv pip install --system --compile-bytecode . && \\
+    (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
+"""
+
     copy = "\n".join(f"COPY {file} {file}" for file in _files_to_copy(config))
 
     # check if .git exists in current directory
@@ -366,10 +374,7 @@ FROM python:{config.image.python_version} AS builder
 COPY --from=ghcr.io/astral-sh/uv /uv /usr/local/bin/uv
 
 WORKDIR /app
-COPY pyproject.toml .
-RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv pip install --system --compile-bytecode . && \\
-    (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
+{pip}
 
 # Final stage - slim image
 FROM python:{config.image.python_version}-slim
