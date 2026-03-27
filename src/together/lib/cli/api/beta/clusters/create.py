@@ -152,7 +152,7 @@ def create(
 
         # In our QA environment, we don't accept storage volume creation, so we skip the prompt
         if not volume and "qa" not in client.base_url.host:
-            if click.confirm():
+            if click.confirm("Clusters: Create a new storage volume?"):
                 default_volume_name = f"{params['cluster_name']}-storage"
                 params["shared_volume"] = SharedVolume(
                     region=f"{params['region']}",
@@ -175,13 +175,13 @@ def create(
                     type=click.Choice([volume.volume_id for volume in volumes.volumes]),
                 )
 
-        click.echo()
+        click.echo("Clusters: Creating cluster with the following parameters:")
         print(ClusterCreateParams(**params))  # type: ignore
 
     response = client.beta.clusters.create(**params)
 
     if json:
-        print_json(openapi_dumps(response).decode())
+        print_json(openapi_dumps(response).decode("utf-8"))
     else:
         click.echo(f"Clusters: Cluster created successfully")
         click.echo(f"Clusters: {response.cluster_id}")

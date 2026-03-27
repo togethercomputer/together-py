@@ -31,7 +31,7 @@ def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
     if not click.confirm(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}?"):
         return
 
-    click.echo()
+    click.echo("Clusters: Deleting cluster...")
     response = client.beta.clusters.delete(cluster_id=cluster_id)
 
     click.echo(f"Clusters: Deleted cluster {cluster.cluster_name}")

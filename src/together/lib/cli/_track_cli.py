@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import os
 import re
 import sys
@@ -15,9 +14,9 @@ from pathlib import Path
 from functools import wraps
 
 import click
-from click.core import ParameterSource
 import httpx
 import machineid
+from click.core import ParameterSource
 from detect_agent import determine_agent
 
 from together import __version__
@@ -131,7 +130,7 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     def send_event() -> None:
         analytics_api_env = os.getenv("TOGETHER_TELEMETRY_API")
         analytics_api = (
-            analytics_api_env if analytics_api_env else "https://api.qa.together.ai/together/gateway/pub/v1/httpRequest"
+            analytics_api_env if analytics_api_env else "https://api.together.ai/together/gateway/pub/v1/httpRequest"
         )
 
         try:
@@ -164,8 +163,8 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                 },
             }
             body = json.dumps(payload)
-            with httpx.Client() as client:
-                response = client.post(
+            with httpx.Client(timeout=2.0) as client:
+                client.post(
                     analytics_api,
                     headers={
                         "content-type": "application/json",
@@ -173,11 +172,10 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                     },
                     content=body,
                 )
-                log_debug("Analytics event sent", response=response.text)
         except Exception as e:
             log_debug("Error sending analytics event", error=e)
 
-    threading.Thread(target=send_event).start()
+    threading.Thread(target=send_event, daemon=True).start()
 
 
 def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:

@@ -15,7 +15,7 @@ from together._utils._logs import setup_logging
 from together.lib.cli.api.beta import beta
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
-from together.lib.cli._track_cli import CliTrackingEvents, invoked_subcommand_path, track_cli
+from together.lib.cli._track_cli import CliTrackingEvents, track_cli, invoked_subcommand_path
 from together.lib.cli.api.models import models
 from together.lib.cli.api.endpoints import endpoints
 from together.lib.cli.api.telemetry import telemetry
@@ -109,7 +109,7 @@ def main(
         try:
             track_cli(
                 CliTrackingEvents.ApiRequest,
-                {"url": str(request.url), "method": request.method, "body": request.content.decode("utf-8")},
+                {"url": str(request.url), "method": request.method},
             )
         except Exception as e:
             log_debug("Error tracking api request", error=e)
