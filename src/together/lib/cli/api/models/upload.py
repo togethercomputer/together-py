@@ -50,7 +50,7 @@ from together.types.model_upload_response import ModelUploadResponse
 )
 @click.pass_context
 @handle_api_errors("Models")
-@auto_track_command("models upload")
+@auto_track_command
 def upload(
     ctx: click.Context,
     model_name: str,

@@ -14,7 +14,7 @@ from together.lib.cli.api._utils import handle_api_errors
 @click.option("--quiet", is_flag=True, help="Deprecated, use --force instead")
 @click.option("--json", is_flag=True, help="Print output in JSON format, must use --force to use this option")
 @handle_api_errors("Fine-tuning")
-@auto_track_command("fine-tuning delete")
+@auto_track_command
 def delete(ctx: click.Context, fine_tune_id: str, force: bool = False, quiet: bool = False, json: bool = False) -> None:
     """Delete fine-tuning job"""
     client: Together = ctx.obj

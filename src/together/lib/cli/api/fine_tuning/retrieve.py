@@ -16,7 +16,7 @@ from together.lib.utils.serializer import datetime_serializer
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--json", is_flag=True, help="Output the response in JSON format")
 @handle_api_errors("Fine-tuning")
-@auto_track_command("fine-tuning retrieve")
+@auto_track_command
 def retrieve(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
     """Retrieve fine-tuning job details"""
     client: Together = ctx.obj

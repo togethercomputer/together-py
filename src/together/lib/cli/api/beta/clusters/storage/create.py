@@ -32,7 +32,7 @@ from together.lib.cli.api._utils import handle_api_errors
     help="Output in JSON format",
 )
 @click.pass_context
-@auto_track_command("clusters storage create")
+@auto_track_command
 @handle_api_errors("Clusters Storage")
 def create(ctx: click.Context, region: str, size_tib: int, volume_name: str, json: bool) -> None:
     """Create a storage volume"""

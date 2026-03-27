@@ -31,7 +31,7 @@ def print_storage(storage: List[ClusterStorage]) -> None:
 )
 @click.pass_context
 @handle_api_errors("Clusters Storage")
-@auto_track_command("clusters storage list")
+@auto_track_command
 def list(ctx: click.Context, json: bool) -> None:
     """List storage volumes"""
     client: Together = ctx.obj

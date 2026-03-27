@@ -15,7 +15,7 @@ from together._utils._logs import setup_logging
 from together.lib.cli.api.beta import beta
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
-from together.lib.cli._track_cli import CliTrackingEvents, track_cli
+from together.lib.cli._track_cli import CliTrackingEvents, invoked_subcommand_path, track_cli
 from together.lib.cli.api.models import models
 from together.lib.cli.api.endpoints import endpoints
 from together.lib.cli.api.telemetry import telemetry
@@ -91,8 +91,7 @@ def main(
 
             # Wrap the client's httpx requests to track the parameters sent on api requests
             def block_requests_for_api_key(_: httpx.Request) -> None:
-                invoked_command = click.get_current_context().command_path
-                invoked_command_name = invoked_command.split("together ")[1]
+                invoked_command_name = invoked_subcommand_path()
                 click.secho(
                     "Error: api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
                     fg="red",

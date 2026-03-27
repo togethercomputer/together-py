@@ -11,7 +11,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 @click.pass_obj
 @handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command("endpoints availability-zones")
+@auto_track_command
 def availability_zones(client: Together, json: bool) -> None:
     """List all availability zones."""
     avzones = client.endpoints.list_avzones()

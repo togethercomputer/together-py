@@ -16,7 +16,7 @@ from together.lib.cli.api._utils import handle_api_errors
     help="Output the response in JSON format",
 )
 @handle_api_errors("Files")
-@auto_track_command("files delete")
+@auto_track_command
 def delete(ctx: click.Context, id: str, json: bool) -> None:
     """Delete remote file"""
 

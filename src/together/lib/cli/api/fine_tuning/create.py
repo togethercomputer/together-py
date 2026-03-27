@@ -212,7 +212,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     help="HF repo to upload the fine-tuned model to",
 )
 @handle_api_errors("Fine-tuning")
-@auto_track_command("fine-tuning create")
+@auto_track_command
 def create(
     ctx: click.Context,
     training_file: str,

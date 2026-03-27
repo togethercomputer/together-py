@@ -39,7 +39,7 @@ from together.lib.cli.api._utils import handle_api_errors
     help="Output the response in JSON format",
 )
 @handle_api_errors("Files")
-@auto_track_command("files upload")
+@auto_track_command
 def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: bool, json: bool) -> None:
     """Upload file"""
 

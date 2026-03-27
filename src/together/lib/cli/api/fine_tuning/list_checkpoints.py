@@ -16,7 +16,7 @@ from together.lib.cli.api._utils import handle_api_errors
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
-@auto_track_command("fine-tuning list-checkpoints")
+@auto_track_command
 def list_checkpoints(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
     """List available checkpoints for a fine-tuning job"""
     client: Together = ctx.obj

@@ -21,7 +21,7 @@ from together.lib.cli.api._utils import handle_api_errors
 )
 @click.pass_context
 @handle_api_errors("Evals")
-@auto_track_command("evals list")
+@auto_track_command
 def list(
     ctx: click.Context,
     status: Union[Literal["pending", "queued", "running", "completed", "error", "user_error"], None],

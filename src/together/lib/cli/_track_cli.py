@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 import os
 import re
 import sys
@@ -13,6 +14,8 @@ from typing import Any, TypeVar, Callable, cast
 from pathlib import Path
 from functools import wraps
 
+import click
+from click.core import ParameterSource
 import httpx
 import machineid
 from detect_agent import determine_agent
@@ -86,6 +89,40 @@ class CliTrackingEvents(Enum):
     ApiRequest = "cli_command_api_request"
 
 
+def invoked_subcommand_path() -> str:
+    """Subcommand path after the top-level program name (e.g. ``evals list`` for ``together evals list``).
+
+    Uses :attr:`click.Context.command_path` and strips the root context's ``info_name`` so the
+    binary name can differ from ``together`` (entry points, ``python -m``, etc.).
+    """
+    ctx = click.get_current_context(silent=True)
+    if ctx is None:
+        return ""
+    path = ctx.command_path
+    root_name = (ctx.find_root().info_name or "").strip()
+    if not root_name:
+        return path
+    prefix = root_name + " "
+    if path.startswith(prefix):
+        return path[len(prefix) :]
+    return path
+
+
+def explicit_cli_parameter_names() -> list[str]:
+    """Names of Click options/arguments whose values came from the user's argv (not defaults/env).
+
+    These are Python parameter names (e.g. ``json`` for ``--json``), not the literal flag spellings.
+    """
+    ctx = click.get_current_context(silent=True)
+    if ctx is None:
+        return []
+    names: list[str] = []
+    for name in ctx.params:
+        if ctx.get_parameter_source(name) == ParameterSource.COMMANDLINE:
+            names.append(name)
+    return sorted(names)
+
+
 def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     """Track a CLI event. Non-Blocking."""
     if not is_tracking_enabled():
@@ -94,7 +131,7 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     def send_event() -> None:
         analytics_api_env = os.getenv("TOGETHER_TELEMETRY_API")
         analytics_api = (
-            analytics_api_env if analytics_api_env else "https://api.together.ai/together/gateway/pub/v1/httpRequest"
+            analytics_api_env if analytics_api_env else "https://api.qa.together.ai/together/gateway/pub/v1/httpRequest"
         )
 
         try:
@@ -143,39 +180,37 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     threading.Thread(target=send_event).start()
 
 
-def auto_track_command(command: str) -> Callable[[F], F]:
+def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator for click commands to automatically track CLI commands start/completion/failure."""
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        cmd = invoked_subcommand_path()
+        explicit = explicit_cli_parameter_names()
+        track_cli(CliTrackingEvents.CommandStarted, {"command": cmd, "arguments": explicit})
+        try:
+            result = f(*args, **kwargs)
+        except KeyboardInterrupt as e:
+            track_cli(
+                CliTrackingEvents.CommandUserAborted,
+                {"command": cmd, "arguments": explicit},
+            )
+            raise e
 
-    def decorator(f: F) -> F:
-        @wraps(f)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            track_cli(CliTrackingEvents.CommandStarted, {"command": command, "arguments": kwargs})
-            try:
-                result = f(*args, **kwargs)
-            except KeyboardInterrupt as e:
-                track_cli(
-                    CliTrackingEvents.CommandUserAborted,
-                    {"command": command, "arguments": kwargs},
-                )
-                raise e
+        except Exception as e:
+            track_cli(
+                CliTrackingEvents.CommandFailed,
+                {
+                    "command": cmd,
+                    "arguments": explicit,
+                    "error": _sanitize_cli_error_message(str(e)),
+                },
+            )
+            raise e
 
-            except Exception as e:
-                track_cli(
-                    CliTrackingEvents.CommandFailed,
-                    {
-                        "command": command,
-                        "arguments": kwargs,
-                        "error": _sanitize_cli_error_message(str(e)),
-                    },
-                )
-                raise e
+        track_cli(CliTrackingEvents.CommandCompleted, {"command": cmd, "arguments": explicit})
+        return result
 
-            track_cli(CliTrackingEvents.CommandCompleted, {"command": command, "arguments": kwargs})
-            return result
-
-        return wrapper  # type: ignore
-
-    return decorator  # type: ignore
+    return wrapper  # type: ignore
 
 
 def _sanitize_cli_error_message(msg: str) -> str:

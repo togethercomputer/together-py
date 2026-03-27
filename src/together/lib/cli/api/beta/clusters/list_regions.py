@@ -17,7 +17,7 @@ from together.lib.cli.api._utils import handle_api_errors
 )
 @click.pass_context
 @handle_api_errors("Clusters")
-@auto_track_command("clusters list-regions")
+@auto_track_command
 def list_regions(ctx: click.Context, json: bool) -> None:
     """List regions"""
     client: Together = ctx.obj

@@ -15,7 +15,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 @click.pass_obj
 @handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command("endpoints stop")
+@auto_track_command
 def stop(client: Together, endpoint_id: str, wait: bool, json: bool) -> None:
     """Stop a dedicated inference endpoint."""
     client.endpoints.update(endpoint_id, state="STOPPED")

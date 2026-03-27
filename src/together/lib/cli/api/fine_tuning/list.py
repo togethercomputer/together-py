@@ -17,7 +17,7 @@ from together.lib.cli.api._utils import handle_api_errors, generate_progress_tex
 @click.pass_context
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
-@auto_track_command("fine-tuning list")
+@auto_track_command
 def list(ctx: click.Context, json: bool) -> None:
     """List fine-tuning jobs"""
     client: Together = ctx.obj

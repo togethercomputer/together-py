@@ -15,7 +15,7 @@ from together.lib.cli.api._utils import handle_api_errors
 @click.option("--output", type=click.Path(file_okay=False, writable=True, dir_okay=True), help="Output filename")
 @click.option("--stdout", is_flag=True, default=False, help="Output to stdout")
 @handle_api_errors("Files")
-@auto_track_command("files retrieve-content")
+@auto_track_command
 def retrieve_content(ctx: click.Context, id: str, output: Union[str, None], stdout: bool) -> None:
     """Retrieve file content and output to file"""
 

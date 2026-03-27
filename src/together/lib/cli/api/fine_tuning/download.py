@@ -45,7 +45,7 @@ _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 )
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
-@auto_track_command("fine-tuning download")
+@auto_track_command
 def download(
     ctx: click.Context,
     fine_tune_id: str,

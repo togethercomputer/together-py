@@ -26,7 +26,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 @click.pass_obj
 @handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command("endpoints hardware")
+@auto_track_command
 def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
     """List all available hardware options, optionally filtered by model."""
     hardware_options = client.endpoints.list_hardware(model=model or omit)

@@ -63,7 +63,7 @@ from together.types.beta.cluster_create_params import SharedVolume, ClusterCreat
 @click.option("--non-interactive", is_flag=True, default=False, help="Disable interactive mode")
 @click.pass_context
 @handle_api_errors("Clusters")
-@auto_track_command("clusters create")
+@auto_track_command
 def create(
     ctx: click.Context,
     name: str | None = None,
@@ -152,7 +152,7 @@ def create(
 
         # In our QA environment, we don't accept storage volume creation, so we skip the prompt
         if not volume and "qa" not in client.base_url.host:
-            if click.confirm("Clusters: Create a new storage volume?"):
+            if click.confirm():
                 default_volume_name = f"{params['cluster_name']}-storage"
                 params["shared_volume"] = SharedVolume(
                     region=f"{params['region']}",
@@ -175,13 +175,13 @@ def create(
                     type=click.Choice([volume.volume_id for volume in volumes.volumes]),
                 )
 
-        click.echo("Clusters: Creating cluster with the following parameters:")
+        click.echo()
         print(ClusterCreateParams(**params))  # type: ignore
 
     response = client.beta.clusters.create(**params)
 
     if json:
-        print_json(openapi_dumps(response).decode("utf-8"))
+        print_json(openapi_dumps(response).decode())
     else:
         click.echo(f"Clusters: Cluster created successfully")
         click.echo(f"Clusters: {response.cluster_id}")

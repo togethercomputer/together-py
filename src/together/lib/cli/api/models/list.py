@@ -24,7 +24,7 @@ from together.lib.utils.serializer import datetime_serializer
 )
 @click.pass_context
 @handle_api_errors("Models")
-@auto_track_command("models list")
+@auto_track_command
 def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     """List models"""
     client: Together = ctx.obj

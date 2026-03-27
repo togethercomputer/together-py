@@ -17,7 +17,7 @@ from together.lib.cli.api._utils import handle_api_errors
 @click.pass_context
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Files")
-@auto_track_command("files list")
+@auto_track_command
 def list(ctx: click.Context, json: bool) -> None:
     """List files"""
     client: Together = ctx.obj

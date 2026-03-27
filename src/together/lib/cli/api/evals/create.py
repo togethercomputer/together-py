@@ -228,7 +228,7 @@ from together.types.eval_create_params import (
 )
 @click.pass_context
 @handle_api_errors("Evals")
-@auto_track_command("evals create")
+@auto_track_command
 def create(
     ctx: click.Context,
     type: Literal["classify", "score", "compare"],

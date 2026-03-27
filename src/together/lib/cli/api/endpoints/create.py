@@ -77,7 +77,7 @@ from .hardware import hardware as list_hardware
 @click.pass_context
 @handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command("endpoints create")
+@auto_track_command
 def create(
     ctx: click.Context,
     model: str,

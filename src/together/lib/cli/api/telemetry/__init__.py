@@ -19,7 +19,7 @@ def telemetry() -> None:
 
 
 @telemetry.command("status")
-@auto_track_command("telemetry status")
+@auto_track_command
 def telemetry_status() -> None:
     """Check to see if telemetry is enabled or disabled."""
     if _config_telemetry_disabled():
@@ -32,7 +32,7 @@ def telemetry_status() -> None:
 
 
 @telemetry.command("disable")
-@auto_track_command("telemetry disable")
+@auto_track_command
 def telemetry_disable() -> None:
     """Explicitly Disable telemetry"""
     cfg = load_telemetry_config()
@@ -42,7 +42,7 @@ def telemetry_disable() -> None:
 
 
 @telemetry.command("enable")
-@auto_track_command("telemetry enable")
+@auto_track_command
 def telemetry_enable() -> None:
     """Enable telemetry"""
     cfg = load_telemetry_config()

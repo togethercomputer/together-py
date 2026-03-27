@@ -21,7 +21,7 @@ from together.lib.cli._track_cli import auto_track_command
     is_flag=True,
     help="Output the response in JSON format",
 )
-@auto_track_command("files check")
+@auto_track_command
 def check(_ctx: click.Context, file: pathlib.Path, json: bool) -> None:
     """Check file for issues"""
 

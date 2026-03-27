@@ -16,7 +16,7 @@ from together.lib.cli.api._utils import handle_api_errors
 )
 @click.pass_context
 @handle_api_errors("Clusters")
-@auto_track_command("clusters delete")
+@auto_track_command
 def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
     """Delete a cluster by ID"""
     client: Together = ctx.obj
@@ -31,7 +31,7 @@ def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
     if not click.confirm(f"Clusters: Are you sure you want to delete cluster {cluster.cluster_name}?"):
         return
 
-    click.echo("Clusters: Deleting cluster...")
+    click.echo()
     response = client.beta.clusters.delete(cluster_id=cluster_id)
 
     click.echo(f"Clusters: Deleted cluster {cluster.cluster_name}")
