@@ -15,7 +15,6 @@ from functools import wraps
 
 import click
 import httpx
-import machineid
 from click.core import ParameterSource
 from detect_agent import determine_agent
 
@@ -107,23 +106,12 @@ def invoked_subcommand_path() -> str:
     return path
 
 
-def explicit_cli_parameter_names() -> list[str]:
-    """Names of Click options/arguments whose values came from the user's argv (not defaults/env).
-
-    These are Python parameter names (e.g. ``json`` for ``--json``), not the literal flag spellings.
-    """
-    ctx = click.get_current_context(silent=True)
-    if ctx is None:
-        return []
-    names: list[str] = []
-    for name in ctx.params:
-        if ctx.get_parameter_source(name) == ParameterSource.COMMANDLINE:
-            names.append(name)
-    return sorted(names)
 
 
 def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
-    """Track a CLI event. Non-Blocking."""
+    """
+    Track a CLI event. Non-Blocking.
+    """
     if not is_tracking_enabled():
         return
 
@@ -152,7 +140,7 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                 },
                 "context": {
                     "session_id": str(SESSION_ID),
-                    "device_id": machineid.id().lower(),
+                    "device_id": _load_device_id(),
                     "time": int(time.time() * 1000),
                     "runtime": {
                         "name": "together-cli",
@@ -179,11 +167,15 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
 
 
 def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator for click commands to automatically track CLI commands start/completion/failure."""
+    """
+    Decorator for click commands to automatically track CLI commands start/completion/failure.
+
+    Every command should be decorated with this decorator.
+    """
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         cmd = invoked_subcommand_path()
-        explicit = explicit_cli_parameter_names()
+        explicit = _get_explicit_cli_parameter_names()
         track_cli(CliTrackingEvents.CommandStarted, {"command": cmd, "arguments": explicit})
         try:
             result = f(*args, **kwargs)
@@ -212,6 +204,7 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def _sanitize_cli_error_message(msg: str) -> str:
+    """Sanitize the error messages caught for telemetry to remove sensitive information."""
     s = msg.strip()
     if len(s) > _ERROR_MESSAGE_MAX_LEN:
         s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
@@ -226,9 +219,40 @@ def _sanitize_cli_error_message(msg: str) -> str:
 
 
 def _env_telemetry_disabled() -> bool:
+    """Check if telemetry is disabled by the environment variable."""
     v = os.getenv("TOGETHER_TELEMETRY_DISABLED", "").strip().lower()
     return v in _ENV_TELEMETRY_OFF
 
 
 def _config_telemetry_disabled() -> bool:
+    """Check if telemetry is disabled by the config file."""
     return load_telemetry_config().get("telemetry_enabled") is False
+
+def _get_explicit_cli_parameter_names() -> list[str]:
+    """Names of Click options/arguments whose values came from the user's argv (not defaults/env).
+
+    These are Python parameter names (e.g. ``json`` for ``--json``), not the literal flag spellings.
+    """
+    ctx = click.get_current_context(silent=True)
+    if ctx is None:
+        return []
+    names: list[str] = []
+    for name in ctx.params:
+        if ctx.get_parameter_source(name) == ParameterSource.COMMANDLINE:
+            names.append(name)
+    return sorted(names)
+
+def _load_device_id() -> str:
+    """
+    Loads a uuid for this device that is stored in the config file.
+
+    If the config file does not contain one, we generate and save it.
+    """
+    config = load_telemetry_config()
+    if "device_id" in config:
+        return config["device_id"]
+
+    device_id = str(uuid.uuid4())
+    config["device_id"] = device_id
+    save_telemetry_config(config)
+    return device_id

@@ -1232,18 +1232,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-machineid"
-version = "1.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "winregistry", marker = "sys_platform == 'win32' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/b0/c7fa6de7298a8f4e544929b97fa028304c0e11a4bc9500eff8689821bdbb/py_machineid-1.0.0.tar.gz", hash = "sha256:8a902a00fae8c6d6433f463697c21dc4ce98c6e55a2e0535c0273319acb0047a", size = 4629, upload-time = "2025-12-02T16:12:54.286Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/76/1ed8375cb1212824c57eb706e1f09f3f2ca4ed12b8d56b28a160e2d53505/py_machineid-1.0.0-py3-none-any.whl", hash = "sha256:910df0d5f2663bcf6739d835c4949f4e9cc6bb090a58b3dd766e12e5f768e3b9", size = 4926, upload-time = "2025-12-02T16:12:20.584Z" },
-]
-
-[[package]]
 name = "pyarrow"
 version = "21.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2092,7 +2080,6 @@ dependencies = [
     { name = "httpx" },
     { name = "pillow", version = "11.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "pillow", version = "12.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
-    { name = "py-machineid" },
     { name = "pydantic", version = "1.10.26", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-8-together-pydantic-v1'" },
     { name = "pydantic", version = "2.12.5", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-8-together-pydantic-v2' or extra != 'group-8-together-pydantic-v1'" },
     { name = "rich" },
@@ -2165,7 +2152,6 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.23.0,<1" },
     { name = "httpx-aiohttp", marker = "extra == 'aiohttp'", specifier = ">=0.1.9" },
     { name = "pillow", specifier = ">=10.4.0" },
-    { name = "py-machineid", specifier = ">=1.0.0" },
     { name = "pyarrow", marker = "extra == 'pyarrow'", specifier = ">=16.1.0" },
     { name = "pyarrow-stubs", marker = "extra == 'pyarrow'", specifier = ">=10.0.1.7" },
     { name = "pydantic", specifier = ">=1.9.0,<3" },
@@ -2389,15 +2375,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
-]
-
-[[package]]
-name = "winregistry"
-version = "2.1.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/86/94/ddc339d2562267af7d25d5067874f7df8c6c19ab9dd976fa830982b1c398/winregistry-2.1.2.tar.gz", hash = "sha256:50260e1aaba4116f707f86a4e287ffcb1eeae7dc0a0883c6d1776017e693fc69", size = 9538, upload-time = "2025-10-09T09:25:07.391Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/dd/5a18d9fbf9a3d69b40e395d80779dfaeda77b98c946df36bf7df41ddcaa5/winregistry-2.1.2-py3-none-any.whl", hash = "sha256:e142548f56fc1fc6b83ddf88baca2e9e18cd6a266d9e00f111e54977dee768cf", size = 8507, upload-time = "2025-10-09T09:25:05.82Z" },
 ]
 
 [[package]]
