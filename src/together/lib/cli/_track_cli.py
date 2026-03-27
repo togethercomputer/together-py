@@ -107,8 +107,6 @@ def invoked_subcommand_path() -> str:
     return path
 
 
-
-
 def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     """
     Track a CLI event. Non-Blocking.
@@ -173,6 +171,7 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
 
     Every command should be decorated with this decorator.
     """
+
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         cmd = invoked_subcommand_path()
@@ -229,6 +228,7 @@ def _config_telemetry_disabled() -> bool:
     """Check if telemetry is disabled by the config file."""
     return load_telemetry_config().get("telemetry_enabled") is False
 
+
 def _get_explicit_cli_parameter_names() -> list[str]:
     """Names of Click options/arguments whose values came from the user's argv (not defaults/env).
 
@@ -243,6 +243,7 @@ def _get_explicit_cli_parameter_names() -> list[str]:
             names.append(name)
     return sorted(names)
 
+
 def _load_device_id() -> str:
     """
     Loads a uuid for this device that is stored in the config file.
@@ -252,7 +253,7 @@ def _load_device_id() -> str:
     try:
         config = load_telemetry_config()
         if "device_id" in config:
-            return config["device_id"]
+            return cast(str, config["device_id"])
 
         device_id = str(uuid.uuid4())
         config["device_id"] = device_id
