@@ -24,6 +24,7 @@ from together.lib.utils import log_debug
 F = TypeVar("F", bound=Callable[..., Any])
 
 SESSION_ID = int(str(uuid.uuid4().int)[0:13])
+CATCH_ALL_DEVICE_ID = "1a41ab33-35d0-420a-ba28-182fddd249c9"
 
 _ENV_TELEMETRY_OFF = frozenset({"1", "true", "yes"})
 _ERROR_MESSAGE_MAX_LEN = 500
@@ -248,11 +249,14 @@ def _load_device_id() -> str:
 
     If the config file does not contain one, we generate and save it.
     """
-    config = load_telemetry_config()
-    if "device_id" in config:
-        return config["device_id"]
+    try:
+        config = load_telemetry_config()
+        if "device_id" in config:
+            return config["device_id"]
 
-    device_id = str(uuid.uuid4())
-    config["device_id"] = device_id
-    save_telemetry_config(config)
-    return device_id
+        device_id = str(uuid.uuid4())
+        config["device_id"] = device_id
+        save_telemetry_config(config)
+        return device_id
+    except Exception:
+        return CATCH_ALL_DEVICE_ID
