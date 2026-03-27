@@ -23,8 +23,7 @@ from together.lib.utils import log_debug
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-SESSION_ID = int(str(uuid.uuid4().int)[0:13])
-CATCH_ALL_DEVICE_ID = "1a41ab33-35d0-420a-ba28-182fddd249c9"
+_SESSION_ID = int(str(uuid.uuid4().int)[0:13])
 
 _ENV_TELEMETRY_OFF = frozenset({"1", "true", "yes"})
 _ERROR_MESSAGE_MAX_LEN = 500
@@ -114,6 +113,9 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     if not is_tracking_enabled():
         return
 
+    # Intentionally loading device id here so we don't have to do it in the background thread and have race conditions.
+    device_id = _load_device_id()
+
     def send_event() -> None:
         analytics_api_env = os.getenv("TOGETHER_TELEMETRY_API")
         analytics_api = (
@@ -138,8 +140,8 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                     **args,
                 },
                 "context": {
-                    "session_id": str(SESSION_ID),
-                    "device_id": _load_device_id(),
+                    "session_id": str(_SESSION_ID),
+                    "device_id": device_id,
                     "time": int(time.time() * 1000),
                     "runtime": {
                         "name": "together-cli",
@@ -244,20 +246,27 @@ def _get_explicit_cli_parameter_names() -> list[str]:
     return sorted(names)
 
 
+_CATCH_ALL_DEVICE_ID = "1a41ab33-35d0-420a-ba28-182fddd249c9"
+_cached_device_id: None | str = None
+
+
 def _load_device_id() -> str:
     """
     Loads a uuid for this device that is stored in the config file.
 
     If the config file does not contain one, we generate and save it.
     """
+    global _cached_device_id
+    if _cached_device_id is not None:
+        return _cached_device_id
     try:
         config = load_telemetry_config()
         if "device_id" in config:
             return cast(str, config["device_id"])
 
-        device_id = str(uuid.uuid4())
-        config["device_id"] = device_id
+        _cached_device_id = str(uuid.uuid4())
+        config["device_id"] = _cached_device_id
         save_telemetry_config(config)
-        return device_id
+        return _cached_device_id
     except Exception:
-        return CATCH_ALL_DEVICE_ID
+        return _CATCH_ALL_DEVICE_ID
