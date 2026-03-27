@@ -451,8 +451,6 @@ class FinetuneRequest(BaseModel):
     training_file: str
     # validation file id
     validation_file: Union[str, None] = None
-    # whether to use packing for training
-    packing: bool = True
     # base model string
     model: Union[str, None] = None
     # number of epochs to train for

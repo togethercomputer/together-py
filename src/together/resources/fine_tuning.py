@@ -82,7 +82,6 @@ class FineTuningResource(SyncAPIResource):
         model: str | None = None,
         n_epochs: int = 1,
         validation_file: str | None = "",
-        packing: bool = True,
         n_evals: int | None = 0,
         n_checkpoints: int | None = 1,
         batch_size: int | Literal["max"] = "max",
@@ -128,7 +127,6 @@ class FineTuningResource(SyncAPIResource):
             model (str, optional): Name of the base model to run fine-tune job on
             n_epochs (int, optional): Number of epochs for fine-tuning. Defaults to 1.
             validation file (str, optional): File ID of a file uploaded to the Together API for validation.
-            packing (bool, optional): Whether to use packing for training. Defaults to True.
             n_evals (int, optional): Number of evaluation loops to run. Defaults to 0.
             n_checkpoints (int, optional): Number of checkpoints to save during fine-tuning.
                 Defaults to 1.
@@ -212,7 +210,6 @@ class FineTuningResource(SyncAPIResource):
             model=model,
             n_epochs=n_epochs,
             validation_file=validation_file,
-            packing=packing,
             n_evals=n_evals,
             n_checkpoints=n_checkpoints,
             batch_size=batch_size,
@@ -647,7 +644,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
         model: str | None = None,
         n_epochs: int = 1,
         validation_file: str | None = "",
-        packing: bool = True,
         n_evals: int | None = 0,
         n_checkpoints: int | None = 1,
         batch_size: int | Literal["max"] = "max",
@@ -693,7 +689,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
             model (str, optional): Name of the base model to run fine-tune job on
             n_epochs (int, optional): Number of epochs for fine-tuning. Defaults to 1.
             validation file (str, optional): File ID of a file uploaded to the Together API for validation.
-            packing (bool, optional): Whether to use packing for training. Defaults to True.
             n_evals (int, optional): Number of evaluation loops to run. Defaults to 0.
             n_checkpoints (int, optional): Number of checkpoints to save during fine-tuning.
                 Defaults to 1.
@@ -777,7 +772,6 @@ class AsyncFineTuningResource(AsyncAPIResource):
             model=model,
             n_epochs=n_epochs,
             validation_file=validation_file,
-            packing=packing,
             n_evals=n_evals,
             n_checkpoints=n_checkpoints,
             batch_size=batch_size,
