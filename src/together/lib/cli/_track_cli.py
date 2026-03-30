@@ -51,7 +51,11 @@ def load_telemetry_config() -> dict[str, Any]:
         data = json.loads(raw)
         if not isinstance(data, dict):
             return {}
-        return cast(dict[str, Any], data)
+        config = cast(dict[str, Any], data)
+        # Optimistic memory caching so no other code has to load the config file.
+        global _cached_device_id
+        _cached_device_id = config.get("device_id")
+        return config
     except (OSError, json.JSONDecodeError):
         return {}
 

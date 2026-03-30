@@ -109,7 +109,7 @@ def main(
         try:
             track_cli(
                 CliTrackingEvents.ApiRequest,
-                {"url": str(request.url), "method": request.method},
+                {"path": request.url.path, "method": request.method},
             )
         except Exception as e:
             log_debug("Error tracking api request", error=e)
