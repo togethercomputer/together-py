@@ -192,6 +192,26 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
             )
             raise e
 
+        # Some commands use sys.exit(1) to exit the program.
+        # We need to track these so we can see if they are failing.
+        except SystemExit as e:
+            if e.code == 0:
+                track_cli(
+                    CliTrackingEvents.CommandCompleted,
+                    {"command": cmd, "arguments": explicit},
+                )
+                raise e
+
+            track_cli(
+                CliTrackingEvents.CommandFailed,
+                {
+                    "command": cmd,
+                    "arguments": explicit,
+                    "error": _sanitize_cli_error_message(str(e)),
+                },
+            )
+            raise e
+
         except Exception as e:
             track_cli(
                 CliTrackingEvents.CommandFailed,
