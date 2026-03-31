@@ -132,7 +132,7 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
             if agent_info["agent"]:
                 agent_name = agent_info["agent"]["name"]
 
-            log_debug("Analytics event sending", event_name=event_name.value, args=args)
+            log_debug("Analytics event sending", event_name=event_name.value, args=args, device_id=device_id)
 
             payload = {
                 "event_source": "cli",
@@ -166,7 +166,7 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                     content=body,
                 )
         except Exception as e:
-            log_debug("Error sending analytics event", error=e)
+            log_debug("Error sending analytics event", error=e, device_id=device_id)
 
     threading.Thread(target=send_event, daemon=True).start()
 
