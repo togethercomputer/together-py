@@ -15,7 +15,7 @@ from together._utils._logs import setup_logging
 from together.lib.cli.api.beta import beta
 from together.lib.cli.api.evals import evals
 from together.lib.cli.api.files import files
-from together.lib.cli._track_cli import CliTrackingEvents, track_cli, invoked_subcommand_path
+from together.lib.cli._track_cli import CliTrackingEvents, track_cli, flush_pending_events, invoked_subcommand_path
 from together.lib.cli.api.models import models
 from together.lib.cli.api.endpoints import endpoints
 from together.lib.cli.api.telemetry import telemetry
@@ -53,6 +53,7 @@ def print_version(ctx: click.Context, _params: Any, value: Any) -> None:
     help="Print version",
 )
 @click.option("--debug", help="Debug mode", is_flag=True)
+@flush_pending_events
 def main(
     ctx: click.Context,
     api_key: str | None,
@@ -126,14 +127,3 @@ main.add_command(models)
 main.add_command(endpoints)
 main.add_command(evals)
 main.add_command(beta)
-
-if __name__ == "__main__":
-    # When running the script, call the command with standalone_mode=False
-    # to prevent Click's default top-level exception handling from suppressing
-    # your try/except block.
-    try:
-        main(standalone_mode=False)
-    except SystemExit as e:
-        # Re-raise SystemExit if it's not a success exit (code 0)
-        if e.code != 0:
-            raise

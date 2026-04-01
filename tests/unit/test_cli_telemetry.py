@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import urllib.request
 from typing import Any
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
+from together.lib.cli import _track_cli as track_cli_mod
 from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
@@ -93,31 +95,40 @@ def test_load_telemetry_config_invalid_json_returns_empty(monkeypatch: pytest.Mo
 def test_track_cli_skips_http_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TOGETHER_TELEMETRY_DISABLED", "1")
 
-    def _client_should_not_run(**_kw: Any) -> Any:
-        raise AssertionError("httpx.Client must not be used when telemetry is off")
+    def _urlopen_should_not_run(*_a: Any, **_kw: Any) -> Any:
+        raise AssertionError("urllib.request.urlopen must not be used when telemetry is off")
 
-    monkeypatch.setattr("together.lib.cli._track_cli.httpx.Client", _client_should_not_run)
+    monkeypatch.setattr("together.lib.cli._track_cli.urllib.request.urlopen", _urlopen_should_not_run)
     track_cli(CliTrackingEvents.CommandStarted, {"command": "x", "arguments": []})
 
 
 def test_track_cli_posts_json_when_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)
-    posted: list[tuple[str, dict[str, Any]]] = []
+    posted: list[urllib.request.Request] = []
 
-    class _Client:
-        def __enter__(self) -> _Client:
+    class _FakeResponse:
+        status = 200
+
+        def __enter__(self) -> _FakeResponse:
             return self
 
         def __exit__(self, *args: object) -> None:
             return None
 
-        def post(self, url: str, **kwargs: Any) -> None:
-            posted.append((url, kwargs))
+        def read(self, _n: int = -1) -> bytes:
+            return b""
 
-    def _client_factory(**_kw: Any) -> _Client:
-        return _Client()
+    def _urlopen_fake(
+        req: urllib.request.Request,
+        _data: object = None,
+        timeout: object = None,
+        **_kw: object,
+    ) -> _FakeResponse:
+        del timeout  # use var name to avoid lint error
+        posted.append(req)
+        return _FakeResponse()
 
-    monkeypatch.setattr("together.lib.cli._track_cli.httpx.Client", _client_factory)
+    monkeypatch.setattr("together.lib.cli._track_cli.urllib.request.urlopen", _urlopen_fake)
     monkeypatch.setenv(
         "TOGETHER_TELEMETRY_API",
         "https://example.test/telemetry",
@@ -127,10 +138,13 @@ def test_track_cli_posts_json_when_enabled(monkeypatch: pytest.MonkeyPatch) -> N
         CliTrackingEvents.CommandCompleted,
         {"command": "models list", "arguments": ["json"]},
     )
+    track_cli_mod._thread_pool[-1].join(timeout=5.0)
     assert len(posted) == 1
-    url, kw = posted[0]
-    assert url == "https://example.test/telemetry"
-    body = json.loads(str(kw["content"]))
+    req = posted[0]
+    assert req.get_full_url() == "https://example.test/telemetry"
+    payload = req.data
+    assert isinstance(payload, bytes)
+    body = json.loads(payload.decode("utf-8"))
     assert body["event_type"] == "cli_command_completed"
     assert body["event_properties"]["command"] == "models list"
     assert body["event_properties"]["arguments"] == ["json"]

@@ -8,13 +8,14 @@ import time
 import uuid
 import platform
 import threading
+import urllib.error
+import urllib.request
 from enum import Enum
 from typing import Any, TypeVar, Callable, cast
 from pathlib import Path
 from functools import wraps
 
 import click
-import httpx
 from click.core import ParameterSource
 from detect_agent import determine_agent
 
@@ -29,6 +30,8 @@ _ENV_TELEMETRY_OFF = frozenset({"1", "true", "yes"})
 _ERROR_MESSAGE_MAX_LEN = 500
 _CONFIG_DIR_NAME = "together"
 _CONFIG_FILE_NAME = "cli.json"
+
+_thread_pool: list[threading.Thread] = []
 
 
 def telemetry_config_path() -> Path:
@@ -110,6 +113,18 @@ def invoked_subcommand_path() -> str:
     return path
 
 
+def flush_pending_events(f: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return f(*args, **kwargs)
+        finally:
+            for thread in _thread_pool:
+                thread.join()
+
+    return wrapper
+
+
 def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
     """
     Track a CLI event. Non-Blocking.
@@ -156,19 +171,29 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                 },
             }
             body = json.dumps(payload)
-            with httpx.Client(timeout=2.0) as client:
-                client.post(
-                    analytics_api,
-                    headers={
-                        "content-type": "application/json",
-                        "user-agent": f"together-cli:{__version__}",
-                    },
-                    content=body,
-                )
+            log_debug("Analytics event sending", body=body, device_id=device_id)
+            req = urllib.request.Request(
+                analytics_api,
+                data=body.encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": f"together-cli:{__version__}",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=1.0):
+                pass
         except Exception as e:
+            if isinstance(e, urllib.error.HTTPError):
+                try:
+                    e.read()
+                finally:
+                    e.close()
             log_debug("Error sending analytics event", error=e, device_id=device_id)
 
-    threading.Thread(target=send_event, daemon=True).start()
+    thread = threading.Thread(target=send_event)
+    _thread_pool.append(thread)
+    thread.start()
 
 
 def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -182,13 +207,17 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         cmd = invoked_subcommand_path()
         explicit = _get_explicit_cli_parameter_names()
+        is_beta_command = cmd.startswith("beta ")
+        # If command starts with "beta " remove that from the start of the command name
+        if is_beta_command:
+            cmd = cmd[len("beta ") :]
         track_cli(CliTrackingEvents.CommandStarted, {"command": cmd, "arguments": explicit})
         try:
             result = f(*args, **kwargs)
         except KeyboardInterrupt as e:
             track_cli(
                 CliTrackingEvents.CommandUserAborted,
-                {"command": cmd, "arguments": explicit},
+                {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
             )
             raise e
 
@@ -198,7 +227,7 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
             if e.code == 0:
                 track_cli(
                     CliTrackingEvents.CommandCompleted,
-                    {"command": cmd, "arguments": explicit},
+                    {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
                 )
                 raise e
 
@@ -207,6 +236,7 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
                 {
                     "command": cmd,
                     "arguments": explicit,
+                    "is_beta_command": is_beta_command,
                     "error": _sanitize_cli_error_message(str(e)),
                 },
             )
@@ -218,12 +248,16 @@ def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
                 {
                     "command": cmd,
                     "arguments": explicit,
+                    "is_beta_command": is_beta_command,
                     "error": _sanitize_cli_error_message(str(e)),
                 },
             )
             raise e
 
-        track_cli(CliTrackingEvents.CommandCompleted, {"command": cmd, "arguments": explicit})
+        track_cli(
+            CliTrackingEvents.CommandCompleted,
+            {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
+        )
         return result
 
     return wrapper  # type: ignore
