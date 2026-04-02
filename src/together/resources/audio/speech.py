@@ -56,6 +56,7 @@ class SpeechResource(SyncAPIResource):
         input: str,
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -91,6 +92,10 @@ class SpeechResource(SyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+          bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
+              response_format is mp3. Higher values produce better audio quality at larger
+              file sizes. Default is 128000. Currently supported on Cartesia models.
+
           language: Language of input text.
 
           response_encoding: Audio encoding of response
@@ -124,6 +129,7 @@ class SpeechResource(SyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         stream: Literal[True],
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -162,6 +168,10 @@ class SpeechResource(SyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+          bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
+              response_format is mp3. Higher values produce better audio quality at larger
+              file sizes. Default is 128000. Currently supported on Cartesia models.
+
           language: Language of input text.
 
           response_encoding: Audio encoding of response
@@ -191,6 +201,7 @@ class SpeechResource(SyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         stream: bool,
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -229,6 +240,10 @@ class SpeechResource(SyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+          bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
+              response_format is mp3. Higher values produce better audio quality at larger
+              file sizes. Default is 128000. Currently supported on Cartesia models.
+
           language: Language of input text.
 
           response_encoding: Audio encoding of response
@@ -257,6 +272,7 @@ class SpeechResource(SyncAPIResource):
         input: str,
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -278,6 +294,7 @@ class SpeechResource(SyncAPIResource):
                     "input": input,
                     "model": model,
                     "voice": voice,
+                    "bit_rate": bit_rate,
                     "language": language,
                     "response_encoding": response_encoding,
                     "response_format": response_format,
@@ -324,6 +341,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         input: str,
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -359,6 +377,10 @@ class AsyncSpeechResource(AsyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+          bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
+              response_format is mp3. Higher values produce better audio quality at larger
+              file sizes. Default is 128000. Currently supported on Cartesia models.
+
           language: Language of input text.
 
           response_encoding: Audio encoding of response
@@ -392,6 +414,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         stream: Literal[True],
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -430,6 +453,10 @@ class AsyncSpeechResource(AsyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+          bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
+              response_format is mp3. Higher values produce better audio quality at larger
+              file sizes. Default is 128000. Currently supported on Cartesia models.
+
           language: Language of input text.
 
           response_encoding: Audio encoding of response
@@ -459,6 +486,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         stream: bool,
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -497,6 +525,10 @@ class AsyncSpeechResource(AsyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+          bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
+              response_format is mp3. Higher values produce better audio quality at larger
+              file sizes. Default is 128000. Currently supported on Cartesia models.
+
           language: Language of input text.
 
           response_encoding: Audio encoding of response
@@ -525,6 +557,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         input: str,
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
+        bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
         language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
         | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
@@ -546,6 +579,7 @@ class AsyncSpeechResource(AsyncAPIResource):
                     "input": input,
                     "model": model,
                     "voice": voice,
+                    "bit_rate": bit_rate,
                     "language": language,
                     "response_encoding": response_encoding,
                     "response_format": response_format,

@@ -50,7 +50,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     default="",
     help="Validation file ID from Files API or local path to a file to be uploaded.",
 )
-@click.option("--packing", type=bool, default=True, help="Whether to use packing for training.")
+@click.option("--packing/--no-packing", type=bool, default=True, help="Whether to use packing for training.")
 @click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
 @click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
 @click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
