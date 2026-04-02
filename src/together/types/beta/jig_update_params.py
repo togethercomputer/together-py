@@ -26,10 +26,7 @@ class JigUpdateParams(TypedDict, total=False):
     """
 
     autoscaling: Autoscaling
-    """Autoscaling configuration for the deployment.
-
-    Omit or set to null to disable autoscaling
-    """
+    """Autoscaling configuration for the deployment. Set to {} to disable autoscaling"""
 
     command: SequenceNotStr[str]
     """Command overrides the container's ENTRYPOINT.
@@ -55,7 +52,7 @@ class JigUpdateParams(TypedDict, total=False):
     gpu_count: int
     """GPUCount is the number of GPUs to allocate per container instance"""
 
-    gpu_type: Literal["h100-80gb", " a100-80gb"]
+    gpu_type: Literal["h100-80gb"]
     """GPUType specifies the GPU hardware to use (e.g., "h100-80gb")"""
 
     health_check_path: str

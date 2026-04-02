@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 from datetime import datetime, timezone
 
 import click
+from rich import print_json
 from tabulate import tabulate
 
 from together import Together
@@ -29,7 +30,7 @@ def list(ctx: click.Context, json: bool) -> None:
     response.data.sort(key=lambda x: x.created_at or epoch_start, reverse=True)
 
     if json:
-        click.echo(openapi_dumps(response.data))
+        print_json(openapi_dumps(response.data).decode("utf-8"))
         return
 
     display_list: List[Dict[str, Any]] = []

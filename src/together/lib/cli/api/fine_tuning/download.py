@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import os
 import re
-import json
 from typing import Union, Literal
 from pathlib import Path
 
@@ -9,6 +9,7 @@ import click
 
 from together import NOT_GIVEN, APIError, NotGiven, Together, APIStatusError
 from together.lib import DownloadManager
+from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 
@@ -41,6 +42,7 @@ _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
     default="merged",
     help="Specifies checkpoint type. 'merged' and 'adapter' options work only for LoRA jobs.",
 )
+@click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
 def download(
     ctx: click.Context,
@@ -48,6 +50,7 @@ def download(
     output_dir: str | None = None,
     checkpoint_step: Union[int, NotGiven] = NOT_GIVEN,
     checkpoint_type: Literal["default", "merged", "adapter"] | NotGiven = NOT_GIVEN,
+    json: bool = False,
 ) -> None:
     """Download fine-tuning checkpoint"""
     client: Together = ctx.obj
@@ -92,6 +95,10 @@ def download(
     if isinstance(output_dir, str):
         output = Path(output_dir)
 
+    # Disable tqdm for json mode
+    if json:
+        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
+
     try:
         file_path, file_size = DownloadManager(client).download(
             url=url,
@@ -101,7 +108,9 @@ def download(
         )
 
         click.echo(
-            json.dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}, indent=4)
+            openapi_dumps({"object": "local", "id": fine_tune_id, "filename": file_path, "size": file_size}).decode(
+                "utf-8"
+            )
         )
     except APIStatusError as e:
         raise APIError(

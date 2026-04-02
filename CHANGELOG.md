@@ -1,5 +1,47 @@
 # Changelog
 
+## 2.6.0 (2026-03-31)
+
+Full Changelog: [v2.5.0...v2.6.0](https://github.com/togethercomputer/together-py/compare/v2.5.0...v2.6.0)
+
+### Features
+
+* [jig] updated created_at, updated_at format to datetime ([#310](https://github.com/togethercomputer/together-py/issues/310)) ([5a27da9](https://github.com/togethercomputer/together-py/commit/5a27da92da7199057d5c1a1c2749044cb325b269))
+* **api:** add bit_rate parameter to speech create method ([e447ab6](https://github.com/togethercomputer/together-py/commit/e447ab6b6714e6615bd7285f53bc6a8f71a6edf8))
+* **api:** add random_seed field to fine_tuning cancel and list responses ([57dcc89](https://github.com/togethercomputer/together-py/commit/57dcc89748da91dc5e5b70bc24b9e43702fd51ab))
+* **internal:** implement indices array format for query and form serialization ([f896e54](https://github.com/togethercomputer/together-py/commit/f896e543c6df5db1657a6ad5ba91925a7d582768))
+
+
+### Bug Fixes
+
+* **jig:** conditionally install pyproject.toml dependancies in dockerfile only if pyproject.toml is available ([#314](https://github.com/togethercomputer/together-py/issues/314)) ([e06478c](https://github.com/togethercomputer/together-py/commit/e06478cc88c03bfb1915c6bb1e19d1b955bd7065))
+* sanitize endpoint path params ([c445ed8](https://github.com/togethercomputer/together-py/commit/c445ed815d6209356ae033cb8408f959fe57c502))
+* **types:** correct gpu_type literal in jig, timestamp types in deployment ([ef08cec](https://github.com/togethercomputer/together-py/commit/ef08cec1c13209592ad8547606c2363292589ff0))
+
+
+### Chores
+
+* **ci:** skip lint on metadata-only changes ([d22b49f](https://github.com/togethercomputer/together-py/commit/d22b49f397c4d9b79290c37f0840eee2b2d3ffea))
+* Disable translation test temporarily ([#313](https://github.com/togethercomputer/together-py/issues/313)) ([4c2075d](https://github.com/togethercomputer/together-py/commit/4c2075ddb818c5d156734c851abd3ae28a865a95))
+* **internal:** regenerate SDK with no functional changes ([e541c40](https://github.com/togethercomputer/together-py/commit/e541c4017882f28c00dbf711cf6ecba050deef6f))
+* **internal:** update gitignore ([6c7113e](https://github.com/togethercomputer/together-py/commit/6c7113e73c0dab048935c14b48f5a7c27501ef33))
+* **tests:** bump steady to v0.19.4 ([f2583ae](https://github.com/togethercomputer/together-py/commit/f2583aeb228f05440305b05d03c1b1e1a5926f2a))
+* **tests:** bump steady to v0.19.5 ([e8de9f6](https://github.com/togethercomputer/together-py/commit/e8de9f612adbfc2d1612103c87ae5fd5242de766))
+* **tests:** bump steady to v0.19.6 ([3f935af](https://github.com/togethercomputer/together-py/commit/3f935afab8e7714da23490d89752515b7ab37ad9))
+* **tests:** bump steady to v0.19.7 ([859e9ba](https://github.com/togethercomputer/together-py/commit/859e9ba7b53111631abe46ec0c19c0556162c8f2))
+* **tests:** bump steady to v0.20.1 ([a4b6f3d](https://github.com/togethercomputer/together-py/commit/a4b6f3d2472231dda03c4a776bfdebcf21de1fc9))
+* **tests:** bump steady to v0.20.2 ([b38453b](https://github.com/togethercomputer/together-py/commit/b38453bac5db8f1c34e1ea945c60a0bb68a632eb))
+
+
+### Documentation
+
+* **api:** update voice parameter documentation URL in speech ([fe89657](https://github.com/togethercomputer/together-py/commit/fe896570536c106938c4dc1f7585b590bb2913be))
+
+
+### Refactors
+
+* **tests:** switch from prism to steady ([0b4c343](https://github.com/togethercomputer/together-py/commit/0b4c343fb6f72a4fda7593bdf6ea133cfad1ca29))
+
 ## 2.5.0 (2026-03-18)
 
 Full Changelog: [v2.4.0...v2.5.0](https://github.com/togethercomputer/together-py/compare/v2.4.0...v2.5.0)

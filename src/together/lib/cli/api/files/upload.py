@@ -1,9 +1,14 @@
+import os
+import sys
+import json as json_lib
 import pathlib
 from typing import get_args
 
 import click
+from rich import print, print_json
 
 from together import Together
+from together.lib import check_file
 from together.types import FilePurpose
 from together._utils._json import openapi_dumps
 from together.lib.cli.api._utils import handle_api_errors
@@ -37,11 +42,25 @@ def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: 
     """Upload file"""
 
     client: Together = ctx.obj
+    if json:
+        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
-    response = client.files.upload(file=file, purpose=purpose, check=check)
+    # Manually handle check here so we can exit and provide the user good error messages
+    if check:
+        report = check_file(file)
+        if report["is_check_passed"] is False:
+            if json:
+                print_json(json_lib.dumps(report))
+            else:
+                print(f"❌ {report['message']}")
+
+            # Make sure to exit
+            sys.exit(1)
+
+    response = client.files.upload(file=file, purpose=purpose, check=False)
 
     if json:
-        click.echo(openapi_dumps(response.model_dump(exclude_none=True)))
+        print_json(openapi_dumps(response).decode("utf-8"))
         return
 
     click.echo(

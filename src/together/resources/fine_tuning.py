@@ -10,7 +10,7 @@ from rich import print as rprint
 
 from ..types import fine_tuning_delete_params, fine_tuning_content_params, fine_tuning_estimate_price_params
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from .._utils import maybe_transform, async_maybe_transform
+from .._utils import path_template, maybe_transform, async_maybe_transform
 from .._compat import cached_property
 from .._resource import SyncAPIResource, AsyncAPIResource
 from .._response import (
@@ -82,6 +82,7 @@ class FineTuningResource(SyncAPIResource):
         model: str | None = None,
         n_epochs: int = 1,
         validation_file: str | None = "",
+        packing: bool = True,
         n_evals: int | None = 0,
         n_checkpoints: int | None = 1,
         batch_size: int | Literal["max"] = "max",
@@ -127,6 +128,7 @@ class FineTuningResource(SyncAPIResource):
             model (str, optional): Name of the base model to run fine-tune job on
             n_epochs (int, optional): Number of epochs for fine-tuning. Defaults to 1.
             validation file (str, optional): File ID of a file uploaded to the Together API for validation.
+            packing (bool, optional): Whether to use packing for training. Defaults to True.
             n_evals (int, optional): Number of evaluation loops to run. Defaults to 0.
             n_checkpoints (int, optional): Number of checkpoints to save during fine-tuning.
                 Defaults to 1.
@@ -210,6 +212,7 @@ class FineTuningResource(SyncAPIResource):
             model=model,
             n_epochs=n_epochs,
             validation_file=validation_file,
+            packing=packing,
             n_evals=n_evals,
             n_checkpoints=n_checkpoints,
             batch_size=batch_size,
@@ -311,7 +314,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            f"/fine-tunes/{id}",
+            path_template("/fine-tunes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -372,7 +375,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._delete(
-            f"/fine-tunes/{id}",
+            path_template("/fine-tunes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -413,7 +416,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._post(
-            f"/fine-tunes/{id}/cancel",
+            path_template("/fine-tunes/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -574,7 +577,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            f"/fine-tunes/{id}/checkpoints",
+            path_template("/fine-tunes/{id}/checkpoints", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -609,7 +612,7 @@ class FineTuningResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            f"/fine-tunes/{id}/events",
+            path_template("/fine-tunes/{id}/events", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -644,6 +647,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         model: str | None = None,
         n_epochs: int = 1,
         validation_file: str | None = "",
+        packing: bool = True,
         n_evals: int | None = 0,
         n_checkpoints: int | None = 1,
         batch_size: int | Literal["max"] = "max",
@@ -689,6 +693,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             model (str, optional): Name of the base model to run fine-tune job on
             n_epochs (int, optional): Number of epochs for fine-tuning. Defaults to 1.
             validation file (str, optional): File ID of a file uploaded to the Together API for validation.
+            packing (bool, optional): Whether to use packing for training. Defaults to True.
             n_evals (int, optional): Number of evaluation loops to run. Defaults to 0.
             n_checkpoints (int, optional): Number of checkpoints to save during fine-tuning.
                 Defaults to 1.
@@ -772,6 +777,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             model=model,
             n_epochs=n_epochs,
             validation_file=validation_file,
+            packing=packing,
             n_evals=n_evals,
             n_checkpoints=n_checkpoints,
             batch_size=batch_size,
@@ -868,7 +874,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            f"/fine-tunes/{id}",
+            path_template("/fine-tunes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -929,7 +935,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._delete(
-            f"/fine-tunes/{id}",
+            path_template("/fine-tunes/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -970,7 +976,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._post(
-            f"/fine-tunes/{id}/cancel",
+            path_template("/fine-tunes/{id}/cancel", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1131,7 +1137,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            f"/fine-tunes/{id}/checkpoints",
+            path_template("/fine-tunes/{id}/checkpoints", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -1166,7 +1172,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            f"/fine-tunes/{id}/events",
+            path_template("/fine-tunes/{id}/events", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),

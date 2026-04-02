@@ -1,7 +1,7 @@
 from typing import List
 
 completion_test_model_list: List[str] = ["Qwen/Qwen2.5-7B-Instruct-Turbo"]
-nextchat_test_model_list: List[str] = []
+chat_test_model_list: List[str] = []
 embedding_test_model_list: List[str] = []
 image_test_model_list: List[str] = []
 moderation_test_model_list: List[str] = []

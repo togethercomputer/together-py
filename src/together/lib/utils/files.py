@@ -12,7 +12,6 @@ from tqdm import tqdm
 from together.types import FilePurpose
 from together.lib.constants import (
     MIN_SAMPLES,
-    DISABLE_TQDM,
     MAX_IMAGE_BYTES,
     NUM_BYTES_IN_GB,
     MAX_FILE_SIZE_GB,
@@ -626,6 +625,8 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
     report_dict.update(_check_utf8(file))
     if not report_dict["utf8"]:
         return report_dict
+
+    DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
 
     dataset_format = None
     with file.open() as f:

@@ -30,7 +30,15 @@ class SpeechCreateParamsBase(TypedDict, total=False):
 
     You can view the voices supported for each model using the /v1/voices endpoint
     sending the model name as the query parameter.
-    [View all supported voices here](https://docs.together.ai/docs/text-to-speech#voices-available).
+    [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
+    """
+
+    bit_rate: Literal[32000, 64000, 96000, 128000, 192000]
+    """Bitrate of the MP3 audio output in bits per second.
+
+    Only applicable when response_format is mp3. Higher values produce better audio
+    quality at larger file sizes. Default is 128000. Currently supported on Cartesia
+    models.
     """
 
     language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
