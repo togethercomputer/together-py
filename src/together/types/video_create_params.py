@@ -7,7 +7,16 @@ from typing_extensions import Literal, Required, TypedDict
 
 from .._types import SequenceNotStr
 
-__all__ = ["VideoCreateParams", "FrameImage"]
+__all__ = [
+    "VideoCreateParams",
+    "FrameImage",
+    "Media",
+    "MediaAudioInput",
+    "MediaFrameImage",
+    "MediaFrameVideo",
+    "MediaReferenceVideo",
+    "MediaSourceVideo",
+]
 
 
 class VideoCreateParams(TypedDict, total=False):
@@ -18,7 +27,13 @@ class VideoCreateParams(TypedDict, total=False):
     """Frames per second. Defaults to 24."""
 
     frame_images: Iterable[FrameImage]
-    """Array of images to guide video generation, similar to keyframes."""
+    """Deprecated: use media.frame_images instead.
+
+    Array of images to guide video generation, similar to keyframes.
+    """
+
+    generate_audio: bool
+    """Whether to generate audio for the video."""
 
     guidance_scale: int
     """Controls how closely the video generation follows your prompt.
@@ -32,6 +47,12 @@ class VideoCreateParams(TypedDict, total=False):
 
     height: int
 
+    media: Media
+    """Media inputs for video generation.
+
+    The accepted fields depend on the model type (e.g. i2v, r2v, t2v, videoedit).
+    """
+
     negative_prompt: str
     """Similar to prompt, but specifies what to avoid instead of what to include"""
 
@@ -44,12 +65,19 @@ class VideoCreateParams(TypedDict, total=False):
     prompt: str
     """Text prompt that describes the video to generate."""
 
+    ratio: str
+    """Aspect ratio of the video."""
+
     reference_images: SequenceNotStr[str]
-    """
+    """Deprecated: use media.reference_images instead.
+
     Unlike frame_images which constrain specific timeline positions, reference
     images guide the general appearance that should appear consistently across the
     video.
     """
+
+    resolution: str
+    """Video resolution."""
 
     seconds: str
     """Clip duration in seconds."""
@@ -84,3 +112,65 @@ class FrameImage(TypedDict, total=False):
     - If size is two, frames are first and last.
     - If size is larger, frames are first, last and evenly spaced between.
     """
+
+
+class MediaAudioInput(TypedDict, total=False):
+    audio: Required[str]
+    """URL of the audio."""
+
+
+class MediaFrameImage(TypedDict, total=False):
+    input_image: Required[str]
+    """URL path to hosted image that is used for a frame"""
+
+    frame: Union[float, Literal["first", "last"]]
+    """Optional param to specify where to insert the frame.
+
+    If this is omitted, the following heuristics are applied:
+
+    - frame_images size is one, frame is first.
+    - If size is two, frames are first and last.
+    - If size is larger, frames are first, last and evenly spaced between.
+    """
+
+
+class MediaFrameVideo(TypedDict, total=False):
+    video: Required[str]
+    """URL of the video."""
+
+
+class MediaReferenceVideo(TypedDict, total=False):
+    video: Required[str]
+    """URL of the video."""
+
+
+class MediaSourceVideo(TypedDict, total=False):
+    """Source video to edit."""
+
+    video: Required[str]
+    """URL of the video."""
+
+
+class Media(TypedDict, total=False):
+    """Media inputs for video generation.
+
+    The accepted fields depend on the model type (e.g. i2v, r2v, t2v, videoedit).
+    """
+
+    audio_inputs: Iterable[MediaAudioInput]
+    """Array of audio inputs."""
+
+    frame_images: Iterable[MediaFrameImage]
+    """Array of images to guide video generation at specific timeline positions."""
+
+    frame_videos: Iterable[MediaFrameVideo]
+    """Array of video clips to use as starting clips."""
+
+    reference_images: SequenceNotStr[str]
+    """Array of image URLs that guide the general appearance across the video."""
+
+    reference_videos: Iterable[MediaReferenceVideo]
+    """Array of reference videos."""
+
+    source_video: MediaSourceVideo
+    """Source video to edit."""
