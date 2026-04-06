@@ -35,9 +35,14 @@ from together.types.beta.cluster_create_params import SharedVolume, ClusterCreat
     help="Billing type to use for the cluster",
 )
 @click.option(
-    "--driver-version",
+    "--nvidia-driver-version",
     type=str,
-    help="Driver version to use for the cluster",
+    help="Nvidia driver version to use for the cluster",
+)
+@click.option(
+    "--cuda-version",
+    type=str,
+    help="CUDA version to use for the cluster",
 )
 @click.option(
     "--duration-days",
@@ -70,7 +75,8 @@ def create(
     num_gpus: int | None = None,
     region: str | None = None,
     billing_type: Literal["RESERVED", "ON_DEMAND"] | None = None,
-    driver_version: str | None = None,
+    nvidia_driver_version: str | None = None,
+    cuda_version: str | None = None,
     duration_days: int | None = None,
     gpu_type: str | None = None,
     cluster_type: Literal["KUBERNETES", "SLURM"] | None = None,
@@ -86,7 +92,8 @@ def create(
         num_gpus=num_gpus,  # type: ignore
         region=region,  # type: ignore
         billing_type=billing_type,  # type: ignore
-        driver_version=driver_version,  # type: ignore
+        nvidia_driver_version=nvidia_driver_version,  # type: ignore
+        cuda_version=cuda_version,  # type: ignore
         duration_days=duration_days,  # type: ignore
         gpu_type=gpu_type,  # type: ignore
         cluster_type=cluster_type,  # type: ignore
@@ -129,21 +136,37 @@ def create(
                 "Clusters: Cluster billing type:", default="ON_DEMAND", type=click.Choice(["RESERVED", "ON_DEMAND"])
             )
 
-        if not driver_version:
+        if not nvidia_driver_version:
             regions = client.beta.clusters.list_regions()
 
             # Get the driver versions for the selected region
-            driver_versions: List[str] = []
+            nvidia_driver_versions: List[str] = []
             for region_obj in regions.regions:
                 if region_obj.name == params["region"]:
-                    driver_versions.extend(region_obj.driver_versions)
+                    for driver_version in region_obj.driver_versions:
+                        nvidia_driver_versions.append(driver_version.nvidia_driver_version)
 
-            params["driver_version"] = click.prompt(
-                "Clusters: Cluster driver version:", default="CUDA_12_5_555", type=click.Choice(driver_versions)
+            params["nvidia_driver_version"] = click.prompt(
+                "Clusters: Nvidia driver version:",
+                default=nvidia_driver_versions[0],
+                type=click.Choice(nvidia_driver_versions),
+            )
+        if not cuda_version:
+            regions = client.beta.clusters.list_regions()
+
+            # Get the driver versions for the selected region
+            cuda_versions: List[str] = []
+            for region_obj in regions.regions:
+                if region_obj.name == params["region"]:
+                    for driver_version in region_obj.driver_versions:
+                        cuda_versions.append(driver_version.cuda_version)
+
+            params["cuda_version"] = click.prompt(
+                "Clusters: CUDA version:", default=cuda_versions[0], type=click.Choice(cuda_versions)
             )
 
         if not duration_days and params["billing_type"] == "RESERVED":
-            params["duration_days"] = click.prompt("Clusters: Cluster reserved duration (1-90 days):", default=3)
+            params["duration_days"] = click.prompt("Clusters: Cluster reserved duration (number of days):", default=7)
 
         if not cluster_type:
             params["cluster_type"] = click.prompt(

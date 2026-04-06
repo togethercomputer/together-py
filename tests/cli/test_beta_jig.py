@@ -211,7 +211,7 @@ class TestBetaJigSecretsUnset:
         with _patched_jig_config(tmp_path), _chdir(tmp_path):
             result = runner.invoke(main, ["beta", "jig", "secrets", "unset", "--name", "tok"])
         assert result.exit_code == 0
-        assert "Deleted secret tok" in result.output
+        assert "Removed secret tok" in result.output
         state = json.loads((tmp_path / ".jig.json").read_text())
         assert "tok" not in state[_DEPLOY_NAME].get("secrets", {})
 
