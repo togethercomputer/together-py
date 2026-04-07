@@ -570,6 +570,20 @@ class Jig:
         self.state.secrets[name] = scoped_name
         self.state.save()
 
+    def delete_secret(self, name: str) -> None:
+        """Delete secret from remote and remove from local state"""
+        scoped_name = f"{self.name}-{name}"
+
+        try:
+            self.api.secrets.delete(id=scoped_name)
+            echo(f"\N{CHECK MARK} Deleted remote secret {name}")
+        except NotFoundError:
+            echo(f"\N{CROSS MARK} Secret {name} not found remotely")
+
+        if name in self.state.secrets:
+            del self.state.secrets[name]
+            self.state.save()
+
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
@@ -1119,6 +1133,14 @@ def secrets_unset(jig: Jig, name: str) -> None:
         echo(f"\N{CHECK MARK} Deleted secret {name}")
     except KeyError:
         echo(f"\N{CROSS MARK} Secret {name} is not set")
+
+
+@secrets.command("delete")
+@_command
+@click.option("--name", required=True, help="Secret name to delete")
+def secrets_delete(jig: Jig, name: str) -> None:
+    """Delete a secret from remote and unset locally"""
+    jig.delete_secret(name)
 
 
 @secrets.command("list")
