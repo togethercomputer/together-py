@@ -571,14 +571,14 @@ class Jig:
         self.state.save()
 
     def delete_secret(self, name: str) -> None:
-        """Delete secret from remote and remove from local state"""
+        """Delete a secret and unset it locally"""
         scoped_name = f"{self.name}-{name}"
 
         try:
             self.api.secrets.delete(id=scoped_name)
-            echo(f"\N{CHECK MARK} Deleted remote secret {name}")
+            echo(f"\N{CHECK MARK} Deleted secret {name}")
         except NotFoundError:
-            echo(f"\N{CROSS MARK} Secret {name} not found remotely")
+            echo(f"\N{CROSS MARK} Secret {name} not found")
 
         if name in self.state.secrets:
             del self.state.secrets[name]
@@ -1130,7 +1130,7 @@ def secrets_unset(jig: Jig, name: str) -> None:
     try:
         del jig.state.secrets[name]
         jig.state.save()
-        echo(f"\N{CHECK MARK} Deleted secret {name}")
+        echo(f"\N{CHECK MARK} Removed secret {name} from the deployment")
     except KeyError:
         echo(f"\N{CROSS MARK} Secret {name} is not set")
 
@@ -1139,7 +1139,7 @@ def secrets_unset(jig: Jig, name: str) -> None:
 @_command
 @click.option("--name", required=True, help="Secret name to delete")
 def secrets_delete(jig: Jig, name: str) -> None:
-    """Delete a secret from remote and unset locally"""
+    """Delete a secret and unset it locally"""
     jig.delete_secret(name)
 
 
