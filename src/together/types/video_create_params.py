@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Union, Iterable
-from typing_extensions import Literal, Required, TypedDict
+from typing_extensions import Literal, Required, TypeAlias, TypedDict
 
 from .._types import SequenceNotStr
 
@@ -12,10 +12,12 @@ __all__ = [
     "FrameImage",
     "Media",
     "MediaAudioInput",
+    "MediaAudioInputAudioRef",
     "MediaFrameImage",
     "MediaFrameVideo",
     "MediaReferenceVideo",
     "MediaSourceVideo",
+    "MediaSourceVideoVideoRef",
 ]
 
 
@@ -114,9 +116,12 @@ class FrameImage(TypedDict, total=False):
     """
 
 
-class MediaAudioInput(TypedDict, total=False):
+class MediaAudioInputAudioRef(TypedDict, total=False):
     audio: Required[str]
     """URL of the audio."""
+
+
+MediaAudioInput: TypeAlias = Union[str, MediaAudioInputAudioRef]
 
 
 class MediaFrameImage(TypedDict, total=False):
@@ -144,11 +149,12 @@ class MediaReferenceVideo(TypedDict, total=False):
     """URL of the video."""
 
 
-class MediaSourceVideo(TypedDict, total=False):
-    """Source video to edit."""
-
+class MediaSourceVideoVideoRef(TypedDict, total=False):
     video: Required[str]
     """URL of the video."""
+
+
+MediaSourceVideo: TypeAlias = Union[str, MediaSourceVideoVideoRef]
 
 
 class Media(TypedDict, total=False):
@@ -157,8 +163,11 @@ class Media(TypedDict, total=False):
     The accepted fields depend on the model type (e.g. i2v, r2v, t2v, videoedit).
     """
 
-    audio_inputs: Iterable[MediaAudioInput]
-    """Array of audio inputs."""
+    audio_inputs: SequenceNotStr[MediaAudioInput]
+    """Array of audio inputs.
+
+    Each element accepts a URL string or an object with an "audio" key.
+    """
 
     frame_images: Iterable[MediaFrameImage]
     """Array of images to guide video generation at specific timeline positions."""
@@ -173,4 +182,4 @@ class Media(TypedDict, total=False):
     """Array of reference videos."""
 
     source_video: MediaSourceVideo
-    """Source video to edit."""
+    """Source video to edit. Accepts a URL string or an object with a "video" key."""
