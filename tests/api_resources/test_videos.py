@@ -32,7 +32,7 @@ class TestVideos:
             frame_images=[
                 {
                     "input_image": "input_image",
-                    "frame": 0,
+                    "frame": "first",
                 }
             ],
             generate_audio=True,
@@ -43,7 +43,7 @@ class TestVideos:
                 "frame_images": [
                     {
                         "input_image": "input_image",
-                        "frame": 0,
+                        "frame": "first",
                     }
                 ],
                 "frame_videos": [{"video": "video"}],
@@ -148,7 +148,7 @@ class TestAsyncVideos:
             frame_images=[
                 {
                     "input_image": "input_image",
-                    "frame": 0,
+                    "frame": "first",
                 }
             ],
             generate_audio=True,
@@ -159,7 +159,7 @@ class TestAsyncVideos:
                 "frame_images": [
                     {
                         "input_image": "input_image",
-                        "frame": 0,
+                        "frame": "first",
                     }
                 ],
                 "frame_videos": [{"video": "video"}],
