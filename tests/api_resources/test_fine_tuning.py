@@ -253,7 +253,7 @@ class TestFineTuning:
             n_evals=0,
             training_method={
                 "method": "sft",
-                "train_on_inputs": True,
+                "train_on_inputs": "auto",
             },
             training_type={"type": "Full"},
             validation_file="validation_file",
@@ -586,7 +586,7 @@ class TestAsyncFineTuning:
             n_evals=0,
             training_method={
                 "method": "sft",
-                "train_on_inputs": True,
+                "train_on_inputs": "auto",
             },
             training_type={"type": "Full"},
             validation_file="validation_file",
