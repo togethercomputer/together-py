@@ -50,13 +50,17 @@ class VideosResource(SyncAPIResource):
         model: str,
         fps: int | Omit = omit,
         frame_images: Iterable[video_create_params.FrameImage] | Omit = omit,
+        generate_audio: bool | Omit = omit,
         guidance_scale: int | Omit = omit,
         height: int | Omit = omit,
+        media: video_create_params.Media | Omit = omit,
         negative_prompt: str | Omit = omit,
         output_format: Literal["MP4", "WEBM"] | Omit = omit,
         output_quality: int | Omit = omit,
         prompt: str | Omit = omit,
+        ratio: str | Omit = omit,
         reference_images: SequenceNotStr[str] | Omit = omit,
+        resolution: str | Omit = omit,
         seconds: str | Omit = omit,
         seed: int | Omit = omit,
         steps: int | Omit = omit,
@@ -76,13 +80,19 @@ class VideosResource(SyncAPIResource):
 
           fps: Frames per second. Defaults to 24.
 
-          frame_images: Array of images to guide video generation, similar to keyframes.
+          frame_images: Deprecated: use media.frame_images instead. Array of images to guide video
+              generation, similar to keyframes.
+
+          generate_audio: Whether to generate audio for the video.
 
           guidance_scale: Controls how closely the video generation follows your prompt. Higher values
               make the model adhere more strictly to your text description, while lower values
               allow more creative freedom. guidence_scale affects both visual content and
               temporal consistency.Recommended range is 6.0-10.0 for most video models. Values
               above 12 may cause over-guidance artifacts or unnatural motion patterns.
+
+          media: Media inputs for video generation. The accepted fields depend on the model type
+              (e.g. i2v, r2v, t2v, videoedit).
 
           negative_prompt: Similar to prompt, but specifies what to avoid instead of what to include
 
@@ -92,9 +102,13 @@ class VideosResource(SyncAPIResource):
 
           prompt: Text prompt that describes the video to generate.
 
-          reference_images: Unlike frame_images which constrain specific timeline positions, reference
-              images guide the general appearance that should appear consistently across the
-              video.
+          ratio: Aspect ratio of the video.
+
+          reference_images: Deprecated: use media.reference_images instead. Unlike frame_images which
+              constrain specific timeline positions, reference images guide the general
+              appearance that should appear consistently across the video.
+
+          resolution: Video resolution.
 
           seconds: Clip duration in seconds.
 
@@ -121,13 +135,17 @@ class VideosResource(SyncAPIResource):
                     "model": model,
                     "fps": fps,
                     "frame_images": frame_images,
+                    "generate_audio": generate_audio,
                     "guidance_scale": guidance_scale,
                     "height": height,
+                    "media": media,
                     "negative_prompt": negative_prompt,
                     "output_format": output_format,
                     "output_quality": output_quality,
                     "prompt": prompt,
+                    "ratio": ratio,
                     "reference_images": reference_images,
+                    "resolution": resolution,
                     "seconds": seconds,
                     "seed": seed,
                     "steps": steps,
@@ -204,13 +222,17 @@ class AsyncVideosResource(AsyncAPIResource):
         model: str,
         fps: int | Omit = omit,
         frame_images: Iterable[video_create_params.FrameImage] | Omit = omit,
+        generate_audio: bool | Omit = omit,
         guidance_scale: int | Omit = omit,
         height: int | Omit = omit,
+        media: video_create_params.Media | Omit = omit,
         negative_prompt: str | Omit = omit,
         output_format: Literal["MP4", "WEBM"] | Omit = omit,
         output_quality: int | Omit = omit,
         prompt: str | Omit = omit,
+        ratio: str | Omit = omit,
         reference_images: SequenceNotStr[str] | Omit = omit,
+        resolution: str | Omit = omit,
         seconds: str | Omit = omit,
         seed: int | Omit = omit,
         steps: int | Omit = omit,
@@ -230,13 +252,19 @@ class AsyncVideosResource(AsyncAPIResource):
 
           fps: Frames per second. Defaults to 24.
 
-          frame_images: Array of images to guide video generation, similar to keyframes.
+          frame_images: Deprecated: use media.frame_images instead. Array of images to guide video
+              generation, similar to keyframes.
+
+          generate_audio: Whether to generate audio for the video.
 
           guidance_scale: Controls how closely the video generation follows your prompt. Higher values
               make the model adhere more strictly to your text description, while lower values
               allow more creative freedom. guidence_scale affects both visual content and
               temporal consistency.Recommended range is 6.0-10.0 for most video models. Values
               above 12 may cause over-guidance artifacts or unnatural motion patterns.
+
+          media: Media inputs for video generation. The accepted fields depend on the model type
+              (e.g. i2v, r2v, t2v, videoedit).
 
           negative_prompt: Similar to prompt, but specifies what to avoid instead of what to include
 
@@ -246,9 +274,13 @@ class AsyncVideosResource(AsyncAPIResource):
 
           prompt: Text prompt that describes the video to generate.
 
-          reference_images: Unlike frame_images which constrain specific timeline positions, reference
-              images guide the general appearance that should appear consistently across the
-              video.
+          ratio: Aspect ratio of the video.
+
+          reference_images: Deprecated: use media.reference_images instead. Unlike frame_images which
+              constrain specific timeline positions, reference images guide the general
+              appearance that should appear consistently across the video.
+
+          resolution: Video resolution.
 
           seconds: Clip duration in seconds.
 
@@ -275,13 +307,17 @@ class AsyncVideosResource(AsyncAPIResource):
                     "model": model,
                     "fps": fps,
                     "frame_images": frame_images,
+                    "generate_audio": generate_audio,
                     "guidance_scale": guidance_scale,
                     "height": height,
+                    "media": media,
                     "negative_prompt": negative_prompt,
                     "output_format": output_format,
                     "output_quality": output_quality,
                     "prompt": prompt,
+                    "ratio": ratio,
                     "reference_images": reference_images,
+                    "resolution": resolution,
                     "seconds": seconds,
                     "seed": seed,
                     "steps": steps,

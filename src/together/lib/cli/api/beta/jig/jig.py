@@ -17,7 +17,7 @@ import shutil
 import typing
 import asyncio
 import subprocess
-from typing import TYPE_CHECKING, Any, Union, Callable
+from typing import TYPE_CHECKING, Any, Union, Callable, Optional
 from pathlib import Path
 from datetime import datetime as dt
 from functools import wraps, cached_property
@@ -26,6 +26,7 @@ from dataclasses import field, asdict, dataclass, is_dataclass
 from typing_extensions import override
 
 import click
+import httpx
 from click import Context, echo
 from click.exceptions import Exit
 
@@ -103,19 +104,19 @@ class DeployConfig:
     description: str = ""
     gpu_type: str = "h100-80gb"
     gpu_count: int = 1
-    cpu: int | float = 1
-    memory: int | float = 8
+    cpu: Union[int, float] = 1
+    memory: Union[int, float] = 8
     storage: int = 100
     min_replicas: int = 1
     max_replicas: int = 1
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
-    command: list[str] | None = None
+    command: Optional[list[str]] = None
     autoscaling: dict[str, Union[str, float, int]] = field(default_factory=dict[str, Union[str, float, int]])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
-    image: str | None = None
+    image: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DeployConfig:
@@ -512,7 +513,8 @@ class Jig:
     def registry(self) -> str:
         """Get registry and namespace for current user"""
         if not self.state.registry_base_path:
-            response = self.together.get("/image-repositories/base-path", cast_to=dict[str, str])
+            res = self.together.get("/image-repositories/base-path", cast_to=httpx.Response)
+            response = res.json()
             # strip protocol for docker image format
             self.state.registry_base_path = response["base-path"].split("://", 1)[-1]
             self.state.save()
@@ -568,6 +570,20 @@ class Jig:
 
         self.state.secrets[name] = scoped_name
         self.state.save()
+
+    def delete_secret(self, name: str) -> None:
+        """Delete a secret and unset it locally"""
+        scoped_name = f"{self.name}-{name}"
+
+        try:
+            self.api.secrets.delete(id=scoped_name)
+            echo(f"\N{CHECK MARK} Deleted secret {name}")
+        except NotFoundError:
+            echo(f"\N{CROSS MARK} Secret {name} not found")
+
+        if name in self.state.secrets:
+            del self.state.secrets[name]
+            self.state.save()
 
     # == Build / Push / Deploy / Track ==
 
@@ -915,7 +931,7 @@ def _command(f: Callable[..., Any]) -> Callable[..., Any]:
             msg = str(e)
         except Exception as e:
             if DEBUG:
-                raise
+                raise e
             msg = f"Unexpected error: {e}"
         else:
             if result is not None:
@@ -1116,9 +1132,17 @@ def secrets_unset(jig: Jig, name: str) -> None:
     try:
         del jig.state.secrets[name]
         jig.state.save()
-        echo(f"\N{CHECK MARK} Deleted secret {name}")
+        echo(f"\N{CHECK MARK} Removed secret {name} from the deployment")
     except KeyError:
         echo(f"\N{CROSS MARK} Secret {name} is not set")
+
+
+@secrets.command("delete")
+@_command
+@click.option("--name", required=True, help="Secret name to delete")
+def secrets_delete(jig: Jig, name: str) -> None:
+    """Delete a secret and unset it locally"""
+    jig.delete_secret(name)
 
 
 @secrets.command("list")

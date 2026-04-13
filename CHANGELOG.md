@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.7.0 (2026-04-03)
+
+Full Changelog: [v2.6.0...v2.7.0](https://github.com/togethercomputer/together-py/compare/v2.6.0...v2.7.0)
+
+### Features
+
+* **api:** add generate_audio, image_reference, media params to videos.create ([b2c5ca7](https://github.com/togethercomputer/together-py/commit/b2c5ca776fa2520e99b4e7c6de8bd1421b4de33f))
+
 ## 2.6.0 (2026-03-31)
 
 Full Changelog: [v2.5.0...v2.6.0](https://github.com/togethercomputer/together-py/compare/v2.5.0...v2.6.0)
