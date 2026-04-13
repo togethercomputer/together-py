@@ -6,6 +6,7 @@ from tabulate import tabulate
 
 from together import Together, omit
 from together._response import APIResponse as APIResponse
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
 
@@ -23,6 +24,7 @@ from together.lib.utils.serializer import datetime_serializer
 )
 @click.pass_context
 @handle_api_errors("Models")
+@auto_track_command
 def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
     """List models"""
     client: Together = ctx.obj

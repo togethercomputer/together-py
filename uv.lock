@@ -285,6 +285,15 @@ wheels = [
 ]
 
 [[package]]
+name = "detect-agent"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/c2/ccda387b261abae034896acd206133dbfa11a42ec8905ab3dbd9182b543a/detect_agent-0.1.1.tar.gz", hash = "sha256:28e6070ce4e0e17a400bbe391c957056bda93656b344de7e06eae5aeb5fbdc2a", size = 14721, upload-time = "2026-04-01T20:50:27.729Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/06/a8069264201af537423292ce7e65d85581303e7631d003f694dbb7bdc39b/detect_agent-0.1.1-py3-none-any.whl", hash = "sha256:63ebe8e6175fb6e7e178212033a85d61a0bdd1f11d057141c6302e001a995d6d", size = 3445, upload-time = "2026-04-01T20:50:28.383Z" },
+]
+
+[[package]]
 name = "dirty-equals"
 version = "0.11"
 source = { registry = "https://pypi.org/simple" }
@@ -2058,12 +2067,13 @@ wheels = [
 
 [[package]]
 name = "together"
-version = "2.5.0"
+version = "2.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "click", version = "8.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+    { name = "detect-agent" },
     { name = "distro" },
     { name = "filelock", version = "3.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "filelock", version = "3.25.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -2136,6 +2146,7 @@ requires-dist = [
     { name = "aiohttp", marker = "extra == 'aiohttp'" },
     { name = "anyio", specifier = ">=3.5.0,<5" },
     { name = "click", specifier = ">=8.1.7" },
+    { name = "detect-agent", specifier = ">=0.1.1" },
     { name = "distro", specifier = ">=1.7.0,<2" },
     { name = "filelock", specifier = ">=3.13.1" },
     { name = "httpx", specifier = ">=0.23.0,<1" },

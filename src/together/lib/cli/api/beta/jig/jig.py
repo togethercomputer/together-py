@@ -32,6 +32,7 @@ from click.exceptions import Exit
 
 from together import Together
 from together._exceptions import APIError, NotFoundError, AuthenticationError
+from together.lib.cli._track_cli import auto_track_command
 from together.types.beta.deployment import Deployment
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.api.beta.jig._uploader import Uploader
@@ -910,6 +911,7 @@ def _command(f: Callable[..., Any]) -> Callable[..., Any]:
 
     @click.pass_context
     @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
+    @auto_track_command
     @wraps(f)
     def wrapper(ctx: Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
         try:

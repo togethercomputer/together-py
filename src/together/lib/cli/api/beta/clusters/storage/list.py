@@ -5,6 +5,7 @@ import click
 from tabulate import tabulate
 
 from together import Together
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.beta.clusters import ClusterStorage
 
@@ -30,6 +31,7 @@ def print_storage(storage: List[ClusterStorage]) -> None:
 )
 @click.pass_context
 @handle_api_errors("Clusters Storage")
+@auto_track_command
 def list(ctx: click.Context, json: bool) -> None:
     """List storage volumes"""
     client: Together = ctx.obj

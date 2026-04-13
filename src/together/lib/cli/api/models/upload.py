@@ -5,6 +5,7 @@ import click
 
 from together import Together, TogetherError, omit
 from together._response import APIResponse as APIResponse
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.model_upload_response import ModelUploadResponse
 
@@ -49,6 +50,7 @@ from together.types.model_upload_response import ModelUploadResponse
 )
 @click.pass_context
 @handle_api_errors("Models")
+@auto_track_command
 def upload(
     ctx: click.Context,
     model_name: str,

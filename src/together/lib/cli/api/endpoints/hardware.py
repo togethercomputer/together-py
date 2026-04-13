@@ -9,6 +9,7 @@ from tabulate import tabulate
 
 from together import Together, omit
 from together.types import EndpointListHardwareResponse
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
@@ -25,6 +26,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 @click.pass_obj
 @handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
+@auto_track_command
 def hardware(client: Together, model: str | None, json: bool, available: bool) -> None:
     """List all available hardware options, optionally filtered by model."""
     hardware_options = client.endpoints.list_hardware(model=model or omit)

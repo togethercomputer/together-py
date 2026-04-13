@@ -3,6 +3,7 @@ import json as json_lib
 import click
 
 from together import Together
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 
 
@@ -15,6 +16,7 @@ from together.lib.cli.api._utils import handle_api_errors
 )
 @click.pass_context
 @handle_api_errors("Clusters")
+@auto_track_command
 def delete(ctx: click.Context, cluster_id: str, json: bool) -> None:
     """Delete a cluster by ID"""
     client: Together = ctx.obj

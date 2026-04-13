@@ -7,6 +7,7 @@ from tabulate import tabulate
 
 from together import Together
 from together._utils._json import openapi_dumps
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 
 
@@ -15,6 +16,7 @@ from together.lib.cli.api._utils import handle_api_errors
 @click.argument("fine_tune_id", type=str, required=True)
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
+@auto_track_command
 def list_events(ctx: click.Context, fine_tune_id: str, json: bool) -> None:
     """List fine-tuning events"""
     client: Together = ctx.obj
