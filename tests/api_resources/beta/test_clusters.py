@@ -9,6 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
+from together._utils import parse_datetime
 from together.types.beta import (
     Cluster,
     ClusterListResponse,
@@ -27,9 +28,10 @@ class TestClusters:
         cluster = client.beta.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
@@ -39,17 +41,27 @@ class TestClusters:
         cluster = client.beta.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
+            auto_scale_max_gpus=0,
+            auto_scaled=True,
+            capacity_pool_id="capacity_pool_id",
             cluster_type="KUBERNETES",
             duration_days=0,
+            gpu_node_failover_enabled=True,
+            install_traefik=True,
+            reservation_end_time=parse_datetime("2019-12-27T18:11:19.117Z"),
+            reservation_start_time=parse_datetime("2019-12-27T18:11:19.117Z"),
             shared_volume={
                 "region": "region",
                 "size_tib": 0,
                 "volume_name": "volume_name",
             },
+            slurm_image="slurm_image",
+            slurm_shm_size_gib=0,
             volume_id="volume_id",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
@@ -59,9 +71,10 @@ class TestClusters:
         response = client.beta.clusters.with_raw_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         )
 
@@ -75,9 +88,10 @@ class TestClusters:
         with client.beta.clusters.with_streaming_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         ) as response:
             assert not response.is_closed
@@ -139,6 +153,7 @@ class TestClusters:
             cluster_id="cluster_id",
             cluster_type="KUBERNETES",
             num_gpus=0,
+            reservation_end_time=parse_datetime("2019-12-27T18:11:19.117Z"),
         )
         assert_matches_type(Cluster, cluster, path=["response"])
 
@@ -272,9 +287,10 @@ class TestAsyncClusters:
         cluster = await async_client.beta.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
@@ -284,17 +300,27 @@ class TestAsyncClusters:
         cluster = await async_client.beta.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
+            auto_scale_max_gpus=0,
+            auto_scaled=True,
+            capacity_pool_id="capacity_pool_id",
             cluster_type="KUBERNETES",
             duration_days=0,
+            gpu_node_failover_enabled=True,
+            install_traefik=True,
+            reservation_end_time=parse_datetime("2019-12-27T18:11:19.117Z"),
+            reservation_start_time=parse_datetime("2019-12-27T18:11:19.117Z"),
             shared_volume={
                 "region": "region",
                 "size_tib": 0,
                 "volume_name": "volume_name",
             },
+            slurm_image="slurm_image",
+            slurm_shm_size_gib=0,
             volume_id="volume_id",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
@@ -304,9 +330,10 @@ class TestAsyncClusters:
         response = await async_client.beta.clusters.with_raw_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         )
 
@@ -320,9 +347,10 @@ class TestAsyncClusters:
         async with async_client.beta.clusters.with_streaming_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
-            driver_version="CUDA_12_5_555",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         ) as response:
             assert not response.is_closed
@@ -384,6 +412,7 @@ class TestAsyncClusters:
             cluster_id="cluster_id",
             cluster_type="KUBERNETES",
             num_gpus=0,
+            reservation_end_time=parse_datetime("2019-12-27T18:11:19.117Z"),
         )
         assert_matches_type(Cluster, cluster, path=["response"])
 

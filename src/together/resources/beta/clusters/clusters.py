@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Union
+from datetime import datetime
 from typing_extensions import Literal
 
 import httpx
@@ -61,15 +63,25 @@ class ClustersResource(SyncAPIResource):
     def create(
         self,
         *,
-        billing_type: Literal["RESERVED", "ON_DEMAND"],
+        billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
-        driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
+        cuda_version: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
+        nvidia_driver_version: str,
         region: str,
+        auto_scale_max_gpus: int | Omit = omit,
+        auto_scaled: bool | Omit = omit,
+        capacity_pool_id: str | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         duration_days: int | Omit = omit,
+        gpu_node_failover_enabled: bool | Omit = omit,
+        install_traefik: bool | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
+        reservation_start_time: Union[str, datetime] | Omit = omit,
         shared_volume: cluster_create_params.SharedVolume | Omit = omit,
+        slurm_image: str | Omit = omit,
+        slurm_shm_size_gib: int | Omit = omit,
         volume_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -93,21 +105,51 @@ class ClustersResource(SyncAPIResource):
 
           cluster_name: Name of the GPU cluster.
 
-          driver_version: NVIDIA driver version to use in the cluster.
+          cuda_version: CUDA version for this cluster. For example, 12.5
 
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
+          nvidia_driver_version: Nvidia driver version for this cluster. For example, 550. Only some combination
+              of cuda_version and nvidia_driver_version are supported.
+
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
+
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
+              required if auto_scaled is true.
+
+          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
+              is not auto-scaled.
+
+          capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
+              applicable if the cluster is created from a capacity pool.
 
           cluster_type: Type of cluster to create.
 
           duration_days: Duration in days to keep the cluster running.
 
+          gpu_node_failover_enabled: Whether automated GPU node failover should be enabled for this cluster. By
+              default, it is disabled.
+
+          install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
+              applicable for Kubernetes clusters and is false by default.
+
+          reservation_end_time: Reservation end time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation end time for the cluster.
+
+          reservation_start_time: Reservation start time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation start time for the cluster. If not provided,
+              the cluster will be provisioned immediately.
+
           shared_volume: Inline configuration to create a shared volume with the cluster creation.
+
+          slurm_image: Custom Slurm image for Slurm clusters.
+
+          slurm_shm_size_gib: Shared memory size in GiB for Slurm cluster. This field is required if
+              cluster_type is SLURM.
 
           volume_id: ID of an existing volume to use with the cluster creation.
 
@@ -125,13 +167,23 @@ class ClustersResource(SyncAPIResource):
                 {
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
-                    "driver_version": driver_version,
+                    "cuda_version": cuda_version,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
+                    "nvidia_driver_version": nvidia_driver_version,
                     "region": region,
+                    "auto_scale_max_gpus": auto_scale_max_gpus,
+                    "auto_scaled": auto_scaled,
+                    "capacity_pool_id": capacity_pool_id,
                     "cluster_type": cluster_type,
                     "duration_days": duration_days,
+                    "gpu_node_failover_enabled": gpu_node_failover_enabled,
+                    "install_traefik": install_traefik,
+                    "reservation_end_time": reservation_end_time,
+                    "reservation_start_time": reservation_start_time,
                     "shared_volume": shared_volume,
+                    "slurm_image": slurm_image,
+                    "slurm_shm_size_gib": slurm_shm_size_gib,
                     "volume_id": volume_id,
                 },
                 cluster_create_params.ClusterCreateParams,
@@ -183,6 +235,7 @@ class ClustersResource(SyncAPIResource):
         *,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         num_gpus: int | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -201,6 +254,9 @@ class ClustersResource(SyncAPIResource):
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
+          reservation_end_time: Timestamp at which the cluster should be decommissioned. Only accepted for
+              prepaid clusters.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -217,6 +273,7 @@ class ClustersResource(SyncAPIResource):
                 {
                     "cluster_type": cluster_type,
                     "num_gpus": num_gpus,
+                    "reservation_end_time": reservation_end_time,
                 },
                 cluster_update_params.ClusterUpdateParams,
             ),
@@ -327,15 +384,25 @@ class AsyncClustersResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        billing_type: Literal["RESERVED", "ON_DEMAND"],
+        billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
-        driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"],
+        cuda_version: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
+        nvidia_driver_version: str,
         region: str,
+        auto_scale_max_gpus: int | Omit = omit,
+        auto_scaled: bool | Omit = omit,
+        capacity_pool_id: str | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         duration_days: int | Omit = omit,
+        gpu_node_failover_enabled: bool | Omit = omit,
+        install_traefik: bool | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
+        reservation_start_time: Union[str, datetime] | Omit = omit,
         shared_volume: cluster_create_params.SharedVolume | Omit = omit,
+        slurm_image: str | Omit = omit,
+        slurm_shm_size_gib: int | Omit = omit,
         volume_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -359,21 +426,51 @@ class AsyncClustersResource(AsyncAPIResource):
 
           cluster_name: Name of the GPU cluster.
 
-          driver_version: NVIDIA driver version to use in the cluster.
+          cuda_version: CUDA version for this cluster. For example, 12.5
 
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
+          nvidia_driver_version: Nvidia driver version for this cluster. For example, 550. Only some combination
+              of cuda_version and nvidia_driver_version are supported.
+
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
+
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
+              required if auto_scaled is true.
+
+          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
+              is not auto-scaled.
+
+          capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
+              applicable if the cluster is created from a capacity pool.
 
           cluster_type: Type of cluster to create.
 
           duration_days: Duration in days to keep the cluster running.
 
+          gpu_node_failover_enabled: Whether automated GPU node failover should be enabled for this cluster. By
+              default, it is disabled.
+
+          install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
+              applicable for Kubernetes clusters and is false by default.
+
+          reservation_end_time: Reservation end time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation end time for the cluster.
+
+          reservation_start_time: Reservation start time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation start time for the cluster. If not provided,
+              the cluster will be provisioned immediately.
+
           shared_volume: Inline configuration to create a shared volume with the cluster creation.
+
+          slurm_image: Custom Slurm image for Slurm clusters.
+
+          slurm_shm_size_gib: Shared memory size in GiB for Slurm cluster. This field is required if
+              cluster_type is SLURM.
 
           volume_id: ID of an existing volume to use with the cluster creation.
 
@@ -391,13 +488,23 @@ class AsyncClustersResource(AsyncAPIResource):
                 {
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
-                    "driver_version": driver_version,
+                    "cuda_version": cuda_version,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
+                    "nvidia_driver_version": nvidia_driver_version,
                     "region": region,
+                    "auto_scale_max_gpus": auto_scale_max_gpus,
+                    "auto_scaled": auto_scaled,
+                    "capacity_pool_id": capacity_pool_id,
                     "cluster_type": cluster_type,
                     "duration_days": duration_days,
+                    "gpu_node_failover_enabled": gpu_node_failover_enabled,
+                    "install_traefik": install_traefik,
+                    "reservation_end_time": reservation_end_time,
+                    "reservation_start_time": reservation_start_time,
                     "shared_volume": shared_volume,
+                    "slurm_image": slurm_image,
+                    "slurm_shm_size_gib": slurm_shm_size_gib,
                     "volume_id": volume_id,
                 },
                 cluster_create_params.ClusterCreateParams,
@@ -449,6 +556,7 @@ class AsyncClustersResource(AsyncAPIResource):
         *,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         num_gpus: int | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -467,6 +575,9 @@ class AsyncClustersResource(AsyncAPIResource):
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
+          reservation_end_time: Timestamp at which the cluster should be decommissioned. Only accepted for
+              prepaid clusters.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -483,6 +594,7 @@ class AsyncClustersResource(AsyncAPIResource):
                 {
                     "cluster_type": cluster_type,
                     "num_gpus": num_gpus,
+                    "reservation_end_time": reservation_end_time,
                 },
                 cluster_update_params.ClusterUpdateParams,
             ),
