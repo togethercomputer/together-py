@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 from typing_extensions import Literal
 
 from ..._models import BaseModel
@@ -41,6 +42,8 @@ class GPUWorkerNode(BaseModel):
 
     status: str
 
+    instance_id: Optional[str] = None
+
 
 class Volume(BaseModel):
     size_tib: int
@@ -62,9 +65,7 @@ class Cluster(BaseModel):
 
     control_plane_nodes: List[ControlPlaneNode]
 
-    driver_version: Literal["CUDA_12_5_555", "CUDA_12_6_560", "CUDA_12_6_565", "CUDA_12_8_570"]
-
-    duration_hours: int
+    cuda_version: str
 
     gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"]
 
@@ -73,6 +74,8 @@ class Cluster(BaseModel):
     kube_config: str
 
     num_gpus: int
+
+    nvidia_driver_version: str
 
     region: str
 
@@ -92,3 +95,17 @@ class Cluster(BaseModel):
     """Current status of the GPU cluster."""
 
     volumes: List[Volume]
+
+    capacity_pool_id: Optional[str] = None
+
+    created_at: Optional[datetime] = None
+
+    duration_hours: Optional[int] = None
+
+    install_traefik: Optional[bool] = None
+
+    reservation_end_time: Optional[datetime] = None
+
+    reservation_start_time: Optional[datetime] = None
+
+    slurm_shm_size_gib: Optional[int] = None
