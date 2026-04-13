@@ -9,6 +9,7 @@ from click.core import ParameterSource
 from together import Together
 from together.types import fine_tuning_estimate_price_params as pe_params
 from together.lib.utils import log_warn
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import INT_WITH_MAX, BOOL_WITH_AUTO, handle_api_errors
 from together.lib.resources.fine_tuning import get_model_limits
 
@@ -211,6 +212,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     help="HF repo to upload the fine-tuned model to",
 )
 @handle_api_errors("Fine-tuning")
+@auto_track_command
 def create(
     ctx: click.Context,
     training_file: str,

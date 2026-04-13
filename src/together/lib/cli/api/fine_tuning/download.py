@@ -10,6 +10,7 @@ import click
 from together import NOT_GIVEN, APIError, NotGiven, Together, APIStatusError
 from together.lib import DownloadManager
 from together._utils._json import openapi_dumps
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 
@@ -44,6 +45,7 @@ _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 )
 @click.option("--json", is_flag=True, help="Print output in JSON format")
 @handle_api_errors("Fine-tuning")
+@auto_track_command
 def download(
     ctx: click.Context,
     fine_tune_id: str,

@@ -4,6 +4,7 @@ from typing import Any, Dict, Union, Literal, Optional, cast
 import click
 
 from together import Together, TogetherError
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.types.eval_create_params import (
     ParametersEvaluationScoreParameters,
@@ -227,6 +228,7 @@ from together.types.eval_create_params import (
 )
 @click.pass_context
 @handle_api_errors("Evals")
+@auto_track_command
 def create(
     ctx: click.Context,
     type: Literal["classify", "score", "compare"],

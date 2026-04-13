@@ -6,6 +6,7 @@ import click
 from rich import print, print_json
 
 from together.lib.utils import check_file
+from together.lib.cli._track_cli import auto_track_command
 
 
 @click.command()
@@ -20,6 +21,7 @@ from together.lib.utils import check_file
     is_flag=True,
     help="Output the response in JSON format",
 )
+@auto_track_command
 def check(_ctx: click.Context, file: pathlib.Path, json: bool) -> None:
     """Check file for issues"""
 

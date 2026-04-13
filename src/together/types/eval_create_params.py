@@ -51,6 +51,13 @@ class ParametersEvaluationClassifyParametersJudge(TypedDict, total=False):
     external_base_url: str
     """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
+
 
 class ParametersEvaluationClassifyParametersModelToEvaluateEvaluationModelRequest(TypedDict, total=False):
     input_template: Required[str]
@@ -76,6 +83,13 @@ class ParametersEvaluationClassifyParametersModelToEvaluateEvaluationModelReques
 
     external_base_url: str
     """Base URL for external models. Must be OpenAI-compatible base URL"""
+
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
 
 
 ParametersEvaluationClassifyParametersModelToEvaluate: TypeAlias = Union[
@@ -115,6 +129,13 @@ class ParametersEvaluationScoreParametersJudge(TypedDict, total=False):
     external_base_url: str
     """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
+
 
 class ParametersEvaluationScoreParametersModelToEvaluateEvaluationModelRequest(TypedDict, total=False):
     input_template: Required[str]
@@ -140,6 +161,13 @@ class ParametersEvaluationScoreParametersModelToEvaluateEvaluationModelRequest(T
 
     external_base_url: str
     """Base URL for external models. Must be OpenAI-compatible base URL"""
+
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
 
 
 ParametersEvaluationScoreParametersModelToEvaluate: TypeAlias = Union[
@@ -182,6 +210,13 @@ class ParametersEvaluationCompareParametersJudge(TypedDict, total=False):
     external_base_url: str
     """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
+
 
 class ParametersEvaluationCompareParametersModelAEvaluationModelRequest(TypedDict, total=False):
     input_template: Required[str]
@@ -207,6 +242,13 @@ class ParametersEvaluationCompareParametersModelAEvaluationModelRequest(TypedDic
 
     external_base_url: str
     """Base URL for external models. Must be OpenAI-compatible base URL"""
+
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
 
 
 ParametersEvaluationCompareParametersModelA: TypeAlias = Union[
@@ -238,6 +280,13 @@ class ParametersEvaluationCompareParametersModelBEvaluationModelRequest(TypedDic
 
     external_base_url: str
     """Base URL for external models. Must be OpenAI-compatible base URL"""
+
+    num_workers: int
+    """Number of concurrent workers for inference requests.
+
+    Overrides the default concurrency for this model. Useful for tuning throughput
+    when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
+    """
 
 
 ParametersEvaluationCompareParametersModelB: TypeAlias = Union[

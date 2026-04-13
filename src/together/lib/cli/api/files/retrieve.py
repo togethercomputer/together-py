@@ -5,6 +5,7 @@ from together import Together
 from together.lib.utils import convert_bytes, convert_unix_timestamp
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_timestamp
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 
 
@@ -17,6 +18,7 @@ from together.lib.cli.api._utils import handle_api_errors
     help="Output the response in JSON format",
 )
 @handle_api_errors("Files")
+@auto_track_command
 def retrieve(ctx: click.Context, id: str, json: bool) -> None:
     """Retrieve file details"""
 

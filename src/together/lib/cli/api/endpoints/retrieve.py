@@ -1,6 +1,7 @@
 import click
 
 from together import Together
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 from together.lib.utils.serializer import datetime_serializer
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
@@ -12,6 +13,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 @click.pass_context
 @handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
+@auto_track_command
 def retrieve(ctx: click.Context, endpoint_id: str, json: bool) -> None:
     """Get a dedicated inference endpoint."""
     client: Together = ctx.obj

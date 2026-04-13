@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.8.0 (2026-04-13)
+
+Full Changelog: [v2.7.0...v2.8.0](https://github.com/togethercomputer/together-py/compare/v2.7.0...v2.8.0)
+
+### Features
+
+* **api:** accept strings for audio_inputs and source_video in video creation ([0b43374](https://github.com/togethercomputer/together-py/commit/0b43374a8b98ae44ed69fdcb2c60019304b647f9))
+* **api:** add autoscale/OIDC/scheduling to clusters, replace driver_version params ([d1bd7b8](https://github.com/togethercomputer/together-py/commit/d1bd7b85cb373427c3240b6b3bac19c912ed8af8))
+* **api:** add num_workers parameter to eval create parameters ([76ffcac](https://github.com/togethercomputer/together-py/commit/76ffcacd3dcd8af7de0d09232230e6ea322343ec))
+* **api:** add RegionDriverVersion model, update cluster regions response types ([8151d02](https://github.com/togethercomputer/together-py/commit/8151d02fd2f5272d334e40ef03a60056d554eb3a))
+* **api:** manual updates ([cec7a40](https://github.com/togethercomputer/together-py/commit/cec7a405e111c6a90cc5a6e8116dd94cc2c39913))
+* **cli:** Add Analytic tracking to CLI commands ([#224](https://github.com/togethercomputer/together-py/issues/224)) ([7362cdc](https://github.com/togethercomputer/together-py/commit/7362cdcbf1535a276e7b8c431ac1c49b0c094c67))
+* **jig:** jig secrets delete cmd to delete secret from remote and local ([#324](https://github.com/togethercomputer/together-py/issues/324)) ([227ae2f](https://github.com/togethercomputer/together-py/commit/227ae2f63a1d2b888496deaf3671f2953591e5bc))
+
+
+### Bug Fixes
+
+* **client:** preserve hardcoded query params when merging with user params ([1f900b6](https://github.com/togethercomputer/together-py/commit/1f900b69661ae3e7ded9545d7eee8f27bd4bfd63))
+* ensure file data are only sent as 1 parameter ([2f95a88](https://github.com/togethercomputer/together-py/commit/2f95a88714e403bb74a00a905418b16fed7597d8))
+* Ensure jig works with Python 3.9 ([#321](https://github.com/togethercomputer/together-py/issues/321)) ([e28b54a](https://github.com/togethercomputer/together-py/commit/e28b54af9f3ccf19f020c1bbaa48272ee27bfb83))
+
+
+### Chores
+
+* Update `clusters list-regions` output for new server response change ([#322](https://github.com/togethercomputer/together-py/issues/322)) ([329cf40](https://github.com/togethercomputer/together-py/commit/329cf40057bb85f23737549d79fd546fe01c9d41))
+
+
+### Documentation
+
+* improve examples ([07892d2](https://github.com/togethercomputer/together-py/commit/07892d276446615b7c0fdb109dd2b5201c16980f))
+
 ## 2.7.0 (2026-04-03)
 
 Full Changelog: [v2.6.0...v2.7.0](https://github.com/togethercomputer/together-py/compare/v2.6.0...v2.7.0)

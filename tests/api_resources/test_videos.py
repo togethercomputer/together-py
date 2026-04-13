@@ -32,24 +32,24 @@ class TestVideos:
             frame_images=[
                 {
                     "input_image": "input_image",
-                    "frame": 0,
+                    "frame": "first",
                 }
             ],
             generate_audio=True,
             guidance_scale=0,
             height=0,
             media={
-                "audio_inputs": [{"audio": "audio"}],
+                "audio_inputs": ["string"],
                 "frame_images": [
                     {
                         "input_image": "input_image",
-                        "frame": 0,
+                        "frame": "first",
                     }
                 ],
                 "frame_videos": [{"video": "video"}],
                 "reference_images": ["string"],
                 "reference_videos": [{"video": "video"}],
-                "source_video": {"video": "video"},
+                "source_video": "string",
             },
             negative_prompt="negative_prompt",
             output_format="MP4",
@@ -148,24 +148,24 @@ class TestAsyncVideos:
             frame_images=[
                 {
                     "input_image": "input_image",
-                    "frame": 0,
+                    "frame": "first",
                 }
             ],
             generate_audio=True,
             guidance_scale=0,
             height=0,
             media={
-                "audio_inputs": [{"audio": "audio"}],
+                "audio_inputs": ["string"],
                 "frame_images": [
                     {
                         "input_image": "input_image",
-                        "frame": 0,
+                        "frame": "first",
                     }
                 ],
                 "frame_videos": [{"video": "video"}],
                 "reference_images": ["string"],
                 "reference_videos": [{"video": "video"}],
-                "source_video": {"video": "video"},
+                "source_video": "string",
             },
             negative_prompt="negative_prompt",
             output_format="MP4",

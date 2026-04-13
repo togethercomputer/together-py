@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.7.0"
+version = "2.8.0"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -25,6 +25,7 @@ dependencies = [
   "filelock>=3.13.1",
   "types-pyyaml>=6.0.12.20250915",
   "tomli>=2.0.0; python_version < '3.11'",
+  "detect-agent>=0.1.1",
 ]
 
 requires-python = ">= 3.9"

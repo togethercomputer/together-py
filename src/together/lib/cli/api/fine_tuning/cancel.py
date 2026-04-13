@@ -5,6 +5,7 @@ from rich import print, print_json
 
 from together import Together
 from together._utils._json import openapi_dumps
+from together.lib.cli._track_cli import auto_track_command
 from together.lib.cli.api._utils import handle_api_errors
 
 NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed", "user_error"]
@@ -16,6 +17,7 @@ NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed",
 @click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
 @click.option("--json", is_flag=True, help="Print output in JSON format, must use --force to use this option")
 @handle_api_errors("Fine-tuning")
+@auto_track_command
 def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False, json: bool = False) -> None:
     """Cancel fine-tuning job"""
     client: Together = ctx.obj
