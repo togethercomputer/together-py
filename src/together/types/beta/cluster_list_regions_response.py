@@ -12,7 +12,7 @@ class RegionDriverVersion(BaseModel):
     CUDA/NVIDIA driver versions pair available in the region to use in the create cluster request.
     """
 
-    cuda_driver_version: str
+    cuda_version: str
     """CUDA driver version."""
 
     nvidia_driver_version: str
