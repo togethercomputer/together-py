@@ -2,6 +2,7 @@ import json as json_lib
 from typing import Any, Dict, List
 
 import click
+from rich import print
 from tabulate import tabulate
 
 from together import Together
@@ -29,13 +30,19 @@ def list_regions(ctx: click.Context, json: bool) -> None:
     else:
         data: List[Dict[str, Any]] = []
         for region in response.regions:
+            driver_versions: list[str] = []
+            for driver_version in region.driver_versions:
+                driver_versions.append(
+                    f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue] [dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]"
+                )
+
             data.append(
                 {
                     "Name": region.name,
                     "Supported GPU Types": ", ".join(region.supported_instance_types)
                     if region.supported_instance_types
                     else "",
-                    "Driver Versions": ", ".join(region.driver_versions) if region.driver_versions else "",
+                    "Driver Versions": "\n".join(driver_versions) if driver_versions else "",
                 }
             )
-        click.echo(tabulate(data, headers="keys", tablefmt="grid"))
+        print(tabulate(data, headers="keys", tablefmt="grid"))

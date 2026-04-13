@@ -42,7 +42,7 @@ _REGIONS_BODY = {
     "regions": [
         {
             "name": "us-central-8",
-            "driver_versions": ["CUDA_12_6_565"],
+            "driver_versions": [{"cuda_version": "12.6", "nvidia_driver_version": "565"}],
             "supported_instance_types": ["H100_SXM"],
         }
     ]
@@ -120,8 +120,10 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--driver-version",
-                "CUDA_12_6_565",
+                "--nvidia-driver-version",
+                "565",
+                "--cuda-version",
+                "12.6",
                 "--region",
                 "us-central-8",
                 "--num-gpus",
