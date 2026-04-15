@@ -233,6 +233,10 @@ class Config:
         allow_top_level = ["volume_mounts", "autoscaling"]
         for key in allow_top_level:
             if key in jig_config:
+                echo(
+                    f"\N{WARNING SIGN} [tool.jig.{key}] is deprecated, use [tool.jig.deploy.{key}] instead",
+                    err=True,
+                )
                 deploy_config[key] = jig_config[key]
         if autoscaling := deploy_config.get("autoscaling"):
             autoscaling["model"] = name
