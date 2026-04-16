@@ -201,6 +201,9 @@ class FinetuneTrainingLimits(BaseModel):
     max_num_epochs: int
     max_learning_rate: float
     min_learning_rate: float
+    min_max_seq_length: int
+    max_seq_length_sft: int
+    max_seq_length_dpo: int
     full_training: Optional[FinetuneFullTrainingLimits] = None
     lora_training: Optional[FinetuneLoraTrainingLimits] = None
     supports_vision: bool = False
@@ -353,6 +356,9 @@ class FinetuneResponse(BaseModel):
     n_evals: Optional[int] = None
     """Number of evaluations during training"""
 
+    max_seq_length: Optional[int] = None
+    """Maximum sequence length used for training"""
+
     owner_address: Optional[str] = None
     """Owner address information"""
 
@@ -471,6 +477,8 @@ class FinetuneRequest(BaseModel):
     n_checkpoints: Union[int, None] = None
     # number of evaluation loops to run
     n_evals: Union[int, None] = None
+    # maximum sequence length
+    max_seq_length: Union[int, None] = None
     # training batch size
     batch_size: Union[int, Literal["max"], None] = None
     # up to 40 character suffix for output model name

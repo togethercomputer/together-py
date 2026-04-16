@@ -32,6 +32,9 @@ _MODEL_LIMITS = FinetuneTrainingLimits(
         max_rank=64,
         target_modules=["q", "k", "v", "o", "mlp"],
     ),
+    max_seq_length_sft=4096,
+    max_seq_length_dpo=4096,
+    min_max_seq_length=1024,
 )
 
 
@@ -242,6 +245,9 @@ def test_non_lora_model():
                     min_batch_size=8,
                 ),
                 lora_training=None,
+                max_seq_length_sft=4096,
+                max_seq_length_dpo=4096,
+                min_max_seq_length=1024,
             ),
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
@@ -264,6 +270,9 @@ def test_non_full_model():
                     target_modules=["q", "k", "v", "o", "mlp"],
                 ),
                 full_training=None,
+                max_seq_length_sft=4096,
+                max_seq_length_dpo=4096,
+                min_max_seq_length=1024,
             ),
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
