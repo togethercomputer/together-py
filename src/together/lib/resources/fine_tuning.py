@@ -229,9 +229,13 @@ def create_finetune_request(
         if max_seq_length < model_limits.min_max_seq_length:
             raise ValueError(f"Maximum sequence length must be greater than {model_limits.min_max_seq_length}")
         if training_method == "sft" and max_seq_length > model_limits.max_seq_length_sft:
-            raise ValueError(f"Maximum sequence length for SFT training must be less than {model_limits.max_seq_length_sft}")
+            raise ValueError(
+                f"Maximum sequence length for SFT training must be less than {model_limits.max_seq_length_sft}"
+            )
         elif training_method == "dpo" and max_seq_length > model_limits.max_seq_length_dpo:
-            raise ValueError(f"Maximum sequence length for DPO training must be less than {model_limits.max_seq_length_dpo}")
+            raise ValueError(
+                f"Maximum sequence length for DPO training must be less than {model_limits.max_seq_length_dpo}"
+            )
         max_seq_length = max_seq_length
 
     if model_limits.supports_vision:
