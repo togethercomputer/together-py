@@ -592,6 +592,11 @@ class Jig:
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
+        if self.config.deploy.image:
+            raise JigError(
+                f"Cannot build: deploy.image is set to '{self.config.deploy.image}'. "
+                "Use 'jig deploy' to deploy the configured image, or remove deploy.image to build from source."
+            )
         image = self.image(tag)
 
         if not _dockerfile(self.config):
