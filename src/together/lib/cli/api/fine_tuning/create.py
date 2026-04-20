@@ -51,6 +51,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     help="Validation file ID from Files API or local path to a file to be uploaded.",
 )
 @click.option("--packing/--no-packing", type=bool, default=True, help="Whether to use packing for training.")
+@click.option("--max-seq-length", type=int, default=None, help="Maximum sequence length to use for training.")
 @click.option("--n-evals", type=int, default=0, help="Number of evaluation loops")
 @click.option("--n-checkpoints", "-c", type=int, default=1, help="Number of checkpoints to save")
 @click.option("--batch-size", "-b", type=INT_WITH_MAX, default="max", help="Train batch size")
@@ -221,6 +222,7 @@ def create(
     packing: bool,
     n_epochs: int,
     n_evals: int,
+    max_seq_length: int | None,
     n_checkpoints: int,
     batch_size: int | Literal["max"],
     learning_rate: float,
@@ -266,6 +268,7 @@ def create(
         validation_file=validation_file,
         packing=packing,
         n_evals=n_evals,
+        max_seq_length=max_seq_length,
         n_checkpoints=n_checkpoints,
         batch_size=batch_size,
         learning_rate=learning_rate,
@@ -386,6 +389,19 @@ def create(
             rpo_alpha=rpo_alpha or 0,
             simpo_gamma=simpo_gamma or 0,
         )
+
+    if max_seq_length is not None:
+        if max_seq_length < model_limits.min_max_seq_length:
+            raise click.BadParameter(f"Maximum sequence length must be greater than {model_limits.min_max_seq_length}")
+        if training_method == "sft" and max_seq_length > model_limits.max_seq_length_sft:
+            raise click.BadParameter(
+                f"Maximum sequence length for SFT training must be less than {model_limits.max_seq_length_sft}"
+            )
+        elif training_method == "dpo" and max_seq_length > model_limits.max_seq_length_dpo:
+            raise click.BadParameter(
+                f"Maximum sequence length for DPO training must be less than {model_limits.max_seq_length_dpo}"
+            )
+        training_args["max_seq_length"] = max_seq_length
 
     if model_limits.supports_vision:
         # Don't show price estimation for multimodal models yet

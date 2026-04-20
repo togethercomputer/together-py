@@ -157,6 +157,9 @@ class FineTuningCancelResponse(BaseModel):
     max_grad_norm: Optional[float] = None
     """Maximum gradient norm for clipping"""
 
+    max_seq_length: Optional[int] = None
+    """Maximum sequence length to use for training."""
+
     model: Optional[str] = None
     """Base model used for fine-tuning"""
 

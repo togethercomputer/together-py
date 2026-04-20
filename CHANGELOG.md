@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.9.0 (2026-04-17)
+
+Full Changelog: [v2.8.0...v2.9.0](https://github.com/togethercomputer/together-py/compare/v2.8.0...v2.9.0)
+
+### Features
+
+* **api:** add max_seq_length to fine-tuning response models ([cfb6497](https://github.com/togethercomputer/together-py/commit/cfb64972ee879c74c777f5a7a85fc2903a152b58))
+
+
+### Bug Fixes
+
+* **jig:** removing command from jig configs doesn't disable it ([#316](https://github.com/togethercomputer/together-py/issues/316)) ([81f81b5](https://github.com/togethercomputer/together-py/commit/81f81b53d086694aa6382a2bc2be62d7cf0b728d))
+
+
+### Performance Improvements
+
+* **client:** optimize file structure copying in multipart requests ([4704a44](https://github.com/togethercomputer/together-py/commit/4704a44deb86f6fd6a688bd8cbff0bf03af8694f))
+
+
+### Chores
+
+* **jig:** deprecate tool.jig.autoscaling ([#328](https://github.com/togethercomputer/together-py/issues/328)) ([e41f4ef](https://github.com/togethercomputer/together-py/commit/e41f4ef71a35bf6fc65ca6643773062667aed22f))
+* **tests:** bump steady to v0.22.1 ([acc8e35](https://github.com/togethercomputer/together-py/commit/acc8e35bfbc6910ad2b8df51f74a638296d7646e))
+
 ## 2.8.0 (2026-04-13)
 
 Full Changelog: [v2.7.0...v2.8.0](https://github.com/togethercomputer/together-py/compare/v2.7.0...v2.8.0)

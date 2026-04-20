@@ -38,6 +38,7 @@ def create_finetune_request(
     n_epochs: int = 1,
     validation_file: str | None = "",
     packing: bool = True,
+    max_seq_length: int | None = None,
     n_evals: int | None = 0,
     n_checkpoints: int | None = 1,
     batch_size: int | Literal["max"] = "max",
@@ -224,6 +225,19 @@ def create_finetune_request(
             simpo_gamma=simpo_gamma,
         )
 
+    if max_seq_length is not None:
+        if max_seq_length < model_limits.min_max_seq_length:
+            raise ValueError(f"Maximum sequence length must be greater than {model_limits.min_max_seq_length}")
+        if training_method == "sft" and max_seq_length > model_limits.max_seq_length_sft:
+            raise ValueError(
+                f"Maximum sequence length for SFT training must be less than {model_limits.max_seq_length_sft}"
+            )
+        elif training_method == "dpo" and max_seq_length > model_limits.max_seq_length_dpo:
+            raise ValueError(
+                f"Maximum sequence length for DPO training must be less than {model_limits.max_seq_length_dpo}"
+            )
+        max_seq_length = max_seq_length
+
     if model_limits.supports_vision:
         multimodal_params = FinetuneMultimodalParams(train_vision=train_vision)
     elif not model_limits.supports_vision and train_vision:
@@ -236,6 +250,7 @@ def create_finetune_request(
         training_file=training_file,
         validation_file=validation_file,
         packing=packing,
+        max_seq_length=max_seq_length,
         n_epochs=n_epochs,
         n_evals=n_evals,
         n_checkpoints=n_checkpoints,

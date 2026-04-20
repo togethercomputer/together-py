@@ -111,7 +111,7 @@ class DeployConfig:
     max_replicas: int = 1
     port: int = 8000
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
-    command: Optional[list[str]] = None
+    command: list[str] = field(default_factory=list[str])
     autoscaling: dict[str, Union[str, float, int]] = field(default_factory=dict[str, Union[str, float, int]])
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
@@ -233,6 +233,10 @@ class Config:
         allow_top_level = ["volume_mounts", "autoscaling"]
         for key in allow_top_level:
             if key in jig_config:
+                echo(
+                    f"\N{WARNING SIGN} [tool.jig.{key}] is deprecated, use [tool.jig.deploy.{key}] instead",
+                    err=True,
+                )
                 deploy_config[key] = jig_config[key]
         if autoscaling := deploy_config.get("autoscaling"):
             autoscaling["model"] = name
