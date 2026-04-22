@@ -1,59 +1,61 @@
-import json as json_lib
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-import click
-from tabulate import tabulate
+from typing import List, Literal, Optional, Annotated
 
-from together import Together, omit
-from together._response import APIResponse as APIResponse
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
+from cyclopts import Parameter
+
+from together import omit
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
+from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
+
+PAGE_SIZE = 20
 
 
-@click.command()
-@click.option(
-    "--type",
-    type=click.Choice(["dedicated"]),
-    help="Filter models by type (dedicated: models that can be deployed as dedicated endpoints)",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Models")
-@auto_track_command
-def list(ctx: click.Context, type: Optional[str], json: bool) -> None:
-    """List models"""
-    client: Together = ctx.obj
+async def list(
+    type: Annotated[
+        Optional[Literal["dedicated"]],
+        Parameter(name="--type", show_choices=True, help="Filter models by specified type."),
+    ] = None,
+    after: AfterParameter = None,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """List models."""
+    models_list = await show_loading_status(
+        "Loading models...", config.client.models.list(dedicated=type == "dedicated" if type else omit)
+    )
 
-    models_list = client.models.list(dedicated=type == "dedicated" if type else omit)
+    models_to_display, next_cursor = mock_pagination(models_list, cursor_field="id", cursor=after)
 
-    if json:
-        items = [model.model_dump() for model in models_list]
-        click.echo(json_lib.dumps(items, indent=2, default=datetime_serializer))
+    if config.json:
+        console.print_json(openapi_dumps(models_to_display).decode())
         return
 
-    display_list: List[Dict[str, Any]] = []
+    table = ListTable()
+    table.add_column("Modality")
+    table.add_primary_column("Model", ratio=4)
+    table.add_column("Context Length", justify="right")
+    table.add_column("Pricing per 1M Tokens", justify="right")
 
-    # If the server has a bug and returns an empty .type this will crash if we don't do the or "".
-    for model in sorted(models_list, key=lambda x: x.type or ""):  # type: ignore
+    for model in models_to_display:
         price_parts: List[str] = []
-
-        # Only show pricing if a value actually exists
         if model.pricing and model.pricing.input > 0 and model.pricing.output > 0:
             price_parts.append(f"${model.pricing.input:.2f}")
             price_parts.append(f"${model.pricing.output:.2f}")
-
-        display_list.append(
-            {
-                "Model": model.id,
-                "Type": model.type,
-                "Context length": model.context_length if model.context_length else None,
-                "Price per 1M Tokens (input/output)": "/".join(price_parts),
-            }
+        else:
+            price_parts.append(f"[link=https://api.together.xyz/models/{model.id}]see pricing[/link]")
+        table.add_row(
+            model.type or "other",  # type: ignore
+            f"[link=https://api.together.xyz/models/{model.id}]{model.id}[/link]",
+            str(model.context_length) if model.context_length else "",
+            " / ".join(price_parts),
         )
 
-    click.echo(tabulate(display_list, headers="keys"))
+    console.print(table)
+    if next_cursor:
+        console.print("\n[blue dim]To display the next page, run:[/blue dim]")
+        console.print(f"  [dim]-[/dim] [white]tg models list --after {next_cursor}[/white]")

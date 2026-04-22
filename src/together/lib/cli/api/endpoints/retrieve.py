@@ -1,27 +1,24 @@
-import click
+from __future__ import annotations
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
-from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from rich import print_json
+
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.endpoints._utils import print_endpoint, handle_endpoint_api_errors
 
 
-@click.command()
-@click.argument("endpoint-id", required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_context
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command
-def retrieve(ctx: click.Context, endpoint_id: str, json: bool) -> None:
+async def retrieve(
+    endpoint_id: str,
+    *,
+    config: CLIConfigParameter,
+) -> None:
     """Get a dedicated inference endpoint."""
-    client: Together = ctx.obj
 
-    endpoint = client.endpoints.retrieve(endpoint_id)
-    if json:
-        import json as json_lib
+    endpoint = await show_loading_status("Loading endpoint...", config.client.endpoints.retrieve(endpoint_id))
+    if config.json:
+        print_json(openapi_dumps(endpoint).decode("utf-8"))
+        return
 
-        click.echo(json_lib.dumps(endpoint.model_dump(), indent=2, default=datetime_serializer))
-    else:
-        ctx.obj.print_endpoint(endpoint)
+    print_endpoint(endpoint)

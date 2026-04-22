@@ -1,56 +1,52 @@
+from __future__ import annotations
+
 import sys
+from typing import Annotated
 
-import click
-from rich import print, print_json
+from cyclopts import Parameter, CoercionError
 
-from together import Together
 from together._utils._json import openapi_dumps
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 NON_CANCELLABLE_STATES = ["cancel_requested", "cancelled", "error", "completed", "user_error"]
 
 
-@click.command()
-@click.pass_context
-@click.argument("fine_tune_id", type=str, required=True)
-@click.option("--quiet", is_flag=True, help="Do not prompt for confirmation before cancelling job")
-@click.option("--json", is_flag=True, help="Print output in JSON format, must use --force to use this option")
-@handle_api_errors("Fine-tuning")
-@auto_track_command
-def cancel(ctx: click.Context, fine_tune_id: str, quiet: bool = False, json: bool = False) -> None:
-    """Cancel fine-tuning job"""
-    client: Together = ctx.obj
-    job = client.fine_tuning.retrieve(fine_tune_id)
+async def cancel(
+    fine_tune_id: Annotated[str, Parameter(help="The ID of the fine-tuning job to cancel")],
+    quiet: Annotated[bool, Parameter(negative="", show=False)] = False,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Cancel fine-tuning job."""
+    can_prompt = quiet is False and config.non_interactive is False
+    if config.json and can_prompt:
+        raise CoercionError("To use json mode, you must use --non-interactive")
 
-    if json and not quiet:
-        raise click.BadOptionUsage("json", "To use json mode, you must use --quiet")
+    job = await show_loading_status("Retrieving fine-tuning job...", config.client.fine_tuning.retrieve(fine_tune_id))
 
     if job.status in NON_CANCELLABLE_STATES:
-        click.echo(
-            click.style(f"Fine-tuning: ", fg="blue")
-            + f"Training is not currently cancellable. Current status is "
-            + click.style(job.status, fg="yellow"),
-            file=sys.stderr if json else None,
+        console.print(
+            f"[red]x[/red] Training is not currently cancellable.\n  Current status is [yellow]{job.status}[/yellow]",
         )
-        return
+        sys.exit(1)
 
-    if not quiet:
-        confirm_response = input(
-            "You will be billed for any completed training steps upon cancellation. "
-            f"Do you want to cancel job {fine_tune_id}? [y/N]"
-        )
+    if can_prompt:
+        console.print("[yellow]You will be billed for any completed training steps upon cancellation.[/yellow]\n")
+        confirm_response = input(f"Do you want to cancel job {fine_tune_id}? [y/N]")
         if "y" not in confirm_response.lower():
-            if json:
-                print_json('{"status": "Cancel not submitted"}')
+            if config.json:
+                console.print_json('{"status": "Cancel not submitted"}')
             else:
-                click.echo("Cancel not submitted")
+                console.print("Cancel not submitted")
             return
 
-    response = client.fine_tuning.cancel(fine_tune_id)
-
-    if json:
-        print_json(openapi_dumps(response).decode("utf-8"))
+    response = await show_loading_status(
+        "Cancelling fine-tuning job...", config.client.fine_tuning.cancel(fine_tune_id)
+    )
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    print("Cancelled fine-tuning job")
+    console.print("[green]+[/green] Cancelled fine-tuning job")

@@ -1,44 +1,34 @@
-import json as json_lib
-from typing import Any, Dict, List
+from __future__ import annotations
 
-import click
-from tabulate import tabulate
-
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
-from together.types.beta.clusters import ClusterStorage
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
+from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
 
-def print_storage(storage: List[ClusterStorage]) -> None:
-    data: List[Dict[str, Any]] = []
-    for volume in storage:
-        data.append(
-            {
-                "ID": volume.volume_id,
-                "Name": volume.volume_name,
-                "Size": volume.size_tib,
-            }
-        )
-    click.echo(tabulate(data, headers="keys", tablefmt="grid"))
+async def list(
+    after: AfterParameter = None,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """List storage volumes."""
+    response = await show_loading_status("Loading storage volumes...", config.client.beta.clusters.storage.list())
 
+    data, next_cursor = mock_pagination(response.volumes, cursor_field="volume_id", cursor=after)
 
-@click.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters Storage")
-@auto_track_command
-def list(ctx: click.Context, json: bool) -> None:
-    """List storage volumes"""
-    client: Together = ctx.obj
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
+        return
 
-    response = client.beta.clusters.storage.list()
-
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(), indent=2))
-    else:
-        print_storage(response.volumes)
+    table = ListTable()
+    table.add_primary_column("ID")
+    table.add_column("Name")
+    table.add_column("Size")
+    for volume in data:
+        table.add_row(volume.volume_id, volume.volume_name, f"{volume.size_tib} TiB")
+    console.print(table)
+    if next_cursor:
+        console.print("\n[blue dim]To display the next page, run:[/blue dim]")
+        console.print(f"  [dim]-[/dim] [white]tg beta clusters storage list --after {next_cursor}[/white]")

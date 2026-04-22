@@ -1,22 +1,28 @@
-import json
+from __future__ import annotations
 
-import click
+from typing import Annotated
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from cyclopts import Parameter
+
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 
-@click.command()
-@click.pass_context
-@click.argument("evaluation_id", type=str, required=True)
-@handle_api_errors("Evals")
-@auto_track_command
-def status(ctx: click.Context, evaluation_id: str) -> None:
-    """Get the status and results of a specific evaluation job"""
+async def status(
+    evaluation_id: Annotated[str, Parameter(help="The ID of the evaluation job.")],
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Get the status and results of a specific evaluation job."""
+    response = await show_loading_status("Retrieving eval status...", config.client.evals.status(evaluation_id))
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
+    else:
+        console.print(f"Status: [bold]{response.status}[/bold]")
 
-    client: Together = ctx.obj
-
-    response = client.evals.status(evaluation_id)
-
-    click.echo(json.dumps(response.model_dump(exclude_none=True), indent=4))
+        if response.results:
+            # TODO: Add a pretty print for the results
+            console.print("\nResults")
+            console.print_json(openapi_dumps(response.results).decode("utf-8"))

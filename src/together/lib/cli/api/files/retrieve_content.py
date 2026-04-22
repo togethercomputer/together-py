@@ -1,46 +1,52 @@
+from __future__ import annotations
+
 import os
-from typing import Union
+import sys
+from typing import Optional, Annotated
 from pathlib import Path
 
-import click
+from cyclopts import Parameter, validators
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together import AsyncTogether
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 
-@click.command()
-@click.pass_context
-@click.argument("id", type=str, required=True)
-@click.option("--output", type=click.Path(file_okay=False, writable=True, dir_okay=True), help="Output filename")
-@click.option("--stdout", is_flag=True, default=False, help="Output to stdout")
-@handle_api_errors("Files")
-@auto_track_command
-def retrieve_content(ctx: click.Context, id: str, output: Union[str, None], stdout: bool) -> None:
-    """Retrieve file content and output to file"""
+async def get_filename(client: AsyncTogether, id: str) -> str:
+    r = await client.files.retrieve(id=id)
+    return r.filename or id
 
-    client: Together = ctx.obj
 
-    if stdout is True:
-        response = client.files.content(id=id)
-        click.echo(response.read().decode("utf-8"))
+async def retrieve_content(
+    id: str,
+    output: Annotated[
+        Optional[Path],
+        Parameter(
+            help="The directory to save the content to", validator=validators.Path(file_okay=False, dir_okay=True)
+        ),
+    ] = None,
+    stdout: Annotated[Optional[bool], Parameter(negative=(), help="Whether to output the content to stdout")] = False,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Retrieve file content and output to file."""
+    if stdout is False and output is None:
+        console.print(f"[red]Invalid usage: Either --output <directory> or --stdout must be specified[/red]")
+        sys.exit(1)
 
-    elif output is not None:
-        os.makedirs(os.path.dirname(output), exist_ok=True)
+    response = await show_loading_status("Retrieving file contents...", config.client.files.content(id=id))
 
-        # If the user specified an output with an extension - that is a file name so write to that
-        # If they only specified a directory, write to that directory with the file name from our api
+    if stdout:
+        bytes = await response.read()
+        console.print(bytes.decode("utf-8"))
+
+    if output is not None:
+        os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
         has_extension = Path(output).suffix != ""
-        output = output if has_extension else f"{output}/{get_filename(client, id)}"
+        out_path = output if has_extension else f"{output}/{await get_filename(config.client, id)}"
 
-        with open(output, "wb") as f:
-            response = client.files.content(id=id)
-            f.write(response.read())
-        click.echo(f"File saved to {output}")
+        response = await config.client.files.content(id=id)
+        await response.write_to_file(out_path)
 
-    else:
-        raise click.UsageError("Either --output <filename> or --stdout must be specified")
-
-
-def get_filename(client: Together, id: str) -> str:
-    return client.files.retrieve(id=id).filename
+        console.print(f"File saved to [blue]{out_path}[/blue]")

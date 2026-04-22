@@ -6,9 +6,8 @@ import json
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
-from together.lib.cli import main
+from tests.cli.utils import CliRunner
 
 
 @pytest.fixture
@@ -20,39 +19,42 @@ def isolated_cli_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path
     return cfg_root / "together" / "cli.json"
 
 
-def test_telemetry_disable_then_status(isolated_cli_config: Path) -> None:
-    runner = CliRunner()
-    r = runner.invoke(main, ["telemetry", "disable"], catch_exceptions=False)
+def test_telemetry_disable_then_status(isolated_cli_config: Path, cli_runner: CliRunner) -> None:
+    r = cli_runner.invoke(["telemetry", "disable"])
     assert r.exit_code == 0
-    assert "Telemetry disabled" in r.output
+    assert "Telemetry: Disabled" in r.output
     assert isolated_cli_config.is_file()
     assert json.loads(isolated_cli_config.read_text(encoding="utf-8"))["telemetry_enabled"] is False
 
-    r2 = runner.invoke(main, ["telemetry", "status"], catch_exceptions=False)
+    r2 = cli_runner.invoke(["telemetry", "status"])
     assert r2.exit_code == 0
     assert "Disabled" in r2.output
     assert "environment variable" not in r2.output.lower()
 
 
-def test_telemetry_enable_then_status(isolated_cli_config: Path) -> None:
+def test_telemetry_enable_then_status(isolated_cli_config: Path, cli_runner: CliRunner) -> None:
     isolated_cli_config.parent.mkdir(parents=True, exist_ok=True)
     isolated_cli_config.write_text(json.dumps({"telemetry_enabled": False}), encoding="utf-8")
 
-    runner = CliRunner()
-    r = runner.invoke(main, ["telemetry", "enable"], catch_exceptions=False)
+    r = cli_runner.invoke(["telemetry", "enable"])
     assert r.exit_code == 0
-    assert "Telemetry enabled" in r.output
+    assert "Telemetry: Enabled" in r.output
     assert json.loads(isolated_cli_config.read_text(encoding="utf-8"))["telemetry_enabled"] is True
 
-    r2 = runner.invoke(main, ["telemetry", "status"], catch_exceptions=False)
+    r2 = cli_runner.invoke(["telemetry", "status"])
     assert r2.exit_code == 0
     assert "Enabled" in r2.output
 
 
-def test_telemetry_status_shows_env_opt_out(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_telemetry_status_shows_env_opt_out(
+    isolated_cli_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+) -> None:
+    """Without XDG isolation, a real cli.json can disable telemetry before env is considered."""
+    assert not isolated_cli_config.exists()
     monkeypatch.setenv("TOGETHER_TELEMETRY_DISABLED", "1")
-    runner = CliRunner()
-    r = runner.invoke(main, ["telemetry", "status"], catch_exceptions=False)
+    r = cli_runner.invoke(["telemetry", "status"])
     assert r.exit_code == 0
     assert "Disabled" in r.output
     assert "environment variable" in r.output.lower()

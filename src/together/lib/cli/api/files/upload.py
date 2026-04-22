@@ -1,71 +1,57 @@
+from __future__ import annotations
+
 import os
 import sys
 import json as json_lib
-import pathlib
-from typing import get_args
+from typing import Optional, Annotated, cast, get_args
+from pathlib import Path
 
-import click
-from rich import print, print_json
+from cyclopts import Parameter
+from rich.markup import escape as escape_rich_markup
 
-from together import Together
 from together.lib import check_file
 from together.types import FilePurpose
 from together._utils._json import openapi_dumps
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 
-@click.command()
-@click.pass_context
-@click.argument(
-    "file",
-    type=click.Path(exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False),
-    required=True,
-)
-@click.option(
-    "--purpose",
-    type=click.Choice(get_args(FilePurpose)),
-    default="fine-tune",
-    help="Purpose of file upload. Acceptable values in enum `together.types.FilePurpose`. Defaults to `fine-tunes`.",
-)
-@click.option(
-    "--check/--no-check",
-    default=True,
-    help="Whether to check the file before uploading.",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output the response in JSON format",
-)
-@handle_api_errors("Files")
-@auto_track_command
-def upload(ctx: click.Context, file: pathlib.Path, purpose: FilePurpose, check: bool, json: bool) -> None:
-    """Upload file"""
-
-    client: Together = ctx.obj
-    if json:
+async def upload(
+    file: Annotated[Path, Parameter(required=True, help="The file to upload")],
+    purpose: Annotated[Optional[FilePurpose], Parameter(help="The purpose of the file")] = "fine-tune",
+    check: Annotated[Optional[bool], Parameter(help="Whether to check the file")] = True,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Upload file."""
+    if config.json:
         os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
     # Manually handle check here so we can exit and provide the user good error messages
     if check:
         report = check_file(file)
         if report["is_check_passed"] is False:
-            if json:
-                print_json(json_lib.dumps(report))
+            if config.json:
+                console.print_json(json_lib.dumps(report))
             else:
-                print(f"❌ {report['message']}")
+                console.print(f"[red]❌ {escape_rich_markup(str(report['message']))}[/red]")
 
             # Make sure to exit
             sys.exit(1)
 
-    response = client.files.upload(file=file, purpose=purpose, check=False)
+    try:
+        purpose = cast(FilePurpose, purpose)
+    except ValueError:
+        console.print(f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]")
+        sys.exit(1)
 
-    if json:
-        print_json(openapi_dumps(response).decode("utf-8"))
-        return
-
-    click.echo(
-        click.style("> Success! ", fg="blue")
-        + f"File uploaded for {click.style(response.purpose, bold=True)}. File ID: {click.style(response.id, fg='green', bold=True)}"
+    response = await show_loading_status(
+        "Uploading file", config.client.files.upload(file=file, purpose=purpose, check=False)
     )
+
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
+        return
+    console.print(f"[green]Success![/green]")
+    console.print(f"[blue]{response.id}[/blue]")
