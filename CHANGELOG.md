@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.10.0 (2026-04-22)
+
+Full Changelog: [v2.9.0...v2.10.0](https://github.com/togethercomputer/together-py/compare/v2.9.0...v2.10.0)
+
+### Features
+
+* Major CLI foundational improvements ([#319](https://github.com/togethercomputer/together-py/issues/319)) ([5e0004a](https://github.com/togethercomputer/together-py/commit/5e0004ab7c96f368d62603e0b2fb392988dd6c5e))
+
+
+### Chores
+
+* **internal:** more robust bootstrap script ([d847567](https://github.com/togethercomputer/together-py/commit/d847567402ac92d3adb3bc8a9d0cf9532726a2e1))
+
 ## 2.9.0 (2026-04-17)
 
 Full Changelog: [v2.8.0...v2.9.0](https://github.com/togethercomputer/together-py/compare/v2.8.0...v2.9.0)
