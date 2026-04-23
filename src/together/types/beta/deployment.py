@@ -199,7 +199,7 @@ class Deployment(BaseModel):
     gpu_count: Optional[int] = None
     """GPUCount is the number of GPUs allocated to each replica in this deployment"""
 
-    gpu_type: Optional[Literal["h100-80gb", " a100-80gb"]] = None
+    gpu_type: Optional[Literal["h100-80gb", "h100-40gb-mig", "b200-192gb"]] = None
     """GPUType specifies the type of GPU requested (if any) for this deployment"""
 
     health_check_path: Optional[str] = None
