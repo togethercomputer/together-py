@@ -1,51 +1,30 @@
-import click
-from rich import print_json
+from __future__ import annotations
 
-from together import Together
+from typing import Annotated
+
+from cyclopts import Parameter
+
 from together._utils._json import openapi_dumps
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
 
 
-@click.command()
-@click.option(
-    "--region",
-    required=True,
-    type=str,
-    help="Region to create the storage volume in",
-)
-@click.option(
-    "--size-tib",
-    required=True,
-    type=int,
-    help="Size of the storage volume in TiB",
-)
-@click.option(
-    "--volume-name",
-    required=True,
-    type=str,
-    help="Name of the storage volume",
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters Storage")
-@auto_track_command
-def create(ctx: click.Context, region: str, size_tib: int, volume_name: str, json: bool) -> None:
-    """Create a storage volume"""
-    client: Together = ctx.obj
-
-    response = client.beta.clusters.storage.create(
+async def create(
+    region: Annotated[str, Parameter(help="Region to create the storage volume in")],
+    size_tib: Annotated[int, Parameter(help="Size of the storage volume in TiB")],
+    volume_name: Annotated[str, Parameter(help="Name of the storage volume")],
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Create a storage volume."""
+    response = await config.client.beta.clusters.storage.create(
         region=region,
         size_tib=size_tib,
         volume_name=volume_name,
     )
 
-    if json:
-        print_json(openapi_dumps(response).decode("utf-8"))
+    if config.json:
+        console.print_json(openapi_dumps(response).decode("utf-8"))
     else:
-        click.echo(f"Storage volume created successfully")
-        click.echo(response.volume_id)
+        console.print(f"[blue]Storage volume created successfully[/blue]")
+        console.print(f"[primary]Volume ID:[/primary] {response.volume_id}")

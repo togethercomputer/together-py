@@ -1,27 +1,21 @@
-import json as json_lib
+from __future__ import annotations
 
-import click
-
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
 
 
-@click.command()
-@click.argument("endpoint-id", required=True)
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.pass_obj
-@handle_api_errors("Endpoints")
-@handle_endpoint_api_errors("Endpoints")
-@auto_track_command
-def delete(client: Together, endpoint_id: str, json: bool) -> None:
+async def delete(
+    endpoint_id: str,
+    *,
+    config: CLIConfigParameter,
+) -> None:
     """Delete a dedicated inference endpoint."""
-    client.endpoints.delete(endpoint_id)
+    await show_loading_status("Deleting endpoint...", config.client.endpoints.delete(endpoint_id))
 
-    if json:
-        click.echo(json_lib.dumps({"message": "Successfully deleted endpoint"}, indent=2))
+    if config.json:
+        console.print_json(openapi_dumps({"message": "Successfully deleted endpoint"}).decode("utf-8"))
         return
 
-    click.echo("Successfully deleted endpoint", err=True)
-    click.echo(endpoint_id)
+    console.print("[green]√[/green] Endpoint deleted")

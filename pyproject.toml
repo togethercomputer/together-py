@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.9.0"
+version = "2.10.0"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -15,7 +15,7 @@ dependencies = [
   "anyio>=3.5.0, <5",
   "distro>=1.7.0, <2",
   "sniffio",
-  "click>=8.1.7",
+  "cyclopts>=4.6.0",
   "rich>=13.7.1",
   "tabulate>=0.9.0",
   "pillow>=10.4.0",
@@ -25,10 +25,10 @@ dependencies = [
   "filelock>=3.13.1",
   "types-pyyaml>=6.0.12.20250915",
   "tomli>=2.0.0; python_version < '3.11'",
-  "detect-agent>=0.1.1",
+  "detect-agent>=0.2.0",
 ]
 
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 classifiers = [
   "Typing :: Typed",
   "Intended Audience :: Developers",
@@ -57,10 +57,11 @@ Changelog = "https://github.com/togethercomputer/together-py/blob/main/CHANGELOG
 aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]
 aiofiles = ["aiofiles>=25.0.0", "types-aiofiles"]
 pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
-cli = ["PyYAML"]
+cli = ["PyYAML", "questionary>=2.1.1"]
 
 [project.scripts]
 together = "together.lib.cli:main"
+tg = "together.lib.cli:main"
 
 [tool.uv]
 managed = true

@@ -11,13 +11,14 @@ import threading
 import urllib.error
 import urllib.request
 from enum import Enum
-from typing import Any, TypeVar, Callable, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Callable, cast
 from pathlib import Path
-from functools import wraps
 
-import click
-from click.core import ParameterSource
 from detect_agent import determine_agent
+from cyclopts.exceptions import CycloptsError
+
+if TYPE_CHECKING:
+    from cyclopts import App
 
 from together import __version__
 from together.lib.utils import log_debug
@@ -94,43 +95,20 @@ class CliTrackingEvents(Enum):
     ApiRequest = "cli_command_api_request"
 
 
-def invoked_subcommand_path() -> str:
-    """Subcommand path after the top-level program name (e.g. ``evals list`` for ``together evals list``).
+def flush_pending_events() -> None:
+    for thread in _thread_pool:
+        thread.join()
+    _thread_pool.clear()
 
-    Uses :attr:`click.Context.command_path` and strips the root context's ``info_name`` so the
-    binary name can differ from ``together`` (entry points, ``python -m``, etc.).
+
+def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> threading.Thread | None:
     """
-    ctx = click.get_current_context(silent=True)
-    if ctx is None:
-        return ""
-    path = ctx.command_path
-    root_name = (ctx.find_root().info_name or "").strip()
-    if not root_name:
-        return path
-    prefix = root_name + " "
-    if path.startswith(prefix):
-        return path[len(prefix) :]
-    return path
+    Track a CLI event. Non-blocking (daemon thread).
 
-
-def flush_pending_events(f: Callable[..., Any]) -> Callable[..., Any]:
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return f(*args, **kwargs)
-        finally:
-            for thread in _thread_pool:
-                thread.join()
-
-    return wrapper
-
-
-def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
-    """
-    Track a CLI event. Non-Blocking.
+    Returns the started thread, or None if telemetry is disabled (tests may ``join()`` the thread).
     """
     if not is_tracking_enabled():
-        return
+        return None
 
     # Intentionally loading device id here so we don't have to do it in the background thread and have race conditions.
     device_id = _load_device_id()
@@ -191,79 +169,68 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> None:
                     e.close()
             log_debug("Error sending analytics event", error=e, device_id=device_id)
 
-    thread = threading.Thread(target=send_event)
+    thread = threading.Thread(target=send_event, daemon=True)
     _thread_pool.append(thread)
     thread.start()
+    return thread
 
 
-def auto_track_command(f: Callable[..., Any]) -> Callable[..., Any]:
+def _long_option_names_in_tokens(tokens: list[str]) -> list[str]:
+    names: list[str] = []
+    for token in tokens:
+        if token.startswith("--"):
+            names.append(token.removeprefix("--").split("=", 1)[0])
+    return names
+
+
+def _legacy_command_before_first_option(tokens: list[str]) -> tuple[str, bool]:
+    """Fallback when cyclopts cannot resolve a command chain (unknown invocations)."""
+    parts: list[str] = []
+    for token in tokens:
+        if token.startswith("--"):
+            break
+        parts.append(token)
+    is_beta_command = bool(parts and parts[0] == "beta")
+    if is_beta_command:
+        parts = parts[1:]
+    return (" ".join(parts), is_beta_command)
+
+
+def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str], bool]:
     """
-    Decorator for click commands to automatically track CLI commands start/completion/failure.
+    Return telemetry-safe command path (registered subcommands only), argument *names* from
+    cyclopts resolution (including positional parameters — values are never returned), and
+    whether the invocation is under ``beta``.
 
-    Every command should be decorated with this decorator.
+    Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken
+    for subcommand tokens (e.g. ``beta jig secrets set <name> <value>``).
     """
+    argv = list(tokens)
+    chain, _, rest_after_chain = app.parse_commands(argv, include_parent_meta=False)
+    legacy_cmd, legacy_beta = _legacy_command_before_first_option(argv)
 
-    @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        cmd = invoked_subcommand_path()
-        explicit = _get_explicit_cli_parameter_names()
-        is_beta_command = cmd.startswith("beta ")
-        # If command starts with "beta " remove that from the start of the command name
-        if is_beta_command:
-            cmd = cmd[len("beta ") :]
-        track_cli(CliTrackingEvents.CommandStarted, {"command": cmd, "arguments": explicit})
-        try:
-            result = f(*args, **kwargs)
-        except KeyboardInterrupt as e:
-            track_cli(
-                CliTrackingEvents.CommandUserAborted,
-                {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
-            )
-            raise e
+    if chain:
+        is_beta_command = chain[0] == "beta"
+        chain_tail = list(chain[1:] if is_beta_command else chain)
+        parsed_command = " ".join(chain_tail)
+        # ``beta`` alone matches first; remaining tokens are not nested beta subcommands (invalid path).
+        if chain == ("beta",) and rest_after_chain:
+            parsed_command = legacy_cmd
+    else:
+        parsed_command = legacy_cmd
+        is_beta_command = legacy_beta
 
-        # Some commands use sys.exit(1) to exit the program.
-        # We need to track these so we can see if they are failing.
-        except SystemExit as e:
-            if e.code == 0:
-                track_cli(
-                    CliTrackingEvents.CommandCompleted,
-                    {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
-                )
-                raise e
+    explicit_args: list[str] = []
+    try:
+        _, bound, _unused, _ignored = app.parse_known_args(argv)
+        explicit_args.extend(bound.arguments.keys())
+    except CycloptsError:
+        explicit_args.extend(_long_option_names_in_tokens(rest_after_chain))
 
-            track_cli(
-                CliTrackingEvents.CommandFailed,
-                {
-                    "command": cmd,
-                    "arguments": explicit,
-                    "is_beta_command": is_beta_command,
-                    "error": _sanitize_cli_error_message(str(e)),
-                },
-            )
-            raise e
-
-        except Exception as e:
-            track_cli(
-                CliTrackingEvents.CommandFailed,
-                {
-                    "command": cmd,
-                    "arguments": explicit,
-                    "is_beta_command": is_beta_command,
-                    "error": _sanitize_cli_error_message(str(e)),
-                },
-            )
-            raise e
-
-        track_cli(
-            CliTrackingEvents.CommandCompleted,
-            {"command": cmd, "arguments": explicit, "is_beta_command": is_beta_command},
-        )
-        return result
-
-    return wrapper  # type: ignore
+    return (parsed_command, explicit_args, is_beta_command)
 
 
-def _sanitize_cli_error_message(msg: str) -> str:
+def sanitize_cli_error_message(msg: str) -> str:
     """Sanitize the error messages caught for telemetry to remove sensitive information."""
     s = msg.strip()
     if len(s) > _ERROR_MESSAGE_MAX_LEN:
@@ -287,21 +254,6 @@ def _env_telemetry_disabled() -> bool:
 def _config_telemetry_disabled() -> bool:
     """Check if telemetry is disabled by the config file."""
     return load_telemetry_config().get("telemetry_enabled") is False
-
-
-def _get_explicit_cli_parameter_names() -> list[str]:
-    """Names of Click options/arguments whose values came from the user's argv (not defaults/env).
-
-    These are Python parameter names (e.g. ``json`` for ``--json``), not the literal flag spellings.
-    """
-    ctx = click.get_current_context(silent=True)
-    if ctx is None:
-        return []
-    names: list[str] = []
-    for name in ctx.params:
-        if ctx.get_parameter_source(name) == ParameterSource.COMMANDLINE:
-            names.append(name)
-    return sorted(names)
 
 
 _CATCH_ALL_DEVICE_ID = "1a41ab33-35d0-420a-ba28-182fddd249c9"

@@ -1,28 +1,28 @@
-import json as json_lib
+from __future__ import annotations
 
-import click
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
+from together.lib.cli.api.beta.clusters._util import print_clusters
 
-from together import Together
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
 
+async def list(
+    after: AfterParameter = None,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """List clusters."""
+    response = await show_loading_status("Loading clusters...", config.client.beta.clusters.list())
 
-@click.command()
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output in JSON format",
-)
-@click.pass_context
-@handle_api_errors("Clusters")
-@auto_track_command
-def list(ctx: click.Context, json: bool) -> None:
-    """List clusters"""
-    client: Together = ctx.obj
+    if config.json:
+        console.print_json(openapi_dumps(response).decode())
+        return
 
-    response = client.beta.clusters.list()
+    clusters, next_cursor = mock_pagination(response.clusters, cursor_field="cluster_id", cursor=after)
 
-    if json:
-        click.echo(json_lib.dumps(response.model_dump(exclude_none=True), indent=4))
-    else:
-        ctx.obj.print_clusters(response.clusters)
+    print_clusters(clusters)
+    if next_cursor:
+        console.print("\n[blue dim]To display the next page, run:[/blue dim]")
+        console.print(f"  [dim]-[/dim] [white]tg beta clusters list --after {next_cursor}[/white]")

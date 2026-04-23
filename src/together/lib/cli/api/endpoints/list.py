@@ -1,73 +1,61 @@
 from __future__ import annotations
 
-import json as json_lib
-from typing import Literal
+from typing import Literal, Optional, Annotated, cast
 
-import click
+from cyclopts import Parameter
 
-from together import Together, omit
-from together.lib.cli._track_cli import auto_track_command
-from together.lib.cli.api._utils import handle_api_errors
-from together.lib.utils.serializer import datetime_serializer
-from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
+from together import omit
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
+from together.types.dedicated_endpoint import DedicatedEndpoint
+from together.lib.cli.api.endpoints._utils import colorized_endpoint_state, handle_endpoint_api_errors
+from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
 
-@click.command()
-@click.option("--json", is_flag=True, help="Print output in JSON format")
-@click.option(
-    "--type",
-    type=click.Choice(["dedicated", "serverless"]),
-    help="Filter by endpoint type",
-)
-@click.option(
-    "--mine",
-    is_flag=True,
-    default=None,
-    help="true (only mine), default=all",
-)
-@click.option(
-    "--usage-type",
-    type=click.Choice(["on-demand", "reserved"]),
-    help="Filter by endpoint usage type",
-)
-@click.pass_context
-@handle_api_errors("Endpoints")
 @handle_endpoint_api_errors("Endpoints")
-@auto_track_command
-def list(
-    ctx: click.Context,
-    json: bool,
-    type: Literal["dedicated", "serverless"] | None,
-    usage_type: Literal["on-demand", "reserved"] | None,
-    mine: bool | None,
+async def list(
+    _type: Annotated[
+        Optional[Literal["dedicated", "serverless"]],
+        Parameter(name="--type", help="Deprecated and no longer has any effect."),
+    ] = None,
+    _mine: Annotated[Optional[bool], Parameter(name="--mine", help="Deprecated and no longer has any effect.")] = None,
+    usage_type: Annotated[
+        Optional[Literal["on-demand", "reserved"]], Parameter(help="Filter by usage type options")
+    ] = None,
+    after: AfterParameter = None,
+    *,
+    config: CLIConfigParameter,
 ) -> None:
     """List all inference endpoints (includes both dedicated and serverless endpoints)."""
-    client: Together = ctx.obj
-
-    endpoints = client.endpoints.list(
-        type=type or omit,
+    endpoints = await config.client.endpoints.list(
+        type="dedicated",
+        mine=True,
         usage_type=usage_type or omit,
-        mine=mine if mine is not None else omit,
     )
 
-    if json:
-        click.echo(
-            json_lib.dumps(
-                [endpoint.model_dump() for endpoint in endpoints.data], default=datetime_serializer, indent=2
-            )
-        )
+    sorted_endpoints = sorted(endpoints.data, key=lambda x: x.created_at, reverse=True)
+    endpoints_to_display, next_cursor = mock_pagination(sorted_endpoints, cursor_field="id", cursor=after)
+
+    if config.json:
+        console.print_json(openapi_dumps(endpoints_to_display).decode("utf-8"))
         return
 
-    if not endpoints:
-        click.echo("No dedicated endpoints found", err=True)
+    if len(endpoints_to_display) == 0:
+        console.print("No dedicated endpoints found")
         return
 
-    click.echo("Endpoints:", err=True)
-    # Only show autoscaling for user's own endpoints (when --mine is set)
-    show_autoscaling = mine is True
-    for endpoint in endpoints.data:
-        ctx.obj.print_endpoint(
-            endpoint,
-            show_autoscaling=show_autoscaling,
-        )
-        click.echo()
+    table = ListTable("Endpoints")
+    table.add_primary_column("ID")
+    table.add_column("Name", ratio=2)
+    table.add_column("State")
+    # show_autoscaling = mine is True
+    for endpoint in endpoints_to_display:
+        id_with_link = f"[link={f'https://api.together.ai/endpoints/{endpoint.name}'}]{endpoint.id}[/link]"
+        table.add_row(id_with_link, endpoint.name, colorized_endpoint_state(cast(DedicatedEndpoint, endpoint)))
+
+    console.print(table)
+    if next_cursor:
+        console.print("\n[blue dim]To display the next page, run:[/blue dim]")
+        console.print(f"  [dim]-[/dim] [white]tg endpoints list --after {next_cursor}[/white]")

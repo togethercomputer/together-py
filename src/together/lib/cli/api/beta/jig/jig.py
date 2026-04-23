@@ -17,25 +17,27 @@ import shutil
 import typing
 import asyncio
 import subprocess
-from typing import TYPE_CHECKING, Any, Union, Callable, Optional
+import concurrent.futures
+from typing import TYPE_CHECKING, Any, Union, Callable, Optional, Annotated
 from pathlib import Path
 from datetime import datetime as dt
-from functools import wraps, cached_property
+from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
-from typing_extensions import override
 
-import click
 import httpx
-from click import Context, echo
-from click.exceptions import Exit
+from cyclopts import Parameter
 
 from together import Together
 from together._exceptions import APIError, NotFoundError, AuthenticationError
-from together.lib.cli._track_cli import auto_track_command
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
+from together.lib.cli.utils._console import console
 from together.resources.beta.jig.jig import JigResource
+from together.lib.cli.components.list import ListTable
 from together.lib.cli.api.beta.jig._uploader import Uploader
+from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
 if TYPE_CHECKING or sys.version_info < (3, 11):
     import tomli as tomllib
@@ -94,7 +96,9 @@ class VolumeMount:
         try:
             return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
         except Exception as e:
-            raise click.UsageError(f"Invalid volume mount {data}: {e}") from None
+            raise e
+            # TODO:
+            # raise click.UsageError(f"Invalid volume mount {data}: {e}") from None
 
 
 @dataclass
@@ -171,7 +175,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
 
 
 @dataclass
-class Config:
+class JigConfig:
     """Main configuration from jig.toml or pyproject.toml"""
 
     model_name: str = ""
@@ -182,15 +186,15 @@ class Config:
 
     def __post_init__(self) -> None:
         if err := validate(self, type(self)):
-            raise click.UsageError(f"Invalid {self._path}: {err}")
+            raise JigError(f"Invalid {self._path}: {err}")
 
     @classmethod
-    def find(cls, config_path: str | None = None, init: bool = False) -> Config:
+    def find(cls, config_path: str | None = None, init: bool = False) -> JigConfig:
         """Find specified config_path, pyproject.toml, or jig.toml"""
         if config_path:
             found_path = Path(config_path)
             if not found_path.exists():
-                raise click.UsageError(f"Configuration file not found: {config_path}")
+                raise JigError(f"Configuration file not found: {config_path}")
             return cls.load(tomllib.loads(found_path.read_text()), found_path)
 
         if (jigfile := Path("jig.toml")).exists():
@@ -203,10 +207,10 @@ class Config:
 
         if init:
             return cls()
-        raise click.UsageError("No pyproject.toml or jig.toml found, use --config to specify a config path")
+        raise JigError("No pyproject.toml or jig.toml found, use --config to specify a config path")
 
     @classmethod
-    def load(cls, data: dict[str, Any], path: Path) -> Config:
+    def load(cls, data: dict[str, Any], path: Path) -> JigConfig:
         """Load configuration from parsed TOML data"""
         # figure out config location and "Deployment name must be unique. Tip: update ..." message
         if path.name.endswith("pyproject.toml"):
@@ -218,7 +222,7 @@ class Config:
             else:
                 name = path.resolve().parent.name
                 hint = "rename your folder or add `project.name` to your pyproject.toml"
-                echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
+                console.print(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
         else:
             jig_config = data
             if name := jig_config.get("name"):
@@ -226,16 +230,15 @@ class Config:
             else:
                 name = path.resolve().parent.name
                 hint = f"rename your folder or add `name` to {path}"
-                echo(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
+                console.print(f"\N{WARNING SIGN} Name not set in {path} - defaulting to {name}")
 
         # support volume_mounts, autoscaling at jig level (merge into deploy config)
         deploy_config = jig_config.setdefault("deploy", {})
         allow_top_level = ["volume_mounts", "autoscaling"]
         for key in allow_top_level:
             if key in jig_config:
-                echo(
+                console.print(
                     f"\N{WARNING SIGN} [tool.jig.{key}] is deprecated, use [tool.jig.deploy.{key}] instead",
-                    err=True,
                 )
                 deploy_config[key] = jig_config[key]
         if autoscaling := deploy_config.get("autoscaling"):
@@ -248,6 +251,9 @@ class Config:
             _path=path,
             _unique_name_hint=hint,
         )
+
+
+Config = JigConfig
 
 
 @dataclass
@@ -318,25 +324,25 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, capture_output=True, text=True, check=True)
 
 
-def _files_to_copy(config: Config) -> list[str]:
+def _files_to_copy(config: JigConfig) -> list[str]:
     """Combine explicitly copied files with git files if requested and valid"""
     files = set(config.image.copy)
     if config.image.auto_include_git:
         try:
             if _run(["git", "status", "--porcelain"]).stdout.strip():
-                raise click.UsageError("Git repository has uncommitted changes: auto_include_git not allowed")
+                raise JigError("Git repository has uncommitted changes: auto_include_git not allowed")
             git_files = _run(["git", "ls-files"]).stdout.strip().split("\n")
             files.update(f for f in git_files if f and f != ".")
         except subprocess.CalledProcessError:
             pass
 
     if "." in files:
-        raise click.UsageError("Copying '.' is not allowed. Please enumerate specific files")
+        raise JigError("Copying '.' is not allowed. Please enumerate specific files")
 
     return sorted(files)
 
 
-def _generate_dockerfile(config: Config) -> str:
+def _generate_dockerfile(config: JigConfig) -> str:
     """Generate Dockerfile from config"""
     apt = ""
     if config.image.system_packages:
@@ -404,12 +410,12 @@ ENV DEPLOYMENT_NAME={config.model_name}
 CMD {json.dumps(shlex.split(config.image.cmd))}"""
 
 
-def _dockerfile(config: Config) -> bool:
+def _dockerfile(config: JigConfig) -> bool:
     """Generate or update managed Dockerfile, returns False if user-managed"""
     dockerfile_path = Path(config.image.dockerfile_path)
     if not dockerfile_path.exists():
         dockerfile_path.write_text(_generate_dockerfile(config))
-        echo("\N{CHECK MARK} Generated Dockerfile")
+        console.print("\N{CHECK MARK} Generated Dockerfile")
         return True
 
     current = dockerfile_path.read_text()
@@ -419,7 +425,7 @@ def _dockerfile(config: Config) -> bool:
     suggested = _generate_dockerfile(config)
     if current != suggested:
         dockerfile_path.write_text(suggested)
-        echo("\N{CHECK MARK} Updated Dockerfile")
+        console.print("\N{CHECK MARK} Updated Dockerfile")
     return True
 
 
@@ -436,7 +442,7 @@ def _build_warm_image(base_image: str) -> None:
         shutil.rmtree(cache_dir)
     cache_dir.mkdir(exist_ok=True)
 
-    echo("\N{FIRE} Running warmup to generate compile cache...")
+    console.print("\N{FIRE} Running warmup to generate compile cache...")
 
     # run container with GPU and RUN_AND_EXIT=1
     # mount current dir as /app so warmup_inputs can reference local weights
@@ -451,30 +457,34 @@ def _build_warm_image(base_image: str) -> None:
         cmd.extend(["-e", f"MODEL_PRELOAD_PATH={weights_path}"])
     cmd.append(base_image)
 
-    echo(f"Running: {' '.join(cmd)}")
+    console.print(f"Running: {' '.join(cmd)}")
     if (code := subprocess.run(cmd).returncode) != 0:
-        echo(f"\N{FIRE EXTINGUISHER} Warmup failed with code {code}")
-        raise Exit(1)
+        console.print(f"\N{FIRE EXTINGUISHER} Warmup failed with code {code}")
+        sys.exit(1)
+        # TODO:
+        # raise Exit(1)
 
     # check cache was generated
     cache_files = list(cache_dir.rglob("*"))
     if not cache_files:
-        echo("\N{FIRE EXTINGUISHER} Warmup completed but no cache files were generated")
-        raise Exit(1)
+        console.print("\N{FIRE EXTINGUISHER} Warmup completed but no cache files were generated")
+        sys.exit(1)
+        # TODO:
+        # raise Exit(1)
 
-    echo(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
+    console.print(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
     # generate cache dockerfile - copy cache to same location used during warmup
     final_dockerfile = f"""FROM {base_image}
 COPY {cache_dir.name} /app/{WARMUP_DEST}
 ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
 
-    echo("\N{FIRE} Building final image with cache...")
+    console.print("\N{FIRE} Building final image with cache...")
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
 
     if subprocess.run(final_cmd, input=final_dockerfile, text=True).returncode != 0:
         raise JigError("\N{FIRE EXTINGUISHER} Cache image build failed")
-    echo("\N{CHECK MARK} Final image with cache built")
+    console.print("\N{CHECK MARK} Final image with cache built")
 
 
 # == Jig ==
@@ -503,8 +513,8 @@ class Jig:
         self._config_path = config_path
 
     @cached_property
-    def config(self) -> Config:
-        return Config.find(self._config_path)
+    def config(self) -> JigConfig:
+        return JigConfig.find(self._config_path)
 
     @cached_property
     def name(self) -> str:
@@ -567,10 +577,10 @@ class Jig:
 
         try:
             self.api.secrets.update(id=scoped_name, name=scoped_name, description=description, value=value)
-            echo(f"\N{CHECK MARK} Updated secret {name}")
+            console.print(f"\N{CHECK MARK} Updated secret {name}")
         except NotFoundError:
             self.api.secrets.create(name=scoped_name, value=value, description=description)
-            echo(f"\N{CHECK MARK} Created secret {name}")
+            console.print(f"\N{CHECK MARK} Created secret {name}")
 
         self.state.secrets[name] = scoped_name
         self.state.save()
@@ -581,9 +591,9 @@ class Jig:
 
         try:
             self.api.secrets.delete(id=scoped_name)
-            echo(f"\N{CHECK MARK} Deleted secret {name}")
+            console.print(f"\N{CHECK MARK} Deleted secret {name}")
         except NotFoundError:
-            echo(f"\N{CROSS MARK} Secret {name} not found")
+            console.print(f"\N{CROSS MARK} Secret {name} not found")
 
         if name in self.state.secrets:
             del self.state.secrets[name]
@@ -595,9 +605,11 @@ class Jig:
         image = self.image(tag)
 
         if not _dockerfile(self.config):
-            echo(f"\N{INFORMATION SOURCE} Using existing {self.config.image.dockerfile_path} (not managed by jig)")
+            console.print(
+                f"\N{INFORMATION SOURCE} Using existing {self.config.image.dockerfile_path} (not managed by jig)"
+            )
 
-        echo(f"Building {image}")
+        console.print(f"Building {image}")
         cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
@@ -608,7 +620,7 @@ class Jig:
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build failed")
 
-        echo("\N{CHECK MARK} Built")
+        console.print("\N{CHECK MARK} Built")
 
         if warmup:
             _build_warm_image(image)
@@ -620,10 +632,10 @@ class Jig:
         if subprocess.run(login_cmd, input=self.together.api_key, text=True).returncode != 0:
             raise JigError("Registry login failed")
 
-        echo(f"Pushing {image}")
+        console.print(f"Pushing {image}")
         if subprocess.run(["docker", "push", image]).returncode != 0:
             raise JigError("Push failed")
-        echo("\N{CHECK MARK} Pushed")
+        console.print("\N{CHECK MARK} Pushed")
 
     def deploy(
         self,
@@ -635,16 +647,16 @@ class Jig:
         existing_image: str | None = None,
     ) -> None:
         if deployment_image := existing_image:
-            echo(f"Deploying provided image {deployment_image}")
+            console.print(f"Deploying provided image {deployment_image}")
         elif deployment_image := self.config.deploy.image:
-            echo(f"Deploying configured image {deployment_image}")
+            console.print(f"Deploying configured image {deployment_image}")
         else:
             self.build(tag, warmup, docker_args)
             self.push(tag)
             deployment_image = self.image_with_digest(tag)
 
         if build_only:
-            echo("\N{CHECK MARK} Build complete (--build-only)")
+            console.print("\N{CHECK MARK} Build complete (--build-only)")
             return
 
         deploy_data: dict[str, Any] = {
@@ -682,26 +694,26 @@ class Jig:
         deploy_data["environment_variables"] = env_list + secret_list
 
         if DEBUG:
-            echo(json.dumps(deploy_data, indent=2))
-        echo(f"Deploying model: {self.name}")
+            console.print(json.dumps(deploy_data, indent=2))
+        console.print(f"Deploying model: {self.name}")
 
         no_track = False
 
         try:
             response = self.api.update(self.name, **deploy_data)
             no_track = str(response.status) == "Ready"
-            echo("\N{CHECK MARK} Applied new deployment configuration")
+            console.print("\N{CHECK MARK} Applied new deployment configuration")
         except NotFoundError:
             try:
                 response = self.api.deploy(**deploy_data)
-                echo(f"\N{CHECK MARK} Deployed: {self.name}")
+                console.print(f"\N{CHECK MARK} Deployed: {self.name}")
             except APIError as e:
                 if "already exists" in e.message:
                     raise JigError(f"Deployment name must be unique. Tip: {self.config._unique_name_hint}") from None
                 raise
 
         if detach or no_track:
-            echo(json.dumps(response.model_dump(), indent=2))
+            console.print(json.dumps(response.model_dump(), indent=2))
             return
 
         self.track(response)
@@ -714,15 +726,15 @@ class Jig:
         start = time.time()
 
         if d.min_replicas == 0 and d.desired_replicas == 0 and d.status == "ScaledToZero":
-            echo("\N{CHECK MARK} Deployment scaled to zero replicas")
+            console.print("\N{CHECK MARK} Deployment scaled to zero replicas")
             return
 
         def once(msg: str, detail: str | None = None) -> None:
             if msg not in printed:
                 printed.add(msg)
-                echo(f"{msg}\n  {detail}" if detail else msg)
+                console.print(f"{msg}\n  {detail}" if detail else msg)
 
-        echo("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
+        console.print("\N{HOURGLASS WITH FLOWING SAND} Deployment in-progress...")
         try:
             while time.time() - start < _TRACK_TIMEOUT:
                 d = self.api.retrieve(self.name)
@@ -732,15 +744,16 @@ class Jig:
                         continue
 
                     if event.replica_status == "Running" and event.replica_ready_since:
-                        echo(f"""\N{CHECK MARK} [{rid}] Container is running and ready
+                        console.print(f"""\N{CHECK MARK} [{rid}] Container is running and ready
 \N{ROCKET} Deployment successful!
 Note: Additional replicas may still be scaling up.""")
                         return
 
                     if event.replica_status_reason == "CrashLoopBackOff":
-                        echo(f"\N{CROSS MARK} [{rid}] Container is crash looping")
-                        echo(self.logs(rid))
-                        raise Exit(1) from None
+                        console.print(f"\N{CROSS MARK} [{rid}] Container is crash looping")
+                        console.print(self.logs(rid))
+                        sys.exit(1)
+                        # raise Exit(1) from None
 
                     if event.volume_preload_status:
                         if not event.volume_preload_completed_at:
@@ -760,23 +773,26 @@ Note: Additional replicas may still be scaling up.""")
                         if rid not in wait_start:
                             wait_start[rid] = time.time()
                         if time.time() - wait_start[rid] > _TRACK_READY_TIMEOUT:
-                            echo(f"Deployment '{self.name}' may still be in progress.")
-                            echo(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
-                            echo(self.logs(rid))
-                            raise Exit(1) from None
+                            console.print(f"Deployment '{self.name}' may still be in progress.")
+                            console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
+                            console.print(self.logs(rid))
+                            sys.exit(1)
+                            # raise Exit(1) from None
 
                 time.sleep(_TRACK_POLL_INTERVAL)
 
-            echo(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
+            console.print(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
-            raise Exit(1)
+            sys.exit(1)
+            # raise Exit(1) from None
         except KeyboardInterrupt:
-            echo(f"""
+            console.print(f"""
 \N{WARNING SIGN} Deployment tracking interrupted
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
-            raise Exit(130) from None
+            sys.exit(130)
+            # raise Exit(130) from None
 
     # == Query ==
 
@@ -792,43 +808,45 @@ Run 'jig status' to check current state.""")
                 for line in stream.iter_lines():
                     if line:
                         log_lines = json.loads(line).get("lines", [])
-                        echo("\n".join(log_lines))
+                        console.print("\n".join(log_lines))
         except KeyboardInterrupt:
-            echo("\nStopped following logs")
+            console.print("\nStopped following logs")
         except (ConnectionError, OSError) as e:
-            echo(f"\nConnection ended: {e}")
+            console.print(f"\nConnection ended: {e}")
 
     def submit(self, prompt: str | None, payload: str | None, watch: bool) -> None:
         """Submit a job and optionally watch for completion"""
         if not prompt and not payload:
-            raise click.UsageError("Either --prompt or --payload required")
+            raise JigError("Either --prompt or --payload required")
 
         body: dict[str, Any] = json.loads(payload) if payload else {"prompt": prompt}  # pyright: ignore
         req = self.api.queue.with_raw_response.submit(model=self.name, payload=body, priority=1)
         raw = typing.cast(dict[str, Any], req.json())
 
-        echo("\N{CHECK MARK} Submitted job")
-        echo(json.dumps(raw, indent=2))
+        console.print("\N{CHECK MARK} Submitted job")
+        console.print(json.dumps(raw, indent=2))
 
         if not watch or not (request_id := raw.get("requestId")):
             return
 
-        echo(f"\nWatching job {request_id}...")
+        console.print(f"\nWatching job {request_id}...")
         last_status = raw.get("status")
         while True:
             try:
                 response = self.api.queue.retrieve(model=self.name, request_id=request_id)
                 if response.status != last_status:
-                    echo(response.model_dump_json(indent=2))
+                    console.print(response.model_dump_json(indent=2))
                     last_status = response.status
                 if response.status in ("done", "finished"):
                     return
                 if response.status in ("failed", "error", "canceled"):
-                    raise Exit(1)
+                    sys.exit(1)
+                    # raise Exit(1) from None
                 time.sleep(1)
             except KeyboardInterrupt:
-                echo(f"\nStopped watching {request_id}")
-                raise Exit(130) from None
+                console.print(f"\nStopped watching {request_id}")
+                sys.exit(130)
+                # raise Exit(130) from None
 
     # == Display ==
 
@@ -893,79 +911,87 @@ Configuration:""")
 
 # == CLI ==
 
-
-class JigGroup(click.Group):
-    """Click groups stop at the first non-option token (the subcommand), so
-    `jig --config foo deploy` would fail — --config is a per-command option, not
-    a group option. We move it past the subcommand before parsing."""
-
-    @override
-    def parse_args(self, ctx: Context, args: list[str]) -> list[str]:
-        args = list(args)
-        for i, arg in enumerate(args):
-            if arg in ("-c", "--config") and i + 1 < len(args):
-                # move flag + value to end: [--config, foo, deploy, ...] -> [deploy, ..., --config, foo]
-                args.extend([args.pop(i), args.pop(i)])
-                break
-        return super().parse_args(ctx, args)
+TomlConfigParameter = Annotated[
+    Optional[str],
+    Parameter(name=["-c", "--config"], help="Configuration file path"),
+]
 
 
-def _command(f: Callable[..., Any]) -> Callable[..., Any]:
-    """Wrap command: create Jig from context, catch errors, display return values"""
+def _sync_together_from_config(config: CLIConfig) -> Together:
+    return Together(
+        api_key=config.client.api_key,
+        base_url=str(config.client.base_url),
+        timeout=config.client.timeout,
+        max_retries=config.client.max_retries,
+    )
 
-    @click.pass_context
-    @click.option("-c", "--config", "config_path", default=None, help="Configuration file path")
-    @auto_track_command
-    @wraps(f)
-    def wrapper(ctx: Context, config_path: str | None, *args: Any, **kwargs: Any) -> None:
-        try:
-            result = f(Jig(ctx.obj, config_path), *args, **kwargs)
-        except (Exit, click.Abort, click.ClickException):
+
+def _print_cli_result(result: Any) -> None:
+    if result is None:
+        return
+    if isinstance(result, str):
+        console.print(result)
+    elif hasattr(result, "json") and callable(result.json):
+        console.print(json.dumps(result.json(), indent=2))
+    else:
+        console.print(str(result))
+
+
+def _jig_fail(msg: str) -> None:
+    console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
+    sys.exit(1)
+
+
+def _asyncio_run_upload(coro: typing.Coroutine[typing.Any, typing.Any, None]) -> None:
+    """Run async upload; safe when an event loop is already running (e.g. Cyclopts async launcher)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(coro)
+    else:
+
+        def _run_in_thread() -> None:
+            asyncio.run(coro)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            pool.submit(_run_in_thread).result()
+
+
+def _api_error_message(e: APIError) -> str:
+    body = e.body
+    if isinstance(body, dict):
+        err = body.get("error", body)  # type: ignore[assignment]
+        return str(err) if isinstance(err, str) else str(err.get("message", err))  # type: ignore[union-attr]
+    return e.message
+
+
+def _run_jig_cmd(config: CLIConfig, config_path: str | None, fn: Callable[[Jig], Any]) -> None:
+    try:
+        jig = Jig(_sync_together_from_config(config), config_path)
+        result = fn(jig)
+        _print_cli_result(result)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except AuthenticationError:
+        _jig_fail("Invalid or missing API key. Set TOGETHER_API_KEY or use --api-key.")
+    except APIError as e:
+        _jig_fail(_api_error_message(e))
+    except JigError as e:
+        _jig_fail(str(e))
+    except Exception as e:
+        if DEBUG:
             raise
-        except AuthenticationError:
-            msg = "Invalid or missing API key. Set TOGETHER_API_KEY or use --api-key."
-        except APIError as e:
-            body = e.body
-            if isinstance(body, dict):
-                err = body.get("error", body)  # type: ignore
-                msg = str(err) if isinstance(err, str) else str(err.get("message", err))  # type: ignore
-            else:
-                msg = e.message
-        except JigError as e:
-            msg = str(e)
-        except Exception as e:
-            if DEBUG:
-                raise e
-            msg = f"Unexpected error: {e}"
-        else:
-            if result is not None:
-                echo(result if isinstance(result, str) else json.dumps(result.json(), indent=2))
-            return
-        prefix = click.style("Jig: ", fg="blue")
-        echo(prefix + click.style("Failed", fg="red"), err=True)
-        echo(prefix + click.style(msg, fg="red"), err=True)
-        raise Exit(1) from None
-
-    return wrapper
+        _jig_fail(f"Unexpected error: {e}")
 
 
-@click.group(cls=JigGroup)
-@click.pass_context
-def jig(ctx: Context) -> None:
-    """Deploy and manage containers on Together AI"""
-    if ctx.obj is None:
-        ctx.obj = Together()
-
-
-def _jig_command(f: Callable[..., Any]) -> click.Command:
-    return jig.command()(_command(f))
-
-
-@jig.command()
-def init() -> None:
-    """Initialize jig configuration"""
+def init(
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Initialize jig configuration."""
+    _ = config
     if (pyproject := Path("pyproject.toml")).exists():
-        echo("pyproject.toml already exists")
+        console.print("pyproject.toml already exists")
         return
 
     content = """[project]
@@ -991,11 +1017,10 @@ gpu_type = "h100-80gb"
 gpu_count = 1
 """
     pyproject.write_text(content)
-    echo("""\N{CHECK MARK} Created pyproject.toml
+    console.print("""\N{CHECK MARK} Created pyproject.toml
   Edit the configuration and run 'jig deploy'""")
 
 
-@_jig_command
 def dockerfile(jig: Jig) -> None:
     """Generate Dockerfile"""
     if not _dockerfile(jig.config):
@@ -1003,36 +1028,16 @@ def dockerfile(jig: Jig) -> None:
         raise JigError(msg)
 
 
-_tag_option = click.option("--tag", default="latest", help="Image tag")
-
-
-def _build_options(f: Callable[..., Any]) -> Callable[..., Any]:
-    f = click.option(
-        "--docker-args", default=None, help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)"
-    )(f)
-    f = click.option("--warmup", is_flag=True, help="Run warmup to build torch compile cache")(f)
-    return _tag_option(f)
-
-
-@_jig_command
-@_build_options
 def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     """Build container image"""
     jig.build(tag, warmup, docker_args)
 
 
-@_jig_command
-@_tag_option
 def push(jig: Jig, tag: str) -> None:
     """Push image to registry"""
     jig.push(tag)
 
 
-@_jig_command
-@_build_options
-@click.option("--build-only", is_flag=True, help="Build and push only")
-@click.option("--image", "existing_image", default=None, help="Use existing image (skip build/push)")
-@click.option("--detach", "detach", is_flag=True, help="Do not wait for deployment to complete")
 def deploy(
     jig: Jig,
     tag: str,
@@ -1046,8 +1051,6 @@ def deploy(
     jig.deploy(tag, build_only, warmup, detach, docker_args, existing_image)
 
 
-@_jig_command
-@click.option("--json", "json_output", is_flag=True, help="Output raw JSON")
 def status(jig: Jig, json_output: bool = False) -> Any:
     """Get deployment status"""
     raw = jig.api.with_raw_response.retrieve(jig.name)
@@ -1056,101 +1059,63 @@ def status(jig: Jig, json_output: bool = False) -> Any:
     return jig.format_status(raw.parse())
 
 
-@_jig_command
 def endpoint(jig: Jig) -> str:
     """Get deployment endpoint URL"""
     return f"https://api.together.ai/v1/deployment-request/{jig.name}"
 
 
-@_jig_command
-@click.option("--follow", is_flag=True, help="Follow log output")
 def logs(jig: Jig, follow: bool) -> str | None:
     """Get deployment logs"""
     return jig.follow_logs() if follow else jig.logs()
 
 
-@_jig_command
 def destroy(jig: Jig) -> str:
     """Destroy deployment"""
     jig.api.destroy(jig.name)
     return f"\N{WASTEBASKET} Destroyed {jig.name}"
 
 
-@_jig_command
-@click.option("--prompt", default=None, help="Job prompt")
-@click.option("--payload", default=None, help="Job payload JSON")
-@click.option("--watch", is_flag=True, help="Watch job status until completion")
 def submit(jig: Jig, prompt: str | None, payload: str | None, watch: bool) -> None:
     """Submit a job to the deployment"""
     jig.submit(prompt, payload, watch)
 
 
-@_jig_command
-@click.option("--request-id", required=True, help="Job request ID")
 def job_status(jig: Jig, request_id: str) -> Any:
     """Get status of a specific job"""
     return jig.api.queue.with_raw_response.retrieve(model=jig.name, request_id=request_id)
 
 
-@_jig_command
 def queue_status(jig: Jig) -> Any:
     """Get queue metrics for the deployment"""
     return jig.api.queue.with_raw_response.metrics(model=jig.name)
 
 
-@jig.command("list")
-# This method is always outputting json, so it's a bit nebulous to have a --json option
-# Doing this for consistency with other commands and to have tests pass for this.
-# Eventually we should change this to output human text and json text.
-@click.option("--json", "_json_output", is_flag=True, help="Output raw JSON")
-@_command
-def list_deployments(jig: Jig, _json_output: bool) -> Any:
+def list_deployments(jig: Jig) -> Any:
     """List all deployments"""
     return jig.api.with_raw_response.list()
 
 
-# -- Secrets --
-
-
-@jig.group()
-def secrets() -> None:
-    """Manage deployment secrets"""
-
-
-@secrets.command("set")
-@_command
-@click.option("--name", required=True, help="Secret name")
-@click.option("--value", required=True, help="Secret value")
-@click.option("--description", default="", help="Secret description")
 def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
     """Set a secret (create or update)"""
     jig.set_secret(name, value, description)
 
 
-@secrets.command("unset")
-@_command
-@click.option("--name", required=True, help="Secret name to remove")
 def secrets_unset(jig: Jig, name: str) -> None:
     """Remove a secret from local state"""
     jig.sync_secrets_from_deployment()
     try:
         del jig.state.secrets[name]
         jig.state.save()
-        echo(f"\N{CHECK MARK} Removed secret {name} from the deployment")
+        console.print(f"\N{CHECK MARK} Removed secret {name} from the deployment")
     except KeyError:
-        echo(f"\N{CROSS MARK} Secret {name} is not set")
+        console.print(f"\N{CROSS MARK} Secret {name} is not set")
 
 
-@secrets.command("delete")
-@_command
-@click.option("--name", required=True, help="Secret name to delete")
 def secrets_delete(jig: Jig, name: str) -> None:
     """Delete a secret and unset it locally"""
     jig.delete_secret(name)
 
 
-@secrets.command("list")
-@_command
 def secrets_list(jig: Jig) -> None:
     """List all secrets with sync status"""
     prefix = f"{jig.name}-"
@@ -1164,74 +1129,53 @@ def secrets_list(jig: Jig) -> None:
             remote_secrets.add(name.removeprefix(prefix))
 
     if not local_secrets and not remote_secrets:
-        echo(f"\N{INFORMATION SOURCE} No secrets configured for deployment {jig.name}")
+        console.print(f"\N{INFORMATION SOURCE} No secrets configured for deployment {jig.name}")
         return
 
-    echo(f"\N{INFORMATION SOURCE} Secrets for deployment {jig.name}:\n")
+    console.print(f"\N{INFORMATION SOURCE} Secrets for deployment {jig.name}:\n")
 
     for name in sorted(local_secrets | remote_secrets):
         in_local = name in local_secrets
         in_remote = name in remote_secrets
 
         if in_local and in_remote:
-            status = click.style("synced", fg="green")
+            status = "[green]synced[/green]"
         elif in_local:
-            status = click.style("local only", fg="yellow")
+            status = "[yellow]local only[/yellow]"
         else:
-            status = click.style("remote only", fg="yellow")
+            status = "[yellow]remote only[/yellow]"
 
-        echo(f"  - {name} [{status}]")
-
-
-# -- Volumes --
+        console.print(f"  - {name} [{status}]")
 
 
-@jig.group()
-def volumes() -> None:
-    """Manage volumes"""
-
-
-_volume_name_option = click.option("--name", required=True, help="Volume name")
-
-
-_source_dir = click.Path(exists=True, file_okay=False, path_type=Path)
-
-
-@volumes.command("create")
-@_command
-@_volume_name_option
-@click.option("--source", required=True, type=_source_dir, help="Source directory path")
 def volumes_create(jig: Jig, name: str, source: Path) -> None:
     """Create a volume and upload files"""
     source_prefix = f"{name}/0"
 
-    echo(f"\N{ROCKET} Creating volume {name} with source prefix {source_prefix}")
+    console.print(f"\N{ROCKET} Creating volume {name} with source prefix {source_prefix}")
     try:
         volume = jig.api.volumes.create(
             name=name, type="readOnly", content={"type": "files", "source_prefix": source_prefix}
         )
-        echo(f"\N{CHECK MARK} Volume created: {volume.id}")
+        console.print(f"\N{CHECK MARK} Volume created: {volume.id}")
     except APIError as e:
         if "already exists" in e.message:
             raise JigError(f"Volume {name} already exists, use 'jig volumes update' instead") from None
         raise JigError(f"Failed to create volume: {e}") from e
 
     try:
-        asyncio.run(Uploader(jig.together).upload_files(source, source_prefix))
+        _asyncio_run_upload(Uploader(jig.together).upload_files(source, source_prefix))
     except Exception as e:
-        echo(f"\N{CROSS MARK} Upload failed: {e}")
-        echo(f"\N{WASTEBASKET} Cleaning up volume {name}")
+        console.print(f"\N{CROSS MARK} Upload failed: {e}")
+        console.print(f"\N{WASTEBASKET} Cleaning up volume {name}")
         try:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
-            echo(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        raise Exit(1) from None
+            console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
+        sys.exit(1)
+        # raise Exit(1) from None
 
 
-@volumes.command("update")
-@_command
-@_volume_name_option
-@click.option("--source", required=True, type=_source_dir, help="New source directory path")
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
     """Update a volume and re-upload files"""
     try:
@@ -1242,29 +1186,23 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     new_version = int(volume_data.get("current_version", 0)) + 1  # type: ignore
     remote_prefix = f"{name}/{new_version}"
 
-    echo(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
-    asyncio.run(Uploader(jig.together).upload_files(source, remote_prefix))
+    console.print(f"\N{INFORMATION SOURCE} Uploading files for volume {name}")
+    _asyncio_run_upload(Uploader(jig.together).upload_files(source, remote_prefix))
 
-    echo(f"\N{INFORMATION SOURCE} Updating volume {name}, version {new_version} from {source}")
+    console.print(f"\N{INFORMATION SOURCE} Updating volume {name}, version {new_version} from {source}")
     jig.api.volumes.update(name, content={"type": "files", "source_prefix": remote_prefix})
-    echo("\N{CHECK MARK} Volume updated successfully")
+    console.print("\N{CHECK MARK} Volume updated successfully")
 
 
-@volumes.command("delete")
-@_command
-@_volume_name_option
 def volumes_delete(jig: Jig, name: str) -> None:
     """Delete a volume"""
     try:
         jig.api.volumes.delete(name)
     except NotFoundError:
         raise JigError(f"Volume {name} not found") from None
-    echo(f"\N{CHECK MARK} Deleted volume {name}")
+    console.print(f"\N{CHECK MARK} Deleted volume {name}")
 
 
-@volumes.command("describe")
-@_command
-@_volume_name_option
 def volumes_describe(jig: Jig, name: str) -> Any:
     """Describe a volume"""
     try:
@@ -1273,12 +1211,262 @@ def volumes_describe(jig: Jig, name: str) -> Any:
         raise JigError(f"Volume {name} not found") from None
 
 
-@volumes.command("list")
-@_command
-def volumes_list(jig: Jig) -> Any:
-    """List all volumes"""
-    return jig.api.volumes.with_raw_response.list()
+async def jig_volumes_list(
+    after: AfterParameter = None,
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """List all volumes."""
+    list_resp = await config.client.beta.jig.volumes.list()
+
+    data, next_cursor = mock_pagination(list_resp.data or [], cursor_field="id", cursor=after)
+
+    if config.json:
+        console.print_json(openapi_dumps(list_resp).decode())
+        return
+
+    table = ListTable()
+
+    table.add_primary_column("ID")
+    table.add_column("Name")
+    table.add_column("Created At")
+    table.add_column("Updated At")
+
+    for volume in data:
+        table.add_row(volume.id, volume.name, volume.created_at, volume.updated_at)
+
+    console.print(table)
+    if next_cursor:
+        console.print("\n[blue dim]To display the next page, run:[/blue dim]")
+        console.print(f"  [dim]-[/dim] [white]tg beta jig volumes list --after {next_cursor}[/white]")
 
 
-if __name__ == "__main__":
-    jig()
+async def jig_volumes_describe(
+    name: Annotated[str, Parameter(name="--name", help="Volume name")],
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    """Describe a volume."""
+    try:
+        vol = await config.client.beta.jig.volumes.retrieve(name)
+    except NotFoundError:
+        _jig_fail(f"Volume {name} not found")
+    else:
+        console.print_json(openapi_dumps(vol).decode())
+
+
+def dockerfile_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Generate Dockerfile."""
+    _run_jig_cmd(config, toml_config, dockerfile)
+
+
+def build_cli(
+    tag: Annotated[str, Parameter(help="Image tag")] = "latest",
+    warmup: Annotated[bool, Parameter(help="Run warmup to build torch compile cache", negative=())] = False,
+    docker_args: Annotated[
+        Optional[str],
+        Parameter(name="--docker-args", help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)"),
+    ] = None,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Build container image."""
+    _run_jig_cmd(config, toml_config, lambda jig: build(jig, tag, warmup, docker_args))
+
+
+def push_cli(
+    tag: Annotated[str, Parameter(help="Image tag")] = "latest",
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Push image to registry."""
+    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag))
+
+
+def deploy_cli(
+    tag: Annotated[str, Parameter(help="Image tag")] = "latest",
+    build_only: Annotated[bool, Parameter(help="Build and push only", negative=())] = False,
+    warmup: Annotated[bool, Parameter(help="Run warmup to build torch compile cache", negative=())] = False,
+    detach: Annotated[bool, Parameter(help="Do not wait for deployment to complete", negative=())] = False,
+    docker_args: Annotated[
+        Optional[str],
+        Parameter(name="--docker-args", help="Extra args for docker build (or use DOCKER_BUILD_EXTRA_ARGS env)"),
+    ] = None,
+    image: Annotated[Optional[str], Parameter(name="--image", help="Use existing image (skip build/push)")] = None,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Deploy model."""
+    _run_jig_cmd(
+        config,
+        toml_config,
+        lambda jig: deploy(jig, tag, build_only, warmup, detach, docker_args, image),
+    )
+
+
+def status_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get deployment status."""
+    _run_jig_cmd(config, toml_config, lambda jig: status(jig, config.json))
+
+
+def endpoint_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get deployment endpoint URL."""
+    _run_jig_cmd(config, toml_config, endpoint)
+
+
+def logs_cli(
+    follow: Annotated[bool, Parameter(help="Follow log output", negative=())] = False,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get deployment logs."""
+    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow))
+
+
+def destroy_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Destroy deployment."""
+    _run_jig_cmd(config, toml_config, destroy)
+
+
+def submit_cli(
+    prompt: Annotated[Optional[str], Parameter(help="Job prompt")] = None,
+    payload: Annotated[Optional[str], Parameter(help="Job payload JSON")] = None,
+    watch: Annotated[bool, Parameter(help="Watch job status until completion", negative=())] = False,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Submit a job to the deployment."""
+    _run_jig_cmd(config, toml_config, lambda jig: submit(jig, prompt, payload, watch))
+
+
+def job_status_cli(
+    request_id: Annotated[str, Parameter(name="--request-id", help="Job request ID")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get status of a specific job."""
+    _run_jig_cmd(config, toml_config, lambda jig: job_status(jig, request_id))
+
+
+def queue_status_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get queue metrics for the deployment."""
+    _run_jig_cmd(config, toml_config, queue_status)
+
+
+def list_deployments_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """List all deployments."""
+    _run_jig_cmd(config, toml_config, list_deployments)
+
+
+def secrets_set_cli(
+    name: Annotated[str, Parameter(name="--name", help="Secret name")],
+    value: Annotated[str, Parameter(name="--value", help="Secret value")],
+    description: Annotated[str, Parameter(help="Secret description")] = "",
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Set a secret (create or update)."""
+    _run_jig_cmd(config, toml_config, lambda jig: secrets_set(jig, name, value, description))
+
+
+def secrets_unset_cli(
+    name: Annotated[str, Parameter(name="--name", help="Secret name to remove")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Remove a secret from local state."""
+    _run_jig_cmd(config, toml_config, lambda jig: secrets_unset(jig, name))
+
+
+def secrets_delete_cli(
+    name: Annotated[str, Parameter(name="--name", help="Secret name to delete")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Delete a secret and unset it locally."""
+    _run_jig_cmd(config, toml_config, lambda jig: secrets_delete(jig, name))
+
+
+def secrets_list_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """List all secrets with sync status."""
+
+    def inner(jig: Jig) -> Any:
+        if config.json:
+            return jig.api.secrets.with_raw_response.list()
+        secrets_list(jig)
+        return None
+
+    _run_jig_cmd(config, toml_config, inner)
+
+
+def jig_volumes_create_cli(
+    name: Annotated[str, Parameter(name="--name", help="Volume name")],
+    source: Annotated[Path, Parameter(name="--source", help="Source directory path")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Create a volume and upload files."""
+    if not source.is_dir():
+        _jig_fail(f"Not a directory: {source}")
+    _run_jig_cmd(config, toml_config, lambda jig: volumes_create(jig, name, source))
+
+
+def jig_volumes_update_cli(
+    name: Annotated[str, Parameter(name="--name", help="Volume name")],
+    source: Annotated[Path, Parameter(name="--source", help="New source directory path")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Update a volume and re-upload files."""
+    if not source.is_dir():
+        _jig_fail(f"Not a directory: {source}")
+    _run_jig_cmd(config, toml_config, lambda jig: volumes_update(jig, name, source))
+
+
+def jig_volumes_delete_cli(
+    name: Annotated[str, Parameter(name="--name", help="Volume name")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Delete a volume."""
+    _run_jig_cmd(config, toml_config, lambda jig: volumes_delete(jig, name))

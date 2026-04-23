@@ -5,21 +5,17 @@ import urllib.request
 from typing import Any
 from pathlib import Path
 
-import click
 import pytest
-from click.testing import CliRunner
 
-from together.lib.cli import _track_cli as track_cli_mod
+from tests.cli.utils import CliRunner
 from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
-    auto_track_command,
     is_tracking_enabled,
     load_telemetry_config,
     save_telemetry_config,
     telemetry_config_path,
-    invoked_subcommand_path,
-    _sanitize_cli_error_message,
+    sanitize_cli_error_message,
 )
 
 
@@ -30,19 +26,19 @@ def _xdg_config_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  
 
 def test_sanitize_cli_error_message_truncates() -> None:
     long = "a" * 600
-    out = _sanitize_cli_error_message(long)
+    out = sanitize_cli_error_message(long)
     assert len(out) < len(long)
     assert out.endswith("…")
 
 
 def test_sanitize_cli_error_message_redacts_bearer() -> None:
     msg = "failed: bearer abcdefghijklmnopqrstuvwxyz0123456789"
-    assert "abcdefghij" not in _sanitize_cli_error_message(msg)
+    assert "abcdefghij" not in sanitize_cli_error_message(msg)
 
 
 def test_sanitize_cli_error_message_redacts_authorization_header() -> None:
     msg = "oops Authorization: supersecrettokenvaluehere"
-    out = _sanitize_cli_error_message(msg)
+    out = sanitize_cli_error_message(msg)
     assert "supersecret" not in out
     assert "<redacted>" in out
 
@@ -50,7 +46,7 @@ def test_sanitize_cli_error_message_redacts_authorization_header() -> None:
 def test_sanitize_cli_error_message_redacts_api_key_assignment() -> None:
     # Pattern matches ``api_key`` + whitespace + long token (not ``key="..."``).
     msg = "config api_key sk-abcdefghijklmnopqrstuvwxyz0123456789"
-    out = _sanitize_cli_error_message(msg)
+    out = sanitize_cli_error_message(msg)
     assert "sk-abc" not in out
     assert "<redacted>" in out
 
@@ -134,11 +130,12 @@ def test_track_cli_posts_json_when_enabled(monkeypatch: pytest.MonkeyPatch) -> N
         "https://example.test/telemetry",
     )
 
-    track_cli(
+    t = track_cli(
         CliTrackingEvents.CommandCompleted,
         {"command": "models list", "arguments": ["json"]},
     )
-    track_cli_mod._thread_pool[-1].join(timeout=5.0)
+    assert t is not None
+    t.join(timeout=5.0)
     assert len(posted) == 1
     req = posted[0]
     assert req.get_full_url() == "https://example.test/telemetry"
@@ -151,67 +148,41 @@ def test_track_cli_posts_json_when_enabled(monkeypatch: pytest.MonkeyPatch) -> N
     assert body["context"]["runtime"]["name"] == "together-cli"
 
 
-def test_auto_track_command_records_failure_with_sanitized_error(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    events: list[tuple[str, dict[str, Any]]] = []
+def test_parse_command_and_flags_splits_command_and_flags() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
 
-    def capture(ev: CliTrackingEvents, args: dict[str, Any]) -> None:
-        events.append((ev.value, args))
-
-    monkeypatch.setattr("together.lib.cli._track_cli.track_cli", capture)
-
-    @click.group("cli")
-    def root() -> None:
-        pass
-
-    @root.command("fail")
-    @auto_track_command
-    def _fail_cmd() -> None:  # pyright: ignore[reportUnusedFunction]
-        raise RuntimeError("bearer abcdefghijklmnopqrstuvwxyz0123456789")
-
-    runner = CliRunner()
-    r = runner.invoke(root, ["fail"], catch_exceptions=True)
-    assert r.exit_code != 0
-    kinds = [e[0] for e in events]
-    assert kinds == [
-        "cli_command_started",
-        "cli_command_failed",
-    ]
-    err = events[1][1]["error"]
-    assert "abcdefghij" not in err
-    assert "<redacted>" in err
+    cmd, flags, is_beta = parse_command_and_flags(app, ["files", "upload", "--file", "ignored.txt"])
+    assert cmd == "files upload"
+    assert flags == ["file"]
+    assert is_beta is False
 
 
-def test_invoked_subcommand_path_strips_root_name() -> None:
-    @click.group("together")
-    def root() -> None:
-        pass
+def test_parse_command_and_flags_strips_beta_prefix() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
 
-    @root.group("models")
-    def models_g() -> None:
-        pass
-
-    @models_g.group("list")
-    def list_g() -> None:
-        pass
-
-    @list_g.command("all")
-    def _all_cmd() -> None:  # pyright: ignore[reportUnusedFunction]
-        click.echo(invoked_subcommand_path())
-
-    runner = CliRunner()
-    r = runner.invoke(root, ["models", "list", "all"], catch_exceptions=False)
-    assert r.exit_code == 0
-    assert r.output.strip() == "models list all"
+    cmd, flags, is_beta = parse_command_and_flags(app, ["beta", "clusters", "list"])
+    assert cmd == "clusters list"
+    assert flags == []
+    assert is_beta is True
 
 
-def test_together_telemetry_status_no_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["beta", "jig", "secrets", "set", "secret-name", "secret-value"])
+    assert cmd == "jig secrets set"
+    assert set(flags) == {"name", "value"}
+    assert is_beta is True
+
+
+def test_telemetry_status_no_api_key(monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)
-    from together.lib.cli import main
+    monkeypatch.setenv("TOGETHER_BASE_URL", "http://127.0.0.1:4010")
 
-    runner = CliRunner()
-    result = runner.invoke(main, ["telemetry", "status"], catch_exceptions=False)
+    result = cli_runner.invoke(["telemetry", "status"])
     assert result.exit_code == 0
     assert "Telemetry:" in result.output

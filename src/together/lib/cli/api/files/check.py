@@ -1,36 +1,35 @@
-import sys
-import json as json_lib
-import pathlib
+from __future__ import annotations
 
-import click
-from rich import print, print_json
+import os
+import sys
+from typing import Annotated
+from pathlib import Path
+
+from cyclopts import Parameter
+from rich.markup import escape as escape_rich_markup
 
 from together.lib.utils import check_file
-from together.lib.cli._track_cli import auto_track_command
+from together._utils._json import openapi_dumps
+from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._console import console
 
 
-@click.command()
-@click.pass_context
-@click.argument(
-    "file",
-    type=click.Path(exists=True, file_okay=True, resolve_path=True, readable=True, dir_okay=False),
-    required=True,
-)
-@click.option(
-    "--json",
-    is_flag=True,
-    help="Output the response in JSON format",
-)
-@auto_track_command
-def check(_ctx: click.Context, file: pathlib.Path, json: bool) -> None:
+async def check(
+    file: Annotated[Path, Parameter(required=True, help="The file to check")],
+    *,
+    config: CLIConfigParameter,
+) -> None:
     """Check file for issues"""
+
+    if config.json:
+        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
     report = check_file(file)
 
-    if json:
-        print_json(json_lib.dumps(report))
+    if config.json:
+        console.print_json(openapi_dumps(report).decode("utf-8"))
     else:
         icon = "✅" if report["is_check_passed"] else "❌"
-        print(f"{icon} {report['message']}")
+        console.print(f"{icon} {escape_rich_markup(str(report['message']))}")
         if report["is_check_passed"] is False:
             sys.exit(1)

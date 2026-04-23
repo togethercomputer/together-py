@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import os
+import sys
 import time
 import asyncio
 import itertools
 from typing import Any
 from pathlib import Path
 
-import click
 import httpx
+from rich import print
 
 from together import Together
+from together.lib.utils import log_debug
 
 DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
@@ -85,7 +87,7 @@ class Uploader:
             if bytes_count > 0:
                 self.uploaded_bytes += bytes_count
             if DEBUG:
-                click.echo(f"\nDEBUG: bytes_count={bytes_count}, total={self.uploaded_bytes}")
+                log_debug(f"bytes_count={bytes_count}, total={self.uploaded_bytes}")
             if file_complete:
                 self.completed_files += 1
             if filename:
@@ -129,7 +131,7 @@ class Uploader:
                 await spinner_task
 
         elapsed_time = time.time() - self.start_time
-        click.echo(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
+        print(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
 
     async def upload_file_with_retry(self, file_path: Path, remote_path: str, file_size: int) -> None:
         for attempt in range(MAX_UPLOAD_RETRIES):
@@ -225,7 +227,7 @@ class Uploader:
                     headers=self.client.auth_headers,
                 )
             except Exception as e:
-                click.echo(f"Failed to abort multipart upload request: {repr(e)}")
+                print(f"[red]Failed to abort multipart upload request: {repr(e)}[/red]", file=sys.stderr)
             raise
 
     async def _upload_parts(

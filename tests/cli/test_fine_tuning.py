@@ -1,25 +1,20 @@
 from __future__ import annotations
 
 import os
-import sys
 import json
+import importlib
 from pathlib import Path
 from unittest.mock import patch
 
 import httpx
 import pytest
 from respx import MockRouter
-from click.testing import CliRunner
 
-from together.lib.cli import main
+from tests.cli.utils import CliRunner
 
-# Real module; package attribute `download` is the Click command and shadows this name.
-_ft_download_mod = sys.modules["together.lib.cli.api.fine_tuning.download"]
+_ft_download_mod = importlib.import_module("together.lib.cli.api.fine_tuning.download")
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
-API_KEY = "0000000000000000000000000000000000000000"
-
-_ENV = {"TOGETHER_BASE_URL": base_url, "TOGETHER_API_KEY": API_KEY}
 
 _FT_LIST_ITEM = {
     "id": "ft-newer",
@@ -78,24 +73,22 @@ _FT_CHECKPOINT = {
 
 class TestFineTuningList:
     @pytest.mark.respx(base_url=base_url)
-    def test_list_table(self, respx_mock: MockRouter) -> None:
+    def test_list_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes").mock(
             return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
         )
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "list"])
+        result = cli_runner.invoke(["fine-tuning", "list"])
         assert result.exit_code == 0
         assert "ft-newer" in result.output
         assert "ft-older" in result.output
         assert result.output.index("ft-newer") < result.output.index("ft-older")
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_json(self, respx_mock: MockRouter) -> None:
+    def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes").mock(
             return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
         )
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "list", "--json"])
+        result = cli_runner.invoke(["fine-tuning", "list", "--json"])
         assert result.exit_code == 0
         parsed = json.loads(result.output)
         assert [x["id"] for x in parsed] == ["ft-newer", "ft-older"]
@@ -103,10 +96,9 @@ class TestFineTuningList:
 
 class TestFineTuningRetrieve:
     @pytest.mark.respx(base_url=base_url)
-    def test_retrieve_json(self, respx_mock: MockRouter) -> None:
+    def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "retrieve", "ft-1", "--json"])
+        result = cli_runner.invoke(["fine-tuning", "retrieve", "ft-1", "--json"])
         assert result.exit_code == 0
         body = json.loads(result.output)
         assert body["id"] == "ft-1"
@@ -115,101 +107,84 @@ class TestFineTuningRetrieve:
 
 class TestFineTuningCancel:
     @pytest.mark.respx(base_url=base_url)
-    def test_cancel_not_cancellable(self, respx_mock: MockRouter) -> None:
+    def test_cancel_not_cancellable(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         body = {**_FT_RETRIEVE_BODY, "status": "completed"}
         respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "cancel", "ft-1", "--quiet"])
-        assert result.exit_code == 0
+        result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--quiet"])
+        assert result.exit_code == 1
         assert "not currently cancellable" in result.output
         assert "completed" in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_cancel_quiet_calls_api(self, respx_mock: MockRouter) -> None:
+    def test_cancel_quiet_calls_api(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         running = {**_FT_RETRIEVE_BODY, "status": "running"}
         respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=running))
         respx_mock.post("/fine-tunes/ft-1/cancel").mock(
             return_value=httpx.Response(200, json={**running, "status": "cancel_requested"})
         )
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "cancel", "ft-1", "--quiet"])
+        result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--quiet", "--non-interactive"])
         assert result.exit_code == 0
         assert "Cancelled" in result.output
 
-    @pytest.mark.respx(base_url=base_url)
-    def test_cancel_json_requires_quiet(self, respx_mock: MockRouter) -> None:
-        running = {**_FT_RETRIEVE_BODY, "status": "running"}
-        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=running))
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "cancel", "ft-1", "--json"])
-        assert result.exit_code != 0
-        assert "quiet" in result.output.lower()
+    def test_cancel_json_requires_non_interactive(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--json"])
+        assert result.exit_code == 1
+        assert "To use json mode, you must use --non-interactive" in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_cancel_not_cancellable_json(self, respx_mock: MockRouter) -> None:
+    def test_cancel_not_cancellable_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         body = {**_FT_RETRIEVE_BODY, "status": "completed"}
         respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
-        try:
-            runner = CliRunner(env=_ENV, mix_stderr=False)
-        except Exception:
-            # Python 3.14 doesnt have the mix_stderr parameter
-            runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "cancel", "ft-1", "--quiet", "--json"])
-        assert result.exit_code == 0
-        assert result.stdout_bytes.decode("utf-8") == ""
-        assert result.stderr_bytes is not None
-        assert len(result.stderr_bytes) > 0
-        assert "Training is not currently cancellable" in result.stderr_bytes.decode("utf-8")
+        result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--quiet", "--json"])
+        assert result.exit_code == 1
+        assert "Training is not currently cancellable" in result.output
 
 
 class TestFineTuningDelete:
-    def test_delete_json_requires_force(self) -> None:
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "delete", "ft-1", "--json"])
+    def test_delete_json_requires_non_interactive(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["fine-tuning", "delete", "ft-1", "--json"])
         assert result.exit_code != 0
-        assert "force" in result.output.lower()
+        assert "non-interactive" in result.output.lower()
 
     @pytest.mark.respx(base_url=base_url)
-    def test_delete_force(self, respx_mock: MockRouter) -> None:
+    def test_delete_force(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.delete("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "delete", "ft-1", "--force"])
+        result = cli_runner.invoke(["fine-tuning", "delete", "ft-1", "--force"])
         assert result.exit_code == 0
         assert "Deleted" in result.output
 
 
 class TestFineTuningEventsAndCheckpoints:
     @pytest.mark.respx(base_url=base_url)
-    def test_list_events_json(self, respx_mock: MockRouter) -> None:
+    def test_list_events_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": [_FT_EVENT]}))
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "list-events", "ft-1", "--json"])
+        result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)[0]["message"] == "training started"
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_checkpoints_table(self, respx_mock: MockRouter) -> None:
+    def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
             return_value=httpx.Response(200, json={"data": [_FT_CHECKPOINT]})
         )
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "list-checkpoints", "ft-1"])
+        result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
         assert "intermediate" in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_checkpoints_empty_message(self, respx_mock: MockRouter) -> None:
+    def test_list_checkpoints_empty_message(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(return_value=httpx.Response(200, json={"data": []}))
-        runner = CliRunner(env=_ENV)
-        result = runner.invoke(main, ["fine-tuning", "list-checkpoints", "ft-1"])
+        result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "No checkpoints found" in result.output
 
 
 class TestFineTuningDownload:
     @pytest.mark.respx(base_url=base_url)
-    def test_download_invokes_download_manager(self, respx_mock: MockRouter, tmp_path: Path) -> None:
+    def test_download_invokes_download_manager(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
         respx_mock.get("/fine-tunes/ft-abcd-12").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
         out_file = tmp_path / "weights.tar"
         out_file.write_bytes(b"x")
@@ -224,18 +199,17 @@ class TestFineTuningDownload:
                 return str(out_file), 1
 
         with patch.object(_ft_download_mod, "DownloadManager", _DM):
-            runner = CliRunner(env=_ENV)
             # Full fine-tunes require explicit --checkpoint-type default (CLI default is merged for LoRA).
-            result = runner.invoke(
-                main,
+            result = cli_runner.invoke(
                 [
                     "fine-tuning",
                     "download",
                     "ft-abcd-12",
                     "--checkpoint-type",
                     "default",
-                    "--output_dir",
+                    "--output-dir",
                     str(tmp_path),
+                    "--json",
                 ],
             )
         assert result.exit_code == 0
