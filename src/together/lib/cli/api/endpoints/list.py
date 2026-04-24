@@ -42,11 +42,8 @@ async def list(
         console.print_json(openapi_dumps(endpoints_to_display).decode("utf-8"))
         return
 
-    if len(endpoints_to_display) == 0:
-        console.print("No dedicated endpoints found")
-        return
-
-    table = ListTable("Endpoints")
+    EMPTY_MESSAGE = "You don't have any dedicated endpoints yet. To create your first endpoint run:\n  [dim]-[/dim] [primary]tg endpoints create[/primary]"
+    table = ListTable("Endpoints", empty_message=EMPTY_MESSAGE)
     table.add_primary_column("ID")
     table.add_column("Name", ratio=2)
     table.add_column("State")

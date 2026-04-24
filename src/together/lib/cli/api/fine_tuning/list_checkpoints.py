@@ -21,7 +21,10 @@ async def list_checkpoints(
         console.print_json(openapi_dumps(checkpoints.data).decode("utf-8"))
         return
 
-    table = ListTable(title="Checkpoints")
+    table = ListTable(
+        title="Checkpoints",
+        empty_message=f"No checkpoints found for job {fine_tune_id}",
+    )
     table.add_column("ID")
     table.add_column("Timestamp")
     table.add_primary_column("Type")
@@ -34,11 +37,8 @@ async def list_checkpoints(
         )
         table.add_row(name, format_timestamp(checkpoint.created_at), checkpoint.checkpoint_type)
 
-    if len(checkpoints.data) == 0:
-        console.print(f"No checkpoints found for job {fine_tune_id}")
-        return
-
     console.print(table)
-    console.print(
-        "\n[bold dim]To download a checkpoint, use `together fine-tuning download \\[checkpoint-id]`[/bold dim]"
-    )
+    if checkpoints.data:
+        console.print(
+            "\n[bold dim]To download a checkpoint, use `together fine-tuning download \\[checkpoint-id]`[/bold dim]"
+        )

@@ -49,7 +49,8 @@ async def list(
         print_json(openapi_dumps(fine_tunings_to_display).decode("utf-8"))
         return
 
-    table = ListTable()
+    EMPTY_MESSAGE = "You don't have any finetuned models yet. To fine tune your first model run:\n  [dim]-[/dim] [primary]tg ft create[/primary]"
+    table = ListTable(empty_message=EMPTY_MESSAGE)
     table.add_primary_column("ID")
     table.add_column("Base Model")
     table.add_column("Suffix")
