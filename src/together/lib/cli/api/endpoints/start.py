@@ -16,7 +16,7 @@ async def start(
         str,
         Parameter(required=True, help="The ID of the endpoint to start"),
     ],
-    wait: Annotated[bool, Parameter(help="Wait for the endpoint to start")] = False,
+    wait: Annotated[bool, Parameter(help="Wait for the endpoint to start", negative=False)] = False,
     *,
     config: CLIConfigParameter,
 ) -> None:
