@@ -196,11 +196,27 @@ def _legacy_command_before_first_option(tokens: list[str]) -> tuple[str, bool]:
     return (" ".join(parts), is_beta_command)
 
 
+# First subcommand token only (alias -> primary name) for stable telemetry.
+_TELEMETRY_SUBCOMMAND_ALIASES: dict[str, str] = {"ft": "fine-tuning"}
+
+
+def _canonical_telemetry_command(cmd: str) -> str:
+    if not cmd:
+        return cmd
+    parts = cmd.split()
+    primary = _TELEMETRY_SUBCOMMAND_ALIASES.get(parts[0])
+    if primary is not None:
+        parts[0] = primary
+    return " ".join(parts)
+
+
 def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str], bool]:
     """
     Return telemetry-safe command path (registered subcommands only), argument *names* from
     cyclopts resolution (including positional parameters — values are never returned), and
     whether the invocation is under ``beta``.
+
+    Subcommand aliases (e.g. ``ft``) are normalized to their primary names (e.g. ``fine-tuning``).
 
     Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken
     for subcommand tokens (e.g. ``beta jig secrets set <name> <value>``).
@@ -227,7 +243,7 @@ def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str]
     except CycloptsError:
         explicit_args.extend(_long_option_names_in_tokens(rest_after_chain))
 
-    return (parsed_command, explicit_args, is_beta_command)
+    return (_canonical_telemetry_command(parsed_command), explicit_args, is_beta_command)
 
 
 def sanitize_cli_error_message(msg: str) -> str:

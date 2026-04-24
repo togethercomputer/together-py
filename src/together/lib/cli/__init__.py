@@ -290,7 +290,7 @@ files_app.command(f"{_CLI}.files.delete:delete", help="Delete a file from the To
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
 # Fine-tuning API commands
-fine_tuning_app = app.command(App(name="fine-tuning", help="Fine-tuning API commands"))
+fine_tuning_app = app.command(App(name="fine-tuning", help="Fine-tuning API commands", alias="ft"))
 fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"), help="Start a new fine-tuning job")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), help="List fine-tuning jobs on the Together platform")
 fine_tuning_app.command(
