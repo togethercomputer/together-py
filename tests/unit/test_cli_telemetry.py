@@ -168,6 +168,16 @@ def test_parse_command_and_flags_strips_beta_prefix() -> None:
     assert is_beta is True
 
 
+def test_parse_command_and_flags_normalizes_ft_to_fine_tuning() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["ft", "list", "--json"])
+    assert cmd == "fine-tuning list"
+    assert flags == ["json"]
+    assert is_beta is False
+
+
 def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:
     from together.lib.cli import app
     from together.lib.cli._track_cli import parse_command_and_flags

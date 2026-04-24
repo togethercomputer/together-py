@@ -471,62 +471,64 @@ with Together() as client:
 
 ```bash
 # Help
-together files --help
+tg files --help
 
 # Check file
-together files check example.jsonl
+tg files check example.jsonl
 
 # Upload file
-together files upload example.jsonl
+tg files upload example.jsonl
 
 # List files
-together files list
+tg files list
 
 # Retrieve file metadata
-together files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
 
 # Retrieve file content
-together files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
 
 # Delete remote file
-together files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
 ```
 
 ### Fine-tuning
 
 ```bash
+# `tg ft` and `tg fine-tuning` are equivalent
+
 # Help
-together fine-tuning --help
+tg ft --help
 
 # Create fine-tune job
-together fine-tuning create \
+tg ft create \
   --model togethercomputer/llama-2-7b-chat \
   --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
 
 # List fine-tune jobs
-together fine-tuning list
+tg ft list
 
 # Retrieve fine-tune job details
-together fine-tuning retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # List fine-tune job events
-together fine-tuning list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # Cancel running job
-together fine-tuning cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # Download fine-tuned model weights
-together fine-tuning download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 ```
 
 ### Models
 
 ```bash
 # Help
-together models --help
+tg models --help
 
 # List models
-together models list
+tg models list
 ```
 
 ## Versioning
@@ -562,201 +564,203 @@ Python 3.9 or higher.
 
 ```bash
 # Help
-together files --help
+tg files --help
 
 # Check file
-together files check example.jsonl
+tg files check example.jsonl
 
 # Upload file
-together files upload example.jsonl
+tg files upload example.jsonl
 
 # List files
-together files list
+tg files list
 
 # Retrieve file metadata
-together files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
 
 # Retrieve file content
-together files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
 
 # Delete remote file
-together files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
 ```
 
 ### Fine-tuning
 
 ```bash
+# `tg ft` and `tg fine-tuning` are equivalent
+
 # Help
-together fine-tuning --help
+tg ft --help
 
 # Create fine-tune job
-together fine-tuning create \
+tg ft create \
   --model togethercomputer/llama-2-7b-chat \
   --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
 
 # List fine-tune jobs
-together fine-tuning list
+tg ft list
 
 # Retrieve fine-tune job details
-together fine-tuning retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # List fine-tune job events
-together fine-tuning list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # List fine-tune checkpoints
-together fine-tuning list-checkpoints ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft list-checkpoints ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # Cancel running job
-together fine-tuning cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # Download fine-tuned model weights
-together fine-tuning download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 
 # Delete fine-tuned model weights
-together fine-tuning delete ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+tg ft delete ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
 ```
 
 ### Models
 
 ```bash
 # Help
-together models --help
+tg models --help
 
 # List models
-together models list
+tg models list
 
 # Upload a model
-together models upload --model-name my-org/my-model --model-source s3-or-hugging-face
+tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face
 ```
 
 ### Clusters
 
 ```bash
 # Help
-together beta clusters --help
+tg beta clusters --help
 
 # Create a cluster
-together beta clusters create
+tg beta clusters create
 
 # List clusters
-together beta clusters list
+tg beta clusters list
 
 # Retrieve cluster details
-together beta clusters retrieve [cluster-id]
+tg beta clusters retrieve [cluster-id]
 
 # Update a cluster
-together beta clusters update [cluster-id]
+tg beta clusters update [cluster-id]
 
 # Retrieve Together cluster configuration options such as regions, gpu types and drivers available
-together beta clusters list-regions
+tg beta clusters list-regions
 ```
 
 ##### Cluster Storage
 
 ```bash
 # Help
-together beta clusters storage --help
+tg beta clusters storage --help
 
 # Create cluster storage volume
-together beta clusters storage create
+tg beta clusters storage create
 
 # List storage volumes
-together beta clusters storage list
+tg beta clusters storage list
 
 # Retrieve storage volume
-together beta clusters storage retrieve [storage-id]
+tg beta clusters storage retrieve [storage-id]
 
 # Delete storage volume
-together beta clusters storage delete [storage-id]
+tg beta clusters storage delete [storage-id]
 ```
 
 ### Jig (Container Deployments)
 
 ```bash
 # Help
-together beta jig --help
+tg beta jig --help
 
 # Initialize jig configuration (creates pyproject.toml)
-together beta jig init
+tg beta jig init
 
 # Generate Dockerfile from config
-together beta jig dockerfile
+tg beta jig dockerfile
 
 # Build container image
-together beta jig build
-together beta jig build --tag v1.0 --warmup
+tg beta jig build
+tg beta jig build --tag v1.0 --warmup
 
 # Push image to registry
-together beta jig push
-together beta jig push --tag v1.0
+tg beta jig push
+tg beta jig push --tag v1.0
 
 # Deploy model (builds, pushes, and deploys)
-together beta jig deploy
-together beta jig deploy --build-only
-together beta jig deploy --image existing-image:tag
+tg beta jig deploy
+tg beta jig deploy --build-only
+tg beta jig deploy --image existing-image:tag
 
 # Get deployment status
-together beta jig status
+tg beta jig status
 
 # Get deployment endpoint URL
-together beta jig endpoint
+tg beta jig endpoint
 
 # View deployment logs
-together beta jig logs
-together beta jig logs --follow
+tg beta jig logs
+tg beta jig logs --follow
 
 # Destroy deployment
-together beta jig destroy
+tg beta jig destroy
 
 # Get queue metrics
-together beta jig queue-status
+tg beta jig queue-status
 
 # List all deployments
-together beta jig list
+tg beta jig list
 ```
 
 ##### Jig Secrets
 
 ```bash
 # Help
-together beta jig secrets --help
+tg beta jig secrets --help
 
 # Set a secret (creates or updates)
-together beta jig secrets set --name MY_SECRET --value "secret-value"
+tg beta jig secrets set --name MY_SECRET --value "secret-value"
 
 # Remove a secret from local state
-together beta jig secrets unset --name MY_SECRET
+tg beta jig secrets unset --name MY_SECRET
 
 # List all secrets with sync status
-together beta jig secrets list
+tg beta jig secrets list
 ```
 
 ##### Jig Volumes
 
 ```bash
 # Help
-together beta jig volumes --help
+tg beta jig volumes --help
 
 # Create a volume and upload files from directory
-together beta jig volumes create --name my-volume --source ./data
+tg beta jig volumes create --name my-volume --source ./data
 
 # Update a volume with new files
-together beta jig volumes update --name my-volume --source ./data
+tg beta jig volumes update --name my-volume --source ./data
 
 # Set volume mount path for deployment
-together beta jig volumes set --name my-volume --mount-path /app/data
+tg beta jig volumes set --name my-volume --mount-path /app/data
 
 # Remove volume from deployment config (does not delete remote volume)
-together beta jig volumes unset --name my-volume
+tg beta jig volumes unset --name my-volume
 
 # Delete a volume
-together beta jig volumes delete --name my-volume
+tg beta jig volumes delete --name my-volume
 
 # Describe a volume
-together beta jig volumes describe --name my-volume
+tg beta jig volumes describe --name my-volume
 
 # List all volumes
-together beta jig volumes list
+tg beta jig volumes list
 ```
 
 ## Contributing

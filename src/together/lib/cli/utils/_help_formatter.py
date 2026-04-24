@@ -22,6 +22,10 @@ def _names_renderer(entry: HelpEntry) -> str:
     if len(entry.names) == 1:
         return entry.names[0]
 
+    # Subcommand aliases (e.g. fine-tuning + ft): cyclopts puts all in positive_names
+    if not entry.shorts and all(not n.startswith("-") for n in entry.names):
+        return f"{entry.names[0]} ({', '.join(entry.names[1:])})"
+
     # Parameters
     names = " ".join(entry.names[1:]) if entry.names else ""
     shorts = " ".join(entry.shorts) if entry.shorts else ""
