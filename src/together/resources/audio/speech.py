@@ -92,6 +92,12 @@ class SpeechResource(SyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+              `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+              voices are combined into a single blended voice by joining their names with `+`
+              (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+              parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+              voice name.
+
           bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
@@ -168,6 +174,12 @@ class SpeechResource(SyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+              `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+              voices are combined into a single blended voice by joining their names with `+`
+              (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+              parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+              voice name.
+
           bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
@@ -239,6 +251,12 @@ class SpeechResource(SyncAPIResource):
               You can view the voices supported for each model using the /v1/voices endpoint
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
+
+              `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+              voices are combined into a single blended voice by joining their names with `+`
+              (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+              parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+              voice name.
 
           bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
               response_format is mp3. Higher values produce better audio quality at larger
@@ -377,6 +395,12 @@ class AsyncSpeechResource(AsyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+              `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+              voices are combined into a single blended voice by joining their names with `+`
+              (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+              parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+              voice name.
+
           bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
@@ -453,6 +477,12 @@ class AsyncSpeechResource(AsyncAPIResource):
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
 
+              `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+              voices are combined into a single blended voice by joining their names with `+`
+              (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+              parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+              voice name.
+
           bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
@@ -524,6 +554,12 @@ class AsyncSpeechResource(AsyncAPIResource):
               You can view the voices supported for each model using the /v1/voices endpoint
               sending the model name as the query parameter.
               [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
+
+              `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+              voices are combined into a single blended voice by joining their names with `+`
+              (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+              parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+              voice name.
 
           bit_rate: Bitrate of the MP3 audio output in bits per second. Only applicable when
               response_format is mp3. Higher values produce better audio quality at larger
