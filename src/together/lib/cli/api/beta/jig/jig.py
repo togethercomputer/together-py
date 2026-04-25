@@ -1225,7 +1225,8 @@ async def jig_volumes_list(
         console.print_json(openapi_dumps(list_resp).decode())
         return
 
-    table = ListTable()
+    EMPTY_MESSAGE = "You don't have any volumes yet. To create your first volume run:\n  [dim]-[/dim] [primary]tg beta jig volumes create[/primary]"
+    table = ListTable(title="Volumes", empty_message=EMPTY_MESSAGE)
 
     table.add_primary_column("ID")
     table.add_column("Name")

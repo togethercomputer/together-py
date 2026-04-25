@@ -4,9 +4,11 @@ from together.types.beta.cluster import Cluster
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 
+EMPTY_MESSAGE = "You don't have any clusters yet. To create your first cluster run:\n  [dim]-[/dim] [primary]tg beta clusters create[/primary]"
+
 
 def print_clusters(clusters: List[Cluster]) -> None:
-    table = ListTable()
+    table = ListTable(title="Clusters", empty_message=EMPTY_MESSAGE)
     table.add_column("ID", ratio=2)
     table.add_primary_column("Name", ratio=2)
     table.add_column("Status")

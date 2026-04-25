@@ -30,7 +30,7 @@ async def hardware(
         console.print_json(openapi_dumps(hardware_options.data).decode("utf-8"))
         return
 
-    table = ListTable("Hardware")
+    table = ListTable("Hardware", empty_message="No hardware options found")
     table.add_primary_column("Hardware ID")
     table.add_column("GPU")
     table.add_column("Memory")

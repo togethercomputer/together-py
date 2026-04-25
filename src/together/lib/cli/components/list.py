@@ -3,12 +3,17 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from rich.box import ROUNDED
+from rich.align import Align
+from rich.panel import Panel
 from rich.table import Table
 from rich.console import Console, RenderResult, ConsoleOptions
+from rich.padding import Padding
 
 
 class ListTable:
-    def __init__(self, title: str | None = None):
+    def __init__(self, title: str | None = None, *, empty_message: str | None = None) -> None:
+        self._title = title
+        self._empty_message = empty_message
         self.has_primary_column = False
         self.table = Table(
             box=ROUNDED,
@@ -36,7 +41,21 @@ class ListTable:
     def add_row(self, *values: Any) -> None:
         self.table.add_row(*values)
 
+    def _default_empty_message(self) -> str:
+        return "Nothing to show"
+
     def __rich_console__(self, console: Console, options: ConsoleOptions) -> RenderResult:
         if self.has_primary_column is False:
             raise ValueError("No primary column added")
-        yield self.table
+        if self.table.row_count == 0:
+            text = self._empty_message or self._default_empty_message()
+            yield Panel(
+                Align.left(Padding(text, (0, 1, 0, 1))),
+                title=self._title,
+                box=ROUNDED,
+                title_align="left",
+                border_style="table.border",
+                expand=True,
+            )
+        else:
+            yield self.table
