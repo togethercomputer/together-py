@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -44,6 +45,13 @@ def test_telemetry_enable_then_status(isolated_cli_config: Path, cli_runner: Cli
     r2 = cli_runner.invoke(["telemetry", "status"])
     assert r2.exit_code == 0
     assert "Enabled" in r2.output
+
+
+def test_telemetry_json_mode_pipes_to_jq(cli_runner: CliRunner) -> None:
+    r = cli_runner.invoke(["telemetry", "status", "--json"])
+    assert r.exit_code == 0
+    jq = subprocess.run(["jq"], input=r.out_out, capture_output=True, text=True)
+    assert jq.returncode == 0, jq.stderr
 
 
 def test_telemetry_status_shows_env_opt_out(

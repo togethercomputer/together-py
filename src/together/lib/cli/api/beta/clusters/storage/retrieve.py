@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from rich import print_json
-
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -18,7 +16,7 @@ async def retrieve(
     request = config.client.beta.clusters.storage.retrieve(volume_id)
 
     if config.json:
-        print_json(openapi_dumps(await request).decode("utf-8"))
+        console.print_json(openapi_dumps(await request).decode("utf-8"))
         return
 
     storage = await show_loading_status("Retrieving storage volume...", request)
