@@ -209,6 +209,7 @@ def _canonical_telemetry_command(cmd: str) -> str:
         parts[0] = primary
     parts = ["list" if p == "ls" else p for p in parts]
     parts = ["delete" if p == "-d" else p for p in parts]
+    parts = ["create" if p == "-c" else p for p in parts]
     return " ".join(parts)
 
 
@@ -221,6 +222,7 @@ def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str]
     Subcommand aliases (e.g. ``ft``) are normalized to their primary names (e.g. ``fine-tuning``).
     The ``list`` alias ``ls`` is normalized to ``list`` in the returned command path.
     The ``delete`` alias ``-d`` is normalized to ``delete`` in the returned command path.
+    The ``create`` alias ``-c`` is normalized to ``create`` in the returned command path.
 
     Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken
     for subcommand tokens (e.g. ``beta jig secrets set <name> <value>``).
@@ -277,10 +279,10 @@ def _redact_secrets_in_error_text(s: str) -> str:
         s,
     )
     # OpenAI / common `sk-…` API keys; Hugging Face `hf_…`; Together-style `tog_…`
-    s = re.sub(r"(?i)(?<![a-z0-9_-])(sk-[a-z0-9_-]{20,})(?![a-z0-9_-])", "<redacted>", s)
-    s = re.sub(r"(?i)(?<![a-z0-9_])(hf_[a-z0-9_-]{20,})(?![a-z0-9_])", "<redacted>", s)
-    s = re.sub(r"(?i)(?<![a-z0-9_])(tgp_[a-z0-9_-]{8,})(?![a-z0-9_])", "<redacted>", s)
-    s = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._\-/+]{20,}", r"\1<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_-])(sk-[a-z0-9_-]+)(?![a-z0-9_-])", "<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_])(hf_[a-z0-9_-]+)(?![a-z0-9_])", "<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_])(tgp_[a-z0-9_-]+)(?![a-z0-9_])", "<redacted>", s)
+    s = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._\-/+]+", r"\1<redacted>", s)
     s = re.sub(
         r"(?i)(api[_-]?key\s*[\"':=]\s*|api[_-]?key\s+)([A-Za-z0-9._\-]{20,})",
         r"\1<redacted>",

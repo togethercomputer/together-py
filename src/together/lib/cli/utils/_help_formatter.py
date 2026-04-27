@@ -18,12 +18,20 @@ def _is_union_origin(origin: object | None) -> bool:
 # Define custom column renderers
 def _names_renderer(entry: HelpEntry) -> str:
     """Combine parameter names and shorts."""
+    is_command = entry.type is None
+
     # Commands
-    names = ", ".join(sorted(entry.names, key=len)).strip() if entry.names else ""
-    short_part = ", ".join(entry.shorts).strip() if entry.shorts else ""
-    if short_part:
-        return f"{short_part}, {names}"
-    return names
+    if is_command:
+        names = ", ".join(sorted(entry.names, key=len)).strip() if entry.names else ""
+        short_part = ", ".join(entry.shorts).strip() if entry.shorts else ""
+        if short_part:
+            return f"{short_part}, {names}"
+        return names
+
+    # Parameters
+    names = " ".join(entry.names[1:]) if entry.names else ""
+    shorts = " ".join(entry.shorts) if entry.shorts else ""
+    return " ".join([names, shorts]).strip()
 
 
 def _strip_annotated_for_display(hint: object) -> object:
