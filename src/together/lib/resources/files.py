@@ -13,12 +13,12 @@ import tempfile
 from typing import IO, Any, Dict, List, Tuple, cast
 from pathlib import Path
 from functools import partial
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 import httpx
 from tqdm import tqdm
 from filelock import FileLock
-from tqdm.utils import CallbackIOWrapper
 
 from together._utils._logs import logger
 
@@ -354,6 +354,8 @@ class UploadManager(SyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         file_size = os.stat(file.as_posix()).st_size
         file_size_gb = file_size / NUM_BYTES_IN_GB
@@ -367,9 +369,13 @@ class UploadManager(SyncAPIResource):
 
         if file_size_gb > MULTIPART_THRESHOLD_GB:
             multipart_manager = MultipartUploadManager(self._client)
-            return multipart_manager.upload(url, file, checksum, purpose)
+            return multipart_manager.upload(
+                url, file, checksum, purpose, callback=callback
+            )
         else:
-            return self._upload_single_file(url, file, checksum, purpose)
+            return self._upload_single_file(
+                url, file, checksum, purpose, callback=callback
+            )
 
     def _upload_single_file(
         self,
@@ -377,6 +383,8 @@ class UploadManager(SyncAPIResource):
         file: Path,
         checksum: str,
         purpose: FilePurpose,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         file_id = None
 
@@ -391,32 +399,37 @@ class UploadManager(SyncAPIResource):
             )
         redirect_url, file_id = self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
-        file_size = os.stat(file.as_posix()).st_size
-        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
-
-        with tqdm(
-            total=file_size,
-            unit="B",
-            unit_scale=True,
-            desc=f"Uploading file {file.name}",
-            disable=bool(DISABLE_TQDM),
-        ) as pbar:
+        if callback is not None:
+            callback(0)
             with file.open("rb") as f:
-                wrapped_file = cast(IO[bytes], CallbackIOWrapper(pbar.update, f, "read"))
+                chunks: list[bytes] = []
+                _CHUNK = 256 * 1024
+                read_so_far = 0
+                while True:
+                    chunk = f.read(_CHUNK)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                    read_so_far += len(chunk)
+                    callback(read_so_far)
+                file_body = b"".join(chunks)
+        else:
+            with file.open("rb") as f:
+                file_body = f.read()
 
-                assert redirect_url is not None
-                callback_response = self._client._client.put(
-                    url=redirect_url,
-                    content=wrapped_file.read(),
-                )
-                log.debug(
-                    'HTTP Response: %s %s "%i %s" %s',
-                    "put",
-                    redirect_url,
-                    callback_response.status_code,
-                    callback_response.reason_phrase,
-                    callback_response.headers,
-                )
+        assert redirect_url is not None
+        callback_response = self._client._client.put(
+            url=redirect_url,
+            content=file_body,
+        )
+        log.debug(
+            'HTTP Response: %s %s "%i %s" %s',
+            "put",
+            redirect_url,
+            callback_response.status_code,
+            callback_response.reason_phrase,
+            callback_response.headers,
+        )
 
         assert isinstance(callback_response, httpx.Response)  # type: ignore
 
@@ -447,6 +460,8 @@ class MultipartUploadManager(SyncAPIResource):
         file: Path,
         checksum: str,
         purpose: FilePurpose,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         """Upload large file using multipart upload"""
 
@@ -465,7 +480,9 @@ class MultipartUploadManager(SyncAPIResource):
         try:
             upload_info = self._initiate_upload(url, file, checksum, file_size, num_parts, purpose, file_type)
 
-            completed_parts = self._upload_parts_concurrent(file, upload_info, part_size)
+            completed_parts = self._upload_parts_concurrent(
+                file, upload_info, part_size, file_size, callback=callback
+            )
 
             upload_id = upload_info.get("upload_id")
             file_id = upload_info.get("file_id")
@@ -560,42 +577,54 @@ class MultipartUploadManager(SyncAPIResource):
         future = executor.submit(self._upload_single_part, part_info, part_data)
         return future, part_number
 
-    def _upload_parts_concurrent(self, file: Path, upload_info: Dict[str, Any], part_size: int) -> List[Dict[str, Any]]:
+    def _upload_parts_concurrent(
+        self,
+        file: Path,
+        upload_info: Dict[str, Any],
+        part_size: int,
+        file_size: int,
+        *,
+        callback: Callable[[int], None] | None = None,
+    ) -> List[Dict[str, Any]]:
         """Upload file parts concurrently with progress tracking"""
 
         parts = upload_info["parts"]
         completed_parts: List[Dict[str, Any]] = []
-
-        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
+        bytes_done = 0
+        if callback is not None:
+            callback(0)
 
         with ThreadPoolExecutor(max_workers=self.max_concurrent_parts) as executor:
-            with tqdm(total=len(parts), desc="Uploading parts", unit="part", disable=bool(DISABLE_TQDM)) as pbar:
-                with open(file, "rb") as f:
-                    future_to_part: Dict[Future[str], int] = {}
-                    part_index = 0
+            with open(file, "rb") as f:
+                future_to_part: Dict[Future[str], int] = {}
+                part_index = 0
 
-                    while part_index < len(parts) and len(future_to_part) < self.max_concurrent_parts:
+                while part_index < len(parts) and len(future_to_part) < self.max_concurrent_parts:
+                    part_info = parts[part_index]
+                    future, part_number = self._submit_part(executor, f, part_info, part_size)
+                    future_to_part[future] = part_number
+                    part_index += 1
+
+                while future_to_part:
+                    done_future = next(as_completed(future_to_part))
+                    part_number = future_to_part.pop(done_future)
+
+                    try:
+                        etag = done_future.result()
+                        completed_parts.append({"part_number": part_number, "etag": etag})
+                        if callback is not None:
+                            bytes_done += _bytes_for_1based_part(
+                                part_number, part_size, file_size
+                            )
+                            callback(bytes_done)
+                    except Exception as e:
+                        raise Exception(f"Failed to upload part {part_number}: {e}") from e
+
+                    if part_index < len(parts):
                         part_info = parts[part_index]
-                        future, part_number = self._submit_part(executor, f, part_info, part_size)
-                        future_to_part[future] = part_number
+                        future, next_part_number = self._submit_part(executor, f, part_info, part_size)
+                        future_to_part[future] = next_part_number
                         part_index += 1
-
-                    while future_to_part:
-                        done_future = next(as_completed(future_to_part))
-                        part_number = future_to_part.pop(done_future)
-
-                        try:
-                            etag = done_future.result()
-                            completed_parts.append({"part_number": part_number, "etag": etag})
-                            pbar.update(1)
-                        except Exception as e:
-                            raise Exception(f"Failed to upload part {part_number}: {e}") from e
-
-                        if part_index < len(parts):
-                            part_info = parts[part_index]
-                            future, next_part_number = self._submit_part(executor, f, part_info, part_size)
-                            future_to_part[future] = next_part_number
-                            part_index += 1
 
         completed_parts.sort(key=lambda x: x["part_number"])
         return completed_parts
@@ -759,6 +788,8 @@ class AsyncUploadManager(AsyncAPIResource):
         url: str,
         file: Path,
         purpose: FilePurpose,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         file_size = os.stat(file.as_posix()).st_size
         file_size_gb = file_size / NUM_BYTES_IN_GB
@@ -768,13 +799,21 @@ class AsyncUploadManager(AsyncAPIResource):
                 f"File size {file_size_gb:.1f}GB exceeds maximum supported size of {MAX_FILE_SIZE_GB}GB"
             )
 
+
+        if callback is not None:
+            callback(0)
+
         checksum = _calculate_file_checksum(file)
 
         if file_size_gb > MULTIPART_THRESHOLD_GB:
             multipart_manager = AsyncMultipartUploadManager(self._client)
-            return await multipart_manager.upload(url, file, checksum, purpose)
+            return await multipart_manager.upload(
+                url, file, checksum, purpose, callback=callback
+            )
         else:
-            return await self._upload_single_file(url, file, checksum, purpose)
+            return await self._upload_single_file(
+                url, file, checksum, purpose, callback=callback
+            )
 
     async def _upload_single_file(
         self,
@@ -782,6 +821,8 @@ class AsyncUploadManager(AsyncAPIResource):
         file: Path,
         checksum: str,
         purpose: FilePurpose,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         file_id = None
 
@@ -797,33 +838,37 @@ class AsyncUploadManager(AsyncAPIResource):
 
         redirect_url, file_id = await self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
-        file_size = os.stat(file.as_posix()).st_size
-
-        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
-
-        with tqdm(
-            total=file_size,
-            unit="B",
-            unit_scale=True,
-            desc=f"Uploading file {file.name}",
-            disable=bool(DISABLE_TQDM),
-        ) as pbar:
+        if callback is not None:
+            callback(0)
             with file.open("rb") as f:
-                wrapped_file = cast(IO[bytes], CallbackIOWrapper(pbar.update, f, "read"))
+                chunks: list[bytes] = []
+                _CHUNK = 256 * 1024
+                read_so_far = 0
+                while True:
+                    chunk = f.read(_CHUNK)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                    read_so_far += len(chunk)
+                    callback(read_so_far)
+                file_body = b"".join(chunks)
+        else:
+            with file.open("rb") as f:
+                file_body = f.read()
 
-                assert redirect_url is not None
-                callback_response = await self._client._client.put(
-                    url=redirect_url,
-                    content=wrapped_file.read(),
-                )
-                log.debug(
-                    'HTTP Response: %s %s "%i %s" %s',
-                    "put",
-                    redirect_url,
-                    callback_response.status_code,
-                    callback_response.reason_phrase,
-                    callback_response.headers,
-                )
+        assert redirect_url is not None
+        callback_response = await self._client._client.put(
+            url=redirect_url,
+            content=file_body,
+        )
+        log.debug(
+            'HTTP Response: %s %s "%i %s" %s',
+            "put",
+            redirect_url,
+            callback_response.status_code,
+            callback_response.reason_phrase,
+            callback_response.headers,
+        )
 
         assert isinstance(callback_response, httpx.Response)  # type: ignore
 
@@ -854,6 +899,8 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         file: Path,
         checksum: str,
         purpose: FilePurpose,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         """Upload large file using multipart upload via ThreadPoolExecutor"""
 
@@ -872,7 +919,9 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         try:
             upload_info = await self._initiate_upload(url, file, checksum, file_size, num_parts, purpose, file_type)
 
-            completed_parts = await self._upload_parts_concurrent(file, upload_info, part_size)
+            completed_parts = await self._upload_parts_concurrent(
+                file, upload_info, part_size, file_size, callback=callback
+            )
 
             upload_id = upload_info.get("upload_id")
             file_id = upload_info.get("file_id")
@@ -952,60 +1001,68 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
             )
 
     async def _upload_parts_concurrent(
-        self, file: Path, upload_info: Dict[str, Any], part_size: int
+        self,
+        file: Path,
+        upload_info: Dict[str, Any],
+        part_size: int,
+        file_size: int,
+        *,
+        callback: Callable[[int], None] | None = None,
     ) -> List[Dict[str, Any]]:
         """Upload file parts concurrently using ThreadPoolExecutor"""
 
         parts = upload_info["parts"]
         completed_parts: List[Dict[str, Any]] = []
+        bytes_done = 0
 
         # Use ThreadPoolExecutor for HTTP I/O efficiency
         loop = asyncio.get_event_loop()
 
-        DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
-
         with ThreadPoolExecutor(max_workers=self.max_concurrent_parts) as executor:
-            with tqdm(total=len(parts), desc="Uploading parts", unit="part", disable=bool(DISABLE_TQDM)) as pbar:
-                with open(file, "rb") as f:
-                    future_to_part: Dict[asyncio.Future[str], int] = {}
-                    part_index = 0
+            with open(file, "rb") as f:
+                future_to_part: Dict[asyncio.Future[str], int] = {}
+                part_index = 0
 
-                    while part_index < len(parts) and len(future_to_part) < self.max_concurrent_parts:
-                        part_info = parts[part_index]
-                        part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
-                        f.seek((part_number - 1) * part_size)
-                        part_data = f.read(part_size)
+                while part_index < len(parts) and len(future_to_part) < self.max_concurrent_parts:
+                    part_info = parts[part_index]
+                    part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
+                    f.seek((part_number - 1) * part_size)
+                    part_data = f.read(part_size)
 
-                        future = loop.run_in_executor(executor, self._upload_single_part_sync, part_info, part_data)
-                        future_to_part[future] = part_number
-                        part_index += 1
+                    future = loop.run_in_executor(executor, self._upload_single_part_sync, part_info, part_data)
+                    future_to_part[future] = part_number
+                    part_index += 1
 
-                    while future_to_part:
-                        done, _ = await asyncio.wait(
-                            tuple(future_to_part.keys()),
-                            return_when=asyncio.FIRST_COMPLETED,
-                        )
+                while future_to_part:
+                    done, _ = await asyncio.wait(
+                        tuple(future_to_part.keys()),
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
 
-                        for done_future in done:
-                            part_number = future_to_part.pop(done_future)
+                    for done_future in done:
+                        part_number = future_to_part.pop(done_future)
 
-                            try:
-                                etag = await done_future
-                                completed_parts.append({"part_number": part_number, "etag": etag})
-                                pbar.update(1)
-                            except Exception as e:
-                                raise Exception(f"Failed to upload part {part_number}: {e}") from e
-
-                            if part_index < len(parts):
-                                part_info = parts[part_index]
-                                next_part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
-                                f.seek((next_part_number - 1) * part_size)
-                                part_data = f.read(part_size)
-                                future = loop.run_in_executor(
-                                    executor, self._upload_single_part_sync, part_info, part_data
+                        try:
+                            etag = await done_future
+                            completed_parts.append({"part_number": part_number, "etag": etag})
+                            if callback is not None:
+                                bytes_done += _bytes_for_1based_part(
+                                    part_number, part_size, file_size
                                 )
-                                future_to_part[future] = next_part_number
-                                part_index += 1
+                                callback(bytes_done)
+                        except Exception as e:
+                            raise Exception(f"Failed to upload part {part_number}: {e}") from e
+
+                        if part_index < len(parts):
+                            part_info = parts[part_index]
+                            next_part_number = part_info.get("PartNumber", part_info.get("part_number", 1))
+                            f.seek((next_part_number - 1) * part_size)
+                            part_data = f.read(part_size)
+                            future = loop.run_in_executor(
+                                executor, self._upload_single_part_sync, part_info, part_data
+                            )
+                            future_to_part[future] = next_part_number
+                            part_index += 1
 
         completed_parts.sort(key=lambda x: x["part_number"])
         return completed_parts
@@ -1093,6 +1150,14 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
             body=payload,
             options={"headers": {"Content-Type": "application/json"}},
         )
+
+
+def _bytes_for_1based_part(part_number: int, part_size: int, file_size: int) -> int:
+    """Byte length of part `part_number` (1-based) when splitting `file_size` into chunks of `part_size`."""
+    start = (part_number - 1) * part_size
+    if start >= file_size:
+        return 0
+    return min(part_size, file_size - start)
 
 
 def _calculate_parts(file_size: int) -> Tuple[int, int]:

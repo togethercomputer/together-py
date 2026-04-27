@@ -5,10 +5,10 @@ from __future__ import annotations
 from pprint import pformat
 from typing import cast, get_args
 from pathlib import Path
+from collections.abc import Callable
 
 import httpx
 
-from together.types import FilePurpose
 from together.lib.resources.files import FileAlreadyExistsError
 
 from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
@@ -154,6 +154,7 @@ class FilesResource(SyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         if check:
             report_dict = check_file(file)
@@ -170,7 +171,12 @@ class FilesResource(SyncAPIResource):
 
         try:
             upload_manager = UploadManager(self._client)
-            result = upload_manager.upload("/files", file, purpose)
+            result = upload_manager.upload(
+                "/files",
+                file,
+                purpose,
+                callback=callback,
+            )
 
             return FileResponse(
                 id=result.id,
@@ -337,6 +343,7 @@ class AsyncFilesResource(AsyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
+        callback: Callable[[int], None] | None = None,
     ) -> FileResponse:
         if check:
             report_dict = check_file(file)
@@ -353,7 +360,12 @@ class AsyncFilesResource(AsyncAPIResource):
 
         try:
             upload_manager = AsyncUploadManager(self._client)
-            result = await upload_manager.upload("/files", file, purpose)
+            result = await upload_manager.upload(
+                "/files",
+                file,
+                purpose,
+                callback=callback,
+            )
 
             return FileResponse(
                 id=result.id,

@@ -15,6 +15,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.resources.fine_tuning import async_get_model_limits
+from together.lib.cli.components.file_upload import files_upload_with_rich_progress
 
 
 def get_confirmation_message(price: str, warning: str) -> str:
@@ -303,13 +304,19 @@ async def create(
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
-        file_upload = await config.client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
+        train_path = Path(training_args["training_file"])
+        file_upload = await files_upload_with_rich_progress(
+            config.client, train_path, "fine-tune", description="Uploading training file"
+        )
         training_args["training_file"] = file_upload.id
 
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["validation_file"]):
-        file_upload = await config.client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
+        val_path = Path(training_args["validation_file"])
+        file_upload = await files_upload_with_rich_progress(
+            config.client, val_path, "fine-tune", description="Uploading validation file"
+        )
         training_args["validation_file"] = file_upload.id
 
     finetune_price_estimation_result = await show_loading_status(

@@ -15,6 +15,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.file_upload import files_upload_with_rich_progress
 
 
 async def upload(
@@ -46,8 +47,8 @@ async def upload(
         console.print(f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]")
         sys.exit(1)
 
-    response = await show_loading_status(
-        "Uploading file", config.client.files.upload(file=file, purpose=purpose, check=False)
+    response = await files_upload_with_rich_progress(
+        config.client, file, purpose, check=False, description="Uploading"
     )
 
     if config.json:
