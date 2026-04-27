@@ -240,6 +240,16 @@ def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     assert is_beta is False
 
 
+def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "-c", "--model", "model-1"])
+    assert cmd == "endpoints create"
+    assert "model" in flags
+    assert is_beta is False
+
+
 def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:
     from together.lib.cli import app
     from together.lib.cli._track_cli import parse_command_and_flags
