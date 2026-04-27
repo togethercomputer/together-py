@@ -285,7 +285,7 @@ files_app.command(f"{_CLI}.files.retrieve:retrieve", help="Retrieve metadata for
 files_app.command(
     f"{_CLI}.files.retrieve_content:retrieve_content", help="Download the contents of a file from the Together platform"
 )
-files_app.command(f"{_CLI}.files.delete:delete", help="Delete a file from the Together platform")
+files_app.command(f"{_CLI}.files.delete:delete", help="Delete a file from the Together platform", alias="-d")
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
 # Fine-tuning API commands
@@ -310,7 +310,9 @@ fine_tuning_app.command(
     help="Download the weights of a fine-tuned model from the Together platform",
 )
 fine_tuning_app.command(
-    (f"{_CLI}.fine_tuning.delete:delete"), help="Delete a fine-tuning job from the Together platform"
+    (f"{_CLI}.fine_tuning.delete:delete"),
+    help="Delete a fine-tuning job from the Together platform",
+    alias="-d",
 )
 
 ## Models API commands
@@ -329,7 +331,11 @@ endpoints_app.command(
 )
 endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
 endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), help="Delete an endpoint from the Together platform")
+endpoints_app.command(
+    (f"{_CLI}.endpoints.delete:delete"),
+    help="Delete an endpoint from the Together platform",
+    alias="-d",
+)
 endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List endpoints on the Together platform")
 endpoints_app.command((f"{_CLI}.endpoints.update:update"), help="Update an endpoint on the Together platform")
 endpoints_app.command(
@@ -365,7 +371,11 @@ clusters_app.command(
     (f"{_CLI}.beta.clusters.retrieve:retrieve"), help="Retrieve metadata for a cluster from the Together platform"
 )
 clusters_app.command((f"{_CLI}.beta.clusters.update:update"), help="Update a cluster on the Together platform")
-clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), help="Delete a cluster from the Together platform")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.delete:delete"),
+    help="Delete a cluster from the Together platform",
+    alias="-d",
+)
 clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
 clusters_app.command((f"{_CLI}.beta.clusters.get_credentials:get_credentials"), help="Get credentials for a cluster")
 
@@ -378,7 +388,9 @@ storage_app.command(
     help="Retrieve metadata for a storage volume from the Together platform",
 )
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume from the Together platform"
+    (f"{_CLI}.beta.clusters.storage.delete:delete"),
+    help="Delete a storage volume from the Together platform",
+    alias="-d",
 )
 
 ### JIG API commands
@@ -405,7 +417,10 @@ secrets_app = jig_app.command(App(name="secrets", help="Manage deployment secret
 secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_set_cli"), name="set", help="Set a secret (create or update)")
 secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_unset_cli"), name="unset", help="Remove a secret from local state")
 secrets_app.command(
-    (f"{_CLI}.beta.jig.jig:secrets_delete_cli"), name="delete", help="Delete a secret and unset it locally"
+    (f"{_CLI}.beta.jig.jig:secrets_delete_cli"),
+    name="delete",
+    help="Delete a secret and unset it locally",
+    alias="-d",
 )
 secrets_app.command(
     (f"{_CLI}.beta.jig.jig:secrets_list_cli"), name="list", alias="ls", help="List all secrets with sync status"
@@ -420,7 +435,10 @@ storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"), name="update", help="Update a volume and re-upload files"
 )
 storage_app.command(
-    (f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"), name="delete", help="Delete a volume from the Together platform"
+    (f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"),
+    name="delete",
+    help="Delete a volume from the Together platform",
+    alias="-d",
 )
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_describe"),

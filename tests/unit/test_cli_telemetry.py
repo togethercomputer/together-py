@@ -230,6 +230,16 @@ def test_parse_command_and_flags_normalizes_ls_alias_to_list() -> None:
     assert is_beta is False
 
 
+def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "-d", "ep-1", "--json", "--yes"])
+    assert cmd == "endpoints delete"
+    assert "endpoint_id" in flags
+    assert is_beta is False
+
+
 def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:
     from together.lib.cli import app
     from together.lib.cli._track_cli import parse_command_and_flags
