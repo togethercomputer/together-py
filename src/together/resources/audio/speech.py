@@ -104,14 +104,16 @@ class SpeechResource(SyncAPIResource):
 
           language: Language of input text.
 
-          response_encoding: Audio encoding of response
+          response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
+              Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
+              and Minimax models always return pcm_s16le regardless of this setting.
 
           response_format: The format of audio output. Supported formats are mp3, wav, raw if streaming is
               false. If streaming is true, the only supported format is raw.
 
-          sample_rate: Sampling rate to use for the output audio. The default sampling rate for
-              canopylabs/orpheus-3b-0.1-ft and hexgrad/Kokoro-82M is 24000 and for
-              cartesia/sonic is 44100.
+          sample_rate: Sampling rate in Hz for the output audio. Cartesia and Minimax models respect
+              this parameter. Orpheus and Kokoro models always output at 24000 Hz regardless
+              of this setting.
 
           stream: If true, output is streamed for several characters at a time instead of waiting
               for the full response. The stream terminates with `data: [DONE]`. If false,
@@ -186,14 +188,16 @@ class SpeechResource(SyncAPIResource):
 
           language: Language of input text.
 
-          response_encoding: Audio encoding of response
+          response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
+              Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
+              and Minimax models always return pcm_s16le regardless of this setting.
 
           response_format: The format of audio output. Supported formats are mp3, wav, raw if streaming is
               false. If streaming is true, the only supported format is raw.
 
-          sample_rate: Sampling rate to use for the output audio. The default sampling rate for
-              canopylabs/orpheus-3b-0.1-ft and hexgrad/Kokoro-82M is 24000 and for
-              cartesia/sonic is 44100.
+          sample_rate: Sampling rate in Hz for the output audio. Cartesia and Minimax models respect
+              this parameter. Orpheus and Kokoro models always output at 24000 Hz regardless
+              of this setting.
 
           extra_headers: Send extra headers
 
@@ -264,14 +268,16 @@ class SpeechResource(SyncAPIResource):
 
           language: Language of input text.
 
-          response_encoding: Audio encoding of response
+          response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
+              Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
+              and Minimax models always return pcm_s16le regardless of this setting.
 
           response_format: The format of audio output. Supported formats are mp3, wav, raw if streaming is
               false. If streaming is true, the only supported format is raw.
 
-          sample_rate: Sampling rate to use for the output audio. The default sampling rate for
-              canopylabs/orpheus-3b-0.1-ft and hexgrad/Kokoro-82M is 24000 and for
-              cartesia/sonic is 44100.
+          sample_rate: Sampling rate in Hz for the output audio. Cartesia and Minimax models respect
+              this parameter. Orpheus and Kokoro models always output at 24000 Hz regardless
+              of this setting.
 
           extra_headers: Send extra headers
 
@@ -407,14 +413,16 @@ class AsyncSpeechResource(AsyncAPIResource):
 
           language: Language of input text.
 
-          response_encoding: Audio encoding of response
+          response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
+              Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
+              and Minimax models always return pcm_s16le regardless of this setting.
 
           response_format: The format of audio output. Supported formats are mp3, wav, raw if streaming is
               false. If streaming is true, the only supported format is raw.
 
-          sample_rate: Sampling rate to use for the output audio. The default sampling rate for
-              canopylabs/orpheus-3b-0.1-ft and hexgrad/Kokoro-82M is 24000 and for
-              cartesia/sonic is 44100.
+          sample_rate: Sampling rate in Hz for the output audio. Cartesia and Minimax models respect
+              this parameter. Orpheus and Kokoro models always output at 24000 Hz regardless
+              of this setting.
 
           stream: If true, output is streamed for several characters at a time instead of waiting
               for the full response. The stream terminates with `data: [DONE]`. If false,
@@ -489,14 +497,16 @@ class AsyncSpeechResource(AsyncAPIResource):
 
           language: Language of input text.
 
-          response_encoding: Audio encoding of response
+          response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
+              Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
+              and Minimax models always return pcm_s16le regardless of this setting.
 
           response_format: The format of audio output. Supported formats are mp3, wav, raw if streaming is
               false. If streaming is true, the only supported format is raw.
 
-          sample_rate: Sampling rate to use for the output audio. The default sampling rate for
-              canopylabs/orpheus-3b-0.1-ft and hexgrad/Kokoro-82M is 24000 and for
-              cartesia/sonic is 44100.
+          sample_rate: Sampling rate in Hz for the output audio. Cartesia and Minimax models respect
+              this parameter. Orpheus and Kokoro models always output at 24000 Hz regardless
+              of this setting.
 
           extra_headers: Send extra headers
 
@@ -567,14 +577,16 @@ class AsyncSpeechResource(AsyncAPIResource):
 
           language: Language of input text.
 
-          response_encoding: Audio encoding of response
+          response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
+              Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
+              and Minimax models always return pcm_s16le regardless of this setting.
 
           response_format: The format of audio output. Supported formats are mp3, wav, raw if streaming is
               false. If streaming is true, the only supported format is raw.
 
-          sample_rate: Sampling rate to use for the output audio. The default sampling rate for
-              canopylabs/orpheus-3b-0.1-ft and hexgrad/Kokoro-82M is 24000 and for
-              cartesia/sonic is 44100.
+          sample_rate: Sampling rate in Hz for the output audio. Cartesia and Minimax models respect
+              this parameter. Orpheus and Kokoro models always output at 24000 Hz regardless
+              of this setting.
 
           extra_headers: Send extra headers
 
