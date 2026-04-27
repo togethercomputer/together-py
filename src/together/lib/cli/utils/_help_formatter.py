@@ -20,11 +20,11 @@ def _names_renderer(entry: HelpEntry) -> str:
     """Combine parameter names and shorts."""
     # Commands
     if len(entry.names) == 1:
-        return entry.names[0]
-
-    # Subcommand aliases (e.g. fine-tuning + ft): cyclopts puts all in positive_names
-    if not entry.shorts and all(not n.startswith("-") for n in entry.names):
-        return f"{entry.names[0]} ({', '.join(entry.names[1:])})"
+        names = entry.names[0]
+        short_part = ", ".join(entry.shorts).strip() if entry.shorts else ""
+        if short_part:
+            return f"{short_part}, {names}"
+        return names
 
     # Parameters
     names = " ".join(entry.names[1:]) if entry.names else ""
