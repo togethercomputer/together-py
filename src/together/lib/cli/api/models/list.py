@@ -47,7 +47,7 @@ def _details_cell(model: Any) -> Any:
 async def list(
     type: Annotated[
         Optional[Literal["dedicated"]],
-        Parameter(name="--type", show_choices=True, help="Filter models by specified type."),
+        Parameter(name="--type", show_choices=True, help="Filter models by specified type"),
     ] = None,
     after: AfterParameter = None,
     *,

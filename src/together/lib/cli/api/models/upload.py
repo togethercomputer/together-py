@@ -37,15 +37,11 @@ async def upload(
     description: Annotated[Optional[str], Parameter(help="A description of your model")] = None,
     base_model: Annotated[
         Optional[str],
-        Parameter(
-            help="The base model to use for an adapter if setting it to run against a serverless pool. Only used for model_type `adapter`."
-        ),
+        Parameter(help="Base model to use for an adapter against a serverless pool (model_type `adapter` only)"),
     ] = None,
     lora_model: Annotated[
         Optional[str],
-        Parameter(
-            help="The lora pool to use for an adapter if setting it to run against, say, a dedicated pool. Only used for model_type `adapter`."
-        ),
+        Parameter(help="LoRA pool to use for an adapter against a dedicated pool (model_type `adapter` only)"),
     ] = None,
     *,
     config: CLIConfigParameter,
