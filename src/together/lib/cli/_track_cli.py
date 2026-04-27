@@ -246,11 +246,36 @@ def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str]
     return (_canonical_telemetry_command(parsed_command), explicit_args, is_beta_command)
 
 
-def sanitize_cli_error_message(msg: str) -> str:
-    """Sanitize the error messages caught for telemetry to remove sensitive information."""
-    s = msg.strip()
-    if len(s) > _ERROR_MESSAGE_MAX_LEN:
-        s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
+def _redact_secrets_in_error_text(s: str) -> str:
+    """Apply secret redaction patterns to error text (run before length truncation)."""
+    # `https://user:pass@host/...` and `http://...`
+    s = re.sub(
+        r"(?i)(https?://)([^:/?#\s]+):([^@]+)@",
+        r"\1<redacted>:<redacted>@",
+        s,
+    )
+    # Query / fragment: `?token=...`, `&api_key=...`, etc.
+    s = re.sub(
+        r"(?i)([?&#])(?:access_?token|id_?token|refresh_?token|api_?key|apikey|"
+        r"password|passwd|client_?secret|token|secret|credentials)=([^&#\s]+)",
+        r"\1<redacted>",
+        s,
+    )
+    # JWT (header typically base64 of `{"` → eyJ; also long JWS / opaque three-part tokens)
+    s = re.sub(
+        r"(?i)\b(eyJ[a-z0-9_-]*\.[a-z0-9_-]*\.[a-z0-9_-]*)\b",
+        "<redacted>",
+        s,
+    )
+    s = re.sub(
+        r"(?i)\b([a-z0-9_-]{20,}\.[a-z0-9_-]{20,}\.[a-z0-9_-]{20,})\b",
+        "<redacted>",
+        s,
+    )
+    # OpenAI / common `sk-…` API keys; Hugging Face `hf_…`; Together-style `tog_…`
+    s = re.sub(r"(?i)(?<![a-z0-9_-])(sk-[a-z0-9_-]{20,})(?![a-z0-9_-])", "<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_])(hf_[a-z0-9_-]{20,})(?![a-z0-9_])", "<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_])(tgp_[a-z0-9_-]{8,})(?![a-z0-9_])", "<redacted>", s)
     s = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._\-/+]{20,}", r"\1<redacted>", s)
     s = re.sub(
         r"(?i)(api[_-]?key\s*[\"':=]\s*|api[_-]?key\s+)([A-Za-z0-9._\-]{20,})",
@@ -258,6 +283,19 @@ def sanitize_cli_error_message(msg: str) -> str:
         s,
     )
     s = re.sub(r"(?i)(Authorization:\s*)([^\s]+)", r"\1<redacted>", s)
+    s = re.sub(
+        r"(?i)(Basic\s+)([A-Za-z0-9+/=]{8,})",
+        r"\1<redacted>",
+        s,
+    )
+    return s
+
+
+def sanitize_cli_error_message(msg: str) -> str:
+    """Sanitize the error messages caught for telemetry to remove sensitive information."""
+    s = _redact_secrets_in_error_text(msg.strip())
+    if len(s) > _ERROR_MESSAGE_MAX_LEN:
+        s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
     return s
 
 
