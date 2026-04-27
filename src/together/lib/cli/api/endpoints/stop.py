@@ -15,7 +15,7 @@ from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 @handle_endpoint_api_errors("Endpoints")
 async def stop(
     endpoint_id: str,
-    wait: Annotated[bool, Parameter(help="Wait for the endpoint to stop")] = False,
+    wait: Annotated[bool, Parameter(help="Wait for the endpoint to stop", negative=False)] = False,
     *,
     config: CLIConfigParameter,
 ) -> None:

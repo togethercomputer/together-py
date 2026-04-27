@@ -14,7 +14,7 @@ from together.lib.cli.components.loader import show_loading_status
 async def delete(
     fine_tune_id: str,
     force: Annotated[Optional[bool], Parameter(negative="", help="Force deletion without confirmation")] = False,
-    quiet: Annotated[Optional[bool], Parameter(negative="", help="Deprecated, use --force instead")] = None,
+    quiet: Annotated[Optional[bool], Parameter(negative="", help="Deprecated, use --force instead", show=False)] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:

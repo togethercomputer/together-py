@@ -20,10 +20,14 @@ MinReplicasParameter = Annotated[int, Parameter(help="Minimum number of replicas
 MaxReplicasParameter = Annotated[int, Parameter(help="Maximum number of replicas to deploy (must be >= 0)")]
 HardwareParameter = Annotated[Optional[str], Parameter(help="Hardware configuration to use for inference")]
 DisplayNameParameter = Annotated[Optional[str], Parameter(help="A human-readable name for the endpoint")]
-NoPromptCacheParameter = Annotated[Optional[bool], Parameter(help="Deprecated and no longer has any effect.")]
-NoSpeculativeDecodingParameter = Annotated[bool, Parameter(help="Disable speculative decoding for this endpoint")]
+NoPromptCacheParameter = Annotated[
+    Optional[bool], Parameter(help="Deprecated and no longer has any effect.", negative=False, show=False)
+]
+NoSpeculativeDecodingParameter = Annotated[
+    bool, Parameter(help="Disable speculative decoding for this endpoint", negative=False)
+]
 NoAutoStartParameter = Annotated[
-    bool, Parameter(help="Create the endpoint in STOPPED state instead of auto-starting it")
+    bool, Parameter(help="Create the endpoint in STOPPED state instead of auto-starting it", negative=False)
 ]
 InactiveTimeoutParameter = Annotated[
     Optional[int],
@@ -34,7 +38,7 @@ InactiveTimeoutParameter = Annotated[
 AvailabilityZoneParameter = Annotated[
     Optional[str], Parameter(help="Start endpoint in specified availability zone (e.g., us-central-4b)")
 ]
-WaitParameter = Annotated[bool, Parameter(help="Wait for the endpoint to be ready after creation")]
+WaitParameter = Annotated[bool, Parameter(help="Wait for the endpoint to be ready after creation", negative=False)]
 
 
 @handle_endpoint_api_errors("Endpoints")
