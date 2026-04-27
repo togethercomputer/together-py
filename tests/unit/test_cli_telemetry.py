@@ -59,9 +59,9 @@ def test_sanitize_cli_error_message_redacts_bare_sk_prefix() -> None:
 
 
 def test_sanitize_cli_error_message_redacts_hf_and_tog_prefixes() -> None:
-    out = sanitize_cli_error_message("t: hf_abcdefghijklmnopqrstuwxyz123456 and tog_abcdefghijklmnop")
+    out = sanitize_cli_error_message("t: hf_abcdefghijklmnopqrstuwxyz123456 and tgp_v1_abcdefghijklmnop")
     assert "hf_abc" not in out
-    assert "tog_abc" not in out
+    assert "tgp_v1_abc" not in out
 
 
 def test_sanitize_cli_error_message_redacts_jwt() -> None:
