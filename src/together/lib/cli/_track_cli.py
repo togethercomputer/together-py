@@ -208,6 +208,7 @@ def _canonical_telemetry_command(cmd: str) -> str:
     if primary is not None:
         parts[0] = primary
     parts = ["list" if p == "ls" else p for p in parts]
+    parts = ["delete" if p == "-d" else p for p in parts]
     return " ".join(parts)
 
 
@@ -219,6 +220,7 @@ def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str]
 
     Subcommand aliases (e.g. ``ft``) are normalized to their primary names (e.g. ``fine-tuning``).
     The ``list`` alias ``ls`` is normalized to ``list`` in the returned command path.
+    The ``delete`` alias ``-d`` is normalized to ``delete`` in the returned command path.
 
     Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken
     for subcommand tokens (e.g. ``beta jig secrets set <name> <value>``).
