@@ -6,7 +6,6 @@ import inspect
 from typing import Optional, Annotated, get_args, get_origin
 
 import httpx
-import detect_agent
 from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
 from rich.markup import escape as escape_rich_markup
 
@@ -431,7 +430,7 @@ def main() -> None:
     install_completion(app)
 
     # Shown in the root help page, but not a functional command
-    BETA_GROUP_TITLE = "Beta Commands" if detect_agent.determine_agent()["is_agent"] else "⚠️ "
+    BETA_GROUP_TITLE = "Beta Commands"
     app.command(App(name="beta clusters", help="Create and manage GPU clusters", group=BETA_GROUP_TITLE))
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
     beta_root_app.show = False
