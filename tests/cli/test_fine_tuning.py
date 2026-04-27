@@ -113,6 +113,14 @@ class TestFineTuningRetrieve:
         assert body["id"] == "ft-1"
         assert body["status"] == "completed"
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_implicit_retrieve_bare_job_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=_FT_RETRIEVE_BODY))
+        result = cli_runner.invoke(["ft", "ft-1", "--json"])
+        assert result.exit_code == 0
+        body = json.loads(result.output)
+        assert body["id"] == "ft-1"
+
 
 class TestFineTuningCancel:
     @pytest.mark.respx(base_url=base_url)

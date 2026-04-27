@@ -11,14 +11,10 @@ import threading
 import urllib.error
 import urllib.request
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeVar, Callable, cast
+from typing import Any, TypeVar, Callable, cast
 from pathlib import Path
 
 from detect_agent import determine_agent
-from cyclopts.exceptions import CycloptsError
-
-if TYPE_CHECKING:
-    from cyclopts import App
 
 from together import __version__
 from together.lib.utils import log_debug
@@ -173,83 +169,6 @@ def track_cli(event_name: CliTrackingEvents, args: dict[str, Any]) -> threading.
     _thread_pool.append(thread)
     thread.start()
     return thread
-
-
-def _long_option_names_in_tokens(tokens: list[str]) -> list[str]:
-    names: list[str] = []
-    for token in tokens:
-        if token.startswith("--"):
-            names.append(token.removeprefix("--").split("=", 1)[0])
-    return names
-
-
-def _legacy_command_before_first_option(tokens: list[str]) -> tuple[str, bool]:
-    """Fallback when cyclopts cannot resolve a command chain (unknown invocations)."""
-    parts: list[str] = []
-    for token in tokens:
-        if token.startswith("--"):
-            break
-        parts.append(token)
-    is_beta_command = bool(parts and parts[0] == "beta")
-    if is_beta_command:
-        parts = parts[1:]
-    return (" ".join(parts), is_beta_command)
-
-
-# First subcommand token only (alias -> primary name) for stable telemetry.
-_TELEMETRY_SUBCOMMAND_ALIASES: dict[str, str] = {"ft": "fine-tuning"}
-
-
-def _canonical_telemetry_command(cmd: str) -> str:
-    if not cmd:
-        return cmd
-    parts = cmd.split()
-    primary = _TELEMETRY_SUBCOMMAND_ALIASES.get(parts[0])
-    if primary is not None:
-        parts[0] = primary
-    parts = ["list" if p == "ls" else p for p in parts]
-    parts = ["delete" if p == "-d" else p for p in parts]
-    parts = ["create" if p == "-c" else p for p in parts]
-    return " ".join(parts)
-
-
-def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str], bool]:
-    """
-    Return telemetry-safe command path (registered subcommands only), argument *names* from
-    cyclopts resolution (including positional parameters — values are never returned), and
-    whether the invocation is under ``beta``.
-
-    Subcommand aliases (e.g. ``ft``) are normalized to their primary names (e.g. ``fine-tuning``).
-    The ``list`` alias ``ls`` is normalized to ``list`` in the returned command path.
-    The ``delete`` alias ``-d`` is normalized to ``delete`` in the returned command path.
-    The ``create`` alias ``-c`` is normalized to ``create`` in the returned command path.
-
-    Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken
-    for subcommand tokens (e.g. ``beta jig secrets set <name> <value>``).
-    """
-    argv = list(tokens)
-    chain, _, rest_after_chain = app.parse_commands(argv, include_parent_meta=False)
-    legacy_cmd, legacy_beta = _legacy_command_before_first_option(argv)
-
-    if chain:
-        is_beta_command = chain[0] == "beta"
-        chain_tail = list(chain[1:] if is_beta_command else chain)
-        parsed_command = " ".join(chain_tail)
-        # ``beta`` alone matches first; remaining tokens are not nested beta subcommands (invalid path).
-        if chain == ("beta",) and rest_after_chain:
-            parsed_command = legacy_cmd
-    else:
-        parsed_command = legacy_cmd
-        is_beta_command = legacy_beta
-
-    explicit_args: list[str] = []
-    try:
-        _, bound, _unused, _ignored = app.parse_known_args(argv)
-        explicit_args.extend(bound.arguments.keys())
-    except CycloptsError:
-        explicit_args.extend(_long_option_names_in_tokens(rest_after_chain))
-
-    return (_canonical_telemetry_command(parsed_command), explicit_args, is_beta_command)
 
 
 def _redact_secrets_in_error_text(s: str) -> str:

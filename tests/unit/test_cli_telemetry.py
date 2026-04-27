@@ -192,9 +192,9 @@ def test_track_cli_posts_json_when_enabled(monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_parse_command_and_flags_splits_command_and_flags() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["files", "upload", "--file", "ignored.txt"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["files", "upload", "--file", "ignored.txt"])
     assert cmd == "files upload"
     assert flags == ["file"]
     assert is_beta is False
@@ -202,9 +202,9 @@ def test_parse_command_and_flags_splits_command_and_flags() -> None:
 
 def test_parse_command_and_flags_strips_beta_prefix() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["beta", "clusters", "list"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "clusters", "list"])
     assert cmd == "clusters list"
     assert flags == []
     assert is_beta is True
@@ -212,19 +212,38 @@ def test_parse_command_and_flags_strips_beta_prefix() -> None:
 
 def test_parse_command_and_flags_normalizes_ft_to_fine_tuning() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["ft", "list", "--json"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["ft", "list", "--json"])
     assert cmd == "fine-tuning list"
     assert flags == ["json"]
     assert is_beta is False
 
 
+def test_parse_command_and_flags_inserts_implicit_retrieve_for_ft_job_id() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["ft", "ft-abcd-12", "--json"])
+    assert cmd == "fine-tuning retrieve"
+    assert "fine_tune_id" in flags
+    assert is_beta is False
+
+
+def test_parse_command_and_flags_implicit_retrieve_fine_tuning_spelling() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, _, is_beta, _ = preparse_tokens(app, ["fine-tuning", "ft-1", "--json"])
+    assert cmd == "fine-tuning retrieve"
+    assert is_beta is False
+
+
 def test_parse_command_and_flags_normalizes_ls_alias_to_list() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "ls", "--json"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "ls", "--json"])
     assert cmd == "endpoints list"
     assert flags == ["json"]
     assert is_beta is False
@@ -232,9 +251,9 @@ def test_parse_command_and_flags_normalizes_ls_alias_to_list() -> None:
 
 def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "-d", "ep-1", "--json", "--yes"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-d", "ep-1", "--json", "--yes"])
     assert cmd == "endpoints delete"
     assert "endpoint_id" in flags
     assert is_beta is False
@@ -242,9 +261,9 @@ def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
 
 def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "-c", "--model", "model-1"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["endpoints", "-c", "--model", "model-1"])
     assert cmd == "endpoints create"
     assert "model" in flags
     assert is_beta is False
@@ -252,9 +271,9 @@ def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
 
 def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:
     from together.lib.cli import app
-    from together.lib.cli._track_cli import parse_command_and_flags
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
-    cmd, flags, is_beta = parse_command_and_flags(app, ["beta", "jig", "secrets", "set", "secret-name", "secret-value"])
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "jig", "secrets", "set", "secret-name", "secret-value"])
     assert cmd == "jig secrets set"
     assert set(flags) == {"name", "value"}
     assert is_beta is True

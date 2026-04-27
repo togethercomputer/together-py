@@ -19,7 +19,6 @@ from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
     flush_pending_events,
-    parse_command_and_flags,
     sanitize_cli_error_message,
 )
 from together.lib.cli.utils.config import CLIConfig
@@ -28,6 +27,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
 from together.lib.cli.utils._help_formatter import help_formatter
+from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
 app = App(
     version=__version__,
@@ -131,8 +131,7 @@ async def launcher(
         json=output_json or False,
     )
 
-    remaining = list(tokens)
-    (parsed_command, explicit_args, is_beta_command) = parse_command_and_flags(app, [*remaining])
+    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     if output_json:
         explicit_args.append("json")
@@ -380,16 +379,20 @@ clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="
 clusters_app.command((f"{_CLI}.beta.clusters.get_credentials:get_credentials"), help="Get credentials for a cluster")
 
 ### Clusters > Storage API commands
-storage_app = clusters_app.command(App(name="storage", help="Clusters Storage API commands", group="Subcommands"))
-storage_app.command((f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster")
-storage_app.command(
+clusters_storage_app = clusters_app.command(
+    App(name="storage", help="Clusters Storage API commands", group="Subcommands")
+)
+clusters_storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster"
+)
+clusters_storage_app.command(
     (f"{_CLI}.beta.clusters.storage.create:create"), alias="-c", help="Create a new storage volume for a cluster"
 )
-storage_app.command(
+clusters_storage_app.command(
     (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
     help="Retrieve metadata for a storage volume from the Together platform",
 )
-storage_app.command(
+clusters_storage_app.command(
     (f"{_CLI}.beta.clusters.storage.delete:delete"),
     help="Delete a storage volume from the Together platform",
     alias="-d",
@@ -431,7 +434,10 @@ secrets_app.command(
 ### Jig > volumes
 storage_app = jig_app.command(App(name="volumes", help="Jig Volumes API commands", group="Subcommands"))
 storage_app.command(
-    (f"{_CLI}.beta.jig.jig:jig_volumes_create_cli"), name="create", help="Create a new volume for a JIG deployment"
+    (f"{_CLI}.beta.jig.jig:jig_volumes_create_cli"),
+    name="create",
+    alias="-c",
+    help="Create a new volume for a JIG deployment",
 )
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"), name="update", help="Update a volume and re-upload files"
@@ -445,11 +451,20 @@ storage_app.command(
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_describe"),
     name="describe",
+    alias="retrieve",
     help="Retrieve metadata for a volume from the Together platform",
 )
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", alias="ls", help="List volumes for a JIG deployment"
 )
+
+# Adds a default handler for when a user sends an id after a command without a retrieve command
+# add_default_retrieve_command(endpoints_app, "endpoint-")
+# add_default_retrieve_command(evals_app, "eval-")
+# add_default_retrieve_command(files_app, "file-")
+# add_default_retrieve_command(fine_tuning_app, "ft-")
+# add_default_retrieve_command(clusters_app, UUID_RE)
+# add_default_retrieve_command(clusters_storage_app, UUID_RE)
 
 
 def main() -> None:

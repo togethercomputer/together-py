@@ -29,6 +29,9 @@ def _names_renderer(entry: HelpEntry) -> str:
         return names
 
     # Parameters
+    if len(entry.names) == 1:
+        return entry.names[0]
+
     names = " ".join(entry.names[1:]) if entry.names else ""
     shorts = " ".join(entry.shorts) if entry.shorts else ""
     return " ".join([names, shorts]).strip()
