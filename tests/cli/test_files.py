@@ -68,6 +68,21 @@ class TestFilesCheck:
         result = cli_runner.invoke(["files", "check", str(sample)])
         assert result.exit_code == 0
 
+    def test_check_missing_file(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        missing = tmp_path / "nope.jsonl"
+        result = cli_runner.invoke(["files", "check", str(missing)])
+        assert result.exit_code == 1
+        assert "Checks passed" not in result.output
+        assert "not found" in result.output.lower() or "not a regular file" in result.output.lower()
+
+    def test_check_non_jsonl_extension(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        bad = tmp_path / "bad.txt"
+        bad.write_text("notjson", encoding="utf-8")
+        result = cli_runner.invoke(["files", "check", str(bad)])
+        assert result.exit_code == 1
+        assert "Checks passed" not in result.output
+        assert "Unknown extension" in result.output
+
 
 class TestFilesDelete:
     @pytest.mark.respx(base_url=base_url)

@@ -75,6 +75,7 @@ def check_file(
     if not file.is_file():
         report_dict["found"] = False
         report_dict["is_check_passed"] = False
+        report_dict["message"] = f"File not found or path is not a regular file: {file}"
         return report_dict
     else:
         report_dict["found"] = True
@@ -105,9 +106,11 @@ def check_file(
         report_dict["filetype"] = "csv"
         data_report_dict = _check_csv(file, purpose)
     else:
-        report_dict["filetype"] = (
+        unknown_ext_msg = (
             f"Unknown extension of file {file}. Only files with extensions .jsonl, .parquet, and .csv are supported."
         )
+        report_dict["filetype"] = unknown_ext_msg
+        report_dict["message"] = unknown_ext_msg
         report_dict["is_check_passed"] = False
 
     report_dict.update(data_report_dict)
