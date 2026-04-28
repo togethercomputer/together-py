@@ -42,7 +42,7 @@ async def create(
     model_field: Annotated[
         Optional[str],
         Parameter(
-            help="Name of the field in the input file containing model-generated text (incompatible with --model-a-name and other model config parameters)"
+            help="Name of the field in the input file containing model-generated text; mutually exclusive with --model-to-evaluate and other model config flags"
         ),
     ] = None,
     model_to_evaluate: Annotated[Optional[str], Parameter(help="Model name when using the detailed config")] = None,
@@ -80,7 +80,7 @@ async def create(
     model_a_field: Annotated[
         Optional[str],
         Parameter(
-            help="Name of the field in the input file containing Model A's generated text (incompatible with --model-a-name and other model config parameters)"
+            help="Name of the field in the input file containing Model A's generated text; mutually exclusive with --model-a and other Model A config flags"
         ),
     ] = None,
     model_a: Annotated[
@@ -102,7 +102,7 @@ async def create(
     model_b_field: Annotated[
         Optional[str],
         Parameter(
-            help="Name of the field in the input file containing Model B's generated text (incompatible with --model-b-name and other model config parameters)"
+            help="Name of the field in the input file containing Model B's generated text; mutually exclusive with --model-b and other Model B config flags"
         ),
     ] = None,
     model_b: Annotated[

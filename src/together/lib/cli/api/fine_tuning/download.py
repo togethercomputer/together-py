@@ -23,7 +23,7 @@ _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 OutputDirParam = Annotated[Optional[Path], Parameter(name=["--output-dir", "-o"], help="Output directory")]
 CheckpointStepParam = Annotated[
     Optional[int],
-    Parameter(name=["--checkpoint-step", "-s"], help="Fine-tuning checkpoint to download (defaults to latest)"),
+    Parameter(name=["--checkpoint-step", "-s"], help="Fine-tuning checkpoint to download; defaults to latest if unset"),
 ]
 CheckpointTypeParam = Annotated[
     Literal["merged", "adapter", "default"],

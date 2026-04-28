@@ -293,11 +293,11 @@ async def launcher(
 _CLI = "together.lib.cli.api"
 
 ## Files API commands
-files_app = app.command(App(name="files", help="Upload and manage files for fine-tuning, evals, and inference"))
-files_app.command(f"{_CLI}.files.upload:upload", help="Upload a file for fine-tuning, evals, etc.")
+files_app = app.command(App(name="files", help="Upload and manage files"))
+files_app.command(f"{_CLI}.files.upload:upload", help="Upload a file for fine-tuning, evals, or inference")
 files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List your files")
 files_app.command(f"{_CLI}.files.retrieve:retrieve", help="Get file details")
-files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download a file's contents")
+files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download file contents")
 files_app.command(f"{_CLI}.files.delete:delete", alias="-d", help="Delete a file")
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 

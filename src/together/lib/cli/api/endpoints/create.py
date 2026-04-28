@@ -34,7 +34,7 @@ InactiveTimeoutParameter = Annotated[
     Parameter(help="Minutes of inactivity before the endpoint auto-stops (0 to disable)"),
 ]
 AvailabilityZoneParameter = Annotated[
-    Optional[str], Parameter(help="Start endpoint in specified availability zone (e.g., us-central-4b)")
+    Optional[str], Parameter(help="Start endpoint in specified availability zone (e.g. us-central-4b)")
 ]
 WaitParameter = Annotated[bool, Parameter(help="Wait for the endpoint to be ready after creation", negative=False)]
 

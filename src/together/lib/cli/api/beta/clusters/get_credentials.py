@@ -22,12 +22,12 @@ async def get_credentials(
         Parameter(
             allow_leading_hyphen=True,
             show_default=True,
-            help="Path to write the kubeconfig to (use `-` to print to stdout instead of writing to a file)",
+            help="Path to write the kubeconfig to; use `-` to print to stdout",
         ),
     ] = os.path.join(os.path.expanduser("~"), ".kube", "config"),
     context_name: Annotated[
         Optional[str],
-        Parameter(help="Name of the context to add to the kubeconfig (defaults to the cluster name)"),
+        Parameter(help="Name of the context to add to the kubeconfig; uses the cluster name if unset"),
     ] = None,
     overwrite_existing: Annotated[
         bool,

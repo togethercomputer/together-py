@@ -46,6 +46,7 @@ model_group = Group(
     help="You must specify either a model or a checkpoint to start a job from, not both",
     default_parameter=Parameter(negative=""),  # Disable "--no-" flags
     validator=validators.LimitedChoice(),  # Mutually Exclusive Options
+    sort_key=0,
 )
 
 DEFAULT_LEARNING_RATE = 1e-5
@@ -75,7 +76,7 @@ async def create(
         Optional[str],
         Parameter(
             group=model_group,
-            help="Checkpoint to continue training from a previous fine-tuning job\n\nFormat: `JOB_ID/OUTPUT_MODEL_NAME:STEP` (step is optional; defaults to the final checkpoint)",
+            help="Checkpoint to continue training from a previous fine-tuning job, formatted as `JOB_ID/OUTPUT_MODEL_NAME:STEP`; STEP is optional and defaults to the final checkpoint",
         ),
     ] = None,
     n_epochs: Annotated[int, Parameter(name=["--n-epochs", "-ne"], help="Number of epochs to train for")] = 1,
@@ -127,7 +128,7 @@ async def create(
     wandb_entity: Annotated[Optional[str], Parameter(help="Wandb entity name")] = None,
     random_seed: Annotated[
         Optional[int],
-        Parameter(help="Random seed for reproducible training, e.g. 42 (server default if unset)"),
+        Parameter(help="Random seed for reproducible training, e.g. 42; uses the server default if unset"),
     ] = None,
     confirm: Annotated[
         bool, Parameter(name=["--confirm", "-y"], help="Whether to skip the launch confirmation message")
@@ -142,13 +143,13 @@ async def create(
     from_hf_model: Annotated[
         Optional[str],
         Parameter(
-            help="Hugging Face Hub repo to start training from (should match the base model's architecture and size)",
+            help="Hugging Face Hub repo to start training from; should match the base model's architecture and size",
         ),
     ] = None,
     hf_model_revision: Annotated[
         Optional[str],
         Parameter(
-            help="Revision of the Hugging Face Hub model (e.g. None for latest in `main`, or a commit hash like '607a30d783dfa663caf39e06633721c8d4cfcd7e')",
+            help="Revision of the Hugging Face Hub model, either a branch name (e.g. `main` for the latest revision) or a specific commit hash",
         ),
     ] = None,
     hf_api_token: Annotated[
