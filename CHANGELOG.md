@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.11.0 (2026-04-28)
+
+Full Changelog: [v2.10.0...v2.11.0](https://github.com/togethercomputer/together-py/compare/v2.10.0...v2.11.0)
+
+### Features
+
+* Add `ft` as shorthand for `fine-tuning` cli command ([#334](https://github.com/togethercomputer/together-py/issues/334)) ([8bcfa7d](https://github.com/togethercomputer/together-py/commit/8bcfa7d781900bde8ef907367673b67ad15fa82a))
+* Add `ls` shorthand command for `list` commands in cli ([#341](https://github.com/togethercomputer/together-py/issues/341)) ([5d238d0](https://github.com/togethercomputer/together-py/commit/5d238d0a85c5918861c6d0fcbb025a2820ff616b))
+* Add `ls` shorthand command for `list` commands in cli ([#341](https://github.com/togethercomputer/together-py/issues/341)) ([#342](https://github.com/togethercomputer/together-py/issues/342)) ([c8c8cc3](https://github.com/togethercomputer/together-py/commit/c8c8cc3f35b2435399bd0793e293be32b0e60e05))
+* **api:** add h100-40gb-mig and b200-192gb GPU types to jig deploy/update ([f61e4d4](https://github.com/togethercomputer/together-py/commit/f61e4d4619ce00491b4acc7ad09f592f5d57d849))
+* **api:** api update ([7f66bb5](https://github.com/togethercomputer/together-py/commit/7f66bb59173b97721856c4785a03292dace2c327))
+* support setting headers via env ([02a83b8](https://github.com/togethercomputer/together-py/commit/02a83b8dba39652d55a7c338c32f2aada32fc89a))
+
+
+### Bug Fixes
+
+* **client:** update videos API base URL from .xyz to .ai domain ([bd71981](https://github.com/togethercomputer/together-py/commit/bd719810bedfeea9427e5cb92ae65dfcad2fe858))
+* **cli:** replace console.print for print_json for json outputs ([#338](https://github.com/togethercomputer/together-py/issues/338)) ([ab219c1](https://github.com/togethercomputer/together-py/commit/ab219c145234027842550988c51cb61c32626982))
+* Improve error sanitization to avoid logging sensitive data in telemetry ([#336](https://github.com/togethercomputer/together-py/issues/336)) ([4ec3f64](https://github.com/togethercomputer/together-py/commit/4ec3f6469423516c5d75d00c4f761d7cc1e33c82))
+* Remove certain negative boolean flags that were added by cyclopts ([#333](https://github.com/togethercomputer/together-py/issues/333)) ([20b2dc9](https://github.com/togethercomputer/together-py/commit/20b2dc93b35cf3880b3656a9f4035c4fecf88124))
+* Remove false positives with `files check` command in certain scenarios ([#335](https://github.com/togethercomputer/together-py/issues/335)) ([67f6338](https://github.com/togethercomputer/together-py/commit/67f6338d807baeb4804f9e021db0251da09a60b5))
+* use correct field name format for multipart file arrays ([b1f783f](https://github.com/togethercomputer/together-py/commit/b1f783f8bd009b79317b7349e3c34c882a94b6c6))
+
+
+### Chores
+
+* Add `-c` as an alias for the create command ([#343](https://github.com/togethercomputer/together-py/issues/343)) ([f9d3fcb](https://github.com/togethercomputer/together-py/commit/f9d3fcb0faee82718190059ade699100e0f5bc96))
+* Add empty state for ListTables ([#337](https://github.com/togethercomputer/together-py/issues/337)) ([2608dc6](https://github.com/togethercomputer/together-py/commit/2608dc62b0b1ef2bb38e26b15112f125436ea0e5))
+* Remove warning emoji from beta commands help group ([#340](https://github.com/togethercomputer/together-py/issues/340)) ([3b07b78](https://github.com/togethercomputer/together-py/commit/3b07b78ab8871e7d7130cb43b269675f372fc527))
+
+
+### Documentation
+
+* **api:** document voice mixing for speech voice parameter ([15aab9c](https://github.com/togethercomputer/together-py/commit/15aab9c8ad0d3470bdea1e654127bcbd02e71c5c))
+* **api:** update billing_type parameter description in clusters create ([5f84188](https://github.com/togethercomputer/together-py/commit/5f841887801827c8bd199cfe8c167cb14043a514))
+* **api:** update response_encoding and sample_rate descriptions in audio speech ([bff30bd](https://github.com/togethercomputer/together-py/commit/bff30bd5034ffd182fdd9992adcd8aa2dff00506))
+
 ## 2.10.0 (2026-04-22)
 
 Full Changelog: [v2.9.0...v2.10.0](https://github.com/togethercomputer/together-py/compare/v2.9.0...v2.10.0)
