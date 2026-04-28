@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.10.0"
+version = "2.11.0"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
