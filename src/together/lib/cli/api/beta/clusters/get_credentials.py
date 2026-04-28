@@ -31,6 +31,7 @@ async def get_credentials(
     ] = None,
     overwrite_existing: Annotated[
         bool,
+<<<<<<< HEAD
         Parameter(
             help="On conflict with the existing kubeconfig, overwrite it instead of raising an error",
             negative=False,
@@ -38,7 +39,11 @@ async def get_credentials(
     ] = False,
     set_default_context: Annotated[
         bool, Parameter(help="Set the default context to the cluster name", negative=False)
+=======
+        Parameter(help="On conflict with the existing kubeconfig, overwrite it instead of raising an error"),
+>>>>>>> e4eed1d (ruff format)
     ] = False,
+    set_default_context: Annotated[bool, Parameter(help="Set the default context to the cluster name")] = False,
     *,
     config: CLIConfigParameter,
 ) -> None:
