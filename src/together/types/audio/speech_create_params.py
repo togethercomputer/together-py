@@ -31,6 +31,12 @@ class SpeechCreateParamsBase(TypedDict, total=False):
     You can view the voices supported for each model using the /v1/voices endpoint
     sending the model name as the query parameter.
     [View all supported voices here](https://docs.together.ai/docs/text-to-speech#supported-voices).
+
+    `hexgrad/Kokoro-82M` additionally supports voice mixing, where two or more
+    voices are combined into a single blended voice by joining their names with `+`
+    (e.g. `af_bella+af_heart`). Optional per-voice weights can be provided in
+    parentheses (e.g. `af_bella(2)+af_heart(1)`). Other models require a single
+    voice name.
     """
 
     bit_rate: Literal[32000, 64000, 96000, 128000, 192000]
@@ -45,7 +51,12 @@ class SpeechCreateParamsBase(TypedDict, total=False):
     """Language of input text."""
 
     response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"]
-    """Audio encoding of response"""
+    """Audio encoding of response.
+
+    Only applicable when response_format is raw or pcm. Cartesia models respect this
+    parameter and support all values. Orpheus, Kokoro, and Minimax models always
+    return pcm_s16le regardless of this setting.
+    """
 
     response_format: Literal["mp3", "wav", "raw"]
     """The format of audio output.
@@ -55,10 +66,10 @@ class SpeechCreateParamsBase(TypedDict, total=False):
     """
 
     sample_rate: int
-    """Sampling rate to use for the output audio.
+    """Sampling rate in Hz for the output audio.
 
-    The default sampling rate for canopylabs/orpheus-3b-0.1-ft and
-    hexgrad/Kokoro-82M is 24000 and for cartesia/sonic is 44100.
+    Cartesia and Minimax models respect this parameter. Orpheus and Kokoro models
+    always output at 24000 Hz regardless of this setting.
     """
 
 

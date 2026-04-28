@@ -18,9 +18,12 @@ from together.lib.cli.utils._mock_pagination import AfterParameter, mock_paginat
 async def list(
     _type: Annotated[
         Optional[Literal["dedicated", "serverless"]],
-        Parameter(name="--type", help="Deprecated and no longer has any effect."),
+        Parameter(name="--type", help="Deprecated and no longer has any effect.", show=False),
     ] = None,
-    _mine: Annotated[Optional[bool], Parameter(name="--mine", help="Deprecated and no longer has any effect.")] = None,
+    _mine: Annotated[
+        Optional[bool],
+        Parameter(name="--mine", help="Deprecated and no longer has any effect.", negative=False, show=False),
+    ] = None,
     usage_type: Annotated[
         Optional[Literal["on-demand", "reserved"]], Parameter(help="Filter by usage type options")
     ] = None,
@@ -42,11 +45,8 @@ async def list(
         console.print_json(openapi_dumps(endpoints_to_display).decode("utf-8"))
         return
 
-    if len(endpoints_to_display) == 0:
-        console.print("No dedicated endpoints found")
-        return
-
-    table = ListTable("Endpoints")
+    EMPTY_MESSAGE = "You don't have any dedicated endpoints yet. To create your first endpoint run:\n  [dim]-[/dim] [primary]tg endpoints create[/primary]"
+    table = ListTable("Endpoints", empty_message=EMPTY_MESSAGE)
     table.add_primary_column("ID")
     table.add_column("Name", ratio=2)
     table.add_column("State")

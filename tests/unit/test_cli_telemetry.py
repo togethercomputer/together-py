@@ -51,6 +51,48 @@ def test_sanitize_cli_error_message_redacts_api_key_assignment() -> None:
     assert "<redacted>" in out
 
 
+def test_sanitize_cli_error_message_redacts_bare_sk_prefix() -> None:
+    out = sanitize_cli_error_message("invalid: sk-12345678abcdefghij")
+    assert "12345678abc" not in out
+    assert "sk-12" not in out
+    assert out.count("<redacted>") >= 1
+
+
+def test_sanitize_cli_error_message_redacts_hf_and_tog_prefixes() -> None:
+    out = sanitize_cli_error_message("t: hf_abcdefghijklmnopqrstuwxyz123456 and tgp_v1_abcdefghijklmnop")
+    assert "hf_abc" not in out
+    assert "tgp_v1_abc" not in out
+
+
+def test_sanitize_cli_error_message_redacts_jwt() -> None:
+    jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abcdefghijklmnopqrstuvwxyz0123456789-_"
+    out = sanitize_cli_error_message(f"code 401: {jwt}")
+    assert "eyJ" not in out
+    assert "eyJh" not in out
+
+
+def test_sanitize_cli_error_message_redacts_url_userinfo() -> None:
+    out = sanitize_cli_error_message("fetch https://user:sekrit1@api.example.com/v1")
+    assert "sekrit1" not in out
+    assert "<redacted>" in out
+    assert "https://<redacted>:<redacted>@" in out
+
+
+def test_sanitize_cli_error_message_redacts_url_query_secrets() -> None:
+    out = sanitize_cli_error_message("https://h.example/xy?api_key=hiddenvalueXXXX&n=1")
+    assert "hidden" not in out
+    assert "hiddenvalueXXXX" not in out
+
+
+def test_sanitize_cli_error_message_redacts_secrets_before_truncation() -> None:
+    # Prefix must not hide a long tail from redaction; redaction runs first.
+    secret = "sk-1234567890123456789012345678"
+    tail = "x" * 600
+    out = sanitize_cli_error_message(f"{secret}{tail}")
+    assert "sk-1" not in out
+    assert "123456" not in out
+
+
 def test_telemetry_env_opt_out_only_explicit_values(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)
     assert is_tracking_enabled() is True
@@ -166,6 +208,46 @@ def test_parse_command_and_flags_strips_beta_prefix() -> None:
     assert cmd == "clusters list"
     assert flags == []
     assert is_beta is True
+
+
+def test_parse_command_and_flags_normalizes_ft_to_fine_tuning() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["ft", "list", "--json"])
+    assert cmd == "fine-tuning list"
+    assert flags == ["json"]
+    assert is_beta is False
+
+
+def test_parse_command_and_flags_normalizes_ls_alias_to_list() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "ls", "--json"])
+    assert cmd == "endpoints list"
+    assert flags == ["json"]
+    assert is_beta is False
+
+
+def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "-d", "ep-1", "--json", "--yes"])
+    assert cmd == "endpoints delete"
+    assert "endpoint_id" in flags
+    assert is_beta is False
+
+
+def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
+    from together.lib.cli import app
+    from together.lib.cli._track_cli import parse_command_and_flags
+
+    cmd, flags, is_beta = parse_command_and_flags(app, ["endpoints", "-c", "--model", "model-1"])
+    assert cmd == "endpoints create"
+    assert "model" in flags
+    assert is_beta is False
 
 
 def test_parse_command_and_flags_positionals_are_argument_names_not_command_tokens() -> None:

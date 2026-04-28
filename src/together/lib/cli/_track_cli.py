@@ -196,11 +196,33 @@ def _legacy_command_before_first_option(tokens: list[str]) -> tuple[str, bool]:
     return (" ".join(parts), is_beta_command)
 
 
+# First subcommand token only (alias -> primary name) for stable telemetry.
+_TELEMETRY_SUBCOMMAND_ALIASES: dict[str, str] = {"ft": "fine-tuning"}
+
+
+def _canonical_telemetry_command(cmd: str) -> str:
+    if not cmd:
+        return cmd
+    parts = cmd.split()
+    primary = _TELEMETRY_SUBCOMMAND_ALIASES.get(parts[0])
+    if primary is not None:
+        parts[0] = primary
+    parts = ["list" if p == "ls" else p for p in parts]
+    parts = ["delete" if p == "-d" else p for p in parts]
+    parts = ["create" if p == "-c" else p for p in parts]
+    return " ".join(parts)
+
+
 def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str], bool]:
     """
     Return telemetry-safe command path (registered subcommands only), argument *names* from
     cyclopts resolution (including positional parameters — values are never returned), and
     whether the invocation is under ``beta``.
+
+    Subcommand aliases (e.g. ``ft``) are normalized to their primary names (e.g. ``fine-tuning``).
+    The ``list`` alias ``ls`` is normalized to ``list`` in the returned command path.
+    The ``delete`` alias ``-d`` is normalized to ``delete`` in the returned command path.
+    The ``create`` alias ``-c`` is normalized to ``create`` in the returned command path.
 
     Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken
     for subcommand tokens (e.g. ``beta jig secrets set <name> <value>``).
@@ -227,21 +249,59 @@ def parse_command_and_flags(app: App, tokens: list[str]) -> tuple[str, list[str]
     except CycloptsError:
         explicit_args.extend(_long_option_names_in_tokens(rest_after_chain))
 
-    return (parsed_command, explicit_args, is_beta_command)
+    return (_canonical_telemetry_command(parsed_command), explicit_args, is_beta_command)
 
 
-def sanitize_cli_error_message(msg: str) -> str:
-    """Sanitize the error messages caught for telemetry to remove sensitive information."""
-    s = msg.strip()
-    if len(s) > _ERROR_MESSAGE_MAX_LEN:
-        s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
-    s = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._\-/+]{20,}", r"\1<redacted>", s)
+def _redact_secrets_in_error_text(s: str) -> str:
+    """Apply secret redaction patterns to error text (run before length truncation)."""
+    # `https://user:pass@host/...` and `http://...`
+    s = re.sub(
+        r"(?i)(https?://)([^:/?#\s]+):([^@]+)@",
+        r"\1<redacted>:<redacted>@",
+        s,
+    )
+    # Query / fragment: `?token=...`, `&api_key=...`, etc.
+    s = re.sub(
+        r"(?i)([?&#])(?:access_?token|id_?token|refresh_?token|api_?key|apikey|"
+        r"password|passwd|client_?secret|token|secret|credentials)=([^&#\s]+)",
+        r"\1<redacted>",
+        s,
+    )
+    # JWT (header typically base64 of `{"` → eyJ; also long JWS / opaque three-part tokens)
+    s = re.sub(
+        r"(?i)\b(eyJ[a-z0-9_-]*\.[a-z0-9_-]*\.[a-z0-9_-]*)\b",
+        "<redacted>",
+        s,
+    )
+    s = re.sub(
+        r"(?i)\b([a-z0-9_-]{20,}\.[a-z0-9_-]{20,}\.[a-z0-9_-]{20,})\b",
+        "<redacted>",
+        s,
+    )
+    # OpenAI / common `sk-…` API keys; Hugging Face `hf_…`; Together-style `tog_…`
+    s = re.sub(r"(?i)(?<![a-z0-9_-])(sk-[a-z0-9_-]+)(?![a-z0-9_-])", "<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_])(hf_[a-z0-9_-]+)(?![a-z0-9_])", "<redacted>", s)
+    s = re.sub(r"(?i)(?<![a-z0-9_])(tgp_[a-z0-9_-]+)(?![a-z0-9_])", "<redacted>", s)
+    s = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._\-/+]+", r"\1<redacted>", s)
     s = re.sub(
         r"(?i)(api[_-]?key\s*[\"':=]\s*|api[_-]?key\s+)([A-Za-z0-9._\-]{20,})",
         r"\1<redacted>",
         s,
     )
     s = re.sub(r"(?i)(Authorization:\s*)([^\s]+)", r"\1<redacted>", s)
+    s = re.sub(
+        r"(?i)(Basic\s+)([A-Za-z0-9+/=]{8,})",
+        r"\1<redacted>",
+        s,
+    )
+    return s
+
+
+def sanitize_cli_error_message(msg: str) -> str:
+    """Sanitize the error messages caught for telemetry to remove sensitive information."""
+    s = _redact_secrets_in_error_text(msg.strip())
+    if len(s) > _ERROR_MESSAGE_MAX_LEN:
+        s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
     return s
 
 

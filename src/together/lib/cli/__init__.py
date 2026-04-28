@@ -6,7 +6,6 @@ import inspect
 from typing import Optional, Annotated, get_args, get_origin
 
 import httpx
-import detect_agent
 from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
 from rich.markup import escape as escape_rich_markup
 
@@ -281,18 +280,20 @@ _CLI = "together.lib.cli.api"
 ## Files API commands
 files_app = app.command(App(name="files", help="File API commands"))
 files_app.command(f"{_CLI}.files.upload:upload", help="Upload files for fine-tuning, evals, etc.")
-files_app.command(f"{_CLI}.files.list:list", help="List files on the Together platform")
+files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List files on the Together platform")
 files_app.command(f"{_CLI}.files.retrieve:retrieve", help="Retrieve metadata for a file from the Together platform")
 files_app.command(
     f"{_CLI}.files.retrieve_content:retrieve_content", help="Download the contents of a file from the Together platform"
 )
-files_app.command(f"{_CLI}.files.delete:delete", help="Delete a file from the Together platform")
+files_app.command(f"{_CLI}.files.delete:delete", help="Delete a file from the Together platform", alias="-d")
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
 # Fine-tuning API commands
-fine_tuning_app = app.command(App(name="fine-tuning", help="Fine-tuning API commands"))
-fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"), help="Start a new fine-tuning job")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), help="List fine-tuning jobs on the Together platform")
+fine_tuning_app = app.command(App(name="fine-tuning", help="Fine-tuning API commands", alias="ft"))
+fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"), alias="-c", help="Start a new fine-tuning job")
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs on the Together platform"
+)
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Retrieve metadata for a fine-tuning job from the Together platform"
 )
@@ -309,12 +310,14 @@ fine_tuning_app.command(
     help="Download the weights of a fine-tuned model from the Together platform",
 )
 fine_tuning_app.command(
-    (f"{_CLI}.fine_tuning.delete:delete"), help="Delete a fine-tuning job from the Together platform"
+    (f"{_CLI}.fine_tuning.delete:delete"),
+    help="Delete a fine-tuning job from the Together platform",
+    alias="-d",
 )
 
 ## Models API commands
 models_app = app.command(App(name="models", help="Models API commands"))
-models_app.command((f"{_CLI}.models.list:list"), help="List models on the Together platform")
+models_app.command((f"{_CLI}.models.list:list"), alias="ls", help="List models on the Together platform")
 models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model to the Together platform")
 
 ## Endpoints API commands
@@ -322,14 +325,18 @@ endpoints_app = app.command(App(name="endpoints", help="Endpoints API commands")
 endpoints_app.command(
     (f"{_CLI}.endpoints.hardware:hardware"), help="List available hardware configurations for deploying models"
 )
-endpoints_app.command((f"{_CLI}.endpoints.create:create"), help="Create a new endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.create:create"), alias="-c", help="Create a new endpoint")
 endpoints_app.command(
     (f"{_CLI}.endpoints.retrieve:retrieve"), help="Retrieve metadata for an endpoint from the Together platform"
 )
 endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
 endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), help="Delete an endpoint from the Together platform")
-endpoints_app.command((f"{_CLI}.endpoints.list:list"), help="List endpoints on the Together platform")
+endpoints_app.command(
+    (f"{_CLI}.endpoints.delete:delete"),
+    help="Delete an endpoint from the Together platform",
+    alias="-d",
+)
+endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List endpoints on the Together platform")
 endpoints_app.command((f"{_CLI}.endpoints.update:update"), help="Update an endpoint on the Together platform")
 endpoints_app.command(
     (f"{_CLI}.endpoints.availability_zones:availability_zones"), help="List availability zones for deploying models"
@@ -337,8 +344,8 @@ endpoints_app.command(
 
 ## Evals API commands
 evals_app = app.command(App(name="evals", help="Evals API commands"))
-evals_app.command((f"{_CLI}.evals.create:create"), help="Create a new eval job")
-evals_app.command((f"{_CLI}.evals.list:list"), help="List eval jobs on the Together platform")
+evals_app.command((f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job")
+evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs on the Together platform")
 evals_app.command(
     (f"{_CLI}.evals.retrieve:retrieve"), help="Retrieve metadata for an eval job from the Together platform"
 )
@@ -358,26 +365,34 @@ beta_app = app.command(beta_root_app)
 
 ### Clusters API commands
 clusters_app = beta_app.command(App(name="clusters", help="Clusters API commands"))
-clusters_app.command((f"{_CLI}.beta.clusters.list:list"), help="List clusters on the Together platform")
-clusters_app.command((f"{_CLI}.beta.clusters.create:create"), help="Create a new cluster")
+clusters_app.command((f"{_CLI}.beta.clusters.list:list"), alias="ls", help="List clusters on the Together platform")
+clusters_app.command((f"{_CLI}.beta.clusters.create:create"), alias="-c", help="Create a new cluster")
 clusters_app.command(
     (f"{_CLI}.beta.clusters.retrieve:retrieve"), help="Retrieve metadata for a cluster from the Together platform"
 )
 clusters_app.command((f"{_CLI}.beta.clusters.update:update"), help="Update a cluster on the Together platform")
-clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), help="Delete a cluster from the Together platform")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.delete:delete"),
+    help="Delete a cluster from the Together platform",
+    alias="-d",
+)
 clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
 clusters_app.command((f"{_CLI}.beta.clusters.get_credentials:get_credentials"), help="Get credentials for a cluster")
 
 ### Clusters > Storage API commands
 storage_app = clusters_app.command(App(name="storage", help="Clusters Storage API commands", group="Subcommands"))
-storage_app.command((f"{_CLI}.beta.clusters.storage.list:list"), help="List storage volumes for a cluster")
-storage_app.command((f"{_CLI}.beta.clusters.storage.create:create"), help="Create a new storage volume for a cluster")
+storage_app.command((f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster")
+storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.create:create"), alias="-c", help="Create a new storage volume for a cluster"
+)
 storage_app.command(
     (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
     help="Retrieve metadata for a storage volume from the Together platform",
 )
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume from the Together platform"
+    (f"{_CLI}.beta.clusters.storage.delete:delete"),
+    help="Delete a storage volume from the Together platform",
+    alias="-d",
 )
 
 ### JIG API commands
@@ -398,15 +413,20 @@ jig_app.command((f"{_CLI}.beta.jig.jig:job_status_cli"), name="job-status", help
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:queue_status_cli"), name="queue-status", help="Get queue metrics for the deployment"
 )
-jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", help="List all deployments")
+jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
 
 secrets_app = jig_app.command(App(name="secrets", help="Manage deployment secrets", group="Subcommands"))
 secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_set_cli"), name="set", help="Set a secret (create or update)")
 secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_unset_cli"), name="unset", help="Remove a secret from local state")
 secrets_app.command(
-    (f"{_CLI}.beta.jig.jig:secrets_delete_cli"), name="delete", help="Delete a secret and unset it locally"
+    (f"{_CLI}.beta.jig.jig:secrets_delete_cli"),
+    name="delete",
+    help="Delete a secret and unset it locally",
+    alias="-d",
 )
-secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_list_cli"), name="list", help="List all secrets with sync status")
+secrets_app.command(
+    (f"{_CLI}.beta.jig.jig:secrets_list_cli"), name="list", alias="ls", help="List all secrets with sync status"
+)
 
 ### Jig > volumes
 storage_app = jig_app.command(App(name="volumes", help="Jig Volumes API commands", group="Subcommands"))
@@ -417,21 +437,26 @@ storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"), name="update", help="Update a volume and re-upload files"
 )
 storage_app.command(
-    (f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"), name="delete", help="Delete a volume from the Together platform"
+    (f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"),
+    name="delete",
+    help="Delete a volume from the Together platform",
+    alias="-d",
 )
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_describe"),
     name="describe",
     help="Retrieve metadata for a volume from the Together platform",
 )
-storage_app.command((f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", help="List volumes for a JIG deployment")
+storage_app.command(
+    (f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", alias="ls", help="List volumes for a JIG deployment"
+)
 
 
 def main() -> None:
     install_completion(app)
 
     # Shown in the root help page, but not a functional command
-    BETA_GROUP_TITLE = "Beta Commands" if detect_agent.determine_agent()["is_agent"] else "⚠️ "
+    BETA_GROUP_TITLE = "Beta Commands"
     app.command(App(name="beta clusters", help="Create and manage GPU clusters", group=BETA_GROUP_TITLE))
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
     beta_root_app.show = False

@@ -24,7 +24,7 @@ async def list_events(
         console.print_json(openapi_dumps(events).decode("utf-8"))
         return
 
-    table = ListTable()
+    table = ListTable(empty_message=f"No events found for job {fine_tune_id}")
     table.add_primary_column("Type")
     table.add_column("Message")
     table.add_column("Created At")

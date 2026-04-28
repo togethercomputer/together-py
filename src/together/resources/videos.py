@@ -129,7 +129,7 @@ class VideosResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/videos" if self._client._base_url_overridden else "https://api.together.xyz/v2/videos",
+            "/videos" if self._client._base_url_overridden else "https://api.together.ai/v2/videos",
             body=maybe_transform(
                 {
                     "model": model,
@@ -187,7 +187,7 @@ class VideosResource(SyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return self._get(
-            ("https://api.together.xyz/v2" if not self._client._base_url_overridden else "")
+            ("https://api.together.ai/v2" if not self._client._base_url_overridden else "")
             + path_template("/videos/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
@@ -301,7 +301,7 @@ class AsyncVideosResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/videos" if self._client._base_url_overridden else "https://api.together.xyz/v2/videos",
+            "/videos" if self._client._base_url_overridden else "https://api.together.ai/v2/videos",
             body=await async_maybe_transform(
                 {
                     "model": model,
@@ -359,7 +359,7 @@ class AsyncVideosResource(AsyncAPIResource):
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
         return await self._get(
-            ("https://api.together.xyz/v2" if not self._client._base_url_overridden else "")
+            ("https://api.together.ai/v2" if not self._client._base_url_overridden else "")
             + path_template("/videos/{id}", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout

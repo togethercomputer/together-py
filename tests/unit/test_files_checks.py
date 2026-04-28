@@ -572,3 +572,21 @@ def test_check_csv_invalid_column(tmp_path: Path):
     report = check_file(file)
 
     assert not report["is_check_passed"]
+
+
+def test_check_file_missing_path(tmp_path: Path) -> None:
+    missing = tmp_path / "does_not_exist.jsonl"
+    report = check_file(missing)
+    assert not report["is_check_passed"]
+    assert report["found"] is False
+    assert "Checks passed" not in report["message"]
+    assert "not found" in report["message"].lower() or "not a regular file" in report["message"].lower()
+
+
+def test_check_file_unknown_extension(tmp_path: Path) -> None:
+    f = tmp_path / "data.txt"
+    f.write_text("notjson\n", encoding="utf-8")
+    report = check_file(f)
+    assert not report["is_check_passed"]
+    assert "Unknown extension" in report["message"]
+    assert report["message"] == report["filetype"]

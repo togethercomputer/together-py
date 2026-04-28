@@ -93,6 +93,15 @@ class TestFineTuningList:
         parsed = json.loads(result.output)
         assert [x["id"] for x in parsed] == ["ft-newer", "ft-older"]
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_ft_alias_list(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes").mock(
+            return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
+        )
+        result = cli_runner.invoke(["ft", "list"])
+        assert result.exit_code == 0
+        assert "ft-newer" in result.output
+
 
 class TestFineTuningRetrieve:
     @pytest.mark.respx(base_url=base_url)

@@ -694,7 +694,7 @@ class Jig:
         deploy_data["environment_variables"] = env_list + secret_list
 
         if DEBUG:
-            console.print(json.dumps(deploy_data, indent=2))
+            console.print_json(json.dumps(deploy_data))
         console.print(f"Deploying model: {self.name}")
 
         no_track = False
@@ -713,7 +713,7 @@ class Jig:
                 raise
 
         if detach or no_track:
-            console.print(json.dumps(response.model_dump(), indent=2))
+            console.print_json(json.dumps(response.model_dump()))
             return
 
         self.track(response)
@@ -824,7 +824,7 @@ Run 'jig status' to check current state.""")
         raw = typing.cast(dict[str, Any], req.json())
 
         console.print("\N{CHECK MARK} Submitted job")
-        console.print(json.dumps(raw, indent=2))
+        console.print_json(json.dumps(raw))
 
         if not watch or not (request_id := raw.get("requestId")):
             return
@@ -835,7 +835,7 @@ Run 'jig status' to check current state.""")
             try:
                 response = self.api.queue.retrieve(model=self.name, request_id=request_id)
                 if response.status != last_status:
-                    console.print(response.model_dump_json(indent=2))
+                    console.print_json(response.model_dump_json())
                     last_status = response.status
                 if response.status in ("done", "finished"):
                     return
@@ -932,7 +932,7 @@ def _print_cli_result(result: Any) -> None:
     if isinstance(result, str):
         console.print(result)
     elif hasattr(result, "json") and callable(result.json):
-        console.print(json.dumps(result.json(), indent=2))
+        console.print_json(json.dumps(result.json()))
     else:
         console.print(str(result))
 
@@ -1225,7 +1225,8 @@ async def jig_volumes_list(
         console.print_json(openapi_dumps(list_resp).decode())
         return
 
-    table = ListTable()
+    EMPTY_MESSAGE = "You don't have any volumes yet. To create your first volume run:\n  [dim]-[/dim] [primary]tg beta jig volumes create[/primary]"
+    table = ListTable(title="Volumes", empty_message=EMPTY_MESSAGE)
 
     table.add_primary_column("ID")
     table.add_column("Name")

@@ -29,7 +29,10 @@ async def list(
         console.print_json(openapi_dumps(files_to_display).decode("utf-8"))
         return
 
-    table = ListTable(title="Files")
+    table = ListTable(
+        title="Files",
+        empty_message="You don't have any files yet. To upload your first file run:\n  [dim]-[/dim] [primary]tg files upload[/primary]",
+    )
     table.add_primary_column("ID")
     table.add_column("File name")
     table.add_column("Size")

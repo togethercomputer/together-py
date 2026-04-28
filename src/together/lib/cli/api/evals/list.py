@@ -44,7 +44,7 @@ async def list(
         console.print_json(openapi_dumps(data).decode("utf-8"))
         return
 
-    table = ListTable("Evals")
+    table = ListTable("Evals", empty_message="No evals found")
     table.add_primary_column("Workflow ID", ratio=2)
     table.add_column("Type")
     table.add_column("Status")
