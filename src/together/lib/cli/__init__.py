@@ -48,7 +48,7 @@ _GLOBAL_PARAM_HELP = {
 def _propagate_global_param_group(target_app: App) -> None:
     for flag, help_text in _GLOBAL_PARAM_HELP.items():
         try:
-            target_app[flag].group = "Global Parameters"
+            target_app[flag].group = "Global Options"
             target_app[flag].show = True
             target_app[flag].help = help_text
         except KeyError:
@@ -114,8 +114,8 @@ def _create_client(
     return client
 
 
-global_parameters = Group(
-    "Global Parameters",
+global_options = Group(
+    "Global Options",
 )
 
 
@@ -128,11 +128,11 @@ async def launcher(
     max_retries: Annotated[Optional[int], Parameter(show=False)] = None,
     debug: Annotated[Optional[bool], Parameter(show=False)] = False,
     non_interactive: Annotated[
-        Optional[bool], Parameter(group=global_parameters, negative=(), help="Disable interactive prompts")
+        Optional[bool], Parameter(group=global_options, negative=(), help="Disable interactive prompts")
     ] = False,
     output_json: Annotated[
         Optional[bool],
-        Parameter(name="json", group=global_parameters, negative=(), help="Output the response in JSON format"),
+        Parameter(name="json", group=global_options, negative=(), help="Output the response in JSON format"),
     ] = False,
 ) -> None:
     if debug:
