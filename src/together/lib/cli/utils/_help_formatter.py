@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import types
-from typing import Union, Annotated, cast, get_args, get_origin
+from typing import Any, Union, Annotated, cast, get_args, get_origin
 from pathlib import Path
 
 from detect_agent import determine_agent
@@ -94,7 +94,7 @@ def _type_renderer(entry: HelpEntry) -> str:
 _NOISY_DEFAULTS = {"False", "None", '""'}
 
 
-def _description_renderer(entry: HelpEntry):
+def _description_renderer(entry: HelpEntry) -> Any:
     description = entry.description
     if not entry.default or entry.default in _NOISY_DEFAULTS:
         return description
