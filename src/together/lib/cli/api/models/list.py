@@ -47,10 +47,10 @@ async def list(
             price_parts.append(f"${model.pricing.input:.2f}")
             price_parts.append(f"${model.pricing.output:.2f}")
         else:
-            price_parts.append(f"[link=https://api.together.xyz/models/{model.id}]see pricing[/link]")
+            price_parts.append(f"[link=https://api.together.ai/models/{model.id}]see pricing[/link]")
         table.add_row(
             model.type or "other",  # type: ignore
-            f"[link=https://api.together.xyz/models/{model.id}]{model.id}[/link]",
+            f"[link=https://api.together.ai/models/{model.id}]{model.id}[/link]",
             str(model.context_length) if model.context_length else "",
             " / ".join(price_parts),
         )

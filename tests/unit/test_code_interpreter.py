@@ -140,7 +140,7 @@ def test_code_interpreter_run(mocker: MockerFixture):
     request = mock_requestor.call_args[0][0]
     assert isinstance(request, Request)
     assert request.method == "POST"
-    assert request.url == URL("https://api.together.xyz/v1/tci/execute")
+    assert request.url == URL("https://api.together.ai/v1/tci/execute")
     assert json.loads(request.read().decode()) == {
         "code": 'print("Hello, world!")',
         "language": "python",
@@ -411,7 +411,7 @@ def test_code_interpreter_run_with_files(mocker: MockerFixture):
     request = mock_requestor.call_args[0][0]
     assert isinstance(request, Request)
     assert request.method == "POST"
-    assert request.url == URL("https://api.together.xyz/v1/tci/execute")
+    assert request.url == URL("https://api.together.ai/v1/tci/execute")
     expected_files_payload = [
         {"name": "test.txt", "encoding": "string", "content": "Hello from file!"},
         {"name": "image.png", "encoding": "base64", "content": "aW1hZ2UgZGF0YQ=="},

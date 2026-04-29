@@ -58,7 +58,7 @@ async def list(
         model_b = deep_get(job.parameters, ["model_b", "model"], "")
         status_color = status_colors[job.status] if job.status in status_colors else "white"
         table.add_row(
-            f"[link=https://api.together.xyz/evaluations/result/{job.workflow_id}]{job.workflow_id}[/link]",
+            f"[link=https://api.together.ai/evaluations/result/{job.workflow_id}]{job.workflow_id}[/link]",
             job.type,
             f"[{status_color}]{job.status}[/{status_color}]",
             model,
