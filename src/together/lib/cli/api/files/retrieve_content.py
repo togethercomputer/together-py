@@ -37,25 +37,11 @@ async def retrieve_content(
         console.print(f"[red]Invalid usage: Either --output <directory> or --stdout must be specified[/red]")
         sys.exit(1)
 
-    response = await show_loading_status("Retrieving file contents...", config.client.files.content(id=id))
+    if stdout is True and output is not None:
+        console.print(f"[red]Invalid usage: --stdout and --output cannot be used together[/red]")
+        sys.exit(1)
 
-    if stdout and output is not None and config.json:
-        raw = await response.read()
-        os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
-        has_extension = Path(output).suffix != ""
-        out_path = output if has_extension else f"{output}/{await get_filename(config.client, id)}"
-        response2 = await config.client.files.content(id=id)
-        await response2.write_to_file(out_path)
-        try:
-            payload = {"id": id, "content": raw.decode("utf-8"), "path": str(out_path)}
-        except UnicodeDecodeError:
-            payload = {
-                "id": id,
-                "content_base64": base64.b64encode(raw).decode("ascii"),
-                "path": str(out_path),
-            }
-        console.print_json(openapi_dumps(payload).decode("utf-8"))
-        return
+    response = await show_loading_status("Retrieving file contents...", config.client.files.content(id=id))
 
     if stdout:
         raw = await response.read()
@@ -67,6 +53,7 @@ async def retrieve_content(
             console.print_json(openapi_dumps(payload).decode("utf-8"))
         else:
             console.print(raw.decode("utf-8"))
+        return
 
     if output is not None:
         os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
