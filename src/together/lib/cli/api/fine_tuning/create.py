@@ -30,7 +30,7 @@ Do you want to proceed? [Y/n]"""
 _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "\nThe estimated price of this job is significantly greater than your current credit limit and balance combined. "
     "It will likely get cancelled due to insufficient funds. "
-    "Consider increasing your credit limit at https://api.together.xyz/settings/profile\n"
+    "Consider increasing your credit limit at https://api.together.ai/settings/profile\n"
 )
 
 

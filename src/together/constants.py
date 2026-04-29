@@ -31,4 +31,4 @@ MAX_SESSION_LIFETIME_SECS = 180
 MAX_CONNECTION_RETRIES = 2
 MAX_RETRIES = DEFAULT_MAX_RETRIES
 
-BASE_URL = "https://api.together.xyz/v1"
+BASE_URL = "https://api.together.ai/v1"

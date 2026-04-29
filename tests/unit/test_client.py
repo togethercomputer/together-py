@@ -49,7 +49,7 @@ class TestTogether:
         with patch.dict("os.environ", clear=True):
             sync_together = Together(api_key="fake_api_key")
 
-            assert sync_together.base_url == "https://api.together.xyz/v1/"
+            assert sync_together.base_url == "https://api.together.ai/v1/"
 
     def test_init_with_default_headers(self):
         """
