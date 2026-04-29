@@ -147,20 +147,15 @@ class TestFilesRetrieveContent:
         respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"stdout-bytes"))
         result = cli_runner.invoke(["files", "retrieve-content", "file-1", "--stdout"])
         assert result.exit_code == 0
-        assert result.output == "stdout-bytes\n"
+        # Rich loading status may leave a leading newline before body output
+        assert result.output.lstrip("\n") == "stdout-bytes\n"
 
-    @pytest.mark.respx(base_url=base_url)
-    def test_specifying_both_output_and_stdout(
-        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
-        respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"to-stdout"))
+    def test_specifying_both_output_and_stdout(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         out = tmp_path / "should-not-exist.bin"
         result = cli_runner.invoke(["files", "retrieve-content", "file-1", "--stdout", "--output", str(out)])
-        assert result.exit_code == 0
-        assert result.output.startswith("to-stdout\n")
-        assert "File saved to" in result.output
-        assert str(out) in result.output.replace("\n", "")
-        assert out.exists()
+        assert result.exit_code == 1
+        assert "cannot be used together" in result.output
+        assert not out.exists()
 
 
 class TestFilesUpload:

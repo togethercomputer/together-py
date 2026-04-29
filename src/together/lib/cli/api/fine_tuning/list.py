@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from rich import print_json
-
 from together.lib.utils import finetune_price_to_dollars
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_datetime
@@ -46,7 +44,7 @@ async def list(
     fine_tunings_to_display, next_cursor = mock_pagination(response.data, cursor_field="id", cursor=after)
 
     if config.json:
-        print_json(openapi_dumps(fine_tunings_to_display).decode("utf-8"))
+        console.print_json(openapi_dumps(fine_tunings_to_display).decode("utf-8"))
         return
 
     EMPTY_MESSAGE = "You don't have any finetuned models yet. To fine tune your first model run:\n  [dim]-[/dim] [primary]tg ft create[/primary]"

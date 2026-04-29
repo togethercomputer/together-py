@@ -37,7 +37,7 @@ async def cancel(
         confirm_response = input(f"Do you want to cancel job {fine_tune_id}? [y/N]")
         if "y" not in confirm_response.lower():
             if config.json:
-                console.print_json('{"status": "Cancel not submitted"}')
+                console.print_json(openapi_dumps({"status": "Cancel not submitted"}).decode("utf-8"))
             else:
                 console.print("Cancel not submitted")
             return

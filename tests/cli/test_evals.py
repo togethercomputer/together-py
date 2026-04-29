@@ -48,9 +48,10 @@ class TestEvalsRetrieveAndStatus:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/evaluation/eval-wf-1").mock(return_value=httpx.Response(200, json=_EVAL_JOB))
-        result = cli_runner.invoke(["evals", "retrieve", "eval-wf-1"])
+        result = cli_runner.invoke(["evals", "retrieve", "eval-wf-1", "--json"])
         assert result.exit_code == 0
-        assert json.loads(result.output)["workflow_id"] == "eval-wf-1"
+        payload = json.loads(result.out_out.lstrip("\n"))
+        assert payload["workflow_id"] == "eval-wf-1"
 
     @pytest.mark.respx(base_url=base_url)
     def test_status(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
