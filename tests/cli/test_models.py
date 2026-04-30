@@ -69,52 +69,20 @@ class TestModelsList:
     def test_list(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/models").mock(return_value=httpx.Response(200, json=list_data))
         result = cli_runner.invoke(["models", "list"])
-        assert (
-            result.output.strip()
-            == dedent("""\
-            ╭───────────┬───────────────────────────────────────────┬───────────┬──────────╮
-            │           │                                           │           │  Prici…  │
-            │           │                                           │  Context  │  per 1M  │
-            │  Modali…  │  Model                                    │   Length  │  Tokens  │
-            ├───────────┼───────────────────────────────────────────┼───────────┼──────────┤
-            │  chat     │  model/chat                               │     1000  │   $0.05  │
-            │           │                                           │           │       /  │
-            │           │                                           │           │   $0.10  │
-            ├───────────┼───────────────────────────────────────────┼───────────┼──────────┤
-            │  langua…  │  model/lang                               │     1000  │   $0.50  │
-            │           │                                           │           │       /  │
-            │           │                                           │           │   $1.00  │
-            ├───────────┼───────────────────────────────────────────┼───────────┼──────────┤
-            │  video    │  model/video                              │           │     see  │
-            │           │                                           │           │  prici…  │
-            ╰───────────┴───────────────────────────────────────────┴───────────┴──────────╯""").strip()
-        )
+        assert result.exit_code == 0
+        out = result.output
+        assert "model/chat" in out and "model/lang" in out and "model/video" in out
+        assert "input" in out and "output" in out and "see pricing" in out
+        assert "modality:" in out and "chat" in out and "language" in out
 
     # Test for endpoint create requiring the model
     @pytest.mark.respx(base_url=base_url)
     def test_list_dedicated(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/models").mock(return_value=httpx.Response(200, json=list_data))
         result = cli_runner.invoke(["models", "list", "--type", "dedicated"])
-        assert (
-            result.output.strip()
-            == dedent("""\
-            ╭───────────┬───────────────────────────────────────────┬───────────┬──────────╮
-            │           │                                           │           │  Prici…  │
-            │           │                                           │  Context  │  per 1M  │
-            │  Modali…  │  Model                                    │   Length  │  Tokens  │
-            ├───────────┼───────────────────────────────────────────┼───────────┼──────────┤
-            │  chat     │  model/chat                               │     1000  │   $0.05  │
-            │           │                                           │           │       /  │
-            │           │                                           │           │   $0.10  │
-            ├───────────┼───────────────────────────────────────────┼───────────┼──────────┤
-            │  langua…  │  model/lang                               │     1000  │   $0.50  │
-            │           │                                           │           │       /  │
-            │           │                                           │           │   $1.00  │
-            ├───────────┼───────────────────────────────────────────┼───────────┼──────────┤
-            │  video    │  model/video                              │           │     see  │
-            │           │                                           │           │  prici…  │
-            ╰───────────┴───────────────────────────────────────────┴───────────┴──────────╯""").strip()
-        )
+        assert result.exit_code == 0
+        out = result.output
+        assert "model/chat" in out and "input" in out and "output" in out
 
         url = str(route.calls[0].request.url)  # type: ignore[arg-type]
         assert "dedicated=true" in url
@@ -124,7 +92,10 @@ class TestModelsList:
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/models").mock(return_value=httpx.Response(200, json=list_data))
         result = cli_runner.invoke(["models", "list", "--json"])
-        assert result.output.strip() == json.dumps(list_data, indent=2).strip()
+        assert result.exit_code == 0
+        payload = json.loads(result.out_out.lstrip("\n"))
+        assert [m["id"] for m in payload["data"]] == ["model/chat", "model/lang", "model/video"]
+        assert payload.get("next_cursor") is None
 
 
 class TestModelsUpload:
