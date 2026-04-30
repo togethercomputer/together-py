@@ -302,7 +302,7 @@ files_app.command(f"{_CLI}.files.delete:delete", alias="-d", help="Delete a file
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
 # Fine-tuning API commands
-fine_tuning_app = app.command(App(name="fine-tuning", help="Create and manage fine-tuning jobs"))
+fine_tuning_app = app.command(App(name="fine-tuning", alias="ft", help="Create and manage fine-tuning jobs"))
 fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"), alias="-c", help="Start a new fine-tuning job")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details")
@@ -431,7 +431,9 @@ storage_app.command(
     name="describe",
     help="Get volume details",
 )
-storage_app.command((f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", help="List volumes for a Jig deployment")
+storage_app.command(
+    (f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", alias="ls", help="List volumes for a Jig deployment"
+)
 
 
 def main() -> None:
