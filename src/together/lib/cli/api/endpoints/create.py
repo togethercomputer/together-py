@@ -21,7 +21,7 @@ MaxReplicasParameter = Annotated[int, Parameter(help="Maximum number of replicas
 HardwareParameter = Annotated[Optional[str], Parameter(help="Hardware configuration to use for inference")]
 DisplayNameParameter = Annotated[Optional[str], Parameter(help="A human-readable name for the endpoint")]
 NoPromptCacheParameter = Annotated[
-    Optional[bool], Parameter(help="Deprecated and no longer has any effect.", negative=False, show=False)
+    Optional[bool], Parameter(help="Deprecated and no longer has any effect", negative=False, show=False)
 ]
 NoSpeculativeDecodingParameter = Annotated[
     bool, Parameter(help="Disable speculative decoding for this endpoint", negative=False)
@@ -31,12 +31,10 @@ NoAutoStartParameter = Annotated[
 ]
 InactiveTimeoutParameter = Annotated[
     Optional[int],
-    Parameter(
-        help="Number of minutes of inactivity after which the endpoint will be automatically stopped. Set to 0 to disable."
-    ),
+    Parameter(help="Minutes of inactivity before the endpoint auto-stops (0 to disable)"),
 ]
 AvailabilityZoneParameter = Annotated[
-    Optional[str], Parameter(help="Start endpoint in specified availability zone (e.g., us-central-4b)")
+    Optional[str], Parameter(help="Start endpoint in specified availability zone (e.g. us-central-4b)")
 ]
 WaitParameter = Annotated[bool, Parameter(help="Wait for the endpoint to be ready after creation", negative=False)]
 

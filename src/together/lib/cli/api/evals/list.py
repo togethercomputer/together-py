@@ -26,9 +26,9 @@ status_colors = {
 async def list(
     status: Annotated[
         Optional[Literal["pending", "queued", "running", "completed", "error", "user_error"]],
-        Parameter(help="Filter evals by status."),
+        Parameter(help="Filter evals by status"),
     ] = None,
-    limit: Annotated[Optional[int], Parameter(help="The number of evals to return.")] = None,
+    limit: Annotated[Optional[int], Parameter(help="The number of evals to return")] = None,
     after: AfterParameter = None,
     *,
     config: CLIConfigParameter,

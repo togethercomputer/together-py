@@ -23,9 +23,7 @@ DurationDaysParameter = Annotated[
 ]
 GpuTypeParameter = Annotated[
     Optional[str],
-    Parameter(
-        help="GPU type to use for the cluster. Find available gpu types for each region with the `list-regions` command."
-    ),
+    Parameter(help="GPU type to use for the cluster (run `list-regions` to see available types per region)"),
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]

@@ -7,7 +7,7 @@ from cyclopts import Parameter
 
 T = TypeVar("T")
 
-AfterParameter = Annotated[Optional[str], Parameter(name="after", help="The cursor to start from.")]
+AfterParameter = Annotated[Optional[str], Parameter(name="after", help="The cursor to start from")]
 
 
 def mock_pagination(

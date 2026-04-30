@@ -11,7 +11,7 @@ from together.lib.cli.components.loader import show_loading_status
 
 
 async def status(
-    evaluation_id: Annotated[str, Parameter(help="The ID of the evaluation job.")],
+    evaluation_id: Annotated[str, Parameter(help="The ID of the evaluation job")],
     *,
     config: CLIConfigParameter,
 ) -> None:

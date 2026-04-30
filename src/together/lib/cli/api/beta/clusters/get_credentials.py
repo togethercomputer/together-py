@@ -22,22 +22,22 @@ async def get_credentials(
         Parameter(
             allow_leading_hyphen=True,
             show_default=True,
-            help="Path to write the kubeconfig to. If you pass `-` it will print the config to stdout instead of writing to a file.",
+            help="Path to write the kubeconfig to; use `-` to print to stdout",
         ),
     ] = os.path.join(os.path.expanduser("~"), ".kube", "config"),
     context_name: Annotated[
         Optional[str],
-        Parameter(help="Name of the context to add to the kubeconfig. By default it will be the cluster name."),
+        Parameter(help="Name of the context to add to the kubeconfig; uses the cluster name if unset"),
     ] = None,
     overwrite_existing: Annotated[
         bool,
         Parameter(
-            help="If there is a conflict with the existing kubeconfig, overwrite the existing kubeconfig instead of raising an error.",
+            help="On conflict with the existing kubeconfig, overwrite it instead of raising an error",
             negative=False,
         ),
     ] = False,
     set_default_context: Annotated[
-        bool, Parameter(help="If true, set the default context to the cluster name.", negative=False)
+        bool, Parameter(help="Set the default context to the cluster name", negative=False)
     ] = False,
     *,
     config: CLIConfigParameter,
