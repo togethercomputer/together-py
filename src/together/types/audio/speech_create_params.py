@@ -47,8 +47,13 @@ class SpeechCreateParamsBase(TypedDict, total=False):
     models.
     """
 
-    language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-    """Language of input text."""
+    language: str
+    """Language or locale of input text.
+
+    Accepts ISO 639-1 language codes (e.g., `en`, `fr`, `es`, `zh`) as well as
+    locale codes for region-specific variants. Locale codes must be lowercase (e.g.,
+    `zh-hk` for Cantonese, not `zh-HK`).
+    """
 
     response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"]
     """Audio encoding of response.
