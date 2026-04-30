@@ -159,7 +159,11 @@ class Data(BaseModel):
     """Maximum gradient norm for clipping"""
 
     max_seq_length: Optional[int] = None
-    """Maximum sequence length to use for training."""
+    """Maximum sequence length to use for training.
+
+    If not specified, the maximum allowed for the model and training method will be
+    used.
+    """
 
     model: Optional[str] = None
     """Base model used for fine-tuning"""
