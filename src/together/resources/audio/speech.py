@@ -103,7 +103,7 @@ class SpeechResource(SyncAPIResource):
 
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
-              codes must be lowercase (e.g., `zh-hk` for Cantonese, not `zh-HK`).
+              codes must be lowercase (e.g., `zh-hk` for Cantonese).
 
           response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
               Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
@@ -188,7 +188,7 @@ class SpeechResource(SyncAPIResource):
 
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
-              codes must be lowercase (e.g., `zh-hk` for Cantonese, not `zh-HK`).
+              codes must be lowercase (e.g., `zh-hk` for Cantonese).
 
           response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
               Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
@@ -269,7 +269,7 @@ class SpeechResource(SyncAPIResource):
 
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
-              codes must be lowercase (e.g., `zh-hk` for Cantonese, not `zh-HK`).
+              codes must be lowercase (e.g., `zh-hk` for Cantonese).
 
           response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
               Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
@@ -414,7 +414,7 @@ class AsyncSpeechResource(AsyncAPIResource):
 
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
-              codes must be lowercase (e.g., `zh-hk` for Cantonese, not `zh-HK`).
+              codes must be lowercase (e.g., `zh-hk` for Cantonese).
 
           response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
               Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
@@ -499,7 +499,7 @@ class AsyncSpeechResource(AsyncAPIResource):
 
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
-              codes must be lowercase (e.g., `zh-hk` for Cantonese, not `zh-HK`).
+              codes must be lowercase (e.g., `zh-hk` for Cantonese).
 
           response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
               Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
@@ -580,7 +580,7 @@ class AsyncSpeechResource(AsyncAPIResource):
 
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
-              codes must be lowercase (e.g., `zh-hk` for Cantonese, not `zh-HK`).
+              codes must be lowercase (e.g., `zh-hk` for Cantonese).
 
           response_encoding: Audio encoding of response. Only applicable when response_format is raw or pcm.
               Cartesia models respect this parameter and support all values. Orpheus, Kokoro,
