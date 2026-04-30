@@ -52,7 +52,7 @@ class SpeechCreateParamsBase(TypedDict, total=False):
 
     Accepts ISO 639-1 language codes (e.g., `en`, `fr`, `es`, `zh`) as well as
     locale codes for region-specific variants. Locale codes must be lowercase (e.g.,
-    `zh-hk` for Cantonese, not `zh-HK`).
+    `zh-hk` for Cantonese).
     """
 
     response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"]
