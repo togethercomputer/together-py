@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.12.0 (2026-05-01)
+
+Full Changelog: [v2.11.0...v2.12.0](https://github.com/togethercomputer/together-py/compare/v2.11.0...v2.12.0)
+
+### Features
+
+* Add default retrieve handler when passing an id to commands ([#345](https://github.com/togethercomputer/together-py/issues/345)) ([984519c](https://github.com/togethercomputer/together-py/commit/984519c038d4b99a794b5665c5c74b7c22f8802c))
+* add the pronunciation dict ([f59d672](https://github.com/togethercomputer/together-py/commit/f59d672d1f26abc9b4ad6216209b6d6707cfa88b))
+* **api:** add cached_input field to Pricing model ([c03fb18](https://github.com/togethercomputer/together-py/commit/c03fb180dc52531e4c99ebcd2a2ca8acea81dc9b))
+* **api:** Update server url to .ai ([2ea6a2d](https://github.com/togethercomputer/together-py/commit/2ea6a2d9201373c8959b4c34749236183a785543))
+* ENG-87042: clarify TTS language parameter supports lowercase locales ([95cf65b](https://github.com/togethercomputer/together-py/commit/95cf65b30233791b1e73f823a3cb0e6cdb731ab4))
+* ENG-87042: document language on TTS WebSocket and simplify locale note ([14b429f](https://github.com/togethercomputer/together-py/commit/14b429f0e08c8ad9eba4ffb51ba6d8d95d35973d))
+* MOSH-2181: Add default note on max-seq-length ([b1edd58](https://github.com/togethercomputer/together-py/commit/b1edd58f1bc7ccc2f3b1016ac5d09eaf2fad16b3))
+* Show cache input token pricing in models list cli output ([#350](https://github.com/togethercomputer/together-py/issues/350)) ([1476f70](https://github.com/togethercomputer/together-py/commit/1476f709115b23e6ca08468c4b0ca6e72553d967))
+
+
+### Bug Fixes
+
+* Properly handle unlinking temp file during fine-tuning download ([#352](https://github.com/togethercomputer/together-py/issues/352)) ([2f1c458](https://github.com/togethercomputer/together-py/commit/2f1c458ee388a14757c50b077e8402c0a063fe01))
+* **types:** remove eval-sample, eval-output, eval-summary, batch-generated from FilePurpose ([ea1d61a](https://github.com/togethercomputer/together-py/commit/ea1d61a182cad4f11f0e123a23381284f61b2153))
+
+
+### Chores
+
+* Improve --json support accross multiple commands ([#347](https://github.com/togethercomputer/together-py/issues/347)) ([949bfa4](https://github.com/togethercomputer/together-py/commit/949bfa4514e34b761727622fab3d345e940a7fe9))
+* **internal:** reformat pyproject.toml ([a52e64b](https://github.com/togethercomputer/together-py/commit/a52e64bde79ccfe3f06c9d4a59af5e736889e412))
+* Pass agent name in request headers when detected ([#351](https://github.com/togethercomputer/together-py/issues/351)) ([1668cf4](https://github.com/togethercomputer/together-py/commit/1668cf4208e4c32c7ee91a6978b708bc8c4c8256))
+* Update references from .xyz to .ai domain ([#349](https://github.com/togethercomputer/together-py/issues/349)) ([0c33450](https://github.com/togethercomputer/together-py/commit/0c334506cfb7f56a7cc8fb0bba4c4b89aed0b408))
+
+
+### Documentation
+
+* polish CLI help text; introduce Options + Global Options panels ([#346](https://github.com/togethercomputer/together-py/issues/346)) ([4905c1a](https://github.com/togethercomputer/together-py/commit/4905c1ac807de4b317639524720592d51b1d23f9))
+
 ## 2.11.0 (2026-04-28)
 
 Full Changelog: [v2.10.0...v2.11.0](https://github.com/togethercomputer/together-py/compare/v2.10.0...v2.11.0)
