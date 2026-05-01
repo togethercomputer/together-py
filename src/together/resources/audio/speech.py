@@ -57,6 +57,7 @@ class SpeechResource(SyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -101,6 +102,8 @@ class SpeechResource(SyncAPIResource):
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
 
+          extra_params: Additional model-specific parameters that fine-tune speech generation behavior.
+
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
               codes must be lowercase (e.g., `zh-hk` for Cantonese).
@@ -139,6 +142,7 @@ class SpeechResource(SyncAPIResource):
         stream: Literal[True],
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -186,6 +190,8 @@ class SpeechResource(SyncAPIResource):
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
 
+          extra_params: Additional model-specific parameters that fine-tune speech generation behavior.
+
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
               codes must be lowercase (e.g., `zh-hk` for Cantonese).
@@ -220,6 +226,7 @@ class SpeechResource(SyncAPIResource):
         stream: bool,
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -267,6 +274,8 @@ class SpeechResource(SyncAPIResource):
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
 
+          extra_params: Additional model-specific parameters that fine-tune speech generation behavior.
+
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
               codes must be lowercase (e.g., `zh-hk` for Cantonese).
@@ -300,6 +309,7 @@ class SpeechResource(SyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -321,6 +331,7 @@ class SpeechResource(SyncAPIResource):
                     "model": model,
                     "voice": voice,
                     "bit_rate": bit_rate,
+                    "extra_params": extra_params,
                     "language": language,
                     "response_encoding": response_encoding,
                     "response_format": response_format,
@@ -368,6 +379,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -412,6 +424,8 @@ class AsyncSpeechResource(AsyncAPIResource):
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
 
+          extra_params: Additional model-specific parameters that fine-tune speech generation behavior.
+
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
               codes must be lowercase (e.g., `zh-hk` for Cantonese).
@@ -450,6 +464,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         stream: Literal[True],
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -497,6 +512,8 @@ class AsyncSpeechResource(AsyncAPIResource):
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
 
+          extra_params: Additional model-specific parameters that fine-tune speech generation behavior.
+
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
               codes must be lowercase (e.g., `zh-hk` for Cantonese).
@@ -531,6 +548,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         stream: bool,
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -578,6 +596,8 @@ class AsyncSpeechResource(AsyncAPIResource):
               response_format is mp3. Higher values produce better audio quality at larger
               file sizes. Default is 128000. Currently supported on Cartesia models.
 
+          extra_params: Additional model-specific parameters that fine-tune speech generation behavior.
+
           language: Language or locale of input text. Accepts ISO 639-1 language codes (e.g., `en`,
               `fr`, `es`, `zh`) as well as locale codes for region-specific variants. Locale
               codes must be lowercase (e.g., `zh-hk` for Cantonese).
@@ -611,6 +631,7 @@ class AsyncSpeechResource(AsyncAPIResource):
         model: Union[Literal["cartesia/sonic", "hexgrad/Kokoro-82M", "canopylabs/orpheus-3b-0.1-ft"], str],
         voice: str,
         bit_rate: Literal[32000, 64000, 96000, 128000, 192000] | Omit = omit,
+        extra_params: speech_create_params.ExtraParams | Omit = omit,
         language: str | Omit = omit,
         response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] | Omit = omit,
         response_format: Literal["mp3", "wav", "raw"] | Omit = omit,
@@ -632,6 +653,7 @@ class AsyncSpeechResource(AsyncAPIResource):
                     "model": model,
                     "voice": voice,
                     "bit_rate": bit_rate,
+                    "extra_params": extra_params,
                     "language": language,
                     "response_encoding": response_encoding,
                     "response_format": response_format,
