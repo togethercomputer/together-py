@@ -193,7 +193,7 @@ class DownloadManager(SyncAPIResource):
                         stream=True,
                     )
                 except APIStatusError as e:
-                    os.remove(lock_path)
+                    lock_path.unlink(missing_ok=True)
                     raise APIStatusError(
                         "Error downloading file",
                         response=e.response,
@@ -282,7 +282,7 @@ class DownloadManager(SyncAPIResource):
             # Moves temp file to output file path
             chmod_and_replace(Path(temp_file.name), file_path)
 
-        os.remove(lock_path)
+        lock_path.unlink(missing_ok=True)
 
         return str(file_path.resolve()), file_size
 
