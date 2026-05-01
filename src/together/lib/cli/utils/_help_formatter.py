@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import types
-from typing import Union, Annotated, cast, get_args, get_origin
+from typing import Any, Union, Annotated, cast, get_args, get_origin
 from pathlib import Path
 
 from detect_agent import determine_agent
@@ -29,6 +29,9 @@ def _names_renderer(entry: HelpEntry) -> str:
         return names
 
     # Parameters
+    if len(entry.names) == 1:
+        return entry.names[0]
+
     names = " ".join(entry.names[1:]) if entry.names else ""
     shorts = " ".join(entry.shorts) if entry.shorts else ""
     return " ".join([names, shorts]).strip()
@@ -88,6 +91,24 @@ def _type_renderer(entry: HelpEntry) -> str:
     return type_short_name_to_display_name.get(typename, typename)
 
 
+_NOISY_DEFAULTS = {"False", "None", '""'}
+
+
+def _description_renderer(entry: HelpEntry) -> Any:
+    description = entry.description
+    if not entry.default or entry.default in _NOISY_DEFAULTS:
+        return description
+    from rich.text import Text
+
+    suffix = Text(f" [default: {entry.default}]", style="dim")
+    if description is None:
+        return suffix
+    if hasattr(description, "append"):
+        description.append(suffix)
+        return description
+    return Text.assemble(str(description), suffix)
+
+
 human_formatter = DefaultFormatter(
     column_specs=(
         ColumnSpec(
@@ -105,7 +126,7 @@ human_formatter = DefaultFormatter(
             style="secondary",
         ),
         ColumnSpec(
-            renderer="description",  # Use attribute name
+            renderer=_description_renderer,
             style="secondary",
             overflow="fold",
         ),

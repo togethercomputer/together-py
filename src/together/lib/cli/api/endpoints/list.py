@@ -18,11 +18,11 @@ from together.lib.cli.utils._mock_pagination import AfterParameter, mock_paginat
 async def list(
     _type: Annotated[
         Optional[Literal["dedicated", "serverless"]],
-        Parameter(name="--type", help="Deprecated and no longer has any effect.", show=False),
+        Parameter(name="--type", help="Deprecated and no longer has any effect", show=False),
     ] = None,
     _mine: Annotated[
         Optional[bool],
-        Parameter(name="--mine", help="Deprecated and no longer has any effect.", negative=False, show=False),
+        Parameter(name="--mine", help="Deprecated and no longer has any effect", negative=False, show=False),
     ] = None,
     usage_type: Annotated[
         Optional[Literal["on-demand", "reserved"]], Parameter(help="Filter by usage type options")

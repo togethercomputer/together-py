@@ -19,6 +19,8 @@ class Pricing(BaseModel):
 
     output: float
 
+    cached_input: Optional[float] = None
+
 
 class ModelObject(BaseModel):
     id: str

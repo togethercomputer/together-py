@@ -30,7 +30,7 @@ Do you want to proceed? [Y/n]"""
 _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "\nThe estimated price of this job is significantly greater than your current credit limit and balance combined. "
     "It will likely get cancelled due to insufficient funds. "
-    "Consider increasing your credit limit at https://api.together.xyz/settings/profile\n"
+    "Consider increasing your credit limit at https://api.together.ai/settings/profile\n"
 )
 
 
@@ -46,6 +46,7 @@ model_group = Group(
     help="You must specify either a model or a checkpoint to start a job from, not both",
     default_parameter=Parameter(negative=""),  # Disable "--no-" flags
     validator=validators.LimitedChoice(),  # Mutually Exclusive Options
+    sort_key=0,
 )
 
 DEFAULT_LEARNING_RATE = 1e-5
@@ -58,14 +59,14 @@ async def create(
         str,
         Parameter(
             name=["--training-file", "-t"],
-            help="Training file ID from Files API or local path to a file to be uploaded.",
+            help="Training file ID from Files API or local path to a file to upload",
         ),
     ],
     validation_file: Annotated[
         str,
         Parameter(
             name=["--validation-file", "-v"],
-            help="Validation file ID from Files API or local path to a file to be uploaded.",
+            help="Validation file ID from Files API or local path to a file to upload",
         ),
     ] = "",
     model: Annotated[
@@ -75,14 +76,14 @@ async def create(
         Optional[str],
         Parameter(
             group=model_group,
-            help="The checkpoint identifier to continue training from a previous fine-tuning job. \n\nThe format: `JOB_ID/OUTPUT_MODEL_NAME:STEP`. \nThe step value is optional, without it the final checkpoint will be used.",
+            help="Checkpoint to continue training from a previous fine-tuning job, formatted as `JOB_ID/OUTPUT_MODEL_NAME:STEP`; STEP is optional and defaults to the final checkpoint",
         ),
     ] = None,
     n_epochs: Annotated[int, Parameter(name=["--n-epochs", "-ne"], help="Number of epochs to train for")] = 1,
-    packing: Annotated[bool, Parameter(show_default=True, help="Whether to use packing for training.")] = True,
-    n_evals: Annotated[int, Parameter(help="Number of evaluation loops to run.")] = 0,
-    max_seq_length: Annotated[int | None, Parameter(help="Maximum sequence length to use for training.")] = None,
-    n_checkpoints: Annotated[int, Parameter(name=["--n-checkpoints", "-c"], help="Number of checkpoints to save.")] = 1,
+    packing: Annotated[bool, Parameter(show_default=True, help="Whether to use packing for training")] = True,
+    n_evals: Annotated[int, Parameter(help="Number of evaluation loops to run")] = 0,
+    max_seq_length: Annotated[int | None, Parameter(help="Maximum sequence length to use for training")] = None,
+    n_checkpoints: Annotated[int, Parameter(name=["--n-checkpoints", "-c"], help="Number of checkpoints to save")] = 1,
     batch_size: Annotated[
         int | Literal["max"],
         Parameter(converter=int_or_max_converter, name=["--batch-size", "-b"], help="Train batch size"),
@@ -100,22 +101,18 @@ async def create(
         float, Parameter(help="Number or fraction of cycles for the cosine learning rate scheduler")
     ] = 0.5,
     warmup_ratio: Annotated[float, Parameter(help="Warmup ratio for the learning rate scheduler")] = 0.0,
-    max_grad_norm: Annotated[
-        float, Parameter(help="Max gradient norm to be used for gradient clipping. Set to 0 to disable.")
-    ] = 1.0,
+    max_grad_norm: Annotated[float, Parameter(help="Max gradient norm for clipping (0 to disable)")] = 1.0,
     weight_decay: Annotated[float, Parameter(help="Weight decay")] = 0.0,
     lora: Annotated[Optional[bool], Parameter(help="Whether to use LoRA adapters for fine-tuning")] = None,
     lora_r: Annotated[int, Parameter(help="LoRA adapters' rank")] = DEFAULT_LORA_R,
     lora_dropout: Annotated[float, Parameter(help="LoRA adapters' dropout")] = 0,
     lora_alpha: Annotated[float, Parameter(help="LoRA adapters' alpha")] = DEFAULT_LORA_ALPHA,
     lora_trainable_modules: Annotated[
-        str, Parameter(help="Trainable modules for LoRA adapters. For example, 'all-linear', 'q_proj,v_proj'")
+        str, Parameter(help="Trainable modules for LoRA adapters (e.g. 'all-linear', 'q_proj,v_proj')")
     ] = "all-linear",
     training_method: Annotated[
         Literal["sft", "dpo"],
-        Parameter(
-            help="Training method to use. Options: sft (supervised fine-tuning), dpo (Direct Preference Optimization)"
-        ),
+        Parameter(help="Training method to use: sft (supervised fine-tuning) or dpo (Direct Preference Optimization)"),
     ] = "sft",
     dpo_beta: Annotated[Optional[float], Parameter(help="DPO beta parameter")] = None,
     dpo_normalize_logratios_by_length: Annotated[
@@ -131,7 +128,7 @@ async def create(
     wandb_entity: Annotated[Optional[str], Parameter(help="Wandb entity name")] = None,
     random_seed: Annotated[
         Optional[int],
-        Parameter(help="Random seed for reproducible training (e.g. 42). If not set, server default is used."),
+        Parameter(help="Random seed for reproducible training, e.g. 42; uses the server default if unset"),
     ] = None,
     confirm: Annotated[
         bool, Parameter(name=["--confirm", "-y"], help="Whether to skip the launch confirmation message")
@@ -139,30 +136,24 @@ async def create(
     train_on_inputs: Annotated[
         Optional[BoolOrAuto],
         Parameter(
-            help="Whether to mask the user messages in conversational data or prompts in instruction data. 'auto' will automatically determine whether to mask the inputs based on the data format.",
+            help="Whether to mask user messages (conversational) or prompts (instruction); 'auto' detects from data format",
         ),
     ] = None,
-    train_vision: Annotated[
-        bool, Parameter(help="Whether to train the vision encoder. Only supported for multimodal models.")
-    ] = False,
+    train_vision: Annotated[bool, Parameter(help="Train the vision encoder (multimodal models only)")] = False,
     from_hf_model: Annotated[
         Optional[str],
         Parameter(
-            help="The Hugging Face Hub repo to start training from. "
-            "Should be as close as possible to the base model (specified by the `model` argument) "
-            "in terms of architecture and size",
+            help="Hugging Face Hub repo to start training from; should match the base model's architecture and size",
         ),
     ] = None,
     hf_model_revision: Annotated[
         Optional[str],
         Parameter(
-            help="The revision of the Hugging Face Hub model to continue training from. "
-            "Example: hf_model_revision=None (defaults to the latest revision in `main`) "
-            "or hf_model_revision='607a30d783dfa663caf39e06633721c8d4cfcd7e' (specific commit).",
+            help="Revision of the Hugging Face Hub model, either a branch name (e.g. `main` for the latest revision) or a specific commit hash",
         ),
     ] = None,
     hf_api_token: Annotated[
-        Optional[str], Parameter(help="HF API otken to use for uploading a checkpoint to a private repo")
+        Optional[str], Parameter(help="HF API token to use for uploading a checkpoint to a private repo")
     ] = None,
     hf_output_repo_name: Annotated[Optional[str], Parameter(help="HF repo to upload the fine-tuned model to")] = None,
     *,

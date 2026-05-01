@@ -17,7 +17,7 @@ def print_clusters(clusters: List[Cluster]) -> None:
         status_color = status_colors[cluster.status] if cluster.status in status_colors else "white"
 
         table.add_row(
-            f"[link=https://api.together.xyz/clusters/id/{cluster.cluster_id}]{cluster.cluster_id}[/link]",
+            f"[link=https://api.together.ai/clusters/id/{cluster.cluster_id}]{cluster.cluster_id}[/link]",
             cluster.cluster_name,
             f"[{status_color}]{cluster.status}[/{status_color}]",
             cluster.region,

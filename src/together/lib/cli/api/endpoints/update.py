@@ -21,9 +21,7 @@ async def update(
     max_replicas: Annotated[Optional[int], Parameter(help="New maximum number of replicas to maintain")] = None,
     inactive_timeout: Annotated[
         Optional[int],
-        Parameter(
-            help="Number of minutes of inactivity after which the endpoint will be automatically stopped. Set to 0 to disable."
-        ),
+        Parameter(help="Minutes of inactivity before the endpoint auto-stops (0 to disable)"),
     ] = None,
     *,
     config: CLIConfigParameter,

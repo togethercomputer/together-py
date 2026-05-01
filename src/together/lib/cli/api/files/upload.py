@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-import json as json_lib
 from typing import Optional, Annotated, cast, get_args
 from pathlib import Path
 
@@ -33,7 +32,7 @@ async def upload(
         report = check_file(file)
         if report["is_check_passed"] is False:
             if config.json:
-                console.print_json(json_lib.dumps(report))
+                console.print_json(openapi_dumps(report).decode("utf-8"))
             else:
                 console.print(f"[red]❌ {escape_rich_markup(str(report['message']))}[/red]")
 

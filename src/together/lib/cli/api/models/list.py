@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Literal, Optional, Annotated
+from typing import Any, Literal, Optional, Annotated
 
 from cyclopts import Parameter
+from rich.table import Table as RichTable
 
 from together import omit
 from together._utils._json import openapi_dumps
@@ -15,10 +16,38 @@ from together.lib.cli.utils._mock_pagination import AfterParameter, mock_paginat
 PAGE_SIZE = 20
 
 
+def _pricing_cell(model: Any) -> Any:
+    """Rich table: dim labels in column 1, prices right-aligned in column 2."""
+    see_pricing = f"[link=https://api.together.ai/models/{model.id}]see pricing[/link]"
+    if not model.pricing or model.pricing.input <= 0 or model.pricing.output <= 0:
+        return see_pricing
+    t = RichTable(show_header=False, box=None, expand=True)
+    t.add_column(style="dim", no_wrap=True, justify="right", ratio=2)
+    t.add_column(justify="left", no_wrap=True, ratio=1)
+    cached = model.pricing.cached_input
+    t.add_row("input", f"${model.pricing.input:.2f}")
+    if cached is not None and cached > 0:
+        t.add_row("cached input", f"${cached:.2f}")
+    t.add_row("output", f"${model.pricing.output:.2f}")
+    return t
+
+
+def _details_cell(model: Any) -> Any:
+    """Rich table: dim labels in column 1, details right-aligned in column 2."""
+    details = [
+        f"[dim]modality:[/dim] {model.type or 'other'}",
+    ]
+
+    if model.context_length:
+        details.append(f"[dim]context length:[/dim] {str(model.context_length)}")
+
+    return "\n".join(details)
+
+
 async def list(
     type: Annotated[
         Optional[Literal["dedicated"]],
-        Parameter(name="--type", show_choices=True, help="Filter models by specified type."),
+        Parameter(name="--type", show_choices=True, help="Filter models by specified type"),
     ] = None,
     after: AfterParameter = None,
     *,
@@ -32,27 +61,22 @@ async def list(
     models_to_display, next_cursor = mock_pagination(models_list, cursor_field="id", cursor=after)
 
     if config.json:
-        console.print_json(openapi_dumps(models_to_display).decode())
+        console.print_json(openapi_dumps({"data": models_to_display, "next_cursor": next_cursor}).decode())
         return
 
     table = ListTable()
-    table.add_column("Modality")
-    table.add_primary_column("Model", ratio=4)
-    table.add_column("Context Length", justify="right")
-    table.add_column("Pricing per 1M Tokens", justify="right")
+    table.add_primary_column("Model", ratio=3)
+    table.add_column("Details")
+    table.add_column("Pricing", justify="center")
 
     for model in models_to_display:
-        price_parts: List[str] = []
-        if model.pricing and model.pricing.input > 0 and model.pricing.output > 0:
-            price_parts.append(f"${model.pricing.input:.2f}")
-            price_parts.append(f"${model.pricing.output:.2f}")
-        else:
-            price_parts.append(f"[link=https://api.together.xyz/models/{model.id}]see pricing[/link]")
+        details = _details_cell(model)
+        pricing = _pricing_cell(model)
+
         table.add_row(
-            model.type or "other",  # type: ignore
-            f"[link=https://api.together.xyz/models/{model.id}]{model.id}[/link]",
-            str(model.context_length) if model.context_length else "",
-            " / ".join(price_parts),
+            f"[link=https://api.together.ai/models/{model.id}]{model.id}[/link]",
+            details,
+            pricing,
         )
 
     console.print(table)

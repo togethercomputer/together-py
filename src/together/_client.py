@@ -128,7 +128,7 @@ class Together(SyncAPIClient):
             base_url = os.environ.get("TOGETHER_BASE_URL")
         self._base_url_overridden = base_url is not None
         if base_url is None:
-            base_url = f"https://api.together.xyz/v1"
+            base_url = f"https://api.together.ai/v1"
 
         custom_headers_env = os.environ.get("TOGETHER_CUSTOM_HEADERS")
         if custom_headers_env is not None:
@@ -402,7 +402,7 @@ class AsyncTogether(AsyncAPIClient):
             base_url = os.environ.get("TOGETHER_BASE_URL")
         self._base_url_overridden = base_url is not None
         if base_url is None:
-            base_url = f"https://api.together.xyz/v1"
+            base_url = f"https://api.together.ai/v1"
 
         custom_headers_env = os.environ.get("TOGETHER_CUSTOM_HEADERS")
         if custom_headers_env is not None:

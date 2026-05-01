@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Union
 from typing_extensions import Literal, Required, TypedDict
 
-__all__ = ["SpeechCreateParamsBase", "SpeechCreateParamsNonStreaming", "SpeechCreateParamsStreaming"]
+from ..._types import SequenceNotStr
+
+__all__ = ["SpeechCreateParamsBase", "ExtraParams", "SpeechCreateParamsNonStreaming", "SpeechCreateParamsStreaming"]
 
 
 class SpeechCreateParamsBase(TypedDict, total=False):
@@ -47,8 +49,16 @@ class SpeechCreateParamsBase(TypedDict, total=False):
     models.
     """
 
-    language: Literal["en", "de", "fr", "es", "hi", "it", "ja", "ko", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]
-    """Language of input text."""
+    extra_params: ExtraParams
+    """Additional model-specific parameters that fine-tune speech generation behavior."""
+
+    language: str
+    """Language or locale of input text.
+
+    Accepts ISO 639-1 language codes (e.g., `en`, `fr`, `es`, `zh`) as well as
+    locale codes for region-specific variants. Locale codes must be lowercase (e.g.,
+    `zh-hk` for Cantonese).
+    """
 
     response_encoding: Literal["pcm_f32le", "pcm_s16le", "pcm_mulaw", "pcm_alaw"]
     """Audio encoding of response.
@@ -70,6 +80,17 @@ class SpeechCreateParamsBase(TypedDict, total=False):
 
     Cartesia and Minimax models respect this parameter. Orpheus and Kokoro models
     always output at 24000 Hz regardless of this setting.
+    """
+
+
+class ExtraParams(TypedDict, total=False):
+    """Additional model-specific parameters that fine-tune speech generation behavior."""
+
+    pronunciation_dict: SequenceNotStr[str]
+    """A list of pronunciation rules for specific characters or symbols.
+
+    Each entry uses the format `"<source>/<replacement>"` (e.g.,
+    `["omg/oh my god"]`) to override how the model pronounces matching tokens.
     """
 
 
