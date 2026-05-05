@@ -26,6 +26,13 @@ from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
+from together.lib.cli.utils._help_examples import (
+    ENDPOINTS_HELP_EXAMPLES,
+    TOP_LEVEL_HELP_EXAMPLES,
+    ENDPOINTS_CREATE_HELP_EXAMPLES,
+    ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    ENDPOINTS_HARDWARE_HELP_EXAMPLES,
+)
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
@@ -326,17 +333,28 @@ models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model")
 ## Endpoints API commands
 endpoints_app = app.command(App(name="endpoints", help="Deploy and manage dedicated endpoints"))
 endpoints_app.command(
-    (f"{_CLI}.endpoints.hardware:hardware"), help="List available hardware configurations for deploying models"
+    (f"{_CLI}.endpoints.hardware:hardware"),
+    help="List available hardware configurations for deploying models",
+    help_epilogue=ENDPOINTS_HARDWARE_HELP_EXAMPLES,
 )
-endpoints_app.command((f"{_CLI}.endpoints.create:create"), alias="-c", help="Create a new endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details")
-endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint")
-endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints")
-endpoints_app.command((f"{_CLI}.endpoints.update:update"), help="Update an endpoint")
 endpoints_app.command(
-    (f"{_CLI}.endpoints.availability_zones:availability_zones"), help="List availability zones for deploying models"
+    (f"{_CLI}.endpoints.create:create"),
+    alias="-c",
+    help="Create a new endpoint",
+    help_epilogue=ENDPOINTS_CREATE_HELP_EXAMPLES,
+)
+endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details", help_epilogue="")
+endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint", help_epilogue="")
+endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint", help_epilogue="")
+endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint", help_epilogue="")
+endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints", help_epilogue="")
+endpoints_app.command(
+    (f"{_CLI}.endpoints.update:update"), help="Update an endpoint", help_epilogue=ENDPOINTS_UPDATE_HELP_EXAMPLES
+)
+endpoints_app.command(
+    (f"{_CLI}.endpoints.availability_zones:availability_zones"),
+    help="List availability zones for deploying models",
+    help_epilogue="",
 )
 
 ## Evals API commands
@@ -434,6 +452,9 @@ storage_app.command(
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", alias="ls", help="List volumes for a Jig deployment"
 )
+
+app.help_epilogue = TOP_LEVEL_HELP_EXAMPLES
+endpoints_app.help_epilogue = ENDPOINTS_HELP_EXAMPLES
 
 
 def main() -> None:

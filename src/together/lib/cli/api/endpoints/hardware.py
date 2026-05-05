@@ -14,7 +14,9 @@ from together.lib.cli.components.list import ListTable
 
 async def hardware(
     model: Annotated[Optional[str], Parameter(help="Show only hardware compatible with the given model")] = None,
-    available: Annotated[bool, Parameter(help="Show only available hardware for the given model")] = False,
+    available: Annotated[
+        bool, Parameter(help="Show only available hardware for the given model", negative=False)
+    ] = False,
     *,
     config: CLIConfigParameter,
 ) -> None:
