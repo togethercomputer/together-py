@@ -366,7 +366,7 @@ class AsyncDownloadManager(AsyncAPIResource):
                     raise APIStatusError(
                         "Error downloading file",
                         response=e.response,
-                        body=e.response,
+                        body=e.body,
                     ) from e
 
                 if not fetch_metadata:
