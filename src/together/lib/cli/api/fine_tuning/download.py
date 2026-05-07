@@ -26,7 +26,7 @@ CheckpointStepParam = Annotated[
     Parameter(name=["--checkpoint-step", "-s"], help="Fine-tuning checkpoint to download; defaults to latest if unset"),
 ]
 CheckpointTypeParam = Annotated[
-    Literal["merged", "adapter", "default"],
+    Optional[Literal["merged", "adapter", "default"]],
     Parameter(
         name=["--checkpoint-type", "-c"],
         help="Checkpoint type ('merged' and 'adapter' apply to LoRA jobs only)",
@@ -38,7 +38,7 @@ async def download(
     fine_tune_id: str,
     output_dir: OutputDirParam = None,
     checkpoint_step: CheckpointStepParam = None,
-    checkpoint_type: CheckpointTypeParam = "merged",
+    checkpoint_type: CheckpointTypeParam = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -56,9 +56,9 @@ async def download(
     ft_job = await show_loading_status(
         "Retrieving fine-tuning job...", config.client.fine_tuning.retrieve(fine_tune_id)
     )
-    loosely_typed_checkpoint_type: str = checkpoint_type
+    loosely_typed_checkpoint_type: str = checkpoint_type if checkpoint_type is not None else ""
     if isinstance(ft_job.training_type, TrainingTypeFullTrainingType):
-        if checkpoint_type != "default":
+        if checkpoint_type is not None and checkpoint_type != "default":
             raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
         loosely_typed_checkpoint_type = "model_output_path"
     elif isinstance(ft_job.training_type, TrainingTypeLoRaTrainingType):
