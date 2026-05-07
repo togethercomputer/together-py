@@ -70,7 +70,7 @@ class TranscriptionsResource(SyncAPIResource):
 
         Args:
           file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+              .webm, .flac, .ogg, .opus, .aac.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you
@@ -193,7 +193,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
 
         Args:
           file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+              .webm, .flac, .ogg, .opus, .aac.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you

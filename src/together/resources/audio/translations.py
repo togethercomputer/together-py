@@ -67,7 +67,7 @@ class TranslationsResource(SyncAPIResource):
 
         Args:
           file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+              .webm, .flac, .ogg, .opus, .aac.
 
           language: Target output language. Optional ISO 639-1 language code. If omitted, language
               is set to English.
@@ -167,7 +167,7 @@ class AsyncTranslationsResource(AsyncAPIResource):
 
         Args:
           file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+              .webm, .flac, .ogg, .opus, .aac.
 
           language: Target output language. Optional ISO 639-1 language code. If omitted, language
               is set to English.
