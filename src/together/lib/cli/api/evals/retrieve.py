@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Annotated
 
 from cyclopts import Parameter
-from rich.markup import escape as escape_rich_markup
 
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.model_dump import print_model_dump
 
 
 async def retrieve(
@@ -22,9 +22,4 @@ async def retrieve(
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    wid = response.workflow_id or evaluation_id
-    console.print(
-        f"[dim]Eval[/dim] [bold]{escape_rich_markup(str(wid))}[/bold] — "
-        f"[dim]status[/dim] [bold]{escape_rich_markup(str(response.status))}[/bold] — "
-        f"[dim]type[/dim] [bold]{escape_rich_markup(str(response.type))}[/bold]"
-    )
+    print_model_dump(response)

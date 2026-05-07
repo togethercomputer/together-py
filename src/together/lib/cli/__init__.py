@@ -27,8 +27,10 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
 from together.lib.cli.utils._help_examples import (
+    EVALS_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
+    EVALS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
@@ -358,11 +360,13 @@ endpoints_app.command(
 )
 
 ## Evals API commands
-evals_app = app.command(App(name="evals", help="Run and manage model evaluations"))
-evals_app.command((f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job")
-evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs")
-evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), help="Get eval job details")
-evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
+evals_app = app.command(App(name="evals", help="Run and manage model evaluations", help_epilogue=EVALS_HELP_EXAMPLES))
+evals_app.command(
+    (f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job", help_epilogue=EVALS_CREATE_HELP_EXAMPLES
+)
+evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs", help_epilogue="")
+evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), help="Get eval job details", help_epilogue="")
+evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status", help_epilogue="")
 
 ## Telemetry API commands
 telemetry_app = app.command(App(name="telemetry", help="Configure CLI telemetry"))
