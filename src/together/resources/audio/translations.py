@@ -74,7 +74,10 @@ class TranslationsResource(SyncAPIResource):
 
           model: Model to use for translation
 
-          prompt: Optional text to bias decoding.
+          prompt: Optional text to bias decoding. Supported only on Whisper-family models (e.g.
+              `openai/whisper-large-v3`). Other STT models (e.g.
+              `nvidia/parakeet-tdt-0.6b-v3`) accept the field for API compatibility but ignore
+              it.
 
           response_format: The format of the response
 
@@ -174,7 +177,10 @@ class AsyncTranslationsResource(AsyncAPIResource):
 
           model: Model to use for translation
 
-          prompt: Optional text to bias decoding.
+          prompt: Optional text to bias decoding. Supported only on Whisper-family models (e.g.
+              `openai/whisper-large-v3`). Other STT models (e.g.
+              `nvidia/parakeet-tdt-0.6b-v3`) accept the field for API compatibility but ignore
+              it.
 
           response_format: The format of the response
 
