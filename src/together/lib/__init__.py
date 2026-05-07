@@ -10,10 +10,12 @@ from .resources import (
     UploadManager,
     DownloadManager,
     AsyncUploadManager,
+    AsyncDownloadManager,
 )
 
 __all__ = [
     "DownloadManager",
+    "AsyncDownloadManager",
     "AsyncUploadManager",
     "UploadManager",
     "FinetuneTrainingLimits",

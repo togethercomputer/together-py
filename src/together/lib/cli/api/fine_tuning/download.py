@@ -7,8 +7,8 @@ from pathlib import Path
 
 from cyclopts import Parameter
 
-from together import APIError, Together, APIStatusError
-from together.lib import DownloadManager
+from together import APIError, APIStatusError
+from together.lib import AsyncDownloadManager
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -87,15 +87,7 @@ async def download(
         os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
     try:
-        # TODO: This is a temporary hack,
-        # We need to make the DownloadManager async so we can use the async client.
-        sync_client = Together(
-            api_key=config.client.api_key,
-            base_url=config.client.base_url,
-            timeout=config.client.timeout,
-            max_retries=config.client.max_retries,
-        )
-        file_path, file_size = DownloadManager(sync_client).download(
+        file_path, file_size = await AsyncDownloadManager(config.client).download(
             url=url,
             output=output,
             remote_name=ft_job.x_model_output_name,

@@ -210,12 +210,12 @@ class TestFineTuningDownload:
             def __init__(self, _client: object) -> None:
                 pass
 
-            def download(self, **kwargs: object) -> tuple[str, int]:
+            async def download(self, **kwargs: object) -> tuple[str, int]:
                 assert "ft_id=ft-abcd-12" in str(kwargs.get("url", ""))
                 assert "checkpoint=model_output_path" in str(kwargs.get("url", ""))
                 return str(out_file), 1
 
-        with patch.object(_ft_download_mod, "DownloadManager", _DM):
+        with patch.object(_ft_download_mod, "AsyncDownloadManager", _DM):
             # Full fine-tunes require explicit --checkpoint-type default (CLI default is merged for LoRA).
             result = cli_runner.invoke(
                 [
