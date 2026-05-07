@@ -1,7 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union, Optional
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import TypeAlias
 
 from ..._models import BaseModel
 
@@ -92,9 +92,6 @@ class AudioTranscriptionVerboseJsonResponse(BaseModel):
 
     segments: List[AudioTranscriptionVerboseJsonResponseSegment]
     """Array of transcription segments"""
-
-    task: Literal["transcribe", "translate"]
-    """The task performed"""
 
     text: str
     """The transcribed text"""
