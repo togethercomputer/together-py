@@ -267,7 +267,7 @@ class DownloadManager(SyncAPIResource):
                             raise APIStatusError(
                                 "Error downloading file",
                                 response=e.response,
-                                body=e.response,
+                                body=e.body,
                             ) from e
 
                 # Close the response
