@@ -11,6 +11,28 @@ TOP_LEVEL_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face[/primary]
 """
 
+## Models API commands
+MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List all models:
+  [primary]tg models list[/primary]
+
+[dim]-[/dim] Upload a model:
+  [primary]tg models upload --model-name my-model --model-source s3-or-hugging-face[/primary]
+"""
+
+MODELS_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Upload a model from S3:
+  [primary]tg models upload \\
+    --model-name my-model \\
+    --model-source $(aws s3 presign s3://my-bucket/my-model)[/primary]
+
+[dim]-[/dim] Upload private model from Hugging Face:
+  [primary]tg models upload \\
+    --model-name my-model \\
+    --model-source my-org/model-name \\
+    --hf-token $HUGGING_FACE_TOKEN[/primary]
+"""
+
 ## Fine-tuning API commands
 FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Create a fine-tuning job:
