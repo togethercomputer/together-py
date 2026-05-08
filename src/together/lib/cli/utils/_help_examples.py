@@ -11,6 +11,41 @@ TOP_LEVEL_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face[/primary]
 """
 
+## Files API commands
+
+FILES_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Upload a file for fine-tuning:
+  [primary]tg files upload ./my-dataset.jsonl --purpose fine-tune[/primary]
+
+[dim]-[/dim] Check a local file for issues:
+  [primary]tg files check ./my-dataset.jsonl[/primary]
+
+[dim]-[/dim] Remove a file from Together:
+  [primary]tg files delete <file-id>[/primary]
+
+[dim]-[/dim] Download a file:
+  [primary]tg files download <file-id> --output ./datasets[/primary]
+"""
+
+FILES_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Upload a file for fine-tuning:
+  [primary]tg files upload ./my-dataset.jsonl --purpose fine-tune[/primary]
+
+[dim]-[/dim] Upload a file for evals:
+  [primary]tg files upload ./my-dataset.jsonl --purpose evals[/primary]
+
+[dim]-[/dim] Skip file checks:
+  [primary]tg files upload ./my-dataset.jsonl --no-check[/primary]
+"""
+
+FILES_RETRIEVE_CONTENT_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Download a file:
+  [primary]tg files download <file-id> --output ./datasets[/primary]
+
+[dim]-[/dim] Print file contents to stdout:
+  [primary]tg files download <file-id> --stdout[/primary]
+"""
+
 ## Models API commands
 MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List all models:
