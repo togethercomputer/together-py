@@ -28,17 +28,20 @@ from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
 from together.lib.cli.utils._help_examples import (
     EVALS_HELP_EXAMPLES,
+    FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
     FINE_TUNING_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
+    FILES_UPLOAD_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
+    FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -308,11 +311,21 @@ async def launcher(
 _CLI = "together.lib.cli.api"
 
 ## Files API commands
-files_app = app.command(App(name="files", help="Upload and manage files"))
-files_app.command(f"{_CLI}.files.upload:upload", help="Upload a file for fine-tuning, evals, or inference")
+files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
+files_app.command(
+    f"{_CLI}.files.upload:upload",
+    help="Upload a file for fine-tuning, evals, or inference",
+    help_epilogue=FILES_UPLOAD_HELP_EXAMPLES,
+)
 files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List your files")
 files_app.command(f"{_CLI}.files.retrieve:retrieve", help="Get file details")
-files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download file contents")
+files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download file contents", show=False)
+files_app.command(
+    f"{_CLI}.files.retrieve_content:retrieve_content",
+    name="download",
+    help="Download file contents",
+    help_epilogue=FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+)
 files_app.command(f"{_CLI}.files.delete:delete", alias="-d", help="Delete a file")
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
