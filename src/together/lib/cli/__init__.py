@@ -28,10 +28,12 @@ from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
 from together.lib.cli.utils._help_examples import (
     EVALS_HELP_EXAMPLES,
+    MODELS_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
     FINE_TUNING_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
+    MODELS_UPLOAD_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
@@ -63,6 +65,7 @@ def _propagate_global_param_group(target_app: App) -> None:
             target_app[flag].group = "Global Options"
             target_app[flag].show = True
             target_app[flag].help = help_text
+            target_app.help_epilogue = target_app.help_epilogue or ""
         except KeyError:
             pass
     for sub in target_app.subapps:
@@ -328,30 +331,25 @@ fine_tuning_app.command(
     help="Start a new fine-tuning job",
     help_epilogue=FINE_TUNING_CREATE_HELP_EXAMPLES,
 )
-fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs", help_epilogue="")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details", help_epilogue="")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"), help="Cancel a fine-tuning job", help_epilogue="")
-fine_tuning_app.command(
-    (f"{_CLI}.fine_tuning.list_events:list_events"), help="List events for a fine-tuning job", help_epilogue=""
-)
+fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"), help="Cancel a fine-tuning job")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.list_events:list_events"), help="List events for a fine-tuning job")
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.list_checkpoints:list_checkpoints"),
     help="List checkpoints for a fine-tuning job",
-    help_epilogue="",
 )
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.download:download"),
     help="Download a fine-tuned model's weights",
     help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
-fine_tuning_app.command(
-    (f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job", help_epilogue=""
-)
+fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
 
 ## Models API commands
-models_app = app.command(App(name="models", help="List and upload models"))
+models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
 models_app.command((f"{_CLI}.models.list:list"), alias="ls", help="List available models")
-models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model")
+models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model", help_epilogue=MODELS_UPLOAD_HELP_EXAMPLES)
 
 ## Endpoints API commands
 endpoints_app = app.command(App(name="endpoints", help="Deploy and manage dedicated endpoints"))
@@ -366,18 +364,17 @@ endpoints_app.command(
     help="Create a new endpoint",
     help_epilogue=ENDPOINTS_CREATE_HELP_EXAMPLES,
 )
-endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints", help_epilogue="")
+endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details")
+endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints")
 endpoints_app.command(
     (f"{_CLI}.endpoints.update:update"), help="Update an endpoint", help_epilogue=ENDPOINTS_UPDATE_HELP_EXAMPLES
 )
 endpoints_app.command(
     (f"{_CLI}.endpoints.availability_zones:availability_zones"),
     help="List availability zones for deploying models",
-    help_epilogue="",
 )
 
 ## Evals API commands
@@ -385,9 +382,9 @@ evals_app = app.command(App(name="evals", help="Run and manage model evaluations
 evals_app.command(
     (f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job", help_epilogue=EVALS_CREATE_HELP_EXAMPLES
 )
-evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs", help_epilogue="")
-evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), help="Get eval job details", help_epilogue="")
-evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status", help_epilogue="")
+evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs")
+evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), help="Get eval job details")
+evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
 
 ## Telemetry API commands
 telemetry_app = app.command(App(name="telemetry", help="Configure CLI telemetry"))
