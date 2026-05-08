@@ -224,7 +224,7 @@ async def create(
         model_b_final = {
             "model": model_b,
             "model_source": model_b_source,
-            "max_tokens": model_b_max_tokens or 512,
+            "max_tokens": model_b_max_tokens if model_b_max_tokens is not None else 16000,
             "temperature": model_b_temperature,
             "system_template": model_b_system_template,
             "input_template": model_b_input_template,
