@@ -27,20 +27,35 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
 from together.lib.cli.utils._help_examples import (
+    JIG_HELP_EXAMPLES,
     EVALS_HELP_EXAMPLES,
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
+    JIG_LOGS_HELP_EXAMPLES,
+    JIG_PUSH_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
+    JIG_BUILD_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
+    JIG_DEPLOY_HELP_EXAMPLES,
+    JIG_SUBMIT_HELP_EXAMPLES,
     FINE_TUNING_HELP_EXAMPLES,
+    JIG_DESTROY_HELP_EXAMPLES,
+    JIG_SECRETS_HELP_EXAMPLES,
+    JIG_VOLUMES_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
+    JIG_JOB_STATUS_HELP_EXAMPLES,
+    JIG_SECRETS_SET_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    JIG_SECRETS_UNSET_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
+    JIG_SECRETS_DELETE_HELP_EXAMPLES,
+    JIG_VOLUMES_CREATE_HELP_EXAMPLES,
+    JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
@@ -471,48 +486,103 @@ storage_app.command(
 storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
 
 ### Jig commands
-jig_app = beta_app.command(App(name="jig", help="Build, deploy, and manage custom containers"))
+jig_app = beta_app.command(
+    App(name="jig", help="Build, deploy, and manage custom containers", help_epilogue=JIG_HELP_EXAMPLES)
+)
 jig_app.command((f"{_CLI}.beta.jig.jig:init"), help="Initialize configuration for a Jig deployment")
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:dockerfile_cli"), name="dockerfile", help="Generate Dockerfile from jig configuration"
 )
-jig_app.command((f"{_CLI}.beta.jig.jig:build_cli"), name="build", help="Build container image")
-jig_app.command((f"{_CLI}.beta.jig.jig:push_cli"), name="push", help="Push image to registry")
-jig_app.command((f"{_CLI}.beta.jig.jig:deploy_cli"), name="deploy", help="Deploy model to Together")
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:build_cli"),
+    name="build",
+    help="Build container image",
+    help_epilogue=JIG_BUILD_HELP_EXAMPLES,
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:push_cli"), name="push", help="Push image to registry", help_epilogue=JIG_PUSH_HELP_EXAMPLES
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:deploy_cli"),
+    name="deploy",
+    help="Deploy model to Together",
+    help_epilogue=JIG_DEPLOY_HELP_EXAMPLES,
+)
 jig_app.command((f"{_CLI}.beta.jig.jig:status_cli"), name="status", help="Get deployment status")
 jig_app.command((f"{_CLI}.beta.jig.jig:endpoint_cli"), name="endpoint", help="Get deployment endpoint URL")
-jig_app.command((f"{_CLI}.beta.jig.jig:logs_cli"), name="logs", help="Get deployment logs")
-jig_app.command((f"{_CLI}.beta.jig.jig:destroy_cli"), name="destroy", help="Destroy deployment")
-jig_app.command((f"{_CLI}.beta.jig.jig:submit_cli"), name="submit", help="Submit a job to the deployment")
-jig_app.command((f"{_CLI}.beta.jig.jig:job_status_cli"), name="job-status", help="Get status of a specific job")
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:logs_cli"), name="logs", help="Get deployment logs", help_epilogue=JIG_LOGS_HELP_EXAMPLES
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:destroy_cli"),
+    name="destroy",
+    help="Destroy deployment",
+    help_epilogue=JIG_DESTROY_HELP_EXAMPLES,
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:submit_cli"),
+    name="submit",
+    help="Submit a job to the deployment",
+    help_epilogue=JIG_SUBMIT_HELP_EXAMPLES,
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:job_status_cli"),
+    name="job-status",
+    help="Get status of a specific job",
+    help_epilogue=JIG_JOB_STATUS_HELP_EXAMPLES,
+)
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:queue_status_cli"), name="queue-status", help="Get queue metrics for the deployment"
 )
 jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
 
-secrets_app = jig_app.command(App(name="secrets", help="Manage deployment secrets", group="Subcommands"))
-secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_set_cli"), name="set", help="Set a secret (create or update)")
-secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_unset_cli"), name="unset", help="Remove a secret from local state")
+secrets_app = jig_app.command(
+    App(name="secrets", help="Manage deployment secrets", group="Subcommands", help_epilogue=JIG_SECRETS_HELP_EXAMPLES)
+)
+secrets_app.command(
+    (f"{_CLI}.beta.jig.jig:secrets_set_cli"),
+    name="set",
+    help="Set a secret (create or update)",
+    help_epilogue=JIG_SECRETS_SET_HELP_EXAMPLES,
+)
+secrets_app.command(
+    (f"{_CLI}.beta.jig.jig:secrets_unset_cli"),
+    name="unset",
+    help="Remove a secret from local state",
+    help_epilogue=JIG_SECRETS_UNSET_HELP_EXAMPLES,
+)
 secrets_app.command(
     (f"{_CLI}.beta.jig.jig:secrets_delete_cli"),
     name="delete",
     help="Delete a secret and unset it locally",
     alias="-d",
+    help_epilogue=JIG_SECRETS_DELETE_HELP_EXAMPLES,
 )
 secrets_app.command(
     (f"{_CLI}.beta.jig.jig:secrets_list_cli"), name="list", alias="ls", help="List all secrets with sync status"
 )
 
 ### Jig > volumes
-storage_app = jig_app.command(App(name="volumes", help="Manage volumes for Jig deployments", group="Subcommands"))
+storage_app = jig_app.command(
+    App(
+        name="volumes",
+        help="Manage volumes for Jig deployments",
+        group="Subcommands",
+        help_epilogue=JIG_VOLUMES_HELP_EXAMPLES,
+    )
+)
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_create_cli"),
     name="create",
     alias="-c",
     help="Create a new volume for a Jig deployment",
+    help_epilogue=JIG_VOLUMES_CREATE_HELP_EXAMPLES,
 )
 storage_app.command(
-    (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"), name="update", help="Update a volume and re-upload files"
+    (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"),
+    name="update",
+    help="Update a volume and re-upload files",
+    help_epilogue=JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
 )
 storage_app.command((f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"), name="delete", help="Delete a volume", alias="-d")
 storage_app.command(
