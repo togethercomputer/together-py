@@ -193,7 +193,7 @@ async def create(
         model_a_final = {
             "model": model_a,
             "model_source": model_a_source,
-            "max_tokens": model_a_max_tokens or 512,
+            "max_tokens": model_a_max_tokens if model_a_max_tokens is not None else 16000,
             "temperature": model_a_temperature,
             "system_template": model_a_system_template,
             "input_template": model_a_input_template,
