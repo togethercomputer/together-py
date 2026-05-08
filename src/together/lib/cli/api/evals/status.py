@@ -18,11 +18,7 @@ async def status(
     """Get the status and results of a specific evaluation job."""
     response = await show_loading_status("Retrieving eval status...", config.client.evals.status(evaluation_id))
     if config.json:
-        console.print_json(openapi_dumps(response).decode("utf-8"))
-    else:
-        console.print(f"Status: [bold]{response.status}[/bold]")
+        console.print_json(openapi_dumps({"status": response.status}).decode("utf-8"))
+        return
 
-        if response.results:
-            # TODO: Add a pretty print for the results
-            console.print("\nResults")
-            console.print_json(openapi_dumps(response.results).decode("utf-8"))
+    console.print(f"Status: {response.status}")

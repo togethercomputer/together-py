@@ -30,4 +30,4 @@ custom_theme = Theme(
     }
 )
 
-console = Console(theme=custom_theme)
+console = Console(theme=custom_theme, highlight=False)

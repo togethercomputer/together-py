@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Union, Literal, Optional, Annotated, cast
+from pathlib import Path
 
 from cyclopts import Parameter
 
@@ -35,10 +35,10 @@ async def create(
     input_data_file_path: Annotated[str, Parameter(help="The path to the input data file")],
     judge_external_api_token: Annotated[
         Optional[str], Parameter(help="API token for access to the external judge model")
-    ],
+    ] = None,
     judge_external_base_url: Annotated[
         Optional[str], Parameter(help="Base URL for access to the external judge model")
-    ],
+    ] = None,
     model_field: Annotated[
         Optional[str],
         Parameter(
@@ -130,6 +130,14 @@ async def create(
     labels_list = labels.split(",") if labels else None
     pass_labels_list = pass_labels.split(",") if pass_labels else None
 
+    # If the user passes a path to a file, try to upload it to the files API first
+    # Uploads are idempotent so we can depend on this API always giving us a file ID
+    if _check_path_exists(input_data_file_path):
+        file_upload = await config.client.files.upload(Path(input_data_file_path), purpose="eval", check=False)
+        training_file = file_upload.id
+    else:
+        training_file = input_data_file_path
+
     model_to_evaluate_final: Union[Dict[str, Any], None, str] = None
     config_params_provided = any(
         [
@@ -154,7 +162,7 @@ async def create(
         model_to_evaluate_final = {
             "model": model_to_evaluate,
             "model_source": model_to_evaluate_source,
-            "max_tokens": model_to_evaluate_max_tokens,
+            "max_tokens": model_to_evaluate_max_tokens if model_to_evaluate_max_tokens is not None else 16000,
             "temperature": model_to_evaluate_temperature,
             "system_template": model_to_evaluate_system_template,
             "input_template": model_to_evaluate_input_template,
@@ -185,7 +193,7 @@ async def create(
         model_a_final = {
             "model": model_a,
             "model_source": model_a_source,
-            "max_tokens": model_a_max_tokens,
+            "max_tokens": model_a_max_tokens if model_a_max_tokens is not None else 16000,
             "temperature": model_a_temperature,
             "system_template": model_a_system_template,
             "input_template": model_a_input_template,
@@ -216,7 +224,7 @@ async def create(
         model_b_final = {
             "model": model_b,
             "model_source": model_b_source,
-            "max_tokens": model_b_max_tokens,
+            "max_tokens": model_b_max_tokens if model_b_max_tokens is not None else 16000,
             "temperature": model_b_temperature,
             "system_template": model_b_system_template,
             "input_template": model_b_input_template,
@@ -239,7 +247,7 @@ async def create(
         response = await config.client.evals.create(
             type=type_val,
             parameters=ParametersEvaluationClassifyParameters(
-                input_data_file_path=input_data_file_path,
+                input_data_file_path=training_file,
                 judge=judge_config,
                 labels=labels_list or [],
                 pass_labels=pass_labels_list or [],
@@ -252,7 +260,7 @@ async def create(
         response = await config.client.evals.create(
             type="score",
             parameters=ParametersEvaluationScoreParameters(
-                input_data_file_path=input_data_file_path,
+                input_data_file_path=training_file,
                 judge=judge_config,
                 max_score=max_score,
                 min_score=min_score,
@@ -264,7 +272,7 @@ async def create(
         response = await config.client.evals.create(
             type=type_val,
             parameters=ParametersEvaluationCompareParameters(
-                input_data_file_path=input_data_file_path,
+                input_data_file_path=training_file,
                 judge=judge_config,
                 model_a=cast(ParametersEvaluationCompareParametersModelAEvaluationModelRequest, model_a_final),
                 model_b=cast(ParametersEvaluationCompareParametersModelBEvaluationModelRequest, model_b_final),
@@ -274,7 +282,13 @@ async def create(
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
     else:
-        console.print(json.dumps(response.model_dump(exclude_none=True), indent=4))
+        url = f"https://api.together.ai/evaluations/result/{response.workflow_id}"
+        console.print(f"[green]√ Evaluation job created[/green] [dim]([link={url}]{response.workflow_id}[/link])[/dim]")
+        console.print(f"  Evaluations may take some time to complete.\n")
+        console.print(f"  To retrieve the status:")
+        console.print(f"    [dim]-[/dim] [primary]tg evals status {response.workflow_id}[/primary]")
+        console.print(f"  To get the results:")
+        console.print(f"    [dim]-[/dim] [primary]tg evals {response.workflow_id}[/primary]")
 
 
 def _build_judge(
@@ -312,3 +326,12 @@ def _build_judge(
     if judge_external_base_url:
         judge_config["external_base_url"] = judge_external_base_url
     return judge_config
+
+
+def _check_path_exists(path_string: str) -> bool:
+    if path_string == "":
+        return False
+    p = Path(path_string)
+    if p.is_dir():
+        raise ValueError(f"Path {path_string} is a directory, not a file. Please provide a file path.")
+    return p.exists() and p.is_file()
