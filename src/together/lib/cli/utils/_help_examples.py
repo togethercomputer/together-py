@@ -228,3 +228,103 @@ EVALS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --model-b-system-template "You are a concise assistant." \\
     --model-b-input-template $'Answer the following:\\n\\n{{prompt}}'[/primary]
 """
+
+## Beta clusters API commands
+
+BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List clusters and regions:
+  [primary]tg beta clusters list[/primary]
+  [primary]tg beta clusters list-regions[/primary]
+
+[dim]-[/dim] Write kubeconfig for a cluster (default ~/.kube/config):
+  [primary]tg beta clusters get-credentials <cluster-id>[/primary]
+
+[dim]-[/dim] Print kubeconfig to stdout:
+  [primary]tg beta clusters get-credentials <cluster-id> --file -[/primary]
+
+[dim]-[/dim] Non-interactive cluster create (see [primary]tg beta clusters create --help[/primary] for flags):
+  [primary]tg beta clusters create --non-interactive \\
+    --name my-cluster --cluster-type KUBERNETES --gpu-type H100_SXM \\
+    --region us-central-8 --num-gpus 8 --billing-type ON_DEMAND \\
+    --nvidia-driver-version 565 --cuda-version 12.6 --volume <volume-id>[/primary]
+
+[dim]-[/dim] Update or delete a cluster:
+  [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
+  [primary]tg beta clusters delete <cluster-id>[/primary]
+"""
+
+BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create interactively (prompts for region, GPUs, drivers, etc.):
+  [primary]tg beta clusters create[/primary]
+
+[dim]-[/dim] Create without prompts (supply every required field):
+  [primary]tg beta clusters create --non-interactive \\
+    --name my-cluster \\
+    --cluster-type KUBERNETES \\
+    --gpu-type H100_SXM \\
+    --region us-central-8 \\
+    --num-gpus 8 \\
+    --billing-type ON_DEMAND \\
+    --nvidia-driver-version 565 \\
+    --cuda-version 12.6 \\
+    --volume <volume-id>[/primary]
+"""
+
+BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Merge cluster kubeconfig into the default file ([primary]~/.kube/config[/primary]):
+  [primary]tg beta clusters get-credentials <cluster-id>[/primary]
+
+[dim]-[/dim] Write to a specific path:
+  [primary]tg beta clusters get-credentials <cluster-id> --file ./my-kubeconfig[/primary]
+
+[dim]-[/dim] Print kubeconfig to stdout (no file write):
+  [primary]tg beta clusters get-credentials <cluster-id> --file -[/primary]
+
+[dim]-[/dim] Use a custom context name in the merged kubeconfig:
+  [primary]tg beta clusters get-credentials <cluster-id> --context-name my-prod-k8s[/primary]
+
+[dim]-[/dim] On name conflicts with an existing kubeconfig, replace the entry:
+  [primary]tg beta clusters get-credentials <cluster-id> --overwrite-existing[/primary]
+
+[dim]-[/dim] Set this cluster as the default kube context after merge:
+  [primary]tg beta clusters get-credentials <cluster-id> --set-default-context[/primary]
+"""
+
+BETA_CLUSTERS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Change GPU count:
+  [primary]tg beta clusters update <cluster-id> --num-gpus 16[/primary]
+
+[dim]-[/dim] Change cluster type:
+  [primary]tg beta clusters update <cluster-id> --cluster-type KUBERNETES[/primary]
+
+[dim]-[/dim] Update both:
+  [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
+"""
+
+BETA_CLUSTERS_STORAGE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List storage volumes:
+  [primary]tg beta clusters storage list[/primary]
+
+[dim]-[/dim] Create or resize a volume (see subcommand help for options):
+  [primary]tg beta clusters storage create --region us-east-1 --size-tib 1 --volume-name my-data[/primary]
+  [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
+
+[dim]-[/dim] Use a volume when creating a cluster:
+  [primary]tg beta clusters create --non-interactive ... --volume <volume-id>[/primary]
+"""
+
+BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a 1 TiB volume in a region ([primary]tg beta clusters list-regions[/primary] lists regions):
+  [primary]tg beta clusters storage create \\
+    --region us-east-1 \\
+    --size-tib 1 \\
+    --volume-name my-training-data[/primary]
+
+[dim]-[/dim] Attach the volume when creating a cluster:
+  [primary]tg beta clusters create --non-interactive ... --volume <volume-id>[/primary]
+"""
+
+BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Grow a volume to 4 TiB:
+  [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
+"""

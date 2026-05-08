@@ -35,13 +35,20 @@ from together.lib.cli.utils._help_examples import (
     FINE_TUNING_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
+    BETA_CLUSTERS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
+    BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -412,20 +419,50 @@ beta_root_app = App(name="beta", help="Experimental and beta features")
 beta_app = app.command(beta_root_app)
 
 ### Clusters API commands
-clusters_app = beta_app.command(App(name="clusters", help="Create and manage GPU clusters"))
+clusters_app = beta_app.command(
+    App(name="clusters", help="Create and manage GPU clusters", help_epilogue=BETA_CLUSTERS_HELP_EXAMPLES)
+)
 clusters_app.command((f"{_CLI}.beta.clusters.list:list"), alias="ls", help="List your clusters")
-clusters_app.command((f"{_CLI}.beta.clusters.create:create"), alias="-c", help="Create a new cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.create:create"),
+    alias="-c",
+    help="Create a new cluster",
+    help_epilogue=BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
+)
 clusters_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"), help="Get cluster details")
-clusters_app.command((f"{_CLI}.beta.clusters.update:update"), help="Update a cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.update:update"),
+    help="Update a cluster",
+    help_epilogue=BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
+)
 clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), alias="-d", help="Delete a cluster")
 clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
-clusters_app.command((f"{_CLI}.beta.clusters.get_credentials:get_credentials"), help="Get credentials for a cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
+    help="Get credentials for a cluster",
+    help_epilogue=BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+)
 
 ### Clusters > Storage API commands
-storage_app = clusters_app.command(App(name="storage", help="Manage cluster storage volumes", group="Subcommands"))
+storage_app = clusters_app.command(
+    App(
+        name="storage",
+        help="Manage cluster storage volumes",
+        group="Subcommands",
+        help_epilogue=BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
+    )
+)
 storage_app.command((f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster")
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.create:create"), alias="-c", help="Create a new storage volume for a cluster"
+    (f"{_CLI}.beta.clusters.storage.create:create"),
+    alias="-c",
+    help="Create a new storage volume for a cluster",
+    help_epilogue=BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+)
+storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.update:update"),
+    help="Resize a storage volume",
+    help_epilogue=BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
 )
 storage_app.command(
     (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
