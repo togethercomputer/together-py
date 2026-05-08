@@ -153,6 +153,7 @@ class TestJSONMode:
     def test_beta_clusters_storage_json_mode(self) -> None:
         beta_clusters_storage = JSONValidator(("beta", "clusters", "storage"))
         beta_clusters_storage.run_and_assert("create --region us-east-1 --size-tib 1 --volume-name test-volume")
+        beta_clusters_storage.run_and_assert("update storage-123 --size-tib 4")
         beta_clusters_storage.run_and_assert("delete storage-123")
         beta_clusters_storage.run_and_assert("list")
         beta_clusters_storage.run_and_assert("retrieve storage-123")
