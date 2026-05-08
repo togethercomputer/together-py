@@ -51,12 +51,22 @@ class ParametersEvaluationClassifyParametersJudge(TypedDict, total=False):
     external_base_url: str
     """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
+    max_tokens: int
+    """Maximum number of tokens the judge model can generate.
+
+    Defaults to 32768. Increase for reasoning models (e.g. Gemini, o-series) that
+    consume output token budget for chain-of-thought.
+    """
+
     num_workers: int
     """Number of concurrent workers for inference requests.
 
     Overrides the default concurrency for this model. Useful for tuning throughput
     when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
     """
+
+    temperature: float
+    """Sampling temperature for the judge model. Defaults to 0.05."""
 
 
 class ParametersEvaluationClassifyParametersModelToEvaluateEvaluationModelRequest(TypedDict, total=False):
@@ -129,12 +139,22 @@ class ParametersEvaluationScoreParametersJudge(TypedDict, total=False):
     external_base_url: str
     """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
+    max_tokens: int
+    """Maximum number of tokens the judge model can generate.
+
+    Defaults to 32768. Increase for reasoning models (e.g. Gemini, o-series) that
+    consume output token budget for chain-of-thought.
+    """
+
     num_workers: int
     """Number of concurrent workers for inference requests.
 
     Overrides the default concurrency for this model. Useful for tuning throughput
     when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
     """
+
+    temperature: float
+    """Sampling temperature for the judge model. Defaults to 0.05."""
 
 
 class ParametersEvaluationScoreParametersModelToEvaluateEvaluationModelRequest(TypedDict, total=False):
@@ -210,12 +230,22 @@ class ParametersEvaluationCompareParametersJudge(TypedDict, total=False):
     external_base_url: str
     """Base URL for external judge models. Must be OpenAI-compatible base URL."""
 
+    max_tokens: int
+    """Maximum number of tokens the judge model can generate.
+
+    Defaults to 32768. Increase for reasoning models (e.g. Gemini, o-series) that
+    consume output token budget for chain-of-thought.
+    """
+
     num_workers: int
     """Number of concurrent workers for inference requests.
 
     Overrides the default concurrency for this model. Useful for tuning throughput
     when using proxy endpoints (e.g. OpenRouter) or rate-limited external APIs.
     """
+
+    temperature: float
+    """Sampling temperature for the judge model. Defaults to 0.05."""
 
 
 class ParametersEvaluationCompareParametersModelAEvaluationModelRequest(TypedDict, total=False):
