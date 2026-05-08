@@ -30,10 +30,13 @@ from together.lib.cli.utils._help_examples import (
     EVALS_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
+    FINE_TUNING_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
+    FINE_TUNING_CREATE_HELP_EXAMPLES,
+    FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -311,21 +314,39 @@ files_app.command(f"{_CLI}.files.delete:delete", alias="-d", help="Delete a file
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
 # Fine-tuning API commands
-fine_tuning_app = app.command(App(name="fine-tuning", alias="ft", help="Create and manage fine-tuning jobs"))
-fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"), alias="-c", help="Start a new fine-tuning job")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"), help="Cancel a fine-tuning job")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.list_events:list_events"), help="List events for a fine-tuning job")
+fine_tuning_app = app.command(
+    App(
+        name="fine-tuning",
+        alias="ft",
+        help="Create and manage fine-tuning jobs",
+        help_epilogue=FINE_TUNING_HELP_EXAMPLES,
+    )
+)
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.create:create"),
+    alias="-c",
+    help="Start a new fine-tuning job",
+    help_epilogue=FINE_TUNING_CREATE_HELP_EXAMPLES,
+)
+fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs", help_epilogue="")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details", help_epilogue="")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"), help="Cancel a fine-tuning job", help_epilogue="")
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.list_events:list_events"), help="List events for a fine-tuning job", help_epilogue=""
+)
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.list_checkpoints:list_checkpoints"),
     help="List checkpoints for a fine-tuning job",
+    help_epilogue="",
 )
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.download:download"),
     help="Download a fine-tuned model's weights",
+    help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
-fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job", help_epilogue=""
+)
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models"))

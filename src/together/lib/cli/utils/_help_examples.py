@@ -11,6 +11,46 @@ TOP_LEVEL_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face[/primary]
 """
 
+## Fine-tuning API commands
+FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a fine-tuning job:
+  [primary]tg ft create --model Qwen/Qwen2-1.5B --training-file ./my-dataset.jsonl[/primary]
+
+[dim]-[/dim] Retrieve a fine-tuning job details:
+  [primary]tg ft <ft-job-id>[/primary]
+
+[dim]-[/dim] Download a fine-tuned model's weights:
+  [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
+
+[dim]-[/dim] List checkpoints for a fine-tuning job:
+  [primary]tg ft list-checkpoints <ft-job-id>[/primary]
+
+[dim]-[/dim] Cancel a fine-tuning job:
+  [primary]tg ft cancel <ft-job-id>[/primary]
+"""
+
+FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Start a supervised fine-tuning job:
+  [primary]tg ft create -M Qwen/Qwen2-1.5B -t ./my-dataset.jsonl[/primary]
+
+[dim]-[/dim] Start a preference fine-tuning job:
+  [primary]tg ft create -m dpo -M Qwen/Qwen2-1.5B -t ./dpo_train_file.jsonl[/primary]
+
+[dim]-[/dim] Start a fine-tuning job from a checkpoint:
+  [primary]tg ft create --from-checkpoint JOB_ID/OUTPUT_MODEL_NAME:STEP --training-file ./updated-dataset.jsonl[/primary]
+
+[dim]-[/dim] Specify the number of checkpoints to save:
+  [primary]tg ft create --n-checkpoints 3 -M Qwen/Qwen2-1.5B --training-file ./my-dataset.jsonl[/primary]
+"""
+
+FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Download a fine-tuned model's weights:
+  [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
+
+[dim]-[/dim] Download a fine-tuned model's weights from a specific checkpoint:
+  [primary]tg ft download <ft-job-id> --checkpoint-step 1 --output-dir ./my-model[/primary]
+"""
+
 ## Endpoints API commands
 
 ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
