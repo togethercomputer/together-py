@@ -31,7 +31,7 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Start a supervised fine-tuning job:
-  [primary]tg ft create -M Qwen/Qwen2-1.5B --t ./my-dataset.jsonl[/primary]
+  [primary]tg ft create -M Qwen/Qwen2-1.5B -t ./my-dataset.jsonl[/primary]
 
 [dim]-[/dim] Start a preference fine-tuning job:
   [primary]tg ft create -m dpo -M Qwen/Qwen2-1.5B -t ./dpo_train_file.jsonl[/primary]
