@@ -162,7 +162,7 @@ async def create(
         model_to_evaluate_final = {
             "model": model_to_evaluate,
             "model_source": model_to_evaluate_source,
-            "max_tokens": model_to_evaluate_max_tokens or 512,
+            "max_tokens": model_to_evaluate_max_tokens if model_to_evaluate_max_tokens is not None else 16000,
             "temperature": model_to_evaluate_temperature,
             "system_template": model_to_evaluate_system_template,
             "input_template": model_to_evaluate_input_template,
