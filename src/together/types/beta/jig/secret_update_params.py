@@ -30,5 +30,5 @@ class SecretUpdateParams(TypedDict, total=False):
     value: str
     """Value is the new sensitive data to store securely.
 
-    Updating this will replace the existing secret value
+    Updating this replaces the existing secret value.
     """

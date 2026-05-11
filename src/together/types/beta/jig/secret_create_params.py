@@ -18,7 +18,7 @@ class SecretCreateParams(TypedDict, total=False):
     value: Required[str]
     """
     Value is the sensitive data to store securely (e.g., API keys, passwords,
-    tokens). This value will be encrypted at rest
+    tokens). Encrypted at rest.
     """
 
     description: str

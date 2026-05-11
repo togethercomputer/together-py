@@ -9,7 +9,7 @@ __all__ = ["FineTuningEstimatePriceResponse"]
 
 class FineTuningEstimatePriceResponse(BaseModel):
     allowed_to_proceed: Optional[bool] = None
-    """Whether the user is allowed to proceed with the fine-tuning job"""
+    """Whether you are allowed to proceed with the fine-tuning job."""
 
     estimated_eval_token_count: Optional[float] = None
     """The estimated number of tokens for evaluation"""
@@ -21,4 +21,4 @@ class FineTuningEstimatePriceResponse(BaseModel):
     """The estimated number of tokens to be trained"""
 
     user_limit: Optional[float] = None
-    """The user's credit limit in dollars"""
+    """Your credit limit in dollars."""

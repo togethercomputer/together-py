@@ -144,7 +144,7 @@ class ClustersResource(SyncAPIResource):
 
           reservation_start_time: Reservation start time of the cluster. This field is required for SCHEDULED
               billing to specify the reservation start time for the cluster. If not provided,
-              the cluster will be provisioned immediately.
+              the cluster provisions immediately.
 
           shared_volume: Inline configuration to create a shared volume with the cluster creation.
 
@@ -467,7 +467,7 @@ class AsyncClustersResource(AsyncAPIResource):
 
           reservation_start_time: Reservation start time of the cluster. This field is required for SCHEDULED
               billing to specify the reservation start time for the cluster. If not provided,
-              the cluster will be provisioned immediately.
+              the cluster provisions immediately.
 
           shared_volume: Inline configuration to create a shared volume with the cluster creation.
 

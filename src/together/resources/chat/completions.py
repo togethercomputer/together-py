@@ -99,13 +99,13 @@ class CompletionsResource(SyncAPIResource):
 
           chat_template_kwargs: Additional configuration to pass to model engine.
 
-          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
-              length of the model. When set to 'error', API will return 400 with appropriate
-              error message. When set to 'truncate', override the max_tokens with maximum
-              context length of the model.
+          context_length_exceeded_behavior: Defines the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', the API returns 400 with an
+              appropriate error message. When set to 'truncate', overrides max_tokens with the
+              maximum context length of the model.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -113,7 +113,7 @@ class CompletionsResource(SyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -151,9 +151,8 @@ class CompletionsResource(SyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -249,13 +248,13 @@ class CompletionsResource(SyncAPIResource):
 
           chat_template_kwargs: Additional configuration to pass to model engine.
 
-          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
-              length of the model. When set to 'error', API will return 400 with appropriate
-              error message. When set to 'truncate', override the max_tokens with maximum
-              context length of the model.
+          context_length_exceeded_behavior: Defines the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', the API returns 400 with an
+              appropriate error message. When set to 'truncate', overrides max_tokens with the
+              maximum context length of the model.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -263,7 +262,7 @@ class CompletionsResource(SyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -301,9 +300,8 @@ class CompletionsResource(SyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate
@@ -395,13 +393,13 @@ class CompletionsResource(SyncAPIResource):
 
           chat_template_kwargs: Additional configuration to pass to model engine.
 
-          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
-              length of the model. When set to 'error', API will return 400 with appropriate
-              error message. When set to 'truncate', override the max_tokens with maximum
-              context length of the model.
+          context_length_exceeded_behavior: Defines the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', the API returns 400 with an
+              appropriate error message. When set to 'truncate', overrides max_tokens with the
+              maximum context length of the model.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -409,7 +407,7 @@ class CompletionsResource(SyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -447,9 +445,8 @@ class CompletionsResource(SyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate
@@ -640,13 +637,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           chat_template_kwargs: Additional configuration to pass to model engine.
 
-          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
-              length of the model. When set to 'error', API will return 400 with appropriate
-              error message. When set to 'truncate', override the max_tokens with maximum
-              context length of the model.
+          context_length_exceeded_behavior: Defines the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', the API returns 400 with an
+              appropriate error message. When set to 'truncate', overrides max_tokens with the
+              maximum context length of the model.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -654,7 +651,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -692,9 +689,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -790,13 +786,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           chat_template_kwargs: Additional configuration to pass to model engine.
 
-          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
-              length of the model. When set to 'error', API will return 400 with appropriate
-              error message. When set to 'truncate', override the max_tokens with maximum
-              context length of the model.
+          context_length_exceeded_behavior: Defines the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', the API returns 400 with an
+              appropriate error message. When set to 'truncate', overrides max_tokens with the
+              maximum context length of the model.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -804,7 +800,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -842,9 +838,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate
@@ -936,13 +931,13 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           chat_template_kwargs: Additional configuration to pass to model engine.
 
-          context_length_exceeded_behavior: Defined the behavior of the API when max_tokens exceed the maximum context
-              length of the model. When set to 'error', API will return 400 with appropriate
-              error message. When set to 'truncate', override the max_tokens with maximum
-              context length of the model.
+          context_length_exceeded_behavior: Defines the behavior of the API when max_tokens exceed the maximum context
+              length of the model. When set to 'error', the API returns 400 with an
+              appropriate error message. When set to 'truncate', overrides max_tokens with the
+              maximum context length of the model.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -950,7 +945,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -988,9 +983,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate

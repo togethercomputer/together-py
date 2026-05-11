@@ -94,8 +94,8 @@ class CompletionsResource(SyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -103,7 +103,7 @@ class CompletionsResource(SyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -124,9 +124,8 @@ class CompletionsResource(SyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -211,8 +210,8 @@ class CompletionsResource(SyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -220,7 +219,7 @@ class CompletionsResource(SyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -241,9 +240,8 @@ class CompletionsResource(SyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate
@@ -324,8 +322,8 @@ class CompletionsResource(SyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -333,7 +331,7 @@ class CompletionsResource(SyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -354,9 +352,8 @@ class CompletionsResource(SyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate
@@ -526,8 +523,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           prompt: A string providing context for the model to complete.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -535,7 +532,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -556,9 +553,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           stream: If true, stream tokens as Server-Sent Events as the model generates them instead
               of waiting for the full model response. The stream terminates with
@@ -643,8 +639,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -652,7 +648,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -673,9 +669,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate
@@ -756,8 +751,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
               of waiting for the full model response. The stream terminates with
               `data: [DONE]`. If false, return a single JSON object containing the results.
 
-          echo: If true, the response will contain the prompt. Can be used with `logprobs` to
-              return prompt logprobs.
+          echo: If true, the response contains the prompt. Can be used with `logprobs` to return
+              prompt logprobs.
 
           frequency_penalty: A number between -2.0 and 2.0 where a positive value decreases the likelihood of
               repeating tokens that have already been mentioned.
@@ -765,7 +760,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
           logit_bias: Adjusts the likelihood of specific tokens appearing in the generated output.
 
           logprobs: An integer between 0 and 20 of the top k tokens to return log probabilities for
-              at each generation step, instead of just the sampled token. Log probabilities
+              at each generation step, instead of only the sampled token. Log probabilities
               help assess model confidence in token predictions.
 
           max_tokens: The maximum number of tokens to generate.
@@ -786,9 +781,8 @@ class AsyncCompletionsResource(AsyncAPIResource):
 
           seed: Seed value for reproducibility.
 
-          stop: A list of string sequences that will truncate (stop) inference text output. For
-              example, "</s>" will stop generation as soon as the model generates the given
-              token.
+          stop: A list of string sequences that truncate (stop) inference text output. For
+              example, "</s>" stops generation as soon as the model generates the given token.
 
           temperature: A decimal number from 0-1 that determines the degree of randomness in the
               response. A temperature less than 1 favors more correctness and is appropriate

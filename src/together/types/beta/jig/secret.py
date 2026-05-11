@@ -16,13 +16,13 @@ class Secret(BaseModel):
     """CreatedAt is the ISO8601 timestamp when this secret was created"""
 
     created_by: Optional[str] = None
-    """CreatedBy is the identifier of the user who created this secret"""
+    """CreatedBy is the identifier of who created this secret."""
 
     description: Optional[str] = None
     """Description is a human-readable description of the secret's purpose"""
 
     last_updated_by: Optional[str] = None
-    """LastUpdatedBy is the identifier of the user who last updated this secret"""
+    """LastUpdatedBy is the identifier of who last updated this secret."""
 
     name: Optional[str] = None
     """Name is the name/key of the secret"""

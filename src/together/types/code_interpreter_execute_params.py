@@ -13,22 +13,19 @@ class CodeInterpreterExecuteParams(TypedDict, total=False):
     """Code snippet to execute."""
 
     language: Required[Literal["python"]]
-    """Programming language for the code to execute.
-
-    Currently only supports Python, but more will be added.
-    """
+    """Programming language for the code to execute. Currently only supports Python."""
 
     files: Iterable[File]
     """Files to upload to the session.
 
-    If present, files will be uploaded before executing the given code.
+    If present, files are uploaded before executing the given code.
     """
 
     session_id: str
     """Identifier of the current session.
 
-    Used to make follow-up calls. Requests will return an error if the session does
-    not belong to the caller or has expired.
+    Used to make follow-up calls. Returns an error if the session does not belong to
+    the caller or has expired.
     """
 
 

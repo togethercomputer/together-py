@@ -97,8 +97,7 @@ class ClusterCreateParams(TypedDict, total=False):
     """Reservation start time of the cluster.
 
     This field is required for SCHEDULED billing to specify the reservation start
-    time for the cluster. If not provided, the cluster will be provisioned
-    immediately.
+    time for the cluster. If not provided, the cluster provisions immediately.
     """
 
     shared_volume: SharedVolume

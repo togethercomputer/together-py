@@ -22,8 +22,8 @@ class ContentFile(BaseModel):
 class Content(BaseModel):
     files: Optional[List[ContentFile]] = None
     """
-    Files is the list of files that will be preloaded into the volume, if the volume
-    content type is "files"
+    Files is the list of files to preload into the volume, if the volume content
+    type is "files".
     """
 
     source_prefix: Optional[str] = None
@@ -40,7 +40,7 @@ class Content(BaseModel):
 
 
 class VersionHistoryContent(BaseModel):
-    """Content specifies the new content that will be preloaded to this volume"""
+    """Content specifies the new content to preload to this volume."""
 
     source_prefix: Optional[str] = None
     """
@@ -57,7 +57,7 @@ class VersionHistoryContent(BaseModel):
 
 class VersionHistory(BaseModel):
     content: Optional[VersionHistoryContent] = None
-    """Content specifies the new content that will be preloaded to this volume"""
+    """Content specifies the new content to preload to this volume."""
 
     mounted_by: Optional[List[str]] = None
 

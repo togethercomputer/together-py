@@ -66,8 +66,8 @@ class TrainingMethodTrainingMethodSft(BaseModel):
 
     train_on_inputs: Union[bool, Literal["auto"]]
     """
-    Whether to mask the user messages in conversational data or prompts in
-    instruction data.
+    Whether to mask user messages in conversational data or prompts in instruction
+    data.
     """
 
 
@@ -160,8 +160,7 @@ class FineTuningCancelResponse(BaseModel):
     max_seq_length: Optional[int] = None
     """Maximum sequence length to use for training.
 
-    If not specified, the maximum allowed for the model and training method will be
-    used.
+    If not specified, uses the maximum allowed for the model and training method.
     """
 
     model: Optional[str] = None
@@ -216,7 +215,7 @@ class FineTuningCancelResponse(BaseModel):
     """Type of training used (full or LoRA)"""
 
     user_id: Optional[str] = None
-    """Identifier for the user who created the job"""
+    """Identifier for who created the job."""
 
     validation_file: Optional[str] = None
     """File-ID of the validation file"""
