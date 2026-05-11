@@ -89,7 +89,7 @@ async def create(
         Parameter(converter=int_or_max_converter, name=["--batch-size", "-b"], help="Train batch size"),
     ] = "max",
     gradient_accumulation_steps: Annotated[
-        int | None,
+        int,
         Parameter(help="Number of gradient accumulation steps (increases effective batch size without more memory)"),
     ] = None,
     learning_rate: Annotated[
