@@ -328,3 +328,140 @@ BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Grow a volume to 4 TiB:
   [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
 """
+
+## Beta > Jig commands
+
+JIG_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Bootstrap config and deploy from the current directory:
+  [primary]tg beta jig init[/primary]
+  [primary]tg beta jig deploy[/primary]
+
+[dim]-[/dim] Inspect a deployment and stream logs:
+  [primary]tg beta jig status[/primary]
+  [primary]tg beta jig logs --follow[/primary]
+
+[dim]-[/dim] List deployments or tear one down:
+  [primary]tg beta jig list[/primary]
+  [primary]tg beta jig destroy[/primary]
+"""
+
+JIG_SECRETS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Add or rotate a secret for this deployment:
+  [primary]tg beta jig secrets set HF_TOKEN "$HF_TOKEN"[/primary]
+
+[dim]-[/dim] List secrets and sync status:
+  [primary]tg beta jig secrets list[/primary]
+
+[dim]-[/dim] Remove a secret remotely and locally:
+  [primary]tg beta jig secrets delete OLD_KEY[/primary]
+"""
+
+JIG_VOLUMES_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a volume and upload a directory:
+  [primary]tg beta jig volumes create --name model-weights --source ./weights[/primary]
+
+[dim]-[/dim] List volumes for the deployment:
+  [primary]tg beta jig volumes list[/primary]
+
+[dim]-[/dim] Refresh volume contents from disk:
+  [primary]tg beta jig volumes update --name model-weights --source ./weights[/primary]
+"""
+
+JIG_BUILD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Build with default tag ([primary]latest[/primary]):
+  [primary]tg beta jig build[/primary]
+
+[dim]-[/dim] Build a tagged image with warmup (torch compile cache):
+  [primary]tg beta jig build --tag v1 --warmup[/primary]
+
+[dim]-[/dim] Pass extra Docker build arguments:
+  [primary]tg beta jig build --docker-args '--no-cache'[/primary]
+"""
+
+JIG_PUSH_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Push the default ([primary]latest[/primary]) image:
+  [primary]tg beta jig push[/primary]
+
+[dim]-[/dim] Push a specific tag:
+  [primary]tg beta jig push --tag v1[/primary]
+"""
+
+JIG_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Build, push, and deploy from config in the current directory:
+  [primary]tg beta jig deploy[/primary]
+
+[dim]-[/dim] Deploy using an image that is already in the registry (skip build/push):
+  [primary]tg beta jig deploy --image my-registry.example.com/my-org/my-model:abc123[/primary]
+
+[dim]-[/dim] Only build and push; do not update the deployment:
+  [primary]tg beta jig deploy --build-only[/primary]
+
+[dim]-[/dim] Start deploy and return immediately without waiting:
+  [primary]tg beta jig deploy --detach[/primary]
+"""
+
+JIG_DESTROY_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Tear down the deployment for this project ([primary]jig.toml[/primary] / [primary]pyproject.toml[/primary]):
+  [primary]tg beta jig destroy[/primary]
+"""
+
+JIG_LOGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Print recent logs once:
+  [primary]tg beta jig logs[/primary]
+
+[dim]-[/dim] Stream logs ([primary]Ctrl+C[/primary] to stop):
+  [primary]tg beta jig logs --follow[/primary]
+"""
+
+JIG_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Submit a simple prompt job:
+  [primary]tg beta jig submit --prompt "Hello, world!"[/primary]
+
+[dim]-[/dim] Submit with a JSON payload (advanced request body):
+  [primary]tg beta jig submit --payload '{"prompt":"Explain transformers","max_tokens":256}'[/primary]
+
+[dim]-[/dim] Submit and poll until the job finishes:
+  [primary]tg beta jig submit --prompt "Summarize this README." --watch[/primary]
+"""
+
+JIG_JOB_STATUS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Look up a job by request ID (from submit output):
+  [primary]tg beta jig job-status --request-id <request-id>[/primary]
+
+[dim]-[/dim] Machine-readable status:
+  [primary]tg beta jig job-status --request-id <request-id> --json[/primary]
+"""
+
+JIG_SECRETS_SET_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create or update a secret from the shell:
+  [primary]tg beta jig secrets set HF_TOKEN "$HF_TOKEN"[/primary]
+
+[dim]-[/dim] Set a secret with a description (shown in listings):
+  [primary]tg beta jig secrets set API_KEY "$API_KEY" --description "Third-party API credentials"[/primary]
+"""
+
+JIG_SECRETS_UNSET_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Drop a secret from local state only (does not delete remotely):
+  [primary]tg beta jig secrets unset OLD_KEY[/primary]
+"""
+
+JIG_SECRETS_DELETE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Delete the secret on the server and remove it locally:
+  [primary]tg beta jig secrets delete REVOKED_KEY[/primary]
+"""
+
+JIG_VOLUMES_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a volume and upload files from a directory:
+  [primary]tg beta jig volumes create --name model-weights --source ./weights[/primary]
+
+[dim]-[/dim] Same using positional arguments:
+  [primary]tg beta jig volumes create model-weights ./weights[/primary]
+"""
+
+JIG_VOLUMES_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Upload a new directory tree as the next volume version:
+  [primary]tg beta jig volumes update --name model-weights --source ./weights[/primary]
+
+[dim]-[/dim] Positional form:
+  [primary]tg beta jig volumes update model-weights ./weights[/primary]
+"""
