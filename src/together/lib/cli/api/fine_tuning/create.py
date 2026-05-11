@@ -88,6 +88,10 @@ async def create(
         int | Literal["max"],
         Parameter(converter=int_or_max_converter, name=["--batch-size", "-b"], help="Train batch size"),
     ] = "max",
+    gradient_accumulation_steps: Annotated[
+        Optional[int],
+        Parameter(help="Number of gradient accumulation steps (increases effective batch size without more memory)"),
+    ] = None,
     learning_rate: Annotated[
         float, Parameter(name=["--learning-rate", "-lr"], help="Learning rate")
     ] = DEFAULT_LEARNING_RATE,
@@ -170,6 +174,7 @@ async def create(
         max_seq_length=max_seq_length,
         n_checkpoints=n_checkpoints,
         batch_size=batch_size,
+        gradient_accumulation_steps=gradient_accumulation_steps,
         learning_rate=learning_rate,
         lr_scheduler_type=lr_scheduler_type,
         min_lr_ratio=min_lr_ratio,

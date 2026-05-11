@@ -481,6 +481,8 @@ class FinetuneRequest(BaseModel):
     max_seq_length: Union[int, None] = None
     # training batch size
     batch_size: Union[int, Literal["max"], None] = None
+    # gradient accumulation steps
+    gradient_accumulation_steps: Union[int, None] = None
     # up to 40 character suffix for output model name
     suffix: Union[str, None] = None
     # weights & biases api key
