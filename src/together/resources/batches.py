@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing_extensions import Literal
+
 import httpx
 
 from ..types import batch_create_params
@@ -46,7 +48,7 @@ class BatchesResource(SyncAPIResource):
     def create(
         self,
         *,
-        endpoint: str,
+        endpoint: Literal["/v1/chat/completions", "/v1/audio/transcriptions", "/v1/audio/translations"],
         input_file_id: str,
         completion_window: str | Omit = omit,
         model_id: str | Omit = omit,
@@ -62,7 +64,13 @@ class BatchesResource(SyncAPIResource):
         Create a new batch job with the given input file and endpoint
 
         Args:
-          endpoint: The endpoint to use for batch processing
+          endpoint: The endpoint to use for batch processing. Each line of the uploaded input file
+              is dispatched against this endpoint.
+
+              - `/v1/chat/completions` — chat completion batches
+              - `/v1/audio/transcriptions` — audio transcription batches (e.g.
+                `openai/whisper-large-v3`)
+              - `/v1/audio/translations` — audio translation batches
 
           input_file_id: ID of the uploaded input file containing batch requests
 
@@ -211,7 +219,7 @@ class AsyncBatchesResource(AsyncAPIResource):
     async def create(
         self,
         *,
-        endpoint: str,
+        endpoint: Literal["/v1/chat/completions", "/v1/audio/transcriptions", "/v1/audio/translations"],
         input_file_id: str,
         completion_window: str | Omit = omit,
         model_id: str | Omit = omit,
@@ -227,7 +235,13 @@ class AsyncBatchesResource(AsyncAPIResource):
         Create a new batch job with the given input file and endpoint
 
         Args:
-          endpoint: The endpoint to use for batch processing
+          endpoint: The endpoint to use for batch processing. Each line of the uploaded input file
+              is dispatched against this endpoint.
+
+              - `/v1/chat/completions` — chat completion batches
+              - `/v1/audio/transcriptions` — audio transcription batches (e.g.
+                `openai/whisper-large-v3`)
+              - `/v1/audio/translations` — audio translation batches
 
           input_file_id: ID of the uploaded input file containing batch requests
 
