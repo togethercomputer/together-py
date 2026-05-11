@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.13.0 (2026-05-11)
+
+Full Changelog: [v2.12.0...v2.13.0](https://github.com/togethercomputer/together-py/compare/v2.12.0...v2.13.0)
+
+### Features
+
+* **api:** add max_tokens and temperature to eval judge parameters ([d35fb64](https://github.com/togethercomputer/together-py/commit/d35fb643b2cd5eff5ccb2b8b2c0eb4fbc8d30734))
+* **internal/types:** support eagerly validating pydantic iterators ([852ef60](https://github.com/togethercomputer/together-py/commit/852ef60dc108bef4dc7e80ea528ca7823d7030d9))
+
+
+### Bug Fixes
+
+* **api:** remove task field from audio transcription/translation responses ([f34ac96](https://github.com/togethercomputer/together-py/commit/f34ac960a980dbb5750208ff27eae4abc283783a))
+* **client:** add missing f-string prefix in file type error message ([d62050f](https://github.com/togethercomputer/together-py/commit/d62050fb50b4858ed32fa27d2024c7505d842946))
+* **types:** constrain endpoint parameter to literals in batches ([cc61be0](https://github.com/togethercomputer/together-py/commit/cc61be030cc95d6a3d8e262ec47f7ceacfd2eb75))
+
+
+### Chores
+
+* Add example usage for clusters commands ([#360](https://github.com/togethercomputer/together-py/issues/360)) ([a357ed6](https://github.com/togethercomputer/together-py/commit/a357ed65e81e3b1a94c3e5e63c7d2d8840f3f421))
+* Add example usage for file commands ([#359](https://github.com/togethercomputer/together-py/issues/359)) ([8d2a18b](https://github.com/togethercomputer/together-py/commit/8d2a18b2647585f4e83bd42c679e699c841cd545))
+* Add example usage for model commands ([#358](https://github.com/togethercomputer/together-py/issues/358)) ([1316203](https://github.com/togethercomputer/together-py/commit/13162032b1ae100ecc7c1a08f454b30474f0a6b4))
+* Add example usage to fine-tuning CLI help pages ([#357](https://github.com/togethercomputer/together-py/issues/357)) ([ad3cdb2](https://github.com/togethercomputer/together-py/commit/ad3cdb2d0d4f5511fa06105c4a7169cc72cf9306))
+* Add examples to the CLI help output for endpoint commands ([#354](https://github.com/togethercomputer/together-py/issues/354)) ([f51b5e8](https://github.com/togethercomputer/together-py/commit/f51b5e8ec65be8cee2eef9270b1af55cbdc2cd91))
+* Add help examples to evals commands ([#356](https://github.com/togethercomputer/together-py/issues/356)) ([0794576](https://github.com/togethercomputer/together-py/commit/0794576cd274a8a55240b3a1b780df8b23261a7c))
+* Add usage examples for jig commands ([#361](https://github.com/togethercomputer/together-py/issues/361)) ([643286f](https://github.com/togethercomputer/together-py/commit/643286f390291ebb3e5fed85c4fb1dc5dd9cd981))
+* Switch to an async version of DownloadManager ([#353](https://github.com/togethercomputer/together-py/issues/353)) ([c756670](https://github.com/togethercomputer/together-py/commit/c7566702fb57fcce808bb23ba1bc9b0737b9c352))
+
+
+### Documentation
+
+* **api:** add .ogg, .opus, .aac to supported formats in audio transcriptions/translations ([9c1211a](https://github.com/togethercomputer/together-py/commit/9c1211a8143dc435ef351dd57b9553d39ae06b8e))
+* **api:** clarify prompt parameter support in audio transcriptions/translations ([9889ead](https://github.com/togethercomputer/together-py/commit/9889ead58a66864a37d01ef0bbe92b4bc8786ff5))
+* **api:** reword docstrings to present tense across resources ([65c1756](https://github.com/togethercomputer/together-py/commit/65c175682f4f8432dfe4d880d6dc0a21acc46655))
+
 ## 2.12.0 (2026-05-01)
 
 Full Changelog: [v2.11.0...v2.12.0](https://github.com/togethercomputer/together-py/compare/v2.11.0...v2.12.0)
