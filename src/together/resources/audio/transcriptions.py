@@ -70,7 +70,7 @@ class TranscriptionsResource(SyncAPIResource):
 
         Args:
           file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+              .webm, .flac, .ogg, .opus, .aac.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you
@@ -94,7 +94,10 @@ class TranscriptionsResource(SyncAPIResource):
 
           model: Model to use for transcription
 
-          prompt: Optional text to bias decoding.
+          prompt: Optional text to bias decoding. Supported only on Whisper-family models (e.g.
+              `openai/whisper-large-v3`). Other STT models (e.g.
+              `nvidia/parakeet-tdt-0.6b-v3`) accept the field for API compatibility but ignore
+              it.
 
           response_format: The format of the response
 
@@ -193,7 +196,7 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
 
         Args:
           file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac.
+              .webm, .flac, .ogg, .opus, .aac.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you
@@ -217,7 +220,10 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
 
           model: Model to use for transcription
 
-          prompt: Optional text to bias decoding.
+          prompt: Optional text to bias decoding. Supported only on Whisper-family models (e.g.
+              `openai/whisper-large-v3`). Other STT models (e.g.
+              `nvidia/parakeet-tdt-0.6b-v3`) accept the field for API compatibility but ignore
+              it.
 
           response_format: The format of the response
 

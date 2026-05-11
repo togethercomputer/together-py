@@ -73,22 +73,21 @@ class CodeInterpreterResource(SyncAPIResource):
         """Executes the given code snippet and returns the output.
 
         Without a session_id, a
-        new session will be created to run the code. If you do pass in a valid
-        session_id, the code will be run in that session. This is useful for running
-        multiple code snippets in the same environment, because dependencies and similar
-        things are persisted between calls to the same session.
+        new session is created to run the code. If you pass a valid session_id, the code
+        runs in that session. This is useful for running multiple code snippets in the
+        same environment, because dependencies and similar things are persisted between
+        calls to the same session.
 
         Args:
           code: Code snippet to execute.
 
-          language: Programming language for the code to execute. Currently only supports Python,
-              but more will be added.
+          language: Programming language for the code to execute. Currently only supports Python.
 
-          files: Files to upload to the session. If present, files will be uploaded before
-              executing the given code.
+          files: Files to upload to the session. If present, files are uploaded before executing
+              the given code.
 
-          session_id: Identifier of the current session. Used to make follow-up calls. Requests will
-              return an error if the session does not belong to the caller or has expired.
+          session_id: Identifier of the current session. Used to make follow-up calls. Returns an
+              error if the session does not belong to the caller or has expired.
 
           extra_headers: Send extra headers
 
@@ -160,22 +159,21 @@ class AsyncCodeInterpreterResource(AsyncAPIResource):
         """Executes the given code snippet and returns the output.
 
         Without a session_id, a
-        new session will be created to run the code. If you do pass in a valid
-        session_id, the code will be run in that session. This is useful for running
-        multiple code snippets in the same environment, because dependencies and similar
-        things are persisted between calls to the same session.
+        new session is created to run the code. If you pass a valid session_id, the code
+        runs in that session. This is useful for running multiple code snippets in the
+        same environment, because dependencies and similar things are persisted between
+        calls to the same session.
 
         Args:
           code: Code snippet to execute.
 
-          language: Programming language for the code to execute. Currently only supports Python,
-              but more will be added.
+          language: Programming language for the code to execute. Currently only supports Python.
 
-          files: Files to upload to the session. If present, files will be uploaded before
-              executing the given code.
+          files: Files to upload to the session. If present, files are uploaded before executing
+              the given code.
 
-          session_id: Identifier of the current session. Used to make follow-up calls. Requests will
-              return an error if the session does not belong to the caller or has expired.
+          session_id: Identifier of the current session. Used to make follow-up calls. Returns an
+              error if the session does not belong to the caller or has expired.
 
           extra_headers: Send extra headers
 

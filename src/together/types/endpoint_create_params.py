@@ -33,10 +33,10 @@ class EndpointCreateParams(TypedDict, total=False):
     """A human-readable name for the endpoint"""
 
     inactive_timeout: Optional[int]
-    """
-    The number of minutes of inactivity after which the endpoint will be
-    automatically stopped. Set to null, omit or set to 0 to disable automatic
-    timeout.
+    """The number of minutes of inactivity after which the endpoint stops
+    automatically.
+
+    Set to null, omit, or set to 0 to disable automatic timeout.
     """
 
     state: Literal["STARTED", "STOPPED"]

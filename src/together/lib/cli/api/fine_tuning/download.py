@@ -7,8 +7,8 @@ from pathlib import Path
 
 from cyclopts import Parameter
 
-from together import APIError, Together, APIStatusError
-from together.lib import DownloadManager
+from together import APIError, APIStatusError
+from together.lib import AsyncDownloadManager
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -26,7 +26,7 @@ CheckpointStepParam = Annotated[
     Parameter(name=["--checkpoint-step", "-s"], help="Fine-tuning checkpoint to download; defaults to latest if unset"),
 ]
 CheckpointTypeParam = Annotated[
-    Literal["merged", "adapter", "default"],
+    Optional[Literal["merged", "adapter", "default"]],
     Parameter(
         name=["--checkpoint-type", "-c"],
         help="Checkpoint type ('merged' and 'adapter' apply to LoRA jobs only)",
@@ -38,7 +38,7 @@ async def download(
     fine_tune_id: str,
     output_dir: OutputDirParam = None,
     checkpoint_step: CheckpointStepParam = None,
-    checkpoint_type: CheckpointTypeParam = "merged",
+    checkpoint_type: CheckpointTypeParam = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -56,9 +56,9 @@ async def download(
     ft_job = await show_loading_status(
         "Retrieving fine-tuning job...", config.client.fine_tuning.retrieve(fine_tune_id)
     )
-    loosely_typed_checkpoint_type: str = checkpoint_type
+    loosely_typed_checkpoint_type: str = checkpoint_type if checkpoint_type is not None else ""
     if isinstance(ft_job.training_type, TrainingTypeFullTrainingType):
-        if checkpoint_type != "default":
+        if checkpoint_type is not None and checkpoint_type != "default":
             raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
         loosely_typed_checkpoint_type = "model_output_path"
     elif isinstance(ft_job.training_type, TrainingTypeLoRaTrainingType):
@@ -87,15 +87,7 @@ async def download(
         os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
     try:
-        # TODO: This is a temporary hack,
-        # We need to make the DownloadManager async so we can use the async client.
-        sync_client = Together(
-            api_key=config.client.api_key,
-            base_url=config.client.base_url,
-            timeout=config.client.timeout,
-            max_retries=config.client.max_retries,
-        )
-        file_path, file_size = DownloadManager(sync_client).download(
+        file_path, file_size = await AsyncDownloadManager(config.client).download(
             url=url,
             output=output,
             remote_name=ft_job.x_model_output_name,

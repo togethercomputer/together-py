@@ -166,7 +166,7 @@ class JigResource(SyncAPIResource):
           description: Description is an optional human-readable description of your deployment
 
           environment_variables: EnvironmentVariables is a list of environment variables to set in the container.
-              This will replace all existing environment variables
+              Replaces all existing environment variables.
 
           gpu_count: GPUCount is the number of GPUs to allocate per container instance
 
@@ -196,8 +196,8 @@ class JigResource(SyncAPIResource):
           termination_grace_period_seconds: TerminationGracePeriodSeconds is the time in seconds to wait for graceful
               shutdown before forcefully terminating the replica
 
-          volumes: Volumes is a list of volume mounts to attach to the container. This will replace
-              all existing volumes
+          volumes: Volumes is a list of volume mounts to attach to the container. Replaces all
+              existing volumes.
 
           extra_headers: Send extra headers
 
@@ -320,10 +320,10 @@ class JigResource(SyncAPIResource):
               if not specified
 
           health_check_path: HealthCheckPath is the HTTP path for health checks (e.g., "/health"). If set,
-              the platform will check this endpoint to determine container health
+              the platform checks this endpoint to determine container health.
 
-          max_replicas: MaxReplicas is the maximum number of container instances that can be scaled up
-              to. If not set, will be set to MinReplicas
+          max_replicas: MaxReplicas is the maximum number of container instances. Defaults to
+              MinReplicas if not set.
 
           memory: Memory is the amount of RAM to allocate per container instance in GiB (e.g., 0.5
               = 512MiB)
@@ -576,7 +576,7 @@ class AsyncJigResource(AsyncAPIResource):
           description: Description is an optional human-readable description of your deployment
 
           environment_variables: EnvironmentVariables is a list of environment variables to set in the container.
-              This will replace all existing environment variables
+              Replaces all existing environment variables.
 
           gpu_count: GPUCount is the number of GPUs to allocate per container instance
 
@@ -606,8 +606,8 @@ class AsyncJigResource(AsyncAPIResource):
           termination_grace_period_seconds: TerminationGracePeriodSeconds is the time in seconds to wait for graceful
               shutdown before forcefully terminating the replica
 
-          volumes: Volumes is a list of volume mounts to attach to the container. This will replace
-              all existing volumes
+          volumes: Volumes is a list of volume mounts to attach to the container. Replaces all
+              existing volumes.
 
           extra_headers: Send extra headers
 
@@ -730,10 +730,10 @@ class AsyncJigResource(AsyncAPIResource):
               if not specified
 
           health_check_path: HealthCheckPath is the HTTP path for health checks (e.g., "/health"). If set,
-              the platform will check this endpoint to determine container health
+              the platform checks this endpoint to determine container health.
 
-          max_replicas: MaxReplicas is the maximum number of container instances that can be scaled up
-              to. If not set, will be set to MinReplicas
+          max_replicas: MaxReplicas is the maximum number of container instances. Defaults to
+              MinReplicas if not set.
 
           memory: Memory is the amount of RAM to allocate per container instance in GiB (e.g., 0.5
               = 512MiB)

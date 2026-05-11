@@ -31,7 +31,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """A string providing context for the model to complete."""
 
     echo: bool
-    """If true, the response will contain the prompt.
+    """If true, the response contains the prompt.
 
     Can be used with `logprobs` to return prompt logprobs.
     """
@@ -48,7 +48,7 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     logprobs: int
     """
     An integer between 0 and 20 of the top k tokens to return log probabilities for
-    at each generation step, instead of just the sampled token. Log probabilities
+    at each generation step, instead of only the sampled token. Log probabilities
     help assess model confidence in token predictions.
     """
 
@@ -84,10 +84,10 @@ class CompletionCreateParamsBase(TypedDict, total=False):
     """Seed value for reproducibility."""
 
     stop: SequenceNotStr[str]
-    """A list of string sequences that will truncate (stop) inference text output.
+    """A list of string sequences that truncate (stop) inference text output.
 
-    For example, "</s>" will stop generation as soon as the model generates the
-    given token.
+    For example, "</s>" stops generation as soon as the model generates the given
+    token.
     """
 
     temperature: float

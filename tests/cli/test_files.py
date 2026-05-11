@@ -197,17 +197,3 @@ class TestFilesUpload:
         call_kw = upload_mock.call_args.kwargs
         assert call_kw["check"] is False
         assert "uploaded-id" in result.output
-
-    def test_upload_does_check_if_enabled(self, tmp_path: Path, cli_runner: CliRunner) -> None:
-        f = tmp_path / "data.jsonl"
-        f.write_text("{}\n")
-        uploaded = _file_response()
-        with patch.object(_files_upload_cli, "check_file") as check_mock, patch(
-            "together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock
-        ) as upload_mock:
-            upload_mock.return_value = uploaded
-            check_mock.return_value = {"is_check_passed": True, "message": "Checks passed"}
-            result = cli_runner.invoke(["files", "upload", str(f), "--check"])
-        assert result.exit_code == 0
-        check_mock.assert_called_once()
-        upload_mock.assert_called_once()

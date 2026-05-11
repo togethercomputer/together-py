@@ -5,6 +5,7 @@ from pathlib import Path
 
 from cyclopts import Group, Parameter, validators
 
+from together import BaseModel
 from together.types import fine_tuning_estimate_price_params as pe_params
 from together.lib.utils import log_warn
 from together.lib.cli.api._utils import (
@@ -15,15 +16,15 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.resources.fine_tuning import async_get_model_limits
+from together.lib.cli.components.model_dump import print_model_dump
 
 
 def get_confirmation_message(price: str, warning: str) -> str:
     return (
-        """You are about to create a fine-tuning job. The estimated price of this job is {price}
+        """You are about to create a fine-tuning job. The estimated price of this job is {price}.
 
 The actual cost of your job will be determined by the model size, the number of tokens in the training file, the number of tokens in the validation file, the number of epochs, and the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.
-{warning}
-Do you want to proceed? [Y/n]"""
+{warning}"""
     ).format(price=price, warning=warning)
 
 
@@ -34,11 +35,13 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 )
 
 
-def _check_path_exists(path_string: str) -> bool:
-    if path_string == "":
+def _check_path_exists(path_string: Optional[str]) -> bool:
+    if path_string == "" or path_string is None:
         return False
     p = Path(path_string)
-    return p.exists() and (p.is_file() or p.is_dir())
+    if p.is_dir():
+        raise ValueError(f"Path {path_string} is a directory, not a file. Please provide a file path.")
+    return p.exists() and p.is_file()
 
 
 model_group = Group(
@@ -58,19 +61,19 @@ async def create(
     training_file: Annotated[
         str,
         Parameter(
-            name=["--training-file", "-t"],
+            alias="-t",
             help="Training file ID from Files API or local path to a file to upload",
         ),
     ],
     validation_file: Annotated[
-        str,
+        Optional[str],
         Parameter(
-            name=["--validation-file", "-v"],
+            alias="-v",
             help="Validation file ID from Files API or local path to a file to upload",
         ),
-    ] = "",
+    ] = None,
     model: Annotated[
-        Optional[str], Parameter(group=model_group, help="Name of the base model to run fine-tune job on")
+        Optional[str], Parameter(group=model_group, alias="-M", help="Name of the base model to run fine-tune job on")
     ] = None,
     from_checkpoint: Annotated[
         Optional[str],
@@ -79,22 +82,20 @@ async def create(
             help="Checkpoint to continue training from a previous fine-tuning job, formatted as `JOB_ID/OUTPUT_MODEL_NAME:STEP`; STEP is optional and defaults to the final checkpoint",
         ),
     ] = None,
-    n_epochs: Annotated[int, Parameter(name=["--n-epochs", "-ne"], help="Number of epochs to train for")] = 1,
+    n_epochs: Annotated[int, Parameter(alias="--ne", help="Number of epochs to train for")] = 1,
     packing: Annotated[bool, Parameter(show_default=True, help="Whether to use packing for training")] = True,
     n_evals: Annotated[int, Parameter(help="Number of evaluation loops to run")] = 0,
     max_seq_length: Annotated[int | None, Parameter(help="Maximum sequence length to use for training")] = None,
-    n_checkpoints: Annotated[int, Parameter(name=["--n-checkpoints", "-c"], help="Number of checkpoints to save")] = 1,
+    n_checkpoints: Annotated[int, Parameter(alias="-c", help="Number of checkpoints to save")] = 1,
     batch_size: Annotated[
         int | Literal["max"],
-        Parameter(converter=int_or_max_converter, name=["--batch-size", "-b"], help="Train batch size"),
+        Parameter(converter=int_or_max_converter, alias="-b", help="Train batch size"),
     ] = "max",
     gradient_accumulation_steps: Annotated[
         Optional[int],
         Parameter(help="Number of gradient accumulation steps (increases effective batch size without more memory)"),
     ] = None,
-    learning_rate: Annotated[
-        float, Parameter(name=["--learning-rate", "-lr"], help="Learning rate")
-    ] = DEFAULT_LEARNING_RATE,
+    learning_rate: Annotated[float, Parameter(alias="--lr", help="Learning rate")] = DEFAULT_LEARNING_RATE,
     lr_scheduler_type: Annotated[
         Literal["linear", "cosine"], Parameter(help="Learning rate scheduler type")
     ] = "cosine",
@@ -116,7 +117,10 @@ async def create(
     ] = "all-linear",
     training_method: Annotated[
         Literal["sft", "dpo"],
-        Parameter(help="Training method to use: sft (supervised fine-tuning) or dpo (Direct Preference Optimization)"),
+        Parameter(
+            alias=("-m"),
+            help="Training method to use: sft (supervised fine-tuning) or dpo (Direct Preference Optimization)",
+        ),
     ] = "sft",
     dpo_beta: Annotated[Optional[float], Parameter(help="DPO beta parameter")] = None,
     dpo_normalize_logratios_by_length: Annotated[
@@ -135,7 +139,7 @@ async def create(
         Parameter(help="Random seed for reproducible training, e.g. 42; uses the server default if unset"),
     ] = None,
     confirm: Annotated[
-        bool, Parameter(name=["--confirm", "-y"], help="Whether to skip the launch confirmation message")
+        bool, Parameter(alias=("-y"), negative=(), help="Whether to skip the launch confirmation message")
     ] = False,
     train_on_inputs: Annotated[
         Optional[BoolOrAuto],
@@ -323,13 +327,23 @@ async def create(
     )
     price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
     warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
-    confirmation_message = get_confirmation_message(price=price_str, warning=warning)
 
     if not confirm:
-        resp = input(confirmation_message).strip().lower()
+        confirmation_message = get_confirmation_message(price=price_str, warning=warning)
+        console.print(confirmation_message)
+        resp = input("Do you want to proceed? [Y/n]").strip().lower()
         if resp and resp != "y" and resp != "yes":
             return
+
+    console.print(f"Submitting a fine-tuning job with the following parameters:")
+    print_model_dump(BaseModel(**training_args), show_nulls=False, expand=False, padding=(0, 2))
+
     response = await show_loading_status(
-        "Creating fine-tuning job...", config.client.fine_tuning.create(**training_args, verbose=True)
+        "Creating fine-tuning job...", config.client.fine_tuning.create(**training_args)
     )
-    console.print(f"\n\nSuccess! Your fine-tuning job {response.id} has been submitted.")
+    url = f"https://api.together.ai/fine-tuning/{response.id}"
+    console.print(
+        f"\n[green]√ Fine-tuning job has been submitted.[/green] [dim]([link={url}]{response.id}[/link])[/dim]"
+    )
+    console.print(f"\n  You can track the job's progress with the following command:")
+    console.print(f"  [dim]-[/dim] [primary]tg fine-tuning {response.id}[/primary]")

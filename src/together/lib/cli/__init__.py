@@ -27,11 +27,43 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import install_completion
 from together.lib.cli.utils._help_examples import (
+    JIG_HELP_EXAMPLES,
+    EVALS_HELP_EXAMPLES,
+    FILES_HELP_EXAMPLES,
+    MODELS_HELP_EXAMPLES,
+    JIG_LOGS_HELP_EXAMPLES,
+    JIG_PUSH_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
+    JIG_BUILD_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
+    JIG_DEPLOY_HELP_EXAMPLES,
+    JIG_SUBMIT_HELP_EXAMPLES,
+    FINE_TUNING_HELP_EXAMPLES,
+    JIG_DESTROY_HELP_EXAMPLES,
+    JIG_SECRETS_HELP_EXAMPLES,
+    JIG_VOLUMES_HELP_EXAMPLES,
+    EVALS_CREATE_HELP_EXAMPLES,
+    FILES_UPLOAD_HELP_EXAMPLES,
+    BETA_CLUSTERS_HELP_EXAMPLES,
+    MODELS_UPLOAD_HELP_EXAMPLES,
+    JIG_JOB_STATUS_HELP_EXAMPLES,
+    JIG_SECRETS_SET_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    JIG_SECRETS_UNSET_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
+    FINE_TUNING_CREATE_HELP_EXAMPLES,
+    JIG_SECRETS_DELETE_HELP_EXAMPLES,
+    JIG_VOLUMES_CREATE_HELP_EXAMPLES,
+    JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
+    FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
+    BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
+    FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -58,6 +90,7 @@ def _propagate_global_param_group(target_app: App) -> None:
             target_app[flag].group = "Global Options"
             target_app[flag].show = True
             target_app[flag].help = help_text
+            target_app.help_epilogue = target_app.help_epilogue or ""
         except KeyError:
             pass
     for sub in target_app.subapps:
@@ -300,17 +333,39 @@ async def launcher(
 _CLI = "together.lib.cli.api"
 
 ## Files API commands
-files_app = app.command(App(name="files", help="Upload and manage files"))
-files_app.command(f"{_CLI}.files.upload:upload", help="Upload a file for fine-tuning, evals, or inference")
+files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
+files_app.command(
+    f"{_CLI}.files.upload:upload",
+    help="Upload a file for fine-tuning, evals, or inference",
+    help_epilogue=FILES_UPLOAD_HELP_EXAMPLES,
+)
 files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List your files")
 files_app.command(f"{_CLI}.files.retrieve:retrieve", help="Get file details")
-files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download file contents")
+files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download file contents", show=False)
+files_app.command(
+    f"{_CLI}.files.retrieve_content:retrieve_content",
+    name="download",
+    help="Download file contents",
+    help_epilogue=FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+)
 files_app.command(f"{_CLI}.files.delete:delete", alias="-d", help="Delete a file")
 files_app.command(f"{_CLI}.files.check:check", help="Check a local file for issues")
 
 # Fine-tuning API commands
-fine_tuning_app = app.command(App(name="fine-tuning", alias="ft", help="Create and manage fine-tuning jobs"))
-fine_tuning_app.command((f"{_CLI}.fine_tuning.create:create"), alias="-c", help="Start a new fine-tuning job")
+fine_tuning_app = app.command(
+    App(
+        name="fine-tuning",
+        alias="ft",
+        help="Create and manage fine-tuning jobs",
+        help_epilogue=FINE_TUNING_HELP_EXAMPLES,
+    )
+)
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.create:create"),
+    alias="-c",
+    help="Start a new fine-tuning job",
+    help_epilogue=FINE_TUNING_CREATE_HELP_EXAMPLES,
+)
 fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"), help="Cancel a fine-tuning job")
@@ -322,13 +377,14 @@ fine_tuning_app.command(
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.download:download"),
     help="Download a fine-tuned model's weights",
+    help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
 fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
 
 ## Models API commands
-models_app = app.command(App(name="models", help="List and upload models"))
+models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
 models_app.command((f"{_CLI}.models.list:list"), alias="ls", help="List available models")
-models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model")
+models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model", help_epilogue=MODELS_UPLOAD_HELP_EXAMPLES)
 
 ## Endpoints API commands
 endpoints_app = app.command(App(name="endpoints", help="Deploy and manage dedicated endpoints"))
@@ -343,23 +399,24 @@ endpoints_app.command(
     help="Create a new endpoint",
     help_epilogue=ENDPOINTS_CREATE_HELP_EXAMPLES,
 )
-endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint", help_epilogue="")
-endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints", help_epilogue="")
+endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details")
+endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint")
+endpoints_app.command((f"{_CLI}.endpoints.list:list"), alias="ls", help="List your endpoints")
 endpoints_app.command(
     (f"{_CLI}.endpoints.update:update"), help="Update an endpoint", help_epilogue=ENDPOINTS_UPDATE_HELP_EXAMPLES
 )
 endpoints_app.command(
     (f"{_CLI}.endpoints.availability_zones:availability_zones"),
     help="List availability zones for deploying models",
-    help_epilogue="",
 )
 
 ## Evals API commands
-evals_app = app.command(App(name="evals", help="Run and manage model evaluations"))
-evals_app.command((f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job")
+evals_app = app.command(App(name="evals", help="Run and manage model evaluations", help_epilogue=EVALS_HELP_EXAMPLES))
+evals_app.command(
+    (f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job", help_epilogue=EVALS_CREATE_HELP_EXAMPLES
+)
 evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs")
 evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), help="Get eval job details")
 evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
@@ -377,20 +434,50 @@ beta_root_app = App(name="beta", help="Experimental and beta features")
 beta_app = app.command(beta_root_app)
 
 ### Clusters API commands
-clusters_app = beta_app.command(App(name="clusters", help="Create and manage GPU clusters"))
+clusters_app = beta_app.command(
+    App(name="clusters", help="Create and manage GPU clusters", help_epilogue=BETA_CLUSTERS_HELP_EXAMPLES)
+)
 clusters_app.command((f"{_CLI}.beta.clusters.list:list"), alias="ls", help="List your clusters")
-clusters_app.command((f"{_CLI}.beta.clusters.create:create"), alias="-c", help="Create a new cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.create:create"),
+    alias="-c",
+    help="Create a new cluster",
+    help_epilogue=BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
+)
 clusters_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"), help="Get cluster details")
-clusters_app.command((f"{_CLI}.beta.clusters.update:update"), help="Update a cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.update:update"),
+    help="Update a cluster",
+    help_epilogue=BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
+)
 clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), alias="-d", help="Delete a cluster")
 clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
-clusters_app.command((f"{_CLI}.beta.clusters.get_credentials:get_credentials"), help="Get credentials for a cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
+    help="Get credentials for a cluster",
+    help_epilogue=BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+)
 
 ### Clusters > Storage API commands
-storage_app = clusters_app.command(App(name="storage", help="Manage cluster storage volumes", group="Subcommands"))
+storage_app = clusters_app.command(
+    App(
+        name="storage",
+        help="Manage cluster storage volumes",
+        group="Subcommands",
+        help_epilogue=BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
+    )
+)
 storage_app.command((f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster")
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.create:create"), alias="-c", help="Create a new storage volume for a cluster"
+    (f"{_CLI}.beta.clusters.storage.create:create"),
+    alias="-c",
+    help="Create a new storage volume for a cluster",
+    help_epilogue=BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+)
+storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.update:update"),
+    help="Resize a storage volume",
+    help_epilogue=BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
 )
 storage_app.command(
     (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
@@ -399,48 +486,103 @@ storage_app.command(
 storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
 
 ### Jig commands
-jig_app = beta_app.command(App(name="jig", help="Build, deploy, and manage custom containers"))
+jig_app = beta_app.command(
+    App(name="jig", help="Build, deploy, and manage custom containers", help_epilogue=JIG_HELP_EXAMPLES)
+)
 jig_app.command((f"{_CLI}.beta.jig.jig:init"), help="Initialize configuration for a Jig deployment")
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:dockerfile_cli"), name="dockerfile", help="Generate Dockerfile from jig configuration"
 )
-jig_app.command((f"{_CLI}.beta.jig.jig:build_cli"), name="build", help="Build container image")
-jig_app.command((f"{_CLI}.beta.jig.jig:push_cli"), name="push", help="Push image to registry")
-jig_app.command((f"{_CLI}.beta.jig.jig:deploy_cli"), name="deploy", help="Deploy model to Together")
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:build_cli"),
+    name="build",
+    help="Build container image",
+    help_epilogue=JIG_BUILD_HELP_EXAMPLES,
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:push_cli"), name="push", help="Push image to registry", help_epilogue=JIG_PUSH_HELP_EXAMPLES
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:deploy_cli"),
+    name="deploy",
+    help="Deploy model to Together",
+    help_epilogue=JIG_DEPLOY_HELP_EXAMPLES,
+)
 jig_app.command((f"{_CLI}.beta.jig.jig:status_cli"), name="status", help="Get deployment status")
 jig_app.command((f"{_CLI}.beta.jig.jig:endpoint_cli"), name="endpoint", help="Get deployment endpoint URL")
-jig_app.command((f"{_CLI}.beta.jig.jig:logs_cli"), name="logs", help="Get deployment logs")
-jig_app.command((f"{_CLI}.beta.jig.jig:destroy_cli"), name="destroy", help="Destroy deployment")
-jig_app.command((f"{_CLI}.beta.jig.jig:submit_cli"), name="submit", help="Submit a job to the deployment")
-jig_app.command((f"{_CLI}.beta.jig.jig:job_status_cli"), name="job-status", help="Get status of a specific job")
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:logs_cli"), name="logs", help="Get deployment logs", help_epilogue=JIG_LOGS_HELP_EXAMPLES
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:destroy_cli"),
+    name="destroy",
+    help="Destroy deployment",
+    help_epilogue=JIG_DESTROY_HELP_EXAMPLES,
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:submit_cli"),
+    name="submit",
+    help="Submit a job to the deployment",
+    help_epilogue=JIG_SUBMIT_HELP_EXAMPLES,
+)
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:job_status_cli"),
+    name="job-status",
+    help="Get status of a specific job",
+    help_epilogue=JIG_JOB_STATUS_HELP_EXAMPLES,
+)
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:queue_status_cli"), name="queue-status", help="Get queue metrics for the deployment"
 )
 jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
 
-secrets_app = jig_app.command(App(name="secrets", help="Manage deployment secrets", group="Subcommands"))
-secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_set_cli"), name="set", help="Set a secret (create or update)")
-secrets_app.command((f"{_CLI}.beta.jig.jig:secrets_unset_cli"), name="unset", help="Remove a secret from local state")
+secrets_app = jig_app.command(
+    App(name="secrets", help="Manage deployment secrets", group="Subcommands", help_epilogue=JIG_SECRETS_HELP_EXAMPLES)
+)
+secrets_app.command(
+    (f"{_CLI}.beta.jig.jig:secrets_set_cli"),
+    name="set",
+    help="Set a secret (create or update)",
+    help_epilogue=JIG_SECRETS_SET_HELP_EXAMPLES,
+)
+secrets_app.command(
+    (f"{_CLI}.beta.jig.jig:secrets_unset_cli"),
+    name="unset",
+    help="Remove a secret from local state",
+    help_epilogue=JIG_SECRETS_UNSET_HELP_EXAMPLES,
+)
 secrets_app.command(
     (f"{_CLI}.beta.jig.jig:secrets_delete_cli"),
     name="delete",
     help="Delete a secret and unset it locally",
     alias="-d",
+    help_epilogue=JIG_SECRETS_DELETE_HELP_EXAMPLES,
 )
 secrets_app.command(
     (f"{_CLI}.beta.jig.jig:secrets_list_cli"), name="list", alias="ls", help="List all secrets with sync status"
 )
 
 ### Jig > volumes
-storage_app = jig_app.command(App(name="volumes", help="Manage volumes for Jig deployments", group="Subcommands"))
+storage_app = jig_app.command(
+    App(
+        name="volumes",
+        help="Manage volumes for Jig deployments",
+        group="Subcommands",
+        help_epilogue=JIG_VOLUMES_HELP_EXAMPLES,
+    )
+)
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_create_cli"),
     name="create",
     alias="-c",
     help="Create a new volume for a Jig deployment",
+    help_epilogue=JIG_VOLUMES_CREATE_HELP_EXAMPLES,
 )
 storage_app.command(
-    (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"), name="update", help="Update a volume and re-upload files"
+    (f"{_CLI}.beta.jig.jig:jig_volumes_update_cli"),
+    name="update",
+    help="Update a volume and re-upload files",
+    help_epilogue=JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
 )
 storage_app.command((f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"), name="delete", help="Delete a volume", alias="-d")
 storage_app.command(

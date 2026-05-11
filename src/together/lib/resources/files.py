@@ -197,7 +197,7 @@ class DownloadManager(SyncAPIResource):
                     raise APIStatusError(
                         "Error downloading file",
                         response=e.response,
-                        body=e.response,
+                        body=e.body,
                     ) from e
 
                 if not fetch_metadata:
@@ -267,11 +267,180 @@ class DownloadManager(SyncAPIResource):
                             raise APIStatusError(
                                 "Error downloading file",
                                 response=e.response,
-                                body=e.response,
+                                body=e.body,
                             ) from e
 
                 # Close the response
                 response.close()
+
+            # Raise exception if remote file size does not match downloaded file size
+            if os.stat(temp_file.name).st_size != file_size:
+                raise DownloadError(
+                    f"Downloaded file size `{bytes_downloaded}` bytes does not match remote file size `{file_size}` bytes."
+                )
+
+            # Moves temp file to output file path
+            chmod_and_replace(Path(temp_file.name), file_path)
+
+        lock_path.unlink(missing_ok=True)
+
+        return str(file_path.resolve()), file_size
+
+
+class AsyncDownloadManager(AsyncAPIResource):
+    async def get_file_metadata(
+        self,
+        url: str,
+        output: Path | None = None,
+        remote_name: str | None = None,
+        fetch_metadata: bool = False,
+    ) -> Tuple[Path, int]:
+        """
+        gets remote file head and parses out file name and file size
+        """
+
+        if not fetch_metadata:
+            if isinstance(output, Path):
+                file_path = output
+            else:
+                assert isinstance(remote_name, str)
+                file_path = Path(remote_name)
+
+            return file_path, 0
+
+        try:
+            response = await self._client.get(
+                path=url,
+                options=RequestOptions(
+                    headers={"Range": "bytes=0-1"},
+                ),
+                cast_to=httpx.Response,
+                stream=False,
+            )
+        except APIStatusError as e:
+            raise APIStatusError(
+                "Error fetching file metadata",
+                response=e.response,
+                body=e.body,
+            ) from e
+
+        headers = response.headers
+
+        assert isinstance(headers, httpx.Headers)
+
+        file_path = _prepare_output(
+            headers=headers,
+            output=output,
+            remote_name=remote_name,
+        )
+
+        file_size = _get_file_size(headers)
+
+        return file_path, file_size
+
+    async def download(
+        self,
+        url: str,
+        output: Path | None = None,
+        remote_name: str | None = None,
+        fetch_metadata: bool = False,
+    ) -> Tuple[str, int]:
+        # pre-fetch remote file name and file size
+        file_path, file_size = await self.get_file_metadata(url, output, remote_name, fetch_metadata)
+
+        temp_file_manager = partial(tempfile.NamedTemporaryFile, mode="wb", dir=file_path.parent, delete=False)
+
+        # Prevent parallel downloads of the same file with a lock.
+        lock_path = Path(file_path.as_posix() + ".lock")
+
+        with FileLock(lock_path.as_posix()):
+            with temp_file_manager() as temp_file:
+                try:
+                    response = await self._client.get(
+                        path=url,
+                        cast_to=httpx.Response,
+                        stream=True,
+                    )
+                except APIStatusError as e:
+                    lock_path.unlink(missing_ok=True)
+                    raise APIStatusError(
+                        "Error downloading file",
+                        response=e.response,
+                        body=e.body,
+                    ) from e
+
+                if not fetch_metadata:
+                    file_size = int(response.headers.get("content-length", 0))
+
+                assert file_size != 0, "Unable to retrieve remote file."
+
+                # Download with retry logic
+                bytes_downloaded = 0
+                retry_count = 0
+                retry_delay = DOWNLOAD_INITIAL_RETRY_DELAY
+
+                DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
+
+                with tqdm(
+                    total=file_size,
+                    unit="B",
+                    unit_scale=True,
+                    desc=f"Downloading file {file_path.name}",
+                    disable=bool(DISABLE_TQDM),
+                ) as pbar:
+                    while bytes_downloaded < file_size:
+                        try:
+                            # If this is a retry, close the previous response and create a new one with Range header
+                            if bytes_downloaded > 0:
+                                await response.aclose()
+
+                                log.info(f"Resuming download from byte {bytes_downloaded}")
+                                response = await self._client.get(
+                                    path=url,
+                                    cast_to=httpx.Response,
+                                    stream=True,
+                                    options=RequestOptions(
+                                        headers={"Range": f"bytes={bytes_downloaded}-"},
+                                    ),
+                                )
+
+                            # Download chunks
+                            async for chunk in response.aiter_bytes(DOWNLOAD_BLOCK_SIZE):
+                                temp_file.write(chunk)  # type: ignore
+                                bytes_downloaded += len(chunk)
+                                pbar.update(len(chunk))
+
+                            # Successfully completed download
+                            break
+
+                        except (httpx.RequestError, httpx.StreamError, APIConnectionError) as e:
+                            if retry_count >= MAX_DOWNLOAD_RETRIES:
+                                log.error(f"Download failed after {retry_count} retries")
+                                raise DownloadError(
+                                    f"Download failed after {retry_count} retries. Last error: {str(e)}"
+                                ) from e
+
+                            retry_count += 1
+                            log.warning(
+                                f"Download interrupted at {bytes_downloaded}/{file_size} bytes. "
+                                f"Retry {retry_count}/{MAX_DOWNLOAD_RETRIES} in {retry_delay}s..."
+                            )
+                            await self._sleep(retry_delay)
+
+                            # Exponential backoff with max delay cap
+                            retry_delay = min(retry_delay * 2, DOWNLOAD_MAX_RETRY_DELAY)
+
+                        except APIStatusError as e:
+                            # For API errors, don't retry
+                            log.error(f"API error during download: {e}")
+                            raise APIStatusError(
+                                "Error downloading file",
+                                response=e.response,
+                                body=e.body,
+                            ) from e
+
+                # Close the response
+                await response.aclose()
 
             # Raise exception if remote file size does not match downloaded file size
             if os.stat(temp_file.name).st_size != file_size:

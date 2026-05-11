@@ -46,7 +46,7 @@ class JigUpdateParams(TypedDict, total=False):
     environment_variables: Iterable[EnvironmentVariable]
     """EnvironmentVariables is a list of environment variables to set in the container.
 
-    This will replace all existing environment variables
+    Replaces all existing environment variables.
     """
 
     gpu_count: int
@@ -104,7 +104,7 @@ class JigUpdateParams(TypedDict, total=False):
     volumes: Iterable[Volume]
     """Volumes is a list of volume mounts to attach to the container.
 
-    This will replace all existing volumes
+    Replaces all existing volumes.
     """
 
 
@@ -186,10 +186,7 @@ class EnvironmentVariable(TypedDict, total=False):
 
 class Volume(TypedDict, total=False):
     mount_path: Required[str]
-    """
-    MountPath is the path in the container where the volume will be mounted (e.g.,
-    "/data")
-    """
+    """MountPath is the path in the container where the volume mounts (e.g., "/data")."""
 
     name: Required[str]
     """Name is the name of the volume to mount.

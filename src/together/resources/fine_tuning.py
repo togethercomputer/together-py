@@ -508,8 +508,8 @@ class FineTuningResource(SyncAPIResource):
 
           from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
               Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
-              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
-              final checkpoint will be used.
+              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, uses the
+              final checkpoint.
 
           model: Name of the base model to run fine-tune job on
 
@@ -521,8 +521,7 @@ class FineTuningResource(SyncAPIResource):
           training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
               Preference Optimization.
 
-          training_type: The training type to use. If not provided, the job will default to LoRA training
-              type.
+          training_type: The training type to use. Defaults to LoRA if not provided.
 
           validation_file: File-ID of a validation file uploaded to the Together API
 
@@ -1110,8 +1109,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           from_checkpoint: The checkpoint identifier to continue training from a previous fine-tuning job.
               Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
-              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
-              final checkpoint will be used.
+              `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, uses the
+              final checkpoint.
 
           model: Name of the base model to run fine-tune job on
 
@@ -1123,8 +1122,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
           training_method: The training method to use. 'sft' for Supervised Fine-Tuning or 'dpo' for Direct
               Preference Optimization.
 
-          training_type: The training type to use. If not provided, the job will default to LoRA training
-              type.
+          training_type: The training type to use. Defaults to LoRA if not provided.
 
           validation_file: File-ID of a validation file uploaded to the Together API
 

@@ -19,7 +19,7 @@ from together.lib.cli.components.loader import show_loading_status
 async def upload(
     file: Annotated[Path, Parameter(required=True, help="The file to upload")],
     purpose: Annotated[Optional[FilePurpose], Parameter(help="The purpose of the file")] = "fine-tune",
-    check: Annotated[Optional[bool], Parameter(help="Whether to check the file")] = True,
+    no_check: Annotated[Optional[bool], Parameter(negative=(), help="Skip checking the file for issues")] = False,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -28,7 +28,7 @@ async def upload(
         os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
     # Manually handle check here so we can exit and provide the user good error messages
-    if check:
+    if not no_check:
         report = check_file(file)
         if report["is_check_passed"] is False:
             if config.json:
