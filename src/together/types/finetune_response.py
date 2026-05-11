@@ -73,8 +73,8 @@ class TrainingMethodTrainingMethodSft(BaseModel):
 
     train_on_inputs: Union[bool, Literal["auto"]]
     """
-    Whether to mask the user messages in conversational data or prompts in
-    instruction data.
+    Whether to mask user messages in conversational data or prompts in instruction
+    data.
     """
 
 

@@ -75,13 +75,13 @@ class JigDeployParams(TypedDict, total=False):
     health_check_path: str
     """HealthCheckPath is the HTTP path for health checks (e.g., "/health").
 
-    If set, the platform will check this endpoint to determine container health
+    If set, the platform checks this endpoint to determine container health.
     """
 
     max_replicas: int
-    """
-    MaxReplicas is the maximum number of container instances that can be scaled up
-    to. If not set, will be set to MinReplicas
+    """MaxReplicas is the maximum number of container instances.
+
+    Defaults to MinReplicas if not set.
     """
 
     memory: float
@@ -199,10 +199,7 @@ class EnvironmentVariable(TypedDict, total=False):
 
 class Volume(TypedDict, total=False):
     mount_path: Required[str]
-    """
-    MountPath is the path in the container where the volume will be mounted (e.g.,
-    "/data")
-    """
+    """MountPath is the path in the container where the volume mounts (e.g., "/data")."""
 
     name: Required[str]
     """Name is the name of the volume to mount.

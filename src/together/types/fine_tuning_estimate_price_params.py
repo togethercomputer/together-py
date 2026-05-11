@@ -24,8 +24,8 @@ class FineTuningEstimatePriceParams(TypedDict, total=False):
     """The checkpoint identifier to continue training from a previous fine-tuning job.
 
     Format is `{$JOB_ID}` or `{$OUTPUT_MODEL_NAME}` or `{$JOB_ID}:{$STEP}` or
-    `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, the
-    final checkpoint will be used.
+    `{$OUTPUT_MODEL_NAME}:{$STEP}`. The step value is optional; without it, uses the
+    final checkpoint.
     """
 
     model: str
@@ -47,10 +47,7 @@ class FineTuningEstimatePriceParams(TypedDict, total=False):
     """
 
     training_type: Optional[TrainingType]
-    """The training type to use.
-
-    If not provided, the job will default to LoRA training type.
-    """
+    """The training type to use. Defaults to LoRA if not provided."""
 
     validation_file: str
     """File-ID of a validation file uploaded to the Together API"""
@@ -61,8 +58,8 @@ class TrainingMethodTrainingMethodSft(TypedDict, total=False):
 
     train_on_inputs: Required[Union[bool, Literal["auto"]]]
     """
-    Whether to mask the user messages in conversational data or prompts in
-    instruction data.
+    Whether to mask user messages in conversational data or prompts in instruction
+    data.
     """
 
 

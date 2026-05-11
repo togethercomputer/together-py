@@ -65,7 +65,7 @@ class SecretsResource(SyncAPIResource):
               characters)
 
           value: Value is the sensitive data to store securely (e.g., API keys, passwords,
-              tokens). This value will be encrypted at rest
+              tokens). Encrypted at rest.
 
           description: Description is an optional human-readable description of the secret's purpose
               (max 500 characters)
@@ -164,8 +164,8 @@ class SecretsResource(SyncAPIResource):
           project_id: ProjectID is ignored - the project is automatically determined from your
               authentication
 
-          value: Value is the new sensitive data to store securely. Updating this will replace
-              the existing secret value
+          value: Value is the new sensitive data to store securely. Updating this replaces the
+              existing secret value.
 
           extra_headers: Send extra headers
 
@@ -292,7 +292,7 @@ class AsyncSecretsResource(AsyncAPIResource):
               characters)
 
           value: Value is the sensitive data to store securely (e.g., API keys, passwords,
-              tokens). This value will be encrypted at rest
+              tokens). Encrypted at rest.
 
           description: Description is an optional human-readable description of the secret's purpose
               (max 500 characters)
@@ -391,8 +391,8 @@ class AsyncSecretsResource(AsyncAPIResource):
           project_id: ProjectID is ignored - the project is automatically determined from your
               authentication
 
-          value: Value is the new sensitive data to store securely. Updating this will replace
-              the existing secret value
+          value: Value is the new sensitive data to store securely. Updating this replaces the
+              existing secret value.
 
           extra_headers: Send extra headers
 

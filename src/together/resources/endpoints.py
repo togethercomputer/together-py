@@ -74,9 +74,9 @@ class EndpointsResource(SyncAPIResource):
     ) -> DedicatedEndpoint:
         """Creates a new dedicated endpoint for serving models.
 
-        The endpoint will
-        automatically start after creation. You can deploy any supported model on
-        hardware configurations that meet the model's requirements.
+        The endpoint starts
+        automatically after creation. You can deploy any supported model on hardware
+        configurations that meet the model's requirements.
 
         Args:
           autoscaling: Configuration for automatic scaling of the endpoint
@@ -93,9 +93,8 @@ class EndpointsResource(SyncAPIResource):
 
           display_name: A human-readable name for the endpoint
 
-          inactive_timeout: The number of minutes of inactivity after which the endpoint will be
-              automatically stopped. Set to null, omit or set to 0 to disable automatic
-              timeout.
+          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
+              automatically. Set to null, omit, or set to 0 to disable automatic timeout.
 
           state: The desired state of the endpoint
 
@@ -192,8 +191,8 @@ class EndpointsResource(SyncAPIResource):
 
           display_name: A human-readable name for the endpoint
 
-          inactive_timeout: The number of minutes of inactivity after which the endpoint will be
-              automatically stopped. Set to 0 to disable automatic timeout.
+          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
+              automatically. Set to 0 to disable automatic timeout.
 
           state: The desired state of the endpoint
 
@@ -416,9 +415,9 @@ class AsyncEndpointsResource(AsyncAPIResource):
     ) -> DedicatedEndpoint:
         """Creates a new dedicated endpoint for serving models.
 
-        The endpoint will
-        automatically start after creation. You can deploy any supported model on
-        hardware configurations that meet the model's requirements.
+        The endpoint starts
+        automatically after creation. You can deploy any supported model on hardware
+        configurations that meet the model's requirements.
 
         Args:
           autoscaling: Configuration for automatic scaling of the endpoint
@@ -435,9 +434,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           display_name: A human-readable name for the endpoint
 
-          inactive_timeout: The number of minutes of inactivity after which the endpoint will be
-              automatically stopped. Set to null, omit or set to 0 to disable automatic
-              timeout.
+          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
+              automatically. Set to null, omit, or set to 0 to disable automatic timeout.
 
           state: The desired state of the endpoint
 
@@ -534,8 +532,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
 
           display_name: A human-readable name for the endpoint
 
-          inactive_timeout: The number of minutes of inactivity after which the endpoint will be
-              automatically stopped. Set to 0 to disable automatic timeout.
+          inactive_timeout: The number of minutes of inactivity after which the endpoint stops
+              automatically. Set to 0 to disable automatic timeout.
 
           state: The desired state of the endpoint
 

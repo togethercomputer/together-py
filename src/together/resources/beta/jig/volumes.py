@@ -61,7 +61,7 @@ class VolumesResource(SyncAPIResource):
         Create a new volume to preload files in deployments
 
         Args:
-          content: Content specifies the new content that will be preloaded to this volume
+          content: Content specifies the new content to preload to this volume.
 
           name: Name is the unique identifier for the volume within the project
 
@@ -146,7 +146,7 @@ class VolumesResource(SyncAPIResource):
         Args:
           id: Volume ID or name.
 
-          content: Content specifies the new content that will be preloaded to this volume
+          content: Content specifies the new content to preload to this volume.
 
           name: Name is the new unique identifier for the volume within the project
 
@@ -270,7 +270,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         Create a new volume to preload files in deployments
 
         Args:
-          content: Content specifies the new content that will be preloaded to this volume
+          content: Content specifies the new content to preload to this volume.
 
           name: Name is the unique identifier for the volume within the project
 
@@ -355,7 +355,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         Args:
           id: Volume ID or name.
 
-          content: Content specifies the new content that will be preloaded to this volume
+          content: Content specifies the new content to preload to this volume.
 
           name: Name is the new unique identifier for the volume within the project
 
