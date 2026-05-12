@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Union, Optional
+from datetime import datetime
 from typing_extensions import Literal
 
 import httpx
 
-from ..types import fine_tuning_delete_params, fine_tuning_content_params, fine_tuning_estimate_price_params
+from ..types import (
+    fine_tuning_delete_params,
+    fine_tuning_content_params,
+    fine_tuning_list_metrics_params,
+    fine_tuning_estimate_price_params,
+)
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import path_template, maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -32,6 +38,7 @@ from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
+from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
 from ..types.fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
@@ -390,6 +397,71 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FineTuningListEventsResponse,
         )
 
+    def list_metrics(
+        self,
+        id: str,
+        *,
+        global_step_from: int | Omit = omit,
+        global_step_to: int | Omit = omit,
+        logged_at_from: Union[str, datetime] | Omit = omit,
+        logged_at_to: Union[str, datetime] | Omit = omit,
+        resolution: int | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuningListMetricsResponse:
+        """Retrieves recorded training metrics for a fine-tuning job in chronological
+        order.
+
+        All query parameters are optional: omit them to retrieve all metrics.
+
+        Args:
+          id: Fine-tune job ID. A string that starts with `ft-`.
+
+          global_step_from: Return only metrics with global_step >= this value.
+
+          global_step_to: Return only metrics with global_step <= this value.
+
+          logged_at_from: Return only metrics logged at or after this ISO-8601 timestamp.
+
+          logged_at_to: Return only metrics logged at or before this ISO-8601 timestamp.
+
+          resolution: Number of (uniformly sampled) train metrics to return.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template("/fine-tunes/{id}/metrics", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "global_step_from": global_step_from,
+                        "global_step_to": global_step_to,
+                        "logged_at_from": logged_at_from,
+                        "logged_at_to": logged_at_to,
+                        "resolution": resolution,
+                    },
+                    fine_tuning_list_metrics_params.FineTuningListMetricsParams,
+                ),
+            ),
+            cast_to=FineTuningListMetricsResponse,
+        )
+
 
 class AsyncFineTuningResource(AsyncAPIResource):
     @cached_property
@@ -743,6 +815,71 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FineTuningListEventsResponse,
         )
 
+    async def list_metrics(
+        self,
+        id: str,
+        *,
+        global_step_from: int | Omit = omit,
+        global_step_to: int | Omit = omit,
+        logged_at_from: Union[str, datetime] | Omit = omit,
+        logged_at_to: Union[str, datetime] | Omit = omit,
+        resolution: int | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuningListMetricsResponse:
+        """Retrieves recorded training metrics for a fine-tuning job in chronological
+        order.
+
+        All query parameters are optional: omit them to retrieve all metrics.
+
+        Args:
+          id: Fine-tune job ID. A string that starts with `ft-`.
+
+          global_step_from: Return only metrics with global_step >= this value.
+
+          global_step_to: Return only metrics with global_step <= this value.
+
+          logged_at_from: Return only metrics logged at or after this ISO-8601 timestamp.
+
+          logged_at_to: Return only metrics logged at or before this ISO-8601 timestamp.
+
+          resolution: Number of (uniformly sampled) train metrics to return.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            path_template("/fine-tunes/{id}/metrics", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {
+                        "global_step_from": global_step_from,
+                        "global_step_to": global_step_to,
+                        "logged_at_from": logged_at_from,
+                        "logged_at_to": logged_at_to,
+                        "resolution": resolution,
+                    },
+                    fine_tuning_list_metrics_params.FineTuningListMetricsParams,
+                ),
+            ),
+            cast_to=FineTuningListMetricsResponse,
+        )
+
 
 class FineTuningResourceWithRawResponse:
     def __init__(self, fine_tuning: FineTuningResource) -> None:
@@ -772,6 +909,9 @@ class FineTuningResourceWithRawResponse:
         )
         self.list_events = to_raw_response_wrapper(
             fine_tuning.list_events,
+        )
+        self.list_metrics = to_raw_response_wrapper(
+            fine_tuning.list_metrics,
         )
 
 
@@ -804,6 +944,9 @@ class AsyncFineTuningResourceWithRawResponse:
         self.list_events = async_to_raw_response_wrapper(
             fine_tuning.list_events,
         )
+        self.list_metrics = async_to_raw_response_wrapper(
+            fine_tuning.list_metrics,
+        )
 
 
 class FineTuningResourceWithStreamingResponse:
@@ -835,6 +978,9 @@ class FineTuningResourceWithStreamingResponse:
         self.list_events = to_streamed_response_wrapper(
             fine_tuning.list_events,
         )
+        self.list_metrics = to_streamed_response_wrapper(
+            fine_tuning.list_metrics,
+        )
 
 
 class AsyncFineTuningResourceWithStreamingResponse:
@@ -865,4 +1011,7 @@ class AsyncFineTuningResourceWithStreamingResponse:
         )
         self.list_events = async_to_streamed_response_wrapper(
             fine_tuning.list_events,
+        )
+        self.list_metrics = async_to_streamed_response_wrapper(
+            fine_tuning.list_metrics,
         )
