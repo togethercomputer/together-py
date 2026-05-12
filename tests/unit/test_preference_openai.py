@@ -83,8 +83,8 @@ MISSING_FIELDS_TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("field_to_remove, description", MISSING_FIELDS_TEST_CASES)
-def test_check_jsonl_invalid_preference_openai_missing_fields(tmp_path: Path, field_to_remove: str, description: str):
+@pytest.mark.parametrize("field_to_remove")
+def test_check_jsonl_invalid_preference_openai_missing_fields(tmp_path: Path, field_to_remove: str):
     """Test missing required fields in OpenAI preference format."""
     file = tmp_path / f"invalid_preference_openai_missing_{field_to_remove}.jsonl"
     content = [item.copy() for item in _TEST_PREFERENCE_OPENAI_CONTENT]
@@ -260,9 +260,9 @@ STRUCTURAL_ISSUE_TEST_CASES = [
 ]
 
 
-@pytest.mark.parametrize("name, modifier, description", STRUCTURAL_ISSUE_TEST_CASES)
+@pytest.mark.parametrize("name, modifier")
 def test_check_jsonl_invalid_preference_openai_structural_issues(
-    tmp_path: Path, name: ParameterSet, modifier: ParameterSet, description: ParameterSet
+    tmp_path: Path, name: ParameterSet, modifier: ParameterSet
 ):
     """Test various structural issues in OpenAI preference format."""
     file = tmp_path / f"invalid_preference_openai_{name}.jsonl"
