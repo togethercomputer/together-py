@@ -189,7 +189,6 @@ def test_check_jsonl_valid_conversational_multimodal_single_turn(tmp_path: Path)
 
     report = check_file(file)
 
-    print(report)
     assert report["is_check_passed"]
     assert report["utf8"]
     assert report["num_samples"] == len(content)
@@ -234,7 +233,7 @@ def test_check_jsonl_invalid_json(tmp_path: Path):
 
 
 def test_check_jsonl_missing_required_field(tmp_path: Path):
-    # Create a JSONL file missing a required field
+    # Semantic checks run on the server; client only verifies JSON objects per line.
     file = tmp_path / "missing_field.jsonl"
     content = [
         {"prompt": "Translate the following sentence.", "completion": "Hello, world!"},
@@ -245,12 +244,11 @@ def test_check_jsonl_missing_required_field(tmp_path: Path):
 
     report = check_file(file)
 
-    assert not report["is_check_passed"]
-    assert "Error parsing file. Could not detect a format for the line 2" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == len(content)
 
 
 def test_check_jsonl_inconsistent_dataset_format(tmp_path: Path):
-    # Create a JSONL file with inconsistent dataset formats
     file = tmp_path / "inconsistent_format.jsonl"
     content = [
         {
@@ -259,19 +257,18 @@ def test_check_jsonl_inconsistent_dataset_format(tmp_path: Path):
                 {"role": "assistant", "content": "Hi! How can I help you?"},
             ]
         },
-        {"text": "How are you?"},  # Missing 'messages'
+        {"text": "How are you?"},
     ]
     with file.open("w") as f:
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
 
-    assert not report["is_check_passed"]
-    assert "All samples in the dataset must have the same dataset format" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == len(content)
 
 
 def test_check_jsonl_invalid_role(tmp_path: Path):
-    # Create a JSONL file with an invalid role
     file = tmp_path / "invalid_role.jsonl"
     content = [{"messages": [{"role": "invalid_role", "content": "Hi"}]}]
     with file.open("w") as f:
@@ -279,12 +276,11 @@ def test_check_jsonl_invalid_role(tmp_path: Path):
 
     report = check_file(file)
 
-    assert not report["is_check_passed"]
-    assert "Invalid role `invalid_role` in conversation" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_assistant_role_exists(tmp_path: Path):
-    # Create a JSONL file with no assistant role
     file = tmp_path / "assistant_role_exists.jsonl"
     content = [{"messages": [{"role": "user", "content": "Hi"}]}]
     with file.open("w") as f:
@@ -292,20 +288,19 @@ def test_check_jsonl_assistant_role_exists(tmp_path: Path):
 
     report = check_file(file)
 
-    assert not report["is_check_passed"]
-    assert "At least one message with the assistant role must be present" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_invalid_value_type(tmp_path: Path):
-    # Create a JSONL file with an invalid value type
     file = tmp_path / "invalid_value_type.jsonl"
     content = [{"text": 123}]
     with file.open("w") as f:
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "Expected string" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_missing_role_in_conversation(tmp_path: Path):
@@ -322,8 +317,8 @@ def test_check_jsonl_missing_role_in_conversation(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "Missing required column `role`" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_missing_content_in_conversation(tmp_path: Path):
@@ -333,8 +328,8 @@ def test_check_jsonl_missing_content_in_conversation(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "Missing required column `content`" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_missing_content_or_tool_calls_in_conversation(tmp_path: Path):
@@ -344,9 +339,8 @@ def test_check_jsonl_missing_content_or_tool_calls_in_conversation(tmp_path: Pat
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "`content`" in report["message"]
-    assert "`tool_calls`" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_wrong_turn_type(tmp_path: Path):
@@ -364,11 +358,8 @@ def test_check_jsonl_wrong_turn_type(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert (
-        "Invalid format on line 1 of the input file. The `messages` column must be a list of dicts."
-        in report["message"]
-    )
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_extra_column(tmp_path: Path):
@@ -378,8 +369,8 @@ def test_check_jsonl_extra_column(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "Found extra column" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_empty_messages(tmp_path: Path):
@@ -389,8 +380,8 @@ def test_check_jsonl_empty_messages(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "The `messages` column must not be empty" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_valid_weights_all_messages(tmp_path: Path):
@@ -460,8 +451,8 @@ def test_check_jsonl_invalid_weight_float(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "Weight must be an integer" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_invalid_weight(tmp_path: Path):
@@ -478,8 +469,8 @@ def test_check_jsonl_invalid_weight(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "Weight must be either 0 or 1" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_jsonl_invalid_multimodal_content(tmp_path: Path):
@@ -509,8 +500,8 @@ def test_check_jsonl_invalid_multimodal_content(tmp_path: Path):
         f.write("\n".join(json.dumps(item) for item in content))
 
     report = check_file(file)
-    assert not report["is_check_passed"]
-    assert "field must be either a JPEG, PNG or WEBP" in report["message"]
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 1
 
 
 def test_check_csv_valid_general(tmp_path: Path):
