@@ -279,9 +279,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
                         )
                     sample_count += 1
 
-                report_dict.update(
-                    _check_samples_count(file, report_dict, sample_count - 1 if sample_count else -1)
-                )
+                report_dict.update(_check_samples_count(file, report_dict, sample_count - 1 if sample_count else -1))
                 report_dict["load_json"] = True
 
             except InvalidFileFormatError as e:
