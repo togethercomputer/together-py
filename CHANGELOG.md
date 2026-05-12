@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.14.0 (2026-05-12)
+
+Full Changelog: [v2.13.0...v2.14.0](https://github.com/togethercomputer/together-py/compare/v2.13.0...v2.14.0)
+
+### Features
+
+* **api:** Integrate fine_tuning.list_metrics from stainless ([0d3a6da](https://github.com/togethercomputer/together-py/commit/0d3a6da0fd4c5f16c119e016b41de2be148c9f95))
+
+
+### Chores
+
+* temp deletion ([a42892c](https://github.com/togethercomputer/together-py/commit/a42892c12297d8e264c00c7c100551896fad87d9))
+* temp undeletion ([462d3f3](https://github.com/togethercomputer/together-py/commit/462d3f3c234ae8b256e7ff965c10ee6708be09af))
+
 ## 2.13.0 (2026-05-11)
 
 Full Changelog: [v2.12.0...v2.13.0](https://github.com/togethercomputer/together-py/compare/v2.12.0...v2.13.0)
