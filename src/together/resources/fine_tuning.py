@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Union, Optional
+from datetime import datetime
 from typing_extensions import Literal
 
 import httpx
 from rich import print as rprint
 
-from ..types import fine_tuning_delete_params, fine_tuning_content_params, fine_tuning_estimate_price_params
+from ..types import (
+    fine_tuning_delete_params,
+    fine_tuning_content_params,
+    fine_tuning_list_metrics_params,
+    fine_tuning_estimate_price_params,
+)
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from .._utils import path_template, maybe_transform, async_maybe_transform
 from .._compat import cached_property
@@ -628,6 +634,11 @@ class FineTuningResource(SyncAPIResource):
         self,
         id: str,
         *,
+        global_step_from: int | Omit = omit,
+        global_step_to: int | Omit = omit,
+        logged_at_from: Union[str, datetime] | Omit = omit,
+        logged_at_to: Union[str, datetime] | Omit = omit,
+        resolution: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -638,11 +649,20 @@ class FineTuningResource(SyncAPIResource):
         """Retrieves recorded training metrics for a fine-tuning job in chronological
         order.
 
-        All filter fields are optional — omit the body or send `{}` to retrieve
-        all metrics.
+        All query parameters are optional: omit them to retrieve all metrics.
 
         Args:
           id: Fine-tune job ID. A string that starts with `ft-`.
+
+          global_step_from: Return only metrics with global_step >= this value.
+
+          global_step_to: Return only metrics with global_step <= this value.
+
+          logged_at_from: Return only metrics logged at or after this ISO-8601 timestamp.
+
+          logged_at_to: Return only metrics logged at or before this ISO-8601 timestamp.
+
+          resolution: Number of (uniformly sampled) train metrics to return.
 
           extra_headers: Send extra headers
 
@@ -657,7 +677,20 @@ class FineTuningResource(SyncAPIResource):
         return self._get(
             path_template("/fine-tunes/{id}/metrics", id=id),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "global_step_from": global_step_from,
+                        "global_step_to": global_step_to,
+                        "logged_at_from": logged_at_from,
+                        "logged_at_to": logged_at_to,
+                        "resolution": resolution,
+                    },
+                    fine_tuning_list_metrics_params.FineTuningListMetricsParams,
+                ),
             ),
             cast_to=FineTuningListMetricsResponse,
         )
@@ -1229,6 +1262,11 @@ class AsyncFineTuningResource(AsyncAPIResource):
         self,
         id: str,
         *,
+        global_step_from: int | Omit = omit,
+        global_step_to: int | Omit = omit,
+        logged_at_from: Union[str, datetime] | Omit = omit,
+        logged_at_to: Union[str, datetime] | Omit = omit,
+        resolution: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1239,11 +1277,20 @@ class AsyncFineTuningResource(AsyncAPIResource):
         """Retrieves recorded training metrics for a fine-tuning job in chronological
         order.
 
-        All filter fields are optional — omit the body or send `{}` to retrieve
-        all metrics.
+        All query parameters are optional: omit them to retrieve all metrics.
 
         Args:
           id: Fine-tune job ID. A string that starts with `ft-`.
+
+          global_step_from: Return only metrics with global_step >= this value.
+
+          global_step_to: Return only metrics with global_step <= this value.
+
+          logged_at_from: Return only metrics logged at or after this ISO-8601 timestamp.
+
+          logged_at_to: Return only metrics logged at or before this ISO-8601 timestamp.
+
+          resolution: Number of (uniformly sampled) train metrics to return.
 
           extra_headers: Send extra headers
 
@@ -1258,7 +1305,20 @@ class AsyncFineTuningResource(AsyncAPIResource):
         return await self._get(
             path_template("/fine-tunes/{id}/metrics", id=id),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {
+                        "global_step_from": global_step_from,
+                        "global_step_to": global_step_to,
+                        "logged_at_from": logged_at_from,
+                        "logged_at_to": logged_at_to,
+                        "resolution": resolution,
+                    },
+                    fine_tuning_list_metrics_params.FineTuningListMetricsParams,
+                ),
             ),
             cast_to=FineTuningListMetricsResponse,
         )

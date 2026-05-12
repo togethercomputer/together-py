@@ -21,6 +21,7 @@ from together.types import (
     FineTuningEstimatePriceResponse,
     FineTuningListCheckpointsResponse,
 )
+from together._utils import parse_datetime
 from together._response import (
     BinaryAPIResponse,
     AsyncBinaryAPIResponse,
@@ -364,14 +365,26 @@ class TestFineTuning:
     @parametrize
     def test_method_list_metrics(self, client: Together) -> None:
         fine_tuning = client.fine_tuning.list_metrics(
-            "id",
+            id="id",
+        )
+        assert_matches_type(FineTuningListMetricsResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_method_list_metrics_with_all_params(self, client: Together) -> None:
+        fine_tuning = client.fine_tuning.list_metrics(
+            id="id",
+            global_step_from=0,
+            global_step_to=0,
+            logged_at_from=parse_datetime("2019-12-27T18:11:19.117Z"),
+            logged_at_to=parse_datetime("2019-12-27T18:11:19.117Z"),
+            resolution=0,
         )
         assert_matches_type(FineTuningListMetricsResponse, fine_tuning, path=["response"])
 
     @parametrize
     def test_raw_response_list_metrics(self, client: Together) -> None:
         response = client.fine_tuning.with_raw_response.list_metrics(
-            "id",
+            id="id",
         )
 
         assert response.is_closed is True
@@ -382,7 +395,7 @@ class TestFineTuning:
     @parametrize
     def test_streaming_response_list_metrics(self, client: Together) -> None:
         with client.fine_tuning.with_streaming_response.list_metrics(
-            "id",
+            id="id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -396,7 +409,7 @@ class TestFineTuning:
     def test_path_params_list_metrics(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.fine_tuning.with_raw_response.list_metrics(
-                "",
+                id="",
             )
 
 
@@ -735,14 +748,26 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_method_list_metrics(self, async_client: AsyncTogether) -> None:
         fine_tuning = await async_client.fine_tuning.list_metrics(
-            "id",
+            id="id",
+        )
+        assert_matches_type(FineTuningListMetricsResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_method_list_metrics_with_all_params(self, async_client: AsyncTogether) -> None:
+        fine_tuning = await async_client.fine_tuning.list_metrics(
+            id="id",
+            global_step_from=0,
+            global_step_to=0,
+            logged_at_from=parse_datetime("2019-12-27T18:11:19.117Z"),
+            logged_at_to=parse_datetime("2019-12-27T18:11:19.117Z"),
+            resolution=0,
         )
         assert_matches_type(FineTuningListMetricsResponse, fine_tuning, path=["response"])
 
     @parametrize
     async def test_raw_response_list_metrics(self, async_client: AsyncTogether) -> None:
         response = await async_client.fine_tuning.with_raw_response.list_metrics(
-            "id",
+            id="id",
         )
 
         assert response.is_closed is True
@@ -753,7 +778,7 @@ class TestAsyncFineTuning:
     @parametrize
     async def test_streaming_response_list_metrics(self, async_client: AsyncTogether) -> None:
         async with async_client.fine_tuning.with_streaming_response.list_metrics(
-            "id",
+            id="id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -767,5 +792,5 @@ class TestAsyncFineTuning:
     async def test_path_params_list_metrics(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.fine_tuning.with_raw_response.list_metrics(
-                "",
+                id="",
             )
