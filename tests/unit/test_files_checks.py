@@ -1,6 +1,6 @@
 import csv
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 from pathlib import Path
 
 import pytest
@@ -297,7 +297,7 @@ def test_check_jsonl_invalid_json(tmp_path: Path):
             id="extra_column",
         ),
         pytest.param(
-            [{"messages": []}],
+            cast(List[Dict[str, Any]], [{"messages": []}]),
             id="empty_messages",
         ),
         pytest.param(
