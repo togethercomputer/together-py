@@ -340,7 +340,7 @@ files_app.command(
     help_epilogue=FILES_UPLOAD_HELP_EXAMPLES,
 )
 files_app.command(f"{_CLI}.files.list:list", alias="ls", help="List your files")
-files_app.command(f"{_CLI}.files.retrieve:retrieve", help="Get file details")
+files_app.command(f"{_CLI}.files.retrieve:retrieve", alias="get", help="Get file details")
 files_app.command(f"{_CLI}.files.retrieve_content:retrieve_content", help="Download file contents", show=False)
 files_app.command(
     f"{_CLI}.files.retrieve_content:retrieve_content",
@@ -367,7 +367,7 @@ fine_tuning_app.command(
     help_epilogue=FINE_TUNING_CREATE_HELP_EXAMPLES,
 )
 fine_tuning_app.command((f"{_CLI}.fine_tuning.list:list"), alias="ls", help="List fine-tuning jobs")
-fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), help="Get fine-tuning job details")
+fine_tuning_app.command((f"{_CLI}.fine_tuning.retrieve:retrieve"), alias="get", help="Get fine-tuning job details")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.cancel:cancel"), help="Cancel a fine-tuning job")
 fine_tuning_app.command((f"{_CLI}.fine_tuning.list_events:list_events"), help="List events for a fine-tuning job")
 fine_tuning_app.command(
@@ -399,7 +399,7 @@ endpoints_app.command(
     help="Create a new endpoint",
     help_epilogue=ENDPOINTS_CREATE_HELP_EXAMPLES,
 )
-endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), help="Get endpoint details")
+endpoints_app.command((f"{_CLI}.endpoints.retrieve:retrieve"), alias="get", help="Get endpoint details")
 endpoints_app.command((f"{_CLI}.endpoints.stop:stop"), help="Stop an endpoint")
 endpoints_app.command((f"{_CLI}.endpoints.start:start"), help="Start an endpoint")
 endpoints_app.command((f"{_CLI}.endpoints.delete:delete"), alias="-d", help="Delete an endpoint")
@@ -418,7 +418,7 @@ evals_app.command(
     (f"{_CLI}.evals.create:create"), alias="-c", help="Create a new eval job", help_epilogue=EVALS_CREATE_HELP_EXAMPLES
 )
 evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs")
-evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), help="Get eval job details")
+evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), alias="get", help="Get eval job details")
 evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
 
 ## Telemetry API commands
@@ -444,7 +444,7 @@ clusters_app.command(
     help="Create a new cluster",
     help_epilogue=BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
 )
-clusters_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"), help="Get cluster details")
+clusters_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"), alias="get", help="Get cluster details")
 clusters_app.command(
     (f"{_CLI}.beta.clusters.update:update"),
     help="Update a cluster",
@@ -481,6 +481,7 @@ storage_app.command(
 )
 storage_app.command(
     (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
+    alias="get",
     help="Get storage volume details",
 )
 storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
@@ -587,7 +588,7 @@ storage_app.command(
 storage_app.command((f"{_CLI}.beta.jig.jig:jig_volumes_delete_cli"), name="delete", help="Delete a volume", alias="-d")
 storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_describe"),
-    alias="retrieve",
+    alias=("retrieve", "get"),
     name="describe",
     help="Get volume details",
 )
