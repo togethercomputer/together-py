@@ -636,9 +636,12 @@ class Jig:
         has_buildx = subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode == 0
         if has_buildx:
             cmd = [
-                "docker", "buildx", "build",
+                "docker",
+                "buildx",
+                "build",
                 "--push",
-                "--platform", "linux/amd64",
+                "--platform",
+                "linux/amd64",
                 "--output",
                 f"type=image,name={image},compression=zstd,force-compression=true,oci-mediatypes=true",
                 "-",
