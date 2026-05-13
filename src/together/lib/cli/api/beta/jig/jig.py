@@ -633,7 +633,24 @@ class Jig:
             raise JigError("Registry login failed")
 
         console.print(f"Pushing {image}")
-        if subprocess.run(["docker", "push", image]).returncode != 0:
+        has_buildx = subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode == 0
+        if has_buildx:
+            cmd = [
+                "docker", "buildx", "build",
+                "--push",
+                "--platform", "linux/amd64",
+                "--output",
+                f"type=image,name={image},compression=zstd,force-compression=true,oci-mediatypes=true",
+                "-",
+            ]
+            ok = subprocess.run(cmd, input=f"FROM {image}\n", text=True).returncode == 0
+        else:
+            console.print(
+                "\N{WARNING SIGN} buildx not available; falling back to gzip push. "
+                "Install docker buildx for faster image pull times."
+            )
+            ok = subprocess.run(["docker", "push", image]).returncode == 0
+        if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
 
