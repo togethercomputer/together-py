@@ -97,12 +97,12 @@ def _interpolate(
             else:
                 left_x, left_y = xs_s[pos - 1], ys_s[pos - 1]
                 right_x, right_y = xs_s[pos], ys_s[pos]
-                # When either bracket endpoint is the -inf NaN sentinel we
-                # cannot compute a meaningful slope.  Instead, assign this
-                # grid point to whichever bracket is closer: if that bracket
-                # is non-finite the dip extends to this column; if it is
-                # finite we use its value so the dip stays as narrow as the
-                # grid resolution allows.
+                # When either bracket endpoint is a non-finite sentinel
+                # (-inf/NaN or +inf) we cannot compute a meaningful slope.
+                # Instead, assign this grid point to whichever bracket is
+                # closer: if that bracket is non-finite the spike/dip extends
+                # to this column; if it is finite we use its value so the
+                # spike/dip stays as narrow as the grid resolution allows.
                 if not math.isfinite(left_y) or not math.isfinite(right_y):
                     closer_y = left_y if (x_point - left_x) <= (right_x - x_point) else right_y
                     interpolated.append(closer_y)
