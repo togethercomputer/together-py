@@ -12,7 +12,7 @@ from together.lib.types.fine_tuning import COMPLETED_STATUSES
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.components.model_dump import print_model_dump
-from together.lib.cli.utils.plot_finetune_metrics import METRICS_WIDTH_PADDING, metrics_block_sparklines
+from together.lib.cli.components.plot_finetune_metrics import METRICS_WIDTH_PADDING, metrics_block_sparklines
 
 _NEST_INDENT = 4
 
@@ -21,7 +21,7 @@ async def retrieve(
     fine_tune_id: str,
     *,
     config: CLIConfigParameter,
-    plots: Annotated[bool, Parameter(help="Print training metric sparklines.")] = True,
+    no_plots: Annotated[bool, Parameter(help="Print training metric sparklines.")] = False,
 ) -> None:
     """Retrieve fine-tuning job details."""
     response = await show_loading_status(
@@ -41,16 +41,12 @@ async def retrieve(
 
     print_model_dump(response, show_nulls=False)
 
-    if plots:
-        try:
-            metrics_response = await show_loading_status(
-                "Fetching metrics...",
-                config.client.fine_tuning.list_metrics(fine_tune_id, resolution=console.width - METRICS_WIDTH_PADDING),
-            )
-            metrics = metrics_response.metrics or []
-        except Exception:
-            # Metrics are optional; silently skip if unavailable.
-            metrics = []
+    if not no_plots:
+        metrics_response = await show_loading_status(
+            "Fetching metrics...",
+            config.client.fine_tuning.list_metrics(fine_tune_id, resolution=console.width - METRICS_WIDTH_PADDING),
+        )
+        metrics = metrics_response.metrics or []
 
         if metrics:
             console.print("\n[muted]Training metrics:[/muted]")

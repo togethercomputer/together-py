@@ -53,6 +53,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_SECRETS_UNSET_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
+    FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     JIG_SECRETS_DELETE_HELP_EXAMPLES,
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
@@ -381,7 +382,9 @@ fine_tuning_app.command(
 )
 fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
 fine_tuning_app.command(
-    (f"{_CLI}.fine_tuning.list_metrics:list_metrics"), help="Retrieve training metrics for a fine-tuning job"
+    (f"{_CLI}.fine_tuning.list_metrics:list_metrics"),
+    help="Retrieve training metrics for a fine-tuning job",
+    help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
 )
 
 ## Models API commands

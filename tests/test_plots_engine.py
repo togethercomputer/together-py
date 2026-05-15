@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from together.lib.cli.utils.plots._engine import (
+from together.lib.cli.components.plots._engine import (
     _interpolate,
     _uniform_grid,
     render_line_chart,
     render_sparklines,
 )
+from together.lib.cli.components.plot_finetune_metrics import _step_label
 
 
 def constant_series(n: int = 5, value: float = 1.0) -> list[tuple[float, float]]:
@@ -25,10 +26,6 @@ _ACCURACY_XS = [p[0] for p in _ACCURACY]
 _ACCURACY_YS = [p[1] for p in _ACCURACY]
 _WIDE_XS = [p[0] for p in _WIDE]
 _WIDE_YS = [p[1] for p in _WIDE]
-
-
-def _x_label(x: float) -> str:
-    return str(int(x))
 
 
 def _interp(xs: list[float], ys: list[float], x_grid: list[float]) -> list[float]:
@@ -160,7 +157,7 @@ class TestRenderLineChart:
             width=20,
             height=4,
             n_xticks=3,
-            x_label=_x_label,
+            x_label=_step_label,
         )
         assert result.plain == (
             "  loss  (0 – 9)  1 → 0.1\n"
@@ -180,7 +177,7 @@ class TestRenderLineChart:
             width=20,
             height=4,
             n_xticks=3,
-            x_label=_x_label,
+            x_label=_step_label,
         )
         assert result.plain == (
             "  loss  (0 – 9)  1 → 0.1\n"
@@ -200,7 +197,7 @@ class TestRenderLineChart:
             width=20,
             height=4,
             n_xticks=3,
-            x_label=_x_label,
+            x_label=_step_label,
             y_log=True,
         )
         assert result.plain == (
@@ -220,7 +217,7 @@ class TestRenderLineChart:
             {"flat": [p[1] for p in _flat]},
             width=20,
             height=4,
-            x_label=_x_label,
+            x_label=_step_label,
         )
         assert result.plain == (
             "  flat  (0 – 9)  42 → 42\n"
@@ -297,7 +294,7 @@ class TestRenderLineChart:
         # -inf/NaN → dip to x-axis border; +inf → spike to top data row.
         xs = [float(i) for i in range(10)]
         ys = [(1.0 - i * 0.1) if i != 5 else bad_value for i in range(10)]
-        result = render_line_chart(xs, {"loss": ys}, width=20, height=4, n_xticks=3, x_label=_x_label)
+        result = render_line_chart(xs, {"loss": ys}, width=20, height=4, n_xticks=3, x_label=_step_label)
         assert result.plain == expected
 
     def test_label_width_caps_y_axis(self) -> None:
@@ -307,7 +304,7 @@ class TestRenderLineChart:
             {"metric": _WIDE_YS},
             width=20,
             height=4,
-            x_label=_x_label,
+            x_label=_step_label,
             y_log=True,
             label_width=5,
         )
