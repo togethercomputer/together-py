@@ -96,24 +96,17 @@ Methods:
 Types:
 
 ```python
-from together.types.beta.clusters import (
-    RemediationCreateResponse,
-    RemediationRetrieveResponse,
-    RemediationListResponse,
-    RemediationApproveResponse,
-    RemediationCancelResponse,
-    RemediationRejectResponse,
-)
+from together.types.beta.clusters import Remediation, RemediationListResponse
 ```
 
 Methods:
 
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">create</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_create_response.py">RemediationCreateResponse</a></code>
-- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">retrieve</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation_retrieve_response.py">RemediationRetrieveResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">create</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
+- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">retrieve</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
 - <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">list</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_list_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_list_response.py">RemediationListResponse</a></code>
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">approve</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_approve_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_approve_response.py">RemediationApproveResponse</a></code>
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">cancel</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation_cancel_response.py">RemediationCancelResponse</a></code>
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">reject</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_reject_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_reject_response.py">RemediationRejectResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">approve</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_approve_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">cancel</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">reject</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_reject_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
 
 ### Storage
 
