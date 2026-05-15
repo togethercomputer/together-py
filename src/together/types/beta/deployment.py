@@ -232,7 +232,7 @@ class Deployment(BaseModel):
     replica_events: Optional[Dict[str, ReplicaEvents]] = None
     """ReplicaEvents is a mapping of replica names or IDs to their status events"""
 
-    status: Optional[Literal["Updating", "Scaling", "Ready", "Failed"]] = None
+    status: Optional[Literal["Updating", "Scaling", "Ready", "Failed", "ScaledToZero"]] = None
     """
     Status represents the overall status of the deployment (e.g., Updating, Scaling,
     Ready, Failed)
@@ -242,6 +242,12 @@ class Deployment(BaseModel):
     """
     Storage is the amount of storage (in MB or units as defined by the platform)
     allocated to each replica
+    """
+
+    termination_grace_period_seconds: Optional[int] = None
+    """
+    TerminationGracePeriodSeconds is the time in seconds to wait for graceful
+    shutdown before forcefully terminating the replica
     """
 
     updated_at: Optional[datetime] = None

@@ -290,6 +290,8 @@ class TestJig:
         jig = client.beta.jig.retrieve_logs(
             id="id",
             replica_id="replica_id",
+            revision="revision",
+            version="version",
         )
         assert_matches_type(DeploymentLogs, jig, path=["response"])
 
@@ -599,6 +601,8 @@ class TestAsyncJig:
         jig = await async_client.beta.jig.retrieve_logs(
             id="id",
             replica_id="replica_id",
+            revision="revision",
+            version="version",
         )
         assert_matches_type(DeploymentLogs, jig, path=["response"])
 

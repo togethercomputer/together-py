@@ -48,7 +48,7 @@ from together.types.beta.jig import Volume, VolumeListResponse
 Methods:
 
 - <code title="post /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">create</a>(\*\*<a href="src/together/types/beta/jig/volume_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="get /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
+- <code title="get /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">retrieve</a>(id, \*\*<a href="src/together/types/beta/jig/volume_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
 - <code title="patch /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/volume_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
 - <code title="get /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">list</a>() -> <a href="./src/together/types/beta/jig/volume_list_response.py">VolumeListResponse</a></code>
 - <code title="delete /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">delete</a>(id) -> object</code>
