@@ -329,11 +329,13 @@ class SharedVolume(TypedDict, total=False):
     """Inline configuration to create a shared volume with the cluster creation."""
 
     region: Required[str]
+    """Region name. Usable regions can be found from `clusters.list_regions()`"""
 
     size_tib: Required[int]
     """Volume size in whole tebibytes (TiB)."""
 
     volume_name: Required[str]
+    """User provided name of the volume."""
 
     is_lifecycle_independent: bool
     """When true, the shared volume is not deleted when the cluster is decommissioned."""

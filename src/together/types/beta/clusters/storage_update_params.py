@@ -9,5 +9,7 @@ __all__ = ["StorageUpdateParams"]
 
 class StorageUpdateParams(TypedDict, total=False):
     volume_id: Required[str]
+    """ID of the volume."""
 
     size_tib: int
+    """Size of the volume in TiB."""
