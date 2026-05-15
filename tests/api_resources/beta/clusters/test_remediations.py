@@ -10,12 +10,8 @@ import pytest
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types.beta.clusters import (
+    Remediation,
     RemediationListResponse,
-    RemediationCancelResponse,
-    RemediationCreateResponse,
-    RemediationRejectResponse,
-    RemediationApproveResponse,
-    RemediationRetrieveResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -31,7 +27,7 @@ class TestRemediations:
             cluster_id="cluster_id",
             mode="REMEDIATION_MODE_VM_ONLY",
         )
-        assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -42,7 +38,7 @@ class TestRemediations:
             remediation_id="remediation_id",
             reason="reason",
         )
-        assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -55,7 +51,7 @@ class TestRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = response.parse()
-        assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -68,7 +64,7 @@ class TestRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = response.parse()
-            assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -95,7 +91,7 @@ class TestRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -108,7 +104,7 @@ class TestRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = response.parse()
-        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -121,7 +117,7 @@ class TestRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = response.parse()
-            assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -216,7 +212,7 @@ class TestRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_method_approve_with_all_params(self, client: Together) -> None:
@@ -226,7 +222,7 @@ class TestRemediations:
             instance_id="instance_id",
             comment="comment",
         )
-        assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_raw_response_approve(self, client: Together) -> None:
@@ -239,7 +235,7 @@ class TestRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = response.parse()
-        assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_streaming_response_approve(self, client: Together) -> None:
@@ -252,7 +248,7 @@ class TestRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = response.parse()
-            assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -286,7 +282,7 @@ class TestRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationCancelResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_raw_response_cancel(self, client: Together) -> None:
@@ -299,7 +295,7 @@ class TestRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = response.parse()
-        assert_matches_type(RemediationCancelResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_streaming_response_cancel(self, client: Together) -> None:
@@ -312,7 +308,7 @@ class TestRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = response.parse()
-            assert_matches_type(RemediationCancelResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -346,7 +342,7 @@ class TestRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_method_reject_with_all_params(self, client: Together) -> None:
@@ -356,7 +352,7 @@ class TestRemediations:
             instance_id="instance_id",
             comment="comment",
         )
-        assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_raw_response_reject(self, client: Together) -> None:
@@ -369,7 +365,7 @@ class TestRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = response.parse()
-        assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     def test_streaming_response_reject(self, client: Together) -> None:
@@ -382,7 +378,7 @@ class TestRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = response.parse()
-            assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -422,7 +418,7 @@ class TestAsyncRemediations:
             cluster_id="cluster_id",
             mode="REMEDIATION_MODE_VM_ONLY",
         )
-        assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -433,7 +429,7 @@ class TestAsyncRemediations:
             remediation_id="remediation_id",
             reason="reason",
         )
-        assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -446,7 +442,7 @@ class TestAsyncRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = await response.parse()
-        assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -459,7 +455,7 @@ class TestAsyncRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = await response.parse()
-            assert_matches_type(RemediationCreateResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -486,7 +482,7 @@ class TestAsyncRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -499,7 +495,7 @@ class TestAsyncRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = await response.parse()
-        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -512,7 +508,7 @@ class TestAsyncRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = await response.parse()
-            assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -607,7 +603,7 @@ class TestAsyncRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_method_approve_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -617,7 +613,7 @@ class TestAsyncRemediations:
             instance_id="instance_id",
             comment="comment",
         )
-        assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_raw_response_approve(self, async_client: AsyncTogether) -> None:
@@ -630,7 +626,7 @@ class TestAsyncRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = await response.parse()
-        assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_streaming_response_approve(self, async_client: AsyncTogether) -> None:
@@ -643,7 +639,7 @@ class TestAsyncRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = await response.parse()
-            assert_matches_type(RemediationApproveResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -677,7 +673,7 @@ class TestAsyncRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationCancelResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_raw_response_cancel(self, async_client: AsyncTogether) -> None:
@@ -690,7 +686,7 @@ class TestAsyncRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = await response.parse()
-        assert_matches_type(RemediationCancelResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_streaming_response_cancel(self, async_client: AsyncTogether) -> None:
@@ -703,7 +699,7 @@ class TestAsyncRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = await response.parse()
-            assert_matches_type(RemediationCancelResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -737,7 +733,7 @@ class TestAsyncRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
         )
-        assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_method_reject_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -747,7 +743,7 @@ class TestAsyncRemediations:
             instance_id="instance_id",
             comment="comment",
         )
-        assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_raw_response_reject(self, async_client: AsyncTogether) -> None:
@@ -760,7 +756,7 @@ class TestAsyncRemediations:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         remediation = await response.parse()
-        assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+        assert_matches_type(Remediation, remediation, path=["response"])
 
     @parametrize
     async def test_streaming_response_reject(self, async_client: AsyncTogether) -> None:
@@ -773,7 +769,7 @@ class TestAsyncRemediations:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             remediation = await response.parse()
-            assert_matches_type(RemediationRejectResponse, remediation, path=["response"])
+            assert_matches_type(Remediation, remediation, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
