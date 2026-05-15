@@ -68,7 +68,8 @@ class ModelsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ModelListResponse:
         """
-        Lists all of Together's open-source models
+        Lists all of Together's open-source models and metadata including pricing, chat
+        template, and context.
 
         Args:
           dedicated: Filter models to only return dedicated models
@@ -195,7 +196,8 @@ class AsyncModelsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ModelListResponse:
         """
-        Lists all of Together's open-source models
+        Lists all of Together's open-source models and metadata including pricing, chat
+        template, and context.
 
         Args:
           dedicated: Filter models to only return dedicated models

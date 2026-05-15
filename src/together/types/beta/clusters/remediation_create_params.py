@@ -9,7 +9,6 @@ __all__ = ["RemediationCreateParams"]
 
 class RemediationCreateParams(TypedDict, total=False):
     cluster_id: Required[str]
-    """The cluster ID."""
 
     mode: Required[
         Literal[
@@ -28,7 +27,7 @@ class RemediationCreateParams(TypedDict, total=False):
     """
 
     remediation_id: str
-    """Optional. Client-specified ID for idempotency."""
+    """Client-specified ID for idempotency."""
 
     reason: str
     """User-provided reason for the remediation."""
