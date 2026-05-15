@@ -109,15 +109,21 @@ class TestStorage:
     @parametrize
     def test_method_update(self, client: Together) -> None:
         storage = client.beta.clusters.storage.update(
-            size_tib=0,
             volume_id="volume_id",
+        )
+        assert_matches_type(ClusterStorage, storage, path=["response"])
+
+    @parametrize
+    def test_method_update_with_all_params(self, client: Together) -> None:
+        storage = client.beta.clusters.storage.update(
+            volume_id="volume_id",
+            size_tib=0,
         )
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
     def test_raw_response_update(self, client: Together) -> None:
         response = client.beta.clusters.storage.with_raw_response.update(
-            size_tib=0,
             volume_id="volume_id",
         )
 
@@ -129,7 +135,6 @@ class TestStorage:
     @parametrize
     def test_streaming_response_update(self, client: Together) -> None:
         with client.beta.clusters.storage.with_streaming_response.update(
-            size_tib=0,
             volume_id="volume_id",
         ) as response:
             assert not response.is_closed
@@ -304,15 +309,21 @@ class TestAsyncStorage:
     @parametrize
     async def test_method_update(self, async_client: AsyncTogether) -> None:
         storage = await async_client.beta.clusters.storage.update(
-            size_tib=0,
             volume_id="volume_id",
+        )
+        assert_matches_type(ClusterStorage, storage, path=["response"])
+
+    @parametrize
+    async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
+        storage = await async_client.beta.clusters.storage.update(
+            volume_id="volume_id",
+            size_tib=0,
         )
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
     async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.clusters.storage.with_raw_response.update(
-            size_tib=0,
             volume_id="volume_id",
         )
 
@@ -324,7 +335,6 @@ class TestAsyncStorage:
     @parametrize
     async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.clusters.storage.with_streaming_response.update(
-            size_tib=0,
             volume_id="volume_id",
         ) as response:
             assert not response.is_closed

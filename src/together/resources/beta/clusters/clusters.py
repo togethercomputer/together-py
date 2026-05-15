@@ -66,7 +66,6 @@ class ClustersResource(SyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
         cuda_version: str,
-        duration_days: int,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
         nvidia_driver_version: str,
@@ -79,6 +78,7 @@ class ClustersResource(SyncAPIResource):
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        duration_days: int | Omit = omit,
         gpu_node_failover_enabled: bool | Omit = omit,
         install_traefik: bool | Omit = omit,
         num_capacity_pool_gpus: int | Omit = omit,
@@ -118,8 +118,6 @@ class ClustersResource(SyncAPIResource):
 
           cuda_version: CUDA version for this cluster. For example, 12.5
 
-          duration_days: Duration in days to keep the cluster running.
-
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
@@ -150,6 +148,8 @@ class ClustersResource(SyncAPIResource):
               applicable if the cluster is created from a capacity pool.
 
           cluster_type: Type of cluster to create.
+
+          duration_days: Duration in days to keep the cluster running.
 
           gpu_node_failover_enabled: Whether automated GPU node failover should be enabled for this cluster. By
               default, it is disabled.
@@ -202,7 +202,6 @@ class ClustersResource(SyncAPIResource):
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
                     "cuda_version": cuda_version,
-                    "duration_days": duration_days,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
                     "nvidia_driver_version": nvidia_driver_version,
@@ -215,6 +214,7 @@ class ClustersResource(SyncAPIResource):
                     "capacity_pool_id": capacity_pool_id,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
+                    "duration_days": duration_days,
                     "gpu_node_failover_enabled": gpu_node_failover_enabled,
                     "install_traefik": install_traefik,
                     "num_capacity_pool_gpus": num_capacity_pool_gpus,
@@ -468,7 +468,6 @@ class AsyncClustersResource(AsyncAPIResource):
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
         cuda_version: str,
-        duration_days: int,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"],
         num_gpus: int,
         nvidia_driver_version: str,
@@ -481,6 +480,7 @@ class AsyncClustersResource(AsyncAPIResource):
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        duration_days: int | Omit = omit,
         gpu_node_failover_enabled: bool | Omit = omit,
         install_traefik: bool | Omit = omit,
         num_capacity_pool_gpus: int | Omit = omit,
@@ -520,8 +520,6 @@ class AsyncClustersResource(AsyncAPIResource):
 
           cuda_version: CUDA version for this cluster. For example, 12.5
 
-          duration_days: Duration in days to keep the cluster running.
-
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
@@ -552,6 +550,8 @@ class AsyncClustersResource(AsyncAPIResource):
               applicable if the cluster is created from a capacity pool.
 
           cluster_type: Type of cluster to create.
+
+          duration_days: Duration in days to keep the cluster running.
 
           gpu_node_failover_enabled: Whether automated GPU node failover should be enabled for this cluster. By
               default, it is disabled.
@@ -604,7 +604,6 @@ class AsyncClustersResource(AsyncAPIResource):
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
                     "cuda_version": cuda_version,
-                    "duration_days": duration_days,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
                     "nvidia_driver_version": nvidia_driver_version,
@@ -617,6 +616,7 @@ class AsyncClustersResource(AsyncAPIResource):
                     "capacity_pool_id": capacity_pool_id,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
+                    "duration_days": duration_days,
                     "gpu_node_failover_enabled": gpu_node_failover_enabled,
                     "install_traefik": install_traefik,
                     "num_capacity_pool_gpus": num_capacity_pool_gpus,

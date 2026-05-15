@@ -132,8 +132,8 @@ class StorageResource(SyncAPIResource):
     def update(
         self,
         *,
-        size_tib: int,
         volume_id: str,
+        size_tib: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -157,8 +157,8 @@ class StorageResource(SyncAPIResource):
             "/compute/clusters/storage/volumes",
             body=maybe_transform(
                 {
-                    "size_tib": size_tib,
                     "volume_id": volume_id,
+                    "size_tib": size_tib,
                 },
                 storage_update_params.StorageUpdateParams,
             ),
@@ -354,8 +354,8 @@ class AsyncStorageResource(AsyncAPIResource):
     async def update(
         self,
         *,
-        size_tib: int,
         volume_id: str,
+        size_tib: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -379,8 +379,8 @@ class AsyncStorageResource(AsyncAPIResource):
             "/compute/clusters/storage/volumes",
             body=await async_maybe_transform(
                 {
-                    "size_tib": size_tib,
                     "volume_id": volume_id,
+                    "size_tib": size_tib,
                 },
                 storage_update_params.StorageUpdateParams,
             ),
