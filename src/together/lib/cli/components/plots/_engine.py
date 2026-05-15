@@ -48,8 +48,8 @@ _NAN_SENTINEL = -3  #  NaN: no line at the place
 
 def should_log(vals: list[float]) -> bool:
     """Return True when values span more than 100×, suggesting log scale."""
-    nz = [v for v in vals if v > 0]
-    return len(nz) > 1 and (max(nz) / min(nz)) > 100
+    positive_val = [v for v in vals if v > 0]
+    return len(positive_val) > 1 and (max(positive_val) / min(positive_val)) > 100
 
 
 def _uniform_grid(vals: list[float], n: int) -> list[float]:
@@ -58,8 +58,8 @@ def _uniform_grid(vals: list[float], n: int) -> list[float]:
     Non-finite values (e.g. the -inf sentinel used for NaN data points) are
     excluded from the range computation so they don't corrupt the grid.
     """
-    finite = [v for v in vals if math.isfinite(v)]
-    min_val, max_val = min(finite), max(finite)
+    finite_val = [v for v in vals if math.isfinite(v)]
+    min_val, max_val = min(finite_val), max(finite_val)
     if n <= 1:
         return [min_val]
     return [min_val + (max_val - min_val) * idx / (n - 1) for idx in range(n)]

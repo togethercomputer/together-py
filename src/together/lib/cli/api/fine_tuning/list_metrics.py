@@ -28,7 +28,7 @@ async def list_metrics(
     logged_at_to: Annotated[Optional[datetime], Parameter(help="Filter metrics logged at or before this time.")] = None,
     resolution: Annotated[
         Optional[int],
-        Parameter(help="Number of training metric points to return. Does not limit the number of eval metric points."),
+        Parameter(help="Number of uniformly sampled training metric points to return. Does not limit the number of eval metric points."),
     ] = None,
 ) -> None:
     """Retrieve training metrics for a fine-tuning job."""
