@@ -126,7 +126,7 @@ class GPUWorkerNodePhaseTransition(BaseModel):
 class GPUWorkerNodeLatestRemediation(BaseModel):
     """
     Remediation represents a node remediation request for an instance.
-     An instance can have multiple remediations over time (e.g., failed attempts followed by retries).
+    An instance can have multiple remediations over time (e.g., failed attempts followed by retries).
     """
 
     id: str
@@ -268,12 +268,16 @@ class PhaseTransition(BaseModel):
 
 class Volume(BaseModel):
     size_tib: int
+    """Size of the volume in TiB."""
 
     status: str
+    """Current status of the volume."""
 
     volume_id: str
+    """ID of the volume."""
 
     volume_name: str
+    """User provided name of the volume."""
 
 
 class ClusterConfigIngress(BaseModel):
