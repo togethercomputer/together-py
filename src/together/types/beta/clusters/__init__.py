@@ -17,3 +17,4 @@ from .remediation_cancel_response import RemediationCancelResponse as Remediatio
 from .remediation_create_response import RemediationCreateResponse as RemediationCreateResponse
 from .remediation_reject_response import RemediationRejectResponse as RemediationRejectResponse
 from .remediation_approve_response import RemediationApproveResponse as RemediationApproveResponse
+from .remediation_retrieve_response import RemediationRetrieveResponse as RemediationRetrieveResponse

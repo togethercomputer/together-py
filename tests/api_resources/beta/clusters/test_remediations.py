@@ -15,6 +15,7 @@ from together.types.beta.clusters import (
     RemediationCreateResponse,
     RemediationRejectResponse,
     RemediationApproveResponse,
+    RemediationRetrieveResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -85,6 +86,66 @@ class TestRemediations:
                 instance_id="",
                 cluster_id="cluster_id",
                 mode="REMEDIATION_MODE_VM_ONLY",
+            )
+
+    @parametrize
+    def test_method_retrieve(self, client: Together) -> None:
+        remediation = client.beta.clusters.remediations.retrieve(
+            remediation_id="remediation_id",
+            cluster_id="cluster_id",
+            instance_id="instance_id",
+        )
+        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+
+    @parametrize
+    def test_raw_response_retrieve(self, client: Together) -> None:
+        response = client.beta.clusters.remediations.with_raw_response.retrieve(
+            remediation_id="remediation_id",
+            cluster_id="cluster_id",
+            instance_id="instance_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        remediation = response.parse()
+        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+
+    @parametrize
+    def test_streaming_response_retrieve(self, client: Together) -> None:
+        with client.beta.clusters.remediations.with_streaming_response.retrieve(
+            remediation_id="remediation_id",
+            cluster_id="cluster_id",
+            instance_id="instance_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            remediation = response.parse()
+            assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_retrieve(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `cluster_id` but received ''"):
+            client.beta.clusters.remediations.with_raw_response.retrieve(
+                remediation_id="remediation_id",
+                cluster_id="",
+                instance_id="instance_id",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `instance_id` but received ''"):
+            client.beta.clusters.remediations.with_raw_response.retrieve(
+                remediation_id="remediation_id",
+                cluster_id="cluster_id",
+                instance_id="",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `remediation_id` but received ''"):
+            client.beta.clusters.remediations.with_raw_response.retrieve(
+                remediation_id="",
+                cluster_id="cluster_id",
+                instance_id="instance_id",
             )
 
     @parametrize
@@ -417,6 +478,66 @@ class TestAsyncRemediations:
                 instance_id="",
                 cluster_id="cluster_id",
                 mode="REMEDIATION_MODE_VM_ONLY",
+            )
+
+    @parametrize
+    async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
+        remediation = await async_client.beta.clusters.remediations.retrieve(
+            remediation_id="remediation_id",
+            cluster_id="cluster_id",
+            instance_id="instance_id",
+        )
+        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+
+    @parametrize
+    async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.clusters.remediations.with_raw_response.retrieve(
+            remediation_id="remediation_id",
+            cluster_id="cluster_id",
+            instance_id="instance_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        remediation = await response.parse()
+        assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.clusters.remediations.with_streaming_response.retrieve(
+            remediation_id="remediation_id",
+            cluster_id="cluster_id",
+            instance_id="instance_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            remediation = await response.parse()
+            assert_matches_type(RemediationRetrieveResponse, remediation, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_retrieve(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `cluster_id` but received ''"):
+            await async_client.beta.clusters.remediations.with_raw_response.retrieve(
+                remediation_id="remediation_id",
+                cluster_id="",
+                instance_id="instance_id",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `instance_id` but received ''"):
+            await async_client.beta.clusters.remediations.with_raw_response.retrieve(
+                remediation_id="remediation_id",
+                cluster_id="cluster_id",
+                instance_id="",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `remediation_id` but received ''"):
+            await async_client.beta.clusters.remediations.with_raw_response.retrieve(
+                remediation_id="",
+                cluster_id="cluster_id",
+                instance_id="instance_id",
             )
 
     @parametrize
