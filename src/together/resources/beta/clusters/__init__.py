@@ -16,8 +16,22 @@ from .clusters import (
     ClustersResourceWithStreamingResponse,
     AsyncClustersResourceWithStreamingResponse,
 )
+from .remediations import (
+    RemediationsResource,
+    AsyncRemediationsResource,
+    RemediationsResourceWithRawResponse,
+    AsyncRemediationsResourceWithRawResponse,
+    RemediationsResourceWithStreamingResponse,
+    AsyncRemediationsResourceWithStreamingResponse,
+)
 
 __all__ = [
+    "RemediationsResource",
+    "AsyncRemediationsResource",
+    "RemediationsResourceWithRawResponse",
+    "AsyncRemediationsResourceWithRawResponse",
+    "RemediationsResourceWithStreamingResponse",
+    "AsyncRemediationsResourceWithStreamingResponse",
     "StorageResource",
     "AsyncStorageResource",
     "StorageResourceWithRawResponse",

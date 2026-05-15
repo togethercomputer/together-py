@@ -91,6 +91,28 @@ Methods:
 - <code title="delete /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">delete</a>(cluster_id) -> <a href="./src/together/types/beta/cluster_delete_response.py">ClusterDeleteResponse</a></code>
 - <code title="get /compute/regions">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list_regions</a>() -> <a href="./src/together/types/beta/cluster_list_regions_response.py">ClusterListRegionsResponse</a></code>
 
+### Remediations
+
+Types:
+
+```python
+from together.types.beta.clusters import (
+    RemediationCreateResponse,
+    RemediationListResponse,
+    RemediationApproveResponse,
+    RemediationCancelResponse,
+    RemediationRejectResponse,
+)
+```
+
+Methods:
+
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">create</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_create_response.py">RemediationCreateResponse</a></code>
+- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">list</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_list_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_list_response.py">RemediationListResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">approve</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_approve_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_approve_response.py">RemediationApproveResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">cancel</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation_cancel_response.py">RemediationCancelResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">reject</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_reject_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_reject_response.py">RemediationRejectResponse</a></code>
+
 ### Storage
 
 Types:
