@@ -10,3 +10,12 @@ __all__ = ["JigRetrieveLogsParams"]
 class JigRetrieveLogsParams(TypedDict, total=False):
     replica_id: str
     """Replica ID to filter logs"""
+
+    revision: str
+    """Deployment revision (UUID) to filter logs"""
+
+    version: str
+    """
+    Deployment image version (tag or last 4 characters of image digest) to filter
+    logs
+    """
