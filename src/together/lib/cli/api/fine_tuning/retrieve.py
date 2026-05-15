@@ -21,7 +21,7 @@ async def retrieve(
     fine_tune_id: str,
     *,
     config: CLIConfigParameter,
-    no_plots: Annotated[bool, Parameter(help="Print training metric sparklines.")] = False,
+    no_plots: Annotated[bool, Parameter(help="Print training metric sparklines.", negative=())] = False,
 ) -> None:
     """Retrieve fine-tuning job details."""
     response = await show_loading_status(

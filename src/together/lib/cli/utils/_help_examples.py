@@ -112,6 +112,9 @@ FINE_TUNING_LIST_METRICS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Retrieve a fixed number of data points as JSON:
   [primary]tg ft list-metrics <ft-job-id> --resolution 50 --json[/primary]
+
+[dim]-[/dim] Save metrics to a file:
+  [primary]tg ft list-metrics <ft-job-id> --save ./metrics.json[/primary]
 """
 
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]

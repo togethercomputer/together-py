@@ -134,10 +134,11 @@ def _quantize_ys(
 
     Non-finite values are mapped to out-of-band sentinels:
 
-    * ``_POS_INF_SENTINEL`` (``-1``) for ``+inf`` — the line spikes to the top
+    * ``_NEG_INF_SENTINEL`` (``-1``) for ``-inf`` — the line descends to the
+      x-axis border row.
+    * ``_POS_INF_SENTINEL`` (``-2``) for ``+inf`` — the line spikes to the top
       data row.
-    * ``_NEG_INF_SENTINEL`` (``-2``) for ``-inf`` / ``NaN`` — the line
-      descends to the x-axis border row.
+    * ``_NAN_SENTINEL`` (``-3``) for ``NaN`` — no line is drawn at that point.
     """
     quantized_ys: list[list[int]] = []
     for ys in interpolated_ys.values():
