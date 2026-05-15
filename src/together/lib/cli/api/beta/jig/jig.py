@@ -477,7 +477,8 @@ def _build_warm_image(base_image: str) -> None:
     # generate cache dockerfile - copy cache to same location used during warmup
     final_dockerfile = f"""FROM {base_image}
 COPY {cache_dir.name} /app/{WARMUP_DEST}
-ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
+ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}
+LABEL jig.warmed=true"""
 
     console.print("\N{FIRE} Building final image with cache...")
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
@@ -485,6 +486,38 @@ ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
     if subprocess.run(final_cmd, input=final_dockerfile, text=True).returncode != 0:
         raise JigError("\N{FIRE EXTINGUISHER} Cache image build failed")
     console.print("\N{CHECK MARK} Final image with cache built")
+
+
+def _image_is_warmed(image: str) -> bool:
+    """True if the local daemon image carries the jig.warmed label set by _build_warm_image."""
+    r = subprocess.run(
+        ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "jig.warmed"}}'],
+        capture_output=True,
+        text=True,
+    )
+    return r.returncode == 0 and r.stdout.strip() == "true"
+
+
+def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
+    """Return the name of a docker-container buildx builder, creating one if needed.
+
+    The default 'docker' buildx driver pushes through the docker daemon, which on
+    legacy (non-containerd) image stores silently downgrades zstd to gzip. A
+    docker-container builder has its own buildkit instance and honors zstd.
+    Returns None if buildx is unavailable or the builder cannot be created.
+    """
+    if os.getenv("JIG_DISABLE_BUILDX"):
+        return None
+    if subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode != 0:
+        return None
+    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
+    if name in (ls.stdout or ""):
+        return name
+    create = subprocess.run(
+        ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"],
+        capture_output=True,
+    )
+    return name if create.returncode == 0 else None
 
 
 # == Jig ==
@@ -541,15 +574,32 @@ class Jig:
         image = self.image(tag)
         if tag != "latest":
             return image
-        try:
-            cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image]
-            if (repo_digests := _run(cmd).stdout.strip()) and repo_digests != "null":
+        # Prefer the local daemon (cheap, no network) when the image is there.
+        daemon = subprocess.run(
+            ["docker", "inspect", "--format={{json .RepoDigests}}", image],
+            capture_output=True,
+            text=True,
+        )
+        if daemon.returncode == 0 and (repo_digests := daemon.stdout.strip()) and repo_digests != "null":
+            try:
                 for digest in json.loads(repo_digests):
                     if digest.startswith(self.registry()):
                         return str(digest)
-        except subprocess.CalledProcessError as e:
-            msg = e.stderr.strip() if e.stderr else "Docker command failed"
-            raise JigError(f"Failed to get digest for {image}: {msg}") from e
+            except (json.JSONDecodeError, TypeError):
+                pass
+        # Fall back to a registry lookup. Used when deploy ran build_and_push, which skips
+        # --load, so the image isn't in the local daemon.
+        registry = subprocess.run(
+            ["docker", "buildx", "imagetools", "inspect", image],
+            capture_output=True,
+            text=True,
+        )
+        if registry.returncode == 0:
+            for line in registry.stdout.splitlines():
+                if line.startswith("Digest:"):
+                    sha = line.split(":", 1)[1].strip()
+                    if sha.startswith("sha256:"):
+                        return f"{image}@{sha}"
         raise JigError(f"No registry digest found for {image}. Make sure the image was pushed to registry first")
 
     def sync_secrets_from_deployment(self) -> None:
@@ -610,13 +660,33 @@ class Jig:
             )
 
         console.print(f"Building {image}")
-        cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
+        # Skip buildx when warmup is requested: _build_warm_image rebuilds via plain `docker build`
+        # which doesn't populate the jig-zstd cache, and push() falls back to `docker push` anyway,
+        # so the buildkit cache work and the --load export would just be thrown away.
+        builder = None if warmup else _ensure_zstd_builder()
+        if builder:
+            # Build via docker-container builder so `push` can output zstd from the buildkit cache.
+            cmd = [
+                "docker",
+                "buildx",
+                "build",
+                "--builder",
+                builder,
+                "--platform",
+                "linux/amd64",
+                "--load",
+                "-t",
+                image,
+            ]
+        else:
+            cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
 
         extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
         if extra_args:
             cmd.extend(shlex.split(extra_args))
+        cmd.append(".")
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build failed")
 
@@ -633,20 +703,28 @@ class Jig:
             raise JigError("Registry login failed")
 
         console.print(f"Pushing {image}")
-        has_buildx = subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode == 0
-        if has_buildx:
+        # Warmup bakes layers into the local daemon image, bypassing the buildx cache. Detect
+        # that via the label stamped by _build_warm_image and push the daemon image directly
+        # (gzip) in that case, since a buildx rebuild would produce the pre-warmup image.
+        builder = None if _image_is_warmed(image) else _ensure_zstd_builder()
+        if builder:
+            # Repackage cached layers from `build` as zstd in a single upload.
             cmd = [
                 "docker",
                 "buildx",
                 "build",
-                "--push",
+                "--builder",
+                builder,
                 "--platform",
                 "linux/amd64",
+                "--push",
                 "--output",
-                f"type=image,name={image},compression=zstd,force-compression=true,oci-mediatypes=true",
-                "-",
+                f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
             ]
-            ok = subprocess.run(cmd, input=f"FROM {image}\n", text=True).returncode == 0
+            if self.config.image.dockerfile_path != "Dockerfile":
+                cmd.extend(["-f", self.config.image.dockerfile_path])
+            cmd.append(".")
+            ok = subprocess.run(cmd).returncode == 0
         else:
             console.print(
                 "\N{WARNING SIGN} buildx not available; falling back to gzip push. "
@@ -656,6 +734,53 @@ class Jig:
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
+
+    def build_and_push(self, tag: str = "latest", docker_args: str | None = None) -> None:
+        """One-shot build + push via a single buildx invocation (no --load).
+
+        Used by deploy when warmup isn't requested: layers go from the buildkit cache
+        straight to the registry as zstd, skipping the daemon-side export entirely.
+        Falls back to separate build + push when buildx isn't available.
+        """
+        image = self.image(tag)
+        builder = _ensure_zstd_builder()
+        if not builder:
+            self.build(tag, False, docker_args)
+            self.push(tag)
+            return
+
+        host = self.registry().split("/")[0]
+        login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
+        if subprocess.run(login_cmd, input=self.together.api_key, text=True).returncode != 0:
+            raise JigError("Registry login failed")
+
+        if not _dockerfile(self.config):
+            console.print(
+                f"\N{INFORMATION SOURCE} Using existing {self.config.image.dockerfile_path} (not managed by jig)"
+            )
+
+        console.print(f"Building and pushing {image}")
+        cmd = [
+            "docker",
+            "buildx",
+            "build",
+            "--builder",
+            builder,
+            "--platform",
+            "linux/amd64",
+            "--push",
+            "--output",
+            f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
+        ]
+        if self.config.image.dockerfile_path != "Dockerfile":
+            cmd.extend(["-f", self.config.image.dockerfile_path])
+        extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
+        if extra_args:
+            cmd.extend(shlex.split(extra_args))
+        cmd.append(".")
+        if subprocess.run(cmd).returncode != 0:
+            raise JigError("Build+push failed")
+        console.print("\N{CHECK MARK} Built and pushed")
 
     def deploy(
         self,
@@ -671,8 +796,13 @@ class Jig:
         elif deployment_image := self.config.deploy.image:
             console.print(f"Deploying configured image {deployment_image}")
         else:
-            self.build(tag, warmup, docker_args)
-            self.push(tag)
+            if warmup:
+                # Warmup needs a local image to docker-run for cache generation, so keep the
+                # build (with --load) + push (gzip via daemon, since the warmup label is set) path.
+                self.build(tag, True, docker_args)
+                self.push(tag)
+            else:
+                self.build_and_push(tag, docker_args)
             deployment_image = self.image_with_digest(tag)
 
         if build_only:
