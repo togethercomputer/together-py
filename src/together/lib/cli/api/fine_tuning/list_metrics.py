@@ -30,7 +30,6 @@ async def list_metrics(
         Optional[int],
         Parameter(help="Number of training metric points to return. Does not limit the number of eval metric points."),
     ] = None,
-    save: Annotated[Optional[Path], Parameter("--save", help="Save metrics to a file as JSON.")] = None,
 ) -> None:
     """Retrieve training metrics for a fine-tuning job."""
 
@@ -48,14 +47,9 @@ async def list_metrics(
     )
 
     metrics = response.metrics or []
-    json_bytes = openapi_dumps(metrics)
-
-    if save is not None:
-        save.write_bytes(json_bytes)
-        console.print(f"[success]Metrics saved to {save}[/success]")
-        return
 
     if config.json:
+        json_bytes = openapi_dumps(metrics)
         console.print_json(json_bytes.decode("utf-8"))
         return
 
