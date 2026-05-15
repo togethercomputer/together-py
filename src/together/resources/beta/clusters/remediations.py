@@ -77,19 +77,14 @@ class RemediationsResource(SyncAPIResource):
         """
         Creates a new remediation for an instance.
 
-        If mode is unspecified, it defaults to VM_ONLY. If trigger is unspecified, it
-        defaults to MANUAL.
+        Remediations created via the API goes directly to PENDING state.
 
-        For MANUAL triggers: The remediation goes directly to PENDING state.
-
-        For AUTOMATED triggers: The remediation is created with PENDING_APPROVAL state.
-        The caller must then use ApproveRemediation to start the remediation process.
+        Our system may trigger automated remediations that require approval. These
+        remediations are created with PENDING_APPROVAL state. The user must call
+        /approve to start the actual remediation process. These operations can also be
+        rejected by calling /reject.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
           mode: Remediation mode specifies how the remediation should be performed.
 
               - `REMEDIATION_MODE_VM_ONLY`: Deletes the VM and provisions a new one on any
@@ -97,7 +92,7 @@ class RemediationsResource(SyncAPIResource):
               - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
                 provisions a new one on a different host.
 
-          remediation_id: Optional. Client-specified ID for idempotency.
+          remediation_id: Client-specified ID for idempotency.
 
           reason: User-provided reason for the remediation.
 
@@ -156,12 +151,6 @@ class RemediationsResource(SyncAPIResource):
         specific cluster.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
-          remediation_id: The remediation ID.
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -208,7 +197,6 @@ class RemediationsResource(SyncAPIResource):
             Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
         ]
         | Omit = omit,
-        trigger: Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -216,30 +204,33 @@ class RemediationsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RemediationListResponse:
-        """Lists remediations for an instance or cluster.
-
-        Use instances/- as wildcard to
-        list all remediations in a cluster.
+        """
+        Lists remediations for an instance or cluster.
 
         Args:
-          cluster_id: The cluster ID.
+          instance_id: To list remediations on a specific node, pass the node's instance ID. To list
+              remediations for all nodes in a cluster, pass `-` as a wildcard for the instance
+              ID.
 
-          instance_id: The instance ID.
+          mode: Filter by remediation mode. Returns only remediations matching the specified
+              mode.
 
-          mode: Optional. Filter by remediation mode. Returns only remediations matching the
-              specified mode.
+          order_by: Order by expression.
 
-          order_by: Optional. Order by expression.
+          page_size: Maximum results to return.
 
-          page_size: Optional. Maximum results to return.
+          page_token: Pagination token from previous request.
 
-          page_token: Optional. Pagination token from previous request.
+          state: Filter by state(s). Returns remediations matching any of the specified states.
 
-          state: Optional. Filter by state(s). Returns remediations matching any of the specified
-              states.
-
-          trigger: Optional. Filter by trigger type. Returns only remediations matching the
-              specified trigger.
+              - `PENDING_APPROVAL`: Awaiting approval before processing can begin.
+              - `PENDING`: Approved and queued for processing.
+              - `RUNNING`: Actively being processed.
+              - `SUCCEEDED`: Successfully completed.
+              - `FAILED`: Failed with an error.
+              - `CANCELLED`: Cancelled by user or system.
+              - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
+                processing.
 
           extra_headers: Send extra headers
 
@@ -271,7 +262,6 @@ class RemediationsResource(SyncAPIResource):
                         "page_size": page_size,
                         "page_token": page_token,
                         "state": state,
-                        "trigger": trigger,
                     },
                     remediation_list_params.RemediationListParams,
                 ),
@@ -303,12 +293,6 @@ class RemediationsResource(SyncAPIResource):
         remediation after approval.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
-          remediation_id: The remediation ID.
-
           comment: Comment explaining the action.
 
           extra_headers: Send extra headers
@@ -414,12 +398,6 @@ class RemediationsResource(SyncAPIResource):
         review_comment fields are populated on the remediation after rejection.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
-          remediation_id: The remediation ID.
-
           comment: Comment explaining the action.
 
           extra_headers: Send extra headers
@@ -494,19 +472,14 @@ class AsyncRemediationsResource(AsyncAPIResource):
         """
         Creates a new remediation for an instance.
 
-        If mode is unspecified, it defaults to VM_ONLY. If trigger is unspecified, it
-        defaults to MANUAL.
+        Remediations created via the API goes directly to PENDING state.
 
-        For MANUAL triggers: The remediation goes directly to PENDING state.
-
-        For AUTOMATED triggers: The remediation is created with PENDING_APPROVAL state.
-        The caller must then use ApproveRemediation to start the remediation process.
+        Our system may trigger automated remediations that require approval. These
+        remediations are created with PENDING_APPROVAL state. The user must call
+        /approve to start the actual remediation process. These operations can also be
+        rejected by calling /reject.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
           mode: Remediation mode specifies how the remediation should be performed.
 
               - `REMEDIATION_MODE_VM_ONLY`: Deletes the VM and provisions a new one on any
@@ -514,7 +487,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
               - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
                 provisions a new one on a different host.
 
-          remediation_id: Optional. Client-specified ID for idempotency.
+          remediation_id: Client-specified ID for idempotency.
 
           reason: User-provided reason for the remediation.
 
@@ -573,12 +546,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
         specific cluster.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
-          remediation_id: The remediation ID.
-
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -625,7 +592,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
             Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
         ]
         | Omit = omit,
-        trigger: Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -633,30 +599,33 @@ class AsyncRemediationsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> RemediationListResponse:
-        """Lists remediations for an instance or cluster.
-
-        Use instances/- as wildcard to
-        list all remediations in a cluster.
+        """
+        Lists remediations for an instance or cluster.
 
         Args:
-          cluster_id: The cluster ID.
+          instance_id: To list remediations on a specific node, pass the node's instance ID. To list
+              remediations for all nodes in a cluster, pass `-` as a wildcard for the instance
+              ID.
 
-          instance_id: The instance ID.
+          mode: Filter by remediation mode. Returns only remediations matching the specified
+              mode.
 
-          mode: Optional. Filter by remediation mode. Returns only remediations matching the
-              specified mode.
+          order_by: Order by expression.
 
-          order_by: Optional. Order by expression.
+          page_size: Maximum results to return.
 
-          page_size: Optional. Maximum results to return.
+          page_token: Pagination token from previous request.
 
-          page_token: Optional. Pagination token from previous request.
+          state: Filter by state(s). Returns remediations matching any of the specified states.
 
-          state: Optional. Filter by state(s). Returns remediations matching any of the specified
-              states.
-
-          trigger: Optional. Filter by trigger type. Returns only remediations matching the
-              specified trigger.
+              - `PENDING_APPROVAL`: Awaiting approval before processing can begin.
+              - `PENDING`: Approved and queued for processing.
+              - `RUNNING`: Actively being processed.
+              - `SUCCEEDED`: Successfully completed.
+              - `FAILED`: Failed with an error.
+              - `CANCELLED`: Cancelled by user or system.
+              - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
+                processing.
 
           extra_headers: Send extra headers
 
@@ -688,7 +657,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
                         "page_size": page_size,
                         "page_token": page_token,
                         "state": state,
-                        "trigger": trigger,
                     },
                     remediation_list_params.RemediationListParams,
                 ),
@@ -720,12 +688,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
         remediation after approval.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
-          remediation_id: The remediation ID.
-
           comment: Comment explaining the action.
 
           extra_headers: Send extra headers
@@ -831,12 +793,6 @@ class AsyncRemediationsResource(AsyncAPIResource):
         review_comment fields are populated on the remediation after rejection.
 
         Args:
-          cluster_id: The cluster ID.
-
-          instance_id: The instance ID.
-
-          remediation_id: The remediation ID.
-
           comment: Comment explaining the action.
 
           extra_headers: Send extra headers
