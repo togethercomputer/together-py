@@ -26,6 +26,14 @@ from ...._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
+from .remediations import (
+    RemediationsResource,
+    AsyncRemediationsResource,
+    RemediationsResourceWithRawResponse,
+    AsyncRemediationsResourceWithRawResponse,
+    RemediationsResourceWithStreamingResponse,
+    AsyncRemediationsResourceWithStreamingResponse,
+)
 from ....types.beta import cluster_list_params, cluster_create_params, cluster_update_params
 from ...._base_client import make_request_options
 from ....types.beta.cluster import Cluster
@@ -37,6 +45,10 @@ __all__ = ["ClustersResource", "AsyncClustersResource"]
 
 
 class ClustersResource(SyncAPIResource):
+    @cached_property
+    def remediations(self) -> RemediationsResource:
+        return RemediationsResource(self._client)
+
     @cached_property
     def storage(self) -> StorageResource:
         return StorageResource(self._client)
@@ -439,6 +451,10 @@ class ClustersResource(SyncAPIResource):
 
 
 class AsyncClustersResource(AsyncAPIResource):
+    @cached_property
+    def remediations(self) -> AsyncRemediationsResource:
+        return AsyncRemediationsResource(self._client)
+
     @cached_property
     def storage(self) -> AsyncStorageResource:
         return AsyncStorageResource(self._client)
@@ -864,6 +880,10 @@ class ClustersResourceWithRawResponse:
         )
 
     @cached_property
+    def remediations(self) -> RemediationsResourceWithRawResponse:
+        return RemediationsResourceWithRawResponse(self._clusters.remediations)
+
+    @cached_property
     def storage(self) -> StorageResourceWithRawResponse:
         return StorageResourceWithRawResponse(self._clusters.storage)
 
@@ -890,6 +910,10 @@ class AsyncClustersResourceWithRawResponse:
         self.list_regions = async_to_raw_response_wrapper(
             clusters.list_regions,
         )
+
+    @cached_property
+    def remediations(self) -> AsyncRemediationsResourceWithRawResponse:
+        return AsyncRemediationsResourceWithRawResponse(self._clusters.remediations)
 
     @cached_property
     def storage(self) -> AsyncStorageResourceWithRawResponse:
@@ -920,6 +944,10 @@ class ClustersResourceWithStreamingResponse:
         )
 
     @cached_property
+    def remediations(self) -> RemediationsResourceWithStreamingResponse:
+        return RemediationsResourceWithStreamingResponse(self._clusters.remediations)
+
+    @cached_property
     def storage(self) -> StorageResourceWithStreamingResponse:
         return StorageResourceWithStreamingResponse(self._clusters.storage)
 
@@ -946,6 +974,10 @@ class AsyncClustersResourceWithStreamingResponse:
         self.list_regions = async_to_streamed_response_wrapper(
             clusters.list_regions,
         )
+
+    @cached_property
+    def remediations(self) -> AsyncRemediationsResourceWithStreamingResponse:
+        return AsyncRemediationsResourceWithStreamingResponse(self._clusters.remediations)
 
     @cached_property
     def storage(self) -> AsyncStorageResourceWithStreamingResponse:
