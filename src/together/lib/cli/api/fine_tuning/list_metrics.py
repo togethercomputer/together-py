@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Optional, Annotated
+from pathlib import Path
 from datetime import datetime
 
 from cyclopts import Parameter
 
+from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -16,32 +18,46 @@ async def list_metrics(
     fine_tune_id: Annotated[str, Parameter(help="The ID of the fine-tuning job")],
     *,
     config: CLIConfigParameter,
-    global_step_from: Annotated[int | None, Parameter(help="Filter metrics from this global step (inclusive).")] = None,
-    global_step_to: Annotated[int | None, Parameter(help="Filter metrics to this global step (inclusive).")] = None,
-    logged_at_from: Annotated[datetime | None, Parameter(help="Filter metrics logged at or after this time.")] = None,
-    logged_at_to: Annotated[datetime | None, Parameter(help="Filter metrics logged at or before this time.")] = None,
-    resolution: Annotated[int | None, Parameter(help="Number of training metric points to return. Does not limit the number of eval metric points.")] = None,
+    global_step_from: Annotated[
+        Optional[int], Parameter(help="Filter metrics from this global step (inclusive).")
+    ] = None,
+    global_step_to: Annotated[Optional[int], Parameter(help="Filter metrics to this global step (inclusive).")] = None,
+    logged_at_from: Annotated[
+        Optional[datetime], Parameter(help="Filter metrics logged at or after this time.")
+    ] = None,
+    logged_at_to: Annotated[Optional[datetime], Parameter(help="Filter metrics logged at or before this time.")] = None,
+    resolution: Annotated[
+        Optional[int],
+        Parameter(help="Number of training metric points to return. Does not limit the number of eval metric points."),
+    ] = None,
+    save: Annotated[Optional[Path], Parameter("--save", help="Save metrics to a file as JSON.")] = None,
 ) -> None:
     """Retrieve training metrics for a fine-tuning job."""
 
-    resolution_value = console.width - METRICS_WIDTH_PADDING if not config.json else resolution
+    resolution_value = resolution if config.json else console.width - METRICS_WIDTH_PADDING
     response = await show_loading_status(
         "Fetching metrics...",
         config.client.fine_tuning.list_metrics(
             fine_tune_id,
-            global_step_from=global_step_from,
-            global_step_to=global_step_to,
-            logged_at_from=logged_at_from,
-            logged_at_to=logged_at_to,
-            resolution=resolution_value,
+            global_step_from=global_step_from or omit,
+            global_step_to=global_step_to or omit,
+            logged_at_from=logged_at_from or omit,
+            logged_at_to=logged_at_to or omit,
+            resolution=resolution_value or omit,
         ),
     )
 
-    if config.json:
-        console.print_json(openapi_dumps(response.metrics or []).decode("utf-8"))
+    metrics = response.metrics or []
+    json_bytes = openapi_dumps(metrics)
+
+    if save is not None:
+        save.write_bytes(json_bytes)
+        console.print(f"[success]Metrics saved to {save}[/success]")
         return
 
-    metrics = response.metrics or []
+    if config.json:
+        console.print_json(json_bytes.decode("utf-8"))
+        return
 
     if not metrics:
         console.print(f"[muted]No metrics found for job {fine_tune_id}[/muted]")
