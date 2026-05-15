@@ -667,16 +667,11 @@ class Jig:
         if builder:
             # Build via docker-container builder so `push` can output zstd from the buildkit cache.
             cmd = [
-                "docker",
-                "buildx",
-                "build",
-                "--builder",
-                builder,
-                "--platform",
-                "linux/amd64",
+                "docker", "buildx", "build",
+                "--builder", builder,
+                "--platform", "linux/amd64",
                 "--load",
-                "-t",
-                image,
+                "-t", image,
             ]
         else:
             cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image]
@@ -706,17 +701,14 @@ class Jig:
         # Warmup bakes layers into the local daemon image, bypassing the buildx cache. Detect
         # that via the label stamped by _build_warm_image and push the daemon image directly
         # (gzip) in that case, since a buildx rebuild would produce the pre-warmup image.
-        builder = None if _image_is_warmed(image) else _ensure_zstd_builder()
+        warmed = _image_is_warmed(image)
+        builder = None if warmed else _ensure_zstd_builder()
         if builder:
             # Repackage cached layers from `build` as zstd in a single upload.
             cmd = [
-                "docker",
-                "buildx",
-                "build",
-                "--builder",
-                builder,
-                "--platform",
-                "linux/amd64",
+                "docker", "buildx", "build",
+                "--builder", builder,
+                "--platform", "linux/amd64",
                 "--push",
                 "--output",
                 f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
@@ -726,10 +718,13 @@ class Jig:
             cmd.append(".")
             ok = subprocess.run(cmd).returncode == 0
         else:
-            console.print(
-                "\N{WARNING SIGN} buildx not available; falling back to gzip push. "
-                "Install docker buildx for faster image pull times."
-            )
+            # Only warn when we genuinely fell back due to missing buildx — not when warmup
+            # or JIG_DISABLE_BUILDX deliberately routed us here.
+            if not warmed and not os.getenv("JIG_DISABLE_BUILDX"):
+                console.print(
+                    "\N{WARNING SIGN} buildx not available; falling back to gzip push. "
+                    "Install docker buildx for faster image pull times."
+                )
             ok = subprocess.run(["docker", "push", image]).returncode == 0
         if not ok:
             raise JigError("Push failed")
@@ -761,13 +756,9 @@ class Jig:
 
         console.print(f"Building and pushing {image}")
         cmd = [
-            "docker",
-            "buildx",
-            "build",
-            "--builder",
-            builder,
-            "--platform",
-            "linux/amd64",
+            "docker", "buildx", "build",
+            "--builder", builder,
+            "--platform", "linux/amd64",
             "--push",
             "--output",
             f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
