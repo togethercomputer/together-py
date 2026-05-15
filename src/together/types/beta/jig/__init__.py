@@ -17,4 +17,5 @@ from .queue_cancel_response import QueueCancelResponse as QueueCancelResponse
 from .queue_retrieve_params import QueueRetrieveParams as QueueRetrieveParams
 from .queue_submit_response import QueueSubmitResponse as QueueSubmitResponse
 from .queue_metrics_response import QueueMetricsResponse as QueueMetricsResponse
+from .volume_retrieve_params import VolumeRetrieveParams as VolumeRetrieveParams
 from .queue_retrieve_response import QueueRetrieveResponse as QueueRetrieveResponse

@@ -9,7 +9,10 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.jig import Volume, VolumeListResponse
+from together.types.beta.jig import (
+    Volume,
+    VolumeListResponse,
+)
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -21,7 +24,7 @@ class TestVolumes:
     def test_method_create(self, client: Together) -> None:
         volume = client.beta.jig.volumes.create(
             content={},
-            name="name",
+            name="x",
             type="readOnly",
         )
         assert_matches_type(Volume, volume, path=["response"])
@@ -33,7 +36,7 @@ class TestVolumes:
                 "source_prefix": "models/",
                 "type": "files",
             },
-            name="name",
+            name="x",
             type="readOnly",
         )
         assert_matches_type(Volume, volume, path=["response"])
@@ -42,7 +45,7 @@ class TestVolumes:
     def test_raw_response_create(self, client: Together) -> None:
         response = client.beta.jig.volumes.with_raw_response.create(
             content={},
-            name="name",
+            name="x",
             type="readOnly",
         )
 
@@ -55,7 +58,7 @@ class TestVolumes:
     def test_streaming_response_create(self, client: Together) -> None:
         with client.beta.jig.volumes.with_streaming_response.create(
             content={},
-            name="name",
+            name="x",
             type="readOnly",
         ) as response:
             assert not response.is_closed
@@ -69,14 +72,22 @@ class TestVolumes:
     @parametrize
     def test_method_retrieve(self, client: Together) -> None:
         volume = client.beta.jig.volumes.retrieve(
-            "id",
+            id="id",
+        )
+        assert_matches_type(Volume, volume, path=["response"])
+
+    @parametrize
+    def test_method_retrieve_with_all_params(self, client: Together) -> None:
+        volume = client.beta.jig.volumes.retrieve(
+            id="id",
+            version=0,
         )
         assert_matches_type(Volume, volume, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
         response = client.beta.jig.volumes.with_raw_response.retrieve(
-            "id",
+            id="id",
         )
 
         assert response.is_closed is True
@@ -87,7 +98,7 @@ class TestVolumes:
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
         with client.beta.jig.volumes.with_streaming_response.retrieve(
-            "id",
+            id="id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -101,7 +112,7 @@ class TestVolumes:
     def test_path_params_retrieve(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.beta.jig.volumes.with_raw_response.retrieve(
-                "",
+                id="",
             )
 
     @parametrize
@@ -228,7 +239,7 @@ class TestAsyncVolumes:
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         volume = await async_client.beta.jig.volumes.create(
             content={},
-            name="name",
+            name="x",
             type="readOnly",
         )
         assert_matches_type(Volume, volume, path=["response"])
@@ -240,7 +251,7 @@ class TestAsyncVolumes:
                 "source_prefix": "models/",
                 "type": "files",
             },
-            name="name",
+            name="x",
             type="readOnly",
         )
         assert_matches_type(Volume, volume, path=["response"])
@@ -249,7 +260,7 @@ class TestAsyncVolumes:
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.jig.volumes.with_raw_response.create(
             content={},
-            name="name",
+            name="x",
             type="readOnly",
         )
 
@@ -262,7 +273,7 @@ class TestAsyncVolumes:
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.jig.volumes.with_streaming_response.create(
             content={},
-            name="name",
+            name="x",
             type="readOnly",
         ) as response:
             assert not response.is_closed
@@ -276,14 +287,22 @@ class TestAsyncVolumes:
     @parametrize
     async def test_method_retrieve(self, async_client: AsyncTogether) -> None:
         volume = await async_client.beta.jig.volumes.retrieve(
-            "id",
+            id="id",
+        )
+        assert_matches_type(Volume, volume, path=["response"])
+
+    @parametrize
+    async def test_method_retrieve_with_all_params(self, async_client: AsyncTogether) -> None:
+        volume = await async_client.beta.jig.volumes.retrieve(
+            id="id",
+            version=0,
         )
         assert_matches_type(Volume, volume, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.jig.volumes.with_raw_response.retrieve(
-            "id",
+            id="id",
         )
 
         assert response.is_closed is True
@@ -294,7 +313,7 @@ class TestAsyncVolumes:
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.jig.volumes.with_streaming_response.retrieve(
-            "id",
+            id="id",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -308,7 +327,7 @@ class TestAsyncVolumes:
     async def test_path_params_retrieve(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.beta.jig.volumes.with_raw_response.retrieve(
-                "",
+                id="",
             )
 
     @parametrize

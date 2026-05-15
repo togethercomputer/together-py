@@ -244,6 +244,12 @@ class Deployment(BaseModel):
     allocated to each replica
     """
 
+    termination_grace_period_seconds: Optional[int] = None
+    """
+    TerminationGracePeriodSeconds is the time in seconds to wait for graceful
+    shutdown before forcefully terminating the replica
+    """
+
     updated_at: Optional[datetime] = None
     """UpdatedAt is the ISO8601 timestamp when this deployment was last updated"""
 
