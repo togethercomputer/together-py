@@ -40,9 +40,6 @@ class ClusterCreateParams(TypedDict, total=False):
     cuda_version: Required[str]
     """CUDA version for this cluster. For example, 12.5"""
 
-    duration_days: Required[int]
-    """Duration in days to keep the cluster running."""
-
     gpu_type: Required[Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"]]
     """Type of GPU to use in the cluster"""
 
@@ -104,6 +101,9 @@ class ClusterCreateParams(TypedDict, total=False):
 
     cluster_type: Literal["KUBERNETES", "SLURM"]
     """Type of cluster to create."""
+
+    duration_days: int
+    """Duration in days to keep the cluster running."""
 
     gpu_node_failover_enabled: bool
     """Whether automated GPU node failover should be enabled for this cluster.
