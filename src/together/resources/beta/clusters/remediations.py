@@ -24,12 +24,8 @@ from ....types.beta.clusters import (
     remediation_reject_params,
     remediation_approve_params,
 )
+from ....types.beta.clusters.remediation import Remediation
 from ....types.beta.clusters.remediation_list_response import RemediationListResponse
-from ....types.beta.clusters.remediation_cancel_response import RemediationCancelResponse
-from ....types.beta.clusters.remediation_create_response import RemediationCreateResponse
-from ....types.beta.clusters.remediation_reject_response import RemediationRejectResponse
-from ....types.beta.clusters.remediation_approve_response import RemediationApproveResponse
-from ....types.beta.clusters.remediation_retrieve_response import RemediationRetrieveResponse
 
 __all__ = ["RemediationsResource", "AsyncRemediationsResource"]
 
@@ -73,7 +69,7 @@ class RemediationsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationCreateResponse:
+    ) -> Remediation:
         """
         Creates a new remediation for an instance.
 
@@ -130,7 +126,7 @@ class RemediationsResource(SyncAPIResource):
                     {"remediation_id": remediation_id}, remediation_create_params.RemediationCreateParams
                 ),
             ),
-            cast_to=RemediationCreateResponse,
+            cast_to=Remediation,
         )
 
     def retrieve(
@@ -145,7 +141,7 @@ class RemediationsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationRetrieveResponse:
+    ) -> Remediation:
         """
         Retrieve the status of a specific remdiation on a specific instance in a
         specific cluster.
@@ -175,7 +171,7 @@ class RemediationsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationRetrieveResponse,
+            cast_to=Remediation,
         )
 
     def list(
@@ -282,7 +278,7 @@ class RemediationsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationApproveResponse:
+    ) -> Remediation:
         """
         Approves a pending remediation.
 
@@ -320,7 +316,7 @@ class RemediationsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationApproveResponse,
+            cast_to=Remediation,
         )
 
     def cancel(
@@ -335,7 +331,7 @@ class RemediationsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationCancelResponse:
+    ) -> Remediation:
         """
         Cancels a pending remediation.
 
@@ -372,7 +368,7 @@ class RemediationsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationCancelResponse,
+            cast_to=Remediation,
         )
 
     def reject(
@@ -388,7 +384,7 @@ class RemediationsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationRejectResponse:
+    ) -> Remediation:
         """
         Rejects a pending remediation.
 
@@ -425,7 +421,7 @@ class RemediationsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationRejectResponse,
+            cast_to=Remediation,
         )
 
 
@@ -468,7 +464,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationCreateResponse:
+    ) -> Remediation:
         """
         Creates a new remediation for an instance.
 
@@ -525,7 +521,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
                     {"remediation_id": remediation_id}, remediation_create_params.RemediationCreateParams
                 ),
             ),
-            cast_to=RemediationCreateResponse,
+            cast_to=Remediation,
         )
 
     async def retrieve(
@@ -540,7 +536,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationRetrieveResponse:
+    ) -> Remediation:
         """
         Retrieve the status of a specific remdiation on a specific instance in a
         specific cluster.
@@ -570,7 +566,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationRetrieveResponse,
+            cast_to=Remediation,
         )
 
     async def list(
@@ -677,7 +673,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationApproveResponse:
+    ) -> Remediation:
         """
         Approves a pending remediation.
 
@@ -715,7 +711,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationApproveResponse,
+            cast_to=Remediation,
         )
 
     async def cancel(
@@ -730,7 +726,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationCancelResponse:
+    ) -> Remediation:
         """
         Cancels a pending remediation.
 
@@ -767,7 +763,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationCancelResponse,
+            cast_to=Remediation,
         )
 
     async def reject(
@@ -783,7 +779,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> RemediationRejectResponse:
+    ) -> Remediation:
         """
         Rejects a pending remediation.
 
@@ -820,7 +816,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=RemediationRejectResponse,
+            cast_to=Remediation,
         )
 
 

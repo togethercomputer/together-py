@@ -6,10 +6,10 @@ from typing_extensions import Literal
 
 from ...._models import BaseModel
 
-__all__ = ["RemediationApproveResponse"]
+__all__ = ["Remediation"]
 
 
-class RemediationApproveResponse(BaseModel):
+class Remediation(BaseModel):
     """
     Remediation represents a node remediation request for an instance.
     An instance can have multiple remediations over time (e.g., failed attempts followed by retries).
