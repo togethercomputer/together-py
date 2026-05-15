@@ -65,7 +65,11 @@ class StorageResource(SyncAPIResource):
         performance for shared storage.
 
         Args:
+          region: Region name. Usable regions can be found from `clusters.list_regions()`
+
           size_tib: Volume size in whole tebibytes (TiB).
+
+          volume_name: User provided name of the volume.
 
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
@@ -145,6 +149,10 @@ class StorageResource(SyncAPIResource):
         Update the configuration of an existing shared volume.
 
         Args:
+          volume_id: ID of the volume.
+
+          size_tib: Size of the volume in TiB.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -287,7 +295,11 @@ class AsyncStorageResource(AsyncAPIResource):
         performance for shared storage.
 
         Args:
+          region: Region name. Usable regions can be found from `clusters.list_regions()`
+
           size_tib: Volume size in whole tebibytes (TiB).
+
+          volume_name: User provided name of the volume.
 
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
@@ -367,6 +379,10 @@ class AsyncStorageResource(AsyncAPIResource):
         Update the configuration of an existing shared volume.
 
         Args:
+          volume_id: ID of the volume.
+
+          size_tib: Size of the volume in TiB.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
