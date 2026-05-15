@@ -10,7 +10,6 @@ __all__ = ["RemediationListParams"]
 
 class RemediationListParams(TypedDict, total=False):
     cluster_id: Required[str]
-    """The cluster ID."""
 
     mode: Literal[
         "REMEDIATION_MODE_VM_ONLY",
@@ -18,30 +17,29 @@ class RemediationListParams(TypedDict, total=False):
         "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
         "REMEDIATION_MODE_REBOOT_VM",
     ]
-    """Optional.
+    """Filter by remediation mode.
 
-    Filter by remediation mode. Returns only remediations matching the specified
-    mode.
+    Returns only remediations matching the specified mode.
     """
 
     order_by: str
-    """Optional. Order by expression."""
+    """Order by expression."""
 
     page_size: int
-    """Optional. Maximum results to return."""
+    """Maximum results to return."""
 
     page_token: str
-    """Optional. Pagination token from previous request."""
+    """Pagination token from previous request."""
 
     state: List[Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]]
-    """Optional.
+    """Filter by state(s). Returns remediations matching any of the specified states.
 
-    Filter by state(s). Returns remediations matching any of the specified states.
-    """
-
-    trigger: Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]
-    """Optional.
-
-    Filter by trigger type. Returns only remediations matching the specified
-    trigger.
+    - `PENDING_APPROVAL`: Awaiting approval before processing can begin.
+    - `PENDING`: Approved and queued for processing.
+    - `RUNNING`: Actively being processed.
+    - `SUCCEEDED`: Successfully completed.
+    - `FAILED`: Failed with an error.
+    - `CANCELLED`: Cancelled by user or system.
+    - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
+      processing.
     """

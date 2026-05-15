@@ -166,7 +166,6 @@ class TestRemediations:
             page_size=0,
             page_token="page_token",
             state=["PENDING_APPROVAL"],
-            trigger="REMEDIATION_TRIGGER_MANUAL",
         )
         assert_matches_type(RemediationListResponse, remediation, path=["response"])
 
@@ -558,7 +557,6 @@ class TestAsyncRemediations:
             page_size=0,
             page_token="page_token",
             state=["PENDING_APPROVAL"],
-            trigger="REMEDIATION_TRIGGER_MANUAL",
         )
         assert_matches_type(RemediationListResponse, remediation, path=["response"])
 
