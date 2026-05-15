@@ -61,6 +61,7 @@ from together.lib.cli.utils._help_examples import (
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
@@ -485,6 +486,38 @@ storage_app.command(
     help="Get storage volume details",
 )
 storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
+
+### Clusters > Remediations API commands
+remediations_app = clusters_app.command(
+    App(
+        name="remediations",
+        help="Manage node remediations",
+        group="Subcommands",
+        help_epilogue=BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
+    )
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.create:create"),
+    alias="-c",
+    help="Create a node remediation",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.list:list"),
+    alias="ls",
+    help="List node remediations",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.approve:approve"),
+    help="Approve a pending remediation",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.cancel:cancel"),
+    help="Cancel a pending remediation",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.reject:reject"),
+    help="Reject a pending remediation",
+)
 
 ### Jig commands
 jig_app = beta_app.command(
