@@ -29,6 +29,7 @@ from ....types.beta.clusters.remediation_cancel_response import RemediationCance
 from ....types.beta.clusters.remediation_create_response import RemediationCreateResponse
 from ....types.beta.clusters.remediation_reject_response import RemediationRejectResponse
 from ....types.beta.clusters.remediation_approve_response import RemediationApproveResponse
+from ....types.beta.clusters.remediation_retrieve_response import RemediationRetrieveResponse
 
 __all__ = ["RemediationsResource", "AsyncRemediationsResource"]
 
@@ -135,6 +136,57 @@ class RemediationsResource(SyncAPIResource):
                 ),
             ),
             cast_to=RemediationCreateResponse,
+        )
+
+    def retrieve(
+        self,
+        remediation_id: str,
+        *,
+        cluster_id: str,
+        instance_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> RemediationRetrieveResponse:
+        """
+        Retrieve the status of a specific remdiation on a specific instance in a
+        specific cluster.
+
+        Args:
+          cluster_id: The cluster ID.
+
+          instance_id: The instance ID.
+
+          remediation_id: The remediation ID.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not cluster_id:
+            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
+        if not instance_id:
+            raise ValueError(f"Expected a non-empty value for `instance_id` but received {instance_id!r}")
+        if not remediation_id:
+            raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
+        return self._get(
+            path_template(
+                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}",
+                cluster_id=cluster_id,
+                instance_id=instance_id,
+                remediation_id=remediation_id,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=RemediationRetrieveResponse,
         )
 
     def list(
@@ -503,6 +555,57 @@ class AsyncRemediationsResource(AsyncAPIResource):
             cast_to=RemediationCreateResponse,
         )
 
+    async def retrieve(
+        self,
+        remediation_id: str,
+        *,
+        cluster_id: str,
+        instance_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> RemediationRetrieveResponse:
+        """
+        Retrieve the status of a specific remdiation on a specific instance in a
+        specific cluster.
+
+        Args:
+          cluster_id: The cluster ID.
+
+          instance_id: The instance ID.
+
+          remediation_id: The remediation ID.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not cluster_id:
+            raise ValueError(f"Expected a non-empty value for `cluster_id` but received {cluster_id!r}")
+        if not instance_id:
+            raise ValueError(f"Expected a non-empty value for `instance_id` but received {instance_id!r}")
+        if not remediation_id:
+            raise ValueError(f"Expected a non-empty value for `remediation_id` but received {remediation_id!r}")
+        return await self._get(
+            path_template(
+                "/compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}",
+                cluster_id=cluster_id,
+                instance_id=instance_id,
+                remediation_id=remediation_id,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=RemediationRetrieveResponse,
+        )
+
     async def list(
         self,
         instance_id: str,
@@ -772,6 +875,9 @@ class RemediationsResourceWithRawResponse:
         self.create = to_raw_response_wrapper(
             remediations.create,
         )
+        self.retrieve = to_raw_response_wrapper(
+            remediations.retrieve,
+        )
         self.list = to_raw_response_wrapper(
             remediations.list,
         )
@@ -792,6 +898,9 @@ class AsyncRemediationsResourceWithRawResponse:
 
         self.create = async_to_raw_response_wrapper(
             remediations.create,
+        )
+        self.retrieve = async_to_raw_response_wrapper(
+            remediations.retrieve,
         )
         self.list = async_to_raw_response_wrapper(
             remediations.list,
@@ -814,6 +923,9 @@ class RemediationsResourceWithStreamingResponse:
         self.create = to_streamed_response_wrapper(
             remediations.create,
         )
+        self.retrieve = to_streamed_response_wrapper(
+            remediations.retrieve,
+        )
         self.list = to_streamed_response_wrapper(
             remediations.list,
         )
@@ -834,6 +946,9 @@ class AsyncRemediationsResourceWithStreamingResponse:
 
         self.create = async_to_streamed_response_wrapper(
             remediations.create,
+        )
+        self.retrieve = async_to_streamed_response_wrapper(
+            remediations.retrieve,
         )
         self.list = async_to_streamed_response_wrapper(
             remediations.list,
