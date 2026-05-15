@@ -667,11 +667,16 @@ class Jig:
         if builder:
             # Build via docker-container builder so `push` can output zstd from the buildkit cache.
             cmd = [
-                "docker", "buildx", "build",
-                "--builder", builder,
-                "--platform", "linux/amd64",
+                "docker",
+                "buildx",
+                "build",
+                "--builder",
+                builder,
+                "--platform",
+                "linux/amd64",
                 "--load",
-                "-t", image,
+                "-t",
+                image,
             ]
         else:
             cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image]
@@ -706,9 +711,13 @@ class Jig:
         if builder:
             # Repackage cached layers from `build` as zstd in a single upload.
             cmd = [
-                "docker", "buildx", "build",
-                "--builder", builder,
-                "--platform", "linux/amd64",
+                "docker",
+                "buildx",
+                "build",
+                "--builder",
+                builder,
+                "--platform",
+                "linux/amd64",
                 "--push",
                 "--output",
                 f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
@@ -756,9 +765,13 @@ class Jig:
 
         console.print(f"Building and pushing {image}")
         cmd = [
-            "docker", "buildx", "build",
-            "--builder", builder,
-            "--platform", "linux/amd64",
+            "docker",
+            "buildx",
+            "build",
+            "--builder",
+            builder,
+            "--platform",
+            "linux/amd64",
             "--push",
             "--output",
             f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
