@@ -539,34 +539,31 @@ class Jig:
     def image(self, tag: str) -> str:
         return f"{self.registry()}{self.name}:{tag}"
 
+    def _metadata_path(self, tag: str) -> Path:
+        """Path for buildx --metadata-file output, used to recover the pushed digest cross-process."""
+        return self.config._path.parent / f".jig-{self.name}-{tag}.metadata.json"
+
     def image_with_digest(self, tag: str = "latest") -> str:
         image = self.image(tag)
-        if tag != "latest":
-            return image
-        registry = subprocess.run(
-            ["docker", "buildx", "imagetools", "inspect", image],
-            capture_output=True,
-            text=True,
-        )
-        if registry.returncode == 0:
-            for line in registry.stdout.splitlines():
-                if line.startswith("Digest:"):
-                    sha = line.split(":", 1)[1].strip()
-                    if sha.startswith("sha256:"):
-                        return f"{image}@{sha}"
-        daemon = subprocess.run(
+        try:
+            digest = json.loads(self._metadata_path(tag).read_text()).get("containerimage.digest")
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            digest = None
+        if digest:
+            return f"{image}@{digest}"
+        r = subprocess.run(
             ["docker", "inspect", "--format={{json .RepoDigests}}", image],
             capture_output=True,
             text=True,
         )
-        if daemon.returncode == 0 and (repo_digests := daemon.stdout.strip()) and repo_digests != "null":
+        if r.returncode == 0 and (repo_digests := r.stdout.strip()) and repo_digests != "null":
             try:
-                for digest in json.loads(repo_digests):
-                    if digest.startswith(self.registry()):
-                        return str(digest)
+                for d in json.loads(repo_digests):
+                    if d.startswith(self.registry()):
+                        return str(d)
             except (json.JSONDecodeError, TypeError):
                 pass
-        raise JigError(f"No registry digest found for {image}. Make sure the image was pushed to registry first")
+        raise JigError(f"Could not find digest for {image}. Build and push the image first.")
 
     def sync_secrets_from_deployment(self) -> None:
         """Sync remote secrets into local state if secrets have never been tracked.
@@ -626,8 +623,12 @@ class Jig:
             )
 
         console.print(f"Building {image}")
-        builder = None if warmup else _ensure_zstd_builder()
-        if builder:
+        if warmup or os.getenv("JIG_DISABLE_BUILDX"):
+            cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image]
+        else:
+            builder = _ensure_zstd_builder()
+            if not builder:
+                raise JigError("`docker buildx` is required to build images.")
             cmd = [
                 "docker",
                 "buildx",
@@ -640,8 +641,6 @@ class Jig:
                 "-t",
                 image,
             ]
-        else:
-            cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
 
@@ -665,10 +664,14 @@ class Jig:
             raise JigError("Registry login failed")
 
         console.print(f"Pushing {image}")
+        self._metadata_path(tag).unlink(missing_ok=True)
         # Skip buildx for warmup-baked images: a buildx rebuild would drop the warmup layer.
-        warmed = _image_is_warmed(image)
-        builder = None if warmed else _ensure_zstd_builder()
-        if builder:
+        if _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
+            ok = subprocess.run(["docker", "push", image]).returncode == 0
+        else:
+            builder = _ensure_zstd_builder()
+            if not builder:
+                raise JigError("`docker buildx` is required to build images.")
             cmd = [
                 "docker",
                 "buildx",
@@ -679,20 +682,14 @@ class Jig:
                 "linux/amd64",
                 "--push",
                 "--output",
-                 "--metadata-file", f"{PATH}/{image}-metadata.json"
                 f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
+                "--metadata-file",
+                str(self._metadata_path(tag)),
             ]
             if self.config.image.dockerfile_path != "Dockerfile":
                 cmd.extend(["-f", self.config.image.dockerfile_path])
             cmd.append(".")
             ok = subprocess.run(cmd).returncode == 0
-        else:
-            if not warmed and not os.getenv("JIG_DISABLE_BUILDX"):
-                console.print(
-                    "\N{WARNING SIGN} buildx not available; falling back to gzip push. "
-                    "Install docker buildx for faster image pull times."
-                )
-            ok = subprocess.run(["docker", "push", image]).returncode == 0
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
@@ -702,14 +699,16 @@ class Jig:
 
         Used by deploy when warmup isn't requested: layers go from the buildkit cache
         straight to the registry as zstd, skipping the daemon-side export entirely.
-        Falls back to separate build + push when buildx isn't available.
+        Falls back to separate build + push when JIG_DISABLE_BUILDX is set.
         """
         image = self.image(tag)
-        builder = _ensure_zstd_builder()
-        if not builder:
+        if os.getenv("JIG_DISABLE_BUILDX"):
             self.build(tag, False, docker_args)
             self.push(tag)
             return
+        builder = _ensure_zstd_builder()
+        if not builder:
+            raise JigError("`docker buildx` is required to build images.")
 
         host = self.registry().split("/")[0]
         login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
@@ -722,6 +721,7 @@ class Jig:
             )
 
         console.print(f"Building and pushing {image}")
+        self._metadata_path(tag).unlink(missing_ok=True)
         cmd = [
             "docker",
             "buildx",
@@ -733,6 +733,8 @@ class Jig:
             "--push",
             "--output",
             f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
+            "--metadata-file",
+            str(self._metadata_path(tag)),
         ]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
