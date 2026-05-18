@@ -37,6 +37,8 @@ def print_model_dump(
                 table.add_row("-", _pretty_print_results(item))
         elif isinstance(results, BaseModel):
             table.add_row("", _pretty_print_results(results.model_dump(), show_nulls=show_nulls))
+        elif isinstance(results, datetime):
+            table.add_row("", _colorize_value(format_datetime(results)))
         else:
             table.add_row("", _colorize_value(results))
         return table
@@ -70,18 +72,25 @@ def print_model_dump(
         - Lists last
         """
 
+        model_dump = model.model_dump()
+
+        # Filter out keys that are not in the model
+        model_dump = {k: v for k, v in model_dump.items() if k in model.model_fields_set}
+
         def _sort_items(key: str, value: Any) -> int:
-            # Returns a sort key: 0 for ID fields, 1 for primitives, 2 for dicts/objects, 3 for lists
+            # Returns a sort key: 0 for ID fields, 1 for dates, 2 for primitives, 3 for dicts/objects, 4 for lists
             if key.endswith("_id"):
                 return 0
-            elif isinstance(value, dict) or isinstance(value, BaseModel):
-                return 2
-            elif isinstance(value, list):
-                return 3
-            else:
+            elif isinstance(value, datetime):
                 return 1
+            elif isinstance(value, dict) or isinstance(value, BaseModel):
+                return 3
+            elif isinstance(value, list):
+                return 4
+            else:
+                return 2
 
-        return dict(sorted(model.model_dump().items(), key=lambda kv: _sort_items(kv[0], kv[1])))
+        return dict(sorted(model_dump.items(), key=lambda kv: _sort_items(kv[0], kv[1])))
 
     console.print(
         _pretty_print_results(_dump_sorted_model(model), show_nulls=show_nulls, expand=expand, padding=padding)

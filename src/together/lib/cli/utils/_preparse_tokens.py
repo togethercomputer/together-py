@@ -15,6 +15,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "endpoints": re.compile(r"^endpoint-"),
     "beta clusters": _UUID_RE,
     "beta clusters storage": _UUID_RE,
+    "beta clusters remediations": _UUID_RE,
     "beta jig volumes": _UUID_RE,
 }
 

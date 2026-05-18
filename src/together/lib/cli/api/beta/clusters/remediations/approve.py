@@ -4,11 +4,12 @@ from typing import Optional, Annotated
 
 from cyclopts import Parameter
 
+from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.clusters.remediations._util import omit_if_none, resolve_remediation
+from together.lib.cli.api.beta.clusters.remediations._resolve_remediation import resolve_remediation
 
 
 async def approve(
@@ -25,7 +26,7 @@ async def approve(
             remediation_id,
             cluster_id=remediation.cluster_id,
             instance_id=remediation.instance_id,
-            comment=omit_if_none(comment),
+            comment=comment or omit,
         ),
     )
 

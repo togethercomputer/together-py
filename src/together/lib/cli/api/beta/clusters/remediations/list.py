@@ -1,40 +1,22 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, Annotated
+from typing import Optional, Annotated
 
 from cyclopts import Parameter
 
+from together import omit
 from together._utils._json import openapi_dumps
+from together.lib.utils.tools import format_datetime
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.clusters.remediations._util import (
-    omit_if_none,
-    parse_states,
-    print_remediations,
-)
-
-OptionalRemediationModeParameter = Annotated[
-    Optional[
-        Literal[
-            "REMEDIATION_MODE_VM_ONLY",
-            "REMEDIATION_MODE_HOST_AWARE",
-            "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
-            "REMEDIATION_MODE_REBOOT_VM",
-        ]
-    ],
-    Parameter(help="Filter by remediation mode"),
-]
 
 
 async def list(
     cluster_id: str,
     instance_id: Annotated[Optional[str], Parameter(help="Instance ID to list remediations for")] = None,
-    mode: OptionalRemediationModeParameter = None,
-    state: Annotated[Optional[str], Parameter(help="Comma-separated remediation states to include")] = None,
-    order_by: Annotated[Optional[str], Parameter(help="Order by expression")] = None,
-    page_size: Annotated[Optional[int], Parameter(help="Maximum results to return")] = None,
-    page_token: Annotated[Optional[str], Parameter(help="Pagination token from a previous request")] = None,
+    after: Annotated[Optional[str], Parameter(help="Pagination token from a previous request")] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -44,11 +26,7 @@ async def list(
         config.client.beta.clusters.remediations.list(
             instance_id or "-",
             cluster_id=cluster_id,
-            mode=omit_if_none(mode),
-            state=parse_states(state),
-            order_by=omit_if_none(order_by),
-            page_size=omit_if_none(page_size),
-            page_token=omit_if_none(page_token),
+            page_token=after or omit,
         ),
     )
 
@@ -56,10 +34,40 @@ async def list(
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    print_remediations(response.remediations)
+    table = ListTable(title="Cluster Remediations", empty_message="No remediations found for this cluster.")
+    table.add_column("Created")
+    table.add_primary_column("Instance", ratio=3)
+    table.add_column("Mode")
+    table.add_column("State")
+    table.add_column("Remediation ID", ratio=3)
+
+    for remediation in response.remediations:
+        table.add_row(
+            format_datetime(remediation.create_time) if remediation.create_time else "-",
+            remediation.instance_id,
+            remediation.mode.replace("REMEDIATION_MODE_", ""),
+            _colorize(remediation.state),
+            remediation.id,
+        )
+
+    console.print(table)
     if response.has_next and response.next_page_token:
-        command = f"tg beta clusters remediations list {cluster_id}"
+        command = f"tg beta clusters remediations ls {cluster_id}"
         if instance_id:
             command += f" {instance_id}"
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]{command} --page-token {response.next_page_token}[/white]")
+        console.print(f"  [dim]-[/dim] [white]{command} --after {response.next_page_token}[/white]")
+
+
+def _colorize(state: str) -> str:
+    state_colors = {
+        "PENDING_APPROVAL": "yellow",
+        "PENDING": "yellow",
+        "RUNNING": "yellow",
+        "SUCCEEDED": "green",
+        "FAILED": "red",
+        "CANCELLED": "dim",
+        "AUTO_RESOLVED": "green",
+    }
+    color = state_colors[state] if state in state_colors else "white"
+    return f"[{color}]{state}[/{color}]"

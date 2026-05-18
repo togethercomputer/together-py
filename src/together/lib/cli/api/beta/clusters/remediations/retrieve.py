@@ -1,32 +1,26 @@
 from __future__ import annotations
 
-from typing import Optional, Annotated
-
-from cyclopts import Parameter
-
-from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.model_dump import print_model_dump
 from together.lib.cli.api.beta.clusters.remediations._resolve_remediation import resolve_remediation
 
 
-async def reject(
+async def retrieve(
     remediation_id: str,
-    comment: Annotated[Optional[str], Parameter(help="Comment explaining the rejection")] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """Reject a pending remediation."""
+    """Retrieve remediation details."""
     remediation = await show_loading_status("Finding remediation...", resolve_remediation(config, remediation_id))
     response = await show_loading_status(
-        "Rejecting remediation...",
-        config.client.beta.clusters.remediations.reject(
+        "Retrieving remediation...",
+        config.client.beta.clusters.remediations.retrieve(
             remediation_id,
             cluster_id=remediation.cluster_id,
             instance_id=remediation.instance_id,
-            comment=comment or omit,
         ),
     )
 
@@ -34,4 +28,4 @@ async def reject(
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    console.print(f"[blue]Remediation rejected.[/blue] ({response.id})")
+    print_model_dump(response, show_nulls=False)

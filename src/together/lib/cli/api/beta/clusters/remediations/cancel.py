@@ -4,7 +4,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.clusters.remediations._util import resolve_remediation
+from together.lib.cli.api.beta.clusters.remediations._resolve_remediation import resolve_remediation
 
 
 async def cancel(

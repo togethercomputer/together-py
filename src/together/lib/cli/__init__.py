@@ -65,6 +65,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+    BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -500,11 +501,17 @@ remediations_app.command(
     (f"{_CLI}.beta.clusters.remediations.create:create"),
     alias="-c",
     help="Create a node remediation",
+    help_epilogue=BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
 )
 remediations_app.command(
     (f"{_CLI}.beta.clusters.remediations.list:list"),
     alias="ls",
     help="List node remediations",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.retrieve:retrieve"),
+    alias="get",
+    help="Get remediation details",
 )
 remediations_app.command(
     (f"{_CLI}.beta.clusters.remediations.approve:approve"),
