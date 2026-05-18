@@ -679,6 +679,7 @@ class Jig:
                 "linux/amd64",
                 "--push",
                 "--output",
+                 "--metadata-file", f"{PATH}/{image}-metadata.json"
                 f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
             ]
             if self.config.image.dockerfile_path != "Dockerfile":
