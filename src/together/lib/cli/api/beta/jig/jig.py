@@ -543,6 +543,17 @@ class Jig:
         image = self.image(tag)
         if tag != "latest":
             return image
+        registry = subprocess.run(
+            ["docker", "buildx", "imagetools", "inspect", image],
+            capture_output=True,
+            text=True,
+        )
+        if registry.returncode == 0:
+            for line in registry.stdout.splitlines():
+                if line.startswith("Digest:"):
+                    sha = line.split(":", 1)[1].strip()
+                    if sha.startswith("sha256:"):
+                        return f"{image}@{sha}"
         daemon = subprocess.run(
             ["docker", "inspect", "--format={{json .RepoDigests}}", image],
             capture_output=True,
@@ -555,17 +566,6 @@ class Jig:
                         return str(digest)
             except (json.JSONDecodeError, TypeError):
                 pass
-        registry = subprocess.run(
-            ["docker", "buildx", "imagetools", "inspect", image],
-            capture_output=True,
-            text=True,
-        )
-        if registry.returncode == 0:
-            for line in registry.stdout.splitlines():
-                if line.startswith("Digest:"):
-                    sha = line.split(":", 1)[1].strip()
-                    if sha.startswith("sha256:"):
-                        return f"{image}@{sha}"
         raise JigError(f"No registry digest found for {image}. Make sure the image was pushed to registry first")
 
     def sync_secrets_from_deployment(self) -> None:
