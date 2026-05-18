@@ -364,8 +364,9 @@ def _generate_dockerfile(config: JigConfig) -> str:
     pip = ""
     if Path("pyproject.toml").exists():
         pip = """COPY pyproject.toml .
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv pip install --system --compile-bytecode . && \\
+    uv sync --inexact --no-dev --no-install-project --compile-bytecode && \\
     (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
 """
 
