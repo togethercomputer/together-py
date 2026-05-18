@@ -219,6 +219,28 @@ class TestBetaJigSecretsUnset:
         assert result.exit_code == 0
 
 
+class TestBetaJigBuild:
+    def test_build_blocked_when_deploy_image_set(self, tmp_path: Path) -> None:
+        with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+            cfg = _jig_mod.Config(
+                model_name=_DEPLOY_NAME,
+                image=_jig_mod.ImageConfig(),
+                deploy=_jig_mod.DeployConfig(image="ghcr.io/org/prebuilt:latest"),
+                _path=tmp_path / "pyproject.toml",
+                _unique_name_hint="h",
+            )
+
+            def _find(*_args: Any):
+                return cfg
+
+            with patch.object(_jig_mod.Config, "find", classmethod(_find)):
+                runner = CliRunner(env=_ENV)
+                with _chdir(tmp_path):
+                    result = runner.invoke(main, ["beta", "jig", "build"])
+        assert result.exit_code == 1
+        assert "deploy.image is set" in result.output
+
+
 class TestBetaJigVolumes:
     @pytest.mark.respx(base_url=base_url)
     def test_delete(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
