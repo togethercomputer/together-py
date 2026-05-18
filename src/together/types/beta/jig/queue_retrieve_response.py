@@ -10,6 +10,8 @@ __all__ = ["QueueRetrieveResponse"]
 
 
 class QueueRetrieveResponse(BaseModel):
+    """Current status and metadata for a queued job."""
+
     model: str
     """Model identifier the job was submitted to"""
 

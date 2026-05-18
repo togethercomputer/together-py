@@ -204,8 +204,8 @@ class QueueResource(SyncAPIResource):
           payload: Freeform model input. Passed unchanged to the model. Contents are
               model-specific.
 
-          info: Arbitrary JSON metadata stored with the job and returned in status responses.
-              The model and system may add or update keys during processing.
+          info: Arbitrary JSON metadata stored with the job. Returned in status responses, where
+              the model and system may have added or modified keys (e.g. progress).
 
           priority: Job priority. Higher values are processed first (strict priority ordering). Jobs
               with equal priority are processed in submission order (FIFO).
@@ -414,8 +414,8 @@ class AsyncQueueResource(AsyncAPIResource):
           payload: Freeform model input. Passed unchanged to the model. Contents are
               model-specific.
 
-          info: Arbitrary JSON metadata stored with the job and returned in status responses.
-              The model and system may add or update keys during processing.
+          info: Arbitrary JSON metadata stored with the job. Returned in status responses, where
+              the model and system may have added or modified keys (e.g. progress).
 
           priority: Job priority. Higher values are processed first (strict priority ordering). Jobs
               with equal priority are processed in submission order (FIFO).
