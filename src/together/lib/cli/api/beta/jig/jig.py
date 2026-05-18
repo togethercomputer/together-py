@@ -363,10 +363,14 @@ def _generate_dockerfile(config: JigConfig) -> str:
 
     pip = ""
     if Path("pyproject.toml").exists():
-        pip = """COPY pyproject.toml .
-ENV UV_PROJECT_ENVIRONMENT=/usr/local
+        pip = "COPY pyproject.toml .\n"
+        sync_flags = "--inexact --no-dev --no-install-project --compile-bytecode"
+        if Path("uv.lock").exists():
+            pip += "COPY uv.lock .\n"
+            sync_flags = f"--frozen {sync_flags}"
+        pip += f"""ENV UV_PROJECT_ENVIRONMENT=/usr/local
 RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv sync --inexact --no-dev --no-install-project --compile-bytecode && \\
+    uv sync {sync_flags} && \\
     (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
 """
 
