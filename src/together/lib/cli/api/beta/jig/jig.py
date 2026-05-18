@@ -51,6 +51,7 @@ DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
 WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
+BUILDX_OUTPUT_OPTS = "compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true"
 
 _TRACK_POLL_INTERVAL = 3
 _TRACK_TIMEOUT = 600
@@ -488,38 +489,6 @@ LABEL jig.warmed=true"""
     console.print("\N{CHECK MARK} Final image with cache built")
 
 
-def _image_is_warmed(image: str) -> bool:
-    """True if the local daemon image carries the jig.warmed label set by _build_warm_image."""
-    r = subprocess.run(
-        ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "jig.warmed"}}'],
-        capture_output=True,
-        text=True,
-    )
-    return r.returncode == 0 and r.stdout.strip() == "true"
-
-
-def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
-    """Return the name of a docker-container buildx builder, creating one if needed.
-
-    The default 'docker' buildx driver pushes through the docker daemon, which on
-    legacy (non-containerd) image stores silently downgrades zstd to gzip. A
-    docker-container builder has its own buildkit instance and honors zstd.
-    Returns None if buildx is unavailable or the builder cannot be created.
-    """
-    if os.getenv("JIG_DISABLE_BUILDX"):
-        return None
-    if subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode != 0:
-        return None
-    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
-    if name in (ls.stdout or ""):
-        return name
-    create = subprocess.run(
-        ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"],
-        capture_output=True,
-    )
-    return name if create.returncode == 0 else None
-
-
 # == Jig ==
 
 
@@ -574,7 +543,6 @@ class Jig:
         image = self.image(tag)
         if tag != "latest":
             return image
-        # Prefer the local daemon (cheap, no network) when the image is there.
         daemon = subprocess.run(
             ["docker", "inspect", "--format={{json .RepoDigests}}", image],
             capture_output=True,
@@ -587,8 +555,6 @@ class Jig:
                         return str(digest)
             except (json.JSONDecodeError, TypeError):
                 pass
-        # Fall back to a registry lookup. Used when deploy ran build_and_push, which skips
-        # --load, so the image isn't in the local daemon.
         registry = subprocess.run(
             ["docker", "buildx", "imagetools", "inspect", image],
             capture_output=True,
@@ -660,12 +626,8 @@ class Jig:
             )
 
         console.print(f"Building {image}")
-        # Skip buildx when warmup is requested: _build_warm_image rebuilds via plain `docker build`
-        # which doesn't populate the jig-zstd cache, and push() falls back to `docker push` anyway,
-        # so the buildkit cache work and the --load export would just be thrown away.
         builder = None if warmup else _ensure_zstd_builder()
         if builder:
-            # Build via docker-container builder so `push` can output zstd from the buildkit cache.
             cmd = [
                 "docker",
                 "buildx",
@@ -703,13 +665,10 @@ class Jig:
             raise JigError("Registry login failed")
 
         console.print(f"Pushing {image}")
-        # Warmup bakes layers into the local daemon image, bypassing the buildx cache. Detect
-        # that via the label stamped by _build_warm_image and push the daemon image directly
-        # (gzip) in that case, since a buildx rebuild would produce the pre-warmup image.
+        # Skip buildx for warmup-baked images: a buildx rebuild would drop the warmup layer.
         warmed = _image_is_warmed(image)
         builder = None if warmed else _ensure_zstd_builder()
         if builder:
-            # Repackage cached layers from `build` as zstd in a single upload.
             cmd = [
                 "docker",
                 "buildx",
@@ -720,15 +679,13 @@ class Jig:
                 "linux/amd64",
                 "--push",
                 "--output",
-                f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
+                f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
             ]
             if self.config.image.dockerfile_path != "Dockerfile":
                 cmd.extend(["-f", self.config.image.dockerfile_path])
             cmd.append(".")
             ok = subprocess.run(cmd).returncode == 0
         else:
-            # Only warn when we genuinely fell back due to missing buildx — not when warmup
-            # or JIG_DISABLE_BUILDX deliberately routed us here.
             if not warmed and not os.getenv("JIG_DISABLE_BUILDX"):
                 console.print(
                     "\N{WARNING SIGN} buildx not available; falling back to gzip push. "
@@ -774,7 +731,7 @@ class Jig:
             "linux/amd64",
             "--push",
             "--output",
-            f"type=image,name={image},compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true",
+            f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
         ]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
@@ -801,8 +758,7 @@ class Jig:
             console.print(f"Deploying configured image {deployment_image}")
         else:
             if warmup:
-                # Warmup needs a local image to docker-run for cache generation, so keep the
-                # build (with --load) + push (gzip via daemon, since the warmup label is set) path.
+                # warmup needs the image locally, so we can't use buildx — fall back to the plain docker build + push path.
                 self.build(tag, True, docker_args)
                 self.push(tag)
             else:
@@ -1636,3 +1592,38 @@ def jig_volumes_delete_cli(
 ) -> None:
     """Delete a volume."""
     _run_jig_cmd(config, toml_config, lambda jig: volumes_delete(jig, name))
+
+
+# == Helpers ==
+
+
+def _image_is_warmed(image: str) -> bool:
+    """True if the local daemon image carries the jig.warmed label set by _build_warm_image."""
+    r = subprocess.run(
+        ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "jig.warmed"}}'],
+        capture_output=True,
+        text=True,
+    )
+    return r.returncode == 0 and r.stdout.strip() == "true"
+
+
+def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
+    """Return the name of a docker-container buildx builder, creating one if needed.
+
+    The default 'docker' buildx driver pushes through the docker daemon, which on
+    legacy (non-containerd) image stores silently downgrades zstd to gzip. A
+    docker-container builder has its own buildkit instance and honors zstd.
+    Returns None if buildx is unavailable or the builder cannot be created.
+    """
+    if os.getenv("JIG_DISABLE_BUILDX"):
+        return None
+    if subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode != 0:
+        return None
+    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
+    if name in (ls.stdout or ""):
+        return name
+    create = subprocess.run(
+        ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"],
+        capture_output=True,
+    )
+    return name if create.returncode == 0 else None
