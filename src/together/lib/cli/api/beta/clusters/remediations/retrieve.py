@@ -28,4 +28,4 @@ async def retrieve(
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    print_model_dump(response, show_nulls=False)
+    print_model_dump(response, show_nulls=False, only_set_fields=True)

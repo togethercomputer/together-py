@@ -254,7 +254,7 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Manage node remediations:
   [primary]tg beta clusters remediations ls <cluster-id>[/primary]
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode REMEDIATION_MODE_VM_ONLY[/primary]
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
 """
 
 BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
