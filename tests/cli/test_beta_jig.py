@@ -242,9 +242,7 @@ class TestBetaJigBuild:
 
 class TestBetaJigLogs:
     @pytest.mark.respx(base_url=base_url)
-    def test_logs_forwards_sdk_filters(
-        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
+    def test_logs_forwards_sdk_filters(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
         route = respx_mock.get(f"/deployments/{_DEPLOY_NAME}/logs").mock(
             return_value=httpx.Response(200, json={"lines": ["line 1", "line 2"]})
@@ -309,9 +307,7 @@ class TestBetaJigVolumes:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_describe_forwards_version(
-        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
-    ) -> None:
+    def test_describe_forwards_version(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         _write_jig_project(tmp_path)
         route = respx_mock.get("/deployments/storage/volumes/v1").mock(
             return_value=httpx.Response(200, json=_volume_api_body("v1", current_version=1))
