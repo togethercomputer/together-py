@@ -11,15 +11,17 @@ __all__ = ["RemediationListParams"]
 class RemediationListParams(TypedDict, total=False):
     cluster_id: Required[str]
 
-    mode: Literal[
-        "REMEDIATION_MODE_VM_ONLY",
-        "REMEDIATION_MODE_HOST_AWARE",
-        "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
-        "REMEDIATION_MODE_REBOOT_VM",
+    mode: List[
+        Literal[
+            "REMEDIATION_MODE_VM_ONLY",
+            "REMEDIATION_MODE_HOST_AWARE",
+            "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
+            "REMEDIATION_MODE_REBOOT_VM",
+        ]
     ]
-    """Filter by remediation mode.
+    """Filter by remediation mode(s).
 
-    Returns only remediations matching the specified mode.
+    Returns remediations matching any of the specified modes.
     """
 
     order_by: str
@@ -42,4 +44,10 @@ class RemediationListParams(TypedDict, total=False):
     - `CANCELLED`: Cancelled by user or system.
     - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
       processing.
+    """
+
+    trigger: List[Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]]
+    """Filter by trigger type(s).
+
+    Returns remediations matching any of the specified triggers.
     """

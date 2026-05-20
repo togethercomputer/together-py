@@ -157,11 +157,12 @@ class TestRemediations:
         remediation = client.beta.clusters.remediations.list(
             instance_id="instance_id",
             cluster_id="cluster_id",
-            mode="REMEDIATION_MODE_VM_ONLY",
+            mode=["REMEDIATION_MODE_VM_ONLY"],
             order_by="order_by",
             page_size=0,
             page_token="page_token",
             state=["PENDING_APPROVAL"],
+            trigger=["REMEDIATION_TRIGGER_MANUAL"],
         )
         assert_matches_type(RemediationListResponse, remediation, path=["response"])
 
@@ -548,11 +549,12 @@ class TestAsyncRemediations:
         remediation = await async_client.beta.clusters.remediations.list(
             instance_id="instance_id",
             cluster_id="cluster_id",
-            mode="REMEDIATION_MODE_VM_ONLY",
+            mode=["REMEDIATION_MODE_VM_ONLY"],
             order_by="order_by",
             page_size=0,
             page_token="page_token",
             state=["PENDING_APPROVAL"],
+            trigger=["REMEDIATION_TRIGGER_MANUAL"],
         )
         assert_matches_type(RemediationListResponse, remediation, path=["response"])
 
