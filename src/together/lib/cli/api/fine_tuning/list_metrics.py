@@ -47,7 +47,7 @@ async def list_metrics(
     # When stdout is redirected (e.g. > file.txt or | jq), is_tty is False and we fall back to raw JSON.
     show_plots = (is_tty or force_plots) and not config.json
 
-    resolution_value = resolution if not show_plots else console.width - METRICS_WIDTH_PADDING
+    resolution_value = resolution if resolution else console.width - METRICS_WIDTH_PADDING
     response = await show_loading_status(
         "Fetching metrics...",
         config.client.fine_tuning.list_metrics(
