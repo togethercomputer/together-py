@@ -349,9 +349,9 @@ class TestBetaClustersRemediations:
         )
 
         params = cast(Call, route.calls[0]).request.url.params
-        assert params.get_list("mode") == ["REMEDIATION_MODE_VM_ONLY", "REMEDIATION_MODE_REBOOT_VM"]
-        assert params.get_list("state") == ["PENDING_APPROVAL"]
-        assert params.get_list("trigger") == ["REMEDIATION_TRIGGER_AUTOMATED"]
+        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_REBOOT_VM"
+        assert params["state"] == "PENDING_APPROVAL"
+        assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
         assert params["page_token"] == "next-token"
         assert result.exit_code == 0
 
