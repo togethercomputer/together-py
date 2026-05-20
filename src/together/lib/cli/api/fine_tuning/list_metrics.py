@@ -53,7 +53,7 @@ async def list_metrics(
         console.print_json(json_bytes.decode("utf-8"))
         return
 
-    if not metrics:
+    if len(metrics) == 0:
         console.print(f"[muted]No metrics found for job {fine_tune_id}[/muted]")
         return
 
