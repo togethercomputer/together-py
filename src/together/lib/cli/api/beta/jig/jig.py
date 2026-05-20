@@ -1507,9 +1507,9 @@ def logs_cli(
         Optional[str],
         Parameter(name="--revision", help="Deployment revision UUID to filter logs"),
     ] = None,
-    log_version: Annotated[
+    image_version: Annotated[
         Optional[str],
-        Parameter(name="--log-version", help="Deployment image version/tag or digest suffix to filter logs"),
+        Parameter(name="--image-version", help="Deployment image version (tag or last 4 characters of image digest) to filter logs"),
     ] = None,
     *,
     config: CLIConfigParameter,
