@@ -8,13 +8,15 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.api.beta.clusters._json_params import parse_json_array, parse_json_object
 from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
 RegionParameter = Annotated[Optional[str], Parameter(help="Region to create the cluster in")]
 BillingTypeParameter = Annotated[
-    Optional[Literal["RESERVED", "ON_DEMAND"]], Parameter(help="Billing type to use for the cluster")
+    Optional[Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"]],
+    Parameter(help="Billing type to use for the cluster"),
 ]
 NvidiaDriverVersionParameter = Annotated[Optional[str], Parameter(help="Nvidia driver version to use for the cluster")]
 CudaVersionParameter = Annotated[Optional[str], Parameter(help="CUDA version to use for the cluster")]
@@ -27,6 +29,49 @@ GpuTypeParameter = Annotated[
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
+AcceptanceTestsParamsParameter = Annotated[
+    Optional[str],
+    Parameter(help="Acceptance test options as a JSON object, or @path to a JSON file"),
+]
+AddOnsParameter = Annotated[
+    Optional[str],
+    Parameter(help="Add-ons to enable as a JSON array, or @path to a JSON file"),
+]
+AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
+AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
+AutoScaledParameter = Annotated[Optional[bool], Parameter(help="Enable workload-based GPU auto-scaling")]
+CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
+ClusterConfigParameter = Annotated[
+    Optional[str],
+    Parameter(help="Cluster config as a JSON object, or @path to a JSON file"),
+]
+GpuNodeFailoverEnabledParameter = Annotated[
+    Optional[bool], Parameter(help="Enable automated GPU node failover for the cluster")
+]
+InstallTraefikParameter = Annotated[Optional[bool], Parameter(help="Install Traefik ingress controller")]
+NumCapacityPoolGpusParameter = Annotated[
+    Optional[int], Parameter(help="Number of GPUs to allocate from a capacity pool")
+]
+NumPreemptibleGpusParameter = Annotated[Optional[int], Parameter(help="Number of preemptible GPUs to request")]
+NumReservedGpusParameter = Annotated[Optional[int], Parameter(help="Number of prepaid reserved GPUs to request")]
+OidcConfigParameter = Annotated[
+    Optional[str],
+    Parameter(help="OIDC config as a JSON object, or @path to a JSON file"),
+]
+ProjectIDParameter = Annotated[Optional[str], Parameter(help="Project ID for the cluster")]
+ReservationEndTimeParameter = Annotated[Optional[str], Parameter(help="Reservation end time for scheduled capacity")]
+ReservationStartTimeParameter = Annotated[
+    Optional[str], Parameter(help="Reservation start time for scheduled capacity")
+]
+SharedVolumeNameParameter = Annotated[Optional[str], Parameter(help="Name for an inline shared volume to create")]
+SharedVolumeRegionParameter = Annotated[Optional[str], Parameter(help="Region for an inline shared volume")]
+SharedVolumeSizeTibParameter = Annotated[Optional[int], Parameter(help="Size in TiB for an inline shared volume")]
+SharedVolumeLifecycleIndependentParameter = Annotated[
+    Optional[bool],
+    Parameter(help="Keep the inline shared volume after cluster decommissioning"),
+]
+SlurmImageParameter = Annotated[Optional[str], Parameter(help="Custom Slurm image for Slurm clusters")]
+SlurmShmSizeGibParameter = Annotated[Optional[int], Parameter(help="Shared memory size in GiB for Slurm clusters")]
 
 
 async def create(
@@ -40,6 +85,28 @@ async def create(
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
+    acceptance_tests_params: AcceptanceTestsParamsParameter = None,
+    add_ons: AddOnsParameter = None,
+    auto_scale: AutoScaleParameter = None,
+    auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
+    auto_scaled: AutoScaledParameter = None,
+    capacity_pool_id: CapacityPoolIDParameter = None,
+    cluster_config: ClusterConfigParameter = None,
+    gpu_node_failover_enabled: GpuNodeFailoverEnabledParameter = None,
+    install_traefik: InstallTraefikParameter = None,
+    num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
+    num_preemptible_gpus: NumPreemptibleGpusParameter = None,
+    num_reserved_gpus: NumReservedGpusParameter = None,
+    oidc_config: OidcConfigParameter = None,
+    project_id: ProjectIDParameter = None,
+    reservation_end_time: ReservationEndTimeParameter = None,
+    reservation_start_time: ReservationStartTimeParameter = None,
+    shared_volume_name: SharedVolumeNameParameter = None,
+    shared_volume_region: SharedVolumeRegionParameter = None,
+    shared_volume_size_tib: SharedVolumeSizeTibParameter = None,
+    shared_volume_lifecycle_independent: SharedVolumeLifecycleIndependentParameter = None,
+    slurm_image: SlurmImageParameter = None,
+    slurm_shm_size_gib: SlurmShmSizeGibParameter = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -57,6 +124,56 @@ async def create(
     )
     if volume:
         params["volume_id"] = volume
+    if acceptance_tests_params:
+        params["acceptance_tests_params"] = parse_json_object(acceptance_tests_params, "--acceptance-tests-params")
+    if add_ons:
+        params["add_ons"] = parse_json_array(add_ons, "--add-ons")
+    if auto_scale is not None:
+        params["auto_scale"] = auto_scale
+    if auto_scale_max_gpus is not None:
+        params["auto_scale_max_gpus"] = auto_scale_max_gpus
+    if auto_scaled is not None:
+        params["auto_scaled"] = auto_scaled
+    if capacity_pool_id:
+        params["capacity_pool_id"] = capacity_pool_id
+    if cluster_config:
+        params["cluster_config"] = parse_json_object(cluster_config, "--cluster-config")
+    if gpu_node_failover_enabled is not None:
+        params["gpu_node_failover_enabled"] = gpu_node_failover_enabled
+    if install_traefik is not None:
+        params["install_traefik"] = install_traefik
+    if num_capacity_pool_gpus is not None:
+        params["num_capacity_pool_gpus"] = num_capacity_pool_gpus
+    if num_preemptible_gpus is not None:
+        params["num_preemptible_gpus"] = num_preemptible_gpus
+    if num_reserved_gpus is not None:
+        params["num_reserved_gpus"] = num_reserved_gpus
+    if oidc_config:
+        params["oidc_config"] = parse_json_object(oidc_config, "--oidc-config")
+    if project_id:
+        params["project_id"] = project_id
+    if reservation_end_time:
+        params["reservation_end_time"] = reservation_end_time
+    if reservation_start_time:
+        params["reservation_start_time"] = reservation_start_time
+    if slurm_image:
+        params["slurm_image"] = slurm_image
+    if slurm_shm_size_gib is not None:
+        params["slurm_shm_size_gib"] = slurm_shm_size_gib
+
+    if any(value is not None for value in (shared_volume_name, shared_volume_region, shared_volume_size_tib)):
+        if volume:
+            raise ValueError("--volume cannot be used with inline shared volume options")
+        if not shared_volume_name or not shared_volume_region or shared_volume_size_tib is None:
+            raise ValueError(
+                "--shared-volume-name, --shared-volume-region, and --shared-volume-size-tib are required together"
+            )
+        params["shared_volume"] = _shared_volume(
+            region=shared_volume_region,
+            size_tib=shared_volume_size_tib,
+            volume_name=shared_volume_name,
+            is_lifecycle_independent=shared_volume_lifecycle_independent,
+        )
 
     # JSON Mode skips hand holding through the argument setup
     if not config.json and not config.non_interactive:
@@ -106,10 +223,17 @@ async def create(
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
                 size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
-                params["shared_volume"] = SharedVolume(
+                is_lifecycle_independent = (
+                    shared_volume_lifecycle_independent
+                    if shared_volume_lifecycle_independent is not None
+                    else input("Clusters: Keep storage volume after cluster deletion? [y/N] ").strip().lower()
+                    in ("y", "yes")
+                )
+                params["shared_volume"] = _shared_volume(
                     region=params["region"],
                     size_tib=int(size) if size else 1,
                     volume_name=vol_name,
+                    is_lifecycle_independent=is_lifecycle_independent,
                 )
             else:
                 volumes = await config.client.beta.clusters.storage.list()
@@ -126,3 +250,16 @@ async def create(
     else:
         console.print("Clusters: Cluster created successfully")
         console.print(f"Clusters: {response.cluster_id}")
+
+
+def _shared_volume(
+    *,
+    region: str,
+    size_tib: int,
+    volume_name: str,
+    is_lifecycle_independent: bool | None,
+) -> SharedVolume:
+    shared_volume = SharedVolume(region=region, size_tib=size_tib, volume_name=volume_name)
+    if is_lifecycle_independent is not None:
+        shared_volume["is_lifecycle_independent"] = is_lifecycle_independent
+    return shared_volume

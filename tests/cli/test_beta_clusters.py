@@ -98,6 +98,15 @@ class TestBetaClustersList:
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_filters_by_project_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        payload = {"clusters": [_cluster_body()]}
+        route = respx_mock.get("/compute/clusters").mock(return_value=httpx.Response(200, json=payload))
+        result = cli_runner.invoke(["beta", "clusters", "list", "--project-id", "proj-1", "--json"])
+
+        assert cast(Call, route.calls[0]).request.url.params["project_id"] == "proj-1"
+        assert result.exit_code == 0
+
 
 class TestBetaClustersListRegions:
     @pytest.mark.respx(base_url=base_url)
@@ -158,6 +167,110 @@ class TestBetaClustersCreate:
         assert body["billing_type"] == "ON_DEMAND"
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created = _cluster_body("new-id", "scheduled")
+        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        oidc_config = json.dumps(
+            {
+                "client_id": "client",
+                "issuer_url": "https://issuer",
+                "username_claim": "sub",
+                "username_prefix": "oidc:",
+                "group_claim": "groups",
+                "group_prefix": "oidc:",
+            }
+        )
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--cluster-type",
+                "SLURM",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-driver-version",
+                "565",
+                "--cuda-version",
+                "12.6",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "SCHEDULED_CAPACITY",
+                "--name",
+                "scheduled",
+                "--acceptance-tests-params",
+                '{"enabled":true,"gpu_burn_duration":60}',
+                "--add-ons",
+                '[{"add_on_type":"dashboard","name":"dash","config":{"dashboard":{"enabled":true}}}]',
+                "--auto-scale",
+                "--auto-scale-max-gpus",
+                "16",
+                "--capacity-pool-id",
+                "pool-1",
+                "--cluster-config",
+                '{"load_balancer":"TRAEFIK","ingress":{"enabled":true}}',
+                "--gpu-node-failover-enabled",
+                "--install-traefik",
+                "--num-capacity-pool-gpus",
+                "8",
+                "--num-preemptible-gpus",
+                "8",
+                "--num-reserved-gpus",
+                "8",
+                "--oidc-config",
+                oidc_config,
+                "--project-id",
+                "proj-1",
+                "--reservation-start-time",
+                "2026-06-01T00:00:00Z",
+                "--reservation-end-time",
+                "2026-06-02T00:00:00Z",
+                "--shared-volume-name",
+                "shared",
+                "--shared-volume-region",
+                "us-central-8",
+                "--shared-volume-size-tib",
+                "2",
+                "--shared-volume-lifecycle-independent",
+                "--slurm-image",
+                "slurm:latest",
+                "--slurm-shm-size-gib",
+                "32",
+            ],
+        )
+
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body["billing_type"] == "SCHEDULED_CAPACITY"
+        assert body["acceptance_tests_params"] == {"enabled": True, "gpu_burn_duration": 60}
+        assert body["add_ons"][0]["name"] == "dash"
+        assert body["auto_scale"] is True
+        assert body["auto_scale_max_gpus"] == 16
+        assert body["capacity_pool_id"] == "pool-1"
+        assert body["cluster_config"]["load_balancer"] == "TRAEFIK"
+        assert body["gpu_node_failover_enabled"] is True
+        assert body["install_traefik"] is True
+        assert body["num_capacity_pool_gpus"] == 8
+        assert body["num_preemptible_gpus"] == 8
+        assert body["num_reserved_gpus"] == 8
+        assert body["oidc_config"]["client_id"] == "client"
+        assert body["project_id"] == "proj-1"
+        assert body["reservation_start_time"] == "2026-06-01T00:00:00Z"
+        assert body["reservation_end_time"] == "2026-06-02T00:00:00Z"
+        assert body["shared_volume"] == {
+            "region": "us-central-8",
+            "size_tib": 2,
+            "volume_name": "shared",
+            "is_lifecycle_independent": True,
+        }
+        assert body["slurm_image"] == "slurm:latest"
+        assert body["slurm_shm_size_gib"] == 32
+        assert result.exit_code == 0
+
 
 class TestBetaClustersUpdate:
     @pytest.mark.respx(base_url=base_url)
@@ -174,6 +287,37 @@ class TestBetaClustersUpdate:
         put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
         assert put_body["num_gpus"] == 16
         assert put_body["cluster_type"] == "SLURM"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        updated = _cluster_body("c1", num_gpus=16)
+        put = respx_mock.put("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "update",
+                "c1",
+                "--add-ons",
+                '[{"name":"dash","config":{"dashboard":{"enabled":false}}}]',
+                "--cluster-config",
+                '{"load_balancer":"NGINX","observability":{"enabled":true}}',
+                "--num-preemptible-gpus",
+                "8",
+                "--num-reserved-gpus",
+                "16",
+                "--reservation-end-time",
+                "2026-06-02T00:00:00Z",
+            ],
+        )
+
+        put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
+        assert put_body["add_ons"][0]["name"] == "dash"
+        assert put_body["cluster_config"]["load_balancer"] == "NGINX"
+        assert put_body["num_preemptible_gpus"] == 8
+        assert put_body["num_reserved_gpus"] == 16
+        assert put_body["reservation_end_time"] == "2026-06-02T00:00:00Z"
         assert result.exit_code == 0
 
 
@@ -218,6 +362,17 @@ class TestBetaClustersStorage:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
+    def test_storage_list_filters_by_project_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        payload = {"volumes": [_VOLUME_BODY]}
+        route = respx_mock.get("/compute/clusters/storage/volumes").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+        result = cli_runner.invoke(["beta", "clusters", "storage", "list", "--project-id", "proj-1", "--json"])
+
+        assert cast(Call, route.calls[0]).request.url.params["project_id"] == "proj-1"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
     def test_storage_create_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.post("/compute/clusters/storage/volumes").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
@@ -234,13 +389,29 @@ class TestBetaClustersStorage:
                 "1",
                 "--volume-name",
                 "test-volume",
+                "--is-lifecycle-independent",
                 "--json",
             ],
         )
         out = json.loads(result.output)
         assert out["volume_id"] == "vol-1"
         raw = cast(Call, route.calls[0]).request.content.decode()
-        assert json.loads(raw) == {"region": "us-east-1", "size_tib": 1, "volume_name": "test-volume"}
+        assert json.loads(raw) == {
+            "region": "us-east-1",
+            "size_tib": 1,
+            "volume_name": "test-volume",
+            "is_lifecycle_independent": True,
+        }
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_storage_update_allows_omitting_size(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.put("/compute/clusters/storage/volumes").mock(
+            return_value=httpx.Response(200, json=_VOLUME_BODY)
+        )
+        result = cli_runner.invoke(["beta", "clusters", "storage", "update", "vol-1", "--json"])
+
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"volume_id": "vol-1"}
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
@@ -370,6 +541,10 @@ class TestBetaClustersRemediations:
                 "AUTOMATED",
                 "--after",
                 "next-token",
+                "--order-by",
+                "create_time desc",
+                "--page-size",
+                "50",
                 "--json",
             ]
         )
@@ -379,6 +554,8 @@ class TestBetaClustersRemediations:
         assert params["state"] == "PENDING_APPROVAL"
         assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
         assert params["page_token"] == "next-token"
+        assert params["order_by"] == "create_time desc"
+        assert params["page_size"] == "50"
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
