@@ -1509,7 +1509,10 @@ def logs_cli(
     ] = None,
     image_version: Annotated[
         Optional[str],
-        Parameter(name="--image-version", help="Deployment image version (tag or last 4 characters of image digest) to filter logs"),
+        Parameter(
+            name="--image-version",
+            help="Deployment image version (tag or last 4 characters of image digest) to filter logs",
+        ),
     ] = None,
     *,
     config: CLIConfigParameter,
