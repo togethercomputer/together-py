@@ -48,7 +48,7 @@ async def list_metrics(
 
     metrics = response.metrics or []
 
-    if not config.json:
+    if config.json:
         json_bytes = openapi_dumps(metrics)
         console.print_json(json_bytes.decode("utf-8"))
         return
