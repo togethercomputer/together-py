@@ -42,10 +42,16 @@ async def list_metrics(
 ) -> None:
     """Retrieve training metrics for a fine-tuning job."""
 
+    if output != "json" and config.json:
+        raise ValueError(
+            f"--output {output!r} conflicts with --json. Either remove --json or set --output json."
+        )
+    output_json = output == "json" or config.json
+
     is_tty = sys.stdout.isatty()
-    # Determine output format: explicit --output flag takes priority, then auto-detect via isatty.
+    # Determine output format: explicit --output or --json flag takes priority, then auto-detect via isatty.
     # When stdout is redirected (e.g. > file.txt or | jq), is_tty is False and we fall back to raw JSON.
-    show_plots = (output == "graph") if output else (is_tty and output != "json")
+    show_plots = (output == "graph") if output else (is_tty and not output_json)
 
     resolution_value = resolution if not show_plots else console.width - METRICS_WIDTH_PADDING
     response = await show_loading_status(
