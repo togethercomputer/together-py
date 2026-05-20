@@ -26,7 +26,9 @@ RemediationModeParameter = Annotated[
     Parameter(help="Filter by remediation mode. Can be used multiple times."),
 ]
 RemediationStateParameter = Annotated[
-    Optional[list[Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]]],
+    Optional[
+        list[Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]]
+    ],
     Parameter(help="Filter by remediation state. Can be used multiple times."),
 ]
 RemediationTriggerParameter = Annotated[

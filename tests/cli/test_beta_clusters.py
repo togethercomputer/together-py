@@ -322,9 +322,7 @@ class TestBetaClustersRemediations:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_remediations_list_table_uses_instance_name(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
+    def test_remediations_list_table_uses_instance_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = _remediation_list_body(_remediation_body(instance_name="gpu-node-a"))
         respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=payload)
