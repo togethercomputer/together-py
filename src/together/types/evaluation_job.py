@@ -69,25 +69,33 @@ class ResultsEvaluationScoreResults(BaseModel):
 
 class ResultsEvaluationCompareResults(BaseModel):
     a_wins: Optional[int] = FieldInfo(alias="A_wins", default=None)
-    """Number of times model A won"""
+    """Number of samples where model A was judged the winner"""
 
     b_wins: Optional[int] = FieldInfo(alias="B_wins", default=None)
-    """Number of times model B won"""
+    """Number of samples where model B was judged the winner"""
 
     generation_fail_count: Optional[float] = None
-    """Number of failed generations."""
+    """Number of generation failures across model A and model B."""
 
     judge_fail_count: Optional[float] = None
-    """Number of failed judge generations"""
+    """Number of judge inference failures.
 
-    num_samples: Optional[int] = None
-    """Total number of samples compared"""
+    In the default two-pass mode (disable_position_bias_correction=false) this is
+    the combined failure count from both the original-order and flipped-order judge
+    passes.
+    """
 
     result_file_id: Optional[str] = None
-    """Data File ID"""
+    """File ID of the detailed output file.
+
+    Each row contains the original input fields plus judge outputs. In two-pass mode
+    the file includes both original-order and flipped-order judge fields; in
+    single-pass mode (disable_position_bias_correction=true) only original-order
+    fields are present.
+    """
 
     ties: Optional[int] = FieldInfo(alias="Ties", default=None)
-    """Number of ties"""
+    """Number of samples that resulted in a tie"""
 
 
 class ResultsError(BaseModel):

@@ -29,6 +29,7 @@ import httpx
 from cyclopts import Parameter
 
 from together import Together
+from together._types import Omit, omit
 from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
@@ -363,9 +364,14 @@ def _generate_dockerfile(config: JigConfig) -> str:
 
     pip = ""
     if Path("pyproject.toml").exists():
-        pip = """COPY pyproject.toml .
+        pip = "COPY pyproject.toml .\n"
+        sync_flags = "--inexact --no-dev --no-install-project --compile-bytecode"
+        if Path("uv.lock").exists():
+            pip += "COPY uv.lock .\n"
+            sync_flags = f"--frozen {sync_flags}"
+        pip += f"""ENV UV_PROJECT_ENVIRONMENT=/usr/local
 RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv pip install --system --compile-bytecode . && \\
+    uv sync {sync_flags} && \\
     (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
 """
 
@@ -615,6 +621,11 @@ class Jig:
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
+        if self.config.deploy.image:
+            raise JigError(
+                f"Invalid command: deploy.image is set to '{self.config.deploy.image}'. "
+                "Use 'jig deploy' to deploy the configured image, or remove deploy.image to build from source."
+            )
         image = self.image(tag)
 
         if not _dockerfile(self.config):
@@ -909,15 +920,36 @@ Run 'jig status' to check current state.""")
 
     # == Query ==
 
-    def logs(self, rid: str | None = None) -> str:
-        if not rid:
-            return "\n".join(self.api.retrieve_logs(self.name).lines or []) or "No logs available"
-        body = "\n".join(self.api.retrieve_logs(self.name, replica_id=rid).lines or [])
-        return f"\n--- Logs for {rid} ---\n{body or 'No logs available'}\n--- End of logs ---\n"
+    def logs(
+        self,
+        replica_id: str | None = None,
+        revision: str | None = None,
+        version: str | None = None,
+    ) -> str:
+        response = self.api.retrieve_logs(
+            self.name,
+            replica_id=replica_id or omit,
+            revision=revision or omit,
+            version=version or omit,
+        )
+        body = "\n".join(response.lines or []) or "No logs available"
+        if replica_id:
+            return f"\n--- Logs for {replica_id} ---\n{body}\n--- End of logs ---\n"
+        return body
 
-    def follow_logs(self) -> None:
+    def follow_logs(
+        self,
+        replica_id: str | None = None,
+        revision: str | None = None,
+        version: str | None = None,
+    ) -> None:
         try:
-            with self.api.with_streaming_response.retrieve_logs(self.name) as stream:
+            with self.api.with_streaming_response.retrieve_logs(
+                self.name,
+                replica_id=replica_id or omit,
+                revision=revision or omit,
+                version=version or omit,
+            ) as stream:
                 for line in stream.iter_lines():
                     if line:
                         log_lines = json.loads(line).get("lines", [])
@@ -1181,9 +1213,15 @@ def endpoint(jig: Jig) -> str:
     return f"https://api.together.ai/v1/deployment-request/{jig.name}"
 
 
-def logs(jig: Jig, follow: bool) -> str | None:
+def logs(
+    jig: Jig,
+    follow: bool,
+    replica_id: str | None,
+    revision: str | None,
+    version: str | None,
+) -> str | None:
     """Get deployment logs"""
-    return jig.follow_logs() if follow else jig.logs()
+    return jig.follow_logs(replica_id, revision, version) if follow else jig.logs(replica_id, revision, version)
 
 
 def destroy(jig: Jig) -> str:
@@ -1320,10 +1358,14 @@ def volumes_delete(jig: Jig, name: str) -> None:
     console.print(f"\N{CHECK MARK} Deleted volume {name}")
 
 
-def volumes_describe(jig: Jig, name: str) -> Any:
+def _optional_int(value: int | None) -> int | Omit:
+    return value if value is not None else omit
+
+
+def volumes_describe(jig: Jig, name: str, version: int | None = None) -> Any:
     """Describe a volume"""
     try:
-        return jig.api.volumes.with_raw_response.retrieve(name)
+        return jig.api.volumes.with_raw_response.retrieve(name, version=_optional_int(version))
     except NotFoundError:
         raise JigError(f"Volume {name} not found") from None
 
@@ -1361,12 +1403,16 @@ async def jig_volumes_list(
 
 async def jig_volumes_describe(
     name: Annotated[str, Parameter(name="--name", help="Volume name")],
+    volume_version: Annotated[
+        Optional[int],
+        Parameter(name="--volume-version", help="Volume version to describe"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
     """Describe a volume."""
     try:
-        vol = await config.client.beta.jig.volumes.retrieve(name)
+        vol = await config.client.beta.jig.volumes.retrieve(name, version=_optional_int(volume_version))
     except NotFoundError:
         _jig_fail(f"Volume {name} not found")
     else:
@@ -1456,12 +1502,24 @@ def endpoint_cli(
 
 def logs_cli(
     follow: Annotated[bool, Parameter(help="Follow log output", negative=())] = False,
+    replica_id: Annotated[Optional[str], Parameter(name="--replica-id", help="Replica ID to filter logs")] = None,
+    revision: Annotated[
+        Optional[str],
+        Parameter(name="--revision", help="Deployment revision UUID to filter logs"),
+    ] = None,
+    image_version: Annotated[
+        Optional[str],
+        Parameter(
+            name="--image-version",
+            help="Deployment image version (tag or last 4 characters of image digest) to filter logs",
+        ),
+    ] = None,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment logs."""
-    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow))
+    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, image_version))
 
 
 def destroy_cli(

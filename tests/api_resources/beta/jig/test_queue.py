@@ -124,7 +124,7 @@ class TestQueue:
     @parametrize
     def test_method_submit(self, client: Together) -> None:
         queue = client.beta.jig.queue.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
         )
         assert_matches_type(QueueSubmitResponse, queue, path=["response"])
@@ -132,7 +132,7 @@ class TestQueue:
     @parametrize
     def test_method_submit_with_all_params(self, client: Together) -> None:
         queue = client.beta.jig.queue.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
             info={"foo": "bar"},
             priority=0,
@@ -142,7 +142,7 @@ class TestQueue:
     @parametrize
     def test_raw_response_submit(self, client: Together) -> None:
         response = client.beta.jig.queue.with_raw_response.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
         )
 
@@ -154,7 +154,7 @@ class TestQueue:
     @parametrize
     def test_streaming_response_submit(self, client: Together) -> None:
         with client.beta.jig.queue.with_streaming_response.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
         ) as response:
             assert not response.is_closed
@@ -273,7 +273,7 @@ class TestAsyncQueue:
     @parametrize
     async def test_method_submit(self, async_client: AsyncTogether) -> None:
         queue = await async_client.beta.jig.queue.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
         )
         assert_matches_type(QueueSubmitResponse, queue, path=["response"])
@@ -281,7 +281,7 @@ class TestAsyncQueue:
     @parametrize
     async def test_method_submit_with_all_params(self, async_client: AsyncTogether) -> None:
         queue = await async_client.beta.jig.queue.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
             info={"foo": "bar"},
             priority=0,
@@ -291,7 +291,7 @@ class TestAsyncQueue:
     @parametrize
     async def test_raw_response_submit(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.jig.queue.with_raw_response.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
         )
 
@@ -303,7 +303,7 @@ class TestAsyncQueue:
     @parametrize
     async def test_streaming_response_submit(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.jig.queue.with_streaming_response.submit(
-            model="model",
+            model="my-queue-model",
             payload={"foo": "bar"},
         ) as response:
             assert not response.is_closed

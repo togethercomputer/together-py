@@ -61,9 +61,12 @@ from together.lib.cli.utils._help_examples import (
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
+    BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+    BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -380,6 +383,11 @@ fine_tuning_app.command(
     help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
 fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.list_metrics:list_metrics"),
+    help="Retrieve training metrics for a fine-tuning job",
+    help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
+)
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
@@ -485,6 +493,44 @@ storage_app.command(
     help="Get storage volume details",
 )
 storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
+
+### Clusters > Remediations API commands
+remediations_app = clusters_app.command(
+    App(
+        name="remediations",
+        help="Manage node remediations",
+        group="Subcommands",
+        help_epilogue=BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
+    )
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.create:create"),
+    alias="-c",
+    help="Create a node remediation",
+    help_epilogue=BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.list:list"),
+    alias="ls",
+    help="List node remediations",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.retrieve:retrieve"),
+    alias="get",
+    help="Get remediation details",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.approve:approve"),
+    help="Approve a pending remediation",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.cancel:cancel"),
+    help="Cancel a pending remediation",
+)
+remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.reject:reject"),
+    help="Reject a pending remediation",
+)
 
 ### Jig commands
 jig_app = beta_app.command(

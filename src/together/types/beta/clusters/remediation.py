@@ -1,0 +1,97 @@
+# File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+from typing import Optional
+from datetime import datetime
+from typing_extensions import Literal
+
+from ...._models import BaseModel
+
+__all__ = ["Remediation"]
+
+
+class Remediation(BaseModel):
+    """
+    Remediation represents a node remediation request for an instance.
+    An instance can have multiple remediations over time (e.g., failed attempts followed by retries).
+    """
+
+    id: str
+
+    cluster_id: str
+
+    instance_id: str
+
+    mode: Literal[
+        "REMEDIATION_MODE_VM_ONLY",
+        "REMEDIATION_MODE_HOST_AWARE",
+        "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
+        "REMEDIATION_MODE_REBOOT_VM",
+    ]
+    """Remediation mode specifies how the remediation should be performed.
+
+    - `REMEDIATION_MODE_VM_ONLY`: Deletes the VM and provisions a new one on any
+      available host.
+    - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
+      provisions a new one on a different host.
+    """
+
+    state: Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
+    """RemediationState represents the lifecycle state of a remediation.
+
+    - `PENDING_APPROVAL`: Awaiting approval before processing can begin.
+    - `PENDING`: Approved and queued for processing.
+    - `RUNNING`: Actively being processed.
+    - `SUCCEEDED`: Successfully completed.
+    - `FAILED`: Failed with an error.
+    - `CANCELLED`: Cancelled by user or system.
+    - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
+      processing.
+    """
+
+    trigger: Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]
+    """RemediationTrigger specifies how the remediation was triggered.
+
+    - `REMEDIATION_TRIGGER_MANUAL`: A user-initiated remediation (either via web UI
+      or API call).
+    - `REMEDIATION_TRIGGER_AUTOMATED`: A system-initiated remediation that requires
+      approval.
+    """
+
+    active_health_check_run_id: Optional[str] = None
+    """Active health check run ID (UUID) that triggered this remediation."""
+
+    create_time: Optional[datetime] = None
+    """When the remediation was created."""
+
+    end_time: Optional[datetime] = None
+    """When the remediation completed."""
+
+    error_message: Optional[str] = None
+    """Error message if the remediation failed."""
+
+    instance_name: Optional[str] = None
+    """Display name of the targeted instance."""
+
+    passive_health_check_event_id: Optional[str] = None
+    """Passive health check event ID that triggered this remediation."""
+
+    reason: Optional[str] = None
+    """User-provided reason for the remediation."""
+
+    requested_by: Optional[str] = None
+    """Who requested the remediation."""
+
+    review_comment: Optional[str] = None
+    """Review comment."""
+
+    review_time: Optional[datetime] = None
+    """When the remediation was reviewed."""
+
+    reviewed_by: Optional[str] = None
+    """Who reviewed the remediation."""
+
+    start_time: Optional[datetime] = None
+    """When processing started."""
+
+    update_time: Optional[datetime] = None
+    """When the remediation was last updated."""

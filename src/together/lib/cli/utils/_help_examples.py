@@ -100,6 +100,26 @@ FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg ft create --n-checkpoints 3 -M Qwen/Qwen2-1.5B --training-file ./my-dataset.jsonl[/primary]
 """
 
+FINE_TUNING_LIST_METRICS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Retrieve metrics for a fine-tuning job:
+  [primary]tg ft list-metrics <ft-job-id>[/primary]
+
+[dim]-[/dim] Retrieve metrics from a specific global step range:
+  [primary]tg ft list-metrics <ft-job-id> --global-step-from 100 --global-step-to 500[/primary]
+
+[dim]-[/dim] Retrieve metrics logged within a time range:
+  [primary]tg ft list-metrics <ft-job-id> --logged-at-from 2024-01-01T00:00:00 --logged-at-to 2024-01-02T00:00:00[/primary]
+
+[dim]-[/dim] Retrieve a fixed number of data points as JSON:
+  [primary]tg ft list-metrics <ft-job-id> --resolution 50 --json[/primary]
+
+[dim]-[/dim] Save raw metrics to a file:
+  [primary]tg ft list-metrics <ft-job-id> --json > metrics.json[/primary]
+
+[dim]-[/dim] Save ASCII plots to a file:
+  [primary]tg ft list-metrics <ft-job-id> > plots.txt[/primary]
+"""
+
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download a fine-tuned model's weights:
   [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
@@ -226,7 +246,8 @@ EVALS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --model-b deepseek-ai/DeepSeek-V3.1 \\
     --model-b-source serverless \\
     --model-b-system-template "You are a concise assistant." \\
-    --model-b-input-template $'Answer the following:\\n\\n{{prompt}}'[/primary]
+    --model-b-input-template $'Answer the following:\\n\\n{{prompt}}' \\
+    --disable-position-bias-correction[/primary]
 """
 
 ## Beta clusters API commands
@@ -251,6 +272,10 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Update or delete a cluster:
   [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
   [primary]tg beta clusters delete <cluster-id>[/primary]
+
+[dim]-[/dim] Manage node remediations:
+  [primary]tg beta clusters remediations ls <cluster-id>[/primary]
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
 """
 
 BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -327,6 +352,42 @@ BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Grow a volume to 4 TiB:
   [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
+"""
+
+BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List all remediations for a cluster:
+  [primary]tg beta clusters remediations ls <cluster-id>[/primary]
+
+[dim]-[/dim] List remediations for one instance:
+  [primary]tg beta clusters remediations ls <cluster-id> <instance-id>[/primary]
+
+[dim]-[/dim] List automated remediations by mode:
+  [primary]tg beta clusters remediations ls <cluster-id> --mode VM_ONLY --mode REBOOT_VM --trigger AUTOMATED[/primary]
+
+[dim]-[/dim] Create a remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY --reason "node unhealthy"[/primary]
+
+[dim]-[/dim] Get remediation details:
+  [primary]tg beta clusters remediations <remediation-id>[/primary]
+
+[dim]-[/dim] Review automated remediations:
+  [primary]tg beta clusters remediations approve <remediation-id>[/primary]
+  [primary]tg beta clusters remediations reject <remediation-id> --comment "already handled"[/primary]
+  [primary]tg beta clusters remediations cancel <remediation-id>[/primary]
+"""
+
+BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a VM-only remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
+
+[dim]-[/dim] Create a host-aware remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode HOST_AWARE[/primary]
+
+[dim]-[/dim] Create a eviction-without-replacement remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode EVICT_WITHOUT_REPLACEMENT[/primary]
+
+[dim]-[/dim] Create a reboot-vm remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
 ## Beta > Jig commands
@@ -411,6 +472,9 @@ JIG_LOGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Stream logs ([primary]Ctrl+C[/primary] to stop):
   [primary]tg beta jig logs --follow[/primary]
+
+[dim]-[/dim] Filter logs by replica and deployment revision:
+  [primary]tg beta jig logs --replica-id <replica-id> --revision <revision-id> --image-version <tag>[/primary]
 """
 
 JIG_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]

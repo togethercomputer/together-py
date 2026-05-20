@@ -8,6 +8,7 @@ from .deployment_logs import DeploymentLogs as DeploymentLogs
 from .jig_deploy_params import JigDeployParams as JigDeployParams
 from .jig_list_response import JigListResponse as JigListResponse
 from .jig_update_params import JigUpdateParams as JigUpdateParams
+from .cluster_list_params import ClusterListParams as ClusterListParams
 from .cluster_create_params import ClusterCreateParams as ClusterCreateParams
 from .cluster_list_response import ClusterListResponse as ClusterListResponse
 from .cluster_update_params import ClusterUpdateParams as ClusterUpdateParams

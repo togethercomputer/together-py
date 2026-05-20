@@ -53,6 +53,28 @@ _VOLUME_BODY = {
 }
 
 
+def _remediation_body(remediation_id: str = "rem-1", **overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": remediation_id,
+        "cluster_id": "c1",
+        "instance_id": "i1",
+        "mode": "REMEDIATION_MODE_VM_ONLY",
+        "state": "PENDING_APPROVAL",
+        "trigger": "REMEDIATION_TRIGGER_AUTOMATED",
+        "reason": "health check failed",
+    }
+    body.update(overrides)
+    return body
+
+
+def _remediation_list_body(*remediations: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "has_next": False,
+        "next_page_token": "",
+        "remediations": list(remediations),
+    }
+
+
 class TestBetaClustersList:
     @pytest.mark.respx(base_url=base_url)
     def test_list_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -237,4 +259,209 @@ class TestBetaClustersStorage:
         )
         result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--json"])
         assert json.loads(result.output) == {"success": True}
+        assert result.exit_code == 0
+
+
+class TestBetaClustersRemediations:
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_create_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations").mock(
+            return_value=httpx.Response(200, json=_remediation_body("rem-created", state="PENDING"))
+        )
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "remediations",
+                "create",
+                "c1",
+                "i1",
+                "--mode",
+                "VM_ONLY",
+                "--reason",
+                "node unhealthy",
+                "--remediation-id",
+                "rem-created",
+                "--json",
+            ],
+        )
+
+        assert json.loads(result.output)["id"] == "rem-created"
+        request = cast(Call, route.calls[0]).request
+        assert request.url.params["remediation_id"] == "rem-created"
+        assert json.loads(request.content.decode()) == {
+            "mode": "REMEDIATION_MODE_VM_ONLY",
+            "reason": "node unhealthy",
+        }
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_list_uses_wildcard_when_instance_id_omitted(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        payload = _remediation_list_body(_remediation_body())
+        route = respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1", "--json"])
+
+        assert json.loads(result.output) == payload
+        assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/-/remediations"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_list_accepts_instance_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        payload = _remediation_list_body(_remediation_body())
+        route = respx_mock.get("/compute/clusters/c1/instances/i1/remediations").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1", "i1", "--json"])
+
+        assert json.loads(result.output) == payload
+        assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/i1/remediations"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_list_table_uses_instance_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        payload = _remediation_list_body(_remediation_body(instance_name="gpu-node-a"))
+        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1"])
+
+        assert "gpu-node-a (i1)" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_list_table_falls_back_to_instance_id(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        payload = _remediation_list_body(_remediation_body())
+        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1"])
+
+        assert "i1" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_list_accepts_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        payload = _remediation_list_body(_remediation_body())
+        route = respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "remediations",
+                "list",
+                "c1",
+                "--mode",
+                "VM_ONLY",
+                "--mode",
+                "REBOOT_VM",
+                "--state",
+                "PENDING_APPROVAL",
+                "--trigger",
+                "AUTOMATED",
+                "--after",
+                "next-token",
+                "--json",
+            ]
+        )
+
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_REBOOT_VM"
+        assert params["state"] == "PENDING_APPROVAL"
+        assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
+        assert params["page_token"] == "next-token"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_retrieve_resolves_cluster_and_instance(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        body = _remediation_body("rem-get", state="RUNNING")
+        respx_mock.get("/compute/clusters").mock(
+            return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
+        )
+        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-get")))
+        )
+        route = respx_mock.get("/compute/clusters/c1/instances/i1/remediations/rem-get").mock(
+            return_value=httpx.Response(200, json=body)
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "remediations", "get", "rem-get", "--json"])
+
+        assert json.loads(result.output) == body
+        assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/i1/remediations/rem-get"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_approve_resolves_cluster_and_instance(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/compute/clusters").mock(
+            return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
+        )
+        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-approve")))
+        )
+        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations/rem-approve/approve").mock(
+            return_value=httpx.Response(200, json=_remediation_body("rem-approve", state="PENDING"))
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "clusters", "remediations", "approve", "rem-approve", "--comment", "go", "--json"]
+        )
+
+        assert json.loads(result.output)["state"] == "PENDING"
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"comment": "go"}
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_cancel_resolves_cluster_and_instance(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/compute/clusters").mock(
+            return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
+        )
+        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-cancel")))
+        )
+        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations/rem-cancel/cancel").mock(
+            return_value=httpx.Response(200, json=_remediation_body("rem-cancel", state="CANCELLED"))
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "remediations", "cancel", "rem-cancel", "--json"])
+
+        assert json.loads(result.output)["state"] == "CANCELLED"
+        assert route.calls
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remediations_reject_resolves_cluster_and_instance(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/compute/clusters").mock(
+            return_value=httpx.Response(200, json={"clusters": [_cluster_body("c1")]})
+        )
+        respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=_remediation_list_body(_remediation_body("rem-reject")))
+        )
+        route = respx_mock.post("/compute/clusters/c1/instances/i1/remediations/rem-reject/reject").mock(
+            return_value=httpx.Response(200, json=_remediation_body("rem-reject", state="CANCELLED"))
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "clusters", "remediations", "reject", "rem-reject", "--comment", "skip", "--json"]
+        )
+
+        assert json.loads(result.output)["state"] == "CANCELLED"
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"comment": "skip"}
         assert result.exit_code == 0

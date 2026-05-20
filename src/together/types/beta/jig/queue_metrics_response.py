@@ -6,6 +6,8 @@ __all__ = ["QueueMetricsResponse"]
 
 
 class QueueMetricsResponse(BaseModel):
+    """Queue job counts for a model."""
+
     messages_running: int
     """Number of jobs currently being processed"""
 

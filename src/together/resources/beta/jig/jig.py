@@ -128,7 +128,7 @@ class JigResource(SyncAPIResource):
         description: str | Omit = omit,
         environment_variables: Iterable[jig_update_params.EnvironmentVariable] | Omit = omit,
         gpu_count: int | Omit = omit,
-        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "b200-192gb"] | Omit = omit,
+        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "h200-140gb", "b200-192gb"] | Omit = omit,
         health_check_path: str | Omit = omit,
         image: str | Omit = omit,
         max_replicas: int | Omit = omit,
@@ -262,7 +262,7 @@ class JigResource(SyncAPIResource):
     def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "b200-192gb"],
+        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "h200-140gb", "b200-192gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -422,6 +422,8 @@ class JigResource(SyncAPIResource):
         id: str,
         *,
         replica_id: str | Omit = omit,
+        revision: str | Omit = omit,
+        version: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -436,6 +438,11 @@ class JigResource(SyncAPIResource):
           id: Deployment ID or name
 
           replica_id: Replica ID to filter logs
+
+          revision: Deployment revision (UUID) to filter logs
+
+          version: Deployment image version (tag or last 4 characters of image digest) to filter
+              logs
 
           extra_headers: Send extra headers
 
@@ -454,7 +461,14 @@ class JigResource(SyncAPIResource):
                 extra_query=extra_query,
                 extra_body=extra_body,
                 timeout=timeout,
-                query=maybe_transform({"replica_id": replica_id}, jig_retrieve_logs_params.JigRetrieveLogsParams),
+                query=maybe_transform(
+                    {
+                        "replica_id": replica_id,
+                        "revision": revision,
+                        "version": version,
+                    },
+                    jig_retrieve_logs_params.JigRetrieveLogsParams,
+                ),
             ),
             cast_to=DeploymentLogs,
         )
@@ -538,7 +552,7 @@ class AsyncJigResource(AsyncAPIResource):
         description: str | Omit = omit,
         environment_variables: Iterable[jig_update_params.EnvironmentVariable] | Omit = omit,
         gpu_count: int | Omit = omit,
-        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "b200-192gb"] | Omit = omit,
+        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "h200-140gb", "b200-192gb"] | Omit = omit,
         health_check_path: str | Omit = omit,
         image: str | Omit = omit,
         max_replicas: int | Omit = omit,
@@ -672,7 +686,7 @@ class AsyncJigResource(AsyncAPIResource):
     async def deploy(
         self,
         *,
-        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "b200-192gb"],
+        gpu_type: Literal["h100-80gb", "h100-40gb-mig", "h200-140gb", "b200-192gb"],
         image: str,
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
@@ -832,6 +846,8 @@ class AsyncJigResource(AsyncAPIResource):
         id: str,
         *,
         replica_id: str | Omit = omit,
+        revision: str | Omit = omit,
+        version: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -846,6 +862,11 @@ class AsyncJigResource(AsyncAPIResource):
           id: Deployment ID or name
 
           replica_id: Replica ID to filter logs
+
+          revision: Deployment revision (UUID) to filter logs
+
+          version: Deployment image version (tag or last 4 characters of image digest) to filter
+              logs
 
           extra_headers: Send extra headers
 
@@ -865,7 +886,12 @@ class AsyncJigResource(AsyncAPIResource):
                 extra_body=extra_body,
                 timeout=timeout,
                 query=await async_maybe_transform(
-                    {"replica_id": replica_id}, jig_retrieve_logs_params.JigRetrieveLogsParams
+                    {
+                        "replica_id": replica_id,
+                        "revision": revision,
+                        "version": version,
+                    },
+                    jig_retrieve_logs_params.JigRetrieveLogsParams,
                 ),
             ),
             cast_to=DeploymentLogs,

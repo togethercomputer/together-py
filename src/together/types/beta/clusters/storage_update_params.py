@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypedDict
+from typing_extensions import Required, TypedDict
 
 __all__ = ["StorageUpdateParams"]
 
 
 class StorageUpdateParams(TypedDict, total=False):
-    size_tib: int
-    """Size of the volume in whole tebibytes (TiB)."""
+    volume_id: Required[str]
+    """ID of the volume."""
 
-    volume_id: str
-    """ID of the volume to update."""
+    size_tib: int
+    """Size of the volume in TiB."""

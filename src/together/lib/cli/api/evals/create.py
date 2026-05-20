@@ -77,6 +77,13 @@ async def create(
     pass_threshold: Annotated[
         Optional[float], Parameter(help="Threshold for passing (required for score type)")
     ] = None,
+    disable_position_bias_correction: Annotated[
+        bool,
+        Parameter(
+            negative=(),
+            help="For compare evals, run only the original-order judge pass without position-bias correction",
+        ),
+    ] = False,
     model_a_field: Annotated[
         Optional[str],
         Parameter(
@@ -274,6 +281,7 @@ async def create(
             parameters=ParametersEvaluationCompareParameters(
                 input_data_file_path=training_file,
                 judge=judge_config,
+                disable_position_bias_correction=disable_position_bias_correction,
                 model_a=cast(ParametersEvaluationCompareParametersModelAEvaluationModelRequest, model_a_final),
                 model_b=cast(ParametersEvaluationCompareParametersModelBEvaluationModelRequest, model_b_final),
             ),

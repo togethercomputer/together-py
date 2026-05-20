@@ -59,3 +59,41 @@ class TestEvalsRetrieveAndStatus:
         result = cli_runner.invoke(["evals", "status", "eval-wf-1"])
         assert result.exit_code == 0
         assert "Status: completed" in result.output
+
+
+class TestEvalsCreate:
+    @pytest.mark.respx(base_url=base_url)
+    def test_compare_passes_disable_position_bias_correction(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.post("/evaluation").mock(
+            return_value=httpx.Response(200, json={"workflow_id": "eval-wf-1", "status": "pending"})
+        )
+
+        result = cli_runner.invoke(
+            [
+                "evals",
+                "create",
+                "--type",
+                "compare",
+                "--judge-model",
+                "Qwen/Qwen3.5-9B",
+                "--judge-model-source",
+                "serverless",
+                "--judge-system-template",
+                "Choose the better response.",
+                "--input-data-file-path",
+                "file-123",
+                "--model-a-field",
+                "response_a",
+                "--model-b-field",
+                "response_b",
+                "--disable-position-bias-correction",
+            ]
+        )
+
+        assert result.exit_code == 0
+        req = cast(Call, route.calls[0]).request
+        payload = json.loads(req.content)
+        assert payload["type"] == "compare"
+        assert payload["parameters"]["disable_position_bias_correction"] is True
