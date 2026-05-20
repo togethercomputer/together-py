@@ -1403,13 +1403,16 @@ async def jig_volumes_list(
 
 async def jig_volumes_describe(
     name: Annotated[str, Parameter(name="--name", help="Volume name")],
-    version: Annotated[Optional[int], Parameter(name="--version", help="Volume version to describe")] = None,
+    volume_version: Annotated[
+        Optional[int],
+        Parameter(name="--volume-version", help="Volume version to describe"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
     """Describe a volume."""
     try:
-        vol = await config.client.beta.jig.volumes.retrieve(name, version=_optional_int(version))
+        vol = await config.client.beta.jig.volumes.retrieve(name, version=_optional_int(volume_version))
     except NotFoundError:
         _jig_fail(f"Volume {name} not found")
     else:
@@ -1504,16 +1507,16 @@ def logs_cli(
         Optional[str],
         Parameter(name="--revision", help="Deployment revision UUID to filter logs"),
     ] = None,
-    version: Annotated[
+    log_version: Annotated[
         Optional[str],
-        Parameter(name="--version", help="Deployment image version/tag or digest suffix to filter logs"),
+        Parameter(name="--log-version", help="Deployment image version/tag or digest suffix to filter logs"),
     ] = None,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment logs."""
-    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, version))
+    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, log_version))
 
 
 def destroy_cli(

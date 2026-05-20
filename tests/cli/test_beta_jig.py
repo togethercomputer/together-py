@@ -260,7 +260,7 @@ class TestBetaJigLogs:
                     "replica-1",
                     "--revision",
                     "revision-1",
-                    "--version",
+                    "--log-version",
                     "v2",
                 ]
             )
@@ -318,7 +318,7 @@ class TestBetaJigVolumes:
         )
 
         with _chdir(tmp_path):
-            result = cli_runner.invoke(["beta", "jig", "volumes", "describe", "--name", "v1", "--version", "1"])
+            result = cli_runner.invoke(["beta", "jig", "volumes", "describe", "--name", "v1", "--volume-version", "1"])
 
         assert "Version" in result.output
         request = cast(Call, route.calls[0]).request
