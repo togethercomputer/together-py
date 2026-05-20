@@ -8,8 +8,8 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.api.beta.clusters._json_params import parse_json_array, parse_json_object
 from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
+from together.lib.cli.api.beta.clusters._json_params import parse_json_array, parse_json_object
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]

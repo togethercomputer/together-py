@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
 
 def parse_json_object(value: str, parameter_name: str) -> dict[str, Any]:
