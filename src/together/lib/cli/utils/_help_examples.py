@@ -468,6 +468,9 @@ JIG_LOGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Stream logs ([primary]Ctrl+C[/primary] to stop):
   [primary]tg beta jig logs --follow[/primary]
+
+[dim]-[/dim] Filter logs by replica and deployment revision:
+  [primary]tg beta jig logs --replica-id <replica-id> --revision <revision-id> --image-version <tag>[/primary]
 """
 
 JIG_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]
