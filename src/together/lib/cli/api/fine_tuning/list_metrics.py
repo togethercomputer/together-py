@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import sys
-from typing import Literal, Optional, Annotated
+from typing import Optional, Annotated
 from datetime import datetime
 
 from cyclopts import Parameter

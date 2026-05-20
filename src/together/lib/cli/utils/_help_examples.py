@@ -360,6 +360,9 @@ BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List remediations for one instance:
   [primary]tg beta clusters remediations ls <cluster-id> <instance-id>[/primary]
 
+[dim]-[/dim] List automated remediations by mode:
+  [primary]tg beta clusters remediations ls <cluster-id> --mode VM_ONLY --mode REBOOT_VM --trigger AUTOMATED[/primary]
+
 [dim]-[/dim] Create a remediation:
   [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY --reason "node unhealthy"[/primary]
 
@@ -468,6 +471,9 @@ JIG_LOGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Stream logs ([primary]Ctrl+C[/primary] to stop):
   [primary]tg beta jig logs --follow[/primary]
+
+[dim]-[/dim] Filter logs by replica and deployment revision:
+  [primary]tg beta jig logs --replica-id <replica-id> --revision <revision-id> --image-version <tag>[/primary]
 """
 
 JIG_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]

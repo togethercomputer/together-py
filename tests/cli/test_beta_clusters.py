@@ -350,6 +350,40 @@ class TestBetaClustersRemediations:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
+    def test_remediations_list_accepts_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        payload = _remediation_list_body(_remediation_body())
+        route = respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "remediations",
+                "list",
+                "c1",
+                "--mode",
+                "VM_ONLY",
+                "--mode",
+                "REBOOT_VM",
+                "--state",
+                "PENDING_APPROVAL",
+                "--trigger",
+                "AUTOMATED",
+                "--after",
+                "next-token",
+                "--json",
+            ]
+        )
+
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_REBOOT_VM"
+        assert params["state"] == "PENDING_APPROVAL"
+        assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
+        assert params["page_token"] == "next-token"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
     def test_remediations_retrieve_resolves_cluster_and_instance(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
