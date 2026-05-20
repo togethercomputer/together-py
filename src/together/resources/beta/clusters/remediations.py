@@ -179,11 +179,13 @@ class RemediationsResource(SyncAPIResource):
         instance_id: str,
         *,
         cluster_id: str,
-        mode: Literal[
-            "REMEDIATION_MODE_VM_ONLY",
-            "REMEDIATION_MODE_HOST_AWARE",
-            "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
-            "REMEDIATION_MODE_REBOOT_VM",
+        mode: List[
+            Literal[
+                "REMEDIATION_MODE_VM_ONLY",
+                "REMEDIATION_MODE_HOST_AWARE",
+                "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
+                "REMEDIATION_MODE_REBOOT_VM",
+            ]
         ]
         | Omit = omit,
         order_by: str | Omit = omit,
@@ -193,6 +195,7 @@ class RemediationsResource(SyncAPIResource):
             Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
         ]
         | Omit = omit,
+        trigger: List[Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -208,8 +211,8 @@ class RemediationsResource(SyncAPIResource):
               remediations for all nodes in a cluster, pass `-` as a wildcard for the instance
               ID.
 
-          mode: Filter by remediation mode. Returns only remediations matching the specified
-              mode.
+          mode: Filter by remediation mode(s). Returns remediations matching any of the
+              specified modes.
 
           order_by: Order by expression.
 
@@ -227,6 +230,9 @@ class RemediationsResource(SyncAPIResource):
               - `CANCELLED`: Cancelled by user or system.
               - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
                 processing.
+
+          trigger: Filter by trigger type(s). Returns remediations matching any of the specified
+              triggers.
 
           extra_headers: Send extra headers
 
@@ -258,6 +264,7 @@ class RemediationsResource(SyncAPIResource):
                         "page_size": page_size,
                         "page_token": page_token,
                         "state": state,
+                        "trigger": trigger,
                     },
                     remediation_list_params.RemediationListParams,
                 ),
@@ -574,11 +581,13 @@ class AsyncRemediationsResource(AsyncAPIResource):
         instance_id: str,
         *,
         cluster_id: str,
-        mode: Literal[
-            "REMEDIATION_MODE_VM_ONLY",
-            "REMEDIATION_MODE_HOST_AWARE",
-            "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
-            "REMEDIATION_MODE_REBOOT_VM",
+        mode: List[
+            Literal[
+                "REMEDIATION_MODE_VM_ONLY",
+                "REMEDIATION_MODE_HOST_AWARE",
+                "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
+                "REMEDIATION_MODE_REBOOT_VM",
+            ]
         ]
         | Omit = omit,
         order_by: str | Omit = omit,
@@ -588,6 +597,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
         ]
         | Omit = omit,
+        trigger: List[Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -603,8 +613,8 @@ class AsyncRemediationsResource(AsyncAPIResource):
               remediations for all nodes in a cluster, pass `-` as a wildcard for the instance
               ID.
 
-          mode: Filter by remediation mode. Returns only remediations matching the specified
-              mode.
+          mode: Filter by remediation mode(s). Returns remediations matching any of the
+              specified modes.
 
           order_by: Order by expression.
 
@@ -622,6 +632,9 @@ class AsyncRemediationsResource(AsyncAPIResource):
               - `CANCELLED`: Cancelled by user or system.
               - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
                 processing.
+
+          trigger: Filter by trigger type(s). Returns remediations matching any of the specified
+              triggers.
 
           extra_headers: Send extra headers
 
@@ -653,6 +666,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
                         "page_size": page_size,
                         "page_token": page_token,
                         "state": state,
+                        "trigger": trigger,
                     },
                     remediation_list_params.RemediationListParams,
                 ),
