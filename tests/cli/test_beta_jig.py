@@ -220,7 +220,7 @@ class TestBetaJigSecretsUnset:
 
 
 class TestBetaJigBuild:
-    def test_build_blocked_when_deploy_image_set(self, tmp_path: Path) -> None:
+    def test_build_blocked_when_deploy_image_set(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
             cfg = _jig_mod.Config(
                 model_name=_DEPLOY_NAME,
@@ -234,11 +234,44 @@ class TestBetaJigBuild:
                 return cfg
 
             with patch.object(_jig_mod.Config, "find", classmethod(_find)):
-                runner = CliRunner(env=_ENV)
                 with _chdir(tmp_path):
-                    result = runner.invoke(main, ["beta", "jig", "build"])
+                    result = cli_runner.invoke(["beta", "jig", "build"])
         assert result.exit_code == 1
         assert "deploy.image is set" in result.output
+
+
+class TestBetaJigLogs:
+    @pytest.mark.respx(base_url=base_url)
+    def test_logs_forwards_sdk_filters(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.get(f"/deployments/{_DEPLOY_NAME}/logs").mock(
+            return_value=httpx.Response(200, json={"lines": ["line 1", "line 2"]})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(
+                [
+                    "beta",
+                    "jig",
+                    "logs",
+                    "--replica-id",
+                    "replica-1",
+                    "--revision",
+                    "revision-1",
+                    "--version",
+                    "v2",
+                ]
+            )
+
+        assert "line 1" in result.output
+        assert "line 2" in result.output
+        request = cast(Call, route.calls[0]).request
+        assert request.url.params["replica_id"] == "replica-1"
+        assert request.url.params["revision"] == "revision-1"
+        assert request.url.params["version"] == "v2"
+        assert result.exit_code == 0
 
 
 class TestBetaJigVolumes:
@@ -273,6 +306,23 @@ class TestBetaJigVolumes:
         with _chdir(tmp_path):
             result = cli_runner.invoke(["beta", "jig", "volumes", "describe", "--name", "v1", "--json"])
         assert json.loads(result.output) == payload
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_describe_forwards_version(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.get("/deployments/storage/volumes/v1").mock(
+            return_value=httpx.Response(200, json=_volume_api_body("v1", current_version=1))
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "volumes", "describe", "--name", "v1", "--version", "1"])
+
+        assert "Version" in result.output
+        request = cast(Call, route.calls[0]).request
+        assert request.url.params["version"] == "1"
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
