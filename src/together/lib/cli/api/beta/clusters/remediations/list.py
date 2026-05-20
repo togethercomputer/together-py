@@ -44,7 +44,7 @@ async def list(
     for remediation in response.remediations:
         table.add_row(
             format_datetime(remediation.create_time) if remediation.create_time else "-",
-            remediation.instance_id,
+            _format_instance(remediation.instance_id, remediation.instance_name),
             remediation.mode.replace("REMEDIATION_MODE_", ""),
             _colorize(remediation.state),
             remediation.id,
@@ -71,3 +71,9 @@ def _colorize(state: str) -> str:
     }
     color = state_colors[state] if state in state_colors else "white"
     return f"[{color}]{state}[/{color}]"
+
+
+def _format_instance(instance_id: str, instance_name: str | None) -> str:
+    if not instance_name:
+        return instance_id
+    return f"{instance_name} ({instance_id})"
