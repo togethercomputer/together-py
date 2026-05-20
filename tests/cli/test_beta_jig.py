@@ -258,7 +258,7 @@ class TestBetaJigLogs:
                     "replica-1",
                     "--revision",
                     "revision-1",
-                    "--log-version",
+                    "--image-version",
                     "v2",
                 ]
             )
