@@ -52,7 +52,7 @@ class JigUpdateParams(TypedDict, total=False):
     gpu_count: int
     """GPUCount is the number of GPUs to allocate per container instance"""
 
-    gpu_type: Literal["h100-80gb", "h100-40gb-mig", "b200-192gb"]
+    gpu_type: Literal["h100-80gb", "h100-40gb-mig", "h200-140gb", "b200-192gb"]
     """GPUType specifies the GPU hardware to use (e.g., "h100-80gb")"""
 
     health_check_path: str

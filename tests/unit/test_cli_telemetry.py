@@ -249,6 +249,16 @@ def test_parse_command_and_flags_normalizes_ls_alias_to_list() -> None:
     assert is_beta is False
 
 
+def test_parse_command_and_flags_normalizes_get_alias_to_retrieve() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["files", "get", "file-meta"])
+    assert cmd == "files retrieve"
+    assert "id" in flags
+    assert is_beta is False
+
+
 def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens

@@ -17,7 +17,7 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.jig import volume_create_params, volume_update_params
+from ....types.beta.jig import volume_create_params, volume_update_params, volume_retrieve_params
 from ....types.beta.jig.volume import Volume
 from ....types.beta.jig.volume_list_response import VolumeListResponse
 
@@ -95,6 +95,7 @@ class VolumesResource(SyncAPIResource):
         self,
         id: str,
         *,
+        version: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -107,6 +108,8 @@ class VolumesResource(SyncAPIResource):
 
         Args:
           id: Volume ID or name
+
+          version: Volume version to describe (defaults to current version)
 
           extra_headers: Send extra headers
 
@@ -121,7 +124,11 @@ class VolumesResource(SyncAPIResource):
         return self._get(
             path_template("/deployments/storage/volumes/{id}", id=id),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"version": version}, volume_retrieve_params.VolumeRetrieveParams),
             ),
             cast_to=Volume,
         )
@@ -304,6 +311,7 @@ class AsyncVolumesResource(AsyncAPIResource):
         self,
         id: str,
         *,
+        version: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -316,6 +324,8 @@ class AsyncVolumesResource(AsyncAPIResource):
 
         Args:
           id: Volume ID or name
+
+          version: Volume version to describe (defaults to current version)
 
           extra_headers: Send extra headers
 
@@ -330,7 +340,11 @@ class AsyncVolumesResource(AsyncAPIResource):
         return await self._get(
             path_template("/deployments/storage/volumes/{id}", id=id),
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform({"version": version}, volume_retrieve_params.VolumeRetrieveParams),
             ),
             cast_to=Volume,
         )

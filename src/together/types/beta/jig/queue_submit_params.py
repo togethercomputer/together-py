@@ -19,9 +19,10 @@ class QueueSubmitParams(TypedDict, total=False):
     """
 
     info: Dict[str, object]
-    """Arbitrary JSON metadata stored with the job and returned in status responses.
+    """Arbitrary JSON metadata stored with the job.
 
-    The model and system may add or update keys during processing.
+    Returned in status responses, where the model and system may have added or
+    modified keys (e.g. progress).
     """
 
     priority: int

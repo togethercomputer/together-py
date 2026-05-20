@@ -9,13 +9,15 @@ __all__ = ["ClusterStorage"]
 
 class ClusterStorage(BaseModel):
     size_tib: int
-    """Size of the volume in whole tebibytes (TiB)."""
+    """Size of the volume in TiB."""
 
-    status: Literal["available", "bound", "provisioning"]
-    """Deployment status of the volume."""
+    status: Literal[
+        "scheduled", "available", "bound", "provisioning", "deleting", "failed", "access_revoked", "unknown"
+    ]
+    """Current status of the shared volume."""
 
     volume_id: str
     """ID of the volume."""
 
     volume_name: str
-    """Provided name of the volume."""
+    """User provided name of the volume."""

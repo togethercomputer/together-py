@@ -15,7 +15,7 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.clusters import storage_create_params, storage_update_params
+from ....types.beta.clusters import storage_list_params, storage_create_params, storage_update_params
 from ....types.beta.clusters.cluster_storage import ClusterStorage
 from ....types.beta.clusters.storage_list_response import StorageListResponse
 from ....types.beta.clusters.storage_delete_response import StorageDeleteResponse
@@ -49,6 +49,7 @@ class StorageResource(SyncAPIResource):
         region: str,
         size_tib: int,
         volume_name: str,
+        is_lifecycle_independent: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -64,11 +65,13 @@ class StorageResource(SyncAPIResource):
         performance for shared storage.
 
         Args:
-          region: Region name. Usable regions can be found from `client.clusters.list_regions()`
+          region: Region name. Usable regions can be found from `clusters.list_regions()`
 
           size_tib: Volume size in whole tebibytes (TiB).
 
-          volume_name: Customizable name of the volume to create.
+          volume_name: User provided name of the volume.
+
+          is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
           extra_headers: Send extra headers
 
@@ -85,6 +88,7 @@ class StorageResource(SyncAPIResource):
                     "region": region,
                     "size_tib": size_tib,
                     "volume_name": volume_name,
+                    "is_lifecycle_independent": is_lifecycle_independent,
                 },
                 storage_create_params.StorageCreateParams,
             ),
@@ -132,8 +136,8 @@ class StorageResource(SyncAPIResource):
     def update(
         self,
         *,
+        volume_id: str,
         size_tib: int | Omit = omit,
-        volume_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -145,9 +149,9 @@ class StorageResource(SyncAPIResource):
         Update the configuration of an existing shared volume.
 
         Args:
-          size_tib: Size of the volume in whole tebibytes (TiB).
+          volume_id: ID of the volume.
 
-          volume_id: ID of the volume to update.
+          size_tib: Size of the volume in TiB.
 
           extra_headers: Send extra headers
 
@@ -161,8 +165,8 @@ class StorageResource(SyncAPIResource):
             "/compute/clusters/storage/volumes",
             body=maybe_transform(
                 {
-                    "size_tib": size_tib,
                     "volume_id": volume_id,
+                    "size_tib": size_tib,
                 },
                 storage_update_params.StorageUpdateParams,
             ),
@@ -175,6 +179,7 @@ class StorageResource(SyncAPIResource):
     def list(
         self,
         *,
+        project_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -182,11 +187,30 @@ class StorageResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> StorageListResponse:
-        """List all shared volumes."""
+        """
+        List all shared volumes.
+
+        Args:
+          project_id: Optional UMS project ID to filter volumes by. When set, only volumes belonging
+              to this project are returned. The caller must be a member of the project;
+              otherwise the result set will be empty.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
         return self._get(
             "/compute/clusters/storage/volumes",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform({"project_id": project_id}, storage_list_params.StorageListParams),
             ),
             cast_to=StorageListResponse,
         )
@@ -255,6 +279,7 @@ class AsyncStorageResource(AsyncAPIResource):
         region: str,
         size_tib: int,
         volume_name: str,
+        is_lifecycle_independent: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -270,11 +295,13 @@ class AsyncStorageResource(AsyncAPIResource):
         performance for shared storage.
 
         Args:
-          region: Region name. Usable regions can be found from `client.clusters.list_regions()`
+          region: Region name. Usable regions can be found from `clusters.list_regions()`
 
           size_tib: Volume size in whole tebibytes (TiB).
 
-          volume_name: Customizable name of the volume to create.
+          volume_name: User provided name of the volume.
+
+          is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
           extra_headers: Send extra headers
 
@@ -291,6 +318,7 @@ class AsyncStorageResource(AsyncAPIResource):
                     "region": region,
                     "size_tib": size_tib,
                     "volume_name": volume_name,
+                    "is_lifecycle_independent": is_lifecycle_independent,
                 },
                 storage_create_params.StorageCreateParams,
             ),
@@ -338,8 +366,8 @@ class AsyncStorageResource(AsyncAPIResource):
     async def update(
         self,
         *,
+        volume_id: str,
         size_tib: int | Omit = omit,
-        volume_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -351,9 +379,9 @@ class AsyncStorageResource(AsyncAPIResource):
         Update the configuration of an existing shared volume.
 
         Args:
-          size_tib: Size of the volume in whole tebibytes (TiB).
+          volume_id: ID of the volume.
 
-          volume_id: ID of the volume to update.
+          size_tib: Size of the volume in TiB.
 
           extra_headers: Send extra headers
 
@@ -367,8 +395,8 @@ class AsyncStorageResource(AsyncAPIResource):
             "/compute/clusters/storage/volumes",
             body=await async_maybe_transform(
                 {
-                    "size_tib": size_tib,
                     "volume_id": volume_id,
+                    "size_tib": size_tib,
                 },
                 storage_update_params.StorageUpdateParams,
             ),
@@ -381,6 +409,7 @@ class AsyncStorageResource(AsyncAPIResource):
     async def list(
         self,
         *,
+        project_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -388,11 +417,30 @@ class AsyncStorageResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> StorageListResponse:
-        """List all shared volumes."""
+        """
+        List all shared volumes.
+
+        Args:
+          project_id: Optional UMS project ID to filter volumes by. When set, only volumes belonging
+              to this project are returned. The caller must be a member of the project;
+              otherwise the result set will be empty.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
         return await self._get(
             "/compute/clusters/storage/volumes",
             options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform({"project_id": project_id}, storage_list_params.StorageListParams),
             ),
             cast_to=StorageListResponse,
         )

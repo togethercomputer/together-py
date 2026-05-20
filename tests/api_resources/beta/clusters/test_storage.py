@@ -31,6 +31,16 @@ class TestStorage:
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
+    def test_method_create_with_all_params(self, client: Together) -> None:
+        storage = client.beta.clusters.storage.create(
+            region="region",
+            size_tib=0,
+            volume_name="volume_name",
+            is_lifecycle_independent=True,
+        )
+        assert_matches_type(ClusterStorage, storage, path=["response"])
+
+    @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.beta.clusters.storage.with_raw_response.create(
             region="region",
@@ -98,20 +108,24 @@ class TestStorage:
 
     @parametrize
     def test_method_update(self, client: Together) -> None:
-        storage = client.beta.clusters.storage.update()
-        assert_matches_type(ClusterStorage, storage, path=["response"])
-
-    @parametrize
-    def test_method_update_with_all_params(self, client: Together) -> None:
         storage = client.beta.clusters.storage.update(
-            size_tib=0,
             volume_id="volume_id",
         )
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
+    def test_method_update_with_all_params(self, client: Together) -> None:
+        storage = client.beta.clusters.storage.update(
+            volume_id="volume_id",
+            size_tib=0,
+        )
+        assert_matches_type(ClusterStorage, storage, path=["response"])
+
+    @parametrize
     def test_raw_response_update(self, client: Together) -> None:
-        response = client.beta.clusters.storage.with_raw_response.update()
+        response = client.beta.clusters.storage.with_raw_response.update(
+            volume_id="volume_id",
+        )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -120,7 +134,9 @@ class TestStorage:
 
     @parametrize
     def test_streaming_response_update(self, client: Together) -> None:
-        with client.beta.clusters.storage.with_streaming_response.update() as response:
+        with client.beta.clusters.storage.with_streaming_response.update(
+            volume_id="volume_id",
+        ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
@@ -132,6 +148,13 @@ class TestStorage:
     @parametrize
     def test_method_list(self, client: Together) -> None:
         storage = client.beta.clusters.storage.list()
+        assert_matches_type(StorageListResponse, storage, path=["response"])
+
+    @parametrize
+    def test_method_list_with_all_params(self, client: Together) -> None:
+        storage = client.beta.clusters.storage.list(
+            project_id="project_id",
+        )
         assert_matches_type(StorageListResponse, storage, path=["response"])
 
     @parametrize
@@ -208,6 +231,16 @@ class TestAsyncStorage:
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
+    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
+        storage = await async_client.beta.clusters.storage.create(
+            region="region",
+            size_tib=0,
+            volume_name="volume_name",
+            is_lifecycle_independent=True,
+        )
+        assert_matches_type(ClusterStorage, storage, path=["response"])
+
+    @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.clusters.storage.with_raw_response.create(
             region="region",
@@ -275,20 +308,24 @@ class TestAsyncStorage:
 
     @parametrize
     async def test_method_update(self, async_client: AsyncTogether) -> None:
-        storage = await async_client.beta.clusters.storage.update()
-        assert_matches_type(ClusterStorage, storage, path=["response"])
-
-    @parametrize
-    async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
         storage = await async_client.beta.clusters.storage.update(
-            size_tib=0,
             volume_id="volume_id",
         )
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
     @parametrize
+    async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
+        storage = await async_client.beta.clusters.storage.update(
+            volume_id="volume_id",
+            size_tib=0,
+        )
+        assert_matches_type(ClusterStorage, storage, path=["response"])
+
+    @parametrize
     async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.clusters.storage.with_raw_response.update()
+        response = await async_client.beta.clusters.storage.with_raw_response.update(
+            volume_id="volume_id",
+        )
 
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -297,7 +334,9 @@ class TestAsyncStorage:
 
     @parametrize
     async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.clusters.storage.with_streaming_response.update() as response:
+        async with async_client.beta.clusters.storage.with_streaming_response.update(
+            volume_id="volume_id",
+        ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
@@ -309,6 +348,13 @@ class TestAsyncStorage:
     @parametrize
     async def test_method_list(self, async_client: AsyncTogether) -> None:
         storage = await async_client.beta.clusters.storage.list()
+        assert_matches_type(StorageListResponse, storage, path=["response"])
+
+    @parametrize
+    async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
+        storage = await async_client.beta.clusters.storage.list(
+            project_id="project_id",
+        )
         assert_matches_type(StorageListResponse, storage, path=["response"])
 
     @parametrize

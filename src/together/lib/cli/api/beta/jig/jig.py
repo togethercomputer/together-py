@@ -51,6 +51,7 @@ DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
 WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
+BUILDX_OUTPUT_OPTS = "compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true"
 
 _TRACK_POLL_INTERVAL = 3
 _TRACK_TIMEOUT = 600
@@ -363,8 +364,9 @@ def _generate_dockerfile(config: JigConfig) -> str:
     pip = ""
     if Path("pyproject.toml").exists():
         pip = """COPY pyproject.toml .
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 RUN --mount=type=cache,target=/root/.cache/uv \\
-    uv pip install --system --compile-bytecode . && \\
+    uv sync --inexact --no-dev --no-install-project --compile-bytecode && \\
     (python -c "import sprocket" 2>/dev/null || (echo "sprocket not found in pyproject.toml, installing from pypi.together.ai..." && uv pip install --system --extra-index-url https://pypi.together.ai/ sprocket))
 """
 
@@ -477,7 +479,8 @@ def _build_warm_image(base_image: str) -> None:
     # generate cache dockerfile - copy cache to same location used during warmup
     final_dockerfile = f"""FROM {base_image}
 COPY {cache_dir.name} /app/{WARMUP_DEST}
-ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}"""
+ENV {WARMUP_ENV_NAME}=/app/{WARMUP_DEST}
+LABEL jig.warmed=true"""
 
     console.print("\N{FIRE} Building final image with cache...")
     final_cmd = ["docker", "build", "--platform", "linux/amd64", "-t", base_image, "-f", "-", "."]
@@ -537,20 +540,31 @@ class Jig:
     def image(self, tag: str) -> str:
         return f"{self.registry()}{self.name}:{tag}"
 
+    def _metadata_path(self, tag: str) -> Path:
+        """Path for buildx --metadata-file output, used to recover the pushed digest cross-process."""
+        return self.config._path.parent / f".jig-{self.name}-{tag}.metadata.json"
+
     def image_with_digest(self, tag: str = "latest") -> str:
         image = self.image(tag)
-        if tag != "latest":
-            return image
         try:
-            cmd = ["docker", "inspect", "--format={{json .RepoDigests}}", image]
-            if (repo_digests := _run(cmd).stdout.strip()) and repo_digests != "null":
-                for digest in json.loads(repo_digests):
-                    if digest.startswith(self.registry()):
-                        return str(digest)
-        except subprocess.CalledProcessError as e:
-            msg = e.stderr.strip() if e.stderr else "Docker command failed"
-            raise JigError(f"Failed to get digest for {image}: {msg}") from e
-        raise JigError(f"No registry digest found for {image}. Make sure the image was pushed to registry first")
+            digest = json.loads(self._metadata_path(tag).read_text()).get("containerimage.digest")
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            digest = None
+        if digest:
+            return f"{image}@{digest}"
+        r = subprocess.run(
+            ["docker", "inspect", "--format={{json .RepoDigests}}", image],
+            capture_output=True,
+            text=True,
+        )
+        if r.returncode == 0 and (repo_digests := r.stdout.strip()) and repo_digests != "null":
+            try:
+                for d in json.loads(repo_digests):
+                    if d.startswith(self.registry()):
+                        return str(d)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        raise JigError(f"Could not find digest for {image}. Build and push the image first.")
 
     def sync_secrets_from_deployment(self) -> None:
         """Sync remote secrets into local state if secrets have never been tracked.
@@ -602,6 +616,11 @@ class Jig:
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
+        if self.config.deploy.image:
+            raise JigError(
+                f"Invalid command: deploy.image is set to '{self.config.deploy.image}'. "
+                "Use 'jig deploy' to deploy the configured image, or remove deploy.image to build from source."
+            )
         image = self.image(tag)
 
         if not _dockerfile(self.config):
@@ -610,13 +629,31 @@ class Jig:
             )
 
         console.print(f"Building {image}")
-        cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image, "."]
+        if warmup or os.getenv("JIG_DISABLE_BUILDX"):
+            cmd = ["docker", "build", "--platform", "linux/amd64", "-t", image]
+        else:
+            builder = _ensure_zstd_builder()
+            if not builder:
+                raise JigError("`docker buildx` is required to build images.")
+            cmd = [
+                "docker",
+                "buildx",
+                "build",
+                "--builder",
+                builder,
+                "--platform",
+                "linux/amd64",
+                "--load",
+                "-t",
+                image,
+            ]
         if self.config.image.dockerfile_path != "Dockerfile":
             cmd.extend(["-f", self.config.image.dockerfile_path])
 
         extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
         if extra_args:
             cmd.extend(shlex.split(extra_args))
+        cmd.append(".")
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build failed")
 
@@ -633,9 +670,87 @@ class Jig:
             raise JigError("Registry login failed")
 
         console.print(f"Pushing {image}")
-        if subprocess.run(["docker", "push", image]).returncode != 0:
+        self._metadata_path(tag).unlink(missing_ok=True)
+        # Skip buildx for warmup-baked images: a buildx rebuild would drop the warmup layer.
+        if _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
+            ok = subprocess.run(["docker", "push", image]).returncode == 0
+        else:
+            builder = _ensure_zstd_builder()
+            if not builder:
+                raise JigError("`docker buildx` is required to build images.")
+            cmd = [
+                "docker",
+                "buildx",
+                "build",
+                "--builder",
+                builder,
+                "--platform",
+                "linux/amd64",
+                "--push",
+                "--output",
+                f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
+                "--metadata-file",
+                str(self._metadata_path(tag)),
+            ]
+            if self.config.image.dockerfile_path != "Dockerfile":
+                cmd.extend(["-f", self.config.image.dockerfile_path])
+            cmd.append(".")
+            ok = subprocess.run(cmd).returncode == 0
+        if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
+
+    def build_and_push(self, tag: str = "latest", docker_args: str | None = None) -> None:
+        """One-shot build + push via a single buildx invocation (no --load).
+
+        Used by deploy when warmup isn't requested: layers go from the buildkit cache
+        straight to the registry as zstd, skipping the daemon-side export entirely.
+        Falls back to separate build + push when JIG_DISABLE_BUILDX is set.
+        """
+        image = self.image(tag)
+        if os.getenv("JIG_DISABLE_BUILDX"):
+            self.build(tag, False, docker_args)
+            self.push(tag)
+            return
+        builder = _ensure_zstd_builder()
+        if not builder:
+            raise JigError("`docker buildx` is required to build images.")
+
+        host = self.registry().split("/")[0]
+        login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
+        if subprocess.run(login_cmd, input=self.together.api_key, text=True).returncode != 0:
+            raise JigError("Registry login failed")
+
+        if not _dockerfile(self.config):
+            console.print(
+                f"\N{INFORMATION SOURCE} Using existing {self.config.image.dockerfile_path} (not managed by jig)"
+            )
+
+        console.print(f"Building and pushing {image}")
+        self._metadata_path(tag).unlink(missing_ok=True)
+        cmd = [
+            "docker",
+            "buildx",
+            "build",
+            "--builder",
+            builder,
+            "--platform",
+            "linux/amd64",
+            "--push",
+            "--output",
+            f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
+            "--metadata-file",
+            str(self._metadata_path(tag)),
+        ]
+        if self.config.image.dockerfile_path != "Dockerfile":
+            cmd.extend(["-f", self.config.image.dockerfile_path])
+        extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
+        if extra_args:
+            cmd.extend(shlex.split(extra_args))
+        cmd.append(".")
+        if subprocess.run(cmd).returncode != 0:
+            raise JigError("Build+push failed")
+        console.print("\N{CHECK MARK} Built and pushed")
 
     def deploy(
         self,
@@ -651,8 +766,12 @@ class Jig:
         elif deployment_image := self.config.deploy.image:
             console.print(f"Deploying configured image {deployment_image}")
         else:
-            self.build(tag, warmup, docker_args)
-            self.push(tag)
+            if warmup:
+                # warmup needs the image locally, so we can't use buildx — fall back to the plain docker build + push path.
+                self.build(tag, True, docker_args)
+                self.push(tag)
+            else:
+                self.build_and_push(tag, docker_args)
             deployment_image = self.image_with_digest(tag)
 
         if build_only:
@@ -1482,3 +1601,38 @@ def jig_volumes_delete_cli(
 ) -> None:
     """Delete a volume."""
     _run_jig_cmd(config, toml_config, lambda jig: volumes_delete(jig, name))
+
+
+# == Helpers ==
+
+
+def _image_is_warmed(image: str) -> bool:
+    """True if the local daemon image carries the jig.warmed label set by _build_warm_image."""
+    r = subprocess.run(
+        ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "jig.warmed"}}'],
+        capture_output=True,
+        text=True,
+    )
+    return r.returncode == 0 and r.stdout.strip() == "true"
+
+
+def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
+    """Return the name of a docker-container buildx builder, creating one if needed.
+
+    The default 'docker' buildx driver pushes through the docker daemon, which on
+    legacy (non-containerd) image stores silently downgrades zstd to gzip. A
+    docker-container builder has its own buildkit instance and honors zstd.
+    Returns None if buildx is unavailable or the builder cannot be created.
+    """
+    if os.getenv("JIG_DISABLE_BUILDX"):
+        return None
+    if subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode != 0:
+        return None
+    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
+    if name in (ls.stdout or ""):
+        return name
+    create = subprocess.run(
+        ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"],
+        capture_output=True,
+    )
+    return name if create.returncode == 0 else None

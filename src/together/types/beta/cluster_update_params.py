@@ -2,27 +2,139 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Iterable
 from datetime import datetime
-from typing_extensions import Literal, Annotated, TypedDict
+from typing_extensions import Literal, Required, Annotated, TypedDict
 
 from ..._utils import PropertyInfo
 
-__all__ = ["ClusterUpdateParams"]
+__all__ = [
+    "ClusterUpdateParams",
+    "AddOn",
+    "AddOnConfig",
+    "AddOnConfigDashboard",
+    "AddOnConfigIngress",
+    "ClusterConfig",
+    "ClusterConfigIngress",
+    "ClusterConfigObservability",
+    "ClusterConfigSlurmStartupScripts",
+]
 
 
 class ClusterUpdateParams(TypedDict, total=False):
+    add_ons: Iterable[AddOn]
+    """Add-ons to update on the cluster.
+
+    Each entry identifies an existing add-on by name and provides the new external
+    config to merge.
+    """
+
+    cluster_config: ClusterConfig
+
     cluster_type: Literal["KUBERNETES", "SLURM"]
     """Type of cluster to update."""
 
     num_gpus: int
-    """Number of GPUs to allocate in the cluster.
+    """Target GPU count for the cluster.
 
-    This must be multiple of 8. For example, 8, 16 or 24
+    When omitted, the server keeps the current GPU count from cluster metadata (use
+    for config-only or decommission-time-only updates).
+    """
+
+    num_preemptible_gpus: int
+    """Updated desired number of preemptible GPUs for the cluster.
+
+    When omitted, the current value is preserved. Must be a multiple of 8.
+    """
+
+    num_reserved_gpus: int
+    """Number of reserved GPUs to update to.
+
+    This field is only applicable for clusters with RESERVED billing type.
     """
 
     reservation_end_time: Annotated[Union[str, datetime], PropertyInfo(format="iso8601")]
     """Timestamp at which the cluster should be decommissioned.
 
     Only accepted for prepaid clusters.
+    """
+
+
+class AddOnConfigDashboard(TypedDict, total=False):
+    enabled: bool
+
+
+class AddOnConfigIngress(TypedDict, total=False):
+    enabled: bool
+
+
+class AddOnConfig(TypedDict, total=False):
+    dashboard: AddOnConfigDashboard
+
+    ingress: AddOnConfigIngress
+
+
+class AddOn(TypedDict, total=False):
+    name: Required[str]
+    """Name of the add-on to update. Must match an existing add-on on the cluster."""
+
+    config: AddOnConfig
+
+
+class ClusterConfigIngress(TypedDict, total=False):
+    enabled: bool
+
+
+class ClusterConfigObservability(TypedDict, total=False):
+    enabled: bool
+
+
+class ClusterConfigSlurmStartupScripts(TypedDict, total=False):
+    """
+    SlurmStartupScripts carries optional Slurm lifecycle scripts (prolog/epilog, init, extra conf).
+    """
+
+    controller_epilog: str
+    """Slurm controller epilog script."""
+
+    controller_prolog: str
+    """Slurm controller prolog script."""
+
+    extra_slurm_conf: str
+    """Additional slurm.conf fragments."""
+
+    login_init_script: str
+    """Script run on Slurm login node init."""
+
+    nodeset_init_script: str
+    """Script run on Slurm nodeset init."""
+
+    worker_epilog: str
+    """Slurm worker node epilog script."""
+
+    worker_prolog: str
+    """Slurm worker node prolog script."""
+
+
+class ClusterConfig(TypedDict, total=False):
+    load_balancer: Required[Literal["NONE", "TRAEFIK", "NGINX", "ISTIO"]]
+
+    gpu_operator_version: str
+    """NVIDIA GPU Operator chart/version for the tenant cluster (e.g.
+
+    v24.6.2). When omitted, a service default is applied.
+    """
+
+    ingress: ClusterConfigIngress
+
+    jumphost_enabled: bool
+
+    kubernetes_dashboard_enabled: bool
+
+    observability: ClusterConfigObservability
+
+    slurm_startup_scripts: ClusterConfigSlurmStartupScripts
+    """
+    SlurmStartupScripts carries optional Slurm lifecycle scripts (prolog/epilog,
+    init, extra conf).
     """

@@ -15,6 +15,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "endpoints": re.compile(r"^endpoint-"),
     "beta clusters": _UUID_RE,
     "beta clusters storage": _UUID_RE,
+    "beta clusters remediations": _UUID_RE,
     "beta jig volumes": _UUID_RE,
 }
 
@@ -75,6 +76,7 @@ def _canonical_telemetry_command(cmd: str) -> str:
     parts = ["list" if p == "ls" else p for p in parts]
     parts = ["delete" if p == "-d" else p for p in parts]
     parts = ["create" if p == "-c" else p for p in parts]
+    parts = ["retrieve" if p == "get" else p for p in parts]
     return " ".join(parts)
 
 
@@ -88,6 +90,7 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
     The ``list`` alias ``ls`` is normalized to ``list`` in the returned command path.
     The ``delete`` alias ``-d`` is normalized to ``delete`` in the returned command path.
     The ``create`` alias ``-c`` is normalized to ``create`` in the returned command path.
+    The ``retrieve`` alias ``get`` is normalized to ``retrieve`` in the returned command path.
     Implicit ``retrieve`` for most commands is applied here so telemetry matches execution.
 
     Requires the root cyclopts :class:`~cyclopts.App` so positional values are not mistaken

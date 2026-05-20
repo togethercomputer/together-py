@@ -8,6 +8,8 @@ __all__ = ["QueueCancelResponse"]
 
 
 class QueueCancelResponse(BaseModel):
+    """Status returned after a cancel attempt."""
+
     status: Literal["canceled", "running", "done", "failed"]
     """Job status after the cancel attempt.
 

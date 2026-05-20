@@ -125,6 +125,13 @@ class TestFilesRetrieve:
         assert "newer.jsonl" in result.output
         assert "fine-tune" in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_alias(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/files/file-meta").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
+        result = cli_runner.invoke(["files", "get", "file-meta"])
+        assert result.exit_code == 0
+        assert "newer.jsonl" in result.output
+
 
 class TestFilesRetrieveContent:
     def test_retrieve_content_no_options(self, cli_runner: CliRunner) -> None:

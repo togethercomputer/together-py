@@ -271,6 +271,10 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Update or delete a cluster:
   [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
   [primary]tg beta clusters delete <cluster-id>[/primary]
+
+[dim]-[/dim] Manage node remediations:
+  [primary]tg beta clusters remediations ls <cluster-id>[/primary]
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
 """
 
 BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -347,6 +351,39 @@ BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Grow a volume to 4 TiB:
   [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
+"""
+
+BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List all remediations for a cluster:
+  [primary]tg beta clusters remediations ls <cluster-id>[/primary]
+
+[dim]-[/dim] List remediations for one instance:
+  [primary]tg beta clusters remediations ls <cluster-id> <instance-id>[/primary]
+
+[dim]-[/dim] Create a remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY --reason "node unhealthy"[/primary]
+
+[dim]-[/dim] Get remediation details:
+  [primary]tg beta clusters remediations <remediation-id>[/primary]
+
+[dim]-[/dim] Review automated remediations:
+  [primary]tg beta clusters remediations approve <remediation-id>[/primary]
+  [primary]tg beta clusters remediations reject <remediation-id> --comment "already handled"[/primary]
+  [primary]tg beta clusters remediations cancel <remediation-id>[/primary]
+"""
+
+BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a VM-only remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
+
+[dim]-[/dim] Create a host-aware remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode HOST_AWARE[/primary]
+
+[dim]-[/dim] Create a eviction-without-replacement remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode EVICT_WITHOUT_REPLACEMENT[/primary]
+
+[dim]-[/dim] Create a reboot-vm remediation:
+  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
 ## Beta > Jig commands
