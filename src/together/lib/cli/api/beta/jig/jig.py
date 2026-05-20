@@ -29,8 +29,8 @@ import httpx
 from cyclopts import Parameter
 
 from together import Together
-from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._types import Omit, omit
+from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
