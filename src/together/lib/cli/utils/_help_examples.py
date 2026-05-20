@@ -100,6 +100,26 @@ FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg ft create --n-checkpoints 3 -M Qwen/Qwen2-1.5B --training-file ./my-dataset.jsonl[/primary]
 """
 
+FINE_TUNING_LIST_METRICS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Retrieve metrics for a fine-tuning job:
+  [primary]tg ft list-metrics <ft-job-id>[/primary]
+
+[dim]-[/dim] Retrieve metrics from a specific global step range:
+  [primary]tg ft list-metrics <ft-job-id> --global-step-from 100 --global-step-to 500[/primary]
+
+[dim]-[/dim] Retrieve metrics logged within a time range:
+  [primary]tg ft list-metrics <ft-job-id> --logged-at-from 2024-01-01T00:00:00 --logged-at-to 2024-01-02T00:00:00[/primary]
+
+[dim]-[/dim] Retrieve a fixed number of data points as JSON:
+  [primary]tg ft list-metrics <ft-job-id> --resolution 50 --json[/primary]
+
+[dim]-[/dim] Save raw metrics to a file:
+  [primary]tg ft list-metrics <ft-job-id> --json > metrics.json[/primary]
+
+[dim]-[/dim] Save ASCII plots to a file:
+  [primary]tg ft list-metrics <ft-job-id> > plots.txt[/primary]
+"""
+
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download a fine-tuned model's weights:
   [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]

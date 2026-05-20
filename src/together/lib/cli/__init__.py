@@ -61,6 +61,7 @@ from together.lib.cli.utils._help_examples import (
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
@@ -382,6 +383,11 @@ fine_tuning_app.command(
     help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
 fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.list_metrics:list_metrics"),
+    help="Retrieve training metrics for a fine-tuning job",
+    help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
+)
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
