@@ -96,8 +96,6 @@ class ControlPlaneNode(BaseModel):
 
     node_id: str
 
-    node_name: str
-
     num_cpu_cores: int
 
     phase_transitions: List[ControlPlaneNodePhaseTransition]
@@ -131,8 +129,6 @@ class GPUWorkerNode(BaseModel):
     networks: List[str]
 
     node_id: str
-
-    node_name: str
 
     num_cpu_cores: int
 
