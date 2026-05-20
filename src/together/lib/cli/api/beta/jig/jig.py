@@ -1516,7 +1516,7 @@ def logs_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment logs."""
-    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, log_version))
+    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, image_version))
 
 
 def destroy_cli(
