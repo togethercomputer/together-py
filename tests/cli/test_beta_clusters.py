@@ -35,6 +35,35 @@ def _cluster_body(cluster_id: str = "cluster-1", name: str = "my-cluster", **ove
     return body
 
 
+def _control_plane_node_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "host_name": "control-1",
+        "memory_gib": 64.0,
+        "network": "net-a",
+        "node_id": "cp-node-1",
+        "num_cpu_cores": 16,
+        "phase_transitions": [],
+        "status": "NODE_PHASE_RUNNING",
+    }
+    body.update(overrides)
+    return body
+
+
+def _gpu_worker_node_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "host_name": "gpu-1",
+        "memory_gib": 256.0,
+        "networks": ["net-a"],
+        "node_id": "gpu-node-1",
+        "num_cpu_cores": 96,
+        "num_gpus": 8,
+        "phase_transitions": [],
+        "status": "NODE_PHASE_RUNNING",
+    }
+    body.update(overrides)
+    return body
+
+
 _REGIONS_BODY = {
     "regions": [
         {
@@ -111,7 +140,10 @@ class TestBetaClustersListRegions:
 class TestBetaClustersRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        c = _cluster_body()
+        c = _cluster_body(
+            control_plane_nodes=[_control_plane_node_body()],
+            gpu_worker_nodes=[_gpu_worker_node_body()],
+        )
         respx_mock.get("/compute/clusters/cluster-1").mock(return_value=httpx.Response(200, json=c))
         result = cli_runner.invoke(["beta", "clusters", "retrieve", "cluster-1", "--json"])
         assert json.loads(result.output) == c
