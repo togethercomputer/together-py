@@ -246,7 +246,8 @@ EVALS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --model-b deepseek-ai/DeepSeek-V3.1 \\
     --model-b-source serverless \\
     --model-b-system-template "You are a concise assistant." \\
-    --model-b-input-template $'Answer the following:\\n\\n{{prompt}}'[/primary]
+    --model-b-input-template $'Answer the following:\\n\\n{{prompt}}' \\
+    --disable-position-bias-correction[/primary]
 """
 
 ## Beta clusters API commands
