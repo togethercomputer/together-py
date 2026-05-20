@@ -211,12 +211,8 @@ class TestFineTuningEventsAndCheckpoints:
 
 class TestFineTuningListMetrics:
     @pytest.mark.respx(base_url=base_url)
-    def test_list_metrics_json_includes_zero_step_filters(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
-        route = respx_mock.get("/fine-tunes/ft-1/metrics").mock(
-            return_value=httpx.Response(200, json=_FT_METRICS_BODY)
-        )
+    def test_list_metrics_json_includes_zero_step_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/fine-tunes/ft-1/metrics").mock(return_value=httpx.Response(200, json=_FT_METRICS_BODY))
 
         result = cli_runner.invoke(
             [
