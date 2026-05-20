@@ -111,13 +111,13 @@ FINE_TUNING_LIST_METRICS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg ft list-metrics <ft-job-id> --logged-at-from 2024-01-01T00:00:00 --logged-at-to 2024-01-02T00:00:00[/primary]
 
 [dim]-[/dim] Retrieve a fixed number of data points as JSON:
-  [primary]tg ft list-metrics <ft-job-id> --resolution 50 --json[/primary]
+  [primary]tg ft list-metrics <ft-job-id> --resolution 50 --output json[/primary]
 
-[dim]-[/dim] Save raw metrics to a file (plots are disabled automatically when redirecting):
+[dim]-[/dim] Save raw metrics to a file (JSON is chosen automatically when redirecting):
   [primary]tg ft list-metrics <ft-job-id> > metrics.json[/primary]
 
 [dim]-[/dim] Save ASCII plots to a file:
-  [primary]tg ft list-metrics <ft-job-id> --force-plots > plots.txt[/primary]
+  [primary]tg ft list-metrics <ft-job-id> --output graph > plots.txt[/primary]
 """
 
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
