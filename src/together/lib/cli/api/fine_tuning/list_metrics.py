@@ -32,28 +32,8 @@ async def list_metrics(
             help="Number of uniformly sampled training metric points to return. Does not limit the number of eval metric points."
         ),
     ] = None,
-    output: Annotated[
-        Optional[Literal["json", "graph"]],
-        Parameter(
-            "--output",
-            help="Override the output format. 'json' prints raw JSON, 'graph' renders ASCII plots. By default the format is chosen automatically based on whether stdout is a terminal.",
-        ),
-    ] = None,
 ) -> None:
     """Retrieve training metrics for a fine-tuning job."""
-
-    if output != "json" and config.json:
-        raise ValueError(
-            f"--output {output!r} conflicts with --json. Either remove --json or set --output json."
-        )
-    output_json = output == "json" or config.json
-
-    is_tty = sys.stdout.isatty()
-    # Determine output format: explicit --output or --json flag takes priority, then auto-detect via isatty.
-    # When stdout is redirected (e.g. > file.txt or | jq), is_tty is False and we fall back to raw JSON.
-    show_plots = (output == "graph") if output else (is_tty and not output_json)
-
-    resolution_value = resolution if not show_plots else console.width - METRICS_WIDTH_PADDING
     response = await show_loading_status(
         "Fetching metrics...",
         config.client.fine_tuning.list_metrics(
@@ -62,19 +42,15 @@ async def list_metrics(
             global_step_to=global_step_to or omit,
             logged_at_from=logged_at_from or omit,
             logged_at_to=logged_at_to or omit,
-            resolution=resolution_value or omit,
+            resolution=resolution or omit,
         ),
     )
 
     metrics = response.metrics or []
 
-    if not show_plots:
+    if not config.json:
         json_bytes = openapi_dumps(metrics)
-        if not is_tty:
-            # stdout is redirected — print raw JSON so it pipes cleanly
-            sys.stdout.write(json_bytes.decode("utf-8") + "\n")
-        else:
-            console.print_json(json_bytes.decode("utf-8"))
+        console.print_json(json_bytes.decode("utf-8"))
         return
 
     if not metrics:
