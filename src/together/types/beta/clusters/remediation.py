@@ -69,6 +69,9 @@ class Remediation(BaseModel):
     error_message: Optional[str] = None
     """Error message if the remediation failed."""
 
+    instance_name: Optional[str] = None
+    """Display name of the targeted instance."""
+
     passive_health_check_event_id: Optional[str] = None
     """Passive health check event ID that triggered this remediation."""
 
