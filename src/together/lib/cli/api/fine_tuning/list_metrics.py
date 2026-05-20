@@ -37,11 +37,11 @@ async def list_metrics(
         "Fetching metrics...",
         config.client.fine_tuning.list_metrics(
             fine_tune_id,
-            global_step_from=global_step_from or omit,
-            global_step_to=global_step_to or omit,
-            logged_at_from=logged_at_from or omit,
-            logged_at_to=logged_at_to or omit,
-            resolution=resolution or omit,
+            global_step_from=global_step_from if global_step_from is not None else omit,
+            global_step_to=global_step_to if global_step_to is not None else omit,
+            logged_at_from=logged_at_from if logged_at_from is not None else omit,
+            logged_at_to=logged_at_to if logged_at_to is not None else omit,
+            resolution=resolution if resolution is not None else omit,
         ),
     )
 

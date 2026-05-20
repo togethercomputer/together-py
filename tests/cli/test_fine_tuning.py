@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 import json
 import importlib
+from typing import cast
 from pathlib import Path
 from unittest.mock import patch
 
 import httpx
 import pytest
 from respx import MockRouter
+from respx.models import Call
 
 from tests.cli.utils import CliRunner
 
@@ -68,6 +70,16 @@ _FT_CHECKPOINT = {
     "created_at": "2024-01-01T00:00:00Z",
     "path": "/p",
     "step": 5,
+}
+
+_FT_METRICS_BODY = {
+    "metrics": [
+        {
+            "global_step": 0,
+            "train_loss": 1.25,
+            "logged_at": "2024-01-01T00:00:00Z",
+        }
+    ]
 }
 
 
@@ -195,6 +207,40 @@ class TestFineTuningEventsAndCheckpoints:
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "No checkpoints found" in result.output
+
+
+class TestFineTuningListMetrics:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_metrics_json_includes_zero_step_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/fine-tunes/ft-1/metrics").mock(return_value=httpx.Response(200, json=_FT_METRICS_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "list-metrics",
+                "ft-1",
+                "--global-step-from",
+                "0",
+                "--global-step-to",
+                "0",
+                "--logged-at-from",
+                "2024-01-01T00:00:00+00:00",
+                "--logged-at-to",
+                "2024-01-02T00:00:00+00:00",
+                "--resolution",
+                "50",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["global_step_from"] == "0"
+        assert params["global_step_to"] == "0"
+        assert params["logged_at_from"] == "2024-01-01T00:00:00+00:00"
+        assert params["logged_at_to"] == "2024-01-02T00:00:00+00:00"
+        assert params["resolution"] == "50"
+        assert json.loads(result.output) == _FT_METRICS_BODY["metrics"]
 
 
 class TestFineTuningDownload:
