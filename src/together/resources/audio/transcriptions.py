@@ -69,8 +69,10 @@ class TranscriptionsResource(SyncAPIResource):
         Transcribes audio into text
 
         Args:
-          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac, .ogg, .opus, .aac.
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats: .wav, .mp3, .m4a,
+              .webm, .flac, .ogg, .opus, .aac. Maximum duration 4 hours; longer audio is
+              rejected with `audio_too_long`. Binary uploads are additionally capped at 500 MB
+              (HTTP 413); URL-fetched audio is capped at 1 GB.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you
@@ -195,8 +197,10 @@ class AsyncTranscriptionsResource(AsyncAPIResource):
         Transcribes audio into text
 
         Args:
-          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac, .ogg, .opus, .aac.
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats: .wav, .mp3, .m4a,
+              .webm, .flac, .ogg, .opus, .aac. Maximum duration 4 hours; longer audio is
+              rejected with `audio_too_long`. Binary uploads are additionally capped at 500 MB
+              (HTTP 413); URL-fetched audio is capped at 1 GB.
 
           diarize: Whether to enable speaker diarization. When enabled, you will get the speaker id
               for each word in the transcription. In the response, in the words array, you
