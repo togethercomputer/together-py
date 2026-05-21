@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional, Annotated
-
-from cyclopts import Parameter
-
-from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -20,14 +15,13 @@ EMPTY_MESSAGE = (
 
 async def list(
     after: AfterParameter = None,
-    project_id: Annotated[Optional[str], Parameter(help="Project ID to filter storage volumes by")] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
     """List storage volumes."""
     response = await show_loading_status(
         "Loading storage volumes...",
-        config.client.beta.clusters.storage.list(project_id=project_id or omit),
+        config.client.beta.clusters.storage.list(),
     )
 
     data, next_cursor = mock_pagination(response.volumes, cursor_field="volume_id", cursor=after)

@@ -362,17 +362,6 @@ class TestBetaClustersStorage:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_storage_list_filters_by_project_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        payload = {"volumes": [_VOLUME_BODY]}
-        route = respx_mock.get("/compute/clusters/storage/volumes").mock(
-            return_value=httpx.Response(200, json=payload)
-        )
-        result = cli_runner.invoke(["beta", "clusters", "storage", "list", "--project-id", "proj-1", "--json"])
-
-        assert cast(Call, route.calls[0]).request.url.params["project_id"] == "proj-1"
-        assert result.exit_code == 0
-
-    @pytest.mark.respx(base_url=base_url)
     def test_storage_create_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.post("/compute/clusters/storage/volumes").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
