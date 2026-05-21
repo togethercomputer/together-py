@@ -9,7 +9,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
-from together.lib.cli.api.beta.clusters._json_params import parse_json_array, parse_json_object
+from together.lib.cli.api.beta.clusters._json_params import parse_json_object
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
@@ -33,18 +33,10 @@ AcceptanceTestsParamsParameter = Annotated[
     Optional[str],
     Parameter(help="Acceptance test options as a JSON object, or @path to a JSON file"),
 ]
-AddOnsParameter = Annotated[
-    Optional[str],
-    Parameter(help="Add-ons to enable as a JSON array, or @path to a JSON file"),
-]
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 AutoScaledParameter = Annotated[Optional[bool], Parameter(help="Enable workload-based GPU auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
-ClusterConfigParameter = Annotated[
-    Optional[str],
-    Parameter(help="Cluster config as a JSON object, or @path to a JSON file"),
-]
 GpuNodeFailoverEnabledParameter = Annotated[
     Optional[bool], Parameter(help="Enable automated GPU node failover for the cluster")
 ]
@@ -86,12 +78,10 @@ async def create(
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
     acceptance_tests_params: AcceptanceTestsParamsParameter = None,
-    add_ons: AddOnsParameter = None,
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     auto_scaled: AutoScaledParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
-    cluster_config: ClusterConfigParameter = None,
     gpu_node_failover_enabled: GpuNodeFailoverEnabledParameter = None,
     install_traefik: InstallTraefikParameter = None,
     num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
@@ -126,8 +116,6 @@ async def create(
         params["volume_id"] = volume
     if acceptance_tests_params:
         params["acceptance_tests_params"] = parse_json_object(acceptance_tests_params, "--acceptance-tests-params")
-    if add_ons:
-        params["add_ons"] = parse_json_array(add_ons, "--add-ons")
     if auto_scale is not None:
         params["auto_scale"] = auto_scale
     if auto_scale_max_gpus is not None:
@@ -136,8 +124,6 @@ async def create(
         params["auto_scaled"] = auto_scaled
     if capacity_pool_id:
         params["capacity_pool_id"] = capacity_pool_id
-    if cluster_config:
-        params["cluster_config"] = parse_json_object(cluster_config, "--cluster-config")
     if gpu_node_failover_enabled is not None:
         params["gpu_node_failover_enabled"] = gpu_node_failover_enabled
     if install_traefik is not None:

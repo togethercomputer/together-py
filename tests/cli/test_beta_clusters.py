@@ -195,15 +195,11 @@ class TestBetaClustersCreate:
                 "scheduled",
                 "--acceptance-tests-params",
                 '{"enabled":true,"gpu_burn_duration":60}',
-                "--add-ons",
-                '[{"add_on_type":"dashboard","name":"dash","config":{"dashboard":{"enabled":true}}}]',
                 "--auto-scale",
                 "--auto-scale-max-gpus",
                 "16",
                 "--capacity-pool-id",
                 "pool-1",
-                "--cluster-config",
-                '{"load_balancer":"TRAEFIK","ingress":{"enabled":true}}',
                 "--gpu-node-failover-enabled",
                 "--install-traefik",
                 "--num-capacity-pool-gpus",
@@ -237,11 +233,9 @@ class TestBetaClustersCreate:
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
         assert body["acceptance_tests_params"] == {"enabled": True, "gpu_burn_duration": 60}
-        assert body["add_ons"][0]["name"] == "dash"
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"
-        assert body["cluster_config"]["load_balancer"] == "TRAEFIK"
         assert body["gpu_node_failover_enabled"] is True
         assert body["install_traefik"] is True
         assert body["num_capacity_pool_gpus"] == 8
@@ -289,10 +283,6 @@ class TestBetaClustersUpdate:
                 "clusters",
                 "update",
                 "c1",
-                "--add-ons",
-                '[{"name":"dash","config":{"dashboard":{"enabled":false}}}]',
-                "--cluster-config",
-                '{"load_balancer":"NGINX","observability":{"enabled":true}}',
                 "--num-preemptible-gpus",
                 "8",
                 "--num-reserved-gpus",
@@ -303,8 +293,6 @@ class TestBetaClustersUpdate:
         )
 
         put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
-        assert put_body["add_ons"][0]["name"] == "dash"
-        assert put_body["cluster_config"]["load_balancer"] == "NGINX"
         assert put_body["num_preemptible_gpus"] == 8
         assert put_body["num_reserved_gpus"] == 16
         assert put_body["reservation_end_time"] == "2026-06-02T00:00:00Z"
