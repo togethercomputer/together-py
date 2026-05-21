@@ -403,10 +403,68 @@ class EndpointsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/v1/endpoints/lora-adapter",
+            "/v1/endpoints/adapters",
             body=maybe_transform(
                 {
-                    "model_name": f"{base_model}:{adapter_name}",
+                    "model_id": f"{base_model}:{adapter_name}",
+                },
+                dict,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=object,
+        )
+
+    def list_adapters(
+        self,
+        *,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> object:
+        """Lists all LoRA adapters bound to dedicated endpoints.
+
+        Returns adapters with their model_id (endpoint:adapter format),
+        adapter_name, and endpoint_name.
+        """
+        return self._get(
+            "/v1/endpoints/adapters",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=object,
+        )
+
+    def delete_adapter(
+        self,
+        *,
+        base_model: str,
+        adapter_name: str,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> object:
+        """Unbinds a LoRA adapter from its dedicated endpoint.
+
+        Args:
+          base_model: The dedicated endpoint name.
+
+          adapter_name: The LoRA adapter model name.
+        """
+        return self._delete(
+            "/v1/endpoints/adapters",
+            body=maybe_transform(
+                {
+                    "model_id": f"{base_model}:{adapter_name}",
                 },
                 dict,
             ),
@@ -791,10 +849,58 @@ class AsyncEndpointsResource(AsyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return await self._post(
-            "/v1/endpoints/lora-adapter",
+            "/v1/endpoints/adapters",
             body=await async_maybe_transform(
                 {
-                    "model_name": f"{base_model}:{adapter_name}",
+                    "model_id": f"{base_model}:{adapter_name}",
+                },
+                dict,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=object,
+        )
+
+    async def list_adapters(
+        self,
+        *,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> object:
+        """Lists all LoRA adapters bound to dedicated endpoints."""
+        return await self._get(
+            "/v1/endpoints/adapters",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=object,
+        )
+
+    async def delete_adapter(
+        self,
+        *,
+        base_model: str,
+        adapter_name: str,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> object:
+        """Unbinds a LoRA adapter from its dedicated endpoint."""
+        return await self._delete(
+            "/v1/endpoints/adapters",
+            body=await async_maybe_transform(
+                {
+                    "model_id": f"{base_model}:{adapter_name}",
                 },
                 dict,
             ),
