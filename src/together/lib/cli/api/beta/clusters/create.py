@@ -169,14 +169,10 @@ async def create(
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
                 size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
-                is_lifecycle_independent = input(
-                    "Clusters: Keep storage volume after cluster deletion? [y/N] "
-                ).strip().lower() in ("y", "yes")
-                params["shared_volume"] = _shared_volume(
+                params["shared_volume"] = SharedVolume(
                     region=params["region"],
                     size_tib=int(size) if size else 1,
                     volume_name=vol_name,
-                    is_lifecycle_independent=is_lifecycle_independent,
                 )
             else:
                 volumes = await config.client.beta.clusters.storage.list()
@@ -193,16 +189,3 @@ async def create(
     else:
         console.print("Clusters: Cluster created successfully")
         console.print(f"Clusters: {response.cluster_id}")
-
-
-def _shared_volume(
-    *,
-    region: str,
-    size_tib: int,
-    volume_name: str,
-    is_lifecycle_independent: bool | None,
-) -> SharedVolume:
-    shared_volume = SharedVolume(region=region, size_tib=size_tib, volume_name=volume_name)
-    if is_lifecycle_independent is not None:
-        shared_volume["is_lifecycle_independent"] = is_lifecycle_independent
-    return shared_volume
