@@ -377,8 +377,8 @@ class EndpointsResource(SyncAPIResource):
     def set_lora_adapter(
         self,
         *,
-        adapter_model_name: str,
-        endpoint_name: str,
+        base_model: str,
+        adapter_name: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
@@ -386,14 +386,13 @@ class EndpointsResource(SyncAPIResource):
     ) -> object:
         """Points a LoRA adapter model to a dedicated endpoint.
 
-        After this call, inference requests to the adapter model name will be
-        routed to the specified endpoint.
+        After this call, inference requests to ``base_model:adapter_name``
+        will be routed to the specified endpoint.
 
         Args:
-          adapter_model_name: The LoRA adapter model name (model_output_name from the FT job).
+          base_model: The dedicated endpoint name that serves the base model with LoRA support.
 
-          endpoint_name: The dedicated endpoint name to route adapter inference to.
-              Must be a private dedicated endpoint with LoRA support.
+          adapter_name: The LoRA adapter model name (e.g. "user/my-adapter").
 
           extra_headers: Send extra headers
 
@@ -407,8 +406,8 @@ class EndpointsResource(SyncAPIResource):
             "/v1/endpoints/lora-adapter",
             body=maybe_transform(
                 {
-                    "adapter_model_name": adapter_model_name,
-                    "endpoint_name": endpoint_name,
+                    "base_model": base_model,
+                    "adapter_name": adapter_name,
                 },
                 dict,
             ),
@@ -767,8 +766,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
     async def set_lora_adapter(
         self,
         *,
-        adapter_model_name: str,
-        endpoint_name: str,
+        base_model: str,
+        adapter_name: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
@@ -776,14 +775,13 @@ class AsyncEndpointsResource(AsyncAPIResource):
     ) -> object:
         """Points a LoRA adapter model to a dedicated endpoint.
 
-        After this call, inference requests to the adapter model name will be
-        routed to the specified endpoint.
+        After this call, inference requests to ``base_model:adapter_name``
+        will be routed to the specified endpoint.
 
         Args:
-          adapter_model_name: The LoRA adapter model name (model_output_name from the FT job).
+          base_model: The dedicated endpoint name that serves the base model with LoRA support.
 
-          endpoint_name: The dedicated endpoint name to route adapter inference to.
-              Must be a private dedicated endpoint with LoRA support.
+          adapter_name: The LoRA adapter model name (e.g. "user/my-adapter").
 
           extra_headers: Send extra headers
 
@@ -797,8 +795,8 @@ class AsyncEndpointsResource(AsyncAPIResource):
             "/v1/endpoints/lora-adapter",
             body=await async_maybe_transform(
                 {
-                    "adapter_model_name": adapter_model_name,
-                    "endpoint_name": endpoint_name,
+                    "base_model": base_model,
+                    "adapter_name": adapter_name,
                 },
                 dict,
             ),
