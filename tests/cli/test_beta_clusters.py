@@ -98,6 +98,7 @@ class TestBetaClustersList:
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
+
 class TestBetaClustersListRegions:
     @pytest.mark.respx(base_url=base_url)
     def test_list_regions_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
