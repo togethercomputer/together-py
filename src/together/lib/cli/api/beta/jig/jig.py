@@ -667,7 +667,10 @@ class Jig:
         if warmup:
             _build_warm_image(image)
 
-    def push(self, tag: str = "latest") -> None:
+    def push(self, tag: str = "latest", source_image: str | None = None) -> None:
+        if source_image and not tag:
+            last = source_image.rsplit("/", 1)[-1]
+            tag = last.rsplit(":", 1)[1] if ":" in last else "latest"
         image = self.image(tag)
         host = self.registry().split("/")[0]
         login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
@@ -676,8 +679,12 @@ class Jig:
 
         console.print(f"Pushing {image}")
         self._metadata_path(tag).unlink(missing_ok=True)
+        if source_image:
+            if subprocess.run(["docker", "tag", source_image, image]).returncode != 0:
+                raise JigError(f"Failed to retag {source_image}")
+            ok = subprocess.run(["docker", "push", image]).returncode == 0
         # Skip buildx for warmup-baked images: a buildx rebuild would drop the warmup layer.
-        if _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
+        elif _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
             ok = subprocess.run(["docker", "push", image]).returncode == 0
         else:
             builder = _ensure_zstd_builder()
@@ -1187,9 +1194,9 @@ def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     jig.build(tag, warmup, docker_args)
 
 
-def push(jig: Jig, tag: str) -> None:
+def push(jig: Jig, tag: str, source_image: str | None = None) -> None:
     """Push image to registry"""
-    jig.push(tag)
+    jig.push(tag, source_image)
 
 
 def deploy(
@@ -1456,13 +1463,14 @@ def build_cli(
 
 
 def push_cli(
-    tag: Annotated[str, Parameter(help="Image tag")] = "latest",
+    tag: Annotated[Optional[str], Parameter(help="Image tag (defaults to 'latest', or source image's tag when --image is used)")] = None,
+    image: Annotated[Optional[str], Parameter(name="--image", help="Existing local image to retag and push")] = None,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Push image to registry."""
-    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag))
+    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag or ("" if image else "latest"), image))
 
 
 def deploy_cli(
