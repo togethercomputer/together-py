@@ -406,8 +406,7 @@ class EndpointsResource(SyncAPIResource):
             "/v1/endpoints/lora-adapter",
             body=maybe_transform(
                 {
-                    "base_model": base_model,
-                    "adapter_name": adapter_name,
+                    "model_name": f"{base_model}:{adapter_name}",
                 },
                 dict,
             ),
@@ -795,8 +794,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
             "/v1/endpoints/lora-adapter",
             body=await async_maybe_transform(
                 {
-                    "base_model": base_model,
-                    "adapter_name": adapter_name,
+                    "model_name": f"{base_model}:{adapter_name}",
                 },
                 dict,
             ),
