@@ -7,10 +7,7 @@ from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
-EMPTY_MESSAGE = (
-    "You don't have any storage volumes yet. To create your first storage volume run:\n"
-    "  [dim]-[/dim] [primary]tg beta clusters storage create[/primary]"
-)
+EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg beta clusters storage create[/primary]"
 
 
 async def list(
@@ -19,10 +16,7 @@ async def list(
     config: CLIConfigParameter,
 ) -> None:
     """List storage volumes."""
-    response = await show_loading_status(
-        "Loading storage volumes...",
-        config.client.beta.clusters.storage.list(),
-    )
+    response = await show_loading_status("Loading storage volumes...", config.client.beta.clusters.storage.list())
 
     data, next_cursor = mock_pagination(response.volumes, cursor_field="volume_id", cursor=after)
 

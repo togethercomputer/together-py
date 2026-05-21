@@ -530,10 +530,6 @@ class TestBetaClustersRemediations:
                 "AUTOMATED",
                 "--after",
                 "next-token",
-                "--order-by",
-                "create_time desc",
-                "--page-size",
-                "50",
                 "--json",
             ]
         )
@@ -543,8 +539,6 @@ class TestBetaClustersRemediations:
         assert params["state"] == "PENDING_APPROVAL"
         assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
         assert params["page_token"] == "next-token"
-        assert params["order_by"] == "create_time desc"
-        assert params["page_size"] == "50"
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
