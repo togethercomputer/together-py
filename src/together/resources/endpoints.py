@@ -374,6 +374,54 @@ class EndpointsResource(SyncAPIResource):
         )
 
 
+    def set_lora_adapter(
+        self,
+        *,
+        adapter_model_name: str,
+        endpoint_name: str,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> object:
+        """Points a LoRA adapter model to a dedicated endpoint.
+
+        After this call, inference requests to the adapter model name will be
+        routed to the specified endpoint.
+
+        Args:
+          adapter_model_name: The LoRA adapter model name (model_output_name from the FT job).
+
+          endpoint_name: The dedicated endpoint name to route adapter inference to.
+              Must be a private dedicated endpoint with LoRA support.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/v1/endpoints/lora-adapter",
+            body=maybe_transform(
+                {
+                    "adapter_model_name": adapter_model_name,
+                    "endpoint_name": endpoint_name,
+                },
+                dict,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=object,
+        )
+
+
 class AsyncEndpointsResource(AsyncAPIResource):
     @cached_property
     def with_raw_response(self) -> AsyncEndpointsResourceWithRawResponse:
@@ -714,6 +762,53 @@ class AsyncEndpointsResource(AsyncAPIResource):
                 ),
             ),
             cast_to=EndpointListHardwareResponse,
+        )
+
+    async def set_lora_adapter(
+        self,
+        *,
+        adapter_model_name: str,
+        endpoint_name: str,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> object:
+        """Points a LoRA adapter model to a dedicated endpoint.
+
+        After this call, inference requests to the adapter model name will be
+        routed to the specified endpoint.
+
+        Args:
+          adapter_model_name: The LoRA adapter model name (model_output_name from the FT job).
+
+          endpoint_name: The dedicated endpoint name to route adapter inference to.
+              Must be a private dedicated endpoint with LoRA support.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/v1/endpoints/lora-adapter",
+            body=await async_maybe_transform(
+                {
+                    "adapter_model_name": adapter_model_name,
+                    "endpoint_name": endpoint_name,
+                },
+                dict,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+            ),
+            cast_to=object,
         )
 
 
