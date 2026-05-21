@@ -217,13 +217,6 @@ class TestBetaClustersCreate:
                 "2026-06-01T00:00:00Z",
                 "--reservation-end-time",
                 "2026-06-02T00:00:00Z",
-                "--shared-volume-name",
-                "shared",
-                "--shared-volume-region",
-                "us-central-8",
-                "--shared-volume-size-tib",
-                "2",
-                "--shared-volume-lifecycle-independent",
                 "--slurm-image",
                 "slurm:latest",
                 "--slurm-shm-size-gib",
@@ -246,12 +239,6 @@ class TestBetaClustersCreate:
         assert body["project_id"] == "proj-1"
         assert body["reservation_start_time"] == "2026-06-01T00:00:00Z"
         assert body["reservation_end_time"] == "2026-06-02T00:00:00Z"
-        assert body["shared_volume"] == {
-            "region": "us-central-8",
-            "size_tib": 2,
-            "volume_name": "shared",
-            "is_lifecycle_independent": True,
-        }
         assert body["slurm_image"] == "slurm:latest"
         assert body["slurm_shm_size_gib"] == 32
         assert result.exit_code == 0

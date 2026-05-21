@@ -55,13 +55,6 @@ ReservationEndTimeParameter = Annotated[Optional[str], Parameter(help="Reservati
 ReservationStartTimeParameter = Annotated[
     Optional[str], Parameter(help="Reservation start time for scheduled capacity")
 ]
-SharedVolumeNameParameter = Annotated[Optional[str], Parameter(help="Name for an inline shared volume to create")]
-SharedVolumeRegionParameter = Annotated[Optional[str], Parameter(help="Region for an inline shared volume")]
-SharedVolumeSizeTibParameter = Annotated[Optional[int], Parameter(help="Size in TiB for an inline shared volume")]
-SharedVolumeLifecycleIndependentParameter = Annotated[
-    Optional[bool],
-    Parameter(help="Keep the inline shared volume after cluster decommissioning"),
-]
 SlurmImageParameter = Annotated[Optional[str], Parameter(help="Custom Slurm image for Slurm clusters")]
 SlurmShmSizeGibParameter = Annotated[Optional[int], Parameter(help="Shared memory size in GiB for Slurm clusters")]
 
@@ -91,10 +84,6 @@ async def create(
     project_id: ProjectIDParameter = None,
     reservation_end_time: ReservationEndTimeParameter = None,
     reservation_start_time: ReservationStartTimeParameter = None,
-    shared_volume_name: SharedVolumeNameParameter = None,
-    shared_volume_region: SharedVolumeRegionParameter = None,
-    shared_volume_size_tib: SharedVolumeSizeTibParameter = None,
-    shared_volume_lifecycle_independent: SharedVolumeLifecycleIndependentParameter = None,
     slurm_image: SlurmImageParameter = None,
     slurm_shm_size_gib: SlurmShmSizeGibParameter = None,
     *,
@@ -147,20 +136,6 @@ async def create(
     if slurm_shm_size_gib is not None:
         params["slurm_shm_size_gib"] = slurm_shm_size_gib
 
-    if any(value is not None for value in (shared_volume_name, shared_volume_region, shared_volume_size_tib)):
-        if volume:
-            raise ValueError("--volume cannot be used with inline shared volume options")
-        if not shared_volume_name or not shared_volume_region or shared_volume_size_tib is None:
-            raise ValueError(
-                "--shared-volume-name, --shared-volume-region, and --shared-volume-size-tib are required together"
-            )
-        params["shared_volume"] = _shared_volume(
-            region=shared_volume_region,
-            size_tib=shared_volume_size_tib,
-            volume_name=shared_volume_name,
-            is_lifecycle_independent=shared_volume_lifecycle_independent,
-        )
-
     # JSON Mode skips hand holding through the argument setup
     if not config.json and not config.non_interactive:
         if not name:
@@ -209,12 +184,9 @@ async def create(
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
                 size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
-                is_lifecycle_independent = (
-                    shared_volume_lifecycle_independent
-                    if shared_volume_lifecycle_independent is not None
-                    else input("Clusters: Keep storage volume after cluster deletion? [y/N] ").strip().lower()
-                    in ("y", "yes")
-                )
+                is_lifecycle_independent = input(
+                    "Clusters: Keep storage volume after cluster deletion? [y/N] "
+                ).strip().lower() in ("y", "yes")
                 params["shared_volume"] = _shared_volume(
                     region=params["region"],
                     size_tib=int(size) if size else 1,
