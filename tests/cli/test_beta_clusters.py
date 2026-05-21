@@ -162,16 +162,6 @@ class TestBetaClustersCreate:
     def test_create_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "scheduled")
         route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
-        oidc_config = json.dumps(
-            {
-                "client_id": "client",
-                "issuer_url": "https://issuer",
-                "username_claim": "sub",
-                "username_prefix": "oidc:",
-                "group_claim": "groups",
-                "group_prefix": "oidc:",
-            }
-        )
         result = cli_runner.invoke(
             [
                 "beta",
@@ -209,8 +199,6 @@ class TestBetaClustersCreate:
                 "8",
                 "--num-reserved-gpus",
                 "8",
-                "--oidc-config",
-                oidc_config,
                 "--project-id",
                 "proj-1",
                 "--reservation-start-time",
@@ -235,7 +223,6 @@ class TestBetaClustersCreate:
         assert body["num_capacity_pool_gpus"] == 8
         assert body["num_preemptible_gpus"] == 8
         assert body["num_reserved_gpus"] == 8
-        assert body["oidc_config"]["client_id"] == "client"
         assert body["project_id"] == "proj-1"
         assert body["reservation_start_time"] == "2026-06-01T00:00:00Z"
         assert body["reservation_end_time"] == "2026-06-02T00:00:00Z"

@@ -46,10 +46,6 @@ NumCapacityPoolGpusParameter = Annotated[
 ]
 NumPreemptibleGpusParameter = Annotated[Optional[int], Parameter(help="Number of preemptible GPUs to request")]
 NumReservedGpusParameter = Annotated[Optional[int], Parameter(help="Number of prepaid reserved GPUs to request")]
-OidcConfigParameter = Annotated[
-    Optional[str],
-    Parameter(help="OIDC config as a JSON object, or @path to a JSON file"),
-]
 ProjectIDParameter = Annotated[Optional[str], Parameter(help="Project ID for the cluster")]
 ReservationEndTimeParameter = Annotated[Optional[str], Parameter(help="Reservation end time for scheduled capacity")]
 ReservationStartTimeParameter = Annotated[
@@ -80,7 +76,6 @@ async def create(
     num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
     num_preemptible_gpus: NumPreemptibleGpusParameter = None,
     num_reserved_gpus: NumReservedGpusParameter = None,
-    oidc_config: OidcConfigParameter = None,
     project_id: ProjectIDParameter = None,
     reservation_end_time: ReservationEndTimeParameter = None,
     reservation_start_time: ReservationStartTimeParameter = None,
@@ -123,8 +118,6 @@ async def create(
         params["num_preemptible_gpus"] = num_preemptible_gpus
     if num_reserved_gpus is not None:
         params["num_reserved_gpus"] = num_reserved_gpus
-    if oidc_config:
-        params["oidc_config"] = parse_json_object(oidc_config, "--oidc-config")
     if project_id:
         params["project_id"] = project_id
     if reservation_end_time:
