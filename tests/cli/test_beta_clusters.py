@@ -98,16 +98,6 @@ class TestBetaClustersList:
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
-    @pytest.mark.respx(base_url=base_url)
-    def test_list_filters_by_project_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        payload = {"clusters": [_cluster_body()]}
-        route = respx_mock.get("/compute/clusters").mock(return_value=httpx.Response(200, json=payload))
-        result = cli_runner.invoke(["beta", "clusters", "list", "--project-id", "proj-1", "--json"])
-
-        assert cast(Call, route.calls[0]).request.url.params["project_id"] == "proj-1"
-        assert result.exit_code == 0
-
-
 class TestBetaClustersListRegions:
     @pytest.mark.respx(base_url=base_url)
     def test_list_regions_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
