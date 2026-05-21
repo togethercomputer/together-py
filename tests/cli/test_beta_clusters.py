@@ -184,8 +184,6 @@ class TestBetaClustersCreate:
                 "SCHEDULED_CAPACITY",
                 "--name",
                 "scheduled",
-                "--acceptance-tests-params",
-                '{"enabled":true,"gpu_burn_duration":60}',
                 "--auto-scale",
                 "--auto-scale-max-gpus",
                 "16",
@@ -214,7 +212,6 @@ class TestBetaClustersCreate:
 
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
-        assert body["acceptance_tests_params"] == {"enabled": True, "gpu_burn_duration": 60}
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"

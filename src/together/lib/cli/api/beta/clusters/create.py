@@ -9,7 +9,6 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
-from together.lib.cli.api.beta.clusters._json_params import parse_json_object
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
@@ -29,10 +28,6 @@ GpuTypeParameter = Annotated[
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
-AcceptanceTestsParamsParameter = Annotated[
-    Optional[str],
-    Parameter(help="Acceptance test options as a JSON object, or @path to a JSON file"),
-]
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 AutoScaledParameter = Annotated[Optional[bool], Parameter(help="Enable workload-based GPU auto-scaling")]
@@ -66,7 +61,6 @@ async def create(
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
-    acceptance_tests_params: AcceptanceTestsParamsParameter = None,
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     auto_scaled: AutoScaledParameter = None,
@@ -98,8 +92,6 @@ async def create(
     )
     if volume:
         params["volume_id"] = volume
-    if acceptance_tests_params:
-        params["acceptance_tests_params"] = parse_json_object(acceptance_tests_params, "--acceptance-tests-params")
     if auto_scale is not None:
         params["auto_scale"] = auto_scale
     if auto_scale_max_gpus is not None:
