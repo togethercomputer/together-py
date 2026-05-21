@@ -373,7 +373,6 @@ class EndpointsResource(SyncAPIResource):
             cast_to=EndpointListHardwareResponse,
         )
 
-
     def set_lora_adapter(
         self,
         *,
