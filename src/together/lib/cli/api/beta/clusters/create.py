@@ -30,7 +30,6 @@ ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Param
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
-AutoScaledParameter = Annotated[Optional[bool], Parameter(help="Enable workload-based GPU auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
 GpuNodeFailoverEnabledParameter = Annotated[
     Optional[bool], Parameter(help="Enable automated GPU node failover for the cluster")
@@ -63,7 +62,6 @@ async def create(
     volume: VolumeParameter = None,
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
-    auto_scaled: AutoScaledParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
     gpu_node_failover_enabled: GpuNodeFailoverEnabledParameter = None,
     install_traefik: InstallTraefikParameter = None,
@@ -96,8 +94,6 @@ async def create(
         params["auto_scale"] = auto_scale
     if auto_scale_max_gpus is not None:
         params["auto_scale_max_gpus"] = auto_scale_max_gpus
-    if auto_scaled is not None:
-        params["auto_scaled"] = auto_scaled
     if capacity_pool_id:
         params["capacity_pool_id"] = capacity_pool_id
     if gpu_node_failover_enabled is not None:
