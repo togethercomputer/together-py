@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.16.0 (2026-05-22)
+
+Full Changelog: [v2.15.0...v2.16.0](https://github.com/togethercomputer/together-py/compare/v2.15.0...v2.16.0)
+
+### Features
+
+* **cli:** expose new cluster SDK parameters ([#378](https://github.com/togethercomputer/together-py/issues/378)) ([b694d8f](https://github.com/togethercomputer/together-py/commit/b694d8f261da15835257bb0352e1ba312b4127d3))
+
+
+### Documentation
+
+* **api:** add size and duration limits to file parameter in audio transcriptions/translations ([cce54f2](https://github.com/togethercomputer/together-py/commit/cce54f2362fd8dba1205eccf89f6909be74e2c37))
+
 ## 2.15.0 (2026-05-20)
 
 Full Changelog: [v2.14.0...v2.15.0](https://github.com/togethercomputer/together-py/compare/v2.14.0...v2.15.0)

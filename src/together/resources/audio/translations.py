@@ -66,8 +66,10 @@ class TranslationsResource(SyncAPIResource):
         Translates audio into English
 
         Args:
-          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac, .ogg, .opus, .aac.
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats: .wav, .mp3, .m4a,
+              .webm, .flac, .ogg, .opus, .aac. Maximum duration 4 hours; longer audio is
+              rejected with `audio_too_long`. Binary uploads are additionally capped at 500 MB
+              (HTTP 413); URL-fetched audio is capped at 1 GB.
 
           language: Target output language. Optional ISO 639-1 language code. If omitted, language
               is set to English.
@@ -169,8 +171,10 @@ class AsyncTranslationsResource(AsyncAPIResource):
         Translates audio into English
 
         Args:
-          file: Audio file upload or public HTTP/HTTPS URL. Supported formats .wav, .mp3, .m4a,
-              .webm, .flac, .ogg, .opus, .aac.
+          file: Audio file upload or public HTTP/HTTPS URL. Supported formats: .wav, .mp3, .m4a,
+              .webm, .flac, .ogg, .opus, .aac. Maximum duration 4 hours; longer audio is
+              rejected with `audio_too_long`. Binary uploads are additionally capped at 500 MB
+              (HTTP 413); URL-fetched audio is capped at 1 GB.
 
           language: Target output language. Optional ISO 639-1 language code. If omitted, language
               is set to English.

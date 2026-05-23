@@ -14,7 +14,8 @@ NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
 RegionParameter = Annotated[Optional[str], Parameter(help="Region to create the cluster in")]
 BillingTypeParameter = Annotated[
-    Optional[Literal["RESERVED", "ON_DEMAND"]], Parameter(help="Billing type to use for the cluster")
+    Optional[Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"]],
+    Parameter(help="Billing type to use for the cluster"),
 ]
 NvidiaDriverVersionParameter = Annotated[Optional[str], Parameter(help="Nvidia driver version to use for the cluster")]
 CudaVersionParameter = Annotated[Optional[str], Parameter(help="CUDA version to use for the cluster")]
@@ -27,6 +28,25 @@ GpuTypeParameter = Annotated[
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
+AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
+AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
+CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
+GpuNodeFailoverEnabledParameter = Annotated[
+    Optional[bool], Parameter(help="Enable automated GPU node failover for the cluster")
+]
+InstallTraefikParameter = Annotated[Optional[bool], Parameter(help="Install Traefik ingress controller")]
+NumCapacityPoolGpusParameter = Annotated[
+    Optional[int], Parameter(help="Number of GPUs to allocate from a capacity pool")
+]
+NumPreemptibleGpusParameter = Annotated[Optional[int], Parameter(help="Number of preemptible GPUs to request")]
+NumReservedGpusParameter = Annotated[Optional[int], Parameter(help="Number of prepaid reserved GPUs to request")]
+ProjectIDParameter = Annotated[Optional[str], Parameter(help="Project ID for the cluster")]
+ReservationEndTimeParameter = Annotated[Optional[str], Parameter(help="Reservation end time for scheduled capacity")]
+ReservationStartTimeParameter = Annotated[
+    Optional[str], Parameter(help="Reservation start time for scheduled capacity")
+]
+SlurmImageParameter = Annotated[Optional[str], Parameter(help="Custom Slurm image for Slurm clusters")]
+SlurmShmSizeGibParameter = Annotated[Optional[int], Parameter(help="Shared memory size in GiB for Slurm clusters")]
 
 
 async def create(
@@ -40,6 +60,19 @@ async def create(
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
+    auto_scale: AutoScaleParameter = None,
+    auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
+    capacity_pool_id: CapacityPoolIDParameter = None,
+    gpu_node_failover_enabled: GpuNodeFailoverEnabledParameter = None,
+    install_traefik: InstallTraefikParameter = None,
+    num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
+    num_preemptible_gpus: NumPreemptibleGpusParameter = None,
+    num_reserved_gpus: NumReservedGpusParameter = None,
+    project_id: ProjectIDParameter = None,
+    reservation_end_time: ReservationEndTimeParameter = None,
+    reservation_start_time: ReservationStartTimeParameter = None,
+    slurm_image: SlurmImageParameter = None,
+    slurm_shm_size_gib: SlurmShmSizeGibParameter = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -57,6 +90,32 @@ async def create(
     )
     if volume:
         params["volume_id"] = volume
+    if auto_scale is not None:
+        params["auto_scale"] = auto_scale
+    if auto_scale_max_gpus is not None:
+        params["auto_scale_max_gpus"] = auto_scale_max_gpus
+    if capacity_pool_id:
+        params["capacity_pool_id"] = capacity_pool_id
+    if gpu_node_failover_enabled is not None:
+        params["gpu_node_failover_enabled"] = gpu_node_failover_enabled
+    if install_traefik is not None:
+        params["install_traefik"] = install_traefik
+    if num_capacity_pool_gpus is not None:
+        params["num_capacity_pool_gpus"] = num_capacity_pool_gpus
+    if num_preemptible_gpus is not None:
+        params["num_preemptible_gpus"] = num_preemptible_gpus
+    if num_reserved_gpus is not None:
+        params["num_reserved_gpus"] = num_reserved_gpus
+    if project_id:
+        params["project_id"] = project_id
+    if reservation_end_time:
+        params["reservation_end_time"] = reservation_end_time
+    if reservation_start_time:
+        params["reservation_start_time"] = reservation_start_time
+    if slurm_image:
+        params["slurm_image"] = slurm_image
+    if slurm_shm_size_gib is not None:
+        params["slurm_shm_size_gib"] = slurm_shm_size_gib
 
     # JSON Mode skips hand holding through the argument setup
     if not config.json and not config.non_interactive:

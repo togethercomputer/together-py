@@ -158,6 +158,75 @@ class TestBetaClustersCreate:
         assert body["billing_type"] == "ON_DEMAND"
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created = _cluster_body("new-id", "scheduled")
+        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--cluster-type",
+                "SLURM",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-driver-version",
+                "565",
+                "--cuda-version",
+                "12.6",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "SCHEDULED_CAPACITY",
+                "--name",
+                "scheduled",
+                "--auto-scale",
+                "--auto-scale-max-gpus",
+                "16",
+                "--capacity-pool-id",
+                "pool-1",
+                "--gpu-node-failover-enabled",
+                "--install-traefik",
+                "--num-capacity-pool-gpus",
+                "8",
+                "--num-preemptible-gpus",
+                "8",
+                "--num-reserved-gpus",
+                "8",
+                "--project-id",
+                "proj-1",
+                "--reservation-start-time",
+                "2026-06-01T00:00:00Z",
+                "--reservation-end-time",
+                "2026-06-02T00:00:00Z",
+                "--slurm-image",
+                "slurm:latest",
+                "--slurm-shm-size-gib",
+                "32",
+            ],
+        )
+
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body["billing_type"] == "SCHEDULED_CAPACITY"
+        assert body["auto_scale"] is True
+        assert body["auto_scale_max_gpus"] == 16
+        assert body["capacity_pool_id"] == "pool-1"
+        assert body["gpu_node_failover_enabled"] is True
+        assert body["install_traefik"] is True
+        assert body["num_capacity_pool_gpus"] == 8
+        assert body["num_preemptible_gpus"] == 8
+        assert body["num_reserved_gpus"] == 8
+        assert body["project_id"] == "proj-1"
+        assert body["reservation_start_time"] == "2026-06-01T00:00:00Z"
+        assert body["reservation_end_time"] == "2026-06-02T00:00:00Z"
+        assert body["slurm_image"] == "slurm:latest"
+        assert body["slurm_shm_size_gib"] == 32
+        assert result.exit_code == 0
+
 
 class TestBetaClustersUpdate:
     @pytest.mark.respx(base_url=base_url)
@@ -174,6 +243,31 @@ class TestBetaClustersUpdate:
         put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
         assert put_body["num_gpus"] == 16
         assert put_body["cluster_type"] == "SLURM"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        updated = _cluster_body("c1", num_gpus=16)
+        put = respx_mock.put("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "update",
+                "c1",
+                "--num-preemptible-gpus",
+                "8",
+                "--num-reserved-gpus",
+                "16",
+                "--reservation-end-time",
+                "2026-06-02T00:00:00Z",
+            ],
+        )
+
+        put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
+        assert put_body["num_preemptible_gpus"] == 8
+        assert put_body["num_reserved_gpus"] == 16
+        assert put_body["reservation_end_time"] == "2026-06-02T00:00:00Z"
         assert result.exit_code == 0
 
 
@@ -234,13 +328,29 @@ class TestBetaClustersStorage:
                 "1",
                 "--volume-name",
                 "test-volume",
+                "--is-lifecycle-independent",
                 "--json",
             ],
         )
         out = json.loads(result.output)
         assert out["volume_id"] == "vol-1"
         raw = cast(Call, route.calls[0]).request.content.decode()
-        assert json.loads(raw) == {"region": "us-east-1", "size_tib": 1, "volume_name": "test-volume"}
+        assert json.loads(raw) == {
+            "region": "us-east-1",
+            "size_tib": 1,
+            "volume_name": "test-volume",
+            "is_lifecycle_independent": True,
+        }
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_storage_update_allows_omitting_size(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.put("/compute/clusters/storage/volumes").mock(
+            return_value=httpx.Response(200, json=_VOLUME_BODY)
+        )
+        result = cli_runner.invoke(["beta", "clusters", "storage", "update", "vol-1", "--json"])
+
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"volume_id": "vol-1"}
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
