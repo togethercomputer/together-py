@@ -92,7 +92,7 @@ class ResultsEvaluationCompareResults(BaseModel):
     """
 
     ties: Optional[int] = FieldInfo(alias="Ties", default=None)
-    """Number of samples that resulted in a tie"""
+    """Number of samples that resulted in a tie score"""
 
 
 Results: TypeAlias = Union[
