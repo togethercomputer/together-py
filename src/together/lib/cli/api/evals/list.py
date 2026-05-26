@@ -101,6 +101,8 @@ def _get_result(job: EvaluationJob) -> str:
                 and compare_job.b_wins > compare_job.a_wins
             ):
                 return f"Winning Model: [primary]{_get_model_name(job, 'model_b')}[/primary] (model B)"
+            elif compare_job.ties is not None:
+                return f"Tie score: [primary]{compare_job.ties}[/primary]"
             else:
                 return "[primary]Tie[/primary]"
 

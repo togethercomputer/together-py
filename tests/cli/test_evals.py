@@ -26,6 +26,14 @@ _EVAL_JOB = {
 
 _EVAL_STATUS = {"status": "completed", "results": None}
 
+_COMPARE_TIE_EVAL_JOB = {
+    "workflow_id": "eval-wf-compare",
+    "type": "compare",
+    "status": "completed",
+    "parameters": {"model_a": "model-a", "model_b": "model-b"},
+    "results": {"A_wins": 0, "B_wins": 0, "Ties": 3},
+}
+
 
 class TestEvalsList:
     @pytest.mark.respx(base_url=base_url)
@@ -42,6 +50,13 @@ class TestEvalsList:
     def test_list_requires_nothing(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/evaluation").mock(return_value=httpx.Response(200, json=[]))
         assert cli_runner.invoke(["evals", "list"]).exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_displays_compare_tie_score(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/evaluation").mock(return_value=httpx.Response(200, json=[_COMPARE_TIE_EVAL_JOB]))
+        result = cli_runner.invoke(["evals", "list"])
+        assert result.exit_code == 0
+        assert "Tie score: 3" in result.output
 
 
 class TestEvalsRetrieveAndStatus:
