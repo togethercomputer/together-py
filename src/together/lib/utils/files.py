@@ -350,7 +350,7 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
             report_dict["is_check_passed"] = False
             return report_dict
 
-    num_samples = len(table)
+    num_samples = table.num_rows
     if num_samples < MIN_SAMPLES:
         report_dict["has_min_samples"] = False
         report_dict["message"] = (
