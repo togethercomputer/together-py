@@ -16,11 +16,8 @@ The REST API documentation can be found on [docs.together.ai](https://docs.toget
 ## Installation
 
 ```sh
+# install from PyPI
 pip install together
-```
-
-```sh
-uv add together
 ```
 
 ## Usage
@@ -92,7 +89,7 @@ You can enable this by installing `aiohttp`:
 
 ```sh
 # install from PyPI
-pip install '--pre together[aiohttp]'
+pip install together[aiohttp]
 ```
 
 Then you can enable it by instantiating the client with `http_client=DefaultAioHttpClient()`:
@@ -197,6 +194,21 @@ chat_completion = client.chat.completions.create(
     reasoning={},
 )
 print(chat_completion.reasoning)
+```
+
+## File uploads
+
+Request parameters that correspond to file uploads can be passed as `bytes`, or a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance or a tuple of `(filename, contents, media type)`.
+
+```python
+from pathlib import Path
+from together import Together
+
+client = Together()
+
+client.audio.transcriptions.create(
+    file=Path("/path/to/file"),
+)
 ```
 
 The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
@@ -465,72 +477,6 @@ with Together() as client:
 # HTTP client is now closed
 ```
 
-## Usage – CLI
-
-### Files
-
-```bash
-# Help
-tg files --help
-
-# Check file
-tg files check example.jsonl
-
-# Upload file
-tg files upload example.jsonl
-
-# List files
-tg files list
-
-# Retrieve file metadata
-tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-
-# Retrieve file content
-tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-
-# Delete remote file
-tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-```
-
-### Fine-tuning
-
-```bash
-# `tg ft` and `tg fine-tuning` are equivalent
-
-# Help
-tg ft --help
-
-# Create fine-tune job
-tg ft create \
-  --model togethercomputer/llama-2-7b-chat \
-  --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
-
-# List fine-tune jobs
-tg ft list
-
-# Retrieve fine-tune job details
-tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# List fine-tune job events
-tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Cancel running job
-tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Download fine-tuned model weights
-tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-```
-
-### Models
-
-```bash
-# Help
-tg models --help
-
-# List models
-tg models list
-```
-
 ## Versioning
 
 This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
@@ -557,211 +503,6 @@ print(together.__version__)
 ## Requirements
 
 Python 3.9 or higher.
-
-## Usage – CLI
-
-### Files
-
-```bash
-# Help
-tg files --help
-
-# Check file
-tg files check example.jsonl
-
-# Upload file
-tg files upload example.jsonl
-
-# List files
-tg files list
-
-# Retrieve file metadata
-tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-
-# Retrieve file content
-tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-
-# Delete remote file
-tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-```
-
-### Fine-tuning
-
-```bash
-# `tg ft` and `tg fine-tuning` are equivalent
-
-# Help
-tg ft --help
-
-# Create fine-tune job
-tg ft create \
-  --model togethercomputer/llama-2-7b-chat \
-  --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
-
-# List fine-tune jobs
-tg ft list
-
-# Retrieve fine-tune job details
-tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# List fine-tune job events
-tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# List fine-tune checkpoints
-tg ft list-checkpoints ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Cancel running job
-tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Download fine-tuned model weights
-tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Delete fine-tuned model weights
-tg ft delete ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-```
-
-### Models
-
-```bash
-# Help
-tg models --help
-
-# List models
-tg models list
-
-# Upload a model
-tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face
-```
-
-### Clusters
-
-```bash
-# Help
-tg beta clusters --help
-
-# Create a cluster
-tg beta clusters create
-
-# List clusters
-tg beta clusters list
-
-# Retrieve cluster details
-tg beta clusters retrieve [cluster-id]
-
-# Update a cluster
-tg beta clusters update [cluster-id]
-
-# Retrieve Together cluster configuration options such as regions, gpu types and drivers available
-tg beta clusters list-regions
-```
-
-##### Cluster Storage
-
-```bash
-# Help
-tg beta clusters storage --help
-
-# Create cluster storage volume
-tg beta clusters storage create
-
-# List storage volumes
-tg beta clusters storage list
-
-# Retrieve storage volume
-tg beta clusters storage retrieve [storage-id]
-
-# Delete storage volume
-tg beta clusters storage delete [storage-id]
-```
-
-### Jig (Container Deployments)
-
-```bash
-# Help
-tg beta jig --help
-
-# Initialize jig configuration (creates pyproject.toml)
-tg beta jig init
-
-# Generate Dockerfile from config
-tg beta jig dockerfile
-
-# Build container image
-tg beta jig build
-tg beta jig build --tag v1.0 --warmup
-
-# Push image to registry
-tg beta jig push
-tg beta jig push --tag v1.0
-
-# Deploy model (builds, pushes, and deploys)
-tg beta jig deploy
-tg beta jig deploy --build-only
-tg beta jig deploy --image existing-image:tag
-
-# Get deployment status
-tg beta jig status
-
-# Get deployment endpoint URL
-tg beta jig endpoint
-
-# View deployment logs
-tg beta jig logs
-tg beta jig logs --follow
-
-# Destroy deployment
-tg beta jig destroy
-
-# Get queue metrics
-tg beta jig queue-status
-
-# List all deployments
-tg beta jig list
-```
-
-##### Jig Secrets
-
-```bash
-# Help
-tg beta jig secrets --help
-
-# Set a secret (creates or updates)
-tg beta jig secrets set --name MY_SECRET --value "secret-value"
-
-# Remove a secret from local state
-tg beta jig secrets unset --name MY_SECRET
-
-# List all secrets with sync status
-tg beta jig secrets list
-```
-
-##### Jig Volumes
-
-```bash
-# Help
-tg beta jig volumes --help
-
-# Create a volume and upload files from directory
-tg beta jig volumes create --name my-volume --source ./data
-
-# Update a volume with new files
-tg beta jig volumes update --name my-volume --source ./data
-
-# Set volume mount path for deployment
-tg beta jig volumes set --name my-volume --mount-path /app/data
-
-# Remove volume from deployment config (does not delete remote volume)
-tg beta jig volumes unset --name my-volume
-
-# Delete a volume
-tg beta jig volumes delete --name my-volume
-
-# Describe a volume
-tg beta jig volumes describe --name my-volume
-
-# List all volumes
-tg beta jig volumes list
-```
 
 ## Contributing
 
