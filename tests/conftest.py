@@ -11,6 +11,7 @@ import pytest
 from pytest_asyncio import is_async_test
 
 from together import Together, AsyncTogether, DefaultAioHttpClient
+from tests.cli.utils import CliRunner
 from together._utils import is_dict
 
 if TYPE_CHECKING:
@@ -82,3 +83,8 @@ async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncTogether]:
         base_url=base_url, api_key=api_key, _strict_response_validation=strict, http_client=http_client
     ) as client:
         yield client
+
+
+@pytest.fixture()
+def cli_runner(capsys: pytest.CaptureFixture[str]) -> CliRunner:
+    return CliRunner(capsys)

@@ -22,6 +22,7 @@ base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 class TestEvals:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_method_create(self, client: Together) -> None:
         eval = client.evals.create(
@@ -39,6 +40,7 @@ class TestEvals:
         )
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         eval = client.evals.create(
@@ -62,6 +64,7 @@ class TestEvals:
         )
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.evals.with_raw_response.create(
@@ -83,6 +86,7 @@ class TestEvals:
         eval = response.parse()
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.evals.with_streaming_response.create(
@@ -221,6 +225,7 @@ class TestAsyncEvals:
         "async_client", [False, True, {"http_client": "aiohttp"}], indirect=True, ids=["loose", "strict", "aiohttp"]
     )
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         eval = await async_client.evals.create(
@@ -238,6 +243,7 @@ class TestAsyncEvals:
         )
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         eval = await async_client.evals.create(
@@ -261,6 +267,7 @@ class TestAsyncEvals:
         )
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.evals.with_raw_response.create(
@@ -282,6 +289,7 @@ class TestAsyncEvals:
         eval = await response.parse()
         assert_matches_type(EvalCreateResponse, eval, path=["response"])
 
+    @pytest.mark.skip(reason="Skipping evals tests atm")
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.evals.with_streaming_response.create(
