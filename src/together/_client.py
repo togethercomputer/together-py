@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import os
-import sys
 from typing import TYPE_CHECKING, Any, Mapping
 from typing_extensions import Self, override
 
 import httpx
-
-from together.lib._google_colab import get_google_colab_secret
 
 from . import _exceptions
 from ._qs import Querystring
@@ -116,8 +113,6 @@ class Together(SyncAPIClient):
         """
         if api_key is None:
             api_key = os.environ.get("TOGETHER_API_KEY")
-        if api_key is None and "google.colab" in sys.modules:
-            api_key = get_google_colab_secret("TOGETHER_API_KEY")
         if api_key is None:
             raise TogetherError(
                 "The api_key client option must be set either by passing api_key to the client or by setting the TOGETHER_API_KEY environment variable"
@@ -390,8 +385,6 @@ class AsyncTogether(AsyncAPIClient):
         """
         if api_key is None:
             api_key = os.environ.get("TOGETHER_API_KEY")
-        if api_key is None and "google.colab" in sys.modules:
-            api_key = get_google_colab_secret("TOGETHER_API_KEY")
         if api_key is None:
             raise TogetherError(
                 "The api_key client option must be set either by passing api_key to the client or by setting the TOGETHER_API_KEY environment variable"
