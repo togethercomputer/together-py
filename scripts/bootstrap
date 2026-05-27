@@ -20,7 +20,7 @@ if [ -f "Brewfile" ] && [ "$(uname -s)" = "Darwin" ] && [ "${SKIP_BREW:-}" != "1
 fi
 
 echo "==> Installing Python…"
-uv python install
+UV_PYTHON=3.10.19 uv python install
 
 echo "==> Installing Python dependencies…"
 uv sync --all-extras

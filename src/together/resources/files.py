@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+from pprint import pformat
+from typing import cast, get_args
+from pathlib import Path
+
 import httpx
 
+from together.types import FilePurpose
+from together.lib.resources.files import FileAlreadyExistsError
+
+from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
+from ..types import FilePurpose
 from .._types import Body, Query, Headers, NotGiven, not_given
 from .._utils import path_template
 from .._compat import cached_property
@@ -138,6 +147,43 @@ class FilesResource(SyncAPIResource):
             ),
             cast_to=FileDeleteResponse,
         )
+
+    def upload(
+        self,
+        file: Path | str,
+        *,
+        purpose: FilePurpose | str = "fine-tune",
+        check: bool = True,
+    ) -> FileResponse:
+        if check:
+            report_dict = check_file(file)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if purpose not in get_args(FilePurpose):
+            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
+
+        purpose = cast(FilePurpose, purpose)
+
+        try:
+            upload_manager = UploadManager(self._client)
+            result = upload_manager.upload("/files", file, purpose)
+
+            return FileResponse(
+                id=result.id,
+                bytes=result.bytes,
+                created_at=result.created_at,
+                filename=result.filename,
+                FileType=result.file_type,
+                object=result.object,
+                Processed=result.processed,
+                purpose=result.purpose,
+            )
+        except FileAlreadyExistsError as e:
+            return self.retrieve(e.file_id)
 
     def content(
         self,
@@ -284,6 +330,43 @@ class AsyncFilesResource(AsyncAPIResource):
             ),
             cast_to=FileDeleteResponse,
         )
+
+    async def upload(
+        self,
+        file: Path | str,
+        *,
+        purpose: FilePurpose | str = "fine-tune",
+        check: bool = True,
+    ) -> FileResponse:
+        if check:
+            report_dict = check_file(file)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if purpose not in get_args(FilePurpose):
+            raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
+
+        purpose = cast(FilePurpose, purpose)
+
+        try:
+            upload_manager = AsyncUploadManager(self._client)
+            result = await upload_manager.upload("/files", file, purpose)
+
+            return FileResponse(
+                id=result.id,
+                bytes=result.bytes,
+                created_at=result.created_at,
+                filename=result.filename,
+                FileType=result.file_type,
+                object=result.object,
+                Processed=result.processed,
+                purpose=result.purpose,
+            )
+        except FileAlreadyExistsError as e:
+            return await self.retrieve(e.file_id)
 
     async def content(
         self,

@@ -38,6 +38,7 @@ import distro
 import pydantic
 from httpx import URL
 from pydantic import PrivateAttr
+from detect_agent import determine_agent
 
 from . import _exceptions
 from ._qs import Querystring
@@ -675,6 +676,7 @@ class BaseClient(Generic[_HttpxClientT, _DefaultStreamT]):
             "Content-Type": "application/json",
             "User-Agent": self.user_agent,
             **self.platform_headers(),
+            **self.agent_headers(),
             **self.auth_headers,
             **self._custom_headers,
         }
@@ -713,6 +715,12 @@ class BaseClient(Generic[_HttpxClientT, _DefaultStreamT]):
         # function because adding `lru_cache` to methods will leak memory
         # https://github.com/python/cpython/issues/88476
         return platform_headers(self._version, platform=self._platform)
+
+    def agent_headers(self) -> dict[str, str]:
+        # the actual implementation is in a separate `lru_cache` decorated
+        # function because adding `lru_cache` to methods will leak memory
+        # https://github.com/python/cpython/issues/88476
+        return agent_headers()
 
     def _parse_retry_after_header(self, response_headers: Optional[httpx.Headers] = None) -> float | None:
         """Returns a float of the number of seconds (not milliseconds) to wait after retrying, or None if unspecified.
@@ -2053,6 +2061,15 @@ def get_platform() -> Platform:
         return OtherPlatform(platform_name)
 
     return "Unknown"
+
+
+@lru_cache(maxsize=None)
+def agent_headers() -> dict[str, str]:
+    agent = determine_agent()
+    if agent["is_agent"] and agent["agent"]:
+        return {"X-Stainless-Agent": agent["agent"]["name"]}
+
+    return {}
 
 
 @lru_cache(maxsize=None)
