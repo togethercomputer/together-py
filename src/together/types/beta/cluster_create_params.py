@@ -105,12 +105,6 @@ class ClusterCreateParams(TypedDict, total=False):
     duration_days: int
     """Duration in days to keep the cluster running."""
 
-    gpu_node_failover_enabled: bool
-    """Whether automated GPU node failover should be enabled for this cluster.
-
-    By default, it is disabled.
-    """
-
     install_traefik: bool
     """Whether to install Traefik ingress controller in the cluster.
 
