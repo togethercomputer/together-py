@@ -420,6 +420,12 @@ endpoints_app.command(
     help="List availability zones for deploying models",
 )
 
+### Adapters subcommands
+adapters_app = endpoints_app.command(App(name="adapters", help="Manage LoRA adapters on dedicated endpoints"))
+adapters_app.command((f"{_CLI}.endpoints.adapters.add:add"), help="Add a LoRA adapter to an endpoint")
+adapters_app.command((f"{_CLI}.endpoints.adapters.list:list"), alias="ls", help="List bound adapters")
+adapters_app.command((f"{_CLI}.endpoints.adapters.remove:remove"), help="Remove a LoRA adapter from an endpoint")
+
 ## Evals API commands
 evals_app = app.command(App(name="evals", help="Run and manage model evaluations", help_epilogue=EVALS_HELP_EXAMPLES))
 evals_app.command(
