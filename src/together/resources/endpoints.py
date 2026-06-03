@@ -373,25 +373,25 @@ class EndpointsResource(SyncAPIResource):
             cast_to=EndpointListHardwareResponse,
         )
 
-    def set_lora_adapter(
+    def add_adapter(
         self,
         *,
-        base_model: str,
-        adapter_name: str,
+        endpoint_id: str,
+        model_id: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> object:
-        """Points a LoRA adapter model to a dedicated endpoint.
+        """Adds a LoRA adapter to a dedicated endpoint.
 
-        After this call, inference requests to ``base_model:adapter_name``
+        After this call, inference requests to the adapter model name
         will be routed to the specified endpoint.
 
         Args:
-          base_model: The dedicated endpoint name that serves the base model with LoRA support.
+          endpoint_id: The dedicated endpoint ID.
 
-          adapter_name: The LoRA adapter model name (e.g. "user/my-adapter").
+          model_id: Combined identifier in "endpoint_name:adapter_name" format.
 
           extra_headers: Send extra headers
 
@@ -402,11 +402,9 @@ class EndpointsResource(SyncAPIResource):
           timeout: Override the client-level default timeout for this request, in seconds
         """
         return self._post(
-            "/v1/endpoints/adapters",
+            f"/v1/endpoints/{endpoint_id}/adapters",
             body=maybe_transform(
-                {
-                    "model_id": f"{base_model}:{adapter_name}",
-                },
+                {"model_id": model_id},
                 dict,
             ),
             options=make_request_options(
@@ -421,18 +419,19 @@ class EndpointsResource(SyncAPIResource):
     def list_adapters(
         self,
         *,
+        endpoint_id: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> object:
-        """Lists all LoRA adapters bound to dedicated endpoints.
+        """Lists LoRA adapters bound to a dedicated endpoint.
 
-        Returns adapters with their model_id (endpoint:adapter format),
-        adapter_name, and endpoint_name.
+        Args:
+          endpoint_id: The dedicated endpoint ID.
         """
         return self._get(
-            "/v1/endpoints/adapters",
+            f"/v1/endpoints/{endpoint_id}/adapters",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -442,29 +441,27 @@ class EndpointsResource(SyncAPIResource):
             cast_to=object,
         )
 
-    def delete_adapter(
+    def remove_adapter(
         self,
         *,
-        base_model: str,
-        adapter_name: str,
+        endpoint_id: str,
+        model_id: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> object:
-        """Unbinds a LoRA adapter from its dedicated endpoint.
+        """Removes a LoRA adapter from a dedicated endpoint.
 
         Args:
-          base_model: The dedicated endpoint name.
+          endpoint_id: The dedicated endpoint ID.
 
-          adapter_name: The LoRA adapter model name.
+          model_id: Combined identifier in "endpoint_name:adapter_name" format.
         """
         return self._delete(
-            "/v1/endpoints/adapters",
+            f"/v1/endpoints/{endpoint_id}/adapters",
             body=maybe_transform(
-                {
-                    "model_id": f"{base_model}:{adapter_name}",
-                },
+                {"model_id": model_id},
                 dict,
             ),
             options=make_request_options(
@@ -819,40 +816,27 @@ class AsyncEndpointsResource(AsyncAPIResource):
             cast_to=EndpointListHardwareResponse,
         )
 
-    async def set_lora_adapter(
+    async def add_adapter(
         self,
         *,
-        base_model: str,
-        adapter_name: str,
+        endpoint_id: str,
+        model_id: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> object:
-        """Points a LoRA adapter model to a dedicated endpoint.
-
-        After this call, inference requests to ``base_model:adapter_name``
-        will be routed to the specified endpoint.
+        """Adds a LoRA adapter to a dedicated endpoint.
 
         Args:
-          base_model: The dedicated endpoint name that serves the base model with LoRA support.
+          endpoint_id: The dedicated endpoint ID.
 
-          adapter_name: The LoRA adapter model name (e.g. "user/my-adapter").
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
+          model_id: Combined identifier in "endpoint_name:adapter_name" format.
         """
         return await self._post(
-            "/v1/endpoints/adapters",
+            f"/v1/endpoints/{endpoint_id}/adapters",
             body=await async_maybe_transform(
-                {
-                    "model_id": f"{base_model}:{adapter_name}",
-                },
+                {"model_id": model_id},
                 dict,
             ),
             options=make_request_options(
@@ -867,14 +851,15 @@ class AsyncEndpointsResource(AsyncAPIResource):
     async def list_adapters(
         self,
         *,
+        endpoint_id: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> object:
-        """Lists all LoRA adapters bound to dedicated endpoints."""
+        """Lists LoRA adapters bound to a dedicated endpoint."""
         return await self._get(
-            "/v1/endpoints/adapters",
+            f"/v1/endpoints/{endpoint_id}/adapters",
             options=make_request_options(
                 extra_headers=extra_headers,
                 extra_query=extra_query,
@@ -884,23 +869,21 @@ class AsyncEndpointsResource(AsyncAPIResource):
             cast_to=object,
         )
 
-    async def delete_adapter(
+    async def remove_adapter(
         self,
         *,
-        base_model: str,
-        adapter_name: str,
+        endpoint_id: str,
+        model_id: str,
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> object:
-        """Unbinds a LoRA adapter from its dedicated endpoint."""
+        """Removes a LoRA adapter from a dedicated endpoint."""
         return await self._delete(
-            "/v1/endpoints/adapters",
+            f"/v1/endpoints/{endpoint_id}/adapters",
             body=await async_maybe_transform(
-                {
-                    "model_id": f"{base_model}:{adapter_name}",
-                },
+                {"model_id": model_id},
                 dict,
             ),
             options=make_request_options(
