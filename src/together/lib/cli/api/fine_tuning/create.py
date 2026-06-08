@@ -326,7 +326,7 @@ async def create(
         ),
     )
 
-    if finetune_price_estimation_result.available is False:
+    if finetune_price_estimation_result.estimation_available is False:
         price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
             finetune_price_estimation_result.unavailable_reason or "",
             _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,

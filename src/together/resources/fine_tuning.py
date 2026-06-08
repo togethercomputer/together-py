@@ -272,7 +272,7 @@ class FineTuningResource(SyncAPIResource):
             training_type=training_type_cls,
             training_method=training_method_cls,
         )
-        if estimation.available is not False:
+        if estimation.estimation_available is not False:
             price_estimation_result = estimation
 
         if verbose:
@@ -900,7 +900,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             training_type=training_type_cls,
             training_method=training_method_cls,
         )
-        price_estimation_result = estimation if estimation.available is not False else None
+        price_estimation_result = estimation if estimation.estimation_available is not False else None
 
         if verbose:
             rprint(
