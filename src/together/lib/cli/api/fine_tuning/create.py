@@ -32,10 +32,10 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "Consider increasing your credit limit at https://api.together.ai/settings/profile\n"
 )
 
-_PRICE_UNAVAILABLE_LINES_BY_REASON = {
-    "multimodal_dataset": "Price estimation is not available for multimodal training datasets.",
+_PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON = {
+    "multimodal_dataset": f"[yellow][bold]Price estimation is not available for multimodal datasets. Please proceed at your own risk.[/bold][/yellow]",
 }
-_PRICE_UNAVAILABLE_LINE_DEFAULT = "Price estimation is not available for this job."
+_PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT = "Price estimation is not available for this job."
 
 
 def _check_path_exists(path_string: Optional[str]) -> bool:
@@ -300,7 +300,6 @@ async def create(
             )
         training_args["max_seq_length"] = max_seq_length
 
-
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
@@ -328,9 +327,9 @@ async def create(
     )
 
     if finetune_price_estimation_result.available is False:
-        price_line = _PRICE_UNAVAILABLE_LINES_BY_REASON.get(
+        price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
             finetune_price_estimation_result.unavailable_reason or "",
-            _PRICE_UNAVAILABLE_LINE_DEFAULT,
+            _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,
         )
         warning = ""
     else:
