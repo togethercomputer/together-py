@@ -325,9 +325,9 @@ async def create(
             training_method=training_method_cls,
         ),
     )
-    if getattr(finetune_price_estimation_result, "estimation_available", None) is False:
+    if finetune_price_estimation_result.estimation_available is False:
         price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
-            getattr(finetune_price_estimation_result, "unavailable_reason", "") or "",
+            finetune_price_estimation_result.unavailable_reason or "",
             _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,
         )
         warning = ""
