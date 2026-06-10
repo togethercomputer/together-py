@@ -37,6 +37,8 @@ jobs:
           gh auth setup-git
 
       - name: Fetch production main
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git remote add production \
             "https://x-access-token:$(gh auth token)@github.com/${PRODUCTION_REPO}.git"
@@ -56,11 +58,15 @@ jobs:
 
       - name: Push staging main to the release branch on production
         if: steps.diff.outputs.synced == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git push production origin/main:refs/heads/stainless/release --force
 
       - name: Open or update the release PR on production
         if: steps.diff.outputs.synced == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           EXISTING_PR=$(gh pr list \
             --repo "${PRODUCTION_REPO}" \
