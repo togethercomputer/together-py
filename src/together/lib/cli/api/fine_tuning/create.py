@@ -17,6 +17,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.resources.fine_tuning import async_get_model_limits
 from together.lib.cli.components.model_dump import print_model_dump
+from together.types.fine_tuning_estimate_price_response import AvailableEstimate
 
 
 def get_confirmation_message(price: str, warning: str) -> str:
@@ -325,8 +326,12 @@ async def create(
             training_method=training_method_cls,
         ),
     )
-    price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
-    warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
+    if isinstance(finetune_price_estimation_result, AvailableEstimate):
+        price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
+        warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
+    else:
+        price_str = f"unavailable ({finetune_price_estimation_result.unavailable_reason})"
+        warning = ""
 
     if not confirm:
         confirmation_message = get_confirmation_message(price=price_str, warning=warning)

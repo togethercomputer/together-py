@@ -49,7 +49,7 @@ from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
-from ..types.fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse
+from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
@@ -261,6 +261,8 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
+        price_limit_passed: bool = True
+        estimated_total_price: Optional[float] = None
         if not model_limits.supports_vision:
             price_estimation_result = self.estimate_price(
                 training_file=training_file,
@@ -272,10 +274,9 @@ class FineTuningResource(SyncAPIResource):
                 training_type=training_type_cls,
                 training_method=training_method_cls,
             )
-            price_limit_passed = price_estimation_result.allowed_to_proceed
-        else:
-            # unsupported case
-            price_limit_passed = True
+            if isinstance(price_estimation_result, AvailableEstimate):
+                price_limit_passed = price_estimation_result.allowed_to_proceed is not False
+                estimated_total_price = price_estimation_result.estimated_total_price
 
         if verbose:
             rprint(
@@ -284,11 +285,7 @@ class FineTuningResource(SyncAPIResource):
             )
             if not price_limit_passed:
                 rprint(
-                    "[red]"
-                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
-                    )
-                    + "[/red]",
+                    "[red]" + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(estimated_total_price) + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
 
@@ -915,12 +912,13 @@ class AsyncFineTuningResource(AsyncAPIResource):
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
-            if not price_estimation_result.allowed_to_proceed:
+            if (
+                isinstance(price_estimation_result, AvailableEstimate)
+                and price_estimation_result.allowed_to_proceed is False
+            ):
                 rprint(
                     "[red]"
-                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
-                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
-                    )
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
                     + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
