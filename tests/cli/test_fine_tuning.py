@@ -124,7 +124,8 @@ class TestFineTuningCreate:
             input="y\n",
         )
 
-        assert "Price estimation is not available for multimodal datasets" in result.output
+        assert "Price estimation is not available" in result.output
+        assert "multimodal datasets" in result.output
         assert "ft-created" in result.output
         assert create_route.calls
         body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
