@@ -72,6 +72,16 @@ _FT_CHECKPOINT = {
     "step": 5,
 }
 
+_MODEL_LIMITS_BODY = {
+    "max_num_epochs": 10,
+    "max_learning_rate": 1.0,
+    "min_learning_rate": 0.0,
+    "min_max_seq_length": 1,
+    "max_seq_length_sft": 4096,
+    "max_seq_length_dpo": 2048,
+    "supports_vision": True,
+}
+
 _FT_METRICS_BODY = {
     "metrics": [
         {
@@ -81,6 +91,46 @@ _FT_METRICS_BODY = {
         }
     ]
 }
+
+
+class TestFineTuningCreate:
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_confirms_when_price_estimation_unavailable(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "estimation_available": False,
+                    "unavailable_reason": "multimodal_dataset",
+                },
+            )
+        )
+        create_route = respx_mock.post("/fine-tunes").mock(
+            return_value=httpx.Response(200, json={"id": "ft-created", "status": "queued"})
+        )
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+            ],
+            input="y\n",
+        )
+
+        assert "Price estimation is not available for multimodal datasets" in result.output
+        assert "ft-created" in result.output
+        assert create_route.calls
+        body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
+        assert body["training_file"] == "file-train"
+        assert body["model"] == "meta-llama/Llama-3-8b"
+        assert result.exit_code == 0
 
 
 class TestFineTuningList:
