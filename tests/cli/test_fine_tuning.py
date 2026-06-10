@@ -126,8 +126,9 @@ class TestFineTuningCreate:
             input="y\n",
         )
 
+        output = " ".join(result.output.split())
         assert result.exit_code == 0
-        assert "Price estimation is not available for multimodal datasets" in result.output
+        assert "Price estimation is not available for multimodal datasets" in output
         assert "Do you want to proceed?" in result.output
         assert "ft-created" in result.output
         assert estimate.calls
@@ -161,8 +162,9 @@ class TestFineTuningCreate:
             input="y\n",
         )
 
+        output = " ".join(result.output.split())
         assert result.exit_code == 0
-        assert "The estimated price of this job is $123.45." in result.output
+        assert "The estimated price of this job is $123.45." in output
         assert "insufficient funds" in result.output
         assert create.calls
 
