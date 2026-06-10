@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Union, Optional
+from typing import Any, Union, Optional, cast
 from datetime import datetime
 from typing_extensions import Literal
 
@@ -539,25 +539,30 @@ class FineTuningResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        return self._post(
-            "/fine-tunes/estimate-price",
-            body=maybe_transform(
-                {
-                    "training_file": training_file,
-                    "from_checkpoint": from_checkpoint,
-                    "model": model,
-                    "n_epochs": n_epochs,
-                    "n_evals": n_evals,
-                    "training_method": training_method,
-                    "training_type": training_type,
-                    "validation_file": validation_file,
-                },
-                fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
+        return cast(
+            FineTuningEstimatePriceResponse,
+            self._post(
+                "/fine-tunes/estimate-price",
+                body=maybe_transform(
+                    {
+                        "training_file": training_file,
+                        "from_checkpoint": from_checkpoint,
+                        "model": model,
+                        "n_epochs": n_epochs,
+                        "n_evals": n_evals,
+                        "training_method": training_method,
+                        "training_type": training_type,
+                        "validation_file": validation_file,
+                    },
+                    fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
+                ),
+                options=make_request_options(
+                    extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                ),
+                cast_to=cast(
+                    Any, FineTuningEstimatePriceResponse
+                ),  # Union types cannot be passed in as arguments in the type system
             ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=FineTuningEstimatePriceResponse,
         )
 
     def list_checkpoints(
@@ -1167,25 +1172,30 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        return await self._post(
-            "/fine-tunes/estimate-price",
-            body=await async_maybe_transform(
-                {
-                    "training_file": training_file,
-                    "from_checkpoint": from_checkpoint,
-                    "model": model,
-                    "n_epochs": n_epochs,
-                    "n_evals": n_evals,
-                    "training_method": training_method,
-                    "training_type": training_type,
-                    "validation_file": validation_file,
-                },
-                fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
+        return cast(
+            FineTuningEstimatePriceResponse,
+            await self._post(
+                "/fine-tunes/estimate-price",
+                body=await async_maybe_transform(
+                    {
+                        "training_file": training_file,
+                        "from_checkpoint": from_checkpoint,
+                        "model": model,
+                        "n_epochs": n_epochs,
+                        "n_evals": n_evals,
+                        "training_method": training_method,
+                        "training_type": training_type,
+                        "validation_file": validation_file,
+                    },
+                    fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
+                ),
+                options=make_request_options(
+                    extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+                ),
+                cast_to=cast(
+                    Any, FineTuningEstimatePriceResponse
+                ),  # Union types cannot be passed in as arguments in the type system
             ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=FineTuningEstimatePriceResponse,
         )
 
     async def list_checkpoints(
