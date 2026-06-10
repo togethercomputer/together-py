@@ -33,7 +33,7 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
 )
 
 _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON = {
-    "multimodal_dataset": f"[yellow][bold]Price estimation is not available for multimodal datasets. Please proceed at your own risk.[/bold][/yellow]",
+    "multimodal_dataset": "[yellow][bold]Price estimation is not available for multimodal datasets. Please proceed at your own risk.[/bold][/yellow]",
 }
 _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT = "Price estimation is not available for this job."
 
@@ -325,7 +325,6 @@ async def create(
             training_method=training_method_cls,
         ),
     )
-
     if finetune_price_estimation_result.estimation_available is False:
         price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
             finetune_price_estimation_result.unavailable_reason or "",

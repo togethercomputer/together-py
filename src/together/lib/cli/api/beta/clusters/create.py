@@ -31,9 +31,6 @@ VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to 
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
-GpuNodeFailoverEnabledParameter = Annotated[
-    Optional[bool], Parameter(help="Enable automated GPU node failover for the cluster")
-]
 InstallTraefikParameter = Annotated[Optional[bool], Parameter(help="Install Traefik ingress controller")]
 NumCapacityPoolGpusParameter = Annotated[
     Optional[int], Parameter(help="Number of GPUs to allocate from a capacity pool")
@@ -63,7 +60,6 @@ async def create(
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
-    gpu_node_failover_enabled: GpuNodeFailoverEnabledParameter = None,
     install_traefik: InstallTraefikParameter = None,
     num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
     num_preemptible_gpus: NumPreemptibleGpusParameter = None,
@@ -96,8 +92,6 @@ async def create(
         params["auto_scale_max_gpus"] = auto_scale_max_gpus
     if capacity_pool_id:
         params["capacity_pool_id"] = capacity_pool_id
-    if gpu_node_failover_enabled is not None:
-        params["gpu_node_failover_enabled"] = gpu_node_failover_enabled
     if install_traefik is not None:
         params["install_traefik"] = install_traefik
     if num_capacity_pool_gpus is not None:
