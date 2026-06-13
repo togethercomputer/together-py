@@ -44,7 +44,9 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
+    JIG_ROLLBACK_HELP_EXAMPLES,
     BETA_CLUSTERS_HELP_EXAMPLES,
+    JIG_REVISIONS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
@@ -582,6 +584,34 @@ jig_app.command(
     (f"{_CLI}.beta.jig.jig:queue_status_cli"), name="queue-status", help="Get queue metrics for the deployment"
 )
 jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:rollback_cli"),
+    name="rollback",
+    help="Roll back the deployment to a previous revision",
+    help_epilogue=JIG_ROLLBACK_HELP_EXAMPLES,
+)
+
+revisions_app = jig_app.command(
+    App(
+        name="revisions",
+        help="Inspect a deployment's revision history",
+        group="Subcommands",
+        help_epilogue=JIG_REVISIONS_HELP_EXAMPLES,
+    )
+)
+revisions_app.command(
+    (f"{_CLI}.beta.jig.jig:revisions_list_cli"),
+    name="list",
+    alias="ls",
+    help="List revision history (newest first)",
+    help_epilogue=JIG_REVISIONS_HELP_EXAMPLES,
+)
+revisions_app.command(
+    (f"{_CLI}.beta.jig.jig:revisions_get_cli"),
+    name="get",
+    alias=("retrieve", "describe"),
+    help="Get the full configuration of a specific revision",
+)
 
 secrets_app = jig_app.command(
     App(name="secrets", help="Manage deployment secrets", group="Subcommands", help_epilogue=JIG_SECRETS_HELP_EXAMPLES)

@@ -429,3 +429,148 @@ class TestBetaJigVolumes:
         patch_body = json.loads(cast(Call, patch_r.calls[0]).request.content.decode())
         assert patch_body["content"] == {"type": "files", "source_prefix": "shared/4"}
         assert result.exit_code == 0
+
+
+_REVISION_ID = "11111111-1111-1111-1111-111111111111"
+
+
+def _ready_deployment_body(revision_id: str) -> dict[str, object]:
+    """Minimal deployment body that jig.track() treats as up and ready."""
+    return {
+        "name": _DEPLOY_NAME,
+        "object": "deployment",
+        "status": "Ready",
+        "environment_variables": [{"name": "TOGETHER_DEPLOYMENT_REVISION_ID", "value": revision_id}],
+        "replica_events": {
+            "replica-1": {
+                "revision_id": revision_id,
+                "replica_status": "Running",
+                "replica_ready_since": "2024-01-01T00:00:00Z",
+            }
+        },
+    }
+
+
+class TestBetaJigRevisions:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_json(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        payload = {
+            "object": "list",
+            "data": [{"object": "revision_event", "revision_number": 2, "revision_id": _REVISION_ID}],
+            "next_cursor": "1",
+        }
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(return_value=httpx.Response(200, json=payload))
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "list", "--json"])
+
+        assert json.loads(result.output) == payload
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_table(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        payload = {
+            "object": "list",
+            "data": [
+                {
+                    "object": "revision_event",
+                    "revision_number": 4,
+                    "event_number": 7,
+                    "revision_id": _REVISION_ID,
+                    "action": "rollback",
+                    "activated_at": "2024-01-01T00:00:00Z",
+                }
+            ],
+        }
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(return_value=httpx.Response(200, json=payload))
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "list"])
+
+        assert "Revisions for" in result.output
+        assert "#4" in result.output
+        assert "#7" in result.output
+        # pagination hint uses the last event's event_number
+        assert "--before 7" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_forwards_limit_and_before(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": []})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "list", "--limit", "50", "--before", "3"])
+
+        request = cast(Call, route.calls[0]).request
+        assert request.url.params["limit"] == "50"
+        assert request.url.params["before"] == "3"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_by_revision_id(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        payload = {"object": "revision", "revision_id": _REVISION_ID, "image": "registry/img:abc", "min_replicas": 1}
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions/{_REVISION_ID}").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "get", "--revision-id", _REVISION_ID])
+
+        assert json.loads(result.output) == payload
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_not_found(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions/missing").mock(
+            return_value=httpx.Response(404, json={"error": {"message": "revision not found"}})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "get", "missing"])
+
+        assert "not found" in result.output.lower()
+        assert result.exit_code == 1
+
+
+class TestBetaJigRollback:
+    @pytest.mark.respx(base_url=base_url)
+    def test_rollback_detach(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.post(f"/deployments/{_DEPLOY_NAME}/rollback").mock(
+            return_value=httpx.Response(200, json={"name": _DEPLOY_NAME, "object": "deployment", "status": "Updating"})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "rollback", "7", "--detach"])
+
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body == {"revision_identifier": "7"}
+        assert "Rolling back" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rollback_tracks_until_ready(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        respx_mock.post(f"/deployments/{_DEPLOY_NAME}/rollback").mock(
+            return_value=httpx.Response(200, json=_ready_deployment_body(_REVISION_ID))
+        )
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}").mock(
+            return_value=httpx.Response(200, json=_ready_deployment_body(_REVISION_ID))
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "rollback", "--revision", _REVISION_ID])
+
+        assert "Deployment successful" in result.output
+        assert result.exit_code == 0

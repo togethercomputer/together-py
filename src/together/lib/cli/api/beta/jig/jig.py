@@ -1250,6 +1250,86 @@ def list_deployments(jig: Jig) -> Any:
     return jig.api.with_raw_response.list()
 
 
+def _fetch_revisions(jig: Jig, limit: int | None, before: int | None) -> httpx.Response:
+    params: dict[str, Any] = {}
+    if limit is not None:
+        params["limit"] = limit
+    if before:
+        params["before"] = before
+    return jig.together.get(
+        f"/deployments/{jig.name}/revisions",
+        options={"params": params},
+        cast_to=httpx.Response,
+    )
+
+
+def _to_revision_list(jig: Jig, revisions: httpx.Response) -> None:
+    """Render an already-fetched revision history response as a table (newest first)"""
+    body = revisions.json()
+    events: list[dict[str, Any]] = body.get("data") or []
+
+    table = ListTable(
+        title=f"Revisions for {jig.name}",
+        empty_message=f"No revisions found for deployment {jig.name}",
+    )
+    table.add_primary_column("Revision")
+    table.add_column("Event")
+    table.add_column("Action")
+    table.add_column("Image", ratio=2)
+    table.add_column("Activated", ratio=2)
+    table.add_column("Revision ID", ratio=2)
+
+    last_event = events[-1] if events else None
+    last_event_number = last_event.get("event_number") if last_event else None
+    has_more_events = last_event is not None and last_event.get("action") != "create"
+
+    for event in events:
+        event_number = event.get("event_number")
+        number = event.get("revision_number")
+        image = event.get("image")
+        activated_at = event.get("activated_at")
+        time_since_activated = _age(activated_at)
+        table.add_row(
+            f"#{number}" if number is not None else "-",
+            f"#{event_number}" if event_number is not None else "-",
+            event.get("action") or "-",
+            jig.short_image(image) if image else "-",
+            f"{activated_at} [primary]({time_since_activated} ago)[/primary]",
+            event.get("revision_id") or "-",
+        )
+
+    console.print(table)
+
+    if has_more_events:
+        console.print("\n[dim]To see older revisions for this deployment, run:[dim]")
+        console.print(f"  [dim]-[/dim] [primary]tg beta jig revisions list --before {last_event_number}[/primary]\n")
+    else:
+        console.print("\n[muted]You've reached the end of the revision history for this deployment.[/muted]\n")
+
+def revisions_get(jig: Jig, revision_id: str) -> Any:
+    """Get the full configuration of a specific revision"""
+    return jig.together.get(
+        f"/deployments/{jig.name}/revisions/{revision_id}",
+        cast_to=httpx.Response,
+    )
+
+
+def rollback(jig: Jig, revision_identifier: str, detach: bool) -> Any:
+    """Roll back the deployment to a previous revision, then track it back to ready"""
+    res = jig.together.post(
+        f"/deployments/{jig.name}/rollback",
+        body={"revision_identifier": revision_identifier},
+        cast_to=httpx.Response,
+    )
+    console.print(
+        f"\N{ANTICLOCKWISE DOWNWARDS AND UPWARDS OPEN CIRCLE ARROWS} Rolling back {jig.name} to revision {revision_identifier}"
+    )
+    if detach:
+        return res
+    jig.track(jig.api.retrieve(jig.name))
+    return None
+
+
 def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
     """Set a secret (create or update)"""
     jig.set_secret(name, value, description)
@@ -1569,6 +1649,54 @@ def list_deployments_cli(
 ) -> None:
     """List all deployments."""
     _run_jig_cmd(config, toml_config, list_deployments)
+
+
+def revisions_list_cli(
+    limit: Annotated[
+        Optional[int], Parameter(name="--limit", help="Maximum number of events to return (default 20, max 100)")
+    ] = None,
+    before: Annotated[
+        Optional[int],
+        Parameter(name="--before", help="Return events before this event number (exclusive, for pagination)"),
+    ] = None,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """List the deployment's revision history (newest first)."""
+
+    def inner(jig: Jig) -> Any:
+        revisions = _fetch_revisions(jig, limit, before)
+        if config.json:
+            return revisions
+        _to_revision_list(jig, revisions)
+        return None
+
+    _run_jig_cmd(config, toml_config, inner)
+
+
+def revisions_get_cli(
+    revision_id: Annotated[str, Parameter(name="--revision-id", help="Revision UUID")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get the full configuration of a specific revision."""
+    _run_jig_cmd(config, toml_config, lambda jig: revisions_get(jig, revision_id))
+
+
+def rollback_cli(
+    revision: Annotated[str, Parameter(name="--revision", help="Revision number or UUID to roll back to")],
+    detach: Annotated[
+        bool,
+        Parameter(help="Return immediately without waiting for the rollback to complete", negative=()),
+    ] = False,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Roll back the deployment to a previous revision."""
+    _run_jig_cmd(config, toml_config, lambda jig: rollback(jig, revision, detach))
 
 
 def secrets_set_cli(
