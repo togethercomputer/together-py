@@ -404,6 +404,9 @@ JIG_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List deployments or tear one down:
   [primary]tg beta jig list[/primary]
   [primary]tg beta jig destroy[/primary]
+
+[dim]-[/dim] List revision history:
+  [primary]tg beta jig revisions list[/primary]
 """
 
 JIG_SECRETS_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -470,11 +473,11 @@ JIG_REVISIONS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Show revision history (newest first, up to 10 events):
   [primary]tg beta jig revisions list[/primary]
 
-[dim]-[/dim] Page through the 10 revision events, event numbers 90 to 100:
-  [primary]tg beta jig revisions list --limit 10 --before 101 [/primary]
+[dim]-[/dim] View a page of 5 revision events, event numbers 5 to 10 (if present):
+  [primary]tg beta jig revisions list --limit 5 --before 11 [/primary]
 
-[dim]-[/dim] Inspect the full configuration of one revision:
-  [primary]tg beta jig revisions get <revision-number> or <revision-id>[/primary]
+[dim]-[/dim] Inspect the full configuration of one revision (by revision number or revision ID):
+  [primary]tg beta jig revisions get 4 [/primary]
 """
 
 JIG_ROLLBACK_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -482,7 +485,7 @@ JIG_ROLLBACK_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta jig rollback 7[/primary]
 
 [dim]-[/dim] Roll back to a revision by UUID:
-  [primary]tg beta jig rollback <revision-id>[/primary]
+  [primary]tg beta jig rollback 2accdd2a-9094-4682-9016-06e4f14daaff[/primary]
 
 [dim]-[/dim] Start the rollback and return immediately, without tracking:
   [primary]tg beta jig rollback 7 --detach[/primary]
