@@ -36,8 +36,8 @@ _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON = {
     "multimodal_dataset": "[yellow][bold]Price estimation is not available for multimodal datasets.[/bold][/yellow]",
     "train_file_not_validated": "[yellow][bold]Price estimation is not available for training file that is not validated yet.[/bold][/yellow]",
     "eval_file_not_validated": "[yellow][bold]Price estimation is not available for evaluation file that is not validated yet.[/bold][/yellow]",
-    "train_file_invalid": "[yellow][bold]Price estimation is not available for training file that is invalid. Your job will likely be cancelled.[/bold][/yellow]",
-    "eval_file_invalid": "[yellow][bold]Price estimation is not available for evaluation file that is invalid. Your job will likely be cancelled.[/bold][/yellow]",
+    "train_file_invalid": "[yellow][bold]Price estimation is not available for training file that is invalid. If you proceed, your job will be cancelled.[/bold][/yellow]",
+    "eval_file_invalid": "[yellow][bold]Price estimation is not available for evaluation file that is invalid. If you proceed, your job will be cancelled.[/bold][/yellow]",
 }
 _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT = "Price estimation is not available for this job."
 
