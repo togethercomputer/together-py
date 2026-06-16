@@ -1416,14 +1416,7 @@ async def jig_volumes_describe(
     except NotFoundError:
         _jig_fail(f"Volume {name} not found")
     else:
-        if config.json:
-            console.print_json(openapi_dumps(vol).decode("utf-8"))
-        else:
-            console.print(f"[bold dim]ID[/bold dim]         [blue]{vol.id or '—'}[/blue]")
-            console.print(f"[bold dim]Name[/bold dim]       [blue]{vol.name or '—'}[/blue]")
-            console.print(f"[bold dim]Created[/bold dim]     [blue]{vol.created_at or '—'}[/blue]")
-            console.print(f"[bold dim]Updated[/bold dim]     [blue]{vol.updated_at or '—'}[/blue]")
-            console.print(f"[bold dim]Version[/bold dim]      [blue]{vol.current_version!s}[/blue]")
+        console.print_json(openapi_dumps(vol).decode("utf-8"))
 
 
 def dockerfile_cli(
