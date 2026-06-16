@@ -2,13 +2,13 @@
 # contributions merged on production main) back onto staging main as an
 # auto-merging PR, so staging stops drifting behind production. Runs on the
 # staging repo, on a schedule; production stays reference-free (staging does the
-# pull, reusing the PRODUCTION_REPO_TOKEN the promote workflow already uses).
+# pull, reusing the stlc app token the promote workflow already uses).
 #
 # ── Per-repo substitutions (do this once per target) ────────────────────────
 #   <STAGING_REPO>      the staging repo this file lives in  (e.g. <org>/<api>-python-staging)
 #   <PRODUCTION_REPO>   the matching public production repo  (e.g. <org>/<api>-python)
 # Each target (python, go, typescript, terraform) gets its own copy with its own
-# two values. The PRODUCTION_REPO_TOKEN secret is the same one promote already needs.
+# two values. The stlc app token is the same one promote already needs.
 
 name: Sync from production
 
@@ -33,7 +33,6 @@ jobs:
     if: github.repository != 'togethercomputer/together-py'
     env:
       PRODUCTION_REPO: togethercomputer/together-py
-      PRODUCTION_REPO_TOKEN: ${{ secrets.PRODUCTION_REPO_TOKEN }}
       # The built-in token writes the branch + PR on this (staging) repo.
       GH_TOKEN: ${{ github.token }}
     steps:
