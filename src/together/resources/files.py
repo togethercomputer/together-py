@@ -7,7 +7,6 @@ from typing import cast, get_args
 from pathlib import Path
 
 import httpx
-from rich import print as rprint
 
 from together.types import FilePurpose
 from together.lib.resources.files import FileAlreadyExistsError
@@ -155,6 +154,7 @@ class FilesResource(SyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
+        throw_if_already_exists: bool = False,
     ) -> FileResponse:
         if check:
             report_dict = check_file(file)
@@ -184,12 +184,9 @@ class FilesResource(SyncAPIResource):
                 purpose=result.purpose,
             )
         except FileAlreadyExistsError as e:
-            res = self.retrieve(e.file_id)
-            rprint(
-                f"\n[yellow]File already exists under ID: [bold]{res.id}[/bold]. "
-                "If you want to re-upload it, please delete the existing file first.[/yellow]"
-            )
-            return res
+            if throw_if_already_exists:
+                raise
+            return self.retrieve(e.file_id)
 
     def content(
         self,
@@ -343,6 +340,7 @@ class AsyncFilesResource(AsyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
+        throw_if_already_exists: bool = False,
     ) -> FileResponse:
         if check:
             report_dict = check_file(file)
@@ -372,12 +370,9 @@ class AsyncFilesResource(AsyncAPIResource):
                 purpose=result.purpose,
             )
         except FileAlreadyExistsError as e:
-            res = await self.retrieve(e.file_id)
-            rprint(
-                f"\n[yellow]File already exists under ID: [bold]{res.id}[/bold]. "
-                "If you want to re-upload it, please delete the existing file first.[/yellow]"
-            )
-            return res
+            if throw_if_already_exists:
+                raise
+            return await self.retrieve(e.file_id)
 
     async def content(
         self,
