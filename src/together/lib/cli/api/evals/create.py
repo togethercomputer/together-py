@@ -137,10 +137,13 @@ async def create(
     labels_list = labels.split(",") if labels else None
     pass_labels_list = pass_labels.split(",") if pass_labels else None
 
-    # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idempotent so we can depend on this API always giving us a file ID
+    # If the user passes a path to a file, try to upload it to the files API first.
+    # Duplicate uploads now raise so users can delete the existing file explicitly.
     if _check_path_exists(input_data_file_path):
-        file_upload = await config.client.files.upload(Path(input_data_file_path), purpose="eval", check=False)
+        try:
+            file_upload = await config.client.files.upload(Path(input_data_file_path), purpose="eval", check=False)
+        except ValueError as e:
+            raise ValueError(f"Failed to upload --input-data-file-path: {e}") from e
         training_file = file_upload.id
     else:
         training_file = input_data_file_path

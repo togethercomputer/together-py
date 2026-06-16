@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import json
 from typing import cast
+from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -62,6 +64,46 @@ class TestEvalsRetrieveAndStatus:
 
 
 class TestEvalsCreate:
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_stops_when_local_input_file_already_exists(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        input_file = tmp_path / "input.jsonl"
+        input_file.write_text("{}\n")
+        route = respx_mock.post("/evaluation").mock(
+            return_value=httpx.Response(200, json={"workflow_id": "eval-wf-1", "status": "pending"})
+        )
+        message = "File already exists under ID: file-existing. If you want to overwrite it, please delete it first."
+
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            upload_mock.side_effect = ValueError(message)
+            result = cli_runner.invoke(
+                [
+                    "evals",
+                    "create",
+                    "--type",
+                    "compare",
+                    "--judge-model",
+                    "Qwen/Qwen3.5-9B",
+                    "--judge-model-source",
+                    "serverless",
+                    "--judge-system-template",
+                    "Choose the better response.",
+                    "--input-data-file-path",
+                    str(input_file),
+                    "--model-a-field",
+                    "response_a",
+                    "--model-b-field",
+                    "response_b",
+                ]
+            )
+
+        assert result.exit_code == 1
+        upload_mock.assert_called_once()
+        assert not route.calls
+        assert "Failed to upload --input-data-file-path" in result.output
+        assert "file-existing" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_compare_passes_disable_position_bias_correction(
         self, respx_mock: MockRouter, cli_runner: CliRunner

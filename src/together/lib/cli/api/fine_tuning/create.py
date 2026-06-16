@@ -304,16 +304,22 @@ async def create(
             )
         training_args["max_seq_length"] = max_seq_length
 
-    # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idempotent so we can depend on this API always giving us a file ID
+    # If the user passes a path to a file, try to upload it to the files API first.
+    # Duplicate uploads now raise so users can delete the existing file explicitly.
     if _check_path_exists(training_args["training_file"]):
-        file_upload = await config.client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
+        try:
+            file_upload = await config.client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
+        except ValueError as e:
+            raise ValueError(f"Failed to upload --training-file: {e}") from e
         training_args["training_file"] = file_upload.id
 
-    # If the user passes a path to a file, try to upload it to the files API first
-    # Uploads are idempotent so we can depend on this API always giving us a file ID
+    # If the user passes a path to a file, try to upload it to the files API first.
+    # Duplicate uploads now raise so users can delete the existing file explicitly.
     if _check_path_exists(training_args["validation_file"]):
-        file_upload = await config.client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
+        try:
+            file_upload = await config.client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
+        except ValueError as e:
+            raise ValueError(f"Failed to upload --validation-file: {e}") from e
         training_args["validation_file"] = file_upload.id
 
     finetune_price_estimation_result = await show_loading_status(

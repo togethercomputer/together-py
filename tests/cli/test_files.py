@@ -204,3 +204,18 @@ class TestFilesUpload:
         call_kw = upload_mock.call_args.kwargs
         assert call_kw["check"] is False
         assert "uploaded-id" in result.output
+
+    def test_upload_duplicate_file_error_json(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / "data.jsonl"
+        f.write_text("{}\n")
+        message = "File already exists under ID: file-existing. If you want to overwrite it, please delete it first."
+        with patch.object(_files_upload_cli, "check_file") as check_mock, patch(
+            "together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock
+        ) as upload_mock:
+            upload_mock.side_effect = ValueError(message)
+            result = cli_runner.invoke(["files", "upload", str(f), "--no-check", "--json"])
+
+        assert result.exit_code == 1
+        check_mock.assert_not_called()
+        upload_mock.assert_called_once()
+        assert json.loads(result.output) == {"error": message}

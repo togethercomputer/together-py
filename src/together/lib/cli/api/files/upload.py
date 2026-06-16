@@ -45,9 +45,16 @@ async def upload(
         console.print(f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]")
         sys.exit(1)
 
-    response = await show_loading_status(
-        "Uploading file", config.client.files.upload(file=file, purpose=purpose, check=False)
-    )
+    try:
+        response = await show_loading_status(
+            "Uploading file", config.client.files.upload(file=file, purpose=purpose, check=False)
+        )
+    except ValueError as e:
+        if config.json:
+            console.print_json(openapi_dumps({"error": str(e)}).decode("utf-8"))
+        else:
+            console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
+        sys.exit(1)
 
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))

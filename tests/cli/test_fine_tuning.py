@@ -5,7 +5,7 @@ import json
 import importlib
 from typing import cast
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -98,6 +98,37 @@ _FT_CREATE_BODY = {
 
 
 class TestFineTuningCreate:
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_stops_when_local_training_file_already_exists(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        training_file = tmp_path / "train.jsonl"
+        training_file.write_text("{}\n")
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        estimate = respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(200, json={"estimated_total_price": 1})
+        )
+        message = "File already exists under ID: file-existing. If you want to overwrite it, please delete it first."
+
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            upload_mock.side_effect = ValueError(message)
+            result = cli_runner.invoke(
+                [
+                    "fine-tuning",
+                    "create",
+                    "--training-file",
+                    str(training_file),
+                    "--model",
+                    "meta-llama/Llama-3-8b",
+                ],
+            )
+
+        assert result.exit_code == 1
+        upload_mock.assert_called_once()
+        assert not estimate.calls
+        assert "Failed to upload --training-file" in result.output
+        assert "file-existing" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/models/limits").mock(
