@@ -237,7 +237,7 @@ class Uploader:
     ) -> list[dict[str, Any]]:
         """Upload file parts concurrently"""
 
-        async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
+        async def upload_part(part_info: dict[str, Any], fd: int) -> dict[str, Any]:
             err = None
             async with self.semaphore:
                 part_number = part_info["part_number"]
@@ -245,6 +245,8 @@ class Uploader:
                 method = part_info["method"]
                 headers = part_info.get("headers", {})
 
+                offset = (part_number - 1) * self.chunk_size
+                data = await asyncio.to_thread(os.pread, fd, self.chunk_size, offset)
                 part_size = len(data)
 
                 for attempt in range(MAX_UPLOAD_RETRIES):
@@ -263,17 +265,9 @@ class Uploader:
                             await asyncio.sleep(1 * (attempt + 1))
                 raise RuntimeError(f"Failed to upload part {part_number}: {err}")
 
-        with open(file_path, "rb") as f:
-            tasks = [
-                asyncio.create_task(
-                    upload_part(
-                        part_info=part_info,
-                        # read file sequentially while uploads proceed
-                        data=await asyncio.to_thread(f.read, self.chunk_size),
-                    )
-                )
-                for part_info in part_urls
-            ]
-
-        completed_parts = await asyncio.gather(*tasks)
+        fd = await asyncio.to_thread(os.open, file_path, os.O_RDONLY)
+        try:
+            completed_parts = await asyncio.gather(*(upload_part(part_info, fd) for part_info in part_urls))
+        finally:
+            await asyncio.to_thread(os.close, fd)
         return sorted(completed_parts, key=lambda x: x["part_number"])
