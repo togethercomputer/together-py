@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.16.2](https://github.com/togethercomputer/together-py/compare/v2.16.1...v2.16.2) (2026-06-16)
+
+
+### Bug Fixes
+
+* **ci:** pass app token to every authenticated step in promote workflow ([1baa0a4](https://github.com/togethercomputer/together-py/commit/1baa0a4be94080fdc18907a589a45c6b263ecaba))
+* use regular print for jig volumes progress update ([#395](https://github.com/togethercomputer/together-py/issues/395)) ([06d1776](https://github.com/togethercomputer/together-py/commit/06d1776cb2cdb68f618e5b56dadaeff452a6289e))
+
+
+### Chores
+
+* integrate production changes to staging repo ([#30](https://github.com/togethercomputer/together-py/issues/30)) ([f67f123](https://github.com/togethercomputer/together-py/commit/f67f123acf28094bc4ff3852905969f287e6de37))
+* Log warning when uploading a file that already exists ([ee2cee5](https://github.com/togethercomputer/together-py/commit/ee2cee5fc44315d6679afd6b4897a15873e204e2))
+* Update release-please token auth ([f77a46a](https://github.com/togethercomputer/together-py/commit/f77a46a7ca833abdafb52ebbc563e6d1a5a54749))
+* update scripts to use github app ([#32](https://github.com/togethercomputer/together-py/issues/32)) ([#403](https://github.com/togethercomputer/together-py/issues/403)) ([83f978c](https://github.com/togethercomputer/together-py/commit/83f978cc932728ebe5ed0e121c649020ffe54ee0))
+* update stlc-promote flow auth token ([09eb41a](https://github.com/togethercomputer/together-py/commit/09eb41aa92b049014a3cf5c484953d2395429206))
+
 ## [2.16.1](https://github.com/togethercomputer/together-py/compare/v2.16.0...v2.16.1) (2026-06-10)
 
 
