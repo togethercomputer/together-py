@@ -644,7 +644,7 @@ class MultipartUploadManager(SyncAPIResource):
             return self._complete_upload(url, upload_id, file_id, completed_parts)
 
         # If the server says the file already exists, raise the error to the files.upload resource
-        # This should be silently handled by fetching down the file and returning it
+        # This should be loudly handled by raising a ValueError and outputting the existing file ID
         except FileAlreadyExistsError as e:
             raise e
         except Exception as e:
@@ -1051,7 +1051,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
             return await self._complete_upload(url, upload_id, file_id, completed_parts)
 
         # If the server says the file already exists, raise the error to the files.upload resource
-        # This should be silently handled by fetching down the file and returning it
+        # This should be loudly handled by raising a ValueError and outputting the existing file ID
         except FileAlreadyExistsError as e:
             raise e
         except Exception as e:
