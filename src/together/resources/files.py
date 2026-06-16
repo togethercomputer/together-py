@@ -183,7 +183,10 @@ class FilesResource(SyncAPIResource):
                 purpose=result.purpose,
             )
         except FileAlreadyExistsError as e:
-            return self.retrieve(e.file_id)
+            res = self.retrieve(e.file_id)
+            raise ValueError(
+                f"File already exists under ID: {res.id}. If you want to overwrite it, please delete the existing file first."
+            ) from e
 
     def content(
         self,
@@ -366,7 +369,10 @@ class AsyncFilesResource(AsyncAPIResource):
                 purpose=result.purpose,
             )
         except FileAlreadyExistsError as e:
-            return await self.retrieve(e.file_id)
+            res = await self.retrieve(e.file_id)
+            raise ValueError(
+                f"File already exists under ID: {res.id}. If you want to overwrite it, please delete the existing file first."
+            ) from e
 
     async def content(
         self,
