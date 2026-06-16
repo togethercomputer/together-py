@@ -7,33 +7,45 @@ from typing_extensions import Literal
 
 import httpx
 
-from ..types import (
+from ...types import (
     endpoint_list_params,
     endpoint_create_params,
     endpoint_update_params,
     endpoint_list_hardware_params,
 )
-from .._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
-from .._utils import path_template, maybe_transform, async_maybe_transform
-from .._compat import cached_property
-from .._resource import SyncAPIResource, AsyncAPIResource
-from .._response import (
+from ..._types import Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
+from ..._utils import path_template, maybe_transform, async_maybe_transform
+from .adapters import (
+    AdaptersResource,
+    AsyncAdaptersResource,
+    AdaptersResourceWithRawResponse,
+    AsyncAdaptersResourceWithRawResponse,
+    AdaptersResourceWithStreamingResponse,
+    AsyncAdaptersResourceWithStreamingResponse,
+)
+from ..._compat import cached_property
+from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from .._base_client import make_request_options
-from ..types.autoscaling_param import AutoscalingParam
-from ..types.dedicated_endpoint import DedicatedEndpoint
-from ..types.endpoint_list_response import EndpointListResponse
-from ..types.endpoint_list_avzones_response import EndpointListAvzonesResponse
-from ..types.endpoint_list_hardware_response import EndpointListHardwareResponse
+from ..._base_client import make_request_options
+from ...types.autoscaling_param import AutoscalingParam
+from ...types.dedicated_endpoint import DedicatedEndpoint
+from ...types.endpoint_list_response import EndpointListResponse
+from ...types.endpoint_list_avzones_response import EndpointListAvzonesResponse
+from ...types.endpoint_list_hardware_response import EndpointListHardwareResponse
 
 __all__ = ["EndpointsResource", "AsyncEndpointsResource"]
 
 
 class EndpointsResource(SyncAPIResource):
+    @cached_property
+    def adapters(self) -> AdaptersResource:
+        return AdaptersResource(self._client)
+
     @cached_property
     def with_raw_response(self) -> EndpointsResourceWithRawResponse:
         """
@@ -375,6 +387,10 @@ class EndpointsResource(SyncAPIResource):
 
 
 class AsyncEndpointsResource(AsyncAPIResource):
+    @cached_property
+    def adapters(self) -> AsyncAdaptersResource:
+        return AsyncAdaptersResource(self._client)
+
     @cached_property
     def with_raw_response(self) -> AsyncEndpointsResourceWithRawResponse:
         """
@@ -743,6 +759,10 @@ class EndpointsResourceWithRawResponse:
             endpoints.list_hardware,
         )
 
+    @cached_property
+    def adapters(self) -> AdaptersResourceWithRawResponse:
+        return AdaptersResourceWithRawResponse(self._endpoints.adapters)
+
 
 class AsyncEndpointsResourceWithRawResponse:
     def __init__(self, endpoints: AsyncEndpointsResource) -> None:
@@ -769,6 +789,10 @@ class AsyncEndpointsResourceWithRawResponse:
         self.list_hardware = async_to_raw_response_wrapper(
             endpoints.list_hardware,
         )
+
+    @cached_property
+    def adapters(self) -> AsyncAdaptersResourceWithRawResponse:
+        return AsyncAdaptersResourceWithRawResponse(self._endpoints.adapters)
 
 
 class EndpointsResourceWithStreamingResponse:
@@ -797,6 +821,10 @@ class EndpointsResourceWithStreamingResponse:
             endpoints.list_hardware,
         )
 
+    @cached_property
+    def adapters(self) -> AdaptersResourceWithStreamingResponse:
+        return AdaptersResourceWithStreamingResponse(self._endpoints.adapters)
+
 
 class AsyncEndpointsResourceWithStreamingResponse:
     def __init__(self, endpoints: AsyncEndpointsResource) -> None:
@@ -823,3 +851,7 @@ class AsyncEndpointsResourceWithStreamingResponse:
         self.list_hardware = async_to_streamed_response_wrapper(
             endpoints.list_hardware,
         )
+
+    @cached_property
+    def adapters(self) -> AsyncAdaptersResourceWithStreamingResponse:
+        return AsyncAdaptersResourceWithStreamingResponse(self._endpoints.adapters)

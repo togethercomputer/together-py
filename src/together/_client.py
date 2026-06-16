@@ -63,12 +63,12 @@ if TYPE_CHECKING:
     from .resources.batches import BatchesResource, AsyncBatchesResource
     from .resources.beta.beta import BetaResource, AsyncBetaResource
     from .resources.chat.chat import ChatResource, AsyncChatResource
-    from .resources.endpoints import EndpointsResource, AsyncEndpointsResource
     from .resources.embeddings import EmbeddingsResource, AsyncEmbeddingsResource
     from .resources.audio.audio import AudioResource, AsyncAudioResource
     from .resources.completions import CompletionsResource, AsyncCompletionsResource
     from .resources.fine_tuning import FineTuningResource, AsyncFineTuningResource
     from .resources.models.models import ModelsResource, AsyncModelsResource
+    from .resources.endpoints.endpoints import EndpointsResource, AsyncEndpointsResource
     from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
 __all__ = [
