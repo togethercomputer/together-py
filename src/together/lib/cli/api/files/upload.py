@@ -51,7 +51,7 @@ async def upload(
         response = await show_loading_status(
             "Uploading file",
             config.client.files.upload(
-                file=file, purpose=purpose, check=False, throw_if_already_exists=not config.json
+                file=file, purpose=purpose, check=False, raise_if_already_exists=not config.json
             ),
         )
     except FileAlreadyExistsError as e:
