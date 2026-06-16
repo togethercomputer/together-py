@@ -5,7 +5,6 @@ import sys
 from typing import Optional, Annotated, cast, get_args
 from pathlib import Path
 
-from rich import print as rprint
 from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
@@ -55,7 +54,7 @@ async def upload(
             ),
         )
     except FileAlreadyExistsError as e:
-        rprint(
+        console.print(
             f"[yellow]File already exists under ID: [bold]{e.file_id}[/bold]. "
             "If you want to re-upload it, please delete the existing file first.[/yellow]"
         )
