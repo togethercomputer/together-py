@@ -189,7 +189,6 @@ class TestBetaClustersCreate:
                 "16",
                 "--capacity-pool-id",
                 "pool-1",
-                "--gpu-node-failover-enabled",
                 "--install-traefik",
                 "--num-capacity-pool-gpus",
                 "8",
@@ -215,7 +214,7 @@ class TestBetaClustersCreate:
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"
-        assert body["gpu_node_failover_enabled"] is True
+        assert "gpu_node_failover_enabled" not in body
         assert body["install_traefik"] is True
         assert body["num_capacity_pool_gpus"] == 8
         assert body["num_preemptible_gpus"] == 8
