@@ -98,7 +98,7 @@ _FT_CREATE_BODY = {
 
 
 class TestFineTuningCreate:
-    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_stops_when_local_training_file_already_exists(
         self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
     ) -> None:
