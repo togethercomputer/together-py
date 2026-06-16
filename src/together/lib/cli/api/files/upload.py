@@ -11,6 +11,7 @@ from rich.markup import escape as escape_rich_markup
 from together.lib import check_file
 from together.types import FilePurpose
 from together._utils._json import openapi_dumps
+from together.lib.resources.files import FileAlreadyExistsError
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
@@ -45,9 +46,19 @@ async def upload(
         console.print(f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]")
         sys.exit(1)
 
-    response = await show_loading_status(
-        "Uploading file", config.client.files.upload(file=file, purpose=purpose, check=False)
-    )
+    try:
+        response = await show_loading_status(
+            "Uploading file",
+            config.client.files.upload(
+                file=file, purpose=purpose, check=False, raise_if_already_exists=not config.json
+            ),
+        )
+    except FileAlreadyExistsError as e:
+        console.print(
+            f"[yellow]File already exists under ID: [bold]{e.file_id}[/bold]. "
+            "If you want to re-upload it, please delete the existing file first.[/yellow]"
+        )
+        return
 
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
