@@ -11,7 +11,7 @@ from typing import Any
 from pathlib import Path
 
 import httpx
-from rich import print as rich_print
+from rich import print
 
 from together import Together
 from together.lib.utils import log_debug
@@ -77,11 +77,9 @@ class Uploader:
             if speed_kbps > 1024:
                 speed_str = f"{(speed_kbps / 1024):.1f} MB/s - "
 
-        msg = f"{spinner} {percent}% - {speed_str}{display_file} {size_str} ({self.completed_files}/{self.total_files} files)"
+        msg = f"\r{spinner} {percent}% - {speed_str}{display_file} {size_str} ({self.completed_files}/{self.total_files} files)"
 
-        # \r moves cursor to start of line, \033[K clears from cursor to end of line.
-        # Use the builtin print (rich's print strips the \r) so the line updates
-        # in-place instead of appending each progress update.
+        # \r moves cursor to start of line, \033[K clears from cursor to end of line
         print(f"\r{msg}\033[K", end="", flush=True)  # noqa: T201
 
     async def increment_progress(self, bytes_count: int, filename: str = "", file_complete: bool = False) -> None:
@@ -133,7 +131,7 @@ class Uploader:
                 await spinner_task
 
         elapsed_time = time.time() - self.start_time
-        rich_print(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
+        print(f"\n\N{CHECK MARK} Upload completed in {elapsed_time:.1f} seconds")
 
     async def upload_file_with_retry(self, file_path: Path, remote_path: str, file_size: int) -> None:
         for attempt in range(MAX_UPLOAD_RETRIES):
@@ -229,7 +227,7 @@ class Uploader:
                     headers=self.client.auth_headers,
                 )
             except Exception as e:
-                rich_print(f"[red]Failed to abort multipart upload request: {repr(e)}[/red]", file=sys.stderr)
+                print(f"[red]Failed to abort multipart upload request: {repr(e)}[/red]", file=sys.stderr)
             raise
 
     async def _upload_parts(

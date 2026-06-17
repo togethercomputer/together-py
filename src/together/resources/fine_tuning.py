@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union, Optional, cast
+from typing import Union, Optional
 from datetime import datetime
 from typing_extensions import Literal
 
@@ -49,7 +49,7 @@ from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
-from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
+from ..types.fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
@@ -261,29 +261,33 @@ class FineTuningResource(SyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-        price_estimation_result: AvailableEstimate | None = None
-        estimation = self.estimate_price(
-            training_file=training_file,
-            from_checkpoint=from_checkpoint or Omit(),
-            validation_file=validation_file or Omit(),
-            model=model or "",
-            n_epochs=finetune_request.n_epochs,
-            n_evals=finetune_request.n_evals or 0,
-            training_type=training_type_cls,
-            training_method=training_method_cls,
-        )
-        if estimation.estimation_available is not False:
-            price_estimation_result = estimation
+        if not model_limits.supports_vision:
+            price_estimation_result = self.estimate_price(
+                training_file=training_file,
+                from_checkpoint=from_checkpoint or Omit(),
+                validation_file=validation_file or Omit(),
+                model=model or "",
+                n_epochs=finetune_request.n_epochs,
+                n_evals=finetune_request.n_evals or 0,
+                training_type=training_type_cls,
+                training_method=training_method_cls,
+            )
+            price_limit_passed = price_estimation_result.allowed_to_proceed
+        else:
+            # unsupported case
+            price_limit_passed = True
 
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
-            if price_estimation_result and not price_estimation_result.allowed_to_proceed:
+            if not price_limit_passed:
                 rprint(
                     "[red]"
-                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
+                    )
                     + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
@@ -535,30 +539,25 @@ class FineTuningResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        return cast(
-            FineTuningEstimatePriceResponse,
-            self._post(
-                "/fine-tunes/estimate-price",
-                body=maybe_transform(
-                    {
-                        "training_file": training_file,
-                        "from_checkpoint": from_checkpoint,
-                        "model": model,
-                        "n_epochs": n_epochs,
-                        "n_evals": n_evals,
-                        "training_method": training_method,
-                        "training_type": training_type,
-                        "validation_file": validation_file,
-                    },
-                    fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
-                ),
-                options=make_request_options(
-                    extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-                ),
-                cast_to=cast(
-                    Any, FineTuningEstimatePriceResponse
-                ),  # Union types cannot be passed in as arguments in the type system
+        return self._post(
+            "/fine-tunes/estimate-price",
+            body=maybe_transform(
+                {
+                    "training_file": training_file,
+                    "from_checkpoint": from_checkpoint,
+                    "model": model,
+                    "n_epochs": n_epochs,
+                    "n_evals": n_evals,
+                    "training_method": training_method,
+                    "training_type": training_type,
+                    "validation_file": validation_file,
+                },
+                fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
             ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuningEstimatePriceResponse,
         )
 
     def list_checkpoints(
@@ -895,7 +894,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             hf_output_repo_name=hf_output_repo_name,
         )
 
-        estimation = await self.estimate_price(
+        price_estimation_result = await self.estimate_price(
             training_file=training_file,
             from_checkpoint=from_checkpoint or Omit(),
             validation_file=validation_file or Omit(),
@@ -905,19 +904,18 @@ class AsyncFineTuningResource(AsyncAPIResource):
             training_type=training_type_cls,
             training_method=training_method_cls,
         )
-        price_estimation_result: AvailableEstimate | None = (
-            estimation if estimation.estimation_available is not False else None
-        )
 
         if verbose:
             rprint(
                 "Submitting a fine-tuning job with the following parameters:",
                 finetune_request,
             )
-            if price_estimation_result and not price_estimation_result.allowed_to_proceed:
+            if not price_estimation_result.allowed_to_proceed:
                 rprint(
                     "[red]"
-                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(price_estimation_result.estimated_total_price)
+                    + _WARNING_MESSAGE_INSUFFICIENT_FUNDS.format(
+                        price_estimation_result.estimated_total_price  # pyright: ignore[reportPossiblyUnboundVariable]
+                    )
                     + "[/red]",
                 )
         parameter_payload = finetune_request.model_dump(exclude_none=True)
@@ -1169,30 +1167,25 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        return cast(
-            FineTuningEstimatePriceResponse,
-            await self._post(
-                "/fine-tunes/estimate-price",
-                body=await async_maybe_transform(
-                    {
-                        "training_file": training_file,
-                        "from_checkpoint": from_checkpoint,
-                        "model": model,
-                        "n_epochs": n_epochs,
-                        "n_evals": n_evals,
-                        "training_method": training_method,
-                        "training_type": training_type,
-                        "validation_file": validation_file,
-                    },
-                    fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
-                ),
-                options=make_request_options(
-                    extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-                ),
-                cast_to=cast(
-                    Any, FineTuningEstimatePriceResponse
-                ),  # Union types cannot be passed in as arguments in the type system
+        return await self._post(
+            "/fine-tunes/estimate-price",
+            body=await async_maybe_transform(
+                {
+                    "training_file": training_file,
+                    "from_checkpoint": from_checkpoint,
+                    "model": model,
+                    "n_epochs": n_epochs,
+                    "n_evals": n_evals,
+                    "training_method": training_method,
+                    "training_type": training_type,
+                    "validation_file": validation_file,
+                },
+                fine_tuning_estimate_price_params.FineTuningEstimatePriceParams,
             ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuningEstimatePriceResponse,
         )
 
     async def list_checkpoints(

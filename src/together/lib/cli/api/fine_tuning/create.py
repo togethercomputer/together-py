@@ -19,11 +19,13 @@ from together.lib.resources.fine_tuning import async_get_model_limits
 from together.lib.cli.components.model_dump import print_model_dump
 
 
-def get_confirmation_message(price_line: str, warning: str) -> str:
-    return f"""You are about to create a fine-tuning job. {price_line}
+def get_confirmation_message(price: str, warning: str) -> str:
+    return (
+        """You are about to create a fine-tuning job. The estimated price of this job is {price}.
 
 The actual cost of your job will be determined by the model size, the number of tokens in the training file, the number of tokens in the validation file, the number of epochs, and the number of evaluations. Visit https://www.together.ai/pricing to learn more about pricing.
 {warning}"""
+    ).format(price=price, warning=warning)
 
 
 _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
@@ -31,15 +33,6 @@ _WARNING_MESSAGE_INSUFFICIENT_FUNDS = (
     "It will likely get cancelled due to insufficient funds. "
     "Consider increasing your credit limit at https://api.together.ai/settings/profile\n"
 )
-
-_PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON = {
-    "multimodal_dataset": "[yellow][bold]Price estimation is not available for multimodal datasets.[/bold][/yellow]",
-    "train_file_not_validated": "[yellow][bold]Price estimation is not available for training file that is not validated yet.[/bold][/yellow]",
-    "eval_file_not_validated": "[yellow][bold]Price estimation is not available for evaluation file that is not validated yet.[/bold][/yellow]",
-    "train_file_invalid": "[yellow][bold]Price estimation is not available for training file that is invalid. If you proceed, your job will be cancelled.[/bold][/yellow]",
-    "eval_file_invalid": "[yellow][bold]Price estimation is not available for evaluation file that is invalid. If you proceed, your job will be cancelled.[/bold][/yellow]",
-}
-_PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT = "Price estimation is not available for this job."
 
 
 def _check_path_exists(path_string: Optional[str]) -> bool:
@@ -304,6 +297,9 @@ async def create(
             )
         training_args["max_seq_length"] = max_seq_length
 
+    if model_limits.supports_vision:
+        confirm = True
+
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
@@ -329,19 +325,12 @@ async def create(
             training_method=training_method_cls,
         ),
     )
-    if finetune_price_estimation_result.estimation_available is False:
-        price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
-            finetune_price_estimation_result.unavailable_reason or "",
-            _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,
-        )
-        warning = ""
-    else:
-        price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
-        price_line = f"The estimated price of this job is {price_str}."
-        warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
+    price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
+    warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
 
     if not confirm:
-        console.print(get_confirmation_message(price_line=price_line, warning=warning))
+        confirmation_message = get_confirmation_message(price=price_str, warning=warning)
+        console.print(confirmation_message)
         resp = input("Do you want to proceed? [Y/n]").strip().lower()
         if resp and resp != "y" and resp != "yes":
             return
