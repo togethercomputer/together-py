@@ -153,7 +153,9 @@ async def create(
     ] = False,
     early_stopping_patience: Annotated[
         Optional[int],
-        Parameter(help="Consecutive non-improving evals to tolerate before stopping; uses the server default (2) if unset"),
+        Parameter(
+            help="Consecutive non-improving evals to tolerate before stopping; uses the server default (2) if unset"
+        ),
     ] = None,
     early_stopping_min_delta: Annotated[
         Optional[float],
