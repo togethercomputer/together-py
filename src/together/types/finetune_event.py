@@ -40,3 +40,7 @@ class FinetuneEvent(BaseModel):
     wandb_url: str
 
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
+
+    early_stopping_best_step: Optional[int] = None
+
+    early_stopping_best_metric_value: Optional[float] = None

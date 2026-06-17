@@ -396,3 +396,50 @@ def test_early_stopping_overrides_omitted_when_unset():
     assert request.early_stopping_patience is None
     assert request.early_stopping_min_delta is None
     assert request.early_stopping_warmup_evals is None
+
+
+@pytest.mark.parametrize(
+    "patience, warmup, min_delta, n_evals, match",
+    [
+        (0, 1, 0.0, 10, "patience must be >= 1"),
+        (2, -1, 0.0, 10, "warmup_evals must be >= 0"),
+        (2, 1, -0.1, 10, "min_delta must be >= 0"),
+        (2, 1, 0.0, 3, "n_evals >= patience"),  # 2 + 1 + 1 = 4 > 3
+    ],
+)
+def test_early_stopping_invalid_config(patience: int, warmup: int, min_delta: float, n_evals: int, match: str):
+    with pytest.raises(ValueError, match=match):
+        _ = create_finetune_request(
+            model_limits=_MODEL_LIMITS,
+            model=_MODEL_NAME,
+            training_file=_TRAINING_FILE,
+            validation_file=_VALIDATION_FILE,
+            n_evals=n_evals,
+            early_stopping_enabled=True,
+            early_stopping_patience=patience,
+            early_stopping_min_delta=min_delta,
+            early_stopping_warmup_evals=warmup,
+        )
+
+
+def test_early_stopping_requires_validation_file():
+    with pytest.raises(ValueError, match="requires a validation file"):
+        _ = create_finetune_request(
+            model_limits=_MODEL_LIMITS,
+            model=_MODEL_NAME,
+            training_file=_TRAINING_FILE,
+            n_evals=10,
+            early_stopping_enabled=True,
+        )
+
+
+def test_early_stopping_disabled_skips_validation():
+    # Knobs that would be invalid while enabled are ignored when the feature is off.
+    request, _, _ = create_finetune_request(
+        model_limits=_MODEL_LIMITS,
+        model=_MODEL_NAME,
+        training_file=_TRAINING_FILE,
+        early_stopping_enabled=False,
+        early_stopping_patience=0,
+    )
+    assert request.early_stopping_enabled is False

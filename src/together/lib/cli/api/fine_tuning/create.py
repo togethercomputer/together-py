@@ -15,7 +15,7 @@ from together.lib.cli.api._utils import (
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.resources.fine_tuning import async_get_model_limits
+from together.lib.resources.fine_tuning import async_get_model_limits, validate_early_stopping
 from together.lib.cli.components.model_dump import print_model_dump
 
 
@@ -279,19 +279,15 @@ async def create(
     elif n_evals > 0 and not validation_file:
         raise ValueError("You have specified a number of evaluation loops but no validation file.")
 
-    if early_stopping_enabled:
-        if not validation_file:
-            raise ValueError("Early stopping requires a validation file. Provide --validation-file.")
-        # Mirror the backend's `n_evals >= patience + warmup_evals + 1` rule to fail before uploading files.
-        # Server defaults when unset: patience=2, warmup_evals=1.
-        effective_patience = early_stopping_patience if early_stopping_patience is not None else 2
-        effective_warmup = early_stopping_warmup_evals if early_stopping_warmup_evals is not None else 1
-        min_n_evals = effective_patience + effective_warmup + 1
-        if n_evals < min_n_evals:
-            raise ValueError(
-                f"Early stopping requires --n-evals >= patience + warmup_evals + 1 = {min_n_evals} "
-                f"(got --n-evals={n_evals})."
-            )
+    # Fail fast (before file uploads / price estimation); the SDK helper enforces the same rules.
+    validate_early_stopping(
+        early_stopping_enabled=early_stopping_enabled,
+        early_stopping_patience=early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta,
+        early_stopping_warmup_evals=early_stopping_warmup_evals,
+        n_evals=n_evals,
+        validation_file=validation_file,
+    )
 
     training_type_cls: pe_params.TrainingType | None
     if lora is None:

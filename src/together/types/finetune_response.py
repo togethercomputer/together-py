@@ -133,6 +133,12 @@ class FinetuneResponse(BaseModel):
 
     created_at: Optional[datetime] = None
 
+    early_stopped: Optional[bool] = None
+
+    early_stopping_best_metric: Optional[float] = None
+
+    early_stopping_best_step: Optional[int] = None
+
     epochs_completed: Optional[int] = None
 
     eval_steps: Optional[int] = None
