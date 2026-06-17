@@ -496,6 +496,11 @@ class FinetuneRequest(BaseModel):
     # wandb entity
     wandb_entity: Union[str, None] = None
     random_seed: Union[int, None] = None
+    # early stopping
+    early_stopping_enabled: Union[bool, None] = None
+    early_stopping_patience: Union[int, None] = None
+    early_stopping_min_delta: Union[float, None] = None
+    early_stopping_warmup_evals: Union[int, None] = None
     # training type
     training_type: Union[TrainingType, None] = None
     # training method

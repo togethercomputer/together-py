@@ -360,3 +360,39 @@ def test_train_on_inputs_not_supported_for_dpo():
             training_method="dpo",
             train_on_inputs=True,
         )
+
+
+def test_early_stopping_request():
+    request, _, _ = create_finetune_request(
+        model_limits=_MODEL_LIMITS,
+        model=_MODEL_NAME,
+        training_file=_TRAINING_FILE,
+        validation_file=_VALIDATION_FILE,
+        n_evals=10,
+        early_stopping_enabled=True,
+        early_stopping_patience=3,
+        early_stopping_min_delta=0.01,
+        early_stopping_warmup_evals=2,
+    )
+
+    assert request.early_stopping_enabled is True
+    assert request.early_stopping_patience == 3
+    assert request.early_stopping_min_delta == 0.01
+    assert request.early_stopping_warmup_evals == 2
+
+
+def test_early_stopping_overrides_omitted_when_unset():
+    # Only the toggle is set; the tuning knobs stay None so the server applies its defaults.
+    request, _, _ = create_finetune_request(
+        model_limits=_MODEL_LIMITS,
+        model=_MODEL_NAME,
+        training_file=_TRAINING_FILE,
+        validation_file=_VALIDATION_FILE,
+        n_evals=10,
+        early_stopping_enabled=True,
+    )
+
+    assert request.early_stopping_enabled is True
+    assert request.early_stopping_patience is None
+    assert request.early_stopping_min_delta is None
+    assert request.early_stopping_warmup_evals is None

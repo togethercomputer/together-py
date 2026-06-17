@@ -145,6 +145,24 @@ async def create(
         Optional[int],
         Parameter(help="Random seed for reproducible training, e.g. 42; uses the server default if unset"),
     ] = None,
+    early_stopping_enabled: Annotated[
+        bool,
+        Parameter(
+            help="Stop training early when validation eval_loss stops improving (requires --validation-file and --n-evals)"
+        ),
+    ] = False,
+    early_stopping_patience: Annotated[
+        Optional[int],
+        Parameter(help="Consecutive non-improving evals to tolerate before stopping; uses the server default (2) if unset"),
+    ] = None,
+    early_stopping_min_delta: Annotated[
+        Optional[float],
+        Parameter(help="Minimum eval_loss decrease to count as an improvement; uses the server default (0) if unset"),
+    ] = None,
+    early_stopping_warmup_evals: Annotated[
+        Optional[int],
+        Parameter(help="Initial evals to skip before counting patience; uses the server default (1) if unset"),
+    ] = None,
     confirm: Annotated[
         bool, Parameter(alias=("-y"), negative=(), help="Whether to skip the launch confirmation message")
     ] = False,
@@ -206,6 +224,10 @@ async def create(
         wandb_name=wandb_name,
         wandb_entity=wandb_entity,
         random_seed=random_seed,
+        early_stopping_enabled=early_stopping_enabled,
+        early_stopping_patience=early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta,
+        early_stopping_warmup_evals=early_stopping_warmup_evals,
         train_on_inputs=train_on_inputs.value if train_on_inputs is not None else None,
         training_method=training_method,
         dpo_beta=dpo_beta,
@@ -254,6 +276,20 @@ async def create(
         )
     elif n_evals > 0 and not validation_file:
         raise ValueError("You have specified a number of evaluation loops but no validation file.")
+
+    if early_stopping_enabled:
+        if not validation_file:
+            raise ValueError("Early stopping requires a validation file. Provide --validation-file.")
+        # Mirror the backend's `n_evals >= patience + warmup_evals + 1` rule to fail before uploading files.
+        # Server defaults when unset: patience=2, warmup_evals=1.
+        effective_patience = early_stopping_patience if early_stopping_patience is not None else 2
+        effective_warmup = early_stopping_warmup_evals if early_stopping_warmup_evals is not None else 1
+        min_n_evals = effective_patience + effective_warmup + 1
+        if n_evals < min_n_evals:
+            raise ValueError(
+                f"Early stopping requires --n-evals >= patience + warmup_evals + 1 = {min_n_evals} "
+                f"(got --n-evals={n_evals})."
+            )
 
     training_type_cls: pe_params.TrainingType | None
     if lora is None:
