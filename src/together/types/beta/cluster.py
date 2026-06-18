@@ -103,6 +103,9 @@ class ControlPlaneNode(BaseModel):
 
     status: str
 
+    public_ipv4: Optional[str] = None
+    """Public IPv4 address of the control plane node."""
+
 
 class GPUWorkerNodePhaseTransition(BaseModel):
     phase: Literal[
@@ -139,6 +142,18 @@ class GPUWorkerNode(BaseModel):
 
     status: str
 
+    auto_remediation_enabled: Optional[bool] = None
+    """Whether auto-remediation is enabled for this node's instance."""
+
+    ephemeral_storage: Optional[str] = None
+    """Ephemeral storage size, such as 1Ti."""
+
+    ib_hca_count: Optional[int] = None
+    """Number of InfiniBand HCAs."""
+
+    ib_hca_type: Optional[str] = None
+    """InfiniBand HCA type."""
+
     instance_id: Optional[str] = None
 
     latest_remediation: Optional[Remediation] = None
@@ -147,6 +162,18 @@ class GPUWorkerNode(BaseModel):
     can have multiple remediations over time (e.g., failed attempts followed by
     retries).
     """
+
+    marked_for_deletion: Optional[bool] = None
+    """Whether this node is marked for deletion by the operator."""
+
+    nvswitch_count: Optional[int] = None
+    """Number of NVSwitches."""
+
+    nvswitch_type: Optional[str] = None
+    """NVSwitch type."""
+
+    public_ipv4: Optional[str] = None
+    """Public IPv4 address of the GPU worker node."""
 
     slurm_worker_hostname: Optional[str] = None
 
@@ -358,16 +385,40 @@ class Cluster(BaseModel):
 
     cluster_config: Optional[ClusterConfig] = None
 
+    control_plane_ready: Optional[bool] = None
+    """Whether the control plane is currently ready."""
+
     created_at: Optional[datetime] = None
 
     duration_hours: Optional[int] = None
 
+    first_ready_at: Optional[datetime] = None
+    """Timestamp when the cluster first reached the Ready phase."""
+
     install_traefik: Optional[bool] = None
 
+    is_in_substrate: Optional[bool] = None
+    """Whether the cluster is managed inside a substrate environment."""
+
+    machine_cluster_id: Optional[str] = None
+    """ID of the machine cluster backing this GPU cluster."""
+
+    nvidia_driver_version_id: Optional[str] = None
+    """Internal NVIDIA version ID for this cluster's driver and CUDA combination."""
+
     oidc_config: Optional[OidcConfig] = None
+
+    os_image: Optional[str] = None
+    """Data-volume image name for GPU worker nodes."""
 
     reservation_end_time: Optional[datetime] = None
 
     reservation_start_time: Optional[datetime] = None
 
     slurm_shm_size_gib: Optional[int] = None
+
+    ums_org_id: Optional[str] = None
+    """UMS organization ID associated with this cluster."""
+
+    ums_project_id: Optional[str] = None
+    """UMS project ID associated with this cluster."""

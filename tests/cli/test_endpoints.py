@@ -117,6 +117,17 @@ ENDPOINT_LIST_ITEM = {
     "created_at": "2024-01-01T00:00:00Z",
 }
 
+ADAPTER_LIST_BODY = {
+    "object": "list",
+    "data": [
+        {
+            "model_id": "sys-name:adapter-a",
+            "adapter_name": "adapter-a",
+            "endpoint_name": "sys-name",
+        }
+    ],
+}
+
 
 # class TestEndpointsCreate:
 #     # Test for endpoint create requiring the model
@@ -333,4 +344,58 @@ class TestEndpointsListRetrieveDeleteUpdateAz:
         )
         result = cli_runner.invoke(["endpoints", "availability-zones", "--json"])
         assert json.loads(result.output)["avzones"] == ["us-east-1a", "us-west-2b"]
+        assert result.exit_code == 0
+
+
+class TestEndpointAdapters:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_adapters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/endpoints/endpoint-123/adapters").mock(
+            return_value=httpx.Response(200, json=ADAPTER_LIST_BODY)
+        )
+
+        result = cli_runner.invoke(["endpoints", "adapters", "list", "endpoint-123"])
+
+        assert "sys-name:adapter-a" in result.out_out
+        assert "adapter-a" in result.out_out
+        assert "sys-name" in result.out_out
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_adapters_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/endpoints/endpoint-123/adapters").mock(
+            return_value=httpx.Response(200, json=ADAPTER_LIST_BODY)
+        )
+
+        result = cli_runner.invoke(["endpoints", "adapters", "ls", "endpoint-123", "--json"])
+
+        body = json.loads(result.output)
+        assert body["data"][0]["model_id"] == "sys-name:adapter-a"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_add_adapter(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/endpoints/endpoint-123/adapters").mock(
+            return_value=httpx.Response(200, json={"model_id": "sys-name:adapter-a"})
+        )
+
+        result = cli_runner.invoke(["endpoints", "adapters", "add", "endpoint-123", "sys-name:adapter-a"])
+
+        req = cast(Call, route.calls[0]).request
+        assert json.loads(req.content.decode()) == {"model_id": "sys-name:adapter-a"}
+        assert "Adapter added." in result.out_out
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_remove_adapter_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.delete("/endpoints/endpoint-123/adapters").mock(
+            return_value=httpx.Response(200, json={"deleted": True, "model_id": "sys-name:adapter-a"})
+        )
+
+        result = cli_runner.invoke(["endpoints", "adapters", "rm", "endpoint-123", "sys-name:adapter-a", "--json"])
+
+        req = cast(Call, route.calls[0]).request
+        assert json.loads(req.content.decode()) == {"model_id": "sys-name:adapter-a"}
+        body = json.loads(result.output)
+        assert body == {"deleted": True, "model_id": "sys-name:adapter-a"}
         assert result.exit_code == 0
