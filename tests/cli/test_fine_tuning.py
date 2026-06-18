@@ -82,6 +82,92 @@ _FT_METRICS_BODY = {
     ]
 }
 
+_MODEL_LIMITS_BODY = {
+    "max_num_epochs": 10,
+    "max_learning_rate": 1,
+    "min_learning_rate": 0,
+    "min_max_seq_length": 1,
+    "max_seq_length_sft": 4096,
+    "max_seq_length_dpo": 4096,
+}
+
+_FT_CREATE_BODY = {
+    "id": "ft-created",
+    "status": "pending",
+}
+
+
+class TestFineTuningCreate:
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(
+            return_value=httpx.Response(200, json={**_MODEL_LIMITS_BODY, "supports_vision": True})
+        )
+        estimate = respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "estimation_available": False,
+                    "unavailable_reason": "multimodal_dataset",
+                },
+            )
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+            ],
+            input="y\n",
+        )
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        assert "Price estimation is not available for multimodal datasets" in output
+        assert "Do you want to proceed?" in result.output
+        assert "ft-created" in result.output
+        assert estimate.calls
+        assert create.calls
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_warns_when_estimated_price_exceeds_funds(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "estimated_total_price": 123.45,
+                    "allowed_to_proceed": False,
+                },
+            )
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+            ],
+            input="y\n",
+        )
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        assert "The estimated price of this job is $123.45." in output
+        assert "insufficient funds" in result.output
+        assert create.calls
+
 
 class TestFineTuningList:
     @pytest.mark.respx(base_url=base_url)
