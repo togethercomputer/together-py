@@ -154,7 +154,6 @@ class FilesResource(SyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-        raise_if_already_exists: bool = False,
     ) -> FileResponse:
         if check:
             report_dict = check_file(file)
@@ -184,8 +183,6 @@ class FilesResource(SyncAPIResource):
                 purpose=result.purpose,
             )
         except FileAlreadyExistsError as e:
-            if raise_if_already_exists:
-                raise
             return self.retrieve(e.file_id)
 
     def content(
@@ -340,7 +337,6 @@ class AsyncFilesResource(AsyncAPIResource):
         *,
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
-        raise_if_already_exists: bool = False,
     ) -> FileResponse:
         if check:
             report_dict = check_file(file)
@@ -370,8 +366,6 @@ class AsyncFilesResource(AsyncAPIResource):
                 purpose=result.purpose,
             )
         except FileAlreadyExistsError as e:
-            if raise_if_already_exists:
-                raise
             return await self.retrieve(e.file_id)
 
     async def content(

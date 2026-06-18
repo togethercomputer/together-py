@@ -91,6 +91,7 @@ class ClustersResource(SyncAPIResource):
         cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         duration_days: int | Omit = omit,
+        gpu_node_failover_enabled: bool | Omit = omit,
         install_traefik: bool | Omit = omit,
         num_capacity_pool_gpus: int | Omit = omit,
         num_preemptible_gpus: int | Omit = omit,
@@ -162,6 +163,9 @@ class ClustersResource(SyncAPIResource):
 
           duration_days: Duration in days to keep the cluster running.
 
+          gpu_node_failover_enabled: Whether automated GPU node failover should be enabled for this cluster. By
+              default, it is disabled.
+
           install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
               applicable for Kubernetes clusters and is false by default.
 
@@ -223,6 +227,7 @@ class ClustersResource(SyncAPIResource):
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
                     "duration_days": duration_days,
+                    "gpu_node_failover_enabled": gpu_node_failover_enabled,
                     "install_traefik": install_traefik,
                     "num_capacity_pool_gpus": num_capacity_pool_gpus,
                     "num_preemptible_gpus": num_preemptible_gpus,
@@ -492,6 +497,7 @@ class AsyncClustersResource(AsyncAPIResource):
         cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         duration_days: int | Omit = omit,
+        gpu_node_failover_enabled: bool | Omit = omit,
         install_traefik: bool | Omit = omit,
         num_capacity_pool_gpus: int | Omit = omit,
         num_preemptible_gpus: int | Omit = omit,
@@ -563,6 +569,9 @@ class AsyncClustersResource(AsyncAPIResource):
 
           duration_days: Duration in days to keep the cluster running.
 
+          gpu_node_failover_enabled: Whether automated GPU node failover should be enabled for this cluster. By
+              default, it is disabled.
+
           install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
               applicable for Kubernetes clusters and is false by default.
 
@@ -624,6 +633,7 @@ class AsyncClustersResource(AsyncAPIResource):
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
                     "duration_days": duration_days,
+                    "gpu_node_failover_enabled": gpu_node_failover_enabled,
                     "install_traefik": install_traefik,
                     "num_capacity_pool_gpus": num_capacity_pool_gpus,
                     "num_preemptible_gpus": num_preemptible_gpus,

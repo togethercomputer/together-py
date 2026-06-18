@@ -1,18 +1,5 @@
 # Changelog
 
-## [2.16.1](https://github.com/togethercomputer/together-py/compare/v2.16.0...v2.16.1) (2026-06-10)
-
-
-### Chores
-
-* Add staging CI syncing ([#5](https://github.com/togethercomputer/together-py/issues/5)) ([3e314e5](https://github.com/togethercomputer/together-py/commit/3e314e59c1db68d6379972a9a9d9fa1f4dd2be00))
-* Add stlc promote action ([0dd26bd](https://github.com/togethercomputer/together-py/commit/0dd26bd284aedbcccd6ce4638e1e91953662c354))
-* Add stlc promote action ([8f092fd](https://github.com/togethercomputer/together-py/commit/8f092fd95f72d3f62d0964ce1f6e861d9168930c))
-* Fix lock files and type issue ([#4](https://github.com/togethercomputer/together-py/issues/4)) ([dd9b3cd](https://github.com/togethercomputer/together-py/commit/dd9b3cda988599ec29202368d63ac4d3e5ed5586))
-* fix production repo reference ([d25fc13](https://github.com/togethercomputer/together-py/commit/d25fc13d1d4cd9bdfc911998dbe6e2ca4389fb37))
-* Improve summary docs for remediations ([5bb4793](https://github.com/togethercomputer/together-py/commit/5bb479351550c5c84c1314634363ea5304bade8e))
-* sync custom code ([985e12e](https://github.com/togethercomputer/together-py/commit/985e12e6ad061c67e79e67cc96342d950bb33853))
-
 ## 2.16.0 (2026-05-22)
 
 Full Changelog: [v2.15.0...v2.16.0](https://github.com/togethercomputer/together-py/compare/v2.15.0...v2.16.0)
