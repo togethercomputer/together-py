@@ -153,17 +153,15 @@ async def create(
     ] = False,
     early_stopping_patience: Annotated[
         Optional[int],
-        Parameter(
-            help="Consecutive non-improving evals to tolerate before stopping; uses the server default (2) if unset"
-        ),
+        Parameter(help="Consecutive non-improving evals to tolerate before stopping; uses the default (2) if unset"),
     ] = None,
     early_stopping_min_delta: Annotated[
         Optional[float],
-        Parameter(help="Minimum eval_loss decrease to count as an improvement; uses the server default (0) if unset"),
+        Parameter(help="Minimum eval_loss decrease to count as an improvement; uses the default (0) if unset"),
     ] = None,
     early_stopping_warmup_evals: Annotated[
         Optional[int],
-        Parameter(help="Initial evals to skip before counting patience; uses the server default (1) if unset"),
+        Parameter(help="Initial evals to skip before counting patience; uses the default (1) if unset"),
     ] = None,
     confirm: Annotated[
         bool, Parameter(alias=("-y"), negative=(), help="Whether to skip the launch confirmation message")

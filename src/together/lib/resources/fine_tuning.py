@@ -42,7 +42,7 @@ def validate_early_stopping(
     """Validate early-stopping prerequisites, mirroring the backend checks.
 
     Lets callers (CLI, SDK) fail before price estimation / job creation. Unset knobs
-    defer to the server defaults (patience=2, warmup_evals=1, min_delta=0).
+    fall back to the same defaults the backend applies.
     """
     if not early_stopping_enabled:
         return

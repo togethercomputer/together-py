@@ -168,6 +168,74 @@ class TestFineTuningCreate:
         assert "insufficient funds" in result.output
         assert create.calls
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_early_stopping_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--validation-file",
+                "file-val",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--n-evals",
+                "10",
+                "--early-stopping-enabled",
+                "--early-stopping-patience",
+                "3",
+                "--early-stopping-warmup-evals",
+                "2",
+                "--early-stopping-min-delta",
+                "0.01",
+            ],
+            input="y\n",
+        )
+
+        assert result.exit_code == 0
+        assert create.calls
+        body = json.loads(create.calls.last.request.content)
+        assert body["early_stopping_enabled"] is True
+        assert body["early_stopping_patience"] == 3
+        assert body["early_stopping_warmup_evals"] == 2
+        assert body["early_stopping_min_delta"] == 0.01
+
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    def test_create_early_stopping_invalid_fails_before_create(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        # default patience(2) + warmup(1) + 1 = 4 > n_evals=3, so this must fail before any create call.
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--validation-file",
+                "file-val",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--n-evals",
+                "3",
+                "--early-stopping-enabled",
+            ],
+            input="y\n",
+        )
+
+        assert result.exit_code == 1
+        assert "n_evals >= patience" in result.output
+        assert not create.calls
+
 
 class TestFineTuningList:
     @pytest.mark.respx(base_url=base_url)

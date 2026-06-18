@@ -180,11 +180,11 @@ class FineTuningResource(SyncAPIResource):
             early_stopping_enabled (bool, optional): Stop training early when validation eval_loss stops improving.
                 Requires validation data and n_evals (n_evals >= patience + warmup_evals + 1). Defaults to False.
             early_stopping_patience (int, optional): Consecutive non-improving evals to tolerate before stopping.
-                If not provided, the server default (2) is used. Defaults to None.
+                If not provided, the default (2) is used. Defaults to None.
             early_stopping_min_delta (float, optional): Minimum eval_loss decrease to count as an improvement.
-                If not provided, the server default (0) is used. Defaults to None.
+                If not provided, the default (0) is used. Defaults to None.
             early_stopping_warmup_evals (int, optional): Initial evals to skip before counting patience.
-                If not provided, the server default (1) is used. Defaults to None.
+                If not provided, the default (1) is used. Defaults to None.
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
             model_limits (FinetuneTrainingLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
@@ -830,11 +830,11 @@ class AsyncFineTuningResource(AsyncAPIResource):
             early_stopping_enabled (bool, optional): Stop training early when validation eval_loss stops improving.
                 Requires validation data and n_evals (n_evals >= patience + warmup_evals + 1). Defaults to False.
             early_stopping_patience (int, optional): Consecutive non-improving evals to tolerate before stopping.
-                If not provided, the server default (2) is used. Defaults to None.
+                If not provided, the default (2) is used. Defaults to None.
             early_stopping_min_delta (float, optional): Minimum eval_loss decrease to count as an improvement.
-                If not provided, the server default (0) is used. Defaults to None.
+                If not provided, the default (0) is used. Defaults to None.
             early_stopping_warmup_evals (int, optional): Initial evals to skip before counting patience.
-                If not provided, the server default (1) is used. Defaults to None.
+                If not provided, the default (1) is used. Defaults to None.
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
             model_limits (FinetuneTrainingLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
