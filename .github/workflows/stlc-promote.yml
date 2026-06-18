@@ -14,17 +14,6 @@ jobs:
     env:
       PRODUCTION_REPO: togethercomputer/together-py
     steps:
-      - name: Mint STLC app token (scoped to staging + production together-py)
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.STLC_WORKFLOW_APP_CLIENT_ID }}
-          private-key: ${{ secrets.STLC_WORKFLOW_APP_PRIVATE_KEY }}
-          owner: togethercomputer
-          repositories: |
-            together-py-staging
-            together-py
-
       - name: Check out staging
         uses: actions/checkout@v6
         with:
