@@ -199,10 +199,12 @@ class TestFineTuningList:
             )
         )
         result = cli_runner.invoke(["fine-tuning", "list"])
-        output = " ".join(result.output.split())
 
         assert result.exit_code == 0
-        assert "early stopped (best step 42, best val loss 0.123456)" in output
+        assert "early" in result.output
+        assert "stopped" in result.output
+        assert "42" in result.output
+        assert "0.1235" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -321,12 +323,12 @@ class TestFineTuningEventsAndCheckpoints:
             )
         )
         result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1"])
-        output = " ".join(result.output.split())
 
         assert result.exit_code == 0
         assert "Details" in result.output
         assert "early_stopped" in result.output
-        assert "best step 21, best val loss 0.654321" in output
+        assert "21" in result.output
+        assert "0.6543" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

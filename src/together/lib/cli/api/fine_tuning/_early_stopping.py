@@ -13,7 +13,7 @@ def format_early_stopping_summary(
     if not details:
         return "early stopped"
 
-    return f"early stopped ({details})"
+    return f"early stopped: {details}"
 
 
 def format_early_stopping_details(best_metric: float | None, best_step: int | None) -> str:
@@ -24,6 +24,6 @@ def format_early_stopping_details(best_metric: float | None, best_step: int | No
         details.append(f"{step_label} {best_step}")
 
     if best_metric is not None:
-        details.append(f"best val loss {best_metric:g}")
+        details.append(f"val loss {best_metric:.4g}")
 
     return ", ".join(details)
