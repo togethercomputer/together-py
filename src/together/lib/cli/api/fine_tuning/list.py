@@ -54,7 +54,6 @@ async def list(
     table.add_column("Base Model")
     table.add_column("Suffix")
     table.add_column("Status")
-    table.add_column("Early Stopping")
     table.add_column("Price")
     table.add_column("Created At")
 
@@ -66,17 +65,19 @@ async def list(
         status_color = status_colors[i.status] if i.status in status_colors else "white"
         if i.status == "running":
             status += f": {generate_progress_text(i, datetime.now(timezone.utc))}"
+        early_stopping = format_early_stopping_summary(
+            i.early_stopped,
+            i.early_stopping_best_metric,
+            i.early_stopping_best_step,
+        )
+        if early_stopping:
+            status += f": {early_stopping}"
 
         table.add_row(
             i.id,
             i.model or "",
             i.suffix or "",
             f"[{status_color}]{status}[/{status_color}]",
-            format_early_stopping_summary(
-                i.early_stopped,
-                i.early_stopping_best_metric,
-                i.early_stopping_best_step,
-            ),
             f"${price:,.2f}",
             format_datetime(i.created_at),
         )

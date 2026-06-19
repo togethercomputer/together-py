@@ -6,17 +6,14 @@ def format_early_stopping_summary(
     best_metric: float | None,
     best_step: int | None,
 ) -> str:
-    if early_stopped is None:
+    if not early_stopped:
         return ""
-
-    if early_stopped is False:
-        return "no"
 
     details = format_early_stopping_details(best_metric, best_step)
     if not details:
-        return "yes"
+        return "early stopped"
 
-    return f"yes ({details})"
+    return f"early stopped ({details})"
 
 
 def format_early_stopping_details(best_metric: float | None, best_step: int | None) -> str:
