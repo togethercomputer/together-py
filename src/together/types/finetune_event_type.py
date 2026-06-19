@@ -30,4 +30,5 @@ FinetuneEventType: TypeAlias = Literal[
     "job_restarted",
     "refund",
     "warning",
+    "early_stopped",
 ]

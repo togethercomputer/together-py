@@ -136,6 +136,22 @@ class FineTuningCancelResponse(BaseModel):
     batch_size: Optional[int] = None
     """Batch size used for training"""
 
+    early_stopped: Optional[bool] = None
+    """Whether the early-stopping criterion triggered."""
+
+    early_stopping_best_metric: Optional[float] = None
+    """Best validation loss observed, corresponding to early_stopping_best_step.
+
+    Null if no improving evaluation was recorded.
+    """
+
+    early_stopping_best_step: Optional[int] = None
+    """Step associated with the selected early-stopping artifact.
+
+    When early_stopping_best_metric is null, no finite best metric was recorded;
+    this is the halt step, not a best-checkpoint step.
+    """
+
     events: Optional[List[FinetuneEvent]] = None
     """Events related to this fine-tune job"""
 
