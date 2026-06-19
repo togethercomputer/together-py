@@ -22,11 +22,8 @@ UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
 MULTIPART_CHUNK_SIZE_MB = int(os.getenv("TOGETHER_MULTIPART_CHUNK_SIZE_MB", "20"))
 MULTIPART_THRESHOLD_MB = int(os.getenv("TOGETHER_MULTIPART_THRESHOLD_MB", "100"))
 MAX_UPLOAD_RETRIES = 3
-# How many part-sized chunks to read ahead beyond the in-flight uploads, so
-# upload workers never stall waiting on disk. Peak resident memory across all
-# concurrent files is bounded by:
-#   (UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS) * chunk_size
-READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "2"))
+# How many part-sized chunks to read ahead beyond the in-flight uploads
+READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "10"))
 MAX_IN_MEMORY_CHUNKS = UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS
 
 
@@ -246,101 +243,56 @@ class Uploader:
         file_path: Path,
         part_urls: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        """Upload file parts concurrently with a bounded read-ahead.
+        """Upload file parts concurrently.
 
-        A single producer reads the file sequentially (off the event loop) and
-        feeds chunks into a queue; a pool of workers uploads them concurrently.
-        ``self.memory_semaphore`` caps how many part-sized chunks are resident
-        in memory at once (globally, across all files): a slot is reserved
-        before a chunk is read and released only after its upload completes, so
-        peak memory stays bounded by ``MAX_IN_MEMORY_CHUNKS * chunk_size``
-        instead of growing with file size. Upload workers only ever handle
-        already-read chunks, so a concurrency slot is never spent on disk I/O.
+        Chunks are read sequentially and handed to upload tasks already in
+        memory, so an upload never waits on disk. ``self.memory_semaphore``
+        bounds how many part-sized chunks are resident at once (globally, across
+        all files): a slot is reserved before a chunk is read and released once
+        its upload finishes, so peak memory stays bounded by
+        ``MAX_IN_MEMORY_CHUNKS * chunk_size`` instead of growing with file size.
         """
-        total_parts = len(part_urls)
-        num_workers = min(UPLOAD_CONCURRENCY_LIMIT, total_parts)
-        # Unbounded queue is safe: read-ahead is bounded by self.memory_semaphore.
-        queue: asyncio.Queue[tuple[dict[str, Any], bytes] | None] = asyncio.Queue()
-        completed_parts: list[dict[str, Any]] = []
 
-        async def producer() -> None:
-            with open(file_path, "rb") as f:
-                for part_info in part_urls:
-                    # Reserve a memory slot before reading; the worker that
-                    # uploads this chunk releases it once done.
-                    await self.memory_semaphore.acquire()
-                    handed_off = False
-                    try:
-                        data = await asyncio.to_thread(f.read, self.chunk_size)
-                        await queue.put((part_info, data))
-                        handed_off = True
-                    finally:
-                        if not handed_off:
-                            self.memory_semaphore.release()
-            # one sentinel per worker so each exits after the stream drains
-            for _ in range(num_workers):
-                await queue.put(None)
+        async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
+            err = None
+            try:
+                async with self.semaphore:
+                    part_number = part_info["part_number"]
+                    url = part_info["url"]
+                    method = part_info["method"]
+                    headers = part_info.get("headers", {})
 
-        async def worker() -> None:
-            while True:
-                item = await queue.get()
-                if item is None:
-                    return
-                part_info, data = item
+                    part_size = len(data)
+
+                    for attempt in range(MAX_UPLOAD_RETRIES):
+                        try:
+                            response = await self.http_client.request(method, url, content=data, headers=headers)
+                            response.raise_for_status()
+                            etag = response.headers.get("ETag", "").strip('"')
+                            await self.increment_progress(
+                                part_size,
+                                f"{file_path.name} (part {part_number}/{len(part_urls)})",
+                            )
+                            return {"part_number": part_number, "etag": etag}
+                        except Exception as e:
+                            err = e
+                            if attempt < MAX_UPLOAD_RETRIES - 1:
+                                await asyncio.sleep(1 * (attempt + 1))
+                    raise RuntimeError(f"Failed to upload part {part_number}: {err}")
+            finally:
+                self.memory_semaphore.release()
+
+        tasks: list[asyncio.Task[dict[str, Any]]] = []
+        with open(file_path, "rb") as f:
+            for part_info in part_urls:
+                # block until a slot frees, bounding chunks read ahead of uploads
+                await self.memory_semaphore.acquire()
                 try:
-                    result = await self._upload_one_part(file_path, part_info, data, total_parts)
-                    completed_parts.append(result)
-                finally:
-                    # free the memory slot reserved by the producer
+                    data = await asyncio.to_thread(f.read, self.chunk_size)
+                except BaseException:
                     self.memory_semaphore.release()
+                    raise
+                tasks.append(asyncio.create_task(upload_part(part_info, data)))
 
-        producer_task = asyncio.create_task(producer())
-        worker_tasks = [asyncio.create_task(worker()) for _ in range(num_workers)]
-        try:
-            await asyncio.gather(producer_task, *worker_tasks)
-        except Exception:
-            producer_task.cancel()
-            for w in worker_tasks:
-                w.cancel()
-            await asyncio.gather(producer_task, *worker_tasks, return_exceptions=True)
-            # release slots for any chunks left buffered when we bailed out
-            while not queue.empty():
-                leftover = queue.get_nowait()
-                if leftover is not None:
-                    self.memory_semaphore.release()
-            raise
-
-        completed_parts.sort(key=lambda x: x["part_number"])
-        return completed_parts
-
-    async def _upload_one_part(
-        self,
-        file_path: Path,
-        part_info: dict[str, Any],
-        data: bytes,
-        total_parts: int,
-    ) -> dict[str, Any]:
-        """Upload a single, already-read part and return its part number + ETag."""
-        part_number = part_info["part_number"]
-        url = part_info["url"]
-        method = part_info["method"]
-        headers = part_info.get("headers", {})
-        part_size = len(data)
-
-        err: Exception | None = None
-        async with self.semaphore:
-            for attempt in range(MAX_UPLOAD_RETRIES):
-                try:
-                    response = await self.http_client.request(method, url, content=data, headers=headers)
-                    response.raise_for_status()
-                    etag = response.headers.get("ETag", "").strip('"')
-                    await self.increment_progress(
-                        part_size,
-                        f"{file_path.name} (part {part_number}/{total_parts})",
-                    )
-                    return {"part_number": part_number, "etag": etag}
-                except Exception as e:
-                    err = e
-                    if attempt < MAX_UPLOAD_RETRIES - 1:
-                        await asyncio.sleep(1 * (attempt + 1))
-        raise RuntimeError(f"Failed to upload part {part_number}: {err}")
+        completed_parts = await asyncio.gather(*tasks)
+        return sorted(completed_parts, key=lambda x: x["part_number"])
