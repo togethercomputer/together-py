@@ -182,6 +182,29 @@ class TestFineTuningList:
         assert result.output.index("ft-newer") < result.output.index("ft-older")
 
     @pytest.mark.respx(base_url=base_url)
+    def test_list_table_includes_early_stopping(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            **_FT_LIST_ITEM,
+                            "early_stopped": True,
+                            "early_stopping_best_metric": 0.123456,
+                            "early_stopping_best_step": 42,
+                        }
+                    ]
+                },
+            )
+        )
+        result = cli_runner.invoke(["fine-tuning", "list"])
+
+        assert result.exit_code == 0
+        assert "Early Stopping" in result.output
+        assert "yes (best step 42, best val loss 0.123456)" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes").mock(
             return_value=httpx.Response(200, json={"data": [_FT_LIST_ITEM_OLDER, _FT_LIST_ITEM]})
@@ -276,6 +299,33 @@ class TestFineTuningEventsAndCheckpoints:
         result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
         assert result.exit_code == 0
         assert json.loads(result.output)[0]["message"] == "training started"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_events_table_includes_early_stopping_details(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/fine-tunes/ft-1/events").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            **_FT_EVENT,
+                            "type": "early_stopped",
+                            "message": "early stopping triggered",
+                            "early_stopping_best_metric_value": 0.654321,
+                            "early_stopping_best_step": 21,
+                        }
+                    ]
+                },
+            )
+        )
+        result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1"])
+
+        assert result.exit_code == 0
+        assert "Details" in result.output
+        assert "early_stopped" in result.output
+        assert "best step 21, best val loss 0.654321" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

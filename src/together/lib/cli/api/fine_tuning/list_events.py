@@ -6,6 +6,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
+from together.lib.cli.api.fine_tuning._early_stopping import format_early_stopping_details
 
 
 async def list_events(
@@ -27,10 +28,19 @@ async def list_events(
     table = ListTable(empty_message=f"No events found for job {fine_tune_id}")
     table.add_primary_column("Type")
     table.add_column("Message")
+    table.add_column("Details")
     table.add_column("Created At")
 
     for i in events:
-        table.add_row(i.type, i.message, format_timestamp(i.created_at))
+        table.add_row(
+            i.type,
+            i.message,
+            format_early_stopping_details(
+                i.early_stopping_best_metric_value,
+                i.early_stopping_best_step,
+            ),
+            format_timestamp(i.created_at),
+        )
 
     console.print(table)
     if next_cursor:
