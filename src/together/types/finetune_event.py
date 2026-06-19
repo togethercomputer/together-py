@@ -39,4 +39,17 @@ class FinetuneEvent(BaseModel):
 
     wandb_url: str
 
+    early_stopping_best_metric_value: Optional[float] = None
+    """For early_stopped events, the best validation loss observed.
+
+    Null if no improving evaluation was recorded.
+    """
+
+    early_stopping_best_step: Optional[int] = None
+    """
+    For early_stopped events, the selected best-checkpoint step when a finite best
+    metric exists. If early_stopping_best_metric_value is null, this is the halt
+    step.
+    """
+
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
