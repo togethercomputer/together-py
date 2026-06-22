@@ -18,7 +18,7 @@ custom_theme = Theme(
         "prompt.choices": "#caaef5",  # Purple 300 ⭐
         "prompt.default": "dim #98a0b3",  # Grey 400 ⭐
         # Table styles
-        "table.header": "#414858",  # Purple 300 ⭐ (lighter when bold)
+        "table.header": "#caaef5",  # Purple 300 ⭐ (lighter when bold)
         "table.border": "#626b84",  # Grey 600 ⭐
         "table.row": "#c4c9d4",  # Grey 300 ⭐
         # Progress/Loading
