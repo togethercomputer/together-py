@@ -67,6 +67,7 @@ class FinetuneEventType(str, Enum):
     JOB_RESTARTED = "JOB_RESTARTED"
     REFUND = "REFUND"
     WARNING = "WARNING"
+    EARLY_STOPPED = "EARLY_STOPPED"
 
 
 class FinetuneEventLevels(str, Enum):
@@ -103,6 +104,8 @@ class FinetuneEvent(BaseModel):
     wandb_url: Union[str, None] = None
     # event hash
     hash: Union[str, None] = None
+    early_stopping_best_step: Union[int, None] = None
+    early_stopping_best_metric_value: Union[float, None] = None
 
 
 class FullTrainingType(BaseModel):
@@ -305,6 +308,15 @@ class FinetuneResponse(BaseModel):
     status: Optional[Union[FinetuneJobStatus, str]] = None
     """Status of the fine-tune job (accepts known enum values or string for forward compatibility)"""
 
+    early_stopped: Optional[bool] = None
+    """Whether training stopped early because the validation metric stopped improving"""
+
+    early_stopping_best_step: Optional[int] = None
+    """Training step of the best checkpoint selected by early stopping"""
+
+    early_stopping_best_metric: Optional[float] = None
+    """Best validation eval_loss used to select the early-stopping checkpoint"""
+
     updated_at: datetime
     """Last update timestamp of the fine-tune job"""
 
@@ -496,6 +508,11 @@ class FinetuneRequest(BaseModel):
     # wandb entity
     wandb_entity: Union[str, None] = None
     random_seed: Union[int, None] = None
+    # early stopping
+    early_stopping_enabled: Union[bool, None] = None
+    early_stopping_patience: Union[int, None] = None
+    early_stopping_min_delta: Union[float, None] = None
+    early_stopping_warmup_evals: Union[int, None] = None
     # training type
     training_type: Union[TrainingType, None] = None
     # training method
