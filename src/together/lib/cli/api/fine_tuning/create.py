@@ -148,7 +148,8 @@ async def create(
     early_stopping_enabled: Annotated[
         bool,
         Parameter(
-            help="Stop training early when validation eval_loss stops improving (requires --validation-file and --n-evals)"
+            help="Stop training early when validation eval_loss stops improving (requires --validation-file and --n-evals)",
+            negative=(),
         ),
     ] = False,
     early_stopping_patience: Annotated[
