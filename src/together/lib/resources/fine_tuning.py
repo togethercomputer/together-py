@@ -31,6 +31,40 @@ AVAILABLE_TRAINING_METHODS = {
 }
 
 
+def validate_early_stopping(
+    early_stopping_enabled: bool,
+    early_stopping_patience: int | None,
+    early_stopping_min_delta: float | None,
+    early_stopping_warmup_evals: int | None,
+    n_evals: int | None,
+    validation_file: str | None,
+) -> None:
+    """Validate early-stopping prerequisites, mirroring the backend checks.
+
+    Lets callers (CLI, SDK) fail before price estimation / job creation. Unset knobs
+    fall back to the same defaults the backend applies.
+    """
+    if not early_stopping_enabled:
+        return
+    if early_stopping_patience is not None and early_stopping_patience < 1:
+        raise ValueError(f"early_stopping_patience must be >= 1 (got {early_stopping_patience})")
+    if early_stopping_warmup_evals is not None and early_stopping_warmup_evals < 0:
+        raise ValueError(f"early_stopping_warmup_evals must be >= 0 (got {early_stopping_warmup_evals})")
+    if early_stopping_min_delta is not None and early_stopping_min_delta < 0:
+        raise ValueError(f"early_stopping_min_delta must be >= 0 (got {early_stopping_min_delta})")
+    if not validation_file:
+        raise ValueError("Early stopping requires a validation file (validation_file).")
+    # Need a baseline eval, warmup, then `patience` non-improving evals to fire.
+    effective_patience = early_stopping_patience if early_stopping_patience is not None else 2
+    effective_warmup = early_stopping_warmup_evals if early_stopping_warmup_evals is not None else 1
+    min_n_evals = effective_patience + effective_warmup + 1
+    if (n_evals or 0) < min_n_evals:
+        raise ValueError(
+            f"Early stopping requires n_evals >= patience + warmup_evals + 1 = {min_n_evals} "
+            f"(got n_evals={n_evals or 0})"
+        )
+
+
 def create_finetune_request(
     model_limits: FinetuneTrainingLimits,
     training_file: str,
@@ -63,6 +97,10 @@ def create_finetune_request(
     wandb_name: str | None = None,
     wandb_entity: str | None = None,
     random_seed: int | None = None,
+    early_stopping_enabled: bool = False,
+    early_stopping_patience: int | None = None,
+    early_stopping_min_delta: float | None = None,
+    early_stopping_warmup_evals: int | None = None,
     train_on_inputs: bool | Literal["auto"] | None = None,
     training_method: str = "sft",
     dpo_beta: float | None = None,
@@ -187,6 +225,15 @@ def create_finetune_request(
         if not simpo_gamma >= 0.0:
             raise ValueError(f"simpo_gamma should be non-negative (got {simpo_gamma})")
 
+    validate_early_stopping(
+        early_stopping_enabled=early_stopping_enabled,
+        early_stopping_patience=early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta,
+        early_stopping_warmup_evals=early_stopping_warmup_evals,
+        n_evals=n_evals,
+        validation_file=validation_file,
+    )
+
     lr_scheduler: FinetuneLRScheduler
     if lr_scheduler_type == "cosine":
         if scheduler_num_cycles <= 0.0:
@@ -270,6 +317,10 @@ def create_finetune_request(
         wandb_name=wandb_name,
         wandb_entity=wandb_entity,
         random_seed=random_seed,
+        early_stopping_enabled=early_stopping_enabled,
+        early_stopping_patience=early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta,
+        early_stopping_warmup_evals=early_stopping_warmup_evals,
         training_method=training_method_cls,  # pyright: ignore[reportPossiblyUnboundVariable]
         multimodal_params=multimodal_params,
         from_checkpoint=from_checkpoint,

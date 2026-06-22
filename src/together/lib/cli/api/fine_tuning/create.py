@@ -15,7 +15,7 @@ from together.lib.cli.api._utils import (
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.resources.fine_tuning import async_get_model_limits
+from together.lib.resources.fine_tuning import async_get_model_limits, validate_early_stopping
 from together.lib.cli.components.model_dump import print_model_dump
 
 
@@ -145,6 +145,25 @@ async def create(
         Optional[int],
         Parameter(help="Random seed for reproducible training, e.g. 42; uses the server default if unset"),
     ] = None,
+    early_stopping_enabled: Annotated[
+        bool,
+        Parameter(
+            help="Stop training early when validation eval_loss stops improving (requires --validation-file and --n-evals)",
+            negative=(),
+        ),
+    ] = False,
+    early_stopping_patience: Annotated[
+        Optional[int],
+        Parameter(help="Consecutive non-improving evals to tolerate before stopping; uses the default (2) if unset"),
+    ] = None,
+    early_stopping_min_delta: Annotated[
+        Optional[float],
+        Parameter(help="Minimum eval_loss decrease to count as an improvement; uses the default (0) if unset"),
+    ] = None,
+    early_stopping_warmup_evals: Annotated[
+        Optional[int],
+        Parameter(help="Initial evals to skip before counting patience; uses the default (1) if unset"),
+    ] = None,
     confirm: Annotated[
         bool, Parameter(alias=("-y"), negative=(), help="Whether to skip the launch confirmation message")
     ] = False,
@@ -254,6 +273,21 @@ async def create(
         )
     elif n_evals > 0 and not validation_file:
         raise ValueError("You have specified a number of evaluation loops but no validation file.")
+
+    validate_early_stopping(
+        early_stopping_enabled=early_stopping_enabled,
+        early_stopping_patience=early_stopping_patience,
+        early_stopping_min_delta=early_stopping_min_delta,
+        early_stopping_warmup_evals=early_stopping_warmup_evals,
+        n_evals=n_evals,
+        validation_file=validation_file,
+    )
+
+    if early_stopping_enabled:
+        training_args["early_stopping_enabled"] = early_stopping_enabled
+        training_args["early_stopping_patience"] = early_stopping_patience
+        training_args["early_stopping_min_delta"] = early_stopping_min_delta
+        training_args["early_stopping_warmup_evals"] = early_stopping_warmup_evals
 
     training_type_cls: pe_params.TrainingType | None
     if lora is None:
