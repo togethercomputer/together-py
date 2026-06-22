@@ -22,6 +22,9 @@ UPLOAD_CONCURRENCY_LIMIT = int(os.getenv("TOGETHER_UPLOAD_CONCURRENCY", "15"))
 MULTIPART_CHUNK_SIZE_MB = int(os.getenv("TOGETHER_MULTIPART_CHUNK_SIZE_MB", "20"))
 MULTIPART_THRESHOLD_MB = int(os.getenv("TOGETHER_MULTIPART_THRESHOLD_MB", "100"))
 MAX_UPLOAD_RETRIES = 3
+# How many part-sized chunks to read ahead beyond the in-flight uploads
+READ_AHEAD_CHUNKS = int(os.getenv("TOGETHER_UPLOAD_READ_AHEAD", "10"))
+MAX_IN_MEMORY_CHUNKS = UPLOAD_CONCURRENCY_LIMIT + READ_AHEAD_CHUNKS
 
 
 # --- File upload ---
@@ -54,6 +57,8 @@ class Uploader:
         self.spinner_iter = itertools.cycle("|/-\\")
         # these will be set in upload_files when event loop is running
         self.semaphore: asyncio.Semaphore
+        # caps how many part-sized chunks are held in memory at once, globally
+        self.memory_semaphore: asyncio.Semaphore
         self.progress_lock: asyncio.Lock
         self.http_client: httpx.AsyncClient
 
@@ -106,6 +111,7 @@ class Uploader:
         """Upload all files from source directory with progress tracking"""
         # these require a running event loop
         self.semaphore = asyncio.Semaphore(UPLOAD_CONCURRENCY_LIMIT)
+        self.memory_semaphore = asyncio.Semaphore(MAX_IN_MEMORY_CHUNKS)
         self.progress_lock = asyncio.Lock()
         files_to_upload: list[tuple[Path, str, int]] = []
 
@@ -237,45 +243,56 @@ class Uploader:
         file_path: Path,
         part_urls: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        """Upload file parts concurrently"""
+        """Upload file parts concurrently.
+
+        Chunks are read sequentially and handed to upload tasks already in
+        memory, so an upload never waits on disk. ``self.memory_semaphore``
+        bounds how many part-sized chunks are resident at once (globally, across
+        all files): a slot is reserved before a chunk is read and released once
+        its upload finishes, so peak memory stays bounded by
+        ``MAX_IN_MEMORY_CHUNKS * chunk_size`` instead of growing with file size.
+        """
 
         async def upload_part(part_info: dict[str, Any], data: bytes) -> dict[str, Any]:
             err = None
-            async with self.semaphore:
-                part_number = part_info["part_number"]
-                url = part_info["url"]
-                method = part_info["method"]
-                headers = part_info.get("headers", {})
+            try:
+                async with self.semaphore:
+                    part_number = part_info["part_number"]
+                    url = part_info["url"]
+                    method = part_info["method"]
+                    headers = part_info.get("headers", {})
 
-                part_size = len(data)
+                    part_size = len(data)
 
-                for attempt in range(MAX_UPLOAD_RETRIES):
-                    try:
-                        response = await self.http_client.request(method, url, content=data, headers=headers)
-                        response.raise_for_status()
-                        etag = response.headers.get("ETag", "").strip('"')
-                        await self.increment_progress(
-                            part_size,
-                            f"{file_path.name} (part {part_number}/{len(part_urls)})",
-                        )
-                        return {"part_number": part_number, "etag": etag}
-                    except Exception as e:
-                        err = e
-                        if attempt < MAX_UPLOAD_RETRIES - 1:
-                            await asyncio.sleep(1 * (attempt + 1))
-                raise RuntimeError(f"Failed to upload part {part_number}: {err}")
+                    for attempt in range(MAX_UPLOAD_RETRIES):
+                        try:
+                            response = await self.http_client.request(method, url, content=data, headers=headers)
+                            response.raise_for_status()
+                            etag = response.headers.get("ETag", "").strip('"')
+                            await self.increment_progress(
+                                part_size,
+                                f"{file_path.name} (part {part_number}/{len(part_urls)})",
+                            )
+                            return {"part_number": part_number, "etag": etag}
+                        except Exception as e:
+                            err = e
+                            if attempt < MAX_UPLOAD_RETRIES - 1:
+                                await asyncio.sleep(1 * (attempt + 1))
+                    raise RuntimeError(f"Failed to upload part {part_number}: {err}")
+            finally:
+                self.memory_semaphore.release()
 
+        tasks: list[asyncio.Task[dict[str, Any]]] = []
         with open(file_path, "rb") as f:
-            tasks = [
-                asyncio.create_task(
-                    upload_part(
-                        part_info=part_info,
-                        # read file sequentially while uploads proceed
-                        data=await asyncio.to_thread(f.read, self.chunk_size),
-                    )
-                )
-                for part_info in part_urls
-            ]
+            for part_info in part_urls:
+                # block until a slot frees, bounding chunks read ahead of uploads
+                await self.memory_semaphore.acquire()
+                try:
+                    data = await asyncio.to_thread(f.read, self.chunk_size)
+                except BaseException:
+                    self.memory_semaphore.release()
+                    raise
+                tasks.append(asyncio.create_task(upload_part(part_info, data)))
 
         completed_parts = await asyncio.gather(*tasks)
         return sorted(completed_parts, key=lambda x: x["part_number"])
