@@ -224,10 +224,6 @@ async def create(
         wandb_name=wandb_name,
         wandb_entity=wandb_entity,
         random_seed=random_seed,
-        early_stopping_enabled=early_stopping_enabled,
-        early_stopping_patience=early_stopping_patience,
-        early_stopping_min_delta=early_stopping_min_delta,
-        early_stopping_warmup_evals=early_stopping_warmup_evals,
         train_on_inputs=train_on_inputs.value if train_on_inputs is not None else None,
         training_method=training_method,
         dpo_beta=dpo_beta,
@@ -286,6 +282,14 @@ async def create(
         n_evals=n_evals,
         validation_file=validation_file,
     )
+
+    # Forward early-stopping knobs only when enabled: the generated create() gains these params
+    # via the openapi -> sdk regen, so passing them on every job would break non-ES jobs until then.
+    if early_stopping_enabled:
+        training_args["early_stopping_enabled"] = early_stopping_enabled
+        training_args["early_stopping_patience"] = early_stopping_patience
+        training_args["early_stopping_min_delta"] = early_stopping_min_delta
+        training_args["early_stopping_warmup_evals"] = early_stopping_warmup_evals
 
     training_type_cls: pe_params.TrainingType | None
     if lora is None:
