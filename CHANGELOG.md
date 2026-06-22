@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.17.0](https://github.com/togethercomputer/together-py/compare/v2.16.1...v2.17.0) (2026-06-22)
+
+
+### Features
+
+* Add CLI commands for endpoint adapters ([#401](https://github.com/togethercomputer/together-py/issues/401)) ([a02606a](https://github.com/togethercomputer/together-py/commit/a02606a735958bf153ad8416b9664e1d058f2319))
+* Add CLI commands for endpoint adapters ([#401](https://github.com/togethercomputer/together-py/issues/401)) ([5d791eb](https://github.com/togethercomputer/together-py/commit/5d791eb058773faf55210d6481c57c5efd691be1))
+
+
+### Bug Fixes
+
+* **ci:** pass app token to every authenticated step in promote workflow ([1baa0a4](https://github.com/togethercomputer/together-py/commit/1baa0a4be94080fdc18907a589a45c6b263ecaba))
+* unbounded read into memory in upload path - ENG-89831 ([#399](https://github.com/togethercomputer/together-py/issues/399)) ([24177a8](https://github.com/togethercomputer/together-py/commit/24177a8ee190a93f5df9c03c6a8bb51a1506fcab))
+* use regular print for jig volumes progress update ([#395](https://github.com/togethercomputer/together-py/issues/395)) ([06d1776](https://github.com/togethercomputer/together-py/commit/06d1776cb2cdb68f618e5b56dadaeff452a6289e))
+
+
+### Chores
+
+* integrate production changes to staging repo ([#30](https://github.com/togethercomputer/together-py/issues/30)) ([f67f123](https://github.com/togethercomputer/together-py/commit/f67f123acf28094bc4ff3852905969f287e6de37))
+* Log warning when uploading a file that already exists ([3c87cba](https://github.com/togethercomputer/together-py/commit/3c87cba7c95a40762a5d2921497fdb6b2714d3f7))
+* Log warning when uploading a file that already exists ([ee2cee5](https://github.com/togethercomputer/together-py/commit/ee2cee5fc44315d6679afd6b4897a15873e204e2))
+* Update release-please token auth ([f77a46a](https://github.com/togethercomputer/together-py/commit/f77a46a7ca833abdafb52ebbc563e6d1a5a54749))
+* update scripts to use github app ([#32](https://github.com/togethercomputer/together-py/issues/32)) ([fc49a8b](https://github.com/togethercomputer/together-py/commit/fc49a8b96e4b0395673fd579872ad5523ac0ed22))
+* update scripts to use github app ([#32](https://github.com/togethercomputer/together-py/issues/32)) ([#403](https://github.com/togethercomputer/together-py/issues/403)) ([83f978c](https://github.com/togethercomputer/together-py/commit/83f978cc932728ebe5ed0e121c649020ffe54ee0))
+* update stlc-promote flow auth token ([09eb41a](https://github.com/togethercomputer/together-py/commit/09eb41aa92b049014a3cf5c484953d2395429206))
+
 ## [2.16.1](https://github.com/togethercomputer/together-py/compare/v2.16.0...v2.16.1) (2026-06-10)
 
 
