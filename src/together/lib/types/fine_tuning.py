@@ -104,9 +104,7 @@ class FinetuneEvent(BaseModel):
     wandb_url: Union[str, None] = None
     # event hash
     hash: Union[str, None] = None
-    # early stopping: best checkpoint step (EARLY_STOPPED events)
     early_stopping_best_step: Union[int, None] = None
-    # early stopping: best eval_loss value (EARLY_STOPPED events)
     early_stopping_best_metric_value: Union[float, None] = None
 
 

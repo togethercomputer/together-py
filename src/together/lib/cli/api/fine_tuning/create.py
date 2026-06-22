@@ -274,7 +274,6 @@ async def create(
     elif n_evals > 0 and not validation_file:
         raise ValueError("You have specified a number of evaluation loops but no validation file.")
 
-    # Fail fast (before file uploads / price estimation); the SDK helper enforces the same rules.
     validate_early_stopping(
         early_stopping_enabled=early_stopping_enabled,
         early_stopping_patience=early_stopping_patience,
@@ -284,8 +283,6 @@ async def create(
         validation_file=validation_file,
     )
 
-    # Forward early-stopping knobs only when enabled: the generated create() gains these params
-    # via the openapi -> sdk regen, so passing them on every job would break non-ES jobs until then.
     if early_stopping_enabled:
         training_args["early_stopping_enabled"] = early_stopping_enabled
         training_args["early_stopping_patience"] = early_stopping_patience
