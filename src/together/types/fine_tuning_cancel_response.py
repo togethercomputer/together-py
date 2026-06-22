@@ -118,15 +118,6 @@ class FineTuningCancelResponse(BaseModel):
     created_at: datetime
     """Creation timestamp of the fine-tune job"""
 
-    early_stopped: Optional[bool] = None
-    """Whether training stopped early because the validation metric stopped improving"""
-
-    early_stopping_best_metric: Optional[float] = None
-    """Best validation eval_loss used to select the early-stopping checkpoint"""
-
-    early_stopping_best_step: Optional[int] = None
-    """Training step of the best checkpoint selected by early stopping"""
-
     status: Literal[
         "pending",
         "queued",
@@ -144,6 +135,22 @@ class FineTuningCancelResponse(BaseModel):
 
     batch_size: Optional[int] = None
     """Batch size used for training"""
+
+    early_stopped: Optional[bool] = None
+    """Whether the early-stopping criterion triggered."""
+
+    early_stopping_best_metric: Optional[float] = None
+    """Best validation loss observed, corresponding to early_stopping_best_step.
+
+    Null if no improving evaluation was recorded.
+    """
+
+    early_stopping_best_step: Optional[int] = None
+    """Step associated with the selected early-stopping artifact.
+
+    When early_stopping_best_metric is null, no finite best metric was recorded;
+    this is the halt step, not a best-checkpoint step.
+    """
 
     events: Optional[List[FinetuneEvent]] = None
     """Events related to this fine-tune job"""
