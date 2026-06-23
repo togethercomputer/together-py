@@ -467,6 +467,13 @@ with Together() as client:
 
 ## Usage – CLI
 
+### Whoami
+
+```bash
+# Show the project and organization for the current API key
+tg whoami
+```
+
 ### Files
 
 ```bash
@@ -559,6 +566,13 @@ print(together.__version__)
 Python 3.9 or higher.
 
 ## Usage – CLI
+
+### Whoami
+
+```bash
+# Show the project and organization for the current API key
+tg whoami
+```
 
 ### Files
 
