@@ -1,3 +1,15 @@
+# Together
+
+Types:
+
+```python
+from together.types import WhoamiResponse
+```
+
+Methods:
+
+- <code title="get /whoami">client.<a href="./src/together/_client.py">whoami</a>() -> <a href="./src/together/types/whoami_response.py">WhoamiResponse</a></code>
+
 # Beta
 
 ## Jig

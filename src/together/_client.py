@@ -14,7 +14,10 @@ from together.lib._google_colab import get_google_colab_secret
 from . import _exceptions
 from ._qs import Querystring
 from ._types import (
+    Body,
     Omit,
+    Query,
+    Headers,
     Timeout,
     NotGiven,
     Transport,
@@ -29,13 +32,21 @@ from ._utils import (
 )
 from ._compat import cached_property
 from ._version import __version__
+from ._response import (
+    to_raw_response_wrapper,
+    to_streamed_response_wrapper,
+    async_to_raw_response_wrapper,
+    async_to_streamed_response_wrapper,
+)
 from ._streaming import Stream as Stream, AsyncStream as AsyncStream
 from ._exceptions import TogetherError, APIStatusError
 from ._base_client import (
     DEFAULT_MAX_RETRIES,
     SyncAPIClient,
     AsyncAPIClient,
+    make_request_options,
 )
+from .types.whoami_response import WhoamiResponse
 
 if TYPE_CHECKING:
     from .resources import (
@@ -323,6 +334,33 @@ class Together(SyncAPIClient):
     # client.with_options(timeout=10).foo.create(...)
     with_options = copy
 
+    def whoami(
+        self,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> WhoamiResponse:
+        """Returns identity information about the authenticated API key.
+
+        Useful for
+        confirming which project and organization a key is scoped to, and for obtaining
+        the project slug used to compose the `model` value
+        (`<project_slug>/<endpoint_slug>`) in dedicated endpoint inference calls.
+        Requires a Bearer API key in the `Authorization` header. Cookie, session, and
+        SLS JWT credentials are not accepted.
+        """
+        return self.get(
+            "/whoami",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=WhoamiResponse,
+        )
+
     @override
     def _make_status_error(
         self,
@@ -597,6 +635,33 @@ class AsyncTogether(AsyncAPIClient):
     # client.with_options(timeout=10).foo.create(...)
     with_options = copy
 
+    async def whoami(
+        self,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> WhoamiResponse:
+        """Returns identity information about the authenticated API key.
+
+        Useful for
+        confirming which project and organization a key is scoped to, and for obtaining
+        the project slug used to compose the `model` value
+        (`<project_slug>/<endpoint_slug>`) in dedicated endpoint inference calls.
+        Requires a Bearer API key in the `Authorization` header. Cookie, session, and
+        SLS JWT credentials are not accepted.
+        """
+        return await self.get(
+            "/whoami",
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=WhoamiResponse,
+        )
+
     @override
     def _make_status_error(
         self,
@@ -636,6 +701,10 @@ class TogetherWithRawResponse:
 
     def __init__(self, client: Together) -> None:
         self._client = client
+
+        self.whoami = to_raw_response_wrapper(
+            client.whoami,
+        )
 
     @cached_property
     def beta(self) -> beta.BetaResourceWithRawResponse:
@@ -734,6 +803,10 @@ class AsyncTogetherWithRawResponse:
     def __init__(self, client: AsyncTogether) -> None:
         self._client = client
 
+        self.whoami = async_to_raw_response_wrapper(
+            client.whoami,
+        )
+
     @cached_property
     def beta(self) -> beta.AsyncBetaResourceWithRawResponse:
         from .resources.beta import AsyncBetaResourceWithRawResponse
@@ -831,6 +904,10 @@ class TogetherWithStreamedResponse:
     def __init__(self, client: Together) -> None:
         self._client = client
 
+        self.whoami = to_streamed_response_wrapper(
+            client.whoami,
+        )
+
     @cached_property
     def beta(self) -> beta.BetaResourceWithStreamingResponse:
         from .resources.beta import BetaResourceWithStreamingResponse
@@ -927,6 +1004,10 @@ class AsyncTogetherWithStreamedResponse:
 
     def __init__(self, client: AsyncTogether) -> None:
         self._client = client
+
+        self.whoami = async_to_streamed_response_wrapper(
+            client.whoami,
+        )
 
     @cached_property
     def beta(self) -> beta.AsyncBetaResourceWithStreamingResponse:
