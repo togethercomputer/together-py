@@ -654,6 +654,8 @@ storage_app.command(
     (f"{_CLI}.beta.jig.jig:jig_volumes_list"), name="list", alias="ls", help="List volumes for a Jig deployment"
 )
 
+app.command((f"{_CLI}.whoami:whoami"), help="Show the current user")
+
 app.help_epilogue = TOP_LEVEL_HELP_EXAMPLES
 endpoints_app.help_epilogue = ENDPOINTS_HELP_EXAMPLES
 
