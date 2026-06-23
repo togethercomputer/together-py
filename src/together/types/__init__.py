@@ -20,6 +20,7 @@ from .evaluation_job import EvaluationJob as EvaluationJob
 from .finetune_event import FinetuneEvent as FinetuneEvent
 from .image_data_b64 import ImageDataB64 as ImageDataB64
 from .image_data_url import ImageDataURL as ImageDataURL
+from .whoami_response import WhoamiResponse as WhoamiResponse
 from .completion_chunk import CompletionChunk as CompletionChunk
 from .eval_list_params import EvalListParams as EvalListParams
 from .execute_response import ExecuteResponse as ExecuteResponse
