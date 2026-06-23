@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.18.0](https://github.com/togethercomputer/together-py/compare/v2.17.0...v2.18.0) (2026-06-23)
+
+
+### Features
+
+* Add "whoami" cli command ([#414](https://github.com/togethercomputer/together-py/issues/414)) ([ce47771](https://github.com/togethercomputer/together-py/commit/ce477710df337345fdf0190ae607ed4c69b3ed25))
+* add /v1/whoami endpoint to OpenAPI spec ([575deea](https://github.com/togethercomputer/together-py/commit/575deea5b95a2070813c2e4dfca409bd3725918c))
+
 ## [2.17.0](https://github.com/togethercomputer/together-py/compare/v2.16.1...v2.17.0) (2026-06-22)
 
 
