@@ -1,12 +1,26 @@
 from __future__ import annotations
 
 import os
+import json
+
+import httpx
+import pytest
+from respx import MockRouter
 
 from tests.cli.utils import CliRunner
 from together._version import __version__
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 API_KEY = "0000000000000000000000000000000000000000"
+
+WHOAMI_RESPONSE = {
+    "api_key_id": "key-123",
+    "organization_id": "org-123",
+    "organization_name": "Acme Org",
+    "project_id": "proj-123",
+    "project_name": "Inference Project",
+    "project_slug": "inference-project",
+}
 
 
 class TestMainGlobalOptions:
@@ -41,3 +55,29 @@ class TestMainGlobalOptions:
             call_kw = ctor.call_args.kwargs
             assert call_kw.get("timeout") == 99
             assert call_kw.get("max_retries") == 3
+
+
+class TestWhoami:
+    @pytest.mark.respx(base_url=base_url)
+    def test_whoami(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=WHOAMI_RESPONSE))
+
+        result = cli_runner.invoke(["whoami"])
+
+        assert result.exit_code == 0
+        assert route.called
+        assert "Api Key Id:" in result.output
+        assert "key-123" in result.output
+        assert "Organization Name:" in result.output
+        assert "Acme Org" in result.output
+        assert "Project Slug:" in result.output
+        assert "inference-project" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_whoami_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=WHOAMI_RESPONSE))
+
+        result = cli_runner.invoke(["whoami", "--json"])
+
+        assert result.exit_code == 0
+        assert json.loads(result.out_out.lstrip("\n")) == WHOAMI_RESPONSE

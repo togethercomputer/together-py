@@ -335,6 +335,8 @@ async def launcher(
 # Register commands
 _CLI = "together.lib.cli.api"
 
+app.command((f"{_CLI}.whoami:whoami"), help="Show identity information for the configured API key")
+
 ## Files API commands
 files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
 files_app.command(
