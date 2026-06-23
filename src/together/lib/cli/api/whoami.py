@@ -3,7 +3,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 
 
-async def whoami(*, config: CLIConfigParameter):
+async def whoami(*, config: CLIConfigParameter) -> None:
     me = await config.client.whoami()
 
     if config.json:
