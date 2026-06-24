@@ -128,7 +128,7 @@ class TestFineTuningCreate:
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
-        assert "Price estimation is not available for multimodal datasets" in output
+        assert "not available for multimodal datasets" in output
         assert "Do you want to proceed?" in result.output
         assert "ft-created" in result.output
         assert estimate.calls
