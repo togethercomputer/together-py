@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.19.0](https://github.com/togethercomputer/together-py/compare/v2.18.0...v2.19.0) (2026-06-24)
+
+
+### Features
+
+* **cli:** expose remediation approval mode ([#418](https://github.com/togethercomputer/together-py/issues/418)) ([d52a5c4](https://github.com/togethercomputer/together-py/commit/d52a5c481bc2eb6c6b467f0837f75d819cb927a5))
+
+
+### Chores
+
+* Clarify warning messages on unavailable price estimation for fine tuning ([#417](https://github.com/togethercomputer/together-py/issues/417)) ([2c0ee3c](https://github.com/togethercomputer/together-py/commit/2c0ee3c3b12472d1b617d477e9490ac262cde1cd))
+
 ## [2.18.0](https://github.com/togethercomputer/together-py/compare/v2.17.0...v2.18.0) (2026-06-23)
 
 
