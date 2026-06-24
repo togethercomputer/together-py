@@ -26,6 +26,9 @@ __all__ = [
     "ClusterConfigIngress",
     "ClusterConfigObservability",
     "ClusterConfigSlurmStartupScripts",
+    "DeletedGPUWorkerNode",
+    "DeletedGPUWorkerNodePhaseTransition",
+    "NodeLifecycleEvent",
     "OidcConfig",
 ]
 
@@ -144,6 +147,12 @@ class GPUWorkerNode(BaseModel):
 
     auto_remediation_enabled: Optional[bool] = None
     """Whether auto-remediation is enabled for this node's instance."""
+
+    deleted_at: Optional[datetime] = None
+    """Timestamp when the node left the live data plane.
+
+    Only set for deleted_gpu_worker_nodes.
+    """
 
     ephemeral_storage: Optional[str] = None
     """Ephemeral storage size, such as 1Ti."""
@@ -277,6 +286,102 @@ class ClusterConfig(BaseModel):
     """
 
 
+class DeletedGPUWorkerNodePhaseTransition(BaseModel):
+    phase: Literal[
+        "NODE_PHASE_PENDING",
+        "NODE_PHASE_SCHEDULING",
+        "NODE_PHASE_BOOTING",
+        "NODE_PHASE_BOOTSTRAPPING",
+        "NODE_PHASE_RUNNING",
+        "NODE_PHASE_SUCCEEDED",
+        "NODE_PHASE_FAILED",
+        "NODE_PHASE_PAUSED",
+    ]
+    """Node phase."""
+
+    transition_time: datetime
+    """Timestamp when the phase transition occurred."""
+
+
+class DeletedGPUWorkerNode(BaseModel):
+    host_name: str
+
+    memory_gib: float
+
+    networks: List[str]
+
+    node_id: str
+
+    num_cpu_cores: int
+
+    num_gpus: int
+
+    phase_transitions: List[DeletedGPUWorkerNodePhaseTransition]
+    """Phase transition history for this GPU worker node."""
+
+    status: str
+
+    auto_remediation_enabled: Optional[bool] = None
+    """Whether auto-remediation is enabled for this node's instance."""
+
+    deleted_at: Optional[datetime] = None
+    """Timestamp when the node left the live data plane.
+
+    Only set for deleted_gpu_worker_nodes.
+    """
+
+    ephemeral_storage: Optional[str] = None
+    """Ephemeral storage size, such as 1Ti."""
+
+    ib_hca_count: Optional[int] = None
+    """Number of InfiniBand HCAs."""
+
+    ib_hca_type: Optional[str] = None
+    """InfiniBand HCA type."""
+
+    instance_id: Optional[str] = None
+
+    latest_remediation: Optional[Remediation] = None
+    """
+    Remediation represents a node remediation request for an instance. An instance
+    can have multiple remediations over time (e.g., failed attempts followed by
+    retries).
+    """
+
+    marked_for_deletion: Optional[bool] = None
+    """Whether this node is marked for deletion by the operator."""
+
+    nvswitch_count: Optional[int] = None
+    """Number of NVSwitches."""
+
+    nvswitch_type: Optional[str] = None
+    """NVSwitch type."""
+
+    public_ipv4: Optional[str] = None
+    """Public IPv4 address of the GPU worker node."""
+
+    slurm_worker_hostname: Optional[str] = None
+
+
+class NodeLifecycleEvent(BaseModel):
+    """Node lifecycle event included in a GPU cluster timeline."""
+
+    message: str
+    """Human-readable lifecycle event message."""
+
+    node_id: str
+    """Tenant node name this lifecycle event applies to."""
+
+    reason: str
+    """
+    Lifecycle event reason, for example TogetherScaledUp, TogetherScaledDown, or
+    TogetherPreempted.
+    """
+
+    timestamp: datetime
+    """Event timestamp."""
+
+
 class OidcConfig(BaseModel):
     client_id: str
     """OIDC client ID for authentication."""
@@ -390,6 +495,13 @@ class Cluster(BaseModel):
 
     created_at: Optional[datetime] = None
 
+    deleted_gpu_worker_nodes: Optional[List[DeletedGPUWorkerNode]] = None
+    """GPU worker nodes retained after they left the live data plane.
+
+    These are separate from gpu_worker_nodes and must not be counted as live
+    capacity.
+    """
+
     duration_hours: Optional[int] = None
 
     first_ready_at: Optional[datetime] = None
@@ -402,6 +514,12 @@ class Cluster(BaseModel):
 
     machine_cluster_id: Optional[str] = None
     """ID of the machine cluster backing this GPU cluster."""
+
+    node_lifecycle_events: Optional[List[NodeLifecycleEvent]] = None
+    """Recent node lifecycle events such as scale-up, scale-down, and preemption.
+
+    Combine these with live and deleted node lists to render the cluster timeline.
+    """
 
     nvidia_driver_version_id: Optional[str] = None
     """Internal NVIDIA version ID for this cluster's driver and CUDA combination."""
