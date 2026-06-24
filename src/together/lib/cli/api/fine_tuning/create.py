@@ -50,7 +50,9 @@ _PRICE_ESTIMATION_UNAVAILABLE_FILE_ARG_BY_REASON = {
     "train_file_invalid": "training_file",
     "eval_file_invalid": "validation_file",
 }
-_FILE_DETAILS_HINT = "Run [bold]tg files retrieve {file_id} --json[/bold] to get details about the file processing status."
+_FILE_DETAILS_HINT = (
+    "Run [bold]tg files retrieve {file_id} --json[/bold] to get details about the file processing status."
+)
 
 
 def _check_path_exists(path_string: Optional[str]) -> bool:
