@@ -222,6 +222,7 @@ class TestRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
             comment="comment",
+            mode="REMEDIATION_MODE_VM_ONLY",
         )
         assert_matches_type(Remediation, remediation, path=["response"])
 
@@ -614,6 +615,7 @@ class TestAsyncRemediations:
             cluster_id="cluster_id",
             instance_id="instance_id",
             comment="comment",
+            mode="REMEDIATION_MODE_VM_ONLY",
         )
         assert_matches_type(Remediation, remediation, path=["response"])
 

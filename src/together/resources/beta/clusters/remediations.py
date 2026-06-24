@@ -279,6 +279,13 @@ class RemediationsResource(SyncAPIResource):
         cluster_id: str,
         instance_id: str,
         comment: str | Omit = omit,
+        mode: Literal[
+            "REMEDIATION_MODE_VM_ONLY",
+            "REMEDIATION_MODE_HOST_AWARE",
+            "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
+            "REMEDIATION_MODE_REBOOT_VM",
+        ]
+        | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -296,7 +303,18 @@ class RemediationsResource(SyncAPIResource):
         remediation after approval.
 
         Args:
-          comment: Comment explaining the action.
+          comment: Approval comment explaining the decision.
+
+          mode: Remediation mode to use after approval. When omitted, the remediation keeps its
+              existing mode.
+
+              - `REMEDIATION_MODE_VM_ONLY`: Deletes the VM and provisions a new one on any
+                available host.
+              - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
+                provisions a new one on a different host.
+              - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
+                provisioning a replacement.
+              - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
 
           extra_headers: Send extra headers
 
@@ -319,7 +337,13 @@ class RemediationsResource(SyncAPIResource):
                 instance_id=instance_id,
                 remediation_id=remediation_id,
             ),
-            body=maybe_transform({"comment": comment}, remediation_approve_params.RemediationApproveParams),
+            body=maybe_transform(
+                {
+                    "comment": comment,
+                    "mode": mode,
+                },
+                remediation_approve_params.RemediationApproveParams,
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -681,6 +705,13 @@ class AsyncRemediationsResource(AsyncAPIResource):
         cluster_id: str,
         instance_id: str,
         comment: str | Omit = omit,
+        mode: Literal[
+            "REMEDIATION_MODE_VM_ONLY",
+            "REMEDIATION_MODE_HOST_AWARE",
+            "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
+            "REMEDIATION_MODE_REBOOT_VM",
+        ]
+        | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -698,7 +729,18 @@ class AsyncRemediationsResource(AsyncAPIResource):
         remediation after approval.
 
         Args:
-          comment: Comment explaining the action.
+          comment: Approval comment explaining the decision.
+
+          mode: Remediation mode to use after approval. When omitted, the remediation keeps its
+              existing mode.
+
+              - `REMEDIATION_MODE_VM_ONLY`: Deletes the VM and provisions a new one on any
+                available host.
+              - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
+                provisions a new one on a different host.
+              - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
+                provisioning a replacement.
+              - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
 
           extra_headers: Send extra headers
 
@@ -721,7 +763,13 @@ class AsyncRemediationsResource(AsyncAPIResource):
                 instance_id=instance_id,
                 remediation_id=remediation_id,
             ),
-            body=await async_maybe_transform({"comment": comment}, remediation_approve_params.RemediationApproveParams),
+            body=await async_maybe_transform(
+                {
+                    "comment": comment,
+                    "mode": mode,
+                },
+                remediation_approve_params.RemediationApproveParams,
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
