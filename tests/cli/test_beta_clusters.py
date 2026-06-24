@@ -526,11 +526,25 @@ class TestBetaClustersRemediations:
         )
 
         result = cli_runner.invoke(
-            ["beta", "clusters", "remediations", "approve", "rem-approve", "--comment", "go", "--json"]
+            [
+                "beta",
+                "clusters",
+                "remediations",
+                "approve",
+                "rem-approve",
+                "--comment",
+                "go",
+                "--mode",
+                "REBOOT_VM",
+                "--json",
+            ]
         )
 
         assert json.loads(result.output)["state"] == "PENDING"
-        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"comment": "go"}
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {
+            "comment": "go",
+            "mode": "REMEDIATION_MODE_REBOOT_VM",
+        }
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
