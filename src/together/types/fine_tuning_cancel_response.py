@@ -230,9 +230,6 @@ class FineTuningCancelResponse(BaseModel):
     training_type: Optional[TrainingType] = None
     """Type of training used (full or LoRA)"""
 
-    user_id: Optional[str] = None
-    """Identifier for who created the job."""
-
     validation_file: Optional[str] = None
     """File-ID of the validation file"""
 
