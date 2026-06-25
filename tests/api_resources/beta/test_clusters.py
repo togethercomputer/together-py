@@ -54,6 +54,7 @@ class TestClusters:
                 "gpu_burn_skipped": True,
                 "nccl_multi_node_skipped": True,
                 "nccl_single_node_skipped": True,
+                "storage_skipped": True,
             },
             add_ons=[
                 {
@@ -75,6 +76,7 @@ class TestClusters:
                 "ingress": {"enabled": True},
                 "jumphost_enabled": True,
                 "kubernetes_dashboard_enabled": True,
+                "network_operator_version": "network_operator_version",
                 "observability": {"enabled": True},
                 "slurm_startup_scripts": {
                     "controller_epilog": "controller_epilog",
@@ -216,6 +218,7 @@ class TestClusters:
                 "ingress": {"enabled": True},
                 "jumphost_enabled": True,
                 "kubernetes_dashboard_enabled": True,
+                "network_operator_version": "network_operator_version",
                 "observability": {"enabled": True},
                 "slurm_startup_scripts": {
                     "controller_epilog": "controller_epilog",
@@ -228,6 +231,7 @@ class TestClusters:
                 },
             },
             cluster_type="KUBERNETES",
+            num_capacity_pool_gpus=0,
             num_gpus=0,
             num_preemptible_gpus=0,
             num_reserved_gpus=0,
@@ -398,6 +402,7 @@ class TestAsyncClusters:
                 "gpu_burn_skipped": True,
                 "nccl_multi_node_skipped": True,
                 "nccl_single_node_skipped": True,
+                "storage_skipped": True,
             },
             add_ons=[
                 {
@@ -419,6 +424,7 @@ class TestAsyncClusters:
                 "ingress": {"enabled": True},
                 "jumphost_enabled": True,
                 "kubernetes_dashboard_enabled": True,
+                "network_operator_version": "network_operator_version",
                 "observability": {"enabled": True},
                 "slurm_startup_scripts": {
                     "controller_epilog": "controller_epilog",
@@ -560,6 +566,7 @@ class TestAsyncClusters:
                 "ingress": {"enabled": True},
                 "jumphost_enabled": True,
                 "kubernetes_dashboard_enabled": True,
+                "network_operator_version": "network_operator_version",
                 "observability": {"enabled": True},
                 "slurm_startup_scripts": {
                     "controller_epilog": "controller_epilog",
@@ -572,6 +579,7 @@ class TestAsyncClusters:
                 },
             },
             cluster_type="KUBERNETES",
+            num_capacity_pool_gpus=0,
             num_gpus=0,
             num_preemptible_gpus=0,
             num_reserved_gpus=0,

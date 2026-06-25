@@ -277,6 +277,12 @@ class ClusterConfig(BaseModel):
 
     kubernetes_dashboard_enabled: Optional[bool] = None
 
+    network_operator_version: Optional[str] = None
+    """NVIDIA Network Operator chart/version for the tenant cluster (e.g.
+
+    v24.7.0). When omitted, a service default is applied.
+    """
+
     observability: Optional[ClusterConfigObservability] = None
 
     slurm_startup_scripts: Optional[ClusterConfigSlurmStartupScripts] = None
@@ -455,10 +461,22 @@ class Cluster(BaseModel):
 
     kube_config: str
 
+    num_capacity_pool_gpus: int
+    """Number of GPUs to draw from a capacity pool.
+
+    A component of the overall num_gpus, alongside num_reserved_gpus.
+    """
+
     num_cpu_workers: int
     """Number of CPU-only worker nodes in the cluster."""
 
     num_gpus: int
+
+    num_reserved_gpus: int
+    """Number of prepaid reserved GPUs for this cluster.
+
+    A component of the overall num_gpus, alongside num_capacity_pool_gpus.
+    """
 
     nvidia_driver_version: str
 
