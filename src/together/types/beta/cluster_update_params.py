@@ -34,6 +34,13 @@ class ClusterUpdateParams(TypedDict, total=False):
     cluster_type: Literal["KUBERNETES", "SLURM"]
     """Type of cluster to update."""
 
+    num_capacity_pool_gpus: int
+    """Number of GPUs to draw from the cluster's capacity pool.
+
+    Only valid for clusters created with a capacity_pool_id. Must be a multiple of 8
+    and not exceed num_gpus. When omitted, the current value is preserved.
+    """
+
     num_gpus: int
     """Target GPU count for the cluster.
 
@@ -130,6 +137,12 @@ class ClusterConfig(TypedDict, total=False):
     jumphost_enabled: bool
 
     kubernetes_dashboard_enabled: bool
+
+    network_operator_version: str
+    """NVIDIA Network Operator chart/version for the tenant cluster (e.g.
+
+    v24.7.0). When omitted, a service default is applied.
+    """
 
     observability: ClusterConfigObservability
 

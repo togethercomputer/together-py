@@ -286,6 +286,7 @@ class ClustersResource(SyncAPIResource):
         add_ons: Iterable[cluster_update_params.AddOn] | Omit = omit,
         cluster_config: cluster_update_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        num_capacity_pool_gpus: int | Omit = omit,
         num_gpus: int | Omit = omit,
         num_preemptible_gpus: int | Omit = omit,
         num_reserved_gpus: int | Omit = omit,
@@ -307,6 +308,10 @@ class ClustersResource(SyncAPIResource):
               name and provides the new external config to merge.
 
           cluster_type: Type of cluster to update.
+
+          num_capacity_pool_gpus: Number of GPUs to draw from the cluster's capacity pool. Only valid for clusters
+              created with a capacity_pool_id. Must be a multiple of 8 and not exceed
+              num_gpus. When omitted, the current value is preserved.
 
           num_gpus: Target GPU count for the cluster. When omitted, the server keeps the current GPU
               count from cluster metadata (use for config-only or decommission-time-only
@@ -338,6 +343,7 @@ class ClustersResource(SyncAPIResource):
                     "add_ons": add_ons,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
+                    "num_capacity_pool_gpus": num_capacity_pool_gpus,
                     "num_gpus": num_gpus,
                     "num_preemptible_gpus": num_preemptible_gpus,
                     "num_reserved_gpus": num_reserved_gpus,
@@ -687,6 +693,7 @@ class AsyncClustersResource(AsyncAPIResource):
         add_ons: Iterable[cluster_update_params.AddOn] | Omit = omit,
         cluster_config: cluster_update_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        num_capacity_pool_gpus: int | Omit = omit,
         num_gpus: int | Omit = omit,
         num_preemptible_gpus: int | Omit = omit,
         num_reserved_gpus: int | Omit = omit,
@@ -708,6 +715,10 @@ class AsyncClustersResource(AsyncAPIResource):
               name and provides the new external config to merge.
 
           cluster_type: Type of cluster to update.
+
+          num_capacity_pool_gpus: Number of GPUs to draw from the cluster's capacity pool. Only valid for clusters
+              created with a capacity_pool_id. Must be a multiple of 8 and not exceed
+              num_gpus. When omitted, the current value is preserved.
 
           num_gpus: Target GPU count for the cluster. When omitted, the server keeps the current GPU
               count from cluster metadata (use for config-only or decommission-time-only
@@ -739,6 +750,7 @@ class AsyncClustersResource(AsyncAPIResource):
                     "add_ons": add_ons,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
+                    "num_capacity_pool_gpus": num_capacity_pool_gpus,
                     "num_gpus": num_gpus,
                     "num_preemptible_gpus": num_preemptible_gpus,
                     "num_reserved_gpus": num_reserved_gpus,

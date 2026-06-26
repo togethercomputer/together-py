@@ -202,6 +202,9 @@ class AcceptanceTestsParams(TypedDict, total=False):
     nccl_single_node_skipped: bool
     """Skip NCCL single-node acceptance test."""
 
+    storage_skipped: bool
+    """Skip storage-performance acceptance test."""
+
 
 class AddOnConfigDashboard(TypedDict, total=False):
     enabled: bool
@@ -276,6 +279,12 @@ class ClusterConfig(TypedDict, total=False):
     jumphost_enabled: bool
 
     kubernetes_dashboard_enabled: bool
+
+    network_operator_version: str
+    """NVIDIA Network Operator chart/version for the tenant cluster (e.g.
+
+    v24.7.0). When omitted, a service default is applied.
+    """
 
     observability: ClusterConfigObservability
 

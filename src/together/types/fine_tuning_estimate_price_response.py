@@ -32,7 +32,13 @@ class UnavailableEstimate(BaseModel):
     estimation_available: Literal[False]
     """Whether price estimation is available for the requested fine-tune job."""
 
-    unavailable_reason: str
+    unavailable_reason: Literal[
+        "multimodal_dataset",
+        "train_file_not_validated",
+        "eval_file_not_validated",
+        "train_file_invalid",
+        "eval_file_invalid",
+    ]
     """Reason price estimation is unavailable for the requested fine-tune job."""
 
 

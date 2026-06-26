@@ -12,32 +12,16 @@ __all__ = ["FinetuneEvent"]
 
 
 class FinetuneEvent(BaseModel):
-    checkpoint_path: str
-
     created_at: str
 
-    hash: str
-
     message: str
-
-    x_model_path: str = FieldInfo(alias="model_path")
 
     object: Literal["fine-tune-event"]
     """The object type, which is always `fine-tune-event`."""
 
-    param_count: int
-
-    step: int
-
-    token_count: int
-
-    total_steps: int
-
-    training_offset: int
-
     type: FinetuneEventType
 
-    wandb_url: str
+    checkpoint_path: Optional[str] = None
 
     early_stopping_best_metric_value: Optional[float] = None
     """For early_stopped events, the best validation loss observed.
@@ -53,3 +37,15 @@ class FinetuneEvent(BaseModel):
     """
 
     level: Optional[Literal["info", "warning", "error", "legacy_info", "legacy_iwarning", "legacy_ierror"]] = None
+
+    x_model_path: Optional[str] = FieldInfo(alias="model_path", default=None)
+
+    param_count: Optional[int] = None
+
+    step: Optional[int] = None
+
+    token_count: Optional[int] = None
+
+    total_steps: Optional[int] = None
+
+    wandb_url: Optional[str] = None
