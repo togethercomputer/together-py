@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.0](https://github.com/togethercomputer/together-py/compare/v2.19.0...v2.20.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** expose capacity pool in cluster updates ([#422](https://github.com/togethercomputer/together-py/issues/422)) ([96fe505](https://github.com/togethercomputer/together-py/commit/96fe5055085969ca3f337e80b15464707a08a479))
+
 ## [2.19.0](https://github.com/togethercomputer/together-py/compare/v2.18.0...v2.19.0) (2026-06-24)
 
 
