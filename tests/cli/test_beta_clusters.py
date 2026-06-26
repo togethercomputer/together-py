@@ -26,7 +26,9 @@ def _cluster_body(cluster_id: str = "cluster-1", name: str = "my-cluster", **ove
         "gpu_type": "H100_SXM",
         "gpu_worker_nodes": [],
         "kube_config": base64.b64encode(b"").decode("ascii"),
+        "num_capacity_pool_gpus": 0,
         "num_gpus": 8,
+        "num_reserved_gpus": 8,
         "region": "us-central-8",
         "status": "Ready",
         "volumes": [],
@@ -256,6 +258,8 @@ class TestBetaClustersUpdate:
                 "c1",
                 "--num-preemptible-gpus",
                 "8",
+                "--num-capacity-pool-gpus",
+                "8",
                 "--num-reserved-gpus",
                 "16",
                 "--reservation-end-time",
@@ -265,6 +269,7 @@ class TestBetaClustersUpdate:
 
         put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
         assert put_body["num_preemptible_gpus"] == 8
+        assert put_body["num_capacity_pool_gpus"] == 8
         assert put_body["num_reserved_gpus"] == 16
         assert put_body["reservation_end_time"] == "2026-06-02T00:00:00Z"
         assert result.exit_code == 0
