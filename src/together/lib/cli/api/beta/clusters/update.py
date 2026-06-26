@@ -22,6 +22,10 @@ async def update(
         Optional[int],
         Parameter(help="Desired number of preemptible GPUs for the cluster"),
     ] = None,
+    num_capacity_pool_gpus: Annotated[
+        Optional[int],
+        Parameter(help="Desired number of capacity pool GPUs for the cluster"),
+    ] = None,
     num_reserved_gpus: Annotated[
         Optional[int],
         Parameter(help="Desired number of reserved GPUs for the cluster"),
@@ -41,6 +45,7 @@ async def update(
             cluster_id,
             num_gpus=num_gpus if num_gpus is not None else omit,
             cluster_type=cluster_type if cluster_type is not None else omit,
+            num_capacity_pool_gpus=num_capacity_pool_gpus if num_capacity_pool_gpus is not None else omit,
             num_preemptible_gpus=num_preemptible_gpus if num_preemptible_gpus is not None else omit,
             num_reserved_gpus=num_reserved_gpus if num_reserved_gpus is not None else omit,
             reservation_end_time=reservation_end_time or omit,
