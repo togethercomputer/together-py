@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.21.0](https://github.com/togethercomputer/together-py/compare/v2.20.0...v2.21.0) (2026-06-29)
+
+
+### Features
+
+* Add early_stopping params to fine_tuning.create() ([#425](https://github.com/togethercomputer/together-py/issues/425)) ([74a793c](https://github.com/togethercomputer/together-py/commit/74a793c2415cdb82453906195d06c4e71e06296c))
+
 ## [2.20.0](https://github.com/togethercomputer/together-py/compare/v2.19.0...v2.20.0) (2026-06-26)
 
 
