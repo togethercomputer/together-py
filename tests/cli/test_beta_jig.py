@@ -316,7 +316,7 @@ class TestBetaJigVolumes:
         with _chdir(tmp_path):
             result = cli_runner.invoke(["beta", "jig", "volumes", "describe", "--name", "v1", "--volume-version", "1"])
 
-        assert "Version" in result.output
+        assert "version" in result.output
         request = cast(Call, route.calls[0]).request
         assert request.url.params["version"] == "1"
         assert result.exit_code == 0
