@@ -115,6 +115,10 @@ class FineTuningResource(SyncAPIResource):
         wandb_name: str | None = None,
         wandb_entity: str | None = None,
         random_seed: int | None = None,
+        early_stopping_enabled: bool = False,
+        early_stopping_patience: int | None = None,
+        early_stopping_min_delta: float | None = None,
+        early_stopping_warmup_evals: int | None = None,
         verbose: bool = False,
         model_limits: FinetuneTrainingLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
@@ -173,6 +177,15 @@ class FineTuningResource(SyncAPIResource):
             random_seed (int, optional): Random seed for reproducible training (e.g. 42). When set, the same seed produces
                 the same run (e.g. data shuffle, init). If not provided (None), the server uses its default seed (42).
                 Defaults to None.
+            early_stopping_enabled (bool, optional): Stop training early when validation eval_loss stops improving.
+                Requires a validation_file, and n_evals must be at least
+                early_stopping_patience + early_stopping_warmup_evals + 1. Defaults to False.
+            early_stopping_patience (int, optional): Consecutive non-improving evals to tolerate before stopping.
+                Only applies when early_stopping_enabled is True. Defaults to None (server default 2).
+            early_stopping_min_delta (float, optional): Minimum eval_loss decrease to count as an improvement.
+                Only applies when early_stopping_enabled is True. Defaults to None (server default 0.0).
+            early_stopping_warmup_evals (int, optional): Initial evals to skip before counting patience.
+                Only applies when early_stopping_enabled is True. Defaults to None (server default 1).
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
             model_limits (FinetuneTrainingLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
@@ -248,6 +261,10 @@ class FineTuningResource(SyncAPIResource):
             wandb_name=wandb_name,
             wandb_entity=wandb_entity,
             random_seed=random_seed,
+            early_stopping_enabled=early_stopping_enabled,
+            early_stopping_patience=early_stopping_patience,
+            early_stopping_min_delta=early_stopping_min_delta,
+            early_stopping_warmup_evals=early_stopping_warmup_evals,
             train_on_inputs=train_on_inputs,
             training_method=training_method,
             dpo_beta=dpo_beta,
@@ -750,6 +767,10 @@ class AsyncFineTuningResource(AsyncAPIResource):
         wandb_name: str | None = None,
         wandb_entity: str | None = None,
         random_seed: int | None = None,
+        early_stopping_enabled: bool = False,
+        early_stopping_patience: int | None = None,
+        early_stopping_min_delta: float | None = None,
+        early_stopping_warmup_evals: int | None = None,
         verbose: bool = False,
         model_limits: FinetuneTrainingLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
@@ -807,6 +828,15 @@ class AsyncFineTuningResource(AsyncAPIResource):
             random_seed (int, optional): Random seed for reproducible training (e.g. 42). When set, the same seed produces
                 the same run (e.g. data shuffle, init). If not provided (None), the server uses its default seed (42).
                 Defaults to None.
+            early_stopping_enabled (bool, optional): Stop training early when validation eval_loss stops improving.
+                Requires a validation_file, and n_evals must be at least
+                early_stopping_patience + early_stopping_warmup_evals + 1. Defaults to False.
+            early_stopping_patience (int, optional): Consecutive non-improving evals to tolerate before stopping.
+                Only applies when early_stopping_enabled is True. Defaults to None (server default 2).
+            early_stopping_min_delta (float, optional): Minimum eval_loss decrease to count as an improvement.
+                Only applies when early_stopping_enabled is True. Defaults to None (server default 0.0).
+            early_stopping_warmup_evals (int, optional): Initial evals to skip before counting patience.
+                Only applies when early_stopping_enabled is True. Defaults to None (server default 1).
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
             model_limits (FinetuneTrainingLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
@@ -882,6 +912,10 @@ class AsyncFineTuningResource(AsyncAPIResource):
             wandb_name=wandb_name,
             wandb_entity=wandb_entity,
             random_seed=random_seed,
+            early_stopping_enabled=early_stopping_enabled,
+            early_stopping_patience=early_stopping_patience,
+            early_stopping_min_delta=early_stopping_min_delta,
+            early_stopping_warmup_evals=early_stopping_warmup_evals,
             train_on_inputs=train_on_inputs,
             training_method=training_method,
             dpo_beta=dpo_beta,
