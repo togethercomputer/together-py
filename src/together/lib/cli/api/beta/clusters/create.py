@@ -129,6 +129,9 @@ async def create(
         if num_gpus is None:
             n = input("Clusters: Cluster GPUs count (8-64): ").strip()
             params["num_gpus"] = int(n) if n else 8
+        if num_preemptible_gpus is None:
+            n = input("Clusters: Cluster preemptible GPUs count [0]: ").strip()
+            params["num_preemptible_gpus"] = int(n) if n else 0
         if not billing_type:
             params["billing_type"] = input("Clusters: Cluster billing type [ON_DEMAND]: ").strip() or "ON_DEMAND"
         if not nvidia_driver_version:
