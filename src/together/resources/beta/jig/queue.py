@@ -17,7 +17,14 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.jig import queue_cancel_params, queue_submit_params, queue_metrics_params, queue_retrieve_params
+from ....types.beta.jig import (
+    queue_clear_params,
+    queue_cancel_params,
+    queue_submit_params,
+    queue_metrics_params,
+    queue_retrieve_params,
+)
+from ....types.beta.jig.queue_clear_response import QueueClearResponse
 from ....types.beta.jig.queue_cancel_response import QueueCancelResponse
 from ....types.beta.jig.queue_submit_response import QueueSubmitResponse
 from ....types.beta.jig.queue_metrics_response import QueueMetricsResponse
@@ -138,6 +145,42 @@ class QueueResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=QueueCancelResponse,
+        )
+
+    def clear(
+        self,
+        *,
+        model: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> QueueClearResponse:
+        """Cancel all pending jobs for the given model.
+
+        Running jobs are left untouched.
+        Returns the number of jobs that were canceled.
+
+        Args:
+          model: Model identifier whose pending jobs should be canceled
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/queue/clear",
+            body=maybe_transform({"model": model}, queue_clear_params.QueueClearParams),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=QueueClearResponse,
         )
 
     def metrics(
@@ -350,6 +393,42 @@ class AsyncQueueResource(AsyncAPIResource):
             cast_to=QueueCancelResponse,
         )
 
+    async def clear(
+        self,
+        *,
+        model: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> QueueClearResponse:
+        """Cancel all pending jobs for the given model.
+
+        Running jobs are left untouched.
+        Returns the number of jobs that were canceled.
+
+        Args:
+          model: Model identifier whose pending jobs should be canceled
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/queue/clear",
+            body=await async_maybe_transform({"model": model}, queue_clear_params.QueueClearParams),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=QueueClearResponse,
+        )
+
     async def metrics(
         self,
         *,
@@ -456,6 +535,9 @@ class QueueResourceWithRawResponse:
         self.cancel = to_raw_response_wrapper(
             queue.cancel,
         )
+        self.clear = to_raw_response_wrapper(
+            queue.clear,
+        )
         self.metrics = to_raw_response_wrapper(
             queue.metrics,
         )
@@ -473,6 +555,9 @@ class AsyncQueueResourceWithRawResponse:
         )
         self.cancel = async_to_raw_response_wrapper(
             queue.cancel,
+        )
+        self.clear = async_to_raw_response_wrapper(
+            queue.clear,
         )
         self.metrics = async_to_raw_response_wrapper(
             queue.metrics,
@@ -492,6 +577,9 @@ class QueueResourceWithStreamingResponse:
         self.cancel = to_streamed_response_wrapper(
             queue.cancel,
         )
+        self.clear = to_streamed_response_wrapper(
+            queue.clear,
+        )
         self.metrics = to_streamed_response_wrapper(
             queue.metrics,
         )
@@ -509,6 +597,9 @@ class AsyncQueueResourceWithStreamingResponse:
         )
         self.cancel = async_to_streamed_response_wrapper(
             queue.cancel,
+        )
+        self.clear = async_to_streamed_response_wrapper(
+            queue.clear,
         )
         self.metrics = async_to_streamed_response_wrapper(
             queue.metrics,

@@ -37,6 +37,7 @@ Types:
 from together.types.beta.jig import (
     QueueRetrieveResponse,
     QueueCancelResponse,
+    QueueClearResponse,
     QueueMetricsResponse,
     QueueSubmitResponse,
 )
@@ -46,6 +47,7 @@ Methods:
 
 - <code title="get /queue/status">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">retrieve</a>(\*\*<a href="src/together/types/beta/jig/queue_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_retrieve_response.py">QueueRetrieveResponse</a></code>
 - <code title="post /queue/cancel">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/jig/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_cancel_response.py">QueueCancelResponse</a></code>
+- <code title="post /queue/clear">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">clear</a>(\*\*<a href="src/together/types/beta/jig/queue_clear_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_clear_response.py">QueueClearResponse</a></code>
 - <code title="get /queue/metrics">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">metrics</a>(\*\*<a href="src/together/types/beta/jig/queue_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_metrics_response.py">QueueMetricsResponse</a></code>
 - <code title="post /queue/submit">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">submit</a>(\*\*<a href="src/together/types/beta/jig/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_submit_response.py">QueueSubmitResponse</a></code>
 

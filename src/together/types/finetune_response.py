@@ -109,6 +109,12 @@ class TrainingTypeLoRaTrainingType(BaseModel):
     lora_dropout: Optional[float] = None
 
     lora_trainable_modules: Optional[str] = None
+    """Comma-separated LoRA target modules.
+
+    Use `all-linear` for model defaults; MoE expert modules (`w_up`, `w_gate`,
+    `w_down`) are supported on compatible models and cannot be mixed with attention
+    modules.
+    """
 
 
 TrainingType: TypeAlias = Union[TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType]
