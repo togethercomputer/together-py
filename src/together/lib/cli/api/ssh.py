@@ -24,10 +24,12 @@ import secrets
 import tempfile
 import subprocess
 import webbrowser
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Optional, Annotated, cast
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from typing_extensions import override
 
 from cyclopts import Parameter
 
@@ -104,7 +106,9 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: str, scope: str) -> s
                 self.send_response(400)
                 self.end_headers()
 
-        def log_message(self, *_a: object) -> None:
+        @override
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: ARG002
+            # Silence the default per-request logging to stderr.
             pass
 
     server = HTTPServer((parsed.hostname or "localhost", parsed.port or 80), _Handler)
