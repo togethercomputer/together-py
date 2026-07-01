@@ -813,6 +813,12 @@ class Jig:
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
             env_dict["TOGETHER_API_BASE_URL"] = str(self.together.base_url.copy_with(path=""))
 
+        if collisions := sorted(set(env_dict) & set(self.state.secrets)):
+            names = ", ".join(collisions)
+            raise JigError(
+                f"Defined as both an environment variable and a secret: {names}. Remove one from pyproject.toml or 'jig secrets unset'."
+            )
+
         env_list = [{"name": k, "value": v} for k, v in env_dict.items()]
         secret_list = [{"name": k, "value_from_secret": v} for k, v in self.state.secrets.items()]
         deploy_data["environment_variables"] = env_list + secret_list
