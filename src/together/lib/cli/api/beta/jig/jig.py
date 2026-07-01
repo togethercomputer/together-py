@@ -849,10 +849,6 @@ class Jig:
         printed: set[str] = set()
         start = time.time()
 
-        if d.min_replicas == 0 and d.desired_replicas == 0 and d.status == "ScaledToZero":
-            console.print("\N{CHECK MARK} Deployment scaled to zero replicas")
-            return
-
         def once(msg: str, detail: str | None = None) -> None:
             if msg not in printed:
                 printed.add(msg)
@@ -862,6 +858,10 @@ class Jig:
         try:
             while time.time() - start < _TRACK_TIMEOUT:
                 d = self.api.retrieve(self.name)
+
+                if d.min_replicas == 0 and d.desired_replicas == 0 and d.status == "ScaledToZero":
+                    console.print("\N{CHECK MARK} Deployment scaled to zero replicas")
+                    return
 
                 for rid, event in (d.replica_events or {}).items():
                     if event.revision_id != rev:
