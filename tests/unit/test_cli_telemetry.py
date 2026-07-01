@@ -289,6 +289,16 @@ def test_parse_command_and_flags_positionals_are_argument_names_not_command_toke
     assert is_beta is True
 
 
+def test_parse_command_and_flags_normalizes_jig_queue_clear_alias() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "jig", "queue-clear", "--json"])
+    assert cmd == "jig clear-queue"
+    assert flags == ["json"]
+    assert is_beta is True
+
+
 def test_telemetry_status_no_api_key(monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)

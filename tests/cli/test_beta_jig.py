@@ -272,6 +272,23 @@ class TestBetaJigLogs:
         assert result.exit_code == 0
 
 
+class TestBetaJigQueue:
+    @pytest.mark.respx(base_url=base_url)
+    def test_clear_queue_forwards_model(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.post("/queue/clear").mock(
+            return_value=httpx.Response(200, json={"canceled_count": 3})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "clear-queue"])
+
+        assert json.loads(result.output) == {"canceled_count": 3}
+        raw = cast(Call, route.calls[0]).request.content.decode()
+        assert json.loads(raw) == {"model": _DEPLOY_NAME}
+        assert result.exit_code == 0
+
+
 class TestBetaJigVolumes:
     @pytest.mark.respx(base_url=base_url)
     def test_delete(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:

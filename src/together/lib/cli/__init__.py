@@ -596,6 +596,12 @@ jig_app.command(
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:queue_status_cli"), name="queue-status", help="Get queue metrics for the deployment"
 )
+jig_app.command(
+    (f"{_CLI}.beta.jig.jig:clear_queue_cli"),
+    name="clear-queue",
+    alias="queue-clear",
+    help="Cancel all pending jobs for the deployment",
+)
 jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
 
 secrets_app = jig_app.command(

@@ -1245,6 +1245,11 @@ def queue_status(jig: Jig) -> Any:
     return jig.api.queue.with_raw_response.metrics(model=jig.name)
 
 
+def clear_queue(jig: Jig) -> Any:
+    """Cancel all pending queue jobs for the deployment"""
+    return jig.api.queue.with_raw_response.clear(model=jig.name)
+
+
 def list_deployments(jig: Jig) -> Any:
     """List all deployments"""
     return jig.api.with_raw_response.list()
@@ -1553,6 +1558,15 @@ def queue_status_cli(
 ) -> None:
     """Get queue metrics for the deployment."""
     _run_jig_cmd(config, toml_config, queue_status)
+
+
+def clear_queue_cli(
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Cancel all pending queue jobs for the deployment."""
+    _run_jig_cmd(config, toml_config, clear_queue)
 
 
 def list_deployments_cli(
