@@ -67,6 +67,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
+    BETA_CLUSTERS_SSH_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -476,6 +477,11 @@ clusters_app.command(
     (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
     help="Get credentials for a cluster",
     help_epilogue=BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+)
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.ssh:ssh"),
+    help="SSH into a cluster via an OIDC-signed certificate",
+    help_epilogue=BETA_CLUSTERS_SSH_HELP_EXAMPLES,
 )
 
 ### Clusters > Storage API commands

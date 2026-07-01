@@ -276,6 +276,23 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Manage node remediations:
   [primary]tg beta clusters remediations ls <cluster-id>[/primary]
   [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
+
+[dim]-[/dim] SSH into a cluster (OIDC-signed certificate):
+  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <user>[/primary]
+"""
+
+BETA_CLUSTERS_SSH_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] SSH to the default slurm-login host:
+  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <user>[/primary]
+
+[dim]-[/dim] SSH to a specific worker node:
+  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <user> --host worker-0[/primary]
+
+[dim]-[/dim] Run a remote command:
+  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <user> -- squeue[/primary]
+
+[dim]-[/dim] Skip the browser flow with a pre-obtained id_token:
+  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <user> --id-token-file ./token[/primary]
 """
 
 BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
