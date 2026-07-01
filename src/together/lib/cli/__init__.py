@@ -335,9 +335,6 @@ async def launcher(
 # Register commands
 _CLI = "together.lib.cli.api"
 
-## SSH (OIDC-signed certificate; no API key, no control-plane contact)
-app.command(f"{_CLI}.ssh:ssh", help="SSH into a cluster via an OIDC-signed certificate")
-
 ## Files API commands
 files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
 files_app.command(
@@ -479,6 +476,10 @@ clusters_app.command(
     (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
     help="Get credentials for a cluster",
     help_epilogue=BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+)
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.ssh:ssh"),
+    help="SSH into a cluster via an OIDC-signed certificate",
 )
 
 ### Clusters > Storage API commands
