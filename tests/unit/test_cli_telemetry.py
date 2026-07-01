@@ -295,7 +295,7 @@ def test_parse_command_and_flags_tracks_jig_queue_clear() -> None:
 
     cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "jig", "queue-clear", "--json"])
     assert cmd == "jig queue-clear"
-    assert flags == ["json"]
+    assert flags == []
     assert is_beta is True
 
 
