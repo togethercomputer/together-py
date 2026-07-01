@@ -1,4 +1,4 @@
-"""`together ssh` — SSH into a Together cluster using a short-lived,
+"""`tg beta clusters ssh` — SSH into a Together cluster using a short-lived,
 OIDC-signed SSH certificate. No API key, no long-lived SSH key, no
 control-plane contact: every coordinate is derived from the cluster's Dex URL.
 

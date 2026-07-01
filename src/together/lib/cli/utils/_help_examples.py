@@ -276,6 +276,9 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Manage node remediations:
   [primary]tg beta clusters remediations ls <cluster-id>[/primary]
   [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
+
+[dim]-[/dim] SSH into a cluster (OIDC-signed certificate; see [primary]tg beta clusters ssh --help[/primary]):
+  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <username>[/primary]
 """
 
 BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
