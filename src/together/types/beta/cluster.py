@@ -13,9 +13,11 @@ __all__ = [
     "AddOnConfig",
     "AddOnConfigDashboard",
     "AddOnConfigIngress",
+    "AddOnConfigTorchpass",
     "AddOnState",
     "AddOnStateDashboard",
     "AddOnStateIngress",
+    "AddOnStateTorchpass",
     "ControlPlaneNode",
     "ControlPlaneNodePhaseTransition",
     "GPUWorkerNode",
@@ -41,10 +43,22 @@ class AddOnConfigIngress(BaseModel):
     enabled: Optional[bool] = None
 
 
+class AddOnConfigTorchpass(BaseModel):
+    """Configuration for the Model Aware TorchPass add-on."""
+
+    enabled: Optional[bool] = None
+    """Whether to enable the Model Aware TorchPass add-on."""
+
+
 class AddOnConfig(BaseModel):
+    """Configuration for a cluster add-on."""
+
     dashboard: Optional[AddOnConfigDashboard] = None
 
     ingress: Optional[AddOnConfigIngress] = None
+
+    torchpass: Optional[AddOnConfigTorchpass] = None
+    """Configuration for the Model Aware TorchPass add-on."""
 
 
 class AddOnStateDashboard(BaseModel):
@@ -55,10 +69,21 @@ class AddOnStateIngress(BaseModel):
     pass
 
 
+class AddOnStateTorchpass(BaseModel):
+    """State for the Model Aware TorchPass add-on."""
+
+    pass
+
+
 class AddOnState(BaseModel):
+    """State for a cluster add-on."""
+
     dashboard: Optional[AddOnStateDashboard] = None
 
     ingress: Optional[AddOnStateIngress] = None
+
+    torchpass: Optional[AddOnStateTorchpass] = None
+    """State for the Model Aware TorchPass add-on."""
 
 
 class AddOn(BaseModel):
@@ -67,10 +92,12 @@ class AddOn(BaseModel):
     add_on_type: str
 
     config: AddOnConfig
+    """Configuration for a cluster add-on."""
 
     name: str
 
     state: AddOnState
+    """State for a cluster add-on."""
 
 
 class ControlPlaneNodePhaseTransition(BaseModel):
@@ -289,6 +316,12 @@ class ClusterConfig(BaseModel):
     """
     SlurmStartupScripts carries optional Slurm lifecycle scripts (prolog/epilog,
     init, extra conf).
+    """
+
+    ssh_ca_enabled: Optional[bool] = None
+    """
+    Whether this cluster uses a per-cluster SSH certificate authority for
+    OIDC-signed SSH access.
     """
 
 

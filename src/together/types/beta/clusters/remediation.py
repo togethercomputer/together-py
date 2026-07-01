@@ -1,12 +1,46 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Optional
+from typing import Dict, List, Optional
 from datetime import datetime
 from typing_extensions import Literal
 
 from ...._models import BaseModel
 
-__all__ = ["Remediation"]
+__all__ = ["Remediation", "LinkedAlert"]
+
+
+class LinkedAlert(BaseModel):
+    """Passive health check alert returned by the health check API."""
+
+    alert_name: str
+    """Alertmanager alert name."""
+
+    annotations: Dict[str, str]
+    """Alertmanager annotations as key-value strings."""
+
+    cluster_id: str
+    """Cluster UUID the alert was raised against."""
+
+    passive_health_check_alert_id: str
+    """Primary key UUID for the passive health check alert."""
+
+    severity: Literal["PHC_SEVERITY_INFO", "PHC_SEVERITY_WARNING", "PHC_SEVERITY_CRITICAL"]
+    """Canonical severity tier for the alert."""
+
+    started_at: datetime
+    """Time when the underlying alert first fired."""
+
+    target_vm: str
+    """VM name extracted from the Alertmanager labels."""
+
+    instance_id: Optional[str] = None
+    """Resolved instance UUID. Empty until the alert is joined to an instance."""
+
+    node_remediation_intent_id: Optional[str] = None
+    """Remediation intent UUID attached to this alert, if any."""
+
+    resolved_at: Optional[datetime] = None
+    """Time when the underlying alert resolved. Empty while the alert is firing."""
 
 
 class Remediation(BaseModel):
@@ -71,6 +105,12 @@ class Remediation(BaseModel):
 
     instance_name: Optional[str] = None
     """Display name of the targeted instance."""
+
+    linked_alerts: Optional[List[LinkedAlert]] = None
+    """
+    Passive health check alerts linked to this remediation, including resolved
+    alerts.
+    """
 
     passive_health_check_event_id: Optional[str] = None
     """Passive health check event ID that triggered this remediation."""

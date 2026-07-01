@@ -10,6 +10,7 @@ import pytest
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types.beta.jig import (
+    QueueClearResponse,
     QueueCancelResponse,
     QueueSubmitResponse,
     QueueMetricsResponse,
@@ -87,6 +88,37 @@ class TestQueue:
 
             queue = response.parse()
             assert_matches_type(QueueCancelResponse, queue, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_clear(self, client: Together) -> None:
+        queue = client.beta.jig.queue.clear(
+            model="model",
+        )
+        assert_matches_type(QueueClearResponse, queue, path=["response"])
+
+    @parametrize
+    def test_raw_response_clear(self, client: Together) -> None:
+        response = client.beta.jig.queue.with_raw_response.clear(
+            model="model",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        queue = response.parse()
+        assert_matches_type(QueueClearResponse, queue, path=["response"])
+
+    @parametrize
+    def test_streaming_response_clear(self, client: Together) -> None:
+        with client.beta.jig.queue.with_streaming_response.clear(
+            model="model",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            queue = response.parse()
+            assert_matches_type(QueueClearResponse, queue, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -236,6 +268,37 @@ class TestAsyncQueue:
 
             queue = await response.parse()
             assert_matches_type(QueueCancelResponse, queue, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_clear(self, async_client: AsyncTogether) -> None:
+        queue = await async_client.beta.jig.queue.clear(
+            model="model",
+        )
+        assert_matches_type(QueueClearResponse, queue, path=["response"])
+
+    @parametrize
+    async def test_raw_response_clear(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.jig.queue.with_raw_response.clear(
+            model="model",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        queue = await response.parse()
+        assert_matches_type(QueueClearResponse, queue, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_clear(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.jig.queue.with_streaming_response.clear(
+            model="model",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            queue = await response.parse()
+            assert_matches_type(QueueClearResponse, queue, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

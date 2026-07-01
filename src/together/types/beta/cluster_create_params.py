@@ -15,6 +15,7 @@ __all__ = [
     "AddOnConfig",
     "AddOnConfigDashboard",
     "AddOnConfigIngress",
+    "AddOnConfigTorchpass",
     "ClusterConfig",
     "ClusterConfigIngress",
     "ClusterConfigObservability",
@@ -214,20 +215,33 @@ class AddOnConfigIngress(TypedDict, total=False):
     enabled: bool
 
 
+class AddOnConfigTorchpass(TypedDict, total=False):
+    """Configuration for the Model Aware TorchPass add-on."""
+
+    enabled: bool
+    """Whether to enable the Model Aware TorchPass add-on."""
+
+
 class AddOnConfig(TypedDict, total=False):
+    """Configuration for a cluster add-on."""
+
     dashboard: AddOnConfigDashboard
 
     ingress: AddOnConfigIngress
 
+    torchpass: AddOnConfigTorchpass
+    """Configuration for the Model Aware TorchPass add-on."""
+
 
 class AddOn(TypedDict, total=False):
     add_on_type: Required[str]
-    """Type of add-on. Valid values: 'dashboard', 'ingress'."""
+    """Type of add-on. Valid values: 'dashboard', 'ingress', 'torchpass'."""
 
     name: Required[str]
     """Human-readable name for this add-on instance."""
 
     config: AddOnConfig
+    """Configuration for a cluster add-on."""
 
 
 class ClusterConfigIngress(TypedDict, total=False):
@@ -292,6 +306,12 @@ class ClusterConfig(TypedDict, total=False):
     """
     SlurmStartupScripts carries optional Slurm lifecycle scripts (prolog/epilog,
     init, extra conf).
+    """
+
+    ssh_ca_enabled: bool
+    """
+    Whether this cluster uses a per-cluster SSH certificate authority for
+    OIDC-signed SSH access.
     """
 
 

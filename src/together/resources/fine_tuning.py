@@ -470,8 +470,9 @@ class FineTuningResource(SyncAPIResource):
           checkpoint: Specifies checkpoint type to download - `merged` vs `adapter`. This field is
               required if the checkpoint_step is not set.
 
-          checkpoint_step: Specifies step number for checkpoint to download. Ignores `checkpoint` value if
-              set.
+          checkpoint_step: Specifies the checkpoint step to download from the list checkpoints response. A
+              final checkpoint step downloads the final model; 0 or omitted downloads the
+              final model by default. Ignores `checkpoint` value if set.
 
           extra_headers: Send extra headers
 
@@ -1121,8 +1122,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
           checkpoint: Specifies checkpoint type to download - `merged` vs `adapter`. This field is
               required if the checkpoint_step is not set.
 
-          checkpoint_step: Specifies step number for checkpoint to download. Ignores `checkpoint` value if
-              set.
+          checkpoint_step: Specifies the checkpoint step to download from the list checkpoints response. A
+              final checkpoint step downloads the final model; 0 or omitted downloads the
+              final model by default. Ignores `checkpoint` value if set.
 
           extra_headers: Send extra headers
 

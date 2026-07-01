@@ -63,6 +63,7 @@ class TestClusters:
                     "config": {
                         "dashboard": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "torchpass": {"enabled": True},
                     },
                 }
             ],
@@ -87,6 +88,7 @@ class TestClusters:
                     "worker_epilog": "worker_epilog",
                     "worker_prolog": "worker_prolog",
                 },
+                "ssh_ca_enabled": True,
             },
             cluster_type="KUBERNETES",
             duration_days=0,
@@ -209,6 +211,7 @@ class TestClusters:
                     "config": {
                         "dashboard": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "torchpass": {"enabled": True},
                     },
                 }
             ],
@@ -229,6 +232,7 @@ class TestClusters:
                     "worker_epilog": "worker_epilog",
                     "worker_prolog": "worker_prolog",
                 },
+                "ssh_ca_enabled": True,
             },
             cluster_type="KUBERNETES",
             num_capacity_pool_gpus=0,
@@ -411,6 +415,7 @@ class TestAsyncClusters:
                     "config": {
                         "dashboard": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "torchpass": {"enabled": True},
                     },
                 }
             ],
@@ -435,6 +440,7 @@ class TestAsyncClusters:
                     "worker_epilog": "worker_epilog",
                     "worker_prolog": "worker_prolog",
                 },
+                "ssh_ca_enabled": True,
             },
             cluster_type="KUBERNETES",
             duration_days=0,
@@ -557,6 +563,7 @@ class TestAsyncClusters:
                     "config": {
                         "dashboard": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "torchpass": {"enabled": True},
                     },
                 }
             ],
@@ -577,6 +584,7 @@ class TestAsyncClusters:
                     "worker_epilog": "worker_epilog",
                     "worker_prolog": "worker_prolog",
                 },
+                "ssh_ca_enabled": True,
             },
             cluster_type="KUBERNETES",
             num_capacity_pool_gpus=0,
