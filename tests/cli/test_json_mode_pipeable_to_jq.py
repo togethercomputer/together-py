@@ -171,7 +171,7 @@ class TestJSONMode:
         jig.skip.run_and_assert("submit")
         jig.skip.run_and_assert("job-status")
         jig.skip.run_and_assert("queue-status")
-        jig.skip.run_and_assert("clear-queue")
+        jig.skip.run_and_assert("queue-clear")
 
         jig.run_and_assert("list")
         jig.run_and_assert("status")

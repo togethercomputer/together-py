@@ -281,7 +281,7 @@ class TestBetaJigQueue:
         )
 
         with _chdir(tmp_path):
-            result = cli_runner.invoke(["beta", "jig", "clear-queue"])
+            result = cli_runner.invoke(["beta", "jig", "queue-clear"])
 
         assert json.loads(result.output) == {"canceled_count": 3}
         raw = cast(Call, route.calls[0]).request.content.decode()

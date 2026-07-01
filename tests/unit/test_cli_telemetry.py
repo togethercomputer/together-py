@@ -289,12 +289,12 @@ def test_parse_command_and_flags_positionals_are_argument_names_not_command_toke
     assert is_beta is True
 
 
-def test_parse_command_and_flags_normalizes_jig_queue_clear_alias() -> None:
+def test_parse_command_and_flags_tracks_jig_queue_clear() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
     cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "jig", "queue-clear", "--json"])
-    assert cmd == "jig clear-queue"
+    assert cmd == "jig queue-clear"
     assert flags == ["json"]
     assert is_beta is True
 

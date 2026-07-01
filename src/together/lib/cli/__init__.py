@@ -598,8 +598,8 @@ jig_app.command(
 )
 jig_app.command(
     (f"{_CLI}.beta.jig.jig:clear_queue_cli"),
-    name="clear-queue",
-    alias="queue-clear",
+    name="queue-clear",
+    alias="clear-queue",
     help="Cancel all pending jobs for the deployment",
 )
 jig_app.command((f"{_CLI}.beta.jig.jig:list_deployments_cli"), name="list", alias="ls", help="List all deployments")
