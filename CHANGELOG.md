@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.22.0](https://github.com/togethercomputer/together-py/compare/v2.21.0...v2.22.0) (2026-07-01)
+
+
+### Features
+
+* Add early_stopping params to fine_tuning.create() ([#425](https://github.com/togethercomputer/together-py/issues/425)) ([78f81c0](https://github.com/togethercomputer/together-py/commit/78f81c0995bc29fb797562d673ea6759595c941b))
+* **cli:** add `together ssh` for OIDC-signed certificate access ([142704b](https://github.com/togethercomputer/together-py/commit/142704b8a1c22208021bfd77893c1c349e8b357f))
+* **cli:** add `together ssh` for OIDC-signed certificate access [TCL-6889] ([333befc](https://github.com/togethercomputer/together-py/commit/333befc0dd1ae4ddb7f820f8f0708b2bcca00c82))
+* **openapi:** add force stop parameter ([8e7c2cf](https://github.com/togethercomputer/together-py/commit/8e7c2cf79bd4356b626ab228498aa50b316ef908))
+* **openapi:** expose remediation linked alerts ([e6db459](https://github.com/togethercomputer/together-py/commit/e6db459dc4a9a20dc4ad35a841a95a413ae547e5))
+* **openapi:** sync passive health check alerts ([785fefc](https://github.com/togethercomputer/together-py/commit/785fefcf53d1ef9657fea46b9a2879b89f30f88a))
+* prompt for preemptible GPUs in interactive cluster create wizard ([#428](https://github.com/togethercomputer/together-py/issues/428)) ([e2e2524](https://github.com/togethercomputer/together-py/commit/e2e2524347010a0fda6142d0a065dd9b264e4234))
+* prompt for preemptible GPUs in interactive cluster create wizard ([#428](https://github.com/togethercomputer/together-py/issues/428)) ([8b67e3b](https://github.com/togethercomputer/together-py/commit/8b67e3bb4c1656141f086987ccfc1b88b6a9eaf4))
+
+
+### Bug Fixes
+
+* **cli:** satisfy pyright/ruff lint for `together ssh` ([0f772be](https://github.com/togethercomputer/together-py/commit/0f772be2c2e0fc38f0501abaeaedea695ce1b165))
+
 ## [2.21.0](https://github.com/togethercomputer/together-py/compare/v2.20.0...v2.21.0) (2026-06-29)
 
 
