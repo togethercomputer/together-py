@@ -335,6 +335,9 @@ async def launcher(
 # Register commands
 _CLI = "together.lib.cli.api"
 
+## SSH (OIDC-signed certificate; no API key, no control-plane contact)
+app.command(f"{_CLI}.ssh:ssh", help="SSH into a cluster via an OIDC-signed certificate")
+
 ## Files API commands
 files_app = app.command(App(name="files", help="Upload and manage files", help_epilogue=FILES_HELP_EXAMPLES))
 files_app.command(
