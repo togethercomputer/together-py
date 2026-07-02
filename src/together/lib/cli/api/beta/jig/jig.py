@@ -814,9 +814,10 @@ class Jig:
             env_dict["TOGETHER_API_BASE_URL"] = str(self.together.base_url.copy_with(path=""))
 
         if collisions := sorted(set(env_dict) & set(self.state.secrets)):
-            names = ", ".join(collisions)
+            for name in collisions:
+                console.print(f"\N{CROSS MARK} {name} is defined as both secret and environment variable")
             raise JigError(
-                f"Defined as both an environment variable and a secret: {names}. Remove one from pyproject.toml or 'jig secrets unset'."
+                "Remove duplicate environment variable from your config or by using 'jig secrets unset'"
             )
 
         env_list = [{"name": k, "value": v} for k, v in env_dict.items()]
