@@ -813,6 +813,11 @@ class Jig:
         if self.together.base_url.host not in ("api.together.ai", "api.together.xyz"):
             env_dict["TOGETHER_API_BASE_URL"] = str(self.together.base_url.copy_with(path=""))
 
+        if collisions := sorted(set(env_dict) & set(self.state.secrets)):
+            for name in collisions:
+                console.print(f"\N{CROSS MARK} {name} is defined as both secret and environment variable")
+            raise JigError("Remove duplicate environment variable from your config or by using 'jig secrets unset'")
+
         env_list = [{"name": k, "value": v} for k, v in env_dict.items()]
         secret_list = [{"name": k, "value_from_secret": v} for k, v in self.state.secrets.items()]
         deploy_data["environment_variables"] = env_list + secret_list
