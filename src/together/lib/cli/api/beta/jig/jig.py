@@ -816,9 +816,7 @@ class Jig:
         if collisions := sorted(set(env_dict) & set(self.state.secrets)):
             for name in collisions:
                 console.print(f"\N{CROSS MARK} {name} is defined as both secret and environment variable")
-            raise JigError(
-                "Remove duplicate environment variable from your config or by using 'jig secrets unset'"
-            )
+            raise JigError("Remove duplicate environment variable from your config or by using 'jig secrets unset'")
 
         env_list = [{"name": k, "value": v} for k, v in env_dict.items()]
         secret_list = [{"name": k, "value_from_secret": v} for k, v in self.state.secrets.items()]
