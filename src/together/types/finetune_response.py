@@ -135,6 +135,9 @@ class FinetuneResponse(BaseModel):
         "completed",
     ]
 
+    user_id: str
+    """ID of the user who owns the fine-tune job."""
+
     batch_size: Union[int, Literal["max"], None] = None
 
     created_at: Optional[datetime] = None
