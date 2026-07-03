@@ -16,6 +16,7 @@ import types
 import shutil
 import typing
 import asyncio
+import tempfile
 import subprocess
 import concurrent.futures
 from typing import TYPE_CHECKING, Any, Union, Callable, Optional, Annotated
@@ -53,6 +54,9 @@ DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
 WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
 BUILDX_OUTPUT_OPTS = "compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true"
+
+BUILDX_CACHE_KEEP_SIZE = "50GB"
+BUILDX_CACHE_MIN_FREE_BYTES = 50 * 1024**3
 
 _TRACK_POLL_INTERVAL = 3
 _TRACK_TIMEOUT = 600
@@ -1661,6 +1665,55 @@ def _image_is_warmed(image: str) -> bool:
     return r.returncode == 0 and r.stdout.strip() == "true"
 
 
+def _docker_cache_free_bytes() -> int | None:
+    """Best-effort free bytes on the filesystem backing the buildx build cache.
+
+    On native Linux Docker the cache lives under 'Docker Root Dir'; on Docker
+    Desktop that path is inside the VM and absent from the host, so fall back to
+    the root filesystem (the VM disk is thin-provisioned from it). Returns None
+    if free space can't be determined.
+    """
+    root: str | None = None
+    info = subprocess.run(
+        ["docker", "info", "--format", "{{.DockerRootDir}}"],
+        capture_output=True,
+        text=True,
+    )
+    if info.returncode == 0:
+        candidate = info.stdout.strip()
+        if candidate and Path(candidate).exists():
+            root = candidate
+    try:
+        return shutil.disk_usage(root or "/").free
+    except OSError:
+        return None
+
+
+def _buildx_cache_config_path() -> str | None:
+    """Write a temp buildkitd.toml raising the build-cache keep-size to 50GB.
+
+    Returns the file path, or None when it shouldn't be applied: buildx lacks the
+    --buildkitd-config flag (older versions), or there isn't ~50GB of free disk
+    (in which case BuildKit keeps its default cache size). The caller passes the
+    path to `buildx create`, which embeds the file's contents, then deletes it.
+    """
+    help_text = subprocess.run(
+        ["docker", "buildx", "create", "--help"], capture_output=True, text=True
+    )
+    if "--buildkitd-config" not in (help_text.stdout or ""):
+        return None
+    free = _docker_cache_free_bytes()
+    if free is None or free < BUILDX_CACHE_MIN_FREE_BYTES:
+        return None
+    fd, path = tempfile.mkstemp(prefix="jig-buildkitd-", suffix=".toml")
+    # gckeepstorage is the widest-compatible knob: with no custom gcpolicy blocks
+    # it sets the keep-size for BuildKit's auto-generated GC policies (newer
+    # BuildKit maps it onto reservedSpace).
+    with os.fdopen(fd, "w") as f:
+        f.write(f'[worker.oci]\n  gc = true\n  gckeepstorage = "{BUILDX_CACHE_KEEP_SIZE}"\n')
+    return path
+
+
 def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
     """Return the name of a docker-container buildx builder, creating one if needed.
 
@@ -1676,8 +1729,23 @@ def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
     ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
     if name in (ls.stdout or ""):
         return name
-    create = subprocess.run(
-        ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"],
-        capture_output=True,
-    )
-    return name if create.returncode == 0 else None
+    base_cmd = ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"]
+    cfg_path = _buildx_cache_config_path()
+    try:
+        create_cmd = base_cmd + ["--buildkitd-config", cfg_path] if cfg_path else base_cmd
+        create = subprocess.run(create_cmd, capture_output=True)
+        if create.returncode == 0:
+            return name
+        # If enlarging the cache failed, fall back to a default-size builder so a
+        # build can still proceed ("it can stay as default size").
+        if cfg_path:
+            create = subprocess.run(base_cmd, capture_output=True)
+            if create.returncode == 0:
+                return name
+        return None
+    finally:
+        if cfg_path:
+            try:
+                os.unlink(cfg_path)
+            except OSError:
+                pass
