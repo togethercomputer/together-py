@@ -1714,34 +1714,55 @@ def _buildx_cache_config_path() -> str | None:
     return path
 
 
+def _zstd_builder_has_cache_config(name: str) -> bool:
+    """True if the builder already carries our enlarged build-cache config.
+
+    `buildx inspect` echoes the stored buildkitd.toml (no bootstrap needed), so a
+    default-sized builder created before this setting was added has no such block.
+    """
+    r = subprocess.run(["docker", "buildx", "inspect", name], capture_output=True, text=True)
+    marker = f'gckeepstorage = "{BUILDX_CACHE_KEEP_SIZE}"'
+    return r.returncode == 0 and marker in (r.stdout or "")
+
+
 def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
     """Return the name of a docker-container buildx builder, creating one if needed.
 
     The default 'docker' buildx driver pushes through the docker daemon, which on
     legacy (non-containerd) image stores silently downgrades zstd to gzip. A
     docker-container builder has its own buildkit instance and honors zstd.
-    Returns None if buildx is unavailable or the builder cannot be created.
+
+    A newly created (or upgraded) builder gets a 50GB build cache when there's
+    enough free disk; an existing default-sized builder is recreated with the
+    larger cache in place, preserving its cached layers. Returns None if buildx
+    is unavailable or the builder cannot be created.
     """
     if os.getenv("JIG_DISABLE_BUILDX"):
         return None
     if subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode != 0:
         return None
-    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
-    if name in (ls.stdout or ""):
-        return name
     base_cmd = ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"]
+    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
+    exists = name in (ls.stdout or "")
+
+    if exists and _zstd_builder_has_cache_config(name):
+        return name  # already enlarged; nothing to do
+
     cfg_path = _buildx_cache_config_path()
+    if exists and not cfg_path:
+        return name  # can't/shouldn't enlarge; leave the existing builder as-is
     try:
+        if exists:
+            # Recreate with the larger cache, keeping the existing state volume so
+            # cached layers survive the swap.
+            subprocess.run(["docker", "buildx", "rm", "--keep-state", name], capture_output=True)
         create_cmd = base_cmd + ["--buildkitd-config", cfg_path] if cfg_path else base_cmd
-        create = subprocess.run(create_cmd, capture_output=True)
-        if create.returncode == 0:
+        if subprocess.run(create_cmd, capture_output=True).returncode == 0:
             return name
         # If enlarging the cache failed, fall back to a default-size builder so a
         # build can still proceed ("it can stay as default size").
-        if cfg_path:
-            create = subprocess.run(base_cmd, capture_output=True)
-            if create.returncode == 0:
-                return name
+        if cfg_path and subprocess.run(base_cmd, capture_output=True).returncode == 0:
+            return name
         return None
     finally:
         if cfg_path:
