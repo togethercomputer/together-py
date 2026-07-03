@@ -1668,10 +1668,8 @@ def _image_is_warmed(image: str) -> bool:
 def _docker_cache_free_bytes() -> int | None:
     """Best-effort free bytes on the filesystem backing the buildx build cache.
 
-    On native Linux Docker the cache lives under 'Docker Root Dir'; on Docker
-    Desktop that path is inside the VM and absent from the host, so fall back to
-    the root filesystem (the VM disk is thin-provisioned from it). Returns None
-    if free space can't be determined.
+    Uses Docker's root dir when it's local (native Linux), else the root FS
+    (Docker Desktop keeps the cache in a VM disk carved from it). None if unknown.
     """
     root: str | None = None
     info = subprocess.run(
@@ -1692,10 +1690,9 @@ def _docker_cache_free_bytes() -> int | None:
 def _buildx_cache_config_path() -> str | None:
     """Write a temp buildkitd.toml raising the build-cache keep-size to 50GB.
 
-    Returns the file path, or None when it shouldn't be applied: buildx lacks the
-    --buildkitd-config flag (older versions), or there isn't ~50GB of free disk
-    (in which case BuildKit keeps its default cache size). The caller passes the
-    path to `buildx create`, which embeds the file's contents, then deletes it.
+    Returns the path, or None when buildx lacks --buildkitd-config or there's
+    under 50GB free (leaving BuildKit's default). buildx embeds the file at create
+    time, so the caller deletes it after.
     """
     help_text = subprocess.run(
         ["docker", "buildx", "create", "--help"], capture_output=True, text=True
@@ -1706,9 +1703,8 @@ def _buildx_cache_config_path() -> str | None:
     if free is None or free < BUILDX_CACHE_MIN_FREE_BYTES:
         return None
     fd, path = tempfile.mkstemp(prefix="jig-buildkitd-", suffix=".toml")
-    # gckeepstorage is the widest-compatible knob: with no custom gcpolicy blocks
-    # it sets the keep-size for BuildKit's auto-generated GC policies (newer
-    # BuildKit maps it onto reservedSpace).
+    # gckeepstorage is the widest-compatible knob (newer BuildKit maps it to
+    # reservedSpace); with no custom gcpolicy it feeds the default GC keep-size.
     with os.fdopen(fd, "w") as f:
         f.write(f'[worker.oci]\n  gc = true\n  gckeepstorage = "{BUILDX_CACHE_KEEP_SIZE}"\n')
     return path
@@ -1717,8 +1713,7 @@ def _buildx_cache_config_path() -> str | None:
 def _zstd_builder_has_cache_config(name: str) -> bool:
     """True if the builder already carries our enlarged build-cache config.
 
-    `buildx inspect` echoes the stored buildkitd.toml (no bootstrap needed), so a
-    default-sized builder created before this setting was added has no such block.
+    `buildx inspect` echoes the stored buildkitd.toml without bootstrapping.
     """
     r = subprocess.run(["docker", "buildx", "inspect", name], capture_output=True, text=True)
     marker = f'gckeepstorage = "{BUILDX_CACHE_KEEP_SIZE}"'
@@ -1732,10 +1727,9 @@ def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
     legacy (non-containerd) image stores silently downgrades zstd to gzip. A
     docker-container builder has its own buildkit instance and honors zstd.
 
-    A newly created (or upgraded) builder gets a 50GB build cache when there's
-    enough free disk; an existing default-sized builder is recreated with the
-    larger cache in place, preserving its cached layers. Returns None if buildx
-    is unavailable or the builder cannot be created.
+    A new or existing under-sized builder gets a 50GB build cache when there's
+    enough free disk, preserving any cached layers. Returns None if buildx is
+    unavailable or the builder cannot be created.
     """
     if os.getenv("JIG_DISABLE_BUILDX"):
         return None
@@ -1753,14 +1747,12 @@ def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
         return name  # can't/shouldn't enlarge; leave the existing builder as-is
     try:
         if exists:
-            # Recreate with the larger cache, keeping the existing state volume so
-            # cached layers survive the swap.
+            # Recreate with the larger cache; --keep-state preserves cached layers.
             subprocess.run(["docker", "buildx", "rm", "--keep-state", name], capture_output=True)
         create_cmd = base_cmd + ["--buildkitd-config", cfg_path] if cfg_path else base_cmd
         if subprocess.run(create_cmd, capture_output=True).returncode == 0:
             return name
-        # If enlarging the cache failed, fall back to a default-size builder so a
-        # build can still proceed ("it can stay as default size").
+        # If enlarging failed, fall back to a default-size builder so the build runs.
         if cfg_path and subprocess.run(base_cmd, capture_output=True).returncode == 0:
             return name
         return None
