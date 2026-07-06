@@ -16,6 +16,7 @@ import types
 import shutil
 import typing
 import asyncio
+import tempfile
 import subprocess
 import concurrent.futures
 from typing import TYPE_CHECKING, Any, Union, Callable, Optional, Annotated
@@ -53,6 +54,9 @@ DEBUG = os.getenv("TOGETHER_DEBUG", "").strip()[:1] in ("y", "1", "t")
 WARMUP_ENV_NAME = os.getenv("WARMUP_ENV_NAME", "TORCHINDUCTOR_CACHE_DIR")
 WARMUP_DEST = os.getenv("WARMUP_DEST", "torch_cache")
 BUILDX_OUTPUT_OPTS = "compression=zstd,compression-level=3,force-compression=true,oci-mediatypes=true"
+
+BUILDX_CACHE_KEEP_SIZE = "50GB"
+BUILDX_CACHE_MIN_FREE_BYTES = 50 * 1024**3
 
 _TRACK_POLL_INTERVAL = 3
 _TRACK_TIMEOUT = 600
@@ -1667,17 +1671,43 @@ def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
     The default 'docker' buildx driver pushes through the docker daemon, which on
     legacy (non-containerd) image stores silently downgrades zstd to gzip. A
     docker-container builder has its own buildkit instance and honors zstd.
-    Returns None if buildx is unavailable or the builder cannot be created.
+
+    A new or existing under-sized builder gets a 50GB build cache when there's
+    enough free disk, preserving any cached layers. Returns None if buildx is
+    unavailable or the builder cannot be created.
     """
-    if os.getenv("JIG_DISABLE_BUILDX"):
+
+    def sh(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(args, capture_output=True, text=True)
+
+    if os.getenv("JIG_DISABLE_BUILDX") or sh("docker", "buildx", "version").returncode != 0:
         return None
-    if subprocess.run(["docker", "buildx", "version"], capture_output=True).returncode != 0:
-        return None
-    ls = subprocess.run(["docker", "buildx", "ls"], capture_output=True, text=True)
-    if name in (ls.stdout or ""):
-        return name
-    create = subprocess.run(
-        ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"],
-        capture_output=True,
+
+    marker = f'gckeepstorage = "{BUILDX_CACHE_KEEP_SIZE}"'
+    exists = name in sh("docker", "buildx", "ls").stdout
+    if exists and marker in sh("docker", "buildx", "inspect", name).stdout:
+        return name  # already enlarged
+
+    # Enlarge the cache to 50GB when buildx supports it and the disk has room.
+    # gckeepstorage is the widest-compatible knob: newer BuildKit maps it to
+    # reservedSpace, and with no custom gcpolicy it feeds the default GC keep-size.
+    root = sh("docker", "info", "--format", "{{.DockerRootDir}}").stdout.strip()
+    free = shutil.disk_usage(root if root and Path(root).exists() else "/").free
+    enlarge = (
+        "--buildkitd-config" in sh("docker", "buildx", "create", "--help").stdout
+        and free >= BUILDX_CACHE_MIN_FREE_BYTES
     )
-    return name if create.returncode == 0 else None
+    if exists and not enlarge:
+        return name  # can't/shouldn't enlarge; leave the existing builder as-is
+
+    create = ["docker", "buildx", "create", "--name", name, "--driver", "docker-container"]
+    if exists:
+        sh("docker", "buildx", "rm", "--keep-state", name)  # keep cached layers
+    with tempfile.TemporaryDirectory() as tmp:
+        if enlarge:
+            cfg = Path(tmp, "buildkitd.toml")  # buildx embeds this at create time
+            cfg.write_text(f"[worker.oci]\n  gc = true\n  {marker}\n")
+            if sh(*create, "--buildkitd-config", str(cfg)).returncode == 0:
+                return name
+    # No enlargement, or it failed: fall back to a default-size builder.
+    return name if sh(*create).returncode == 0 else None
