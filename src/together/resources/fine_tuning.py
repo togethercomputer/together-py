@@ -51,6 +51,7 @@ from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
+from ..types.fine_tuning_model_limits_response import FineTuningModelLimitsResponse
 from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
