@@ -13,6 +13,7 @@ from ..types import (
     fine_tuning_delete_params,
     fine_tuning_content_params,
     fine_tuning_list_metrics_params,
+    fine_tuning_model_limits_params,
     fine_tuning_estimate_price_params,
 )
 from .._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
@@ -49,6 +50,7 @@ from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
+from ..types.fine_tuning_model_limits_response import FineTuningModelLimitsResponse
 from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
@@ -714,6 +716,45 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FineTuningListMetricsResponse,
         )
 
+    def model_limits(
+        self,
+        *,
+        model_name: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuningModelLimitsResponse:
+        """
+        Get model limits for a specific fine-tuning model.
+
+        Args:
+          model_name: The model name to get limits for.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._get(
+            "/fine-tunes/models/limits",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {"model_name": model_name}, fine_tuning_model_limits_params.FineTuningModelLimitsParams
+                ),
+            ),
+            cast_to=FineTuningModelLimitsResponse,
+        )
+
 
 class AsyncFineTuningResource(AsyncAPIResource):
     @cached_property
@@ -1366,6 +1407,45 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FineTuningListMetricsResponse,
         )
 
+    async def model_limits(
+        self,
+        *,
+        model_name: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuningModelLimitsResponse:
+        """
+        Get model limits for a specific fine-tuning model.
+
+        Args:
+          model_name: The model name to get limits for.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._get(
+            "/fine-tunes/models/limits",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {"model_name": model_name}, fine_tuning_model_limits_params.FineTuningModelLimitsParams
+                ),
+            ),
+            cast_to=FineTuningModelLimitsResponse,
+        )
+
 
 class FineTuningResourceWithRawResponse:
     def __init__(self, fine_tuning: FineTuningResource) -> None:
@@ -1398,6 +1478,9 @@ class FineTuningResourceWithRawResponse:
         )
         self.list_metrics = to_raw_response_wrapper(
             fine_tuning.list_metrics,
+        )
+        self.model_limits = to_raw_response_wrapper(
+            fine_tuning.model_limits,
         )
 
 
@@ -1433,6 +1516,9 @@ class AsyncFineTuningResourceWithRawResponse:
         self.list_metrics = async_to_raw_response_wrapper(
             fine_tuning.list_metrics,
         )
+        self.model_limits = async_to_raw_response_wrapper(
+            fine_tuning.model_limits,
+        )
 
 
 class FineTuningResourceWithStreamingResponse:
@@ -1467,6 +1553,9 @@ class FineTuningResourceWithStreamingResponse:
         self.list_metrics = to_streamed_response_wrapper(
             fine_tuning.list_metrics,
         )
+        self.model_limits = to_streamed_response_wrapper(
+            fine_tuning.model_limits,
+        )
 
 
 class AsyncFineTuningResourceWithStreamingResponse:
@@ -1500,4 +1589,7 @@ class AsyncFineTuningResourceWithStreamingResponse:
         )
         self.list_metrics = async_to_streamed_response_wrapper(
             fine_tuning.list_metrics,
+        )
+        self.model_limits = async_to_streamed_response_wrapper(
+            fine_tuning.model_limits,
         )

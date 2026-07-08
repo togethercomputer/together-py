@@ -140,6 +140,9 @@ class Data(BaseModel):
     updated_at: datetime
     """Last update timestamp of the fine-tune job"""
 
+    user_id: str
+    """ID of the user who owns the fine-tune job."""
+
     batch_size: Optional[int] = None
     """Batch size used for training"""
 
