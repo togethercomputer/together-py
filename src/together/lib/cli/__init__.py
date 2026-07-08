@@ -481,6 +481,10 @@ fine_tuning_app.command(
     help="Preview how a fine-tuning training file will be tokenized",
     help_epilogue=FINE_TUNING_PREVIEW_HELP_EXAMPLES,
 )
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.model_limits:model_limits"),
+    help="Get fine-tuning limits for a model",
+)
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))

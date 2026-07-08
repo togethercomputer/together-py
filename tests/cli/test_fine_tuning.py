@@ -127,12 +127,33 @@ _FT_TOKENIZED_DATASET_BODY = {
 }
 
 _MODEL_LIMITS_BODY = {
+    "model_name": "meta-llama/Llama-3-8b",
+    "default_gradient_accumulation_steps": 1,
     "max_num_epochs": 10,
+    "max_num_checkpoints": 5,
+    "max_num_evals": 20,
     "max_learning_rate": 1,
     "min_learning_rate": 0,
     "min_max_seq_length": 1,
     "max_seq_length_sft": 4096,
     "max_seq_length_dpo": 4096,
+    "merge_output_lora": True,
+    "supports_full_training": True,
+    "supports_reasoning": False,
+    "supports_tools": True,
+    "supports_vision": False,
+    "full_training": {
+        "max_batch_size": 64,
+        "max_batch_size_dpo": 32,
+        "min_batch_size": 1,
+    },
+    "lora_training": {
+        "max_batch_size": 128,
+        "max_batch_size_dpo": 64,
+        "max_rank": 64,
+        "min_batch_size": 1,
+        "target_modules": ["q_proj", "v_proj"],
+    },
 }
 
 _FT_CREATE_BODY = {
@@ -591,6 +612,34 @@ class TestFineTuningPreview:
         assert "Preview Rows" in result.output
         assert "1-3" in result.output
         assert "hello" in result.output
+
+
+class TestFineTuningModelLimits:
+    @pytest.mark.respx(base_url=base_url)
+    def test_model_limits_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/fine-tunes/models/limits").mock(
+            return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY)
+        )
+
+        result = cli_runner.invoke(["fine-tuning", "model-limits", "meta-llama/Llama-3-8b", "--json"])
+
+        assert result.exit_code == 0
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["model_name"] == "meta-llama/Llama-3-8b"
+        body = json.loads(result.output)
+        assert body["model_name"] == "meta-llama/Llama-3-8b"
+        assert body["lora_training"]["max_rank"] == 64
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_model_limits_ft_alias_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+
+        result = cli_runner.invoke(["ft", "model-limits", "meta-llama/Llama-3-8b"])
+
+        assert result.exit_code == 0
+        assert "meta-llama/Llama-3-8b" in result.output
+        assert "Max Rank" in result.output
+
 
 
 class TestFineTuningDownload:
