@@ -217,6 +217,7 @@ from together.types import (
     FineTuningListCheckpointsResponse,
     FineTuningListEventsResponse,
     FineTuningListMetricsResponse,
+    FineTuningModelLimitsResponse,
 )
 ```
 

@@ -40,12 +40,12 @@ from ..lib.types.fine_tuning import (
     FinetuneTrainingLimits,
 )
 from ..types.finetune_response import FinetuneResponse
-from ..types.finetune_model_limits import FinetuneModelLimits
 from ..lib.resources.fine_tuning import (
     get_model_limits,
     async_get_model_limits,
     create_finetune_request,
 )
+from ..types.finetune_model_limits import FinetuneModelLimits
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
