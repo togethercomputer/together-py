@@ -216,6 +216,7 @@ from together.types import (
     FineTuningListCheckpointsResponse,
     FineTuningListEventsResponse,
     FineTuningListMetricsResponse,
+    FineTuningModelLimitsResponse,
 )
 ```
 
@@ -230,6 +231,7 @@ Methods:
 - <code title="get /fine-tunes/{id}/checkpoints">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_checkpoints</a>(id) -> <a href="./src/together/types/fine_tuning_list_checkpoints_response.py">FineTuningListCheckpointsResponse</a></code>
 - <code title="get /fine-tunes/{id}/events">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_events</a>(id) -> <a href="./src/together/types/fine_tuning_list_events_response.py">FineTuningListEventsResponse</a></code>
 - <code title="get /fine-tunes/{id}/metrics">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_metrics</a>(id, \*\*<a href="src/together/types/fine_tuning_list_metrics_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_list_metrics_response.py">FineTuningListMetricsResponse</a></code>
+- <code title="get /fine-tunes/models/limits">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">model_limits</a>(\*\*<a href="src/together/types/fine_tuning_model_limits_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_model_limits_response.py">FineTuningModelLimitsResponse</a></code>
 
 # CodeInterpreter
 
