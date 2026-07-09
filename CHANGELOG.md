@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.22.1](https://github.com/togethercomputer/together-py/compare/v2.22.0...v2.22.1) (2026-07-09)
+
+
+### Bug Fixes
+
+* handle OIDC SSH callback port conflicts ([9787a22](https://github.com/togethercomputer/together-py/commit/9787a22b2625977302b6189e95323abd6ee14cba))
+* increase buildkit cache size ([#436](https://github.com/togethercomputer/together-py/issues/436)) ([a0d2bb7](https://github.com/togethercomputer/together-py/commit/a0d2bb71a0da147acd587cb2e32afc4f1f1f458d))
+
 ## [2.22.0](https://github.com/togethercomputer/together-py/compare/v2.21.0...v2.22.0) (2026-07-01)
 
 
