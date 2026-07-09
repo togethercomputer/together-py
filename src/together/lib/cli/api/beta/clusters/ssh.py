@@ -19,6 +19,7 @@ import os
 import ssl
 import json as json_lib
 import base64
+import socket
 import hashlib
 import secrets
 import tempfile
@@ -40,6 +41,9 @@ _CERT_ALGO = {
     "ecdsa": "ecdsa-sha2-nistp256-cert-v01@openssh.com",
     "ed25519": "ssh-ed25519-cert-v01@openssh.com",
 }
+_DEFAULT_REDIRECT_HOST = "localhost"
+_DEFAULT_REDIRECT_PATH = "/login-callback"
+_DEFAULT_REDIRECT_PORTS = (3000, 10001, 11110)
 
 
 def _http_json(
@@ -73,24 +77,52 @@ def _derive(dex_url: str) -> tuple[str, str]:
     return f"{u.scheme}://{u.hostname}/step-{cluster_id}", f"ssh.{cluster_id}.{base}"
 
 
-def _pkce_login(issuer: str, client_id: str, redirect_uri: str, scope: str) -> str:
+def _redirect_uri_for_port(port: int) -> str:
+    return f"http://{_DEFAULT_REDIRECT_HOST}:{port}{_DEFAULT_REDIRECT_PATH}"
+
+
+def _localhost_port_in_use(port: int) -> bool:
+    try:
+        with socket.create_connection((_DEFAULT_REDIRECT_HOST, port), timeout=0.2):
+            return True
+    except OSError:
+        return False
+
+
+def _callback_server(
+    redirect_uri: Optional[str],
+    handler: type[BaseHTTPRequestHandler],
+) -> tuple[HTTPServer, str]:
+    if redirect_uri is not None:
+        parsed = urllib.parse.urlparse(redirect_uri)
+        try:
+            return HTTPServer((parsed.hostname or _DEFAULT_REDIRECT_HOST, parsed.port or 80), handler), redirect_uri
+        except OSError as exc:
+            raise TogetherError(f"OIDC callback port is unavailable for {redirect_uri}: {exc}") from exc
+
+    for port in _DEFAULT_REDIRECT_PORTS:
+        if _localhost_port_in_use(port):
+            continue
+
+        candidate_uri = _redirect_uri_for_port(port)
+        try:
+            return HTTPServer((_DEFAULT_REDIRECT_HOST, port), handler), candidate_uri
+        except OSError:
+            continue
+
+    ports = "/".join(str(port) for port in _DEFAULT_REDIRECT_PORTS)
+    raise TogetherError(
+        f"OIDC login needs a local callback port, but {ports} are all in use. "
+        "Free one of them or pass a registered --redirect-uri."
+    )
+
+
+def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope: str) -> str:
     """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
     disc = _http_json(issuer.rstrip("/") + "/.well-known/openid-configuration")
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
     state = secrets.token_urlsafe(16)
-    parsed = urllib.parse.urlparse(redirect_uri)
-    params = {
-        "response_type": "code",
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "scope": scope,
-        "state": state,
-        "nonce": secrets.token_urlsafe(16),
-        "code_challenge": challenge,
-        "code_challenge_method": "S256",
-    }
-    auth_url = disc["authorization_endpoint"] + "?" + urllib.parse.urlencode(params)
     captured: dict[str, str] = {}
 
     class _Handler(BaseHTTPRequestHandler):
@@ -111,7 +143,18 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: str, scope: str) -> s
             # Silence the default per-request logging to stderr.
             pass
 
-    server = HTTPServer((parsed.hostname or "localhost", parsed.port or 80), _Handler)
+    server, redirect_uri = _callback_server(redirect_uri, _Handler)
+    params = {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "scope": scope,
+        "state": state,
+        "nonce": secrets.token_urlsafe(16),
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+    }
+    auth_url = disc["authorization_endpoint"] + "?" + urllib.parse.urlencode(params)
     console.print(f"[dim]Opening browser for login: {issuer}[/dim]")
     if not webbrowser.open(auth_url):
         console.print(f"Open this URL to log in:\n{auth_url}")
@@ -177,9 +220,7 @@ async def ssh(
     ca_url: Annotated[Optional[str], Parameter(help="Override step-ca URL (derived from DEX_URL)")] = None,
     bastion: Annotated[Optional[str], Parameter(help="Override bastion host (derived from DEX_URL)")] = None,
     client_id: Annotated[str, Parameter(help="Dex public client id")] = "together-cli",
-    redirect_uri: Annotated[
-        str, Parameter(help="OIDC redirect URI (registered on the Dex client)")
-    ] = "http://localhost:3000/login-callback",
+    redirect_uri: Annotated[Optional[str], Parameter(help="OIDC redirect URI (registered on the Dex client)")] = None,
     scope: Annotated[str, Parameter(help="OIDC scopes")] = "openid email",
     key_type: Annotated[str, Parameter(help="Ephemeral key type (ecdsa is KMS-compatible)")] = "ecdsa",
     ca_root: Annotated[Optional[str], Parameter(help="step-ca root cert (PEM) for TLS")] = None,

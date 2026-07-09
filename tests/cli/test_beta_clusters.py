@@ -3,14 +3,19 @@ from __future__ import annotations
 import os
 import json
 import base64
+import socket
 from typing import Any, cast
+from http.server import BaseHTTPRequestHandler
+from typing_extensions import override
 
 import httpx
 import pytest
 from respx import MockRouter
 from respx.models import Call
 
+from together import TogetherError
 from tests.cli.utils import CliRunner
+from together.lib.cli.api.beta.clusters import ssh as ssh_cli
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -53,6 +58,64 @@ _VOLUME_BODY = {
     "size_tib": 2,
     "status": "available",
 }
+
+
+def _reserved_port() -> tuple[socket.socket, int]:
+    sock = socket.socket()
+    sock.bind(("localhost", 0))
+    sock.listen(1)
+    return sock, int(sock.getsockname()[1])
+
+
+class _CallbackHandler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:  # noqa: N802
+        self.send_response(200)
+        self.end_headers()
+
+    @override
+    def log_message(self, format: str, *args: Any) -> None:  # noqa: ARG002
+        pass
+
+
+class TestBetaClustersSSHCallbackServer:
+    def test_localhost_port_in_use_detects_bound_listener(self) -> None:
+        busy_socket, busy_port = _reserved_port()
+
+        try:
+            assert ssh_cli._localhost_port_in_use(busy_port) is True
+        finally:
+            busy_socket.close()
+
+    def test_callback_server_uses_next_registered_port_when_first_is_busy(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        busy_socket, busy_port = _reserved_port()
+        free_socket, free_port = _reserved_port()
+        free_socket.close()
+
+        try:
+            monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (busy_port, free_port))
+
+            server, redirect_uri = ssh_cli._callback_server(None, _CallbackHandler)
+            try:
+                assert redirect_uri == f"http://localhost:{free_port}/login-callback"
+            finally:
+                server.server_close()
+        finally:
+            busy_socket.close()
+
+    def test_callback_server_explains_when_all_registered_ports_are_busy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        first_socket, first_port = _reserved_port()
+        second_socket, second_port = _reserved_port()
+
+        try:
+            monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (first_port, second_port))
+
+            with pytest.raises(TogetherError, match="callback port"):
+                ssh_cli._callback_server(None, _CallbackHandler)
+        finally:
+            first_socket.close()
+            second_socket.close()
 
 
 def _remediation_body(remediation_id: str = "rem-1", **overrides: Any) -> dict[str, Any]:
