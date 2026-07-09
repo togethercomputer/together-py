@@ -15,7 +15,7 @@ from together.lib.cli.api._utils import (
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.resources.fine_tuning import async_get_model_limits, validate_early_stopping
+from together.lib.resources.fine_tuning import validate_early_stopping
 from together.lib.cli.components.model_dump import print_model_dump
 
 
@@ -257,13 +257,11 @@ async def create(
     model_name = model
     if from_checkpoint is not None:
         model_name = from_checkpoint.split(":")[0]
-    model_limits = await async_get_model_limits(config.client, str(model_name))
+    model_limits = await config.client.fine_tuning.model_limits(model_name=str(model_name))
 
     if lora is None:
         pass
     elif lora:
-        if model_limits.lora_training is None:
-            raise ValueError(f"LoRA fine-tuning is not supported for the model `{model}`")
         # Cyclopts has no Click-style ctx/ParameterSource; use CLI defaults as heuristic for "unset".
         if lora_r == DEFAULT_LORA_R:
             training_args["lora_r"] = model_limits.lora_training.max_rank
