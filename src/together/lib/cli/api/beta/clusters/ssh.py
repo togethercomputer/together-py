@@ -329,7 +329,7 @@ def _ssh_command(
     ssh_args: tuple[str, ...],
 ) -> list[str]:
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
-    proxy_common = common + ["-o", "StrictHostKeyChecking=accept-new"]
+    proxy_common = common + ["-o", "StrictHostKeyChecking=ask"]
     proxy = (
         "ssh "
         + " ".join(shlex.quote(arg) for arg in proxy_common)
@@ -337,7 +337,7 @@ def _ssh_command(
     )
     inner_verification = [
         "-o",
-        "StrictHostKeyChecking=accept-new",
+        "StrictHostKeyChecking=ask",
         "-o",
         f"UserKnownHostsFile={known_hosts_path}",
         "-o",
@@ -375,7 +375,7 @@ def _ssh_config_entry(
     _validate_ssh_alias(alias)
     _ssh_config_value(bastion)
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
-    proxy_common = common + ["-o", "StrictHostKeyChecking=accept-new"]
+    proxy_common = common + ["-o", "StrictHostKeyChecking=ask"]
     proxy = (
         "ssh "
         + " ".join(shlex.quote(arg) for arg in proxy_common)
@@ -389,7 +389,7 @@ def _ssh_config_entry(
             f"  IdentityFile {_ssh_config_value(key_path)}",
             f"  CertificateFile {_ssh_config_value(cert_path)}",
             "  IdentitiesOnly yes",
-            "  StrictHostKeyChecking accept-new",
+            "  StrictHostKeyChecking ask",
             f"  UserKnownHostsFile {_ssh_config_value(known_hosts_path)}",
             f"  HostKeyAlias {_ssh_config_value(f'{host}.{bastion}')}",
             f"  ProxyCommand {proxy}",
