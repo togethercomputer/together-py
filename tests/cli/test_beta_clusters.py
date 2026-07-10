@@ -180,7 +180,7 @@ class TestBetaClustersSSHHelpers:
         assert "jhu@slurm-login" in cmd
         assert cmd[-2:] == ["sinfo", "-h"]
         assert any("ProxyCommand=ssh" in arg for arg in cmd)
-        assert "StrictHostKeyChecking=accept-new" in cmd
+        assert "StrictHostKeyChecking=ask" in cmd
         assert "UserKnownHostsFile=/tmp/known_hosts" in cmd
         assert "HostKeyAlias=slurm-login.ssh.t-abc123.s1.us-central-2a.cloud.together.ai" in cmd
 
@@ -200,7 +200,7 @@ class TestBetaClustersSSHHelpers:
         assert "User jhu" in entry
         assert "IdentityFile /home/jhu/.together/ssh/t-abc123/jhu/id" in entry
         assert "CertificateFile /home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub" in entry
-        assert "StrictHostKeyChecking accept-new" in entry
+        assert "StrictHostKeyChecking ask" in entry
         assert "UserKnownHostsFile /home/jhu/.together/ssh/t-abc123/jhu/known_hosts" in entry
         assert "ProxyCommand ssh" in entry
 
