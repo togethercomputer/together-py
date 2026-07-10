@@ -201,7 +201,13 @@ def _validate_id_token_claims(
     client_id: str,
     nonce: Optional[str],
 ) -> None:
-    """Validate client-bound claims before step-ca verifies the token signature."""
+    """Validate client-bound claims before step-ca performs authoritative signature verification.
+
+    These checks provide early client errors. Security still depends on step-ca
+    verifying the OTT signature before issuing a certificate; duplicating that
+    verification here cannot protect a misconfigured CA because callers can
+    invoke the signing endpoint without this CLI.
+    """
     try:
         payload_segment = id_token.split(".")[1]
         payload_segment += "=" * (-len(payload_segment) % 4)
