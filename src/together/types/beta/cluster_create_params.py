@@ -362,3 +362,9 @@ class SharedVolume(TypedDict, total=False):
 
     is_lifecycle_independent: bool
     """When true, the shared volume is not deleted when the cluster is decommissioned."""
+
+    project_id: str
+    """Project ID that will own the volume.
+
+    When omitted, the caller's default project is used.
+    """

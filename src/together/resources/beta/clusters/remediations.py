@@ -60,6 +60,7 @@ class RemediationsResource(SyncAPIResource):
             "REMEDIATION_MODE_HOST_AWARE",
             "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
             "REMEDIATION_MODE_REBOOT_VM",
+            "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ],
         remediation_id: str | Omit = omit,
         reason: str | Omit = omit,
@@ -87,6 +88,11 @@ class RemediationsResource(SyncAPIResource):
                 available host.
               - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
                 provisions a new one on a different host.
+              - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
+                provisioning a replacement.
+              - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+              - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Cordons and power-cycles the bare-metal
+                host while preserving host and node identity.
 
           remediation_id: Client-specified ID for idempotency.
 
@@ -185,6 +191,7 @@ class RemediationsResource(SyncAPIResource):
                 "REMEDIATION_MODE_HOST_AWARE",
                 "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
                 "REMEDIATION_MODE_REBOOT_VM",
+                "REMEDIATION_MODE_HOST_POWER_CYCLE",
             ]
         ]
         | Omit = omit,
@@ -192,7 +199,17 @@ class RemediationsResource(SyncAPIResource):
         page_size: int | Omit = omit,
         page_token: str | Omit = omit,
         state: List[
-            Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
+            Literal[
+                "PENDING_APPROVAL",
+                "PENDING",
+                "RUNNING",
+                "SUCCEEDED",
+                "FAILED",
+                "CANCELLED",
+                "AUTO_RESOLVED",
+                "QUARANTINING",
+                "QUARANTINED",
+            ]
         ]
         | Omit = omit,
         trigger: List[Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]] | Omit = omit,
@@ -230,6 +247,8 @@ class RemediationsResource(SyncAPIResource):
               - `CANCELLED`: Cancelled by user or system.
               - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
                 processing.
+              - `QUARANTINING`: Cordoning or preparing the host before remediation.
+              - `QUARANTINED`: Host has been cordoned or isolated for remediation.
 
           trigger: Filter by trigger type(s). Returns remediations matching any of the specified
               triggers.
@@ -284,6 +303,7 @@ class RemediationsResource(SyncAPIResource):
             "REMEDIATION_MODE_HOST_AWARE",
             "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
             "REMEDIATION_MODE_REBOOT_VM",
+            "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ]
         | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -315,6 +335,9 @@ class RemediationsResource(SyncAPIResource):
               - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
                 provisioning a replacement.
               - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+              - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Power-cycles the bare-metal host after
+                cordoning it. This mode cannot be set as an approval override; create a host
+                power-cycle remediation directly.
 
           extra_headers: Send extra headers
 
@@ -486,6 +509,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             "REMEDIATION_MODE_HOST_AWARE",
             "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
             "REMEDIATION_MODE_REBOOT_VM",
+            "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ],
         remediation_id: str | Omit = omit,
         reason: str | Omit = omit,
@@ -513,6 +537,11 @@ class AsyncRemediationsResource(AsyncAPIResource):
                 available host.
               - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
                 provisions a new one on a different host.
+              - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
+                provisioning a replacement.
+              - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+              - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Cordons and power-cycles the bare-metal
+                host while preserving host and node identity.
 
           remediation_id: Client-specified ID for idempotency.
 
@@ -611,6 +640,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
                 "REMEDIATION_MODE_HOST_AWARE",
                 "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
                 "REMEDIATION_MODE_REBOOT_VM",
+                "REMEDIATION_MODE_HOST_POWER_CYCLE",
             ]
         ]
         | Omit = omit,
@@ -618,7 +648,17 @@ class AsyncRemediationsResource(AsyncAPIResource):
         page_size: int | Omit = omit,
         page_token: str | Omit = omit,
         state: List[
-            Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
+            Literal[
+                "PENDING_APPROVAL",
+                "PENDING",
+                "RUNNING",
+                "SUCCEEDED",
+                "FAILED",
+                "CANCELLED",
+                "AUTO_RESOLVED",
+                "QUARANTINING",
+                "QUARANTINED",
+            ]
         ]
         | Omit = omit,
         trigger: List[Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]] | Omit = omit,
@@ -656,6 +696,8 @@ class AsyncRemediationsResource(AsyncAPIResource):
               - `CANCELLED`: Cancelled by user or system.
               - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
                 processing.
+              - `QUARANTINING`: Cordoning or preparing the host before remediation.
+              - `QUARANTINED`: Host has been cordoned or isolated for remediation.
 
           trigger: Filter by trigger type(s). Returns remediations matching any of the specified
               triggers.
@@ -710,6 +752,7 @@ class AsyncRemediationsResource(AsyncAPIResource):
             "REMEDIATION_MODE_HOST_AWARE",
             "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
             "REMEDIATION_MODE_REBOOT_VM",
+            "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ]
         | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -741,6 +784,9 @@ class AsyncRemediationsResource(AsyncAPIResource):
               - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
                 provisioning a replacement.
               - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+              - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Power-cycles the bare-metal host after
+                cordoning it. This mode cannot be set as an approval override; create a host
+                power-cycle remediation directly.
 
           extra_headers: Send extra headers
 
