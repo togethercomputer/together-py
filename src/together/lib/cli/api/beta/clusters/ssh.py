@@ -534,8 +534,6 @@ def _replace_managed_host_entry(config: str, alias: str, entry: str) -> str:
 
 
 def _atomic_write(path: str, content: str, mode: int) -> None:
-    if os.path.islink(path):
-        path = os.path.realpath(path)
     os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(prefix=".tmp-", dir=os.path.dirname(path), text=True)
     try:
@@ -552,20 +550,40 @@ def _atomic_write(path: str, content: str, mode: int) -> None:
             pass
 
 
+def _read_owned_text_file(path: str, purpose: str) -> str:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise TogetherError(f"could not securely open {purpose}: {path}") from exc
+    with os.fdopen(fd) as f:
+        file_stat = os.fstat(f.fileno())
+        if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_uid != os.geteuid():
+            raise TogetherError(f"{purpose} must be a regular file owned by the current user")
+        if stat.S_IMODE(file_stat.st_mode) & 0o022:
+            raise TogetherError(f"{purpose} must not be group- or world-writable")
+        return f.read()
+
+
 def _ensure_include(main_config_path: str, include_path: str) -> None:
     os.makedirs(os.path.dirname(main_config_path), mode=0o700, exist_ok=True)
     include_line = f"Include {_ssh_config_value(include_path)}"
+    write_path = main_config_path
 
-    if os.path.exists(main_config_path):
-        with open(main_config_path) as f:
-            content = f.read()
+    if os.path.islink(main_config_path):
+        write_path = os.path.realpath(main_config_path)
+        if not os.path.exists(write_path):
+            raise TogetherError("main SSH config symlink target must exist")
+
+    if os.path.exists(write_path):
+        content = _read_owned_text_file(write_path, "main SSH config")
         if any(line.strip() == include_line for line in content.splitlines()):
             return
         new_content = include_line + "\n" + content
     else:
         new_content = include_line + "\n"
 
-    _atomic_write(main_config_path, new_content, 0o600)
+    _atomic_write(write_path, new_content, 0o600)
 
 
 def _write_ssh_config(alias: str, entry: str, cache_root: str) -> tuple[str, str]:
@@ -576,9 +594,8 @@ def _write_ssh_config(alias: str, entry: str, cache_root: str) -> tuple[str, str
     os.makedirs(os.path.dirname(lock_path), mode=0o700, exist_ok=True)
 
     with FileLock(lock_path, timeout=_CACHE_LOCK_TIMEOUT_SECONDS):
-        if os.path.exists(managed_config):
-            with open(managed_config) as f:
-                content = f.read()
+        if os.path.lexists(managed_config):
+            content = _read_owned_text_file(managed_config, "managed SSH config")
         else:
             content = ""
 
