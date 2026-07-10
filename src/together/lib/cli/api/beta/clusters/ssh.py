@@ -179,6 +179,17 @@ def _validate_discovery_endpoint(endpoint: Any, issuer: str, name: str) -> str:
     return endpoint
 
 
+def _callback_code(request_path: str, expected_state: str) -> Optional[str]:
+    parsed_request = urllib.parse.urlparse(request_path)
+    if parsed_request.path != _DEFAULT_REDIRECT_PATH:
+        return None
+    query = urllib.parse.parse_qs(parsed_request.query)
+    callback_state = query.get("state", [""])[0]
+    if "code" not in query or not secrets.compare_digest(callback_state.encode(), expected_state.encode()):
+        return None
+    return query["code"][0]
+
+
 def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
     """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
     ctx = _certifi_ssl_context()
@@ -197,11 +208,10 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
 
     class _Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
-            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            callback_state = q.get("state", [""])[0]
-            if "code" in q and secrets.compare_digest(callback_state.encode(), state.encode()):
-                captured["code"] = q["code"][0]
-                captured["state"] = callback_state
+            code = _callback_code(self.path, state)
+            if code is not None:
+                captured["code"] = code
+                captured["state"] = state
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b"Login complete. You can close this tab.")

@@ -143,6 +143,13 @@ class TestBetaClustersSSHCallbackServer:
 
 
 class TestBetaClustersSSHHelpers:
+    def test_callback_code_requires_registered_path_and_state(self) -> None:
+        state = "expected-state"
+
+        assert ssh_cli._callback_code(f"/login-callback?code=valid&state={state}", state) == "valid"
+        assert ssh_cli._callback_code(f"/anything?code=valid&state={state}", state) is None
+        assert ssh_cli._callback_code("/login-callback?code=valid&state=wrong", state) is None
+
     def test_validate_discovery_endpoint_accepts_trusted_origin(self) -> None:
         issuer = "https://dex.s1.cloud.together.ai/t-abc123"
         endpoint = "https://dex.s1.cloud.together.ai/t-abc123/token"
