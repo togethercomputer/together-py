@@ -143,6 +143,12 @@ class TestBetaClustersSSHCallbackServer:
 
 
 class TestBetaClustersSSHHelpers:
+    def test_validate_discovery_endpoint_accepts_trusted_origin(self) -> None:
+        issuer = "https://dex.s1.cloud.together.ai/t-abc123"
+        endpoint = "https://dex.s1.cloud.together.ai/t-abc123/token"
+
+        assert ssh_cli._validate_discovery_endpoint(endpoint, issuer, "token endpoint") == endpoint
+
     @pytest.mark.parametrize(
         "endpoint",
         [
