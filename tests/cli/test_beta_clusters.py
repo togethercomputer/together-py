@@ -122,6 +122,19 @@ class TestBetaClustersSSHCallbackServer:
             first_socket.close()
             second_socket.close()
 
+    @pytest.mark.parametrize(
+        "redirect_uri",
+        [
+            "http://0.0.0.0:3000/login-callback",
+            "https://localhost:3000/login-callback",
+            "http://user@localhost:3000/login-callback",
+            "http://localhost:3000/login-callback?next=evil",
+        ],
+    )
+    def test_callback_server_rejects_non_loopback_or_ambiguous_redirects(self, redirect_uri: str) -> None:
+        with pytest.raises(TogetherError, match="HTTP loopback URL"):
+            ssh_cli._callback_server(redirect_uri, _CallbackHandler)
+
     def test_pkce_login_explains_missing_callback(self, monkeypatch: pytest.MonkeyPatch) -> None:
         class Server:
             def handle_request(self) -> None:
