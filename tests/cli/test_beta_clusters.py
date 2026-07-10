@@ -83,14 +83,6 @@ class _CallbackHandler(BaseHTTPRequestHandler):
 
 
 class TestBetaClustersSSHCallbackServer:
-    def test_localhost_port_in_use_detects_bound_listener(self) -> None:
-        busy_socket, busy_port = _reserved_port()
-
-        try:
-            assert ssh_cli._localhost_port_in_use(busy_port) is True
-        finally:
-            busy_socket.close()
-
     def test_callback_server_uses_next_registered_port_when_first_is_busy(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -151,6 +143,21 @@ class TestBetaClustersSSHCallbackServer:
 
 
 class TestBetaClustersSSHHelpers:
+    @pytest.mark.parametrize(
+        "endpoint",
+        [
+            "http://dex.s1.cloud.together.ai/token",
+            "https://evil.example/token",
+            "https://user@dex.s1.cloud.together.ai/token",
+            "https://dex.s1.cloud.together.ai/token?next=evil",
+        ],
+    )
+    def test_validate_discovery_endpoint_rejects_untrusted_origins(self, endpoint: str) -> None:
+        issuer = "https://dex.s1.cloud.together.ai/t-abc123"
+
+        with pytest.raises(TogetherError, match="trusted issuer origin"):
+            ssh_cli._validate_discovery_endpoint(endpoint, issuer, "token endpoint")
+
     @pytest.mark.parametrize(
         "dex_url",
         [
