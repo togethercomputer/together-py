@@ -20,6 +20,7 @@ import re
 import ssl
 import json as json_lib
 import stat
+import time
 import shlex
 import base64
 import socket
@@ -55,6 +56,8 @@ _ALLOWED_REDIRECT_HOSTS = frozenset({"localhost", "127.0.0.1"})
 _DEFAULT_CACHE_ROOT = os.path.join(os.path.expanduser("~"), ".together", "ssh")
 _CERT_REFRESH_SKEW = timedelta(minutes=5)
 _CACHE_LOCK_TIMEOUT_SECONDS = 600
+_OIDC_CLOCK_SKEW_SECONDS = 60
+_TRUSTED_DEX_SUFFIX = ".together.ai"
 
 
 def _http_json(
@@ -99,6 +102,30 @@ def _certifi_ssl_context() -> ssl.SSLContext:
     return httpx.create_ssl_context(trust_env=False)
 
 
+def _parse_dex_url(dex_url: str) -> tuple[urllib.parse.ParseResult, str]:
+    parsed = urllib.parse.urlparse(dex_url)
+    path_parts = parsed.path.strip("/").split("/")
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise TogetherError("DEX_URL contains an invalid port") from exc
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname is None
+        or not parsed.hostname.startswith("dex.")
+        or not parsed.hostname.endswith(_TRUSTED_DEX_SUFFIX)
+        or parsed.username is not None
+        or parsed.password is not None
+        or port is not None
+        or len(path_parts) != 1
+        or re.fullmatch(r"[A-Za-z0-9-]+", path_parts[0]) is None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise TogetherError("DEX_URL must be an HTTPS Together Dex issuer URL with one cluster id path")
+    return parsed, path_parts[0]
+
+
 def _derive(dex_url: str) -> tuple[str, str]:
     """Derive (ca_url, bastion) from the cluster's Dex issuer URL.
 
@@ -106,19 +133,15 @@ def _derive(dex_url: str) -> tuple[str, str]:
         ca_url  = https://dex.<base>/step-<cluster-id>
         bastion = ssh.<cluster-id>.<base>
     """
-    u = urllib.parse.urlparse(dex_url)
-    if not u.scheme or not u.hostname or not u.path.strip("/"):
-        raise TogetherError("DEX_URL must look like https://dex.<base>/<cluster-id>")
-    cluster_id = u.path.strip("/").split("/")[0]
-    base = u.hostname[4:] if u.hostname.startswith("dex.") else u.hostname
-    return f"{u.scheme}://{u.hostname}/step-{cluster_id}", f"ssh.{cluster_id}.{base}"
+    parsed, cluster_id = _parse_dex_url(dex_url)
+    hostname = cast("str", parsed.hostname)
+    base = hostname.removeprefix("dex.")
+    return f"https://{hostname}/step-{cluster_id}", f"ssh.{cluster_id}.{base}"
 
 
 def _cluster_id(dex_url: str) -> str:
-    u = urllib.parse.urlparse(dex_url)
-    if not u.path.strip("/"):
-        raise TogetherError("DEX_URL must include a cluster id path")
-    return u.path.strip("/").split("/")[0]
+    _, cluster_id = _parse_dex_url(dex_url)
+    return cluster_id
 
 
 def _redirect_uri_for_port(port: int) -> str:
@@ -172,6 +195,38 @@ def _callback_server(
     )
 
 
+def _validate_id_token_claims(
+    id_token: str,
+    issuer: str,
+    client_id: str,
+    nonce: Optional[str],
+) -> None:
+    """Validate client-bound claims before step-ca verifies the token signature."""
+    try:
+        payload_segment = id_token.split(".")[1]
+        payload_segment += "=" * (-len(payload_segment) % 4)
+        decoded_claims = json_lib.loads(base64.urlsafe_b64decode(payload_segment).decode())
+    except (IndexError, ValueError, json_lib.JSONDecodeError) as exc:
+        raise TogetherError("OIDC token is malformed") from exc
+    if not isinstance(decoded_claims, dict):
+        raise TogetherError("OIDC token payload must be an object")
+    claims = cast("dict[str, Any]", decoded_claims)
+
+    token_issuer = claims.get("iss")
+    if not isinstance(token_issuer, str) or token_issuer.rstrip("/") != issuer.rstrip("/"):
+        raise TogetherError("OIDC token issuer does not match the requested cluster")
+    audience = claims.get("aud")
+    if audience != client_id and (not isinstance(audience, list) or client_id not in audience):
+        raise TogetherError("OIDC token audience does not include the Together CLI")
+    expires_at = claims.get("exp")
+    if not isinstance(expires_at, (int, float)) or expires_at <= time.time() - _OIDC_CLOCK_SKEW_SECONDS:
+        raise TogetherError("OIDC token is expired or has no valid expiry")
+    if nonce is not None:
+        token_nonce = claims.get("nonce")
+        if not isinstance(token_nonce, str) or not secrets.compare_digest(token_nonce.encode(), nonce.encode()):
+            raise TogetherError("OIDC token nonce does not match the login request")
+
+
 def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope: str) -> str:
     """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
     ctx = _certifi_ssl_context()
@@ -179,6 +234,7 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
     state = secrets.token_urlsafe(16)
+    nonce = secrets.token_urlsafe(16)
     captured: dict[str, str] = {}
 
     class _Handler(BaseHTTPRequestHandler):
@@ -207,7 +263,7 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
         "redirect_uri": redirect_uri,
         "scope": scope,
         "state": state,
-        "nonce": secrets.token_urlsafe(16),
+        "nonce": nonce,
         "code_challenge": challenge,
         "code_challenge_method": "S256",
     }
@@ -239,7 +295,9 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
     )
     if "id_token" not in tok:
         raise TogetherError(f"token endpoint returned no id_token: {tok}")
-    return str(tok["id_token"])
+    id_token = str(tok["id_token"])
+    _validate_id_token_claims(id_token, issuer, client_id, nonce)
+    return id_token
 
 
 def _sign(ca_url: str, ott: str, pub_blob: str, ctx: Optional[ssl.SSLContext]) -> str:
@@ -368,7 +426,7 @@ def _ssh_command(
     key_path: str,
     cert_path: str,
     known_hosts_path: str,
-    ssh_args: tuple[str, ...],
+    remote_command: tuple[str, ...],
 ) -> list[str]:
     _validate_ssh_destination(login, host, bastion)
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
@@ -391,7 +449,7 @@ def _ssh_command(
         + common
         + inner_verification
         + ["-o", f"ProxyCommand={proxy}", "--", f"{login}@{host}"]
-        + list(ssh_args)
+        + list(remote_command)
     )
 
 
@@ -530,9 +588,9 @@ def _write_ssh_config(alias: str, entry: str, cache_root: str) -> tuple[str, str
 
 async def ssh(
     dex_url: Annotated[str, Parameter(help="Cluster Dex issuer URL: https://dex.<base>/<cluster-id>")],
-    *ssh_args: Annotated[
+    *remote_command: Annotated[
         str,
-        Parameter(allow_leading_hyphen=True, help="Extra args / remote command passed through to ssh"),
+        Parameter(allow_leading_hyphen=True, help="Remote command and arguments; never parsed as SSH client options"),
     ],
     login: Annotated[str, Parameter(name=["--login", "-l"], help="POSIX login / SSH username on the cluster")],
     host: Annotated[
@@ -541,8 +599,6 @@ async def ssh(
             help="Target host on the cluster (any hostname reachable through the bastion; e.g. slurm-login or a worker)"
         ),
     ] = "slurm-login",
-    ca_url: Annotated[Optional[str], Parameter(help="Override step-ca URL (derived from DEX_URL)")] = None,
-    bastion: Annotated[Optional[str], Parameter(help="Override bastion host (derived from DEX_URL)")] = None,
     client_id: Annotated[str, Parameter(help="Dex public client id")] = "together-cli",
     redirect_uri: Annotated[Optional[str], Parameter(help="OIDC redirect URI (registered on the Dex client)")] = None,
     scope: Annotated[str, Parameter(help="OIDC scopes")] = "openid email",
@@ -575,9 +631,7 @@ async def ssh(
     contacts the control plane. Anything after DEX_URL is passed through to ssh.
     """
     issuer = dex_url
-    derived_ca_url, derived_bastion = _derive(dex_url)
-    ca_url = ca_url or derived_ca_url
-    bastion = bastion or derived_bastion
+    ca_url, bastion = _derive(dex_url)
     if not cache and (print_ssh_command or ssh_config_alias is not None or write_ssh_config):
         raise TogetherError(
             "--print-ssh-command, --ssh-config-alias, and --write-ssh-config require cached key/cert files"
@@ -611,6 +665,7 @@ async def ssh(
             pub_blob = _get_or_create_keypair(key_path, key_type)
             if id_token_file:
                 ott = _read_id_token_file(id_token_file)
+                _validate_id_token_claims(ott, issuer, client_id, None)
             else:
                 if cache:
                     console.print(
@@ -625,7 +680,7 @@ async def ssh(
             _atomic_write(cert_path, f"{_CERT_ALGO[key_type]} {crt} together-ssh\n", 0o644)
 
     known_hosts_path = os.path.join(os.path.dirname(key_path), "known_hosts")
-    cmd = _ssh_command(login, host, bastion, key_path, cert_path, known_hosts_path, ssh_args)
+    cmd = _ssh_command(login, host, bastion, key_path, cert_path, known_hosts_path, remote_command)
     if ssh_config_alias is not None:
         entry = _ssh_config_entry(
             ssh_config_alias,

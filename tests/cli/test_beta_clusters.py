@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import ssl
 import json
+import time
 import base64
 import socket
 import subprocess
@@ -164,6 +165,44 @@ class TestBetaClustersSSHCallbackServer:
 
 
 class TestBetaClustersSSHHelpers:
+    @pytest.mark.parametrize(
+        "dex_url",
+        [
+            "http://dex.s1.cloud.together.ai/t-abc123",
+            "https://dex.evil.example/t-abc123",
+            "https://user@dex.s1.cloud.together.ai/t-abc123",
+            "https://dex.s1.cloud.together.ai/t-abc123/extra",
+            "https://dex.s1.cloud.together.ai:bad/t-abc123",
+        ],
+    )
+    def test_derive_rejects_untrusted_dex_urls(self, dex_url: str) -> None:
+        with pytest.raises(TogetherError, match="DEX_URL"):
+            ssh_cli._derive(dex_url)
+
+    def test_validate_id_token_claims(self) -> None:
+        issuer = "https://dex.s1.cloud.together.ai/t-abc123"
+        nonce = "expected-nonce"
+
+        def token(**overrides: Any) -> str:
+            claims: dict[str, Any] = {
+                "iss": issuer,
+                "aud": "together-cli",
+                "exp": time.time() + 300,
+                "nonce": nonce,
+            }
+            claims.update(overrides)
+            payload = base64.urlsafe_b64encode(json.dumps(claims).encode()).rstrip(b"=").decode()
+            return f"header.{payload}.signature"
+
+        ssh_cli._validate_id_token_claims(token(), issuer, "together-cli", nonce)
+
+        with pytest.raises(TogetherError, match="issuer"):
+            ssh_cli._validate_id_token_claims(token(iss="https://dex.evil.example"), issuer, "together-cli", nonce)
+        with pytest.raises(TogetherError, match="expired"):
+            ssh_cli._validate_id_token_claims(token(exp=0), issuer, "together-cli", nonce)
+        with pytest.raises(TogetherError, match="nonce"):
+            ssh_cli._validate_id_token_claims(token(nonce="wrong"), issuer, "together-cli", nonce)
+
     def test_cache_paths_are_cluster_and_login_scoped(self, tmp_path: Any) -> None:
         key_path, cert_path = ssh_cli._cache_paths(
             "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123",
