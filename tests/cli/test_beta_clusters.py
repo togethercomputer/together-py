@@ -172,6 +172,7 @@ class TestBetaClustersSSHHelpers:
             "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
             "/tmp/id",
             "/tmp/id-cert.pub",
+            "/tmp/known_hosts",
             ("sinfo", "-h"),
         )
 
@@ -179,6 +180,9 @@ class TestBetaClustersSSHHelpers:
         assert "jhu@slurm-login" in cmd
         assert cmd[-2:] == ["sinfo", "-h"]
         assert any("ProxyCommand=ssh" in arg for arg in cmd)
+        assert "StrictHostKeyChecking=accept-new" in cmd
+        assert "UserKnownHostsFile=/tmp/known_hosts" in cmd
+        assert "HostKeyAlias=slurm-login.ssh.t-abc123.s1.us-central-2a.cloud.together.ai" in cmd
 
     def test_ssh_config_entry_points_plain_ssh_at_cached_cert(self) -> None:
         entry = ssh_cli._ssh_config_entry(
@@ -188,6 +192,7 @@ class TestBetaClustersSSHHelpers:
             "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
             "/home/jhu/.together/ssh/t-abc123/jhu/id",
             "/home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub",
+            "/home/jhu/.together/ssh/t-abc123/jhu/known_hosts",
         )
 
         assert "Host test-oidc" in entry
@@ -195,6 +200,8 @@ class TestBetaClustersSSHHelpers:
         assert "User jhu" in entry
         assert "IdentityFile /home/jhu/.together/ssh/t-abc123/jhu/id" in entry
         assert "CertificateFile /home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub" in entry
+        assert "StrictHostKeyChecking accept-new" in entry
+        assert "UserKnownHostsFile /home/jhu/.together/ssh/t-abc123/jhu/known_hosts" in entry
         assert "ProxyCommand ssh" in entry
 
     def test_ssh_config_entry_rejects_invalid_alias(self) -> None:
@@ -206,6 +213,7 @@ class TestBetaClustersSSHHelpers:
                 "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
                 "/tmp/id",
                 "/tmp/id-cert.pub",
+                "/tmp/known_hosts",
             )
 
     def test_get_or_create_keypair_replaces_partial_cache(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
