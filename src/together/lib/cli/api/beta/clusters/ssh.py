@@ -224,6 +224,8 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
             # Silence the default per-request logging to stderr.
             pass
 
+    # Bind before starting authorization, then reuse this exact URI for the token
+    # exchange. PKCE prevents another local process from redeeming an intercepted code.
     server, redirect_uri = _callback_server(_Handler)
     params = {
         "response_type": "code",
