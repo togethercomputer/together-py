@@ -16,6 +16,7 @@ class RemediationCreateParams(TypedDict, total=False):
             "REMEDIATION_MODE_HOST_AWARE",
             "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
             "REMEDIATION_MODE_REBOOT_VM",
+            "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ]
     ]
     """Remediation mode specifies how the remediation should be performed.
@@ -24,6 +25,11 @@ class RemediationCreateParams(TypedDict, total=False):
       available host.
     - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
       provisions a new one on a different host.
+    - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
+      provisioning a replacement.
+    - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+    - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Cordons and power-cycles the bare-metal
+      host while preserving host and node identity.
     """
 
     remediation_id: str

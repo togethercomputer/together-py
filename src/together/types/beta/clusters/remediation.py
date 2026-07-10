@@ -60,6 +60,7 @@ class Remediation(BaseModel):
         "REMEDIATION_MODE_HOST_AWARE",
         "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
         "REMEDIATION_MODE_REBOOT_VM",
+        "REMEDIATION_MODE_HOST_POWER_CYCLE",
     ]
     """Remediation mode specifies how the remediation should be performed.
 
@@ -67,9 +68,24 @@ class Remediation(BaseModel):
       available host.
     - `REMEDIATION_MODE_HOST_AWARE`: Cordons the host, deletes the VM, and
       provisions a new one on a different host.
+    - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
+      provisioning a replacement.
+    - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+    - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Cordons and power-cycles the bare-metal
+      host while preserving host and node identity.
     """
 
-    state: Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]
+    state: Literal[
+        "PENDING_APPROVAL",
+        "PENDING",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELLED",
+        "AUTO_RESOLVED",
+        "QUARANTINING",
+        "QUARANTINED",
+    ]
     """RemediationState represents the lifecycle state of a remediation.
 
     - `PENDING_APPROVAL`: Awaiting approval before processing can begin.
@@ -80,6 +96,8 @@ class Remediation(BaseModel):
     - `CANCELLED`: Cancelled by user or system.
     - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
       processing.
+    - `QUARANTINING`: Cordoning or preparing the host before remediation.
+    - `QUARANTINED`: Host has been cordoned or isolated for remediation.
     """
 
     trigger: Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]

@@ -50,6 +50,7 @@ class StorageResource(SyncAPIResource):
         size_tib: int,
         volume_name: str,
         is_lifecycle_independent: bool | Omit = omit,
+        project_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -73,6 +74,9 @@ class StorageResource(SyncAPIResource):
 
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
+          project_id: Project ID that will own the volume. When omitted, the caller's default project
+              is used.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -89,6 +93,7 @@ class StorageResource(SyncAPIResource):
                     "size_tib": size_tib,
                     "volume_name": volume_name,
                     "is_lifecycle_independent": is_lifecycle_independent,
+                    "project_id": project_id,
                 },
                 storage_create_params.StorageCreateParams,
             ),
@@ -280,6 +285,7 @@ class AsyncStorageResource(AsyncAPIResource):
         size_tib: int,
         volume_name: str,
         is_lifecycle_independent: bool | Omit = omit,
+        project_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -303,6 +309,9 @@ class AsyncStorageResource(AsyncAPIResource):
 
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
+          project_id: Project ID that will own the volume. When omitted, the caller's default project
+              is used.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -319,6 +328,7 @@ class AsyncStorageResource(AsyncAPIResource):
                     "size_tib": size_tib,
                     "volume_name": volume_name,
                     "is_lifecycle_independent": is_lifecycle_independent,
+                    "project_id": project_id,
                 },
                 storage_create_params.StorageCreateParams,
             ),

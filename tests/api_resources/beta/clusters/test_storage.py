@@ -37,6 +37,7 @@ class TestStorage:
             size_tib=0,
             volume_name="volume_name",
             is_lifecycle_independent=True,
+            project_id="project_id",
         )
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
@@ -237,6 +238,7 @@ class TestAsyncStorage:
             size_tib=0,
             volume_name="volume_name",
             is_lifecycle_independent=True,
+            project_id="project_id",
         )
         assert_matches_type(ClusterStorage, storage, path=["response"])
 
