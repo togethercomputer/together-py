@@ -20,7 +20,6 @@ import re
 import ssl
 import json as json_lib
 import stat
-import time
 import shlex
 import base64
 import socket
@@ -52,11 +51,9 @@ _CERT_ALGO = {
 _DEFAULT_REDIRECT_HOST = "localhost"
 _DEFAULT_REDIRECT_PATH = "/login-callback"
 _DEFAULT_REDIRECT_PORTS = (3000, 10001, 11110)
-_ALLOWED_REDIRECT_HOSTS = frozenset({"localhost", "127.0.0.1"})
 _DEFAULT_CACHE_ROOT = os.path.join(os.path.expanduser("~"), ".together", "ssh")
 _CERT_REFRESH_SKEW = timedelta(minutes=5)
 _CACHE_LOCK_TIMEOUT_SECONDS = 600
-_OIDC_CLOCK_SKEW_SECONDS = 60
 _TRUSTED_DEX_SUFFIX = ".together.ai"
 
 
@@ -157,27 +154,8 @@ def _localhost_port_in_use(port: int) -> bool:
 
 
 def _callback_server(
-    redirect_uri: Optional[str],
     handler: type[BaseHTTPRequestHandler],
 ) -> tuple[HTTPServer, str]:
-    if redirect_uri is not None:
-        parsed = urllib.parse.urlparse(redirect_uri)
-        if (
-            parsed.scheme != "http"
-            or parsed.hostname not in _ALLOWED_REDIRECT_HOSTS
-            or parsed.username is not None
-            or parsed.password is not None
-            or parsed.query
-            or parsed.fragment
-        ):
-            raise TogetherError(
-                "OIDC redirect URI must be an HTTP loopback URL without credentials, query, or fragment"
-            )
-        try:
-            return HTTPServer((parsed.hostname, parsed.port or 80), handler), redirect_uri
-        except OSError as exc:
-            raise TogetherError(f"OIDC callback port is unavailable for {redirect_uri}: {exc}") from exc
-
     for port in _DEFAULT_REDIRECT_PORTS:
         if _localhost_port_in_use(port):
             continue
@@ -195,45 +173,7 @@ def _callback_server(
     )
 
 
-def _validate_id_token_claims(
-    id_token: str,
-    issuer: str,
-    client_id: str,
-    nonce: Optional[str],
-) -> None:
-    """Validate client-bound claims before step-ca performs authoritative signature verification.
-
-    These checks provide early client errors. Security still depends on step-ca
-    verifying the OTT signature before issuing a certificate; duplicating that
-    verification here cannot protect a misconfigured CA because callers can
-    invoke the signing endpoint without this CLI.
-    """
-    try:
-        payload_segment = id_token.split(".")[1]
-        payload_segment += "=" * (-len(payload_segment) % 4)
-        decoded_claims = json_lib.loads(base64.urlsafe_b64decode(payload_segment).decode())
-    except (IndexError, ValueError, json_lib.JSONDecodeError) as exc:
-        raise TogetherError("OIDC token is malformed") from exc
-    if not isinstance(decoded_claims, dict):
-        raise TogetherError("OIDC token payload must be an object")
-    claims = cast("dict[str, Any]", decoded_claims)
-
-    token_issuer = claims.get("iss")
-    if not isinstance(token_issuer, str) or token_issuer.rstrip("/") != issuer.rstrip("/"):
-        raise TogetherError("OIDC token issuer does not match the requested cluster")
-    audience = claims.get("aud")
-    if audience != client_id and (not isinstance(audience, list) or client_id not in audience):
-        raise TogetherError("OIDC token audience does not include the Together CLI")
-    expires_at = claims.get("exp")
-    if not isinstance(expires_at, (int, float)) or expires_at <= time.time() - _OIDC_CLOCK_SKEW_SECONDS:
-        raise TogetherError("OIDC token is expired or has no valid expiry")
-    if nonce is not None:
-        token_nonce = claims.get("nonce")
-        if not isinstance(token_nonce, str) or not secrets.compare_digest(token_nonce.encode(), nonce.encode()):
-            raise TogetherError("OIDC token nonce does not match the login request")
-
-
-def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope: str) -> str:
+def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
     """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
     ctx = _certifi_ssl_context()
     disc = _http_json(issuer.rstrip("/") + "/.well-known/openid-configuration", ctx=ctx, purpose="OIDC discovery")
@@ -262,7 +202,7 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
             # Silence the default per-request logging to stderr.
             pass
 
-    server, redirect_uri = _callback_server(redirect_uri, _Handler)
+    server, redirect_uri = _callback_server(_Handler)
     params = {
         "response_type": "code",
         "client_id": client_id,
@@ -301,9 +241,7 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
     )
     if "id_token" not in tok:
         raise TogetherError(f"token endpoint returned no id_token: {tok}")
-    id_token = str(tok["id_token"])
-    _validate_id_token_claims(id_token, issuer, client_id, nonce)
-    return id_token
+    return str(tok["id_token"])
 
 
 def _sign(ca_url: str, ott: str, pub_blob: str, ctx: Optional[ssl.SSLContext]) -> str:
@@ -332,8 +270,36 @@ def _sign(ca_url: str, ott: str, pub_blob: str, ctx: Optional[ssl.SSLContext]) -
 
 
 def _read_pubkey_blob(key_path: str) -> str:
-    with open(key_path + ".pub") as f:
-        return f.read().split()[1]
+    public_key_path = key_path + ".pub"
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(public_key_path, flags)
+    except OSError as exc:
+        raise TogetherError(f"could not securely open cached public key: {public_key_path}") from exc
+    with os.fdopen(fd) as f:
+        file_stat = os.fstat(f.fileno())
+        if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_uid != os.geteuid():
+            raise TogetherError("cached public key must be a regular file owned by the current user")
+        if stat.S_IMODE(file_stat.st_mode) & 0o022:
+            raise TogetherError("cached public key must not be group- or world-writable")
+        parts = f.read().split()
+    if len(parts) < 2:
+        raise TogetherError("cached public key is malformed")
+    return parts[1]
+
+
+def _validate_private_key(key_path: str) -> None:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(key_path, flags)
+    except OSError as exc:
+        raise TogetherError(f"could not securely open cached private key: {key_path}") from exc
+    with os.fdopen(fd) as f:
+        file_stat = os.fstat(f.fileno())
+        if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_uid != os.geteuid():
+            raise TogetherError("cached private key must be a regular file owned by the current user")
+        if stat.S_IMODE(file_stat.st_mode) & 0o077:
+            raise TogetherError("cached private key permissions must be 600")
 
 
 def _gen_keypair(key_path: str, key_type: str) -> str:
@@ -348,8 +314,11 @@ def _gen_keypair(key_path: str, key_type: str) -> str:
 
 def _get_or_create_keypair(key_path: str, key_type: str) -> str:
     public_key_path = key_path + ".pub"
-    if os.path.exists(key_path) and os.path.exists(public_key_path):
+    try:
+        _validate_private_key(key_path)
         return _read_pubkey_blob(key_path)
+    except TogetherError:
+        pass
     for path in (key_path, public_key_path):
         try:
             os.remove(path)
@@ -358,22 +327,12 @@ def _get_or_create_keypair(key_path: str, key_type: str) -> str:
     return _gen_keypair(key_path, key_type)
 
 
-def _read_id_token_file(path: str) -> str:
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-    try:
-        fd = os.open(path, flags)
-    except OSError as exc:
-        raise TogetherError(f"could not securely open id token file: {path}") from exc
-
-    with os.fdopen(fd) as f:
-        file_stat = os.fstat(f.fileno())
-        if not stat.S_ISREG(file_stat.st_mode):
-            raise TogetherError("id token file must be a regular file")
-        if file_stat.st_uid != os.geteuid():
-            raise TogetherError("id token file must be owned by the current user")
-        if stat.S_IMODE(file_stat.st_mode) & 0o077:
-            raise TogetherError("id token file permissions are too broad; run chmod 600 on the file")
-        return f.read().strip()
+def _prepare_cache_directory(path: str) -> None:
+    os.makedirs(path, mode=0o700, exist_ok=True)
+    directory_stat = os.lstat(path)
+    if not stat.S_ISDIR(directory_stat.st_mode) or directory_stat.st_uid != os.geteuid():
+        raise TogetherError("SSH cache directory must be owned by the current user and must not be a symlink")
+    os.chmod(path, 0o700)
 
 
 def _cache_paths(dex_url: str, login: str, key_type: str, cache_root: str) -> tuple[str, str]:
@@ -606,13 +565,9 @@ async def ssh(
         ),
     ] = "slurm-login",
     client_id: Annotated[str, Parameter(help="Dex public client id")] = "together-cli",
-    redirect_uri: Annotated[Optional[str], Parameter(help="OIDC redirect URI (registered on the Dex client)")] = None,
     scope: Annotated[str, Parameter(help="OIDC scopes")] = "openid email",
     key_type: Annotated[str, Parameter(help="Ephemeral key type (ecdsa is KMS-compatible)")] = "ecdsa",
     ca_root: Annotated[Optional[str], Parameter(help="step-ca root cert (PEM) for TLS")] = None,
-    id_token_file: Annotated[
-        Optional[str], Parameter(help="Use a pre-obtained id_token instead of the browser flow")
-    ] = None,
     cache: Annotated[bool, Parameter(help="Cache SSH key/certificate and reuse while valid")] = True,
     refresh: Annotated[bool, Parameter(negative=False, help="Force refreshing the cached SSH certificate")] = False,
     cache_dir: Annotated[Optional[str], Parameter(help="Directory for cached SSH keys/certificates")] = None,
@@ -655,7 +610,7 @@ async def ssh(
     cache_root = os.path.expanduser(cache_dir or _DEFAULT_CACHE_ROOT)
     if cache:
         key_path, cert_path = _cache_paths(issuer, login, key_type, cache_root)
-        os.makedirs(os.path.dirname(key_path), mode=0o700, exist_ok=True)
+        _prepare_cache_directory(os.path.dirname(key_path))
     else:
         tmp = tempfile.TemporaryDirectory(prefix="together-ssh-")
         key_path = os.path.join(tmp.name, "id")
@@ -669,19 +624,15 @@ async def ssh(
             console.print(f"[dim]Using cached SSH certificate: {cert_path}[/dim]")
         else:
             pub_blob = _get_or_create_keypair(key_path, key_type)
-            if id_token_file:
-                ott = _read_id_token_file(id_token_file)
-                _validate_id_token_claims(ott, issuer, client_id, None)
-            else:
-                if cache:
-                    console.print(
-                        "[yellow]No valid cached SSH certificate found. Opening browser for Together login.[/yellow]"
-                    )
-                    console.print(
-                        "[dim]Keep this terminal command running until login completes. "
-                        "If you are logged out of Together Web, log in in the browser first.[/dim]"
-                    )
-                ott = _pkce_login(issuer, client_id, redirect_uri, scope)
+            if cache:
+                console.print(
+                    "[yellow]No valid cached SSH certificate found. Opening browser for Together login.[/yellow]"
+                )
+                console.print(
+                    "[dim]Keep this terminal command running until login completes. "
+                    "If you are logged out of Together Web, log in in the browser first.[/dim]"
+                )
+            ott = _pkce_login(issuer, client_id, scope)
             crt = _sign(ca_url, ott, pub_blob, ca_ctx)
             _atomic_write(cert_path, f"{_CERT_ALGO[key_type]} {crt} together-ssh\n", 0o644)
 
