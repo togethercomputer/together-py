@@ -230,6 +230,27 @@ class TestBetaClustersSSHHelpers:
 
         assert ssh_cli._get_or_create_keypair(str(key_path), "ecdsa") == "new-public-key"
 
+    def test_read_id_token_file_requires_private_permissions(self, tmp_path: Any) -> None:
+        token_path = tmp_path / "id-token"
+        token_path.write_text("secret-token\n")
+        token_path.chmod(0o600)
+
+        assert ssh_cli._read_id_token_file(str(token_path)) == "secret-token"
+
+        token_path.chmod(0o644)
+        with pytest.raises(TogetherError, match="chmod 600"):
+            ssh_cli._read_id_token_file(str(token_path))
+
+    def test_read_id_token_file_rejects_symlink(self, tmp_path: Any) -> None:
+        token_path = tmp_path / "id-token"
+        token_path.write_text("secret-token\n")
+        token_path.chmod(0o600)
+        symlink_path = tmp_path / "id-token-link"
+        symlink_path.symlink_to(token_path)
+
+        with pytest.raises(TogetherError, match="securely open"):
+            ssh_cli._read_id_token_file(str(symlink_path))
+
     def test_replace_managed_host_entry_appends_and_updates(self) -> None:
         first = "Host test-oidc\n  HostName slurm-login\n  User jhu"
         config = ssh_cli._replace_managed_host_entry("", "test-oidc", first)

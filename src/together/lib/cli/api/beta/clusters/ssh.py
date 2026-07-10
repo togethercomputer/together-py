@@ -19,6 +19,7 @@ import os
 import re
 import ssl
 import json as json_lib
+import stat
 import shlex
 import base64
 import socket
@@ -280,6 +281,24 @@ def _get_or_create_keypair(key_path: str, key_type: str) -> str:
     return _gen_keypair(key_path, key_type)
 
 
+def _read_id_token_file(path: str) -> str:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise TogetherError(f"could not securely open id token file: {path}") from exc
+
+    with os.fdopen(fd) as f:
+        file_stat = os.fstat(f.fileno())
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise TogetherError("id token file must be a regular file")
+        if file_stat.st_uid != os.geteuid():
+            raise TogetherError("id token file must be owned by the current user")
+        if stat.S_IMODE(file_stat.st_mode) & 0o077:
+            raise TogetherError("id token file permissions are too broad; run chmod 600 on the file")
+        return f.read().strip()
+
+
 def _cache_paths(dex_url: str, login: str, key_type: str, cache_root: str) -> tuple[str, str]:
     cluster = _cluster_id(dex_url)
     issuer_hash = hashlib.sha256(dex_url.encode()).hexdigest()[:12]
@@ -499,7 +518,6 @@ async def ssh(
     scope: Annotated[str, Parameter(help="OIDC scopes")] = "openid email",
     key_type: Annotated[str, Parameter(help="Ephemeral key type (ecdsa is KMS-compatible)")] = "ecdsa",
     ca_root: Annotated[Optional[str], Parameter(help="step-ca root cert (PEM) for TLS")] = None,
-    insecure: Annotated[bool, Parameter(negative=False, help="Skip step-ca TLS verification")] = False,
     id_token_file: Annotated[
         Optional[str], Parameter(help="Use a pre-obtained id_token instead of the browser flow")
     ] = None,
@@ -539,9 +557,7 @@ async def ssh(
     if key_type not in _CERT_ALGO:
         raise TogetherError(f"unsupported SSH key type: {key_type}")
 
-    if insecure:
-        ca_ctx: Optional[ssl.SSLContext] = ssl._create_unverified_context()
-    elif ca_root:
+    if ca_root:
         ca_ctx = ssl.create_default_context(cafile=ca_root)
     else:
         ca_ctx = _certifi_ssl_context()
@@ -564,8 +580,7 @@ async def ssh(
         else:
             pub_blob = _get_or_create_keypair(key_path, key_type)
             if id_token_file:
-                with open(id_token_file) as f:
-                    ott = f.read().strip()
+                ott = _read_id_token_file(id_token_file)
             else:
                 if cache:
                     console.print(
