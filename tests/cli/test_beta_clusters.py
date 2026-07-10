@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import os
+import ssl
 import json
 import base64
 import socket
+import subprocess
+import urllib.error
 from typing import Any, cast
 from http.server import BaseHTTPRequestHandler
+from email.message import Message
 from typing_extensions import override
+from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 import pytest
@@ -67,6 +72,17 @@ def _reserved_port() -> tuple[socket.socket, int]:
     return sock, int(sock.getsockname()[1])
 
 
+def _reserved_ipv6_port() -> tuple[socket.socket, int]:
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    try:
+        sock.bind(("::1", 0))
+    except OSError:
+        sock.close()
+        pytest.skip("IPv6 loopback is unavailable")
+    sock.listen(1)
+    return sock, int(sock.getsockname()[1])
+
+
 class _CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         self.send_response(200)
@@ -78,11 +94,19 @@ class _CallbackHandler(BaseHTTPRequestHandler):
 
 
 class TestBetaClustersSSHCallbackServer:
-    def test_localhost_port_in_use_detects_bound_listener(self) -> None:
-        busy_socket, busy_port = _reserved_port()
+    def test_callback_server_skips_port_with_ipv6_listener(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        busy_socket, busy_port = _reserved_ipv6_port()
+        free_socket, free_port = _reserved_port()
+        free_socket.close()
 
         try:
-            assert ssh_cli._localhost_port_in_use(busy_port) is True
+            monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (busy_port, free_port))
+
+            server, redirect_uri = ssh_cli._callback_server(_CallbackHandler)
+            try:
+                assert redirect_uri == f"http://localhost:{free_port}/login-callback"
+            finally:
+                server.server_close()
         finally:
             busy_socket.close()
 
@@ -96,7 +120,7 @@ class TestBetaClustersSSHCallbackServer:
         try:
             monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (busy_port, free_port))
 
-            server, redirect_uri = ssh_cli._callback_server(None, _CallbackHandler)
+            server, redirect_uri = ssh_cli._callback_server(_CallbackHandler)
             try:
                 assert redirect_uri == f"http://localhost:{free_port}/login-callback"
             finally:
@@ -111,11 +135,428 @@ class TestBetaClustersSSHCallbackServer:
         try:
             monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (first_port, second_port))
 
-            with pytest.raises(TogetherError, match="callback port"):
-                ssh_cli._callback_server(None, _CallbackHandler)
+            with pytest.raises(TogetherError, match="Stop the process using one of these ports"):
+                ssh_cli._callback_server(_CallbackHandler)
         finally:
             first_socket.close()
             second_socket.close()
+
+    def test_pkce_login_explains_missing_callback(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        class Server:
+            def handle_request(self) -> None:
+                return
+
+            def server_close(self) -> None:
+                return
+
+        def http_json(*_args: Any, **_kwargs: Any) -> dict[str, str]:
+            return {
+                "authorization_endpoint": "https://dex.example/auth",
+                "token_endpoint": "https://dex.example/token",
+            }
+
+        def callback_server(*_args: Any, **_kwargs: Any) -> tuple[Server, str]:
+            return Server(), "http://localhost:3000/login-callback"
+
+        def open_browser(*_args: Any, **_kwargs: Any) -> bool:
+            return True
+
+        monkeypatch.setattr(ssh_cli, "_http_json", http_json)
+        monkeypatch.setattr(ssh_cli, "_callback_server", callback_server)
+        monkeypatch.setattr(ssh_cli.webbrowser, "open", open_browser)
+
+        with pytest.raises(TogetherError, match="Browser login did not complete"):
+            ssh_cli._pkce_login("https://dex.example/t-abc", "together-cli", "openid email")
+
+
+class TestBetaClustersSSHHelpers:
+    def test_callback_code_requires_registered_path_and_state(self) -> None:
+        state = "expected-state"
+
+        assert ssh_cli._callback_code(f"/login-callback?code=valid&state={state}", state) == "valid"
+        assert ssh_cli._callback_code(f"/anything?code=valid&state={state}", state) is None
+        assert ssh_cli._callback_code("/login-callback?code=valid&state=wrong", state) is None
+
+    def test_validate_discovery_endpoint_accepts_trusted_origin(self) -> None:
+        issuer = "https://dex.s1.cloud.together.ai/t-abc123"
+        endpoint = "https://dex.s1.cloud.together.ai/t-abc123/token"
+
+        assert ssh_cli._validate_discovery_endpoint(endpoint, issuer, "token endpoint") == endpoint
+
+    @pytest.mark.parametrize(
+        "endpoint",
+        [
+            "http://dex.s1.cloud.together.ai/token",
+            "https://evil.example/token",
+            "https://user@dex.s1.cloud.together.ai/token",
+            "https://dex.s1.cloud.together.ai/token?next=evil",
+        ],
+    )
+    def test_validate_discovery_endpoint_rejects_untrusted_origins(self, endpoint: str) -> None:
+        issuer = "https://dex.s1.cloud.together.ai/t-abc123"
+
+        with pytest.raises(TogetherError, match="trusted issuer origin"):
+            ssh_cli._validate_discovery_endpoint(endpoint, issuer, "token endpoint")
+
+    @pytest.mark.parametrize(
+        "dex_url",
+        [
+            "http://dex.s1.cloud.together.ai/t-abc123",
+            "https://dex.evil.example/t-abc123",
+            "https://user@dex.s1.cloud.together.ai/t-abc123",
+            "https://dex.s1.cloud.together.ai/t-abc123/extra",
+            "https://dex.s1.cloud.together.ai:bad/t-abc123",
+        ],
+    )
+    def test_derive_rejects_untrusted_dex_urls(self, dex_url: str) -> None:
+        with pytest.raises(TogetherError, match="DEX_URL"):
+            ssh_cli._derive(dex_url)
+
+    def test_cache_paths_are_cluster_and_login_scoped(self, tmp_path: Any) -> None:
+        key_path, cert_path = ssh_cli._cache_paths(
+            "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123",
+            "user@example.com",
+            "ecdsa",
+            str(tmp_path),
+        )
+
+        assert str(tmp_path) in key_path
+        assert "t-abc123-" in key_path
+        assert "user%40example.com" in key_path
+        assert key_path.endswith("/ecdsa/id")
+        assert cert_path == key_path + "-cert.pub"
+
+    def test_ssh_command_preserves_remote_args_and_proxy(self) -> None:
+        cmd = ssh_cli._ssh_command(
+            "jhu",
+            "slurm-login",
+            "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
+            "/tmp/id",
+            "/tmp/id-cert.pub",
+            "/tmp/known_hosts",
+            ("sinfo", "-h"),
+        )
+
+        assert cmd[:5] == ["ssh", "-i", "/tmp/id", "-o", "CertificateFile=/tmp/id-cert.pub"]
+        assert "jhu@slurm-login" in cmd
+        assert cmd[cmd.index("--") + 1] == "jhu@slurm-login"
+        assert cmd[-2:] == ["sinfo", "-h"]
+        assert any("ProxyCommand=ssh" in arg for arg in cmd)
+        assert "StrictHostKeyChecking=ask" in cmd
+        assert "UserKnownHostsFile=/tmp/known_hosts" in cmd
+        assert "HostKeyAlias=slurm-login.ssh.t-abc123.s1.us-central-2a.cloud.together.ai" in cmd
+
+    def test_ssh_config_entry_points_plain_ssh_at_cached_cert(self) -> None:
+        entry = ssh_cli._ssh_config_entry(
+            "test-oidc",
+            "jhu",
+            "slurm-login",
+            "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
+            "/home/jhu/.together/ssh/t-abc123/jhu/id",
+            "/home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub",
+            "/home/jhu/.together/ssh/t-abc123/jhu/known_hosts",
+        )
+
+        assert "Host test-oidc" in entry
+        assert "HostName slurm-login" in entry
+        assert "User jhu" in entry
+        assert "IdentityFile /home/jhu/.together/ssh/t-abc123/jhu/id" in entry
+        assert "CertificateFile /home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub" in entry
+        assert "StrictHostKeyChecking ask" in entry
+        assert "UserKnownHostsFile /home/jhu/.together/ssh/t-abc123/jhu/known_hosts" in entry
+        assert "ProxyCommand ssh" in entry
+
+    @pytest.mark.parametrize(
+        ("login", "host", "bastion"),
+        [
+            ("-oProxyCommand=evil", "slurm-login", "ssh.example.com"),
+            ("jhu", "slurm-login -oProxyCommand=evil", "ssh.example.com"),
+            ("jhu", "slurm-login", "ssh.example.com -oProxyCommand=evil"),
+            ("jhu", "slurm-login:2222", "ssh.example.com"),
+            ("jhu", "slurm-login%h", "ssh.example.com"),
+            ("jhu", "slurm-login", "ssh.example.com:2222"),
+        ],
+    )
+    def test_ssh_command_rejects_invalid_destination(self, login: str, host: str, bastion: str) -> None:
+        with pytest.raises(TogetherError, match="unsupported characters"):
+            ssh_cli._ssh_command(
+                login,
+                host,
+                bastion,
+                "/tmp/id",
+                "/tmp/id-cert.pub",
+                "/tmp/known_hosts",
+                (),
+            )
+
+    def test_ssh_config_entry_rejects_invalid_alias(self) -> None:
+        with pytest.raises(TogetherError, match="SSH config alias"):
+            ssh_cli._ssh_config_entry(
+                "unsafe\nHost injected",
+                "jhu",
+                "slurm-login",
+                "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
+                "/tmp/id",
+                "/tmp/id-cert.pub",
+                "/tmp/known_hosts",
+            )
+
+    def test_get_or_create_keypair_replaces_partial_cache(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+        key_path = tmp_path / "id"
+        key_path.write_text("partial private key")
+
+        def generate(path: str, key_type: str) -> str:
+            assert path == str(key_path)
+            assert key_type == "ecdsa"
+            assert not key_path.exists()
+            return "new-public-key"
+
+        monkeypatch.setattr(ssh_cli, "_gen_keypair", generate)
+
+        assert ssh_cli._get_or_create_keypair(str(key_path), "ecdsa") == "new-public-key"
+
+    def test_prepare_cache_directory_restricts_permissions(self, tmp_path: Any) -> None:
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir(mode=0o777)
+        cache_dir.chmod(0o777)
+
+        ssh_cli._prepare_cache_directory(str(cache_dir))
+
+        assert cache_dir.stat().st_mode & 0o777 == 0o700
+
+    def test_read_pubkey_blob_rejects_symlink(self, tmp_path: Any) -> None:
+        key_path = tmp_path / "id"
+        public_key = tmp_path / "actual.pub"
+        public_key.write_text("ssh-ed25519 key")
+        (tmp_path / "id.pub").symlink_to(public_key)
+
+        with pytest.raises(TogetherError, match="securely open"):
+            ssh_cli._read_pubkey_blob(str(key_path))
+
+    def test_atomic_write_replaces_symlink_without_modifying_target(self, tmp_path: Any) -> None:
+        target = tmp_path / "target"
+        target.write_text("original")
+        link = tmp_path / "link"
+        link.symlink_to(target)
+
+        ssh_cli._atomic_write(str(link), "replacement", 0o600)
+
+        assert not link.is_symlink()
+        assert link.read_text() == "replacement"
+        assert target.read_text() == "original"
+
+    def test_replace_managed_host_entry_appends_and_updates(self) -> None:
+        first = "Host test-oidc\n  HostName slurm-login\n  User jhu"
+        config = ssh_cli._replace_managed_host_entry("", "test-oidc", first)
+        assert config == first + "\n"
+
+        second = "Host test-oidc\n  HostName slurm-login\n  User alice"
+        config = ssh_cli._replace_managed_host_entry(config, "test-oidc", second)
+        assert config == second + "\n"
+        assert "User jhu" not in config
+
+    def test_write_ssh_config_writes_managed_file_and_include(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        cache_root = home / ".together" / "ssh"
+        monkeypatch.setenv("HOME", str(home))
+
+        entry = "Host test-oidc\n  HostName slurm-login\n  User jhu"
+        managed_config, main_config = ssh_cli._write_ssh_config("test-oidc", entry, str(cache_root))
+
+        assert managed_config == str(cache_root / "config")
+        assert main_config == str(home / ".ssh" / "config")
+        assert (cache_root / "config").read_text() == entry + "\n"
+        assert (home / ".ssh" / "config").read_text() == f"Include {cache_root / 'config'}\n"
+
+        ssh_cli._write_ssh_config("test-oidc", entry.replace("jhu", "alice"), str(cache_root))
+        assert "User alice" in (cache_root / "config").read_text()
+        assert (home / ".ssh" / "config").read_text().count("Include") == 1
+
+    def test_write_ssh_config_quotes_paths_with_spaces(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+        home = tmp_path / "home with spaces"
+        cache_root = home / ".together" / "ssh"
+        monkeypatch.setenv("HOME", str(home))
+
+        ssh_cli._write_ssh_config("test-oidc", "Host test-oidc\n  HostName slurm-login", str(cache_root))
+
+        assert (home / ".ssh" / "config").read_text() == f'Include "{cache_root / "config"}"\n'
+
+    def test_write_ssh_config_preserves_main_config_symlink(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        ssh_dir = home / ".ssh"
+        ssh_dir.mkdir(parents=True)
+        dotfiles_config = tmp_path / "dotfiles" / "ssh-config"
+        dotfiles_config.parent.mkdir()
+        dotfiles_config.write_text("Host existing\n  HostName example.com\n")
+        (ssh_dir / "config").symlink_to(dotfiles_config)
+        monkeypatch.setenv("HOME", str(home))
+
+        ssh_cli._write_ssh_config(
+            "test-oidc",
+            "Host test-oidc\n  HostName slurm-login",
+            str(home / ".together" / "ssh"),
+        )
+
+        assert (ssh_dir / "config").is_symlink()
+        assert "Host existing" in dotfiles_config.read_text()
+        assert "Include " in dotfiles_config.read_text()
+
+    def test_write_ssh_config_rejects_managed_config_symlink(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        cache_root = home / ".together" / "ssh"
+        cache_root.mkdir(parents=True)
+        target = tmp_path / "target"
+        target.write_text("Host attacker")
+        (cache_root / "config").symlink_to(target)
+        monkeypatch.setenv("HOME", str(home))
+
+        with pytest.raises(TogetherError, match="managed SSH config"):
+            ssh_cli._write_ssh_config("test-oidc", "Host test-oidc", str(cache_root))
+
+        assert target.read_text() == "Host attacker"
+
+    def test_write_ssh_config_rejects_writable_main_config_target(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        ssh_dir = home / ".ssh"
+        ssh_dir.mkdir(parents=True)
+        dotfiles_config = tmp_path / "dotfiles" / "ssh-config"
+        dotfiles_config.parent.mkdir()
+        dotfiles_config.write_text("Host existing\n")
+        dotfiles_config.chmod(0o666)
+        (ssh_dir / "config").symlink_to(dotfiles_config)
+        monkeypatch.setenv("HOME", str(home))
+
+        with pytest.raises(TogetherError, match="main SSH config"):
+            ssh_cli._write_ssh_config("test-oidc", "Host test-oidc", str(home / ".together" / "ssh"))
+
+    def test_concurrent_ssh_config_writes_preserve_all_aliases(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        cache_root = home / ".together" / "ssh"
+        monkeypatch.setenv("HOME", str(home))
+        aliases = [f"test-{i}" for i in range(10)]
+
+        def write_alias(alias: str) -> None:
+            ssh_cli._write_ssh_config(alias, f"Host {alias}\n  HostName slurm-login", str(cache_root))
+
+        with ThreadPoolExecutor(max_workers=len(aliases)) as executor:
+            list(executor.map(write_alias, aliases))
+
+        content = (cache_root / "config").read_text()
+        assert all(f"Host {alias}\n" in content for alias in aliases)
+
+    def test_cert_validity_uses_ssh_keygen_expiry(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+        cert_path = tmp_path / "id-cert.pub"
+        cert_path.write_text("placeholder")
+
+        class Result:
+            returncode = 0
+            stdout = "        Valid: from 2026-07-09T00:00:00 to 2099-07-09T00:00:00\n"
+
+        def run_ssh_keygen_valid(*_args: Any, **_kwargs: Any) -> Result:
+            return Result()
+
+        monkeypatch.setattr(subprocess, "run", run_ssh_keygen_valid)
+
+        assert ssh_cli._cert_is_valid(str(cert_path)) is True
+
+    def test_cert_validity_rejects_missing_or_expired_cert(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        assert ssh_cli._cert_is_valid(str(tmp_path / "missing-cert.pub")) is False
+
+        cert_path = tmp_path / "id-cert.pub"
+        cert_path.write_text("placeholder")
+
+        class Result:
+            returncode = 0
+            stdout = "        Valid: from 2020-01-01T00:00:00 to 2020-01-01T01:00:00\n"
+
+        def run_ssh_keygen_expired(*_args: Any, **_kwargs: Any) -> Result:
+            return Result()
+
+        monkeypatch.setattr(subprocess, "run", run_ssh_keygen_expired)
+
+        assert ssh_cli._cert_is_valid(str(cert_path)) is False
+
+    def test_cert_validity_rejects_not_yet_valid_cert(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+        cert_path = tmp_path / "id-cert.pub"
+        cert_path.write_text("placeholder")
+
+        class Result:
+            returncode = 0
+            stdout = "        Valid: from 2098-01-01T00:00:00 to 2099-01-01T00:00:00\n"
+
+        def run_ssh_keygen_future(*_args: Any, **_kwargs: Any) -> Result:
+            return Result()
+
+        monkeypatch.setattr(subprocess, "run", run_ssh_keygen_future)
+
+        assert ssh_cli._cert_is_valid(str(cert_path)) is False
+
+    async def test_print_modes_require_cache(self) -> None:
+        with pytest.raises(TogetherError, match="require cached"):
+            await ssh_cli.ssh(
+                "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123",
+                login="jhu",
+                cache=False,
+                print_ssh_command=True,
+            )
+
+    async def test_write_ssh_config_requires_alias(self) -> None:
+        with pytest.raises(TogetherError, match="requires --ssh-config-alias"):
+            await ssh_cli.ssh(
+                "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123",
+                login="jhu",
+                write_ssh_config=True,
+            )
+
+    def test_http_json_404_mentions_oidc_endpoint_and_cli_upgrade(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def raise_404(*_args: Any, **_kwargs: Any) -> None:
+            raise urllib.error.HTTPError(
+                url="https://dex.example/t-abc/.well-known/openid-configuration",
+                code=404,
+                msg="Not Found",
+                hdrs=Message(),
+                fp=None,
+            )
+
+        monkeypatch.setattr(ssh_cli.urllib.request, "urlopen", raise_404)
+
+        with pytest.raises(TogetherError, match="OIDC discovery failed"):
+            ssh_cli._http_json("https://dex.example/t-abc/.well-known/openid-configuration", purpose="OIDC discovery")
+
+    def test_http_json_tls_error_suggests_certifi(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def raise_tls(*_args: Any, **_kwargs: Any) -> None:
+            raise urllib.error.URLError("CERTIFICATE_VERIFY_FAILED")
+
+        monkeypatch.setattr(ssh_cli.urllib.request, "urlopen", raise_tls)
+
+        with pytest.raises(TogetherError, match="bundled CA store"):
+            ssh_cli._http_json("https://dex.example/t-abc/.well-known/openid-configuration", purpose="OIDC discovery")
+
+    def test_sign_tls_error_suggests_certifi(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def raise_tls(*_args: Any, **_kwargs: Any) -> None:
+            raise urllib.error.URLError("CERTIFICATE_VERIFY_FAILED")
+
+        monkeypatch.setattr(ssh_cli.urllib.request, "urlopen", raise_tls)
+
+        with pytest.raises(TogetherError, match="ca-root"):
+            ssh_cli._sign("https://dex.example/step-t-abc", "ott", "pub", None)
+
+    def test_certifi_ssl_context_ignores_broken_ssl_cert_file(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("SSL_CERT_FILE", "/does/not/exist")
+
+        assert isinstance(ssh_cli._certifi_ssl_context(), ssl.SSLContext)
 
 
 def _remediation_body(remediation_id: str = "rem-1", **overrides: Any) -> dict[str, Any]:
