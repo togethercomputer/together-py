@@ -51,6 +51,7 @@ _CERT_ALGO = {
 _DEFAULT_REDIRECT_HOST = "localhost"
 _DEFAULT_REDIRECT_PATH = "/login-callback"
 _DEFAULT_REDIRECT_PORTS = (3000, 10001, 11110)
+_ALLOWED_REDIRECT_HOSTS = frozenset({"localhost", "127.0.0.1"})
 _DEFAULT_CACHE_ROOT = os.path.join(os.path.expanduser("~"), ".together", "ssh")
 _CERT_REFRESH_SKEW = timedelta(minutes=5)
 _CACHE_LOCK_TIMEOUT_SECONDS = 600
@@ -138,8 +139,19 @@ def _callback_server(
 ) -> tuple[HTTPServer, str]:
     if redirect_uri is not None:
         parsed = urllib.parse.urlparse(redirect_uri)
+        if (
+            parsed.scheme != "http"
+            or parsed.hostname not in _ALLOWED_REDIRECT_HOSTS
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise TogetherError(
+                "OIDC redirect URI must be an HTTP loopback URL without credentials, query, or fragment"
+            )
         try:
-            return HTTPServer((parsed.hostname or _DEFAULT_REDIRECT_HOST, parsed.port or 80), handler), redirect_uri
+            return HTTPServer((parsed.hostname, parsed.port or 80), handler), redirect_uri
         except OSError as exc:
             raise TogetherError(f"OIDC callback port is unavailable for {redirect_uri}: {exc}") from exc
 
@@ -172,9 +184,10 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
     class _Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            if "code" in q:
+            callback_state = q.get("state", [""])[0]
+            if "code" in q and secrets.compare_digest(callback_state.encode(), state.encode()):
                 captured["code"] = q["code"][0]
-                captured["state"] = q.get("state", [""])[0]
+                captured["state"] = callback_state
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b"Login complete. You can close this tab.")
