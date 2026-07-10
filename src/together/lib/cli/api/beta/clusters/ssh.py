@@ -351,6 +351,16 @@ def _cert_is_valid(cert_path: str) -> bool:
     return valid_after <= now and valid_until > now + _CERT_REFRESH_SKEW
 
 
+def _validate_ssh_destination(login: str, host: str, bastion: str) -> None:
+    if re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", login) is None:
+        raise TogetherError("SSH login contains unsupported characters")
+    hostname_pattern = r"[A-Za-z0-9][A-Za-z0-9._:%-]*"
+    if re.fullmatch(hostname_pattern, host) is None:
+        raise TogetherError("SSH target host contains unsupported characters")
+    if re.fullmatch(hostname_pattern, bastion) is None:
+        raise TogetherError("SSH bastion host contains unsupported characters")
+
+
 def _ssh_command(
     login: str,
     host: str,
@@ -360,6 +370,7 @@ def _ssh_command(
     known_hosts_path: str,
     ssh_args: tuple[str, ...],
 ) -> list[str]:
+    _validate_ssh_destination(login, host, bastion)
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
     proxy_common = common + ["-o", "StrictHostKeyChecking=ask"]
     proxy = (
@@ -375,7 +386,13 @@ def _ssh_command(
         "-o",
         f"HostKeyAlias={host}.{bastion}",
     ]
-    return ["ssh"] + common + inner_verification + ["-o", f"ProxyCommand={proxy}", f"{login}@{host}"] + list(ssh_args)
+    return (
+        ["ssh"]
+        + common
+        + inner_verification
+        + ["-o", f"ProxyCommand={proxy}", "--", f"{login}@{host}"]
+        + list(ssh_args)
+    )
 
 
 def _shell_command(args: list[str]) -> str:
@@ -405,7 +422,7 @@ def _ssh_config_entry(
     known_hosts_path: str,
 ) -> str:
     _validate_ssh_alias(alias)
-    _ssh_config_value(bastion)
+    _validate_ssh_destination(login, host, bastion)
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
     proxy_common = common + ["-o", "StrictHostKeyChecking=ask"]
     proxy = (

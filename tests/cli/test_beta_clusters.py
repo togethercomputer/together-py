@@ -191,6 +191,7 @@ class TestBetaClustersSSHHelpers:
 
         assert cmd[:5] == ["ssh", "-i", "/tmp/id", "-o", "CertificateFile=/tmp/id-cert.pub"]
         assert "jhu@slurm-login" in cmd
+        assert cmd[cmd.index("--") + 1] == "jhu@slurm-login"
         assert cmd[-2:] == ["sinfo", "-h"]
         assert any("ProxyCommand=ssh" in arg for arg in cmd)
         assert "StrictHostKeyChecking=ask" in cmd
@@ -216,6 +217,26 @@ class TestBetaClustersSSHHelpers:
         assert "StrictHostKeyChecking ask" in entry
         assert "UserKnownHostsFile /home/jhu/.together/ssh/t-abc123/jhu/known_hosts" in entry
         assert "ProxyCommand ssh" in entry
+
+    @pytest.mark.parametrize(
+        ("login", "host", "bastion"),
+        [
+            ("-oProxyCommand=evil", "slurm-login", "ssh.example.com"),
+            ("jhu", "slurm-login -oProxyCommand=evil", "ssh.example.com"),
+            ("jhu", "slurm-login", "ssh.example.com -oProxyCommand=evil"),
+        ],
+    )
+    def test_ssh_command_rejects_invalid_destination(self, login: str, host: str, bastion: str) -> None:
+        with pytest.raises(TogetherError, match="unsupported characters"):
+            ssh_cli._ssh_command(
+                login,
+                host,
+                bastion,
+                "/tmp/id",
+                "/tmp/id-cert.pub",
+                "/tmp/known_hosts",
+                (),
+            )
 
     def test_ssh_config_entry_rejects_invalid_alias(self) -> None:
         with pytest.raises(TogetherError, match="SSH config alias"):
