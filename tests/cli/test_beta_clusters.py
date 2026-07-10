@@ -245,6 +245,9 @@ class TestBetaClustersSSHHelpers:
             ("-oProxyCommand=evil", "slurm-login", "ssh.example.com"),
             ("jhu", "slurm-login -oProxyCommand=evil", "ssh.example.com"),
             ("jhu", "slurm-login", "ssh.example.com -oProxyCommand=evil"),
+            ("jhu", "slurm-login:2222", "ssh.example.com"),
+            ("jhu", "slurm-login%h", "ssh.example.com"),
+            ("jhu", "slurm-login", "ssh.example.com:2222"),
         ],
     )
     def test_ssh_command_rejects_invalid_destination(self, login: str, host: str, bastion: str) -> None:
