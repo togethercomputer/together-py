@@ -43,6 +43,7 @@ from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .rerank_create_params import RerankCreateParams as RerankCreateParams
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
+from .finetune_model_limits import FinetuneModelLimits as FinetuneModelLimits
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
@@ -66,7 +67,6 @@ from .fine_tuning_model_limits_params import FineTuningModelLimitsParams as Fine
 from .fine_tuning_list_events_response import FineTuningListEventsResponse as FineTuningListEventsResponse
 from .fine_tuning_estimate_price_params import FineTuningEstimatePriceParams as FineTuningEstimatePriceParams
 from .fine_tuning_list_metrics_response import FineTuningListMetricsResponse as FineTuningListMetricsResponse
-from .fine_tuning_model_limits_response import FineTuningModelLimitsResponse as FineTuningModelLimitsResponse
 from .fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse as FineTuningEstimatePriceResponse
 from .fine_tuning_list_checkpoints_response import (
     FineTuningListCheckpointsResponse as FineTuningListCheckpointsResponse,

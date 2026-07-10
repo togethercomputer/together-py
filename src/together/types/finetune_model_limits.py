@@ -6,7 +6,7 @@ from pydantic import Field as FieldInfo
 
 from .._models import BaseModel
 
-__all__ = ["FineTuningModelLimitsResponse", "LoraTraining", "FullTraining"]
+__all__ = ["FinetuneModelLimits", "LoraTraining", "FullTraining"]
 
 
 class LoraTraining(BaseModel):
@@ -41,7 +41,7 @@ class FullTraining(BaseModel):
     """Minimum batch size for full training."""
 
 
-class FineTuningModelLimitsResponse(BaseModel):
+class FinetuneModelLimits(BaseModel):
     """Model limits for fine-tuning."""
 
     default_gradient_accumulation_steps: int
