@@ -399,7 +399,7 @@ def _cert_is_valid(cert_path: str) -> bool:
 def _validate_ssh_destination(login: str, host: str, bastion: str) -> None:
     if re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", login) is None:
         raise TogetherError("SSH login contains unsupported characters")
-    hostname_pattern = r"[A-Za-z0-9][A-Za-z0-9._:%-]*"
+    hostname_pattern = r"[A-Za-z0-9][A-Za-z0-9._-]*"
     if re.fullmatch(hostname_pattern, host) is None:
         raise TogetherError("SSH target host contains unsupported characters")
     if re.fullmatch(hostname_pattern, bastion) is None:
