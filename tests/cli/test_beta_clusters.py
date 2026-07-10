@@ -333,6 +333,18 @@ class TestBetaClustersSSHHelpers:
         with pytest.raises(TogetherError, match="securely open"):
             ssh_cli._read_pubkey_blob(str(key_path))
 
+    def test_atomic_write_replaces_symlink_without_modifying_target(self, tmp_path: Any) -> None:
+        target = tmp_path / "target"
+        target.write_text("original")
+        link = tmp_path / "link"
+        link.symlink_to(target)
+
+        ssh_cli._atomic_write(str(link), "replacement", 0o600)
+
+        assert not link.is_symlink()
+        assert link.read_text() == "replacement"
+        assert target.read_text() == "original"
+
     def test_replace_managed_host_entry_appends_and_updates(self) -> None:
         first = "Host test-oidc\n  HostName slurm-login\n  User jhu"
         config = ssh_cli._replace_managed_host_entry("", "test-oidc", first)
@@ -392,6 +404,38 @@ class TestBetaClustersSSHHelpers:
         assert (ssh_dir / "config").is_symlink()
         assert "Host existing" in dotfiles_config.read_text()
         assert "Include " in dotfiles_config.read_text()
+
+    def test_write_ssh_config_rejects_managed_config_symlink(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        cache_root = home / ".together" / "ssh"
+        cache_root.mkdir(parents=True)
+        target = tmp_path / "target"
+        target.write_text("Host attacker")
+        (cache_root / "config").symlink_to(target)
+        monkeypatch.setenv("HOME", str(home))
+
+        with pytest.raises(TogetherError, match="managed SSH config"):
+            ssh_cli._write_ssh_config("test-oidc", "Host test-oidc", str(cache_root))
+
+        assert target.read_text() == "Host attacker"
+
+    def test_write_ssh_config_rejects_writable_main_config_target(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
+        home = tmp_path / "home"
+        ssh_dir = home / ".ssh"
+        ssh_dir.mkdir(parents=True)
+        dotfiles_config = tmp_path / "dotfiles" / "ssh-config"
+        dotfiles_config.parent.mkdir()
+        dotfiles_config.write_text("Host existing\n")
+        dotfiles_config.chmod(0o666)
+        (ssh_dir / "config").symlink_to(dotfiles_config)
+        monkeypatch.setenv("HOME", str(home))
+
+        with pytest.raises(TogetherError, match="main SSH config"):
+            ssh_cli._write_ssh_config("test-oidc", "Host test-oidc", str(home / ".together" / "ssh"))
 
     def test_concurrent_ssh_config_writes_preserve_all_aliases(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
