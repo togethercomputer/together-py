@@ -72,6 +72,17 @@ def _reserved_port() -> tuple[socket.socket, int]:
     return sock, int(sock.getsockname()[1])
 
 
+def _reserved_ipv6_port() -> tuple[socket.socket, int]:
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    try:
+        sock.bind(("::1", 0))
+    except OSError:
+        sock.close()
+        pytest.skip("IPv6 loopback is unavailable")
+    sock.listen(1)
+    return sock, int(sock.getsockname()[1])
+
+
 class _CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         self.send_response(200)
@@ -83,6 +94,22 @@ class _CallbackHandler(BaseHTTPRequestHandler):
 
 
 class TestBetaClustersSSHCallbackServer:
+    def test_callback_server_skips_port_with_ipv6_listener(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        busy_socket, busy_port = _reserved_ipv6_port()
+        free_socket, free_port = _reserved_port()
+        free_socket.close()
+
+        try:
+            monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (busy_port, free_port))
+
+            server, redirect_uri = ssh_cli._callback_server(_CallbackHandler)
+            try:
+                assert redirect_uri == f"http://localhost:{free_port}/login-callback"
+            finally:
+                server.server_close()
+        finally:
+            busy_socket.close()
+
     def test_callback_server_uses_next_registered_port_when_first_is_busy(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -108,7 +135,7 @@ class TestBetaClustersSSHCallbackServer:
         try:
             monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (first_port, second_port))
 
-            with pytest.raises(TogetherError, match="callback port"):
+            with pytest.raises(TogetherError, match="Stop the process using one of these ports"):
                 ssh_cli._callback_server(_CallbackHandler)
         finally:
             first_socket.close()
