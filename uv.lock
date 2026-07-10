@@ -1563,6 +1563,7 @@ version = "2.22.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
+    { name = "certifi" },
     { name = "cyclopts" },
     { name = "detect-agent" },
     { name = "distro" },
@@ -1628,6 +1629,7 @@ requires-dist = [
     { name = "aiofiles", marker = "extra == 'aiofiles'", specifier = ">=25.0.0" },
     { name = "aiohttp", marker = "extra == 'aiohttp'" },
     { name = "anyio", specifier = ">=3.5.0,<5" },
+    { name = "certifi" },
     { name = "cyclopts", specifier = ">=4.6.0" },
     { name = "detect-agent", specifier = ">=0.2.0" },
     { name = "distro", specifier = ">=1.7.0,<2" },

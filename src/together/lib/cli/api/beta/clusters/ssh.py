@@ -16,8 +16,10 @@ login, so no `authorized_keys` or per-user key distribution is involved.
 from __future__ import annotations
 
 import os
+import re
 import ssl
 import json as json_lib
+import shlex
 import base64
 import socket
 import hashlib
@@ -29,9 +31,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Optional, Annotated, cast
+from datetime import datetime, timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing_extensions import override
 
+import certifi
 from cyclopts import Parameter
 
 from together import TogetherError
@@ -44,12 +48,15 @@ _CERT_ALGO = {
 _DEFAULT_REDIRECT_HOST = "localhost"
 _DEFAULT_REDIRECT_PATH = "/login-callback"
 _DEFAULT_REDIRECT_PORTS = (3000, 10001, 11110)
+_DEFAULT_CACHE_ROOT = os.path.join(os.path.expanduser("~"), ".together", "ssh")
+_CERT_REFRESH_SKEW = timedelta(minutes=5)
 
 
 def _http_json(
     url: str,
     data: Optional[dict[str, Any]] = None,
     ctx: Optional[ssl.SSLContext] = None,
+    purpose: str = "request",
 ) -> dict[str, Any]:
     """GET (data=None) or form-POST JSON helper using stdlib only."""
     if data is None:
@@ -58,8 +65,33 @@ def _http_json(
         body = urllib.parse.urlencode(data).encode()
         req = urllib.request.Request(url, data=body, method="POST")
         req.add_header("Content-Type", "application/x-www-form-urlencoded")
-    with urllib.request.urlopen(req, context=ctx) as resp:
-        return cast("dict[str, Any]", json_lib.loads(resp.read().decode()))
+    try:
+        with urllib.request.urlopen(req, context=ctx) as resp:
+            return cast("dict[str, Any]", json_lib.loads(resp.read().decode()))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode(errors="replace")[:300]
+        if exc.code == 404:
+            raise TogetherError(
+                f"{purpose} failed: {url} returned 404. "
+                "Check that the cluster OIDC/Dex endpoint is ready and that the copied OIDC issuer URL is current. "
+                "If this came from the UI, try refreshing the cluster page and make sure your Together CLI is up to date "
+                "(`uv tool install together --upgrade` or `pip install --upgrade together`)."
+            ) from exc
+        raise TogetherError(f"{purpose} failed: {url} returned HTTP {exc.code}: {body}") from exc
+    except urllib.error.URLError as exc:
+        reason = str(exc.reason)
+        if "CERTIFICATE_VERIFY_FAILED" in reason or "certificate verify failed" in reason.lower():
+            raise TogetherError(
+                f"{purpose} failed TLS verification for {url}. "
+                "Your local Python certificate store may be missing the CA chain. Try:\n"
+                '  export SSL_CERT_FILE="$(python3 -m certifi)"\n'
+                "Then retry the command."
+            ) from exc
+        raise TogetherError(f"{purpose} failed for {url}: {reason}") from exc
+
+
+def _certifi_ssl_context() -> ssl.SSLContext:
+    return ssl.create_default_context(cafile=certifi.where())
 
 
 def _derive(dex_url: str) -> tuple[str, str]:
@@ -75,6 +107,13 @@ def _derive(dex_url: str) -> tuple[str, str]:
     cluster_id = u.path.strip("/").split("/")[0]
     base = u.hostname[4:] if u.hostname.startswith("dex.") else u.hostname
     return f"{u.scheme}://{u.hostname}/step-{cluster_id}", f"ssh.{cluster_id}.{base}"
+
+
+def _cluster_id(dex_url: str) -> str:
+    u = urllib.parse.urlparse(dex_url)
+    if not u.path.strip("/"):
+        raise TogetherError("DEX_URL must include a cluster id path")
+    return u.path.strip("/").split("/")[0]
 
 
 def _redirect_uri_for_port(port: int) -> str:
@@ -119,7 +158,8 @@ def _callback_server(
 
 def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope: str) -> str:
     """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
-    disc = _http_json(issuer.rstrip("/") + "/.well-known/openid-configuration")
+    ctx = _certifi_ssl_context()
+    disc = _http_json(issuer.rstrip("/") + "/.well-known/openid-configuration", ctx=ctx, purpose="OIDC discovery")
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
     state = secrets.token_urlsafe(16)
@@ -162,7 +202,12 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
     server.server_close()
 
     if not captured.get("code") or captured.get("state") != state:
-        raise TogetherError("OIDC login failed (no code or state mismatch)")
+        raise TogetherError(
+            "Browser login did not complete. No valid cached SSH certificate is available. "
+            "Please log into Together Web and rerun this command. If the browser shows "
+            "'localhost refused to connect', the CLI callback listener likely exited; rerun "
+            "the command and keep the terminal process running until login completes."
+        )
     tok = _http_json(
         disc["token_endpoint"],
         data={
@@ -172,6 +217,8 @@ def _pkce_login(issuer: str, client_id: str, redirect_uri: Optional[str], scope:
             "client_id": client_id,
             "code_verifier": verifier,
         },
+        ctx=ctx,
+        purpose="OIDC token exchange",
     )
     if "id_token" not in tok:
         raise TogetherError(f"token endpoint returned no id_token: {tok}")
@@ -188,20 +235,172 @@ def _sign(ca_url: str, ott: str, pub_blob: str, ctx: Optional[ssl.SSLContext]) -
             out = json_lib.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         raise TogetherError(f"step-ca /ssh/sign failed ({e.code}): {e.read().decode()[:300]}") from e
+    except urllib.error.URLError as e:
+        reason = str(e.reason)
+        if "CERTIFICATE_VERIFY_FAILED" in reason or "certificate verify failed" in reason.lower():
+            raise TogetherError(
+                f"step-ca /ssh/sign failed TLS verification for {ca_url}. "
+                "Your local Python certificate store may be missing the CA chain. Try:\n"
+                '  export SSL_CERT_FILE="$(python3 -m certifi)"\n'
+                "Then retry the command."
+            ) from e
+        raise TogetherError(f"step-ca /ssh/sign failed for {ca_url}: {reason}") from e
     if "crt" not in out:
         raise TogetherError(f"step-ca returned no crt: {out}")
     return str(out["crt"])
 
 
-def _gen_keypair(tmpdir: str, key_type: str) -> tuple[str, str]:
-    """ssh-keygen an ephemeral keypair. Returns (key_path, pubkey_blob)."""
-    key_path = os.path.join(tmpdir, "id")
+def _read_pubkey_blob(key_path: str) -> str:
+    with open(key_path + ".pub") as f:
+        return f.read().split()[1]
+
+
+def _gen_keypair(key_path: str, key_type: str) -> str:
+    """ssh-keygen a keypair. Returns pubkey_blob."""
     subprocess.run(
         ["ssh-keygen", "-t", key_type, "-f", key_path, "-N", "", "-q", "-C", "together-ssh"],
         check=True,
     )
-    with open(key_path + ".pub") as f:
-        return key_path, f.read().split()[1]
+    os.chmod(key_path, 0o600)
+    return _read_pubkey_blob(key_path)
+
+
+def _cache_paths(dex_url: str, login: str, key_type: str, cache_root: str) -> tuple[str, str]:
+    cluster = _cluster_id(dex_url)
+    issuer_hash = hashlib.sha256(dex_url.encode()).hexdigest()[:12]
+    safe_login = urllib.parse.quote(login, safe="")
+    cache_dir = os.path.join(cache_root, f"{cluster}-{issuer_hash}", safe_login, key_type)
+    return os.path.join(cache_dir, "id"), os.path.join(cache_dir, "id-cert.pub")
+
+
+def _cert_valid_until(cert_path: str) -> Optional[datetime]:
+    if not os.path.exists(cert_path):
+        return None
+    result = subprocess.run(
+        ["ssh-keygen", "-L", "-f", cert_path],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    if "Valid: forever" in result.stdout:
+        return datetime.max
+    match = re.search(r"Valid:\s+from\s+\S+\s+to\s+([0-9T:\-]+)", result.stdout)
+    if match is None:
+        return None
+    try:
+        return datetime.fromisoformat(match.group(1))
+    except ValueError:
+        return None
+
+
+def _cert_is_valid(cert_path: str) -> bool:
+    valid_until = _cert_valid_until(cert_path)
+    if valid_until is None:
+        return False
+    return valid_until > datetime.now() + _CERT_REFRESH_SKEW
+
+
+def _ssh_command(
+    login: str,
+    host: str,
+    bastion: str,
+    key_path: str,
+    cert_path: str,
+    ssh_args: tuple[str, ...],
+) -> list[str]:
+    common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
+    proxy_common = common + ["-o", "StrictHostKeyChecking=accept-new"]
+    proxy = "ssh " + " ".join(shlex.quote(arg) for arg in proxy_common) + f" -W %h:%p {shlex.quote(login)}@{shlex.quote(bastion)}"
+    inner_insecure = ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
+    return ["ssh"] + common + inner_insecure + ["-o", f"ProxyCommand={proxy}", f"{login}@{host}"] + list(ssh_args)
+
+
+def _shell_command(args: list[str]) -> str:
+    return " ".join(shlex.quote(arg) for arg in args)
+
+
+def _ssh_config_entry(alias: str, login: str, host: str, bastion: str, key_path: str, cert_path: str) -> str:
+    common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
+    proxy_common = common + ["-o", "StrictHostKeyChecking=accept-new"]
+    proxy = "ssh " + " ".join(shlex.quote(arg) for arg in proxy_common) + f" -W %h:%p {shlex.quote(login)}@{shlex.quote(bastion)}"
+    return "\n".join(
+        [
+            f"Host {alias}",
+            f"  HostName {host}",
+            f"  User {login}",
+            f"  IdentityFile {key_path}",
+            f"  CertificateFile {cert_path}",
+            "  IdentitiesOnly yes",
+            "  StrictHostKeyChecking no",
+            "  UserKnownHostsFile /dev/null",
+            f"  ProxyCommand {proxy}",
+        ]
+    )
+
+
+def _replace_managed_host_entry(config: str, alias: str, entry: str) -> str:
+    lines = config.splitlines()
+    out: list[str] = []
+    i = 0
+    replaced = False
+
+    while i < len(lines):
+        line = lines[i]
+        if line.strip() == f"Host {alias}":
+            out.extend(entry.splitlines())
+            replaced = True
+            i += 1
+            while i < len(lines) and not lines[i].startswith("Host "):
+                i += 1
+            continue
+        out.append(line)
+        i += 1
+
+    if not replaced:
+        if out and out[-1].strip():
+            out.append("")
+        out.extend(entry.splitlines())
+
+    return "\n".join(out).rstrip() + "\n"
+
+
+def _ensure_include(main_config_path: str, include_path: str) -> None:
+    os.makedirs(os.path.dirname(main_config_path), mode=0o700, exist_ok=True)
+    include_line = f"Include {include_path}"
+
+    if os.path.exists(main_config_path):
+        with open(main_config_path) as f:
+            content = f.read()
+        if any(line.strip() == include_line for line in content.splitlines()):
+            return
+        new_content = include_line + "\n" + content
+    else:
+        new_content = include_line + "\n"
+
+    with open(main_config_path, "w") as f:
+        f.write(new_content)
+    os.chmod(main_config_path, 0o600)
+
+
+def _write_ssh_config(alias: str, entry: str, cache_root: str) -> tuple[str, str]:
+    managed_config = os.path.join(cache_root, "config")
+    main_config = os.path.join(os.path.expanduser("~"), ".ssh", "config")
+    os.makedirs(os.path.dirname(managed_config), mode=0o700, exist_ok=True)
+
+    if os.path.exists(managed_config):
+        with open(managed_config) as f:
+            content = f.read()
+    else:
+        content = ""
+
+    with open(managed_config, "w") as f:
+        f.write(_replace_managed_host_entry(content, alias, entry))
+    os.chmod(managed_config, 0o600)
+    _ensure_include(main_config, managed_config)
+
+    return managed_config, main_config
 
 
 async def ssh(
@@ -228,6 +427,19 @@ async def ssh(
     id_token_file: Annotated[
         Optional[str], Parameter(help="Use a pre-obtained id_token instead of the browser flow")
     ] = None,
+    cache: Annotated[bool, Parameter(help="Cache SSH key/certificate and reuse while valid")] = True,
+    refresh: Annotated[bool, Parameter(negative=False, help="Force refreshing the cached SSH certificate")] = False,
+    cache_dir: Annotated[Optional[str], Parameter(help="Directory for cached SSH keys/certificates")] = None,
+    print_ssh_command: Annotated[
+        bool, Parameter(negative=False, help="Print the underlying ssh command instead of executing it")
+    ] = False,
+    ssh_config_alias: Annotated[
+        Optional[str], Parameter(help="Print an ssh_config Host entry for this alias instead of executing ssh")
+    ] = None,
+    write_ssh_config: Annotated[
+        bool,
+        Parameter(negative=False, help="Write/update the alias in ~/.together/ssh/config and include it from ~/.ssh/config"),
+    ] = False,
 ) -> None:
     """SSH into a Together cluster, identified only by its Dex URL.
 
@@ -240,36 +452,64 @@ async def ssh(
     derived_ca_url, derived_bastion = _derive(dex_url)
     ca_url = ca_url or derived_ca_url
     bastion = bastion or derived_bastion
+    if not cache and (print_ssh_command or ssh_config_alias is not None or write_ssh_config):
+        raise TogetherError("--print-ssh-command, --ssh-config-alias, and --write-ssh-config require cached key/cert files")
+    if write_ssh_config and ssh_config_alias is None:
+        raise TogetherError("--write-ssh-config requires --ssh-config-alias")
 
     if insecure:
         ca_ctx: Optional[ssl.SSLContext] = ssl._create_unverified_context()
     elif ca_root:
         ca_ctx = ssl.create_default_context(cafile=ca_root)
     else:
-        ca_ctx = None
+        ca_ctx = _certifi_ssl_context()
 
-    if id_token_file:
-        with open(id_token_file) as f:
-            ott = f.read().strip()
+    cache_root = os.path.expanduser(cache_dir or _DEFAULT_CACHE_ROOT)
+    if cache:
+        key_path, cert_path = _cache_paths(issuer, login, key_type, cache_root)
+        os.makedirs(os.path.dirname(key_path), mode=0o700, exist_ok=True)
     else:
-        ott = _pkce_login(issuer, client_id, redirect_uri, scope)
-
-    with tempfile.TemporaryDirectory(prefix="together-ssh-") as tmp:
-        key_path, pub_blob = _gen_keypair(tmp, key_type)
-        crt = _sign(ca_url, ott, pub_blob, ca_ctx)
+        tmp = tempfile.TemporaryDirectory(prefix="together-ssh-")
+        key_path = os.path.join(tmp.name, "id")
         cert_path = key_path + "-cert.pub"
+
+    if cache and not refresh and os.path.exists(key_path) and _cert_is_valid(cert_path):
+        console.print(f"[dim]Using cached SSH certificate: {cert_path}[/dim]")
+    else:
+        if os.path.exists(key_path):
+            pub_blob = _read_pubkey_blob(key_path)
+        else:
+            pub_blob = _gen_keypair(key_path, key_type)
+        if id_token_file:
+            with open(id_token_file) as f:
+                ott = f.read().strip()
+        else:
+            if cache:
+                console.print(
+                    "[yellow]No valid cached SSH certificate found. Opening browser for Together login.[/yellow]"
+                )
+                console.print(
+                    "[dim]Keep this terminal command running until login completes. "
+                    "If you are logged out of Together Web, log in in the browser first.[/dim]"
+                )
+            ott = _pkce_login(issuer, client_id, redirect_uri, scope)
+        crt = _sign(ca_url, ott, pub_blob, ca_ctx)
         with open(cert_path, "w") as f:
             f.write(f"{_CERT_ALGO[key_type]} {crt} together-ssh\n")
 
-        common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
-        # Bastion hop is the internet-facing edge and its hostname is unique per
-        # cluster, so it keeps normal host-key verification (proxy uses `common`
-        # only). The inner hop runs through the bastion, already inside the
-        # cluster, and targets generic names (slurm-login, workers) whose host
-        # keys both churn on pod restarts and collide across clusters. Skip
-        # host-key checking on that inner hop only.
-        proxy = "ssh " + " ".join(common) + f" -W %h:%p {login}@{bastion}"
-        inner_insecure = ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
-        cmd = ["ssh"] + common + inner_insecure + ["-o", f"ProxyCommand={proxy}", f"{login}@{host}"] + list(ssh_args)
-        console.print(f"[dim]Connecting to {host} via {bastion} as {login}...[/dim]")
-        os.execvp("ssh", cmd)
+    cmd = _ssh_command(login, host, bastion, key_path, cert_path, ssh_args)
+    if ssh_config_alias is not None:
+        entry = _ssh_config_entry(ssh_config_alias, login, host, bastion, key_path, cert_path)
+        if write_ssh_config:
+            managed_config, main_config = _write_ssh_config(ssh_config_alias, entry, cache_root)
+            console.print(f"[green]Wrote SSH alias '{ssh_config_alias}' to {managed_config}[/green]")
+            console.print(f"[dim]Ensured {main_config} includes {managed_config}[/dim]")
+            console.print(f"Use it with: ssh {shlex.quote(ssh_config_alias)}")
+        else:
+            console.print(entry)
+        return
+    if print_ssh_command:
+        console.print(_shell_command(cmd))
+        return
+    console.print(f"[dim]Connecting to {host} via {bastion} as {login}...[/dim]")
+    os.execvp("ssh", cmd)
