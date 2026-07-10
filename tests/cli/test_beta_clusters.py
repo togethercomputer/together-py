@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import ssl
 import json
-import time
 import base64
 import socket
 import subprocess
@@ -102,7 +101,7 @@ class TestBetaClustersSSHCallbackServer:
         try:
             monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (busy_port, free_port))
 
-            server, redirect_uri = ssh_cli._callback_server(None, _CallbackHandler)
+            server, redirect_uri = ssh_cli._callback_server(_CallbackHandler)
             try:
                 assert redirect_uri == f"http://localhost:{free_port}/login-callback"
             finally:
@@ -118,23 +117,10 @@ class TestBetaClustersSSHCallbackServer:
             monkeypatch.setattr(ssh_cli, "_DEFAULT_REDIRECT_PORTS", (first_port, second_port))
 
             with pytest.raises(TogetherError, match="callback port"):
-                ssh_cli._callback_server(None, _CallbackHandler)
+                ssh_cli._callback_server(_CallbackHandler)
         finally:
             first_socket.close()
             second_socket.close()
-
-    @pytest.mark.parametrize(
-        "redirect_uri",
-        [
-            "http://0.0.0.0:3000/login-callback",
-            "https://localhost:3000/login-callback",
-            "http://user@localhost:3000/login-callback",
-            "http://localhost:3000/login-callback?next=evil",
-        ],
-    )
-    def test_callback_server_rejects_non_loopback_or_ambiguous_redirects(self, redirect_uri: str) -> None:
-        with pytest.raises(TogetherError, match="HTTP loopback URL"):
-            ssh_cli._callback_server(redirect_uri, _CallbackHandler)
 
     def test_pkce_login_explains_missing_callback(self, monkeypatch: pytest.MonkeyPatch) -> None:
         class Server:
@@ -161,7 +147,7 @@ class TestBetaClustersSSHCallbackServer:
         monkeypatch.setattr(ssh_cli.webbrowser, "open", open_browser)
 
         with pytest.raises(TogetherError, match="Browser login did not complete"):
-            ssh_cli._pkce_login("https://dex.example/t-abc", "together-cli", None, "openid email")
+            ssh_cli._pkce_login("https://dex.example/t-abc", "together-cli", "openid email")
 
 
 class TestBetaClustersSSHHelpers:
@@ -178,30 +164,6 @@ class TestBetaClustersSSHHelpers:
     def test_derive_rejects_untrusted_dex_urls(self, dex_url: str) -> None:
         with pytest.raises(TogetherError, match="DEX_URL"):
             ssh_cli._derive(dex_url)
-
-    def test_validate_id_token_claims(self) -> None:
-        issuer = "https://dex.s1.cloud.together.ai/t-abc123"
-        nonce = "expected-nonce"
-
-        def token(**overrides: Any) -> str:
-            claims: dict[str, Any] = {
-                "iss": issuer,
-                "aud": "together-cli",
-                "exp": time.time() + 300,
-                "nonce": nonce,
-            }
-            claims.update(overrides)
-            payload = base64.urlsafe_b64encode(json.dumps(claims).encode()).rstrip(b"=").decode()
-            return f"header.{payload}.signature"
-
-        ssh_cli._validate_id_token_claims(token(), issuer, "together-cli", nonce)
-
-        with pytest.raises(TogetherError, match="issuer"):
-            ssh_cli._validate_id_token_claims(token(iss="https://dex.evil.example"), issuer, "together-cli", nonce)
-        with pytest.raises(TogetherError, match="expired"):
-            ssh_cli._validate_id_token_claims(token(exp=0), issuer, "together-cli", nonce)
-        with pytest.raises(TogetherError, match="nonce"):
-            ssh_cli._validate_id_token_claims(token(nonce="wrong"), issuer, "together-cli", nonce)
 
     def test_cache_paths_are_cluster_and_login_scoped(self, tmp_path: Any) -> None:
         key_path, cert_path = ssh_cli._cache_paths(
@@ -303,26 +265,23 @@ class TestBetaClustersSSHHelpers:
 
         assert ssh_cli._get_or_create_keypair(str(key_path), "ecdsa") == "new-public-key"
 
-    def test_read_id_token_file_requires_private_permissions(self, tmp_path: Any) -> None:
-        token_path = tmp_path / "id-token"
-        token_path.write_text("secret-token\n")
-        token_path.chmod(0o600)
+    def test_prepare_cache_directory_restricts_permissions(self, tmp_path: Any) -> None:
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir(mode=0o777)
+        cache_dir.chmod(0o777)
 
-        assert ssh_cli._read_id_token_file(str(token_path)) == "secret-token"
+        ssh_cli._prepare_cache_directory(str(cache_dir))
 
-        token_path.chmod(0o644)
-        with pytest.raises(TogetherError, match="chmod 600"):
-            ssh_cli._read_id_token_file(str(token_path))
+        assert cache_dir.stat().st_mode & 0o777 == 0o700
 
-    def test_read_id_token_file_rejects_symlink(self, tmp_path: Any) -> None:
-        token_path = tmp_path / "id-token"
-        token_path.write_text("secret-token\n")
-        token_path.chmod(0o600)
-        symlink_path = tmp_path / "id-token-link"
-        symlink_path.symlink_to(token_path)
+    def test_read_pubkey_blob_rejects_symlink(self, tmp_path: Any) -> None:
+        key_path = tmp_path / "id"
+        public_key = tmp_path / "actual.pub"
+        public_key.write_text("ssh-ed25519 key")
+        (tmp_path / "id.pub").symlink_to(public_key)
 
         with pytest.raises(TogetherError, match="securely open"):
-            ssh_cli._read_id_token_file(str(symlink_path))
+            ssh_cli._read_pubkey_blob(str(key_path))
 
     def test_replace_managed_host_entry_appends_and_updates(self) -> None:
         first = "Host test-oidc\n  HostName slurm-login\n  User jhu"
