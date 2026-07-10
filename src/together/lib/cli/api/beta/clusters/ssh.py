@@ -22,7 +22,6 @@ import json as json_lib
 import stat
 import shlex
 import base64
-import socket
 import hashlib
 import secrets
 import tempfile
@@ -145,21 +144,10 @@ def _redirect_uri_for_port(port: int) -> str:
     return f"http://{_DEFAULT_REDIRECT_HOST}:{port}{_DEFAULT_REDIRECT_PATH}"
 
 
-def _localhost_port_in_use(port: int) -> bool:
-    try:
-        with socket.create_connection((_DEFAULT_REDIRECT_HOST, port), timeout=0.2):
-            return True
-    except OSError:
-        return False
-
-
 def _callback_server(
     handler: type[BaseHTTPRequestHandler],
 ) -> tuple[HTTPServer, str]:
     for port in _DEFAULT_REDIRECT_PORTS:
-        if _localhost_port_in_use(port):
-            continue
-
         candidate_uri = _redirect_uri_for_port(port)
         try:
             return HTTPServer((_DEFAULT_REDIRECT_HOST, port), handler), candidate_uri
@@ -173,10 +161,34 @@ def _callback_server(
     )
 
 
+def _validate_discovery_endpoint(endpoint: Any, issuer: str, name: str) -> str:
+    if not isinstance(endpoint, str):
+        raise TogetherError(f"OIDC discovery returned no valid {name}")
+    endpoint_url = urllib.parse.urlparse(endpoint)
+    issuer_url = urllib.parse.urlparse(issuer)
+    if (
+        endpoint_url.scheme != "https"
+        or endpoint_url.hostname != issuer_url.hostname
+        or endpoint_url.port != issuer_url.port
+        or endpoint_url.username is not None
+        or endpoint_url.password is not None
+        or endpoint_url.query
+        or endpoint_url.fragment
+    ):
+        raise TogetherError(f"OIDC discovery {name} must use the trusted issuer origin")
+    return endpoint
+
+
 def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
     """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
     ctx = _certifi_ssl_context()
     disc = _http_json(issuer.rstrip("/") + "/.well-known/openid-configuration", ctx=ctx, purpose="OIDC discovery")
+    authorization_endpoint = _validate_discovery_endpoint(
+        disc.get("authorization_endpoint"),
+        issuer,
+        "authorization endpoint",
+    )
+    token_endpoint = _validate_discovery_endpoint(disc.get("token_endpoint"), issuer, "token endpoint")
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
     state = secrets.token_urlsafe(16)
@@ -213,7 +225,7 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
         "code_challenge": challenge,
         "code_challenge_method": "S256",
     }
-    auth_url = disc["authorization_endpoint"] + "?" + urllib.parse.urlencode(params)
+    auth_url = authorization_endpoint + "?" + urllib.parse.urlencode(params)
     console.print(f"[dim]Opening browser for login: {issuer}[/dim]")
     if not webbrowser.open(auth_url):
         console.print(f"Open this URL to log in:\n{auth_url}")
@@ -228,7 +240,7 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
             "the command and keep the terminal process running until login completes."
         )
     tok = _http_json(
-        disc["token_endpoint"],
+        token_endpoint,
         data={
             "grant_type": "authorization_code",
             "code": captured["code"],
