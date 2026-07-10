@@ -22,6 +22,7 @@ import json as json_lib
 import stat
 import shlex
 import base64
+import socket
 import hashlib
 import secrets
 import tempfile
@@ -144,10 +145,22 @@ def _redirect_uri_for_port(port: int) -> str:
     return f"http://{_DEFAULT_REDIRECT_HOST}:{port}{_DEFAULT_REDIRECT_PATH}"
 
 
+def _localhost_port_in_use(port: int) -> bool:
+    try:
+        with socket.create_connection((_DEFAULT_REDIRECT_HOST, port), timeout=0.2):
+            return True
+    except OSError:
+        return False
+
+
 def _callback_server(
     handler: type[BaseHTTPRequestHandler],
 ) -> tuple[HTTPServer, str]:
     for port in _DEFAULT_REDIRECT_PORTS:
+        # HTTPServer can bind IPv4 while another process owns the same port on
+        # IPv6. The browser may resolve localhost to that other listener.
+        if _localhost_port_in_use(port):
+            continue
         candidate_uri = _redirect_uri_for_port(port)
         try:
             return HTTPServer((_DEFAULT_REDIRECT_HOST, port), handler), candidate_uri
@@ -157,7 +170,7 @@ def _callback_server(
     ports = "/".join(str(port) for port in _DEFAULT_REDIRECT_PORTS)
     raise TogetherError(
         f"OIDC login needs a local callback port, but {ports} are all in use. "
-        "Free one of them or pass a registered --redirect-uri."
+        "Stop the process using one of these ports and rerun the command."
     )
 
 
