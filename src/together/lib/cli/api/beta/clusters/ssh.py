@@ -325,6 +325,7 @@ def _ssh_command(
     bastion: str,
     key_path: str,
     cert_path: str,
+    known_hosts_path: str,
     ssh_args: tuple[str, ...],
 ) -> list[str]:
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
@@ -334,8 +335,15 @@ def _ssh_command(
         + " ".join(shlex.quote(arg) for arg in proxy_common)
         + f" -W %h:%p {shlex.quote(login)}@{shlex.quote(bastion)}"
     )
-    inner_insecure = ["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
-    return ["ssh"] + common + inner_insecure + ["-o", f"ProxyCommand={proxy}", f"{login}@{host}"] + list(ssh_args)
+    inner_verification = [
+        "-o",
+        "StrictHostKeyChecking=accept-new",
+        "-o",
+        f"UserKnownHostsFile={known_hosts_path}",
+        "-o",
+        f"HostKeyAlias={host}.{bastion}",
+    ]
+    return ["ssh"] + common + inner_verification + ["-o", f"ProxyCommand={proxy}", f"{login}@{host}"] + list(ssh_args)
 
 
 def _shell_command(args: list[str]) -> str:
@@ -355,7 +363,15 @@ def _ssh_config_value(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def _ssh_config_entry(alias: str, login: str, host: str, bastion: str, key_path: str, cert_path: str) -> str:
+def _ssh_config_entry(
+    alias: str,
+    login: str,
+    host: str,
+    bastion: str,
+    key_path: str,
+    cert_path: str,
+    known_hosts_path: str,
+) -> str:
     _validate_ssh_alias(alias)
     _ssh_config_value(bastion)
     common = ["-i", key_path, "-o", f"CertificateFile={cert_path}", "-o", "IdentitiesOnly=yes"]
@@ -373,8 +389,9 @@ def _ssh_config_entry(alias: str, login: str, host: str, bastion: str, key_path:
             f"  IdentityFile {_ssh_config_value(key_path)}",
             f"  CertificateFile {_ssh_config_value(cert_path)}",
             "  IdentitiesOnly yes",
-            "  StrictHostKeyChecking no",
-            "  UserKnownHostsFile /dev/null",
+            "  StrictHostKeyChecking accept-new",
+            f"  UserKnownHostsFile {_ssh_config_value(known_hosts_path)}",
+            f"  HostKeyAlias {_ssh_config_value(f'{host}.{bastion}')}",
             f"  ProxyCommand {proxy}",
         ]
     )
@@ -562,9 +579,18 @@ async def ssh(
             crt = _sign(ca_url, ott, pub_blob, ca_ctx)
             _atomic_write(cert_path, f"{_CERT_ALGO[key_type]} {crt} together-ssh\n", 0o644)
 
-    cmd = _ssh_command(login, host, bastion, key_path, cert_path, ssh_args)
+    known_hosts_path = os.path.join(os.path.dirname(key_path), "known_hosts")
+    cmd = _ssh_command(login, host, bastion, key_path, cert_path, known_hosts_path, ssh_args)
     if ssh_config_alias is not None:
-        entry = _ssh_config_entry(ssh_config_alias, login, host, bastion, key_path, cert_path)
+        entry = _ssh_config_entry(
+            ssh_config_alias,
+            login,
+            host,
+            bastion,
+            key_path,
+            cert_path,
+            known_hosts_path,
+        )
         if write_ssh_config:
             managed_config, main_config = _write_ssh_config(ssh_config_alias, entry, cache_root)
             console.print(f"[green]Wrote SSH alias '{ssh_config_alias}' to {managed_config}[/green]")
