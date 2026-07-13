@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.23.0](https://github.com/togethercomputer/together-py/compare/v2.22.1...v2.23.0) (2026-07-13)
+
+
+### Features
+
+* **openapi:** sync RL Muon optimizer API ([95d5efc](https://github.com/togethercomputer/together-py/commit/95d5efcd5ea9c94cad8018da50fdf6a04492b0d2))
+
+
+### Bug Fixes
+
+* avoid dual-stack OIDC callback collisions ([c1fe1b5](https://github.com/togethercomputer/together-py/commit/c1fe1b50f267f766b3461dd93ec534b0b6007a93))
+* bind OIDC SSH to trusted issuers ([d4a2ffd](https://github.com/togethercomputer/together-py/commit/d4a2ffdae9729ffc91d8d0faf98df716ba06f799))
+* harden OIDC SSH cache handling ([38a1cbc](https://github.com/togethercomputer/together-py/commit/38a1cbcaf62a217e783f58bb72432703741ab7c8))
+* harden OIDC SSH config file handling ([d0f2b75](https://github.com/togethercomputer/together-py/commit/d0f2b756ca67852965238bd5c231ba51f1d6cb9b))
+* improve OIDC SSH caching and UX ([19cc146](https://github.com/togethercomputer/together-py/commit/19cc1461a6939bf59ebfa02598f1a962820729a5))
+* reduce CI token permissions ([4bc2778](https://github.com/togethercomputer/together-py/commit/4bc27780398950eb76acdf9d79b0966844f7b62e))
+* reduce OIDC SSH credential surface ([85eb309](https://github.com/togethercomputer/together-py/commit/85eb309a3c67010cc0cca90462536450bfd14b41))
+* require OIDC SSH host confirmation ([388179b](https://github.com/togethercomputer/together-py/commit/388179b0729893fd52507d20601ccc0fe8dd221a))
+* restore CI test runners ([690d29e](https://github.com/togethercomputer/together-py/commit/690d29e764aad3b80cf057f7aae70eccdd688cbd))
+* restrict OIDC SSH hostnames ([35ef3f4](https://github.com/togethercomputer/together-py/commit/35ef3f44420f21029db19aea0bd521cdfa05fb6c))
+* secure OIDC token file handling ([844f0a5](https://github.com/togethercomputer/together-py/commit/844f0a5a197f8c7e4b25b4a7c4f0f67563c77c5b))
+* validate OIDC callback path ([a17be62](https://github.com/togethercomputer/together-py/commit/a17be62273384fb257f4a87032f8b0a0b010f48b))
+* validate OIDC callbacks before capture ([c012014](https://github.com/togethercomputer/together-py/commit/c012014ab9f31b7b5c3fa94e4403253c0f0e5295))
+* validate OIDC discovery endpoints ([bf9eeef](https://github.com/togethercomputer/together-py/commit/bf9eeef3a357b5a753b3ff728162272b78232151))
+* validate OIDC SSH destinations ([541757e](https://github.com/togethercomputer/together-py/commit/541757e1157590d4eb0f903729f7aa34dc79d8d9))
+* verify OIDC SSH target host keys ([04a69c3](https://github.com/togethercomputer/together-py/commit/04a69c35c74fb341f12bba7895cb7044b149ee20))
+
+
+### Chores
+
+* Update cluster remediation CLI commands for new enums ([0da582b](https://github.com/togethercomputer/together-py/commit/0da582b63b93249c3aa73a212ca88d064891d025))
+
+
+### Documentation
+
+* clarify OIDC callback binding invariant ([eb54dc2](https://github.com/togethercomputer/together-py/commit/eb54dc233607099104a8c3b4f802e1dc98cc57ea))
+* clarify OIDC token verification boundary ([015ba1c](https://github.com/togethercomputer/together-py/commit/015ba1c1940053de0e8cc98e235220b6445e726c))
+
 ## [2.22.1](https://github.com/togethercomputer/together-py/compare/v2.22.0...v2.22.1) (2026-07-09)
 
 
