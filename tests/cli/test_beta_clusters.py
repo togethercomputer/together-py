@@ -689,6 +689,8 @@ class TestBetaClustersCreate:
                 "8",
                 "--billing-type",
                 "ON_DEMAND",
+                "--num-preemptible-gpus",
+                "0",
                 "--name",
                 "with-volume",
                 "--project-id",
