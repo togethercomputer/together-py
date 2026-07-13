@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+from .rl.rl import (
+    RlResource,
+    AsyncRlResource,
+    RlResourceWithRawResponse,
+    AsyncRlResourceWithRawResponse,
+    RlResourceWithStreamingResponse,
+    AsyncRlResourceWithStreamingResponse,
+)
 from .jig.jig import (
     JigResource,
     AsyncJigResource,
@@ -25,6 +33,10 @@ __all__ = ["BetaResource", "AsyncBetaResource"]
 
 
 class BetaResource(SyncAPIResource):
+    @cached_property
+    def rl(self) -> RlResource:
+        return RlResource(self._client)
+
     @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
@@ -54,6 +66,10 @@ class BetaResource(SyncAPIResource):
 
 
 class AsyncBetaResource(AsyncAPIResource):
+    @cached_property
+    def rl(self) -> AsyncRlResource:
+        return AsyncRlResource(self._client)
+
     @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
@@ -87,6 +103,10 @@ class BetaResourceWithRawResponse:
         self._beta = beta
 
     @cached_property
+    def rl(self) -> RlResourceWithRawResponse:
+        return RlResourceWithRawResponse(self._beta.rl)
+
+    @cached_property
     def jig(self) -> JigResourceWithRawResponse:
         return JigResourceWithRawResponse(self._beta.jig)
 
@@ -98,6 +118,10 @@ class BetaResourceWithRawResponse:
 class AsyncBetaResourceWithRawResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
+
+    @cached_property
+    def rl(self) -> AsyncRlResourceWithRawResponse:
+        return AsyncRlResourceWithRawResponse(self._beta.rl)
 
     @cached_property
     def jig(self) -> AsyncJigResourceWithRawResponse:
@@ -113,6 +137,10 @@ class BetaResourceWithStreamingResponse:
         self._beta = beta
 
     @cached_property
+    def rl(self) -> RlResourceWithStreamingResponse:
+        return RlResourceWithStreamingResponse(self._beta.rl)
+
+    @cached_property
     def jig(self) -> JigResourceWithStreamingResponse:
         return JigResourceWithStreamingResponse(self._beta.jig)
 
@@ -124,6 +152,10 @@ class BetaResourceWithStreamingResponse:
 class AsyncBetaResourceWithStreamingResponse:
     def __init__(self, beta: AsyncBetaResource) -> None:
         self._beta = beta
+
+    @cached_property
+    def rl(self) -> AsyncRlResourceWithStreamingResponse:
+        return AsyncRlResourceWithStreamingResponse(self._beta.rl)
 
     @cached_property
     def jig(self) -> AsyncJigResourceWithStreamingResponse:
