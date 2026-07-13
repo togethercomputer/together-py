@@ -19,7 +19,6 @@ from together.types import (
     FineTuningDeleteResponse,
     FineTuningListEventsResponse,
     FineTuningListMetricsResponse,
-    FineTuningModelLimitsResponse,
     FineTuningEstimatePriceResponse,
     FineTuningListCheckpointsResponse,
 )
