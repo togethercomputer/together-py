@@ -20,6 +20,7 @@ class RemediationApproveParams(TypedDict, total=False):
         "REMEDIATION_MODE_HOST_AWARE",
         "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
         "REMEDIATION_MODE_REBOOT_VM",
+        "REMEDIATION_MODE_HOST_POWER_CYCLE",
     ]
     """Remediation mode to use after approval.
 
@@ -32,4 +33,7 @@ class RemediationApproveParams(TypedDict, total=False):
     - `REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT`: Evicts the VM without
       provisioning a replacement.
     - `REMEDIATION_MODE_REBOOT_VM`: Reboots the VM in place.
+    - `REMEDIATION_MODE_HOST_POWER_CYCLE`: Power-cycles the bare-metal host after
+      cordoning it. This mode cannot be set as an approval override; create a host
+      power-cycle remediation directly.
     """

@@ -45,12 +45,12 @@ from ..lib.resources.fine_tuning import (
     async_get_model_limits,
     create_finetune_request,
 )
+from ..types.finetune_model_limits import FinetuneModelLimits
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
-from ..types.fine_tuning_model_limits_response import FineTuningModelLimitsResponse
 from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 
@@ -726,7 +726,7 @@ class FineTuningResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuningModelLimitsResponse:
+    ) -> FinetuneModelLimits:
         """
         Get model limits for a specific fine-tuning model.
 
@@ -752,7 +752,7 @@ class FineTuningResource(SyncAPIResource):
                     {"model_name": model_name}, fine_tuning_model_limits_params.FineTuningModelLimitsParams
                 ),
             ),
-            cast_to=FineTuningModelLimitsResponse,
+            cast_to=FinetuneModelLimits,
         )
 
 
@@ -1417,7 +1417,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuningModelLimitsResponse:
+    ) -> FinetuneModelLimits:
         """
         Get model limits for a specific fine-tuning model.
 
@@ -1443,7 +1443,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                     {"model_name": model_name}, fine_tuning_model_limits_params.FineTuningModelLimitsParams
                 ),
             ),
-            cast_to=FineTuningModelLimitsResponse,
+            cast_to=FinetuneModelLimits,
         )
 
 

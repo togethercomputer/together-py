@@ -17,6 +17,7 @@ class RemediationListParams(TypedDict, total=False):
             "REMEDIATION_MODE_HOST_AWARE",
             "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
             "REMEDIATION_MODE_REBOOT_VM",
+            "REMEDIATION_MODE_HOST_POWER_CYCLE",
         ]
     ]
     """Filter by remediation mode(s).
@@ -33,7 +34,19 @@ class RemediationListParams(TypedDict, total=False):
     page_token: str
     """Pagination token from previous request."""
 
-    state: List[Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]]
+    state: List[
+        Literal[
+            "PENDING_APPROVAL",
+            "PENDING",
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "CANCELLED",
+            "AUTO_RESOLVED",
+            "QUARANTINING",
+            "QUARANTINED",
+        ]
+    ]
     """Filter by state(s). Returns remediations matching any of the specified states.
 
     - `PENDING_APPROVAL`: Awaiting approval before processing can begin.
@@ -44,6 +57,8 @@ class RemediationListParams(TypedDict, total=False):
     - `CANCELLED`: Cancelled by user or system.
     - `AUTO_RESOLVED`: The underlying issue was automatically resolved before
       processing.
+    - `QUARANTINING`: Cordoning or preparing the host before remediation.
+    - `QUARANTINED`: Host has been cordoned or isolated for remediation.
     """
 
     trigger: List[Literal["REMEDIATION_TRIGGER_MANUAL", "REMEDIATION_TRIGGER_AUTOMATED"]]

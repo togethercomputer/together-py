@@ -43,6 +43,7 @@ from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .rerank_create_params import RerankCreateParams as RerankCreateParams
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
+from .finetune_model_limits import FinetuneModelLimits as FinetuneModelLimits
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams

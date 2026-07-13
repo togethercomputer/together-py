@@ -13,12 +13,12 @@ from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types import (
     FinetuneResponse,
+    FinetuneModelLimits,
     FineTuningListResponse,
     FineTuningCancelResponse,
     FineTuningDeleteResponse,
     FineTuningListEventsResponse,
     FineTuningListMetricsResponse,
-    FineTuningModelLimitsResponse,
     FineTuningEstimatePriceResponse,
     FineTuningListCheckpointsResponse,
 )
@@ -418,7 +418,7 @@ class TestFineTuning:
         fine_tuning = client.fine_tuning.model_limits(
             model_name="model_name",
         )
-        assert_matches_type(FineTuningModelLimitsResponse, fine_tuning, path=["response"])
+        assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
 
     @parametrize
     def test_raw_response_model_limits(self, client: Together) -> None:
@@ -429,7 +429,7 @@ class TestFineTuning:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tuning = response.parse()
-        assert_matches_type(FineTuningModelLimitsResponse, fine_tuning, path=["response"])
+        assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
 
     @parametrize
     def test_streaming_response_model_limits(self, client: Together) -> None:
@@ -440,7 +440,7 @@ class TestFineTuning:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tuning = response.parse()
-            assert_matches_type(FineTuningModelLimitsResponse, fine_tuning, path=["response"])
+            assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -832,7 +832,7 @@ class TestAsyncFineTuning:
         fine_tuning = await async_client.fine_tuning.model_limits(
             model_name="model_name",
         )
-        assert_matches_type(FineTuningModelLimitsResponse, fine_tuning, path=["response"])
+        assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
 
     @parametrize
     async def test_raw_response_model_limits(self, async_client: AsyncTogether) -> None:
@@ -843,7 +843,7 @@ class TestAsyncFineTuning:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         fine_tuning = await response.parse()
-        assert_matches_type(FineTuningModelLimitsResponse, fine_tuning, path=["response"])
+        assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
 
     @parametrize
     async def test_streaming_response_model_limits(self, async_client: AsyncTogether) -> None:
@@ -854,6 +854,6 @@ class TestAsyncFineTuning:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             fine_tuning = await response.parse()
-            assert_matches_type(FineTuningModelLimitsResponse, fine_tuning, path=["response"])
+            assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
 
         assert cast(Any, response.is_closed) is True
