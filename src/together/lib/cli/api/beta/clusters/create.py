@@ -162,11 +162,14 @@ async def create(
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
                 size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
-                params["shared_volume"] = SharedVolume(
+                shared_volume = SharedVolume(
                     region=params["region"],
                     size_tib=int(size) if size else 1,
                     volume_name=vol_name,
                 )
+                if project_id:
+                    shared_volume["project_id"] = project_id
+                params["shared_volume"] = shared_volume
             else:
                 volumes = await config.client.beta.clusters.storage.list()
                 if volumes.volumes:
