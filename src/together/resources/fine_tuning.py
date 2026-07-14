@@ -35,16 +35,9 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
-from ..lib.types.fine_tuning import (
-    FinetuneResponse as FinetuneResponseLib,
-    FinetuneTrainingLimits,
-)
+from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib
 from ..types.finetune_response import FinetuneResponse
-from ..lib.resources.fine_tuning import (
-    get_model_limits,
-    async_get_model_limits,
-    create_finetune_request,
-)
+from ..lib.resources.fine_tuning import create_finetune_request
 from ..types.finetune_model_limits import FinetuneModelLimits
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
@@ -122,7 +115,7 @@ class FineTuningResource(SyncAPIResource):
         early_stopping_min_delta: float | None = None,
         early_stopping_warmup_evals: int | None = None,
         verbose: bool = False,
-        model_limits: FinetuneTrainingLimits | None = None,
+        model_limits: FinetuneModelLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
         training_method: str = "sft",
         dpo_beta: float | None = None,
@@ -190,7 +183,7 @@ class FineTuningResource(SyncAPIResource):
                 Only applies when early_stopping_enabled is True. Defaults to None (server default 1).
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
-            model_limits (FinetuneTrainingLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
+            model_limits (FinetuneModelLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
                 Defaults to None.
             train_on_inputs (bool or "auto", optional): Whether to mask the user messages in conversational data or prompts in instruction data.
                 "auto" will automatically determine whether to mask the inputs based on the data format.
@@ -229,7 +222,7 @@ class FineTuningResource(SyncAPIResource):
             else:
                 # this branch is unreachable, but mypy doesn't know that
                 pass
-            model_limits = get_model_limits(self._client, str(model_name))
+            model_limits = self.model_limits(model_name=str(model_name))
 
         finetune_request, training_type_cls, training_method_cls = create_finetune_request(
             model_limits=model_limits,
@@ -814,7 +807,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
         early_stopping_min_delta: float | None = None,
         early_stopping_warmup_evals: int | None = None,
         verbose: bool = False,
-        model_limits: FinetuneTrainingLimits | None = None,
+        model_limits: FinetuneModelLimits | None = None,
         train_on_inputs: bool | Literal["auto"] | None = None,
         training_method: str = "sft",
         dpo_beta: float | None = None,
@@ -881,7 +874,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
                 Only applies when early_stopping_enabled is True. Defaults to None (server default 1).
             verbose (bool, optional): whether to print the job parameters before submitting a request.
                 Defaults to False.
-            model_limits (FinetuneTrainingLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
+            model_limits (FinetuneModelLimits, optional): Limits for the hyperparameters the model in Fine-tuning.
                 Defaults to None.
             train_on_inputs (bool or "auto", optional): Whether to mask the user messages in conversational data or prompts in instruction data.
                 "auto" will automatically determine whether to mask the inputs based on the data format.
@@ -920,7 +913,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             else:
                 # this branch is unreachable, but mypy doesn't know that
                 pass
-            model_limits = await async_get_model_limits(self._client, str(model_name))
+            model_limits = await self.model_limits(model_name=str(model_name))
 
         finetune_request, training_type_cls, training_method_cls = create_finetune_request(
             model_limits=model_limits,
