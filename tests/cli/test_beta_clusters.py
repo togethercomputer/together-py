@@ -665,51 +665,6 @@ class TestBetaClustersCreate:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_create_passes_project_id_to_inline_shared_volume(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
-        created = _cluster_body("new-id", "with-volume")
-        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
-        result = cli_runner.invoke(
-            [
-                "beta",
-                "clusters",
-                "create",
-                "--cluster-type",
-                "KUBERNETES",
-                "--gpu-type",
-                "H100_SXM",
-                "--nvidia-driver-version",
-                "565",
-                "--cuda-version",
-                "12.6",
-                "--region",
-                "us-central-8",
-                "--num-gpus",
-                "8",
-                "--billing-type",
-                "ON_DEMAND",
-                "--num-preemptible-gpus",
-                "0",
-                "--name",
-                "with-volume",
-                "--project-id",
-                "proj-1",
-            ],
-            input="y\nshared-data\n2\n",
-        )
-
-        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
-        assert body["project_id"] == "proj-1"
-        assert body["shared_volume"] == {
-            "region": "us-central-8",
-            "size_tib": 2,
-            "volume_name": "shared-data",
-            "project_id": "proj-1",
-        }
-        assert result.exit_code == 0
-
-    @pytest.mark.respx(base_url=base_url)
     def test_create_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "scheduled")
         route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
@@ -882,8 +837,6 @@ class TestBetaClustersStorage:
                 "--volume-name",
                 "test-volume",
                 "--is-lifecycle-independent",
-                "--project-id",
-                "project-1",
                 "--json",
             ],
         )
@@ -895,7 +848,6 @@ class TestBetaClustersStorage:
             "size_tib": 1,
             "volume_name": "test-volume",
             "is_lifecycle_independent": True,
-            "project_id": "project-1",
         }
         assert result.exit_code == 0
 

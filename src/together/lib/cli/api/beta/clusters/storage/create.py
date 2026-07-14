@@ -18,10 +18,6 @@ async def create(
         Optional[bool],
         Parameter(help="Keep the storage volume after cluster decommissioning"),
     ] = None,
-    project_id: Annotated[
-        Optional[str],
-        Parameter(help="Project ID that will own the storage volume"),
-    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -31,7 +27,6 @@ async def create(
         size_tib=size_tib,
         volume_name=volume_name,
         is_lifecycle_independent=is_lifecycle_independent if is_lifecycle_independent is not None else omit,
-        project_id=project_id or omit,
     )
 
     if config.json:
