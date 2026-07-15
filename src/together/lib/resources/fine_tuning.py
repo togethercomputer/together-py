@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from rich import print as rprint
 
 from together.types import fine_tuning_estimate_price_params as pe_params
 from together.lib.utils import log_warn_once
-
-if TYPE_CHECKING:
-    from together import Together, AsyncTogether
 from together.lib.types.fine_tuning import (
     TrainingType,
     FinetuneRequest,
@@ -21,9 +18,9 @@ from together.lib.types.fine_tuning import (
     FinetuneLRScheduler,
     CosineLRSchedulerArgs,
     LinearLRSchedulerArgs,
-    FinetuneTrainingLimits,
     FinetuneMultimodalParams,
 )
+from together.types.finetune_model_limits import FinetuneModelLimits
 
 AVAILABLE_TRAINING_METHODS = {
     "sft",
@@ -66,7 +63,7 @@ def validate_early_stopping(
 
 
 def create_finetune_request(
-    model_limits: FinetuneTrainingLimits,
+    model_limits: FinetuneModelLimits,
     training_file: str,
     model: str | None = None,
     n_epochs: int = 1,
@@ -144,9 +141,6 @@ def create_finetune_request(
         # This logic is handled on the Together API backend.
         training_type = None
     elif lora:
-        if model_limits.lora_training is None:
-            raise ValueError(f"LoRA adapters are not supported for the selected model ({model_or_checkpoint}).")
-
         if lora_dropout is not None:
             if not 0 <= lora_dropout < 1.0:
                 raise ValueError("LoRA dropout must be in [0, 1) range.")
@@ -376,47 +370,3 @@ def create_price_estimation_params(
         raise ValueError(f"Unknown training method: {finetune_request.training_method}")
 
     return training_type_cls, training_method_cls
-
-
-def get_model_limits(client: Together, model: str) -> FinetuneTrainingLimits:
-    """
-    Requests training limits for a specific model
-
-    Args:
-        model_name (str): Name of the model to get limits for
-
-    Returns:
-    FinetuneTrainingLimits: Object containing training limits for the model
-    """
-
-    response = client.get(
-        "/fine-tunes/models/limits",
-        cast_to=FinetuneTrainingLimits,
-        options={
-            "params": {"model_name": model},
-        },
-    )
-
-    return response
-
-
-async def async_get_model_limits(client: AsyncTogether, model: str) -> FinetuneTrainingLimits:
-    """
-    Requests training limits for a specific model
-
-    Args:
-        model_name (str): Name of the model to get limits for
-
-    Returns:
-    FinetuneTrainingLimits: Object containing training limits for the model
-    """
-
-    response = await client.get(
-        "/fine-tunes/models/limits",
-        cast_to=FinetuneTrainingLimits,
-        options={
-            "params": {"model_name": model},
-        },
-    )
-
-    return response

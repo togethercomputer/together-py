@@ -1,4 +1,4 @@
-from typing import Union, Literal
+from typing import Union, Literal, Optional
 
 import pytest
 
@@ -6,36 +6,60 @@ from together.lib.types.fine_tuning import (
     FullTrainingType,
     LoRATrainingType,
     TrainingMethodSFT,
-    FinetuneTrainingLimits,
-    FinetuneFullTrainingLimits,
-    FinetuneLoraTrainingLimits,
 )
 from together.lib.resources.fine_tuning import create_finetune_request
+from together.types.finetune_model_limits import (
+    FullTraining,
+    LoraTraining,
+    FinetuneModelLimits,
+)
 
 _MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B-Instruct-Reference"
 _TRAINING_FILE = "file-7dbce5e9-7993-4520-9f3e-a7ece6c39d84"
 _VALIDATION_FILE = "file-7dbce5e9-7553-4520-9f3e-a7ece6c39d84"
 _FROM_CHECKPOINT = "ft-12345678-1234-1234-1234-1234567890ab"
-_MODEL_LIMITS = FinetuneTrainingLimits(
-    max_num_epochs=20,
-    max_learning_rate=1.0,
-    min_learning_rate=1e-6,
-    full_training=FinetuneFullTrainingLimits(
-        max_batch_size=96,
-        max_batch_size_dpo=48,
-        min_batch_size=8,
-    ),
-    lora_training=FinetuneLoraTrainingLimits(
-        max_batch_size=128,
-        max_batch_size_dpo=64,
-        min_batch_size=8,
-        max_rank=64,
-        target_modules=["q", "k", "v", "o", "mlp"],
-    ),
-    max_seq_length_sft=4096,
-    max_seq_length_dpo=4096,
-    min_max_seq_length=1024,
+
+_DEFAULT_LORA_TRAINING = LoraTraining(
+    max_batch_size=128,
+    max_batch_size_dpo=64,
+    min_batch_size=8,
+    max_rank=64,
+    target_modules=["q", "k", "v", "o", "mlp"],
 )
+_DEFAULT_FULL_TRAINING = FullTraining(
+    max_batch_size=96,
+    max_batch_size_dpo=48,
+    min_batch_size=8,
+)
+
+
+def _make_model_limits(
+    *,
+    full_training: Optional[FullTraining] = _DEFAULT_FULL_TRAINING,
+    lora_training: LoraTraining = _DEFAULT_LORA_TRAINING,
+) -> FinetuneModelLimits:
+    return FinetuneModelLimits(
+        model_name=_MODEL_NAME,
+        default_gradient_accumulation_steps=1,
+        max_num_epochs=20,
+        max_num_checkpoints=10,
+        max_num_evals=10,
+        max_learning_rate=1.0,
+        min_learning_rate=1e-6,
+        merge_output_lora=True,
+        supports_full_training=full_training is not None,
+        supports_reasoning=False,
+        supports_tools=False,
+        supports_vision=False,
+        full_training=full_training,
+        lora_training=lora_training,
+        max_seq_length_sft=4096,
+        max_seq_length_dpo=4096,
+        min_max_seq_length=1024,
+    )
+
+
+_MODEL_LIMITS = _make_model_limits()
 
 
 def test_full_training_request():
@@ -98,7 +122,6 @@ def test_lora_request():
 
     assert isinstance(request.training_type, LoRATrainingType)
     assert request.training_type.type == "Lora"
-    assert _MODEL_LIMITS.lora_training is not None
     assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
     assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
     assert request.training_type.lora_dropout == 0.0
@@ -143,7 +166,6 @@ def test_dpo_request_lora():
 
     assert isinstance(request.training_type, LoRATrainingType)
     assert request.training_type.type == "Lora"
-    assert _MODEL_LIMITS.lora_training is not None
     assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
     assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
     assert request.training_type.lora_dropout == 0.0
@@ -232,48 +254,10 @@ def test_batch_size_limit(batch_size: int, use_lora: bool):
             )
 
 
-def test_non_lora_model():
-    with pytest.raises(ValueError, match="LoRA adapters are not supported for the selected model."):
-        _ = create_finetune_request(
-            model_limits=FinetuneTrainingLimits(
-                max_num_epochs=20,
-                max_learning_rate=1.0,
-                min_learning_rate=1e-6,
-                full_training=FinetuneFullTrainingLimits(
-                    max_batch_size=96,
-                    max_batch_size_dpo=48,
-                    min_batch_size=8,
-                ),
-                lora_training=None,
-                max_seq_length_sft=4096,
-                max_seq_length_dpo=4096,
-                min_max_seq_length=1024,
-            ),
-            model=_MODEL_NAME,
-            training_file=_TRAINING_FILE,
-            lora=True,
-        )
-
-
 def test_non_full_model():
     with pytest.raises(ValueError, match="Full training is not supported for the selected model."):
         _ = create_finetune_request(
-            model_limits=FinetuneTrainingLimits(
-                max_num_epochs=20,
-                max_learning_rate=1.0,
-                min_learning_rate=1e-6,
-                lora_training=FinetuneLoraTrainingLimits(
-                    max_batch_size=96,
-                    max_batch_size_dpo=48,
-                    min_batch_size=8,
-                    max_rank=64,
-                    target_modules=["q", "k", "v", "o", "mlp"],
-                ),
-                full_training=None,
-                max_seq_length_sft=4096,
-                max_seq_length_dpo=4096,
-                min_max_seq_length=1024,
-            ),
+            model_limits=_make_model_limits(full_training=None),
             model=_MODEL_NAME,
             training_file=_TRAINING_FILE,
             lora=False,
