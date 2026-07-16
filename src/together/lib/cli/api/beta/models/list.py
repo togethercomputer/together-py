@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
-from typing_extensions import Annotated, Literal
+from typing_extensions import Literal, Annotated
 
 from cyclopts import Parameter
 
