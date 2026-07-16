@@ -60,6 +60,10 @@ async def ab(
         Optional[str],
         Parameter(help="Variant deployment name; defaults to the model name with a short suffix"),
     ] = None,
+    description: Annotated[
+        Optional[str],
+        Parameter(help="Description for the A/B experiment"),
+    ] = None,
     config: CLIConfigParameter,
 ) -> None:
     """Create a variant deployment and allocate it a percentage of live endpoint traffic."""
@@ -124,20 +128,27 @@ async def ab(
                 endpoint_id=endpoint.id,
                 name=experiment_name,
                 members=members,
+                description=description or omit,
                 project_id=config.project_id,
             ),
         )
     else:
         assert existing_experiment.id is not None
+        update_mask = ["members"]
+        update_kwargs: dict[str, Any] = {}
+        if description is not None:
+            update_mask.append("description")
+            update_kwargs["description"] = description
         experiment = await show_loading_status(
             "Updating A/B experiment...",
             config.client.beta.endpoints.ab_experiments.update(
                 id=existing_experiment.id,
                 endpoint_id=endpoint.id,
-                update_mask="members",
+                update_mask=",".join(update_mask),
                 members=members,
                 etag=existing_experiment.etag or omit,
                 project_id=config.project_id,
+                **update_kwargs,
             ),
         )
 

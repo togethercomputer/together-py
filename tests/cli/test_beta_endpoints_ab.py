@@ -285,7 +285,7 @@ class TestEndpointsAb:
             )
         )
 
-        result = cli_runner.invoke(_ab_cli_args())
+        result = cli_runner.invoke(_ab_cli_args(description="experiment notes"))
 
         assert result.exit_code == 0, result.output
 
@@ -305,6 +305,7 @@ class TestEndpointsAb:
                 {"deploymentId": "dep_control", "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL", "percent": 95},
                 {"deploymentId": "dep_variant", "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT", "percent": 5},
             ],
+            "description": "experiment notes",
         }
 
         output = json.loads(result.output)
@@ -385,17 +386,18 @@ class TestEndpointsAb:
             )
         )
 
-        result = cli_runner.invoke(_ab_cli_args(percent="10", name="variant-dep-2"))
+        result = cli_runner.invoke(_ab_cli_args(percent="10", name="variant-dep-2", description="updated notes"))
 
         assert result.exit_code == 0, result.output
         update_url = str(cast(Call, update_experiment_route.calls[0]).request.url)
-        assert "updateMask=members" in update_url
+        assert "updateMask=members%2Cdescription" in update_url
         experiment_body = json.loads(cast(Call, update_experiment_route.calls[0]).request.content.decode())
         assert experiment_body["members"] == [
             {"deploymentId": "dep_control", "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL", "percent": 85},
             {"deploymentId": "dep_variant_1", "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT", "percent": 5},
             {"deploymentId": "dep_variant_2", "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT", "percent": 10},
         ]
+        assert experiment_body["description"] == "updated notes"
 
     @pytest.mark.respx(base_url=base_url)
     def test_ab_rejects_control_without_traffic(

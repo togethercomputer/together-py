@@ -158,6 +158,8 @@ class TestBetaEndpointsDeploy:
                 "cr_1",
                 "--deployment-name",
                 "my-dep",
+                "--visibility",
+                "internal",
                 "--traffic-weight",
                 "1",
                 "--json",
@@ -166,6 +168,8 @@ class TestBetaEndpointsDeploy:
 
         assert result.exit_code == 0, result.output
         assert create_endpoint_route.call_count == 1
+        endpoint_body = json.loads(cast(Call, create_endpoint_route.calls[0]).request.content.decode())
+        assert endpoint_body == {"name": "fresh-endpoint", "visibility": "VISIBILITY_INTERNAL"}
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
         assert deployment_body["name"] == "my-dep"
         assert deployment_body["model"] == "projects/proj/models/ml_1"
@@ -197,12 +201,15 @@ class TestBetaEndpointsDeploy:
                 "cr_1",
                 "--deployment-name",
                 "my-dep",
+                "--validate-only",
                 "--json",
             ]
         )
 
         assert result.exit_code == 0, result.output
         assert create_deployment_route.call_count == 1
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["validateOnly"] is True
 
 
 class TestBetaEndpointsList:
@@ -216,13 +223,30 @@ class TestBetaEndpointsList:
         )
 
         result = cli_runner.invoke(
-            ["beta", "endpoints", "ls", "--project", "proj", "--limit", "10", "--after", "tok", "--json"]
+            [
+                "beta",
+                "endpoints",
+                "ls",
+                "--project",
+                "proj",
+                "--limit",
+                "10",
+                "--after",
+                "tok",
+                "--filter",
+                "name:foo",
+                "--order-by",
+                "created_at desc",
+                "--json",
+            ]
         )
 
         assert result.exit_code == 0, result.output
         url = str(cast(Call, route.calls[0]).request.url)
         assert "limit=10" in url
         assert "after=tok" in url
+        assert "filter=name%3Afoo" in url
+        assert "orderBy=created_at+desc" in url
         assert json.loads(result.output)["next_cursor"] == "next"
 
     @pytest.mark.respx(base_url=base_url)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import Any, Optional
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 from cyclopts import Parameter
 from rich.panel import Panel
@@ -141,6 +141,14 @@ async def deploy(
         ),
     ] = None,
     deployment_name: DeploymentNameParameter = None,
+    visibility: Annotated[
+        Optional[Literal["private", "internal"]],
+        Parameter(help="Visibility for a newly created endpoint"),
+    ] = None,
+    validate_only: Annotated[
+        bool,
+        Parameter(help="Validate the deployment request without creating or provisioning it"),
+    ] = False,
     model_revision: Annotated[
         Optional[str],
         Parameter(
@@ -211,10 +219,12 @@ async def deploy(
             enable_lora=enable_lora,
             model_revision=model_revision,
             traffic_weight=traffic_weight,
+            endpoint_visibility=visibility,
+            validate_only=validate_only,
         )
     await assert_explicit_project_id(config)
 
-    endpoint, is_new_endpoint = await _find_or_create_endpoint(config, endpoint_name_or_id)
+    endpoint, is_new_endpoint = await _find_or_create_endpoint(config, endpoint_name_or_id, visibility=visibility)
 
     try:
         deployment = await show_loading_status(
@@ -228,6 +238,7 @@ async def deploy(
                 enable_lora=enable_lora if enable_lora is not None else omit,
                 model_revision_id=model_revision or omit,
                 placement=placement_value or omit,
+                validate_only=validate_only or omit,
             ),
         )
     except Exception as e:
@@ -273,6 +284,8 @@ def _print_deployment_preview(
     enable_lora: bool | None,
     model_revision: str | None,
     traffic_weight: float | None,
+    endpoint_visibility: Literal["private", "internal"] | None,
+    validate_only: bool,
 ) -> None:
     table = Table(expand=True, show_header=False, show_edge=False, show_lines=False, box=None, pad_edge=False)
     table.add_column("Arg", justify="left", no_wrap=True, ratio=1)
@@ -284,6 +297,10 @@ def _print_deployment_preview(
 
     add_row("--endpoint", endpoint)
     add_row("--deployment-name", deployment_name)
+    if endpoint_visibility is not None:
+        add_row("--visibility", endpoint_visibility)
+    if validate_only:
+        add_row("--validate-only", "true")
 
     if (min_replicas := autoscaling.get("min_replicas")) is not None:
         add_row("--min-replicas", str(min_replicas))
@@ -340,7 +357,12 @@ def _print_deployment_preview(
 
 # Helper method to enable the users to use this command to either create a new endpoint+deployment
 # or append a new deployment to an existing endpoint
-async def _find_or_create_endpoint(config: CLIConfigParameter, endpoint_input: str) -> tuple[Endpoint, bool]:
+async def _find_or_create_endpoint(
+    config: CLIConfigParameter,
+    endpoint_input: str,
+    *,
+    visibility: Literal["private", "internal"] | None = None,
+) -> tuple[Endpoint, bool]:
     # If the user gave us an endpoint ID, we can just retrieve it.
     if endpoint_input.startswith("ep_"):
         endpoint = await config.client.beta.endpoints.retrieve(id=endpoint_input)
@@ -352,7 +374,10 @@ async def _find_or_create_endpoint(config: CLIConfigParameter, endpoint_input: s
     #
     # The exception block will then search through the endpoints for the matching name.
     try:
-        endpoint = await config.client.beta.endpoints.create(name=endpoint_input)
+        endpoint = await config.client.beta.endpoints.create(
+            name=endpoint_input,
+            visibility=f"VISIBILITY_{visibility.upper()}" if visibility is not None else omit,
+        )
         return endpoint, True
     except APIError as e:
         me = await config.client.whoami()

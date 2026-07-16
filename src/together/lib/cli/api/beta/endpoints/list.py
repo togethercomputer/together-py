@@ -36,14 +36,10 @@ async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParam
     return dict(await asyncio.gather(*(fetch_model_name(model_id) for model_id in model_ids)))
 
 
-def _print_next_page(next_cursor: str | None, *, public: bool = False, org: bool = False) -> None:
+def _print_next_page(next_cursor: str | None, *, org: bool = False) -> None:
     if not next_cursor:
         return
-    flags = ""
-    if public:
-        flags = " --public"
-    elif org:
-        flags = " --org"
+    flags = " --org" if org else ""
     console.print("\n[blue dim]To display the next page, run:[/blue dim]")
     console.print(f"  [dim]-[/dim] [white]tg beta endpoints ls{flags} --after {next_cursor}[/white]")
 
@@ -52,6 +48,14 @@ async def list(
     org: Annotated[bool, Parameter(help="List org-scoped endpoints")] = False,
     limit: Annotated[Optional[int], Parameter(help="Maximum endpoints to return")] = None,
     after: AfterParameter = None,
+    filter: Annotated[
+        Optional[str],
+        Parameter(help="Filter expression using name, created_at, or updated_at"),
+    ] = None,
+    order_by: Annotated[
+        Optional[str],
+        Parameter(help="Sort field, e.g. created_at desc or updated_at asc"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -65,6 +69,8 @@ async def list(
                 organization_id=me.organization_id,
                 limit=limit if limit is not None else omit,
                 after=after or omit,
+                filter=filter or omit,
+                order_by=order_by or omit,
             ),
         )
     else:
@@ -75,6 +81,8 @@ async def list(
             config.client.beta.endpoints.list(
                 limit=limit if limit is not None else omit,
                 after=after or omit,
+                filter=filter or omit,
+                order_by=order_by or omit,
             ),
         )
 

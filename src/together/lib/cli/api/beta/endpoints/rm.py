@@ -30,18 +30,19 @@ async def rm(
             )
         ),
     ] = False,
+    etag: Annotated[str | None, Parameter(help="ETag for optimistic concurrency")] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
     """Smart-delete any dedicated-endpoint resource by ID prefix."""
     if id.startswith("ep_"):
-        result = await _delete_endpoint(id, force=force, config=config)
+        result = await _delete_endpoint(id, force=force, etag=etag, config=config)
     elif id.startswith("dep_"):
-        result = await _delete_deployment(id, config=config)
+        result = await _delete_deployment(id, etag=etag, config=config)
     elif id.startswith("abx_"):
-        result = await _delete_ab_experiment(id, config=config)
+        result = await _delete_ab_experiment(id, etag=etag, config=config)
     elif id.startswith("exp_"):
-        result = await _delete_shadow_experiment(id, config=config)
+        result = await _delete_shadow_experiment(id, etag=etag, config=config)
     else:
         raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, abx_, or exp_.")
 
@@ -52,11 +53,17 @@ async def rm(
     console.print(f"[green]√[/green] {result['message']}")
 
 
-async def _delete_endpoint(endpoint_id: str, *, force: bool, config: CLIConfigParameter) -> dict[str, Any]:
+async def _delete_endpoint(
+    endpoint_id: str,
+    *,
+    force: bool,
+    etag: str | None,
+    config: CLIConfigParameter,
+) -> dict[str, Any]:
     try:
         await show_loading_status(
             "Deleting endpoint...",
-            config.client.beta.endpoints.delete(endpoint_id),
+            config.client.beta.endpoints.delete(endpoint_id, etag=etag or omit),
         )
     except APIError as e:
         if force:
@@ -75,7 +82,7 @@ async def _delete_endpoint(endpoint_id: str, *, force: bool, config: CLIConfigPa
 
             await show_loading_status(
                 "Deleting endpoint...",
-                config.client.beta.endpoints.delete(endpoint_id),
+                config.client.beta.endpoints.delete(endpoint_id, etag=etag or omit),
             )
         else:
             await _print_endpoint_delete_blocked(endpoint_id, error=e, config=config)
@@ -124,7 +131,7 @@ async def _print_endpoint_delete_blocked(
         console.print(f"  [white]{escape_rich_markup(error.message)}[/white]")
 
 
-async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
+async def _delete_deployment(deployment_id: str, *, etag: str | None, config: CLIConfigParameter) -> dict[str, Any]:
     endpoint = await find_endpoint_by_deployment(config.client, deployment_id)
     actions: list[str] = []
 
@@ -193,6 +200,7 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
             config.client.beta.endpoints.deployments.delete(
                 id=deployment_id,
                 endpoint_id=endpoint.id,
+                etag=etag or omit,
             ),
         )
     except APIError as e:
@@ -249,28 +257,38 @@ async def _scale_down_and_ask_retry(
     console.print(f"  Once stopped, retry: [primary]tg beta endpoints rm {escape_rich_markup(deployment_id)}[/primary]")
 
 
-async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
+async def _delete_ab_experiment(
+    experiment_id: str,
+    *,
+    etag: str | None,
+    config: CLIConfigParameter,
+) -> dict[str, Any]:
     endpoint_id, experiment = await _find_ab_experiment(config.client, experiment_id, config.project_id)
     await show_loading_status(
         "Deleting A/B experiment...",
         config.client.beta.endpoints.ab_experiments.delete(
             id=experiment.id,
             endpoint_id=endpoint_id,
-            etag=experiment.etag or omit,
+            etag=etag or experiment.etag or omit,
             project_id=config.project_id,
         ),
     )
     return {"message": f"Deleted A/B experiment {experiment_id}", "id": experiment_id, "type": "ab_experiment"}
 
 
-async def _delete_shadow_experiment(experiment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
+async def _delete_shadow_experiment(
+    experiment_id: str,
+    *,
+    etag: str | None,
+    config: CLIConfigParameter,
+) -> dict[str, Any]:
     endpoint_id, experiment = await _find_shadow_experiment(config.client, experiment_id)
     await show_loading_status(
         "Deleting shadow experiment...",
         config.client.beta.endpoints.shadow_experiments.delete(
             id=experiment.id,
             endpoint_id=endpoint_id,
-            etag=experiment.etag or omit,
+            etag=etag or experiment.etag or omit,
         ),
     )
     return {

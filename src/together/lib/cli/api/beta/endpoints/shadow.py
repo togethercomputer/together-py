@@ -8,7 +8,7 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from cyclopts.validators import Number as CycloptsNumberValidator
 
-from together import APIError, AsyncClient
+from together import APIError, AsyncClient, omit
 from together.types.beta import ShadowSourceParam, ShadowEndpointSourceParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
@@ -85,6 +85,14 @@ async def shadow(
         bool,
         Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment"),
     ] = False,
+    description: Annotated[
+        Optional[str],
+        Parameter(help="Description for the shadow experiment"),
+    ] = None,
+    target_description: Annotated[
+        Optional[str],
+        Parameter(help="Description for the shadow target"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -114,7 +122,13 @@ async def shadow(
 
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing
-    experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
+    experiment = await create_or_find_shadow_experiment(
+        config.client,
+        endpoint_id,
+        shadow_name,
+        source,
+        description=description,
+    )
 
     deployment = await show_loading_status(
         "Creating shadow deployment...",
@@ -138,6 +152,7 @@ async def shadow(
             experiment_id=experiment.id,
             name=name + "-target",
             target_deployment_id=deployment.id,
+            description=target_description or omit,
         ),
     )
 
@@ -202,7 +217,12 @@ def build_shadow_name(rate: float | None, key: str | None, target_qps: float | N
 
 
 async def create_or_find_shadow_experiment(
-    client: AsyncClient, endpoint_id: str, name: str, source: ShadowSourceParam
+    client: AsyncClient,
+    endpoint_id: str,
+    name: str,
+    source: ShadowSourceParam,
+    *,
+    description: str | None = None,
 ) -> ShadowExperiment:
     try:
         return await show_loading_status(
@@ -212,6 +232,7 @@ async def create_or_find_shadow_experiment(
                 name=name,
                 source=source,
                 targets=[],
+                description=description or omit,
             ),
         )
     except APIError as e:

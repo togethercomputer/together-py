@@ -20,6 +20,10 @@ async def list(
         Parameter(help="Model ID to filter configs for", required=True),
     ],
     *,
+    reference_model: Annotated[
+        Optional[str],
+        Parameter(help="Full model resource name filter, e.g. projects/<project>/models/<model>"),
+    ] = None,
     limit: Annotated[Optional[int], Parameter(help="Maximum configs to return")] = None,
     after: AfterParameter = None,
     config: CLIConfigParameter,
@@ -28,6 +32,7 @@ async def list(
     response = await show_loading_status(
         "Loading model configs...",
         config.client.beta.models.configs.list(
+            reference_model=reference_model or omit,
             reference_model_id=model,
             limit=limit if limit is not None else omit,
             after=after or omit,

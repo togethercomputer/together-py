@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 from typing_extensions import Annotated, override
 
 from cyclopts import Parameter
 
+from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
@@ -50,6 +51,7 @@ async def create(
         Literal["model", "adapter"],
         Parameter(name="type", help="Record type: full model weights or a LoRA adapter"),
     ] = "model",
+    description: Annotated[Optional[str], Parameter(help="Human-readable description for the model")] = None,
     config: CLIConfigParameter,
 ) -> None:
     """Register a model (does not upload files)"""
@@ -58,7 +60,12 @@ async def create(
 
     response = await show_loading_status(
         "Creating beta model...",
-        config.client.beta.models.create(name=name, base_model_id=base_model, type=type),
+        config.client.beta.models.create(
+            name=name,
+            base_model_id=base_model,
+            type=type,
+            description=description if description is not None else omit,
+        ),
     )
 
     if config.json:

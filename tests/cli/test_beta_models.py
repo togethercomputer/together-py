@@ -142,6 +142,8 @@ class TestBetaModelsCreate:
                 "ml_base",
                 "--type",
                 "model",
+                "--description",
+                "registered model",
                 "--json",
             ]
         )
@@ -151,6 +153,7 @@ class TestBetaModelsCreate:
             "name": "my-model",
             "baseModelId": "ml_base",
             "type": "model",
+            "description": "registered model",
         }
         assert json.loads(result.output)["id"] == "ml_1"
 
@@ -184,14 +187,20 @@ class TestBetaModelsUpdate:
                 "renamed",
                 "--description",
                 "updated",
+                "--visibility",
+                "internal",
                 "--json",
             ]
         )
 
         assert result.exit_code == 0, result.output
         req = cast(Call, route.calls[0]).request
-        assert "updateMask=name%2Cdescription" in str(req.url)
-        assert json.loads(req.content.decode()) == {"name": "renamed", "description": "updated"}
+        assert "updateMask=name%2Cdescription%2Cvisibility" in str(req.url)
+        assert json.loads(req.content.decode()) == {
+            "name": "renamed",
+            "description": "updated",
+            "visibility": "VISIBILITY_INTERNAL",
+        }
 
     def test_update_requires_option(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "models", "update", "ml_1", "--project", "proj"])
@@ -210,13 +219,30 @@ class TestBetaModelsList:
         )
 
         result = cli_runner.invoke(
-            ["beta", "models", "list", "--project", "proj", "--limit", "10", "--after", "tok", "--json"]
+            [
+                "beta",
+                "models",
+                "list",
+                "--project",
+                "proj",
+                "--limit",
+                "10",
+                "--after",
+                "tok",
+                "--organization",
+                "org-1",
+                "--visibility",
+                "internal",
+                "--json",
+            ]
         )
 
         assert result.exit_code == 0, result.output
         url = str(cast(Call, route.calls[0]).request.url)
         assert "limit=10" in url
         assert "after=tok" in url
+        assert "organizationId=org-1" in url
+        assert "visibility=VISIBILITY_INTERNAL" in url
         assert json.loads(result.output)["next_cursor"] == "next"
 
 
@@ -273,7 +299,20 @@ class TestBetaModelsOrg:
         )
 
         result = cli_runner.invoke(
-            ["beta", "models", "org", "--project", "proj", "--limit", "3", "--after", "tok", "--json"]
+            [
+                "beta",
+                "models",
+                "org",
+                "--project",
+                "proj",
+                "--organization",
+                "org-1",
+                "--limit",
+                "3",
+                "--after",
+                "tok",
+                "--json",
+            ]
         )
 
         assert result.exit_code == 0, result.output
@@ -402,6 +441,8 @@ class TestBetaModelsConfigs:
                 "5",
                 "--after",
                 "tok",
+                "--reference-model",
+                "projects/proj/models/ml_1",
                 "--json",
             ]
         )
@@ -409,6 +450,7 @@ class TestBetaModelsConfigs:
         assert result.exit_code == 0, result.output
         url = str(cast(Call, route.calls[0]).request.url)
         assert "referenceModelId=ml_1" in url
+        assert "referenceModel=projects%2Fproj%2Fmodels%2Fml_1" in url
         assert "limit=5" in url
         assert "after=tok" in url
         assert json.loads(result.output)["next_cursor"] == "next"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from typing import Any, List, Optional
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 from cyclopts import Parameter
 
@@ -17,6 +17,10 @@ async def update(
     id: Annotated[str, Parameter(help="Model ID to update")],
     name: Annotated[Optional[str], Parameter(help="Updated inference-addressable name")] = None,
     description: Annotated[Optional[str], Parameter(help="Updated description")] = None,
+    visibility: Annotated[
+        Optional[Literal["private", "internal"]],
+        Parameter(help="Updated model visibility"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -31,6 +35,9 @@ async def update(
     if description is not None:
         body["description"] = description
         update_mask.append("description")
+    if visibility is not None:
+        body["visibility"] = f"VISIBILITY_{visibility.upper()}"
+        update_mask.append("visibility")
 
     if not update_mask:
         console.print("Error: At least one update option must be specified.")

@@ -16,13 +16,19 @@ async def org(
     config: CLIConfigParameter,
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
     after: AfterParameter = None,
+    organization_id: Annotated[
+        Optional[str],
+        Parameter(name="organization", help="Organization ID to list; defaults to the authenticated organization"),
+    ] = None,
 ) -> None:
-    me = await config.client.whoami()
+    if organization_id is None:
+        me = await config.client.whoami()
+        organization_id = me.organization_id
 
     response = await show_loading_status(
         "Loading org-scoped models...",
         config.client.beta.models.list_org_scoped(
-            me.organization_id,
+            organization_id,
             limit=limit if limit is not None else omit,
             after=after or omit,
         ),

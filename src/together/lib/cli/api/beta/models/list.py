@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 from cyclopts import Parameter
 
@@ -17,6 +17,14 @@ from together.lib.cli.utils._mock_pagination import AfterParameter
 async def list(
     limit: Annotated[Optional[int], Parameter(help="Maximum models to return")] = None,
     after: AfterParameter = None,
+    organization_id: Annotated[
+        Optional[str],
+        Parameter(name="organization", help="Organization whose shared models should be included"),
+    ] = None,
+    visibility: Annotated[
+        Optional[Literal["private", "internal"]],
+        Parameter(help="Filter by model visibility"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -25,6 +33,8 @@ async def list(
         config.client.beta.models.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
+            organization_id=organization_id or omit,
+            visibility=f"VISIBILITY_{visibility.upper()}" if visibility is not None else omit,
         ),
     )
 
