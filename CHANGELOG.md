@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.24.0](https://github.com/togethercomputer/together-py/compare/v2.23.0...v2.24.0) (2026-07-16)
+
+
+### Features
+
+* Add CLI commands for new dedicated endpoints ([#25](https://github.com/togethercomputer/together-py/issues/25)) ([c658cb0](https://github.com/togethercomputer/together-py/commit/c658cb014f8fc1d0465929b30d81d8aa56d564ff))
+* SDK methods for new dedicated models inference ([574dd24](https://github.com/togethercomputer/together-py/commit/574dd248591a12d917e9a86e93aa54e853691074))
+
+
+### Chores
+
+* Remove stale model_limits utils ([#440](https://github.com/togethercomputer/together-py/issues/440)) ([e9d9e33](https://github.com/togethercomputer/together-py/commit/e9d9e33a2dded4300a0994ad36126a4ec96605ff))
+
 ## [2.23.0](https://github.com/togethercomputer/together-py/compare/v2.22.1...v2.23.0) (2026-07-13)
 
 
