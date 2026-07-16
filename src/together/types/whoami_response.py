@@ -1,5 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
+from typing import Optional
+
 from .._models import BaseModel
 
 __all__ = ["WhoamiResponse"]
@@ -27,3 +29,6 @@ class WhoamiResponse(BaseModel):
     Used with an endpoint slug as `<project_slug>/<endpoint_slug>` to form the
     `model` value in dedicated endpoint inference calls.
     """
+
+    user_id: Optional[str] = None
+    """The ID of the authenticated user, if available."""

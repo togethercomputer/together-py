@@ -5,6 +5,7 @@ from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
 from ..._models import BaseModel
+from .container_deployment_status import ContainerDeploymentStatus
 
 __all__ = [
     "Deployment",
@@ -56,7 +57,7 @@ class AutoscalingCustomMetricAutoscalingConfig(BaseModel):
     custom_metric_name: Optional[str] = None
     """CustomMetricName is the Prometheus metric name.
 
-    Required. Must match [a-zA-Z\\__:][a-zA-Z0-9_:]\\**
+    Must match [a-zA-Z\\__:][a-zA-Z0-9_:]\\**
     """
 
     metric: Optional[Literal["CustomMetric"]] = None
@@ -232,7 +233,7 @@ class Deployment(BaseModel):
     replica_events: Optional[Dict[str, ReplicaEvents]] = None
     """ReplicaEvents is a mapping of replica names or IDs to their status events"""
 
-    status: Optional[Literal["Updating", "Scaling", "Ready", "Failed", "ScaledToZero"]] = None
+    status: Optional[ContainerDeploymentStatus] = None
     """
     Status represents the overall status of the deployment (e.g., Updating, Scaling,
     Ready, Failed)
