@@ -208,8 +208,10 @@ class TestBetaEndpointsDeploy:
 
         assert result.exit_code == 0, result.output
         assert create_deployment_route.call_count == 1
+        deployment_url = str(cast(Call, create_deployment_route.calls[0]).request.url)
+        assert "validateOnly=true" in deployment_url
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
-        assert deployment_body["validateOnly"] is True
+        assert "validateOnly" not in deployment_body
 
 
 class TestBetaEndpointsList:

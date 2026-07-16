@@ -85,10 +85,6 @@ async def shadow(
         bool,
         Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment"),
     ] = False,
-    description: Annotated[
-        Optional[str],
-        Parameter(help="Description for the shadow experiment"),
-    ] = None,
     target_description: Annotated[
         Optional[str],
         Parameter(help="Description for the shadow target"),
@@ -122,13 +118,7 @@ async def shadow(
 
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing
-    experiment = await create_or_find_shadow_experiment(
-        config.client,
-        endpoint_id,
-        shadow_name,
-        source,
-        description=description,
-    )
+    experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
 
     deployment = await show_loading_status(
         "Creating shadow deployment...",
@@ -221,8 +211,6 @@ async def create_or_find_shadow_experiment(
     endpoint_id: str,
     name: str,
     source: ShadowSourceParam,
-    *,
-    description: str | None = None,
 ) -> ShadowExperiment:
     try:
         return await show_loading_status(
@@ -232,7 +220,6 @@ async def create_or_find_shadow_experiment(
                 name=name,
                 source=source,
                 targets=[],
-                description=description or omit,
             ),
         )
     except APIError as e:

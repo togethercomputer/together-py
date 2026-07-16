@@ -237,9 +237,7 @@ class TestBetaEndpointShadow:
             return_value=httpx.Response(200, json=_shadow_target_body())
         )
 
-        result = cli_runner.invoke(
-            _shadow_cli_args(description="shadow notes", target_description="target notes")
-        )
+        result = cli_runner.invoke(_shadow_cli_args(target_description="target notes"))
 
         assert result.exit_code == 0, result.output
 
@@ -248,7 +246,6 @@ class TestBetaEndpointShadow:
             "name": "shadow-rate-0.1",
             "source": {"endpoint": {"sampling": {"uniform": {"rate": 0.1}}}},
             "targets": [],
-            "description": "shadow notes",
         }
 
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())

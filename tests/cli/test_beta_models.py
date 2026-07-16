@@ -290,7 +290,6 @@ class TestBetaModelsPublic:
 class TestBetaModelsOrg:
     @pytest.mark.respx(base_url=base_url)
     def test_org_lists_org_scoped_models(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         route = respx_mock.get("/organizations/org-1/models").mock(
             return_value=httpx.Response(
                 200,
