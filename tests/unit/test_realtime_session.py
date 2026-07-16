@@ -12,7 +12,7 @@ import json
 import base64
 import asyncio
 import contextlib
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Callable, Optional
 
 import pytest
 
@@ -25,6 +25,7 @@ from together.lib.realtime import (
     TranscriptDelta,
     TranscriptCompleted,
     RealtimeSessionError,
+    RealtimeSessionEvent,
     RealtimeConnectionError,
 )
 from together.lib.realtime._session import AsyncRealtimeTranscriptionSession
@@ -183,11 +184,11 @@ def make_session(server: FakeRealtimeServer, **overrides: Any) -> AsyncRealtimeT
 
 async def collect_until(
     session: AsyncRealtimeTranscriptionSession,
-    predicate: Any,
+    predicate: Callable[[List[RealtimeSessionEvent]], bool],
     timeout: float = 5.0,
-) -> List[Any]:
+) -> List[RealtimeSessionEvent]:
     """Consume session events until predicate(events) is truthy."""
-    events: List[Any] = []
+    events: List[RealtimeSessionEvent] = []
 
     async def _consume() -> None:
         async for event in session:
@@ -504,4 +505,4 @@ class TestBufferGapEvents:
                     session, lambda evs: any(isinstance(e, BufferGap) for e in evs), timeout=5.0
                 )
             gaps = [e for e in events if isinstance(e, BufferGap)]
-            assert gaps[0].dropped_seconds == pytest.approx(2.0, abs=0.1)
+            assert abs(gaps[0].dropped_seconds - 2.0) < 0.1

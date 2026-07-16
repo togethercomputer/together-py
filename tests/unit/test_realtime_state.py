@@ -27,7 +27,7 @@ def make_state(**kwargs: object) -> RecoveryState:
     # neutral defaults so each test states its intent explicitly; production
     # defaults (margin 0, max_replay_seconds 5) are covered by
     # TestDefaultReplayWindow
-    defaults: dict = {"input_audio_format": FMT, "replay_margin": 5.0, "max_replay_seconds": None}
+    defaults: dict[str, object] = {"input_audio_format": FMT, "replay_margin": 5.0, "max_replay_seconds": None}
     defaults.update(kwargs)
     return RecoveryState(**defaults)  # type: ignore[arg-type]
 

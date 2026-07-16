@@ -6,9 +6,9 @@ is being spoken, plus a finalized transcript per utterance. The WAV file
 here stands in for a live source (microphone, phone call, meeting audio).
 
 Usage:
-    pip install "together[realtime]"
+    uv add "together[realtime]"
     export TOGETHER_API_KEY=...
-    python examples/realtime_transcription.py audio.wav   # 16 kHz mono s16le WAV
+    uv run ./examples/realtime_transcription.py audio.wav   # 16 kHz mono s16le WAV
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ def on_event(event: RealtimeSessionEvent) -> None:
 async def transcribe(audio: bytes) -> str:
     client = AsyncTogether()
 
-    async with client.realtime.transcription(
+    async with client.beta.realtime.transcription(
         model=MODEL,
         sample_rate=SAMPLE_RATE,
         event_callback=on_event,

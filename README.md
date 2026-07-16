@@ -176,10 +176,10 @@ moments and a finalized transcript for each utterance. Requires the `realtime`
 extra:
 
 ```sh
-pip install "together[realtime]"
+uv add "together[realtime]"
 ```
 
-Use `client.realtime.transcription()`: a session built for live sources. If
+Use `client.beta.realtime.transcription()`: a session built for live sources. If
 the connection drops mid-conversation, the session holds on to the speech the
 server hadn't transcribed yet, reconnects automatically, and picks up where
 the transcript left off — words spoken during the outage still come back as
@@ -191,7 +191,7 @@ from together.lib.realtime import TranscriptDelta, TranscriptCompleted
 
 client = AsyncTogether()
 
-async with client.realtime.transcription(
+async with client.beta.realtime.transcription(
     model="openai/whisper-large-v3",
     sample_rate=16_000,
 ) as session:
@@ -233,11 +233,11 @@ What to know before integrating:
   see [`examples/realtime_failover.py`](examples/realtime_failover.py):
   on failure, `session.pending_audio()` hands you the un-transcribed speech
   to seed a new session on another endpoint.
-- **Sync applications**: `Together().realtime.transcription(...)` mirrors the
+- **Sync applications**: `Together().beta.realtime.transcription(...)` mirrors the
   async API on a background thread — good for a handful of sessions; use the
   async client for high concurrency.
 - **Full manual control** (raw wire events, no automatic recovery):
-  `client.realtime.connect()`.
+  `client.beta.realtime.connect()`.
 
 See [`examples/realtime_transcription.py`](examples/realtime_transcription.py)
 for a runnable end-to-end example.

@@ -10,9 +10,9 @@ When an endpoint is unrecoverable, SDK calls raise RealtimeConnectionError.
 Moving to another endpoint is application code: the loop below handles failover.
 
 Usage:
-    pip install "together[realtime]"
+    uv add "together[realtime]"
     export TOGETHER_API_KEY=...
-    python examples/realtime_failover.py audio.wav   # 16 kHz mono s16le WAV
+    uv run ./examples/realtime_failover.py audio.wav   # 16 kHz mono s16le WAV
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ async def transcribe_with_failover(audio: bytes) -> str:
         client, model = clients[attempt % len(clients)]
         print(f"--- streaming to {model}")
 
-        session = client.realtime.transcription(
+        session = client.beta.realtime.transcription(
             model=model,
             sample_rate=SAMPLE_RATE,
             event_callback=on_event,
@@ -93,7 +93,7 @@ async def transcribe_with_failover(audio: bytes) -> str:
                     await session.append(carry_over)
 
                 while position < len(audio):
-                    await session.append(audio[position: position + CHUNK_BYTES])
+                    await session.append(audio[position : position + CHUNK_BYTES])
                     position += CHUNK_BYTES
                     await asyncio.sleep(0.1)  # simulate a live capture cadence
                 transcripts.append(await session.flush())

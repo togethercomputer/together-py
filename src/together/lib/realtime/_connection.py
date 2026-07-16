@@ -32,7 +32,7 @@ __all__ = [
     "handshake_status_of",
 ]
 
-_INSTALL_HINT = 'The realtime API requires the `websockets` package; install it with `pip install "together[realtime]"`'
+_INSTALL_HINT = 'The realtime API requires the `websockets` package; install it with `uv add "together[realtime]"`'
 
 
 def _require_websockets() -> None:
@@ -228,7 +228,7 @@ class AsyncRealtimeConnection:
 
 
 class RealtimeConnectionManager:
-    """Context manager returned by `client.realtime.connect(...)` (sync)."""
+    """Context manager returned by `client.beta.realtime.connect(...)` (sync)."""
 
     def __init__(
         self,
@@ -290,7 +290,7 @@ class RealtimeConnectionManager:
 
 
 class AsyncRealtimeConnectionManager:
-    """Awaitable context manager returned by `client.realtime.connect(...)` (async)."""
+    """Awaitable context manager returned by `client.beta.realtime.connect(...)` (async)."""
 
     def __init__(
         self,

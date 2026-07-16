@@ -1,5 +1,5 @@
-"""Regen-guard: `client.realtime` is a handwritten addition to the generated
-_client.py. If a Stainless regeneration drops the cached_property, these tests
+"""Regen-guard: `client.beta.realtime` is a handwritten addition to the generated
+resources/beta/beta.py. If a Stainless regeneration drops the cached_property, these tests
 fail loudly instead of the feature silently disappearing.
 """
 
@@ -11,14 +11,14 @@ from together.resources.realtime import RealtimeResource, AsyncRealtimeResource
 
 def test_sync_client_exposes_realtime() -> None:
     client = Together(api_key="test-key", base_url="http://127.0.0.1:4010")
-    assert isinstance(client.realtime, RealtimeResource)
-    manager = client.realtime.connect(model="openai/whisper-large-v3")
+    assert isinstance(client.beta.realtime, RealtimeResource)
+    manager = client.beta.realtime.connect(model="openai/whisper-large-v3")
     assert manager is not None
 
 
 def test_async_client_exposes_realtime() -> None:
     client = AsyncTogether(api_key="test-key", base_url="http://127.0.0.1:4010")
-    assert isinstance(client.realtime, AsyncRealtimeResource)
+    assert isinstance(client.beta.realtime, AsyncRealtimeResource)
 
 
 def test_public_lib_surface_importable() -> None:

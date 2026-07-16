@@ -511,7 +511,7 @@ class AsyncRealtimeTranscriptionSession:
         elif isinstance(event, EchoResponseEvent):
             self._echo_pending_since = None
         # turn events / unknown events are intentionally not surfaced by the
-        # normalized stream; use client.realtime.connect() for raw access.
+        # normalized stream; use client.beta.realtime.connect() for raw access.
 
     def _is_replayed_now(self) -> bool:
         """Events for audio at or before the replay watermark came from replayed bytes."""
