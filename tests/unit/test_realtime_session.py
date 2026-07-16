@@ -1,0 +1,508 @@
+"""Failure-injection tests for the robust realtime transcription session.
+
+Runs an in-process websockets server whose per-connection behavior is
+scripted, so reconnect/replay behavior is exercised against real sockets.
+Servers are created inside each test (not fixtures) to avoid event-loop
+leakage across tests.
+"""
+
+from __future__ import annotations
+
+import json
+import base64
+import asyncio
+import contextlib
+from typing import Any, Dict, List, Optional
+
+import pytest
+
+from together import AsyncTogether
+from together.lib.realtime import (
+    BufferGap,
+    Reconnected,
+    Reconnecting,
+    SessionStarted,
+    TranscriptDelta,
+    TranscriptCompleted,
+    RealtimeSessionError,
+    RealtimeConnectionError,
+)
+from together.lib.realtime._session import AsyncRealtimeTranscriptionSession
+
+BPS = 32_000  # pcm_s16le_16000
+
+
+class ConnectionLog:
+    """What one server-side connection observed."""
+
+    def __init__(self) -> None:
+        self.audio = bytearray()
+        self.commits = 0
+        self.events: List[Dict[str, Any]] = []
+        self.path = ""
+
+
+class FakeRealtimeServer:
+    """Scriptable stand-in for the ipop realtime endpoint."""
+
+    def __init__(
+        self,
+        *,
+        reject_statuses: Optional[List[int]] = None,
+        drop_after_bytes: Optional[int] = None,
+        completed_every_bytes: Optional[int] = None,
+        fatal_error: Optional[Dict[str, Any]] = None,
+        complete_on_commit: bool = True,
+        transcribed_fraction: float = 1.0,
+        answer_echo: bool = True,
+    ) -> None:
+        self.reject_statuses = list(reject_statuses or [])
+        self.drop_after_bytes = drop_after_bytes
+        self.completed_every_bytes = completed_every_bytes
+        self.fatal_error = fatal_error
+        self.complete_on_commit = complete_on_commit
+        self.transcribed_fraction = transcribed_fraction
+        self.answer_echo = answer_echo
+        self.connections: List[ConnectionLog] = []
+        self._server: Any = None
+
+    async def __aenter__(self) -> "FakeRealtimeServer":
+        from websockets.asyncio.server import serve
+
+        self._server = await serve(self._handler, "127.0.0.1", 0, process_request=self._process_request)
+        port = self._server.sockets[0].getsockname()[1]
+        self.url = f"http://127.0.0.1:{port}"
+        return self
+
+    async def __aexit__(self, *_exc: object) -> None:
+        self._server.close()
+        await self._server.wait_closed()
+
+    def _process_request(self, connection: Any, _request: Any) -> Any:
+        if self.reject_statuses:
+            status = self.reject_statuses.pop(0)
+            return connection.respond(status, f"rejected {status}\n")
+        return None
+
+    async def _handler(self, ws: Any) -> None:
+        conn = ConnectionLog()
+        conn.path = getattr(ws.request, "path", "")
+        self.connections.append(conn)
+        item = len(self.connections) * 100
+        await ws.send(
+            json.dumps(
+                {
+                    "type": "session.created",
+                    "event_id": "e1",
+                    "session": {"id": f"s{len(self.connections)}", "object": "realtime.session"},
+                }
+            )
+        )
+        if self.fatal_error is not None:
+            await ws.send(
+                json.dumps(
+                    {
+                        "type": "conversation.item.input_audio_transcription.failed",
+                        "error": self.fatal_error,
+                    }
+                )
+            )
+            await ws.close()
+            return
+        emitted_at = 0
+        try:
+            async for message in ws:
+                event = json.loads(message)
+                conn.events.append(event)
+                etype = event.get("type")
+                if etype == "input_audio_buffer.append":
+                    conn.audio.extend(base64.b64decode(event["audio"]))
+                    if self.drop_after_bytes is not None and len(conn.audio) >= self.drop_after_bytes:
+                        self.drop_after_bytes = None  # only the first connection drops
+                        ws.transport.abort()  # simulate abrupt network failure
+                        return
+                    if (
+                        self.completed_every_bytes is not None
+                        and len(conn.audio) - emitted_at >= self.completed_every_bytes
+                    ):
+                        # like the real whisper handler, completed carries
+                        # start/duration on the audio timeline
+                        start_s = emitted_at / BPS
+                        duration_s = (len(conn.audio) - emitted_at) / BPS * self.transcribed_fraction
+                        emitted_at = len(conn.audio)
+                        item += 1
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "conversation.item.input_audio_transcription.delta",
+                                    "item_id": f"msg_{item}",
+                                    "delta": f"partial-{item}",
+                                }
+                            )
+                        )
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "conversation.item.input_audio_transcription.completed",
+                                    "item_id": f"msg_{item}",
+                                    "transcript": f"final-{item}",
+                                    "start": start_s,
+                                    "duration": duration_s,
+                                }
+                            )
+                        )
+                elif etype == "input_audio_buffer.commit":
+                    conn.commits += 1
+                    if self.complete_on_commit:
+                        item += 1
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "conversation.item.input_audio_transcription.completed",
+                                    "item_id": f"msg_{item}",
+                                    "transcript": f"committed-{item}",
+                                }
+                            )
+                        )
+                elif etype == "echo" and self.answer_echo:
+                    await ws.send(json.dumps({"type": "echo.response", "echo_id": event.get("echo_id")}))
+        except Exception:
+            pass
+
+
+def make_session(server: FakeRealtimeServer, **overrides: Any) -> AsyncRealtimeTranscriptionSession:
+    client = AsyncTogether(api_key="test-key", base_url=server.url)
+    kwargs: Dict[str, Any] = dict(
+        client=client,
+        model="openai/whisper-large-v3",
+        reconnect={"backoff_initial": 0.01, "backoff_max": 0.02, "max_attempts": 5, "max_elapsed": 5.0},
+    )
+    kwargs.update(overrides)
+    return AsyncRealtimeTranscriptionSession(**kwargs)
+
+
+async def collect_until(
+    session: AsyncRealtimeTranscriptionSession,
+    predicate: Any,
+    timeout: float = 5.0,
+) -> List[Any]:
+    """Consume session events until predicate(events) is truthy."""
+    events: List[Any] = []
+
+    async def _consume() -> None:
+        async for event in session:
+            events.append(event)
+            if predicate(events):
+                return
+
+    await asyncio.wait_for(_consume(), timeout)
+    return events
+
+
+def seconds(n: float) -> bytes:
+    return b"\x01" * int(n * BPS)
+
+
+class TestHappyPath:
+    async def test_vad_flow_delta_completed(self) -> None:
+        async with FakeRealtimeServer(completed_every_bytes=BPS) as server:
+            session = make_session(server)
+            async with session:
+                await session.append(seconds(1.0))
+                events = await collect_until(session, lambda evs: any(isinstance(e, TranscriptCompleted) for e in evs))
+            assert isinstance(events[0], SessionStarted)
+            deltas = [e for e in events if isinstance(e, TranscriptDelta)]
+            finals = [e for e in events if isinstance(e, TranscriptCompleted)]
+            assert deltas and finals
+            assert finals[0].text.startswith("final-")
+            assert finals[0].replayed is False
+            assert server.connections[0].audio == seconds(1.0)
+
+    async def test_manual_commit_flow(self) -> None:
+        async with FakeRealtimeServer() as server:
+            session = make_session(server, turn_detection={"type": "none"})
+            async with session:
+                await session.append(seconds(0.5))
+                await session.commit()
+                events = await collect_until(session, lambda evs: any(isinstance(e, TranscriptCompleted) for e in evs))
+            finals = [e for e in events if isinstance(e, TranscriptCompleted)]
+            assert finals[0].text.startswith("committed-")
+            # commit was sent after all audio
+            assert server.connections[0].commits == 1
+            assert len(server.connections[0].audio) == len(seconds(0.5))
+
+
+class TestSessionParams:
+    async def test_session_level_params_sent_on_connect(self) -> None:
+        async with FakeRealtimeServer() as server:
+            session = make_session(
+                server,
+                language="en",
+                prompt="medical terms",
+                rolling_prompt=True,
+                energy_gate_rms=0.02,
+                session_params={"custom_engine_knob": "x"},
+            )
+            async with session:
+                await session.append(seconds(0.1))
+                await asyncio.sleep(0.1)
+            updates = [e for e in server.connections[0].events if e["type"] == "transcription_session.updated"]
+            assert updates, "expected a transcription_session.updated event"
+            sent = updates[0]["session"]
+            assert sent["language"] == "en"
+            assert sent["prompt"] == "medical terms"
+            assert sent["rolling_prompt"] is True
+            assert sent["energy_gate_rms"] == 0.02
+            assert sent["custom_engine_knob"] == "x"
+
+
+class TestReconnect:
+    async def test_drop_mid_stream_replays_from_anchor(self) -> None:
+        async with FakeRealtimeServer(completed_every_bytes=BPS, drop_after_bytes=int(2.5 * BPS)) as server:
+            session = make_session(server, buffer={"replay_margin": 1.0})
+            async with session:
+                await session.append(seconds(2.0))
+                # wait for the completeds from the first connection (anchor advances)
+                await collect_until(session, lambda evs: sum(isinstance(e, TranscriptCompleted) for e in evs) >= 2)
+                await session.append(seconds(1.0))  # triggers the drop at 2.5s
+                events = await collect_until(
+                    session, lambda evs: any(isinstance(e, Reconnected) for e in evs), timeout=10.0
+                )
+                assert any(isinstance(e, Reconnecting) for e in events)
+                assert len(server.connections) == 2
+                # replay window = [anchor - margin, head]; anchor was at ~2s of
+                # audio appended when the second completed arrived. Reconnected
+                # fires before the writer drains, so wait for the replay bytes.
+                replayed = await self._wait_bytes_stable(server, 1, int(1.0 * BPS))
+                assert replayed <= int(2.0 * BPS)  # bounded: never the whole 3s buffer
+                assert replayed >= int(1.0 * BPS)  # at least margin + post-anchor audio
+
+    async def test_max_replay_seconds_zero_resumes_live(self) -> None:
+        async with FakeRealtimeServer(drop_after_bytes=BPS) as server:
+            session = make_session(server, buffer={"max_replay_seconds": 0.0})
+            async with session:
+                await session.append(seconds(1.0))  # server drops at 1s
+                await collect_until(session, lambda evs: any(isinstance(e, Reconnected) for e in evs), timeout=10.0)
+                assert len(server.connections) == 2
+                assert len(server.connections[1].audio) == 0  # nothing replayed
+                await session.append(seconds(0.25))
+                await asyncio.wait_for(self._wait_bytes(server, 1, int(0.25 * BPS)), 5.0)
+
+    @staticmethod
+    async def _wait_bytes(server: FakeRealtimeServer, conn: int, nbytes: int) -> None:
+        while len(server.connections) <= conn or len(server.connections[conn].audio) < nbytes:
+            await asyncio.sleep(0.01)
+
+    @staticmethod
+    async def _wait_bytes_stable(server: FakeRealtimeServer, conn: int, min_bytes: int, timeout: float = 5.0) -> int:
+        """Wait for at least min_bytes on a connection, then for the count to go quiet."""
+        await asyncio.wait_for(TestReconnect._wait_bytes(server, conn, min_bytes), timeout)
+        prev = -1
+        while prev != len(server.connections[conn].audio):
+            prev = len(server.connections[conn].audio)
+            await asyncio.sleep(0.1)
+        return prev
+
+    async def test_commit_resent_after_drop(self) -> None:
+        async with FakeRealtimeServer(drop_after_bytes=int(0.5 * BPS)) as server:
+            session = make_session(server, turn_detection={"type": "none"})
+            async with session:
+                await session.append(seconds(0.5))
+                await session.commit()  # server drops before answering
+                events = await collect_until(
+                    session,
+                    lambda evs: any(isinstance(e, TranscriptCompleted) for e in evs),
+                    timeout=10.0,
+                )
+            assert len(server.connections) == 2
+            second = server.connections[1]
+            assert second.commits == 1  # the outstanding commit was re-issued
+            assert len(second.audio) == len(seconds(0.5))  # full unacked audio replayed
+            finals = [e for e in events if isinstance(e, TranscriptCompleted)]
+            assert finals and finals[0].replayed is True
+
+    async def test_replayed_flag_set_on_replay_events(self) -> None:
+        async with FakeRealtimeServer(completed_every_bytes=BPS, drop_after_bytes=int(1.5 * BPS)) as server:
+            # explicit pre-roll so the replay window covers the already
+            # transcribed first second and the server re-emits its transcript
+            session = make_session(server, buffer={"replay_margin": 5.0})
+            async with session:
+                await session.append(seconds(1.5))  # 1 completed, then drop
+                events = await collect_until(
+                    session,
+                    lambda evs: sum(isinstance(e, TranscriptCompleted) for e in evs) >= 2,
+                    timeout=10.0,
+                )
+            finals = [e for e in events if isinstance(e, TranscriptCompleted)]
+            assert finals[0].replayed is False
+            assert finals[1].replayed is True  # produced from replayed audio
+            # stable, distinct SDK segment ids despite server item_id reuse patterns
+            assert finals[0].segment_id != finals[1].segment_id
+
+
+class TestTerminalFailureUnderLoad:
+    async def test_continuous_appends_during_terminal_failure_do_not_starve_loop(self) -> None:
+        """Regression: unsent audio accumulating while a reconnect is in flight
+        must not busy-spin the writer and starve the event loop (the reconnect
+        task would then never escalate, hanging the session forever)."""
+        async with FakeRealtimeServer(drop_after_bytes=int(0.3 * BPS)) as server:
+            session = make_session(server, reconnect={"max_attempts": 0})
+            with pytest.raises(RealtimeConnectionError):
+                async with session:
+                    server.reject_statuses.extend([500] * 5)
+
+                    async def feed() -> None:
+                        while True:
+                            await session.append(seconds(0.1))
+                            await asyncio.sleep(0.01)
+
+                    feeder = asyncio.create_task(feed())
+                    try:
+                        await asyncio.wait_for(collect_until(session, lambda _evs: False, timeout=8.0), 9.0)
+                    finally:
+                        feeder.cancel()
+                        with contextlib.suppress(asyncio.CancelledError, Exception):
+                            await feeder
+
+
+class TestTerminalFailureSurfacesOnCalls:
+    async def test_append_and_flush_raise_the_terminal_failure(self) -> None:
+        """A plain feed loop must be able to drive failover without a separate
+        consumer task: after terminal failure, append()/flush() raise the
+        stored RealtimeConnectionError rather than a generic state error."""
+        async with FakeRealtimeServer(drop_after_bytes=int(0.2 * BPS)) as server:
+            session = make_session(server, reconnect={"max_attempts": 0})
+            async with session:
+                server.reject_statuses.extend([500] * 5)
+                with pytest.raises(RealtimeConnectionError):
+                    for _ in range(200):  # keep feeding until failure surfaces
+                        await session.append(seconds(0.1))
+                        await asyncio.sleep(0.02)
+                with pytest.raises(RealtimeConnectionError):
+                    await session.flush()
+
+
+class TestExternalFailover:
+    """Endpoint failover is orchestrated OUTSIDE the SDK: on terminal failure
+    the app starts a fresh session on an alternate endpoint, seeded with
+    pending_audio() and context_prompt() from the failed session."""
+
+    async def test_pending_audio_and_prompt_resume_on_alternate_endpoint(self) -> None:
+        async with FakeRealtimeServer(
+            completed_every_bytes=BPS, drop_after_bytes=int(2 * BPS)
+        ) as primary, FakeRealtimeServer() as alternate:
+            session = make_session(
+                primary,
+                reconnect={"backoff_initial": 0.001, "backoff_max": 0.002, "max_attempts": 2, "max_elapsed": 5.0},
+            )
+            failed = False
+            async with session:
+                await session.append(seconds(1.5))
+                await collect_until(session, lambda evs: any(isinstance(e, TranscriptCompleted) for e in evs))
+                primary.reject_statuses.extend([500] * 20)  # endpoint is now down
+                await session.append(seconds(1.0))  # triggers the drop at 2s
+                try:
+                    await collect_until(session, lambda _evs: False, timeout=10.0)
+                except RealtimeConnectionError:
+                    failed = True
+            assert failed
+            # ---- orchestration layer (application code, not the SDK) ----
+            pending = session.pending_audio()
+            prompt = session.context_prompt()
+            assert prompt.startswith("final-") or prompt  # transcript tail available
+            # watermark was 1.0s (completed start+duration), head 2.5s
+            assert len(pending) == len(seconds(1.5))
+            resumed = make_session(alternate, turn_detection={"type": "none"}, prompt=prompt)
+            async with resumed:
+                await resumed.append(pending)
+                await resumed.commit()
+                events = await collect_until(resumed, lambda evs: any(isinstance(e, TranscriptCompleted) for e in evs))
+            assert len(alternate.connections) == 1
+            assert bytes(alternate.connections[0].audio) == pending
+            updates = [e for e in alternate.connections[0].events if e["type"] == "transcription_session.updated"]
+            assert updates and updates[0]["session"]["prompt"] == prompt
+            finals = [e for e in events if isinstance(e, TranscriptCompleted)]
+            assert finals
+
+
+class TestFatalErrors:
+    async def test_fatal_model_not_available(self) -> None:
+        async with FakeRealtimeServer(
+            fatal_error={"message": "no such model", "type": "invalid_request_error", "code": "model_not_available"}
+        ) as server:
+            session = make_session(server)
+            async with session:
+                with pytest.raises(RealtimeSessionError) as err:
+                    await collect_until(session, lambda _evs: False, timeout=5.0)
+                assert err.value.code == "model_not_available"
+
+    async def test_handshake_401_is_fatal(self) -> None:
+        async with FakeRealtimeServer(reject_statuses=[401]) as server:
+            from websockets.exceptions import InvalidStatus
+
+            session = make_session(server)
+            with pytest.raises(InvalidStatus):
+                await session.start()
+
+    async def test_handshake_5xx_retries_then_succeeds(self) -> None:
+        async with FakeRealtimeServer(
+            completed_every_bytes=BPS, drop_after_bytes=int(0.5 * BPS), reject_statuses=[]
+        ) as server:
+            # first connection OK; drop; then two 500s on reconnect before success
+            session = make_session(server)
+            async with session:
+                await session.append(seconds(0.25))
+                server.reject_statuses.extend([500, 503])
+                await session.append(seconds(0.25))  # triggers drop
+                events = await collect_until(
+                    session, lambda evs: any(isinstance(e, Reconnected) for e in evs), timeout=10.0
+                )
+            reconnected = [e for e in events if isinstance(e, Reconnected)]
+            assert reconnected[0].attempt >= 3  # two rejected handshakes + one success
+            assert len(server.connections) == 2
+
+    async def test_retries_exhausted_raises_connection_error(self) -> None:
+        async with FakeRealtimeServer(drop_after_bytes=int(0.1 * BPS)) as server:
+            session = make_session(
+                server,
+                reconnect={"backoff_initial": 0.001, "backoff_max": 0.002, "max_attempts": 3, "max_elapsed": 5.0},
+            )
+            async with session:
+                # reject only reconnect attempts, not the initial connect
+                server.reject_statuses.extend([500] * 50)
+                await session.append(seconds(0.2))
+                with pytest.raises(RealtimeConnectionError):
+                    await collect_until(session, lambda _evs: False, timeout=10.0)
+
+
+class TestWatermark:
+    async def test_completed_start_duration_bounds_replay(self) -> None:
+        # the server reports only half of each segment as transcribed via
+        # start+duration, so the watermark (1.5s) trails the anchor (2.0s);
+        # replay must start from the watermark minus the margin
+        async with FakeRealtimeServer(
+            completed_every_bytes=BPS, transcribed_fraction=0.5, drop_after_bytes=int(2.5 * BPS)
+        ) as server:
+            session = make_session(server, buffer={"replay_margin": 0.5})
+            async with session:
+                await session.append(seconds(2.0))
+                await collect_until(session, lambda evs: sum(isinstance(e, TranscriptCompleted) for e in evs) >= 2)
+                assert session.state.watermark == session.state.to_bytes(1.5)  # start 1.0 + duration 0.5
+                await session.append(seconds(1.0))
+                await collect_until(session, lambda evs: any(isinstance(e, Reconnected) for e in evs), timeout=10.0)
+                # watermark 1.5s - margin 0.5s => replay [1.0s, 3.0s] = 2.0s
+                replayed = await TestReconnect._wait_bytes_stable(server, 1, int(2.0 * BPS))
+            assert replayed == int(2.0 * BPS)
+
+
+class TestBufferGapEvents:
+    async def test_overflow_emits_gap(self) -> None:
+        async with FakeRealtimeServer() as server:  # never completes anything
+            session = make_session(server, buffer={"max_seconds": 1.0})
+            async with session:
+                await session.append(seconds(3.0))
+                events = await collect_until(
+                    session, lambda evs: any(isinstance(e, BufferGap) for e in evs), timeout=5.0
+                )
+            gaps = [e for e in events if isinstance(e, BufferGap)]
+            assert gaps[0].dropped_seconds == pytest.approx(2.0, abs=0.1)

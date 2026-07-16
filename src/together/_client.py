@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from .resources.chat.chat import ChatResource, AsyncChatResource
     from .resources.embeddings import EmbeddingsResource, AsyncEmbeddingsResource
     from .resources.audio.audio import AudioResource, AsyncAudioResource
+    from .resources.realtime import RealtimeResource, AsyncRealtimeResource
     from .resources.completions import CompletionsResource, AsyncCompletionsResource
     from .resources.fine_tuning import FineTuningResource, AsyncFineTuningResource
     from .resources.models.models import ModelsResource, AsyncModelsResource
@@ -230,6 +231,14 @@ class Together(SyncAPIClient):
         from .resources.audio import AudioResource
 
         return AudioResource(self)
+
+    # Handwritten (not generated): realtime transcription over WebSocket.
+    # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
+    @cached_property
+    def realtime(self) -> RealtimeResource:
+        from .resources.realtime import RealtimeResource
+
+        return RealtimeResource(self)
 
     @cached_property
     def models(self) -> ModelsResource:
@@ -550,6 +559,14 @@ class AsyncTogether(AsyncAPIClient):
         from .resources.audio import AsyncAudioResource
 
         return AsyncAudioResource(self)
+
+    # Handwritten (not generated): realtime transcription over WebSocket.
+    # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
+    @cached_property
+    def realtime(self) -> AsyncRealtimeResource:
+        from .resources.realtime import AsyncRealtimeResource
+
+        return AsyncRealtimeResource(self)
 
     @cached_property
     def models(self) -> AsyncModelsResource:

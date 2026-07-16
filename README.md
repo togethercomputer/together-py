@@ -168,6 +168,70 @@ async for chat_completion in stream:
     print(chat_completion.choices)
 ```
 
+## Realtime transcription
+
+Stream audio over WebSocket and receive interim and final transcripts as the
+audio plays. Requires the `realtime` extra:
+
+```sh
+pip install "together[realtime]"
+```
+
+`client.realtime.transcription()` is the recommended surface: an
+auto-reconnecting session that buffers un-transcribed audio on the client and
+replays it after a connection drop, so transient WebSocket failures don't lose
+speech.
+
+```python
+from together import AsyncTogether
+from together.lib.realtime import TranscriptDelta, TranscriptCompleted
+
+client = AsyncTogether()
+
+async with client.realtime.transcription(
+    model="openai/whisper-large-v3",
+    sample_rate=16_000,  # validated against input_audio_format
+) as session:
+    await session.append(pcm_chunk)  # 16 kHz mono s16le PCM, any chunk size
+    async for event in session:
+        if isinstance(event, TranscriptDelta):
+            print("interim:", event.text)
+        elif isinstance(event, TranscriptCompleted):
+            print("final:", event.text)
+    transcript = await session.flush()
+```
+
+Notes:
+
+- Audio must be PCM signed 16-bit little-endian; the default format is
+  `pcm_s16le_16000` (16 kHz mono). Resample before appending.
+- Server-side voice activity detection is on by default: final transcripts
+  arrive per detected utterance without explicit commits. Pass
+  `turn_detection={"type": "none"}` to segment manually with
+  `await session.commit()`.
+- All server session parameters are supported: `language`, `prompt`,
+  `rolling_prompt`, `energy_gate_rms`, turn-detection tuning via
+  `turn_detection={...}` (`threshold`, `min_silence_duration_ms`,
+  `max_speech_duration_s`, `speech_pad_ms`, Deepgram `eot_*`), and
+  `session_params={...}` for engine-specific passthrough options.
+- On retryable failures (network errors, server hiccups, 429/5xx handshakes)
+  the session reconnects with jittered exponential backoff and replays buffered
+  audio from `max(head - max_replay_seconds, last transcribed position)`, where
+  the transcribed position comes from the `completed` event's `start + duration`
+  and `buffer={"max_replay_seconds": 5.0}` is the client-configurable cap
+  (`0` resumes live with no replay; `None` replays the full untranscribed
+  window). Events produced from replayed audio carry `replayed=True`.
+- Buffer gaps (audio dropped after outages exceeding the retention window) are
+  always surfaced as `BufferGap` events — never silent.
+- The sync client (`Together().realtime.transcription(...)`) mirrors this API
+  and runs the session on a background thread — intended for low session
+  counts; use the async client for high-concurrency workloads.
+- For full manual control (raw wire events, no retries), use
+  `client.realtime.connect()`.
+
+See [`examples/realtime_transcription.py`](examples/realtime_transcription.py)
+for a runnable end-to-end example.
+
 ## Using types
 
 Nested request parameters are [TypedDicts](https://docs.python.org/3/library/typing.html#typing.TypedDict). Responses are [Pydantic models](https://docs.pydantic.dev) which also provide helper methods for things like:
