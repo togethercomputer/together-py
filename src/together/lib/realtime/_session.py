@@ -218,7 +218,17 @@ class AsyncRealtimeTranscriptionSession:
     async def start(self) -> None:
         if self._connection is not None:
             return
-        connection = await self._open_connection()
+        try:
+            connection = await self._open_connection()
+        except Exception as exc:
+            status = handshake_status_of(exc)
+            detail = f"HTTP {status}" if status is not None else exc.__class__.__name__
+            raise RealtimeConnectionError(
+                f"could not open realtime connection to {self._client.base_url} ({detail}); "
+                "check that base_url / TOGETHER_BASE_URL points at an API root that "
+                "serves /realtime, e.g. https://api.together.ai/v1",
+                cause=exc,
+            ) from exc
         created = await self._await_session_created(connection)
         self.state.begin_epoch(self.state.write_head)
         self._sent_offset = self.state.write_head
@@ -300,14 +310,18 @@ class AsyncRealtimeTranscriptionSession:
         if self.state.write_head > (self.state.anchor or 0):
             await self.commit()
         self._raise_if_failed()
-        deadline = self._now() + timeout
+        started = self._now()
+        deadline = started + timeout
         while self._now() < deadline:
             if self._failure is not None:
                 raise self._failure
             if self._closed:
                 break
             fully_sent = self._sent_offset >= self.state.write_head and not self._pending_controls
-            quiet_for = self._now() - max(self._last_transcript_event, self._connected_at)
+            # the quiescence clock starts at flush time so the commit sent
+            # above always gets a response window: a final for the tail
+            # utterance may land seconds after the last transcript event
+            quiet_for = self._now() - max(self._last_transcript_event, self._connected_at, started)
             if fully_sent and quiet_for >= quiescence and self._reconnect_task is None:
                 break
             await asyncio.sleep(min(0.1, quiescence / 4))

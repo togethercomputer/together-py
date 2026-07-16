@@ -436,13 +436,12 @@ class TestFatalErrors:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
                 assert err.value.code == "model_not_available"
 
-    async def test_handshake_401_is_fatal(self) -> None:
+    async def test_initial_handshake_failure_raises_typed_error_naming_target(self) -> None:
         async with FakeRealtimeServer(reject_statuses=[401]) as server:
-            from websockets.exceptions import InvalidStatus
-
             session = make_session(server)
-            with pytest.raises(InvalidStatus):
+            with pytest.raises(RealtimeConnectionError, match="HTTP 401") as err:
                 await session.start()
+            assert "127.0.0.1" in str(err.value)  # names the target it tried
 
     async def test_handshake_5xx_retries_then_succeeds(self) -> None:
         async with FakeRealtimeServer(

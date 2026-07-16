@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Realtime transcription over WebSocket with automatic reconnection.
+"""Realtime transcription of live audio.
 
-Streams a 16 kHz mono PCM WAV (or raw PCM) file to the Together realtime API
-and prints interim and final transcripts. The session survives connection
-drops: buffered audio is replayed from the last confirmed transcript.
+Stream PCM audio as it is captured and receive interim text while a phrase
+is being spoken, plus a finalized transcript per utterance. The WAV file
+here stands in for a live source (microphone, phone call, meeting audio).
 
 Usage:
     pip install "together[realtime]"
     export TOGETHER_API_KEY=...
-    python examples/realtime_transcription.py audio.wav
+    python examples/realtime_transcription.py audio.wav   # 16 kHz mono s16le WAV
 """
 
 from __future__ import annotations
@@ -20,70 +20,59 @@ from pathlib import Path
 
 from together import AsyncTogether
 from together.lib.realtime import (
-    BufferGap,
-    Reconnected,
-    Reconnecting,
+    SessionStarted,
     TranscriptDelta,
     TranscriptCompleted,
+    RealtimeSessionEvent,
 )
 
-CHUNK_MS = 40
+MODEL = "openai/whisper-large-v3"
+
 SAMPLE_RATE = 16_000
-BYTES_PER_SECOND = SAMPLE_RATE * 2
+CHUNK_BYTES = SAMPLE_RATE * 2 // 10  # 100 ms per append, like a live source
 
 
-def load_pcm(path: Path) -> bytes:
-    if path.suffix.lower() != ".wav":
-        return path.read_bytes()
-    with wave.open(str(path), "rb") as wav:
-        if wav.getnchannels() != 1 or wav.getsampwidth() != 2 or wav.getframerate() != SAMPLE_RATE:
-            raise SystemExit("expected mono 16-bit 16 kHz WAV (resample first)")
-        return wav.readframes(wav.getnframes())
+def on_event(event: RealtimeSessionEvent) -> None:
+    """Handle session events as they arrive."""
+    if isinstance(event, SessionStarted):
+        # Log the server-assigned session id — useful when correlating a
+        # stream with server-side logs or support requests.
+        print(f"session {event.session_id} started on {event.model}")
+    elif isinstance(event, TranscriptDelta):
+        print(f"interim: {event.text}", end="\r")
+    elif isinstance(event, TranscriptCompleted):
+        print(f"final: {event.text}")
 
 
-async def main() -> None:
-    audio = load_pcm(Path(sys.argv[1]))
+async def transcribe(audio: bytes) -> str:
     client = AsyncTogether()
 
     async with client.realtime.transcription(
-        # model="together_sso/openai/whisper-large-v3-47df6eb0",
-        model="together_sso/openai/whisper-large-v3-e151bfbf",
+        model=MODEL,
         sample_rate=SAMPLE_RATE,
+        event_callback=on_event,
     ) as session:
+        position = 0
+        while position < len(audio):
+            await session.append(audio[position : position + CHUNK_BYTES])
+            position += CHUNK_BYTES
+            await asyncio.sleep(0.1)  # simulate a live capture cadence
 
-        async def feed() -> None:
-            chunk_bytes = BYTES_PER_SECOND * CHUNK_MS // 1000
-            for start in range(0, len(audio), chunk_bytes):
-                await session.append(audio[start : start + chunk_bytes])
-                await asyncio.sleep(CHUNK_MS / 1000)  # pace like a live mic
-            print("\n[audio fully sent — draining transcripts]")
+        return await session.flush()  # finalize whatever was said last
 
-        feeder = asyncio.create_task(feed())
 
-        async def consume() -> None:
-            async for event in session:
-                if isinstance(event, TranscriptDelta):
-                    # print(f"\r… {event.text}", end="", flush=True)
-                    pass
-                elif isinstance(event, TranscriptCompleted):
-                    # marker = " (replayed)" if event.replayed else ""
-                    # print(f"\rfinal: {event.text}{marker}")
-                    print(event.text)
-                elif isinstance(event, Reconnecting):
-                    # print(f"\n[reconnecting: {event.reason} (attempt {event.attempt})]")
-                    pass
-                elif isinstance(event, Reconnected):
-                    # print(f"[reconnected; replayed {event.replayed_seconds:.1f}s of audio]")
-                    pass
-                elif isinstance(event, BufferGap):
-                    # print(f"[warning: {event.dropped_seconds:.1f}s of audio lost]")
-                    pass
+def load_pcm(path: Path) -> bytes:
+    with wave.open(str(path), "rb") as w:
+        if (w.getnchannels(), w.getsampwidth(), w.getframerate()) != (1, 2, SAMPLE_RATE):
+            raise SystemExit(f"expected mono 16-bit {SAMPLE_RATE} Hz WAV")
+        return w.readframes(w.getnframes())
 
-        consumer = asyncio.create_task(consume())
-        await feeder
-        transcript = await session.flush()
-        consumer.cancel()
-        print(f"\nfull transcript: {transcript}")
+
+async def main() -> None:
+    if len(sys.argv) != 2:
+        raise SystemExit(__doc__)
+    transcript = await transcribe(load_pcm(Path(sys.argv[1])))
+    print(f"\nfull transcript: {transcript}")
 
 
 if __name__ == "__main__":
