@@ -41,7 +41,7 @@ def _parse_rpc_error_envelope(body: object) -> _RPCError:
     return _RPCError.parse_obj(body)  # type: ignore
 
 
-def try_handle_server_error_message(e: APIError, json: bool) -> None:
+def parse_api_error(e: APIError) -> tuple[str, dict[str, Any]]:
     # If the error is from the API and uses the standard error envelope, print the message
     message = ""
     dump = {}
@@ -53,7 +53,17 @@ def try_handle_server_error_message(e: APIError, json: bool) -> None:
     except Exception:
         rpc_envelope = _parse_rpc_error_envelope(e.body)
         dump = rpc_envelope.model_dump()
-        message = rpc_envelope.message
+        if isinstance(rpc_envelope.details, list):
+            for detail_dict in rpc_envelope.details:
+                message = detail_dict["detail"]
+        else:
+            message = rpc_envelope.message
+
+    return message, dump
+
+
+def try_handle_server_error_message(e: APIError, json: bool) -> None:
+    message, dump = parse_api_error(e)
 
     if json:
         console.print_json(openapi_dumps(dump).decode("utf-8"))

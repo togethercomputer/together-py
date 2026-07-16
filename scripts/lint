@@ -16,7 +16,9 @@ echo "==> Running pyright"
 uv run pyright -p .
 
 echo "==> Running mypy"
-uv run mypy .
+# Use -p together so mypy resolves the editable src layout as `together`
+# instead of also discovering it as `src.together` via `mypy .`.
+uv run mypy -p together
 
 echo "==> Making sure it imports"
 uv run python -c 'import together'

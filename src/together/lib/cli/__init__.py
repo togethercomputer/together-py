@@ -38,6 +38,7 @@ from together.lib.cli.utils._help_examples import (
     TOP_LEVEL_HELP_EXAMPLES,
     JIG_DEPLOY_HELP_EXAMPLES,
     JIG_SUBMIT_HELP_EXAMPLES,
+    BETA_MODELS_HELP_EXAMPLES,
     FINE_TUNING_HELP_EXAMPLES,
     JIG_DESTROY_HELP_EXAMPLES,
     JIG_SECRETS_HELP_EXAMPLES,
@@ -46,27 +47,43 @@ from together.lib.cli.utils._help_examples import (
     FILES_UPLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
+    BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    BETA_ENDPOINTS_AB_HELP_EXAMPLES,
+    BETA_ENDPOINTS_LS_HELP_EXAMPLES,
+    BETA_ENDPOINTS_RM_HELP_EXAMPLES,
     JIG_SECRETS_UNSET_HELP_EXAMPLES,
+    BETA_ENDPOINTS_GET_HELP_EXAMPLES,
+    BETA_MODELS_CREATE_HELP_EXAMPLES,
+    BETA_MODELS_PUBLIC_HELP_EXAMPLES,
+    BETA_MODELS_UPDATE_HELP_EXAMPLES,
+    BETA_MODELS_UPLOAD_HELP_EXAMPLES,
     ENDPOINTS_HARDWARE_HELP_EXAMPLES,
     FINE_TUNING_CREATE_HELP_EXAMPLES,
     JIG_SECRETS_DELETE_HELP_EXAMPLES,
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
+    BETA_MODELS_CONFIGS_HELP_EXAMPLES,
     BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
+    BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
+    BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
+    BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
+    BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
+    BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
+    BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
@@ -85,6 +102,11 @@ _GLOBAL_PARAM_HELP = {
     "--help": "Display this message and exit",
     "--version": "Display application version",
 }
+
+
+async def _resolve_project_id(client: AsyncTogether) -> str:
+    me = await client.whoami()
+    return me.project_id
 
 
 def _propagate_global_param_group(target_app: App) -> None:
@@ -107,6 +129,7 @@ def _create_client(
     base_url: Optional[str],
     timeout: Optional[int],
     max_retries: Optional[int],
+    project_id: Optional[str],
 ) -> AsyncTogether:
     try:
         client = AsyncTogether(
@@ -114,6 +137,7 @@ def _create_client(
             base_url=base_url,
             timeout=timeout,
             max_retries=max_retries if max_retries is not None else 0,
+            project_id=project_id,
         )
     except Exception as e:
         if "api_key" in str(e):
@@ -122,6 +146,7 @@ def _create_client(
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries if max_retries is not None else 0,
+                project_id=project_id,
             )
 
             def block_requests_for_api_key(_: httpx.Request) -> None:
@@ -173,6 +198,19 @@ async def launcher(
     non_interactive: Annotated[
         Optional[bool], Parameter(group=global_options, negative=(), help="Disable interactive prompts")
     ] = False,
+    project_id: Annotated[
+        Optional[str],
+        Parameter(
+            name="--project",
+            group=global_options,
+            help=(
+                "Together project ID. Defaults to TOGETHER_PROJECT_ID. If omitted, read-only commands use the "
+                "project associated with the API key; mutating commands may prompt for confirmation or require "
+                "an explicit project in JSON or non-interactive mode."
+            ),
+            env_var="TOGETHER_PROJECT_ID",
+        ),
+    ] = None,
     output_json: Annotated[
         Optional[bool],
         Parameter(name="json", group=global_options, negative=(), help="Output the response in JSON format"),
@@ -181,13 +219,18 @@ async def launcher(
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
-    client = _create_client(api_key, base_url, timeout, max_retries)
+    client = _create_client(api_key, base_url, timeout, max_retries, project_id)
+
+    if client.project_id is None:
+        client.project_id = await _resolve_project_id(client)
+
     config = CLIConfig(
         client=client,
         # TODO: Turn on non-interactive mode for agents
         # TODO: Detect isTTY or CI
-        non_interactive=non_interactive or False,
+        non_interactive=non_interactive or output_json or False,
         json=output_json or False,
+        project_id=project_id,
     )
 
     (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
@@ -548,6 +591,151 @@ remediations_app.command(
     help="Reject a pending remediation",
 )
 
+### Beta Endpoints API commands
+
+beta_endpoints_app = beta_app.command(
+    App(
+        name="endpoints",
+        help="Deploy and manage dedicated inference endpoints",
+        help_epilogue=BETA_ENDPOINTS_HELP_EXAMPLES,
+    )
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.deploy:deploy"),
+    help="Create a deployment on a new or existing endpoint",
+    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
+    sort_key=1,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.list:list"),
+    name="ls",
+    help="List project, organization, or public endpoints",
+    help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
+    sort_key=2,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
+    name="get",
+    help="Get endpoint or deployment details by ID",
+    help_epilogue=BETA_ENDPOINTS_GET_HELP_EXAMPLES,
+    sort_key=3,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.retrieve:retrieve"), show=False
+)  # This is just here to allow the default command to work
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.update:update"),
+    help="Update a deployment's name, autoscaling, or traffic weight",
+    help_epilogue=BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    sort_key=4,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.rm:rm"),
+    name="rm",
+    alias="-d",
+    sort_key=5,
+    help="Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID",
+    help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.shadow:shadow"),
+    help="Mirror sampled live traffic to a new deployment without serving its responses",
+    help_epilogue=BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
+    sort_key=9999,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.ab:ab"),
+    help="Create a variant deployment and split live traffic from a control deployment",
+    help_epilogue=BETA_ENDPOINTS_AB_HELP_EXAMPLES,
+    sort_key=9999,
+)
+
+### Beta Models API commands
+beta_models_app = beta_app.command(
+    App(
+        name="models",
+        help="Register and manage models for dedicated inference",
+        help_epilogue=BETA_MODELS_HELP_EXAMPLES,
+    )
+)
+beta_models_app.command((f"{_CLI}.beta.models.list:list"), alias="ls", help="List models in the caller's project")
+beta_models_app.command(
+    (f"{_CLI}.beta.models.public:public"),
+    help="List publicly-visible models across all projects",
+    help_epilogue=BETA_MODELS_PUBLIC_HELP_EXAMPLES,
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.org:org"), help="List internal-visibility models in the caller's organization"
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.create:create"),
+    alias="-c",
+    help="Register a model (does not upload files)",
+    help_epilogue=BETA_MODELS_CREATE_HELP_EXAMPLES,
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.list_files:list_files"), name="ls-files", help="List files in a model or adapter"
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.list_revisions:list_revisions"), name="ls-revisions", help="List revisions for a model"
+)
+beta_models_app.command((f"{_CLI}.beta.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
+beta_models_app.command(
+    (f"{_CLI}.beta.models.update:update"),
+    help="Update a model (provided fields only)",
+    help_epilogue=BETA_MODELS_UPDATE_HELP_EXAMPLES,
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.rm:rm"),
+    name="rm",
+    alias="-d",
+    help="Delete a model (metadata; does not delete files)",
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.upload:upload"),
+    help="Upload files to a model or adapter",
+    help_epilogue=BETA_MODELS_UPLOAD_HELP_EXAMPLES,
+)
+beta_models_app.command(
+    (f"{_CLI}.beta.models.download:download"),
+    help="Download files from a model or adapter",
+    help_epilogue=BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
+)
+
+### Beta Models > Remote Uploads API commands
+beta_models_remote_uploads_app = beta_models_app.command(
+    App(
+        name="remote-uploads",
+        help="Import model weights from Hugging Face or presigned URLs",
+        group="Subcommands",
+        help_epilogue=BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
+    )
+)
+beta_models_remote_uploads_app.command(
+    (f"{_CLI}.beta.models.remote_uploads.create:create"),
+    alias="-c",
+    help="Start a remote upload job",
+    help_epilogue=BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
+)
+beta_models_remote_uploads_app.command(
+    (f"{_CLI}.beta.models.remote_uploads.retrieve:retrieve"),
+    alias="get",
+    help="Get a remote upload job by ID",
+)
+beta_models_remote_uploads_app.command(
+    (f"{_CLI}.beta.models.remote_uploads.list:list"),
+    alias="ls",
+    help="List remote upload jobs",
+)
+
+### Beta Models > Configs API commands
+beta_models_app.command(
+    (f"{_CLI}.beta.models.configs.list:list"),
+    name="configs",
+    help="List deployable configs for a model",
+    help_epilogue=BETA_MODELS_CONFIGS_HELP_EXAMPLES,
+)
+
 ### Jig commands
 jig_app = beta_app.command(
     App(name="jig", help="Build, deploy, and manage custom containers", help_epilogue=JIG_HELP_EXAMPLES)
@@ -670,6 +858,12 @@ def main() -> None:
     # Shown in the root help page, but not a functional command
     BETA_GROUP_TITLE = "Beta Commands"
     app.command(App(name="beta clusters", help="Create and manage GPU clusters", group=BETA_GROUP_TITLE))
+    app.command(
+        App(name="beta endpoints", help="Deploy and manage dedicated inference endpoints", group=BETA_GROUP_TITLE)
+    )
+    app.command(
+        App(name="beta models", help="Register and manage models for dedicated inference", group=BETA_GROUP_TITLE)
+    )
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
     beta_root_app.show = False
 
