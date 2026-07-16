@@ -124,6 +124,7 @@ human_formatter = DefaultFormatter(
         ColumnSpec(
             renderer=_type_renderer,
             style="secondary",
+            max_width=40,
         ),
         ColumnSpec(
             renderer=_description_renderer,

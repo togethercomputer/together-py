@@ -146,7 +146,7 @@ class AutoscalingCustomMetricAutoscalingConfig(TypedDict, total=False):
     custom_metric_name: str
     """CustomMetricName is the Prometheus metric name.
 
-    Required. Must match [a-zA-Z\\__:][a-zA-Z0-9_:]\\**
+    Must match [a-zA-Z\\__:][a-zA-Z0-9_:]\\**
     """
 
     metric: Literal["CustomMetric"]

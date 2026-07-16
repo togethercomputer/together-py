@@ -702,7 +702,7 @@ class TestBetaClustersCreate:
                 "8",
                 "--num-reserved-gpus",
                 "8",
-                "--project-id",
+                "--project",
                 "proj-1",
                 "--reservation-start-time",
                 "2026-06-01T00:00:00Z",
@@ -715,6 +715,7 @@ class TestBetaClustersCreate:
             ],
         )
 
+        assert result.exit_code == 0, result.output
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
         assert body["auto_scale"] is True

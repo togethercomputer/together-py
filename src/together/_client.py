@@ -96,11 +96,13 @@ __all__ = [
 
 class Together(SyncAPIClient):
     # client options
+    project_id: str | None
     api_key: str
 
     def __init__(
         self,
         *,
+        project_id: str | None = None,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: float | Timeout | None | NotGiven = not_given,
@@ -123,8 +125,14 @@ class Together(SyncAPIClient):
     ) -> None:
         """Construct a new synchronous Together client instance.
 
-        This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
+        This automatically infers the following arguments from their corresponding environment variables if they are not provided:
+        - `project_id` from `TOGETHER_PROJECT_ID`
+        - `api_key` from `TOGETHER_API_KEY`
         """
+        if project_id is None:
+            project_id = os.environ.get("TOGETHER_PROJECT_ID")
+        self.project_id = project_id
+
         if api_key is None:
             api_key = os.environ.get("TOGETHER_API_KEY")
         if api_key is None and "google.colab" in sys.modules:
@@ -284,6 +292,7 @@ class Together(SyncAPIClient):
     def copy(
         self,
         *,
+        project_id: str | None = None,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: float | Timeout | None | NotGiven = not_given,
@@ -318,6 +327,7 @@ class Together(SyncAPIClient):
 
         http_client = http_client or self._client
         client = self.__class__(
+            project_id=project_id or self.project_id,
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
@@ -361,6 +371,15 @@ class Together(SyncAPIClient):
             cast_to=WhoamiResponse,
         )
 
+    def _get_project_id_path_param(self) -> str:
+        from_client = self.project_id
+        if from_client is not None:
+            return from_client
+
+        raise ValueError(
+            "Missing project_id argument; Please provide it at the client level, e.g. Together(project_id='abcd') or per method."
+        )
+
     @override
     def _make_status_error(
         self,
@@ -397,11 +416,13 @@ class Together(SyncAPIClient):
 
 class AsyncTogether(AsyncAPIClient):
     # client options
+    project_id: str | None
     api_key: str
 
     def __init__(
         self,
         *,
+        project_id: str | None = None,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: float | Timeout | None | NotGiven = not_given,
@@ -424,8 +445,14 @@ class AsyncTogether(AsyncAPIClient):
     ) -> None:
         """Construct a new async AsyncTogether client instance.
 
-        This automatically infers the `api_key` argument from the `TOGETHER_API_KEY` environment variable if it is not provided.
+        This automatically infers the following arguments from their corresponding environment variables if they are not provided:
+        - `project_id` from `TOGETHER_PROJECT_ID`
+        - `api_key` from `TOGETHER_API_KEY`
         """
+        if project_id is None:
+            project_id = os.environ.get("TOGETHER_PROJECT_ID")
+        self.project_id = project_id
+
         if api_key is None:
             api_key = os.environ.get("TOGETHER_API_KEY")
         if api_key is None and "google.colab" in sys.modules:
@@ -585,6 +612,7 @@ class AsyncTogether(AsyncAPIClient):
     def copy(
         self,
         *,
+        project_id: str | None = None,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         timeout: float | Timeout | None | NotGiven = not_given,
@@ -619,6 +647,7 @@ class AsyncTogether(AsyncAPIClient):
 
         http_client = http_client or self._client
         client = self.__class__(
+            project_id=project_id or self.project_id,
             api_key=api_key or self.api_key,
             base_url=base_url or self.base_url,
             timeout=self.timeout if isinstance(timeout, NotGiven) else timeout,
@@ -660,6 +689,15 @@ class AsyncTogether(AsyncAPIClient):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=WhoamiResponse,
+        )
+
+    def _get_project_id_path_param(self) -> str:
+        from_client = self.project_id
+        if from_client is not None:
+            return from_client
+
+        raise ValueError(
+            "Missing project_id argument; Please provide it at the client level, e.g. AsyncTogether(project_id='abcd') or per method."
         )
 
     @override
