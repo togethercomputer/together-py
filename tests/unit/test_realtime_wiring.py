@@ -28,6 +28,17 @@ def test_public_lib_surface_importable() -> None:
         assert getattr(rt, name) is not None
 
 
+def test_root_realtime_module_reexports_public_surface() -> None:
+    """`together.realtime` is the stable public import path; it must expose
+    everything the lib package exports (a regen or refactor that drops the
+    root shim or lets it drift fails here)."""
+    import together.realtime as public
+    import together.lib.realtime as lib
+
+    for name in lib.__all__:
+        assert getattr(public, name) is getattr(lib, name), name
+
+
 def test_url_and_header_derivation() -> None:
     import httpx
 

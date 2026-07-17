@@ -187,7 +187,7 @@ text.
 
 ```python
 from together import AsyncTogether
-from together.lib.realtime import TranscriptDelta, TranscriptCompleted
+from together.realtime import TranscriptDelta, TranscriptCompleted
 
 client = AsyncTogether()
 

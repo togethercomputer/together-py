@@ -19,7 +19,7 @@ import asyncio
 from pathlib import Path
 
 from together import AsyncTogether
-from together.lib.realtime import (
+from together.realtime import (
     SessionStarted,
     TranscriptDelta,
     TranscriptCompleted,
