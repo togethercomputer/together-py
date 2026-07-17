@@ -657,7 +657,7 @@ class Trainer:
                 file_info.url,
                 cast_to=httpx.Response,
                 stream=True,
-                options={"max_retries": _MAX_RETRIES},
+                options={"max_retries": _MAX_RETRIES, "headers": {"Authorization": omit}},
             )
             try:
                 with file_path.open("wb") as f:
