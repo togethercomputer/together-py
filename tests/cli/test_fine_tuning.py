@@ -67,7 +67,10 @@ _FT_EVENT = {
 
 _FT_CHECKPOINT = {
     "checkpoint_type": "intermediate",
+    "checkpoint": "model",
     "created_at": "2024-01-01T00:00:00Z",
+    "object_id": "ml-checkpoint",
+    "object_revision_id": "rv-checkpoint",
     "path": "/p",
     "step": 5,
 }
@@ -348,6 +351,8 @@ class TestFineTuningEventsAndCheckpoints:
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
+        assert "ml-checkpoint" in result.output
+        assert "rv-checkpoint" in result.output
         assert "intermediate" in result.output
 
     @pytest.mark.respx(base_url=base_url)

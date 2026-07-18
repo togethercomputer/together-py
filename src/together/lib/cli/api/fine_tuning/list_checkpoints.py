@@ -25,8 +25,10 @@ async def list_checkpoints(
         title="Checkpoints",
         empty_message=f"No checkpoints found for job {fine_tune_id}",
     )
-    table.add_column("ID")
+    table.add_column("Download ID")
     table.add_column("Timestamp")
+    table.add_column("Artifact ID")
+    table.add_column("Revision ID")
     table.add_primary_column("Type")
 
     for checkpoint in checkpoints.data:
@@ -35,7 +37,13 @@ async def list_checkpoints(
             if "intermediate" in checkpoint.checkpoint_type.lower()
             else fine_tune_id
         )
-        table.add_row(name, format_timestamp(checkpoint.created_at), checkpoint.checkpoint_type)
+        table.add_row(
+            name,
+            format_timestamp(checkpoint.created_at),
+            checkpoint.object_id or "",
+            checkpoint.object_revision_id or "",
+            checkpoint.checkpoint_type,
+        )
 
     console.print(table)
     if checkpoints.data:
