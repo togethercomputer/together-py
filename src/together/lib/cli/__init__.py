@@ -103,6 +103,12 @@ _GLOBAL_PARAM_HELP = {
     "--version": "Display application version",
 }
 
+# Commands that authenticate out-of-band (OIDC / step-ca) and make no Together
+# API calls, so the launcher must not require an API key or run the up-front
+# whoami() for them. Values match preparse_tokens() command paths (beta prefix
+# stripped; reported separately via is_beta_command).
+_NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
+
 
 async def _resolve_project_id(client: AsyncTogether) -> str:
     me = await client.whoami()
@@ -130,6 +136,7 @@ def _create_client(
     timeout: Optional[int],
     max_retries: Optional[int],
     project_id: Optional[str],
+    require_api_key: bool = True,
 ) -> AsyncTogether:
     try:
         client = AsyncTogether(
@@ -172,7 +179,10 @@ def _create_client(
 
     client._client.event_hooks["request"].append(track_request)
 
-    if client.api_key == "":
+    # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
+    # calls, so a missing key is not fatal for them. The block hook installed
+    # above still errors clearly if such a command ever does hit the API.
+    if require_api_key and client.api_key == "":
         console.print(
             "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
         )
@@ -219,9 +229,24 @@ async def launcher(
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
-    client = _create_client(api_key, base_url, timeout, max_retries, project_id)
 
-    if client.project_id is None:
+    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
+
+    # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
+    # and never call the Together API. They must not be gated on an API key or the
+    # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
+    # its auth is entirely the cluster's Dex OIDC flow (see
+    # together.lib.cli.api.beta.clusters.ssh). Before the whoami() was added for
+    # project resolution these commands worked with no key; skip client setup so
+    # they stay keyless.
+    no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+
+    client = _create_client(api_key, base_url, timeout, max_retries, project_id, require_api_key=not no_auth_command)
+
+    # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
+    # Together API call and would reintroduce the API-key dependency for keyless
+    # commands like `beta clusters ssh`.
+    if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
 
     config = CLIConfig(
@@ -232,8 +257,6 @@ async def launcher(
         json=output_json or False,
         project_id=project_id,
     )
-
-    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     if output_json:
         explicit_args.append("json")
