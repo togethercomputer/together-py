@@ -351,8 +351,8 @@ class TestFineTuningEventsAndCheckpoints:
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
-        assert "ml-checkpoint" in result.output
-        assert "rv-checkpoint" in result.output
+        assert "Registry artifacts" in result.output
+        assert "ml-checkpoint@rv-checkpoint" in result.output
         assert "intermediate" in result.output
 
     @pytest.mark.respx(base_url=base_url)
