@@ -136,6 +136,7 @@ def _create_client(
     timeout: Optional[int],
     max_retries: Optional[int],
     project_id: Optional[str],
+    require_api_key: bool = True,
 ) -> AsyncTogether:
     try:
         client = AsyncTogether(
@@ -178,7 +179,10 @@ def _create_client(
 
     client._client.event_hooks["request"].append(track_request)
 
-    if client.api_key == "":
+    # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
+    # calls, so a missing key is not fatal for them. The block hook installed
+    # above still errors clearly if such a command ever does hit the API.
+    if require_api_key and client.api_key == "":
         console.print(
             "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
         )
@@ -237,13 +241,13 @@ async def launcher(
     # they stay keyless.
     no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
 
-    if no_auth_command:
-        client = None
-    else:
-        client = _create_client(api_key, base_url, timeout, max_retries, project_id)
+    client = _create_client(api_key, base_url, timeout, max_retries, project_id, require_api_key=not no_auth_command)
 
-        if client.project_id is None:
-            client.project_id = await _resolve_project_id(client)
+    # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
+    # Together API call and would reintroduce the API-key dependency for keyless
+    # commands like `beta clusters ssh`.
+    if not no_auth_command and client.project_id is None:
+        client.project_id = await _resolve_project_id(client)
 
     config = CLIConfig(
         client=client,
@@ -391,8 +395,7 @@ async def launcher(
         sys.exit(1)
     finally:
         flush_pending_events()
-        if client is not None:
-            await client.close()
+        await client.close()
 
 
 # Register commands

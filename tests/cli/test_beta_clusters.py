@@ -1098,3 +1098,19 @@ class TestBetaClustersRemediations:
         assert json.loads(result.output)["state"] == "CANCELLED"
         assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"comment": "skip"}
         assert result.exit_code == 0
+
+
+def test_ssh_second_hop_host_key_checking_disabled() -> None:
+    """Second hop (bastion -> ephemeral cluster host) skips host-key verification;
+    first hop (client -> bastion) keeps StrictHostKeyChecking=ask."""
+    from together.lib.cli.api.beta.clusters.ssh import _ssh_command, _ssh_config_entry
+
+    cmd = " ".join(_ssh_command("me", "worker1", "bastion.x", "/k", "/c", ("uptime",)))
+    assert "StrictHostKeyChecking=no" in cmd
+    assert "UserKnownHostsFile=/dev/null" in cmd
+    assert "StrictHostKeyChecking=ask" in cmd  # proxy (first hop) still verifies
+
+    entry = _ssh_config_entry("myalias", "me", "worker1", "bastion.x", "/k", "/c")
+    assert "StrictHostKeyChecking no" in entry
+    assert "UserKnownHostsFile /dev/null" in entry
+    assert "StrictHostKeyChecking=ask" in entry  # first hop in ProxyCommand

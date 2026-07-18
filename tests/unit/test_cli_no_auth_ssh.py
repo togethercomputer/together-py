@@ -27,15 +27,14 @@ def _run(argv: list[str]) -> None:
 def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
 
-    create_calls = 0
+    require_flags: list[bool] = []
     resolve_calls = 0
 
     real_create = cli._create_client
 
-    def spy_create(*args: object, **kwargs: object):  # type: ignore[no-untyped-def]
-        nonlocal create_calls
-        create_calls += 1
-        return real_create(*args, **kwargs)  # type: ignore[arg-type]
+    def spy_create(*args: object, require_api_key: bool = True, **kwargs: object):  # type: ignore[no-untyped-def]
+        require_flags.append(require_api_key)
+        return real_create(*args, require_api_key=require_api_key, **kwargs)  # type: ignore[arg-type]
 
     async def spy_resolve(_client: object) -> str:
         nonlocal resolve_calls
@@ -60,23 +59,24 @@ def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.Monk
         ]
     )
 
-    assert create_calls == 0, "ssh must not construct an API client (no api-key gate)"
+    # The client is built with the api-key requirement waived (no hard exit on a
+    # missing key) and the project-resolution whoami() is skipped entirely.
+    assert require_flags == [False], "ssh must build the client with require_api_key=False"
     assert resolve_calls == 0, "ssh must not run the project-resolution whoami()"
 
 
 def test_non_ssh_command_still_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
 
-    create_calls = 0
+    require_flags: list[bool] = []
     real_create = cli._create_client
 
-    def spy_create(*args: object, **kwargs: object):  # type: ignore[no-untyped-def]
-        nonlocal create_calls
-        create_calls += 1
-        return real_create(*args, **kwargs)  # type: ignore[arg-type]
+    def spy_create(*args: object, require_api_key: bool = True, **kwargs: object):  # type: ignore[no-untyped-def]
+        require_flags.append(require_api_key)
+        return real_create(*args, require_api_key=require_api_key, **kwargs)  # type: ignore[arg-type]
 
     monkeypatch.setattr(cli, "_create_client", spy_create)
 
     _run(["endpoints", "list"])
 
-    assert create_calls >= 1, "API-backed commands must still construct the client / gate on the key"
+    assert require_flags and all(require_flags), "API-backed commands must still gate on the API key"
