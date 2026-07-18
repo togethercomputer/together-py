@@ -103,6 +103,12 @@ _GLOBAL_PARAM_HELP = {
     "--version": "Display application version",
 }
 
+# Commands that authenticate out-of-band (OIDC / step-ca) and make no Together
+# API calls, so the launcher must not require an API key or run the up-front
+# whoami() for them. Values match preparse_tokens() command paths (beta prefix
+# stripped; reported separately via is_beta_command).
+_NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
+
 
 async def _resolve_project_id(client: AsyncTogether) -> str:
     me = await client.whoami()
@@ -219,10 +225,25 @@ async def launcher(
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
-    client = _create_client(api_key, base_url, timeout, max_retries, project_id)
 
-    if client.project_id is None:
-        client.project_id = await _resolve_project_id(client)
+    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
+
+    # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
+    # and never call the Together API. They must not be gated on an API key or the
+    # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
+    # its auth is entirely the cluster's Dex OIDC flow (see
+    # together.lib.cli.api.beta.clusters.ssh). Before the whoami() was added for
+    # project resolution these commands worked with no key; skip client setup so
+    # they stay keyless.
+    no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+
+    if no_auth_command:
+        client = None
+    else:
+        client = _create_client(api_key, base_url, timeout, max_retries, project_id)
+
+        if client.project_id is None:
+            client.project_id = await _resolve_project_id(client)
 
     config = CLIConfig(
         client=client,
@@ -232,8 +253,6 @@ async def launcher(
         json=output_json or False,
         project_id=project_id,
     )
-
-    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     if output_json:
         explicit_args.append("json")
@@ -372,7 +391,8 @@ async def launcher(
         sys.exit(1)
     finally:
         flush_pending_events()
-        await client.close()
+        if client is not None:
+            await client.close()
 
 
 # Register commands
