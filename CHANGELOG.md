@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.24.1](https://github.com/togethercomputer/together-py/compare/v2.24.0...v2.24.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **cli:** [TCL-7938] keyless OIDC `beta clusters ssh` + insecure second hop ([236203b](https://github.com/togethercomputer/together-py/commit/236203b414530784c191f6a80e76f74c86811416))
+* **cli:** don't require an API key for OIDC-based `beta clusters ssh` ([0a4ead7](https://github.com/togethercomputer/together-py/commit/0a4ead7272d8a869846238eb7448e40c02f84085))
+* **cli:** second SSH hop insecure by default + keep API-key gate typing clean ([35f798d](https://github.com/togethercomputer/together-py/commit/35f798dcc9de61d8ae6d9b1a072fcd07d7737e02))
+
+
+### Documentation
+
+* expose fine-tune artifact ids ([cac9173](https://github.com/togethercomputer/together-py/commit/cac917318ddf66159780ff7c17f4297476a5e4b9))
+
 ## [2.24.0](https://github.com/togethercomputer/together-py/compare/v2.23.0...v2.24.0) (2026-07-16)
 
 
