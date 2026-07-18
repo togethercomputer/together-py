@@ -233,7 +233,6 @@ class TestBetaClustersSSHHelpers:
             "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
             "/tmp/id",
             "/tmp/id-cert.pub",
-            "/tmp/known_hosts",
             ("sinfo", "-h"),
         )
 
@@ -241,10 +240,11 @@ class TestBetaClustersSSHHelpers:
         assert "jhu@slurm-login" in cmd
         assert cmd[cmd.index("--") + 1] == "jhu@slurm-login"
         assert cmd[-2:] == ["sinfo", "-h"]
+        # First hop (client -> bastion) verifies; second hop (bastion -> host) does not.
         assert any("ProxyCommand=ssh" in arg for arg in cmd)
-        assert "StrictHostKeyChecking=ask" in cmd
-        assert "UserKnownHostsFile=/tmp/known_hosts" in cmd
-        assert "HostKeyAlias=slurm-login.ssh.t-abc123.s1.us-central-2a.cloud.together.ai" in cmd
+        assert any("StrictHostKeyChecking=ask" in arg for arg in cmd)  # first hop (inside ProxyCommand)
+        assert "StrictHostKeyChecking=no" in cmd  # second hop (own -o element)
+        assert "UserKnownHostsFile=/dev/null" in cmd
 
     def test_ssh_config_entry_points_plain_ssh_at_cached_cert(self) -> None:
         entry = ssh_cli._ssh_config_entry(
@@ -254,7 +254,6 @@ class TestBetaClustersSSHHelpers:
             "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
             "/home/jhu/.together/ssh/t-abc123/jhu/id",
             "/home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub",
-            "/home/jhu/.together/ssh/t-abc123/jhu/known_hosts",
         )
 
         assert "Host test-oidc" in entry
@@ -262,8 +261,10 @@ class TestBetaClustersSSHHelpers:
         assert "User jhu" in entry
         assert "IdentityFile /home/jhu/.together/ssh/t-abc123/jhu/id" in entry
         assert "CertificateFile /home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub" in entry
-        assert "StrictHostKeyChecking ask" in entry
-        assert "UserKnownHostsFile /home/jhu/.together/ssh/t-abc123/jhu/known_hosts" in entry
+        # Second hop insecure; first hop (in the ProxyCommand) still verifies.
+        assert "StrictHostKeyChecking no" in entry
+        assert "UserKnownHostsFile /dev/null" in entry
+        assert "StrictHostKeyChecking=ask" in entry  # first hop inside ProxyCommand
         assert "ProxyCommand ssh" in entry
 
     @pytest.mark.parametrize(
@@ -285,7 +286,6 @@ class TestBetaClustersSSHHelpers:
                 bastion,
                 "/tmp/id",
                 "/tmp/id-cert.pub",
-                "/tmp/known_hosts",
                 (),
             )
 
@@ -298,7 +298,6 @@ class TestBetaClustersSSHHelpers:
                 "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
                 "/tmp/id",
                 "/tmp/id-cert.pub",
-                "/tmp/known_hosts",
             )
 
     def test_get_or_create_keypair_replaces_partial_cache(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
