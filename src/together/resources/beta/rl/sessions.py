@@ -139,6 +139,7 @@ class SessionsResource(SyncAPIResource):
         self,
         *,
         after: str | Omit = omit,
+        created_by: str | Omit = omit,
         limit: int | Omit = omit,
         model_resources_id: str | Omit = omit,
         status: List[
@@ -165,6 +166,9 @@ class SessionsResource(SyncAPIResource):
         Args:
           after: Cursor for pagination (ID of the last session from the previous page)
 
+          created_by: Filter sessions in the current project by the creator ID. Pass "me" to show
+              sessions you created.
+
           limit: Maximum number of sessions to return (1-100)
 
           model_resources_id: Filter sessions by the model resource they are attached to
@@ -189,6 +193,7 @@ class SessionsResource(SyncAPIResource):
                 query=maybe_transform(
                     {
                         "after": after,
+                        "created_by": created_by,
                         "limit": limit,
                         "model_resources_id": model_resources_id,
                         "status": status,
@@ -348,6 +353,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         self,
         *,
         after: str | Omit = omit,
+        created_by: str | Omit = omit,
         limit: int | Omit = omit,
         model_resources_id: str | Omit = omit,
         status: List[
@@ -374,6 +380,9 @@ class AsyncSessionsResource(AsyncAPIResource):
         Args:
           after: Cursor for pagination (ID of the last session from the previous page)
 
+          created_by: Filter sessions in the current project by the creator ID. Pass "me" to show
+              sessions you created.
+
           limit: Maximum number of sessions to return (1-100)
 
           model_resources_id: Filter sessions by the model resource they are attached to
@@ -398,6 +407,7 @@ class AsyncSessionsResource(AsyncAPIResource):
                 query=await async_maybe_transform(
                     {
                         "after": after,
+                        "created_by": created_by,
                         "limit": limit,
                         "model_resources_id": model_resources_id,
                         "status": status,

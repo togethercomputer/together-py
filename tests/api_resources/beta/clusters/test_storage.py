@@ -154,7 +154,7 @@ class TestStorage:
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
         storage = client.beta.clusters.storage.list(
-            project_id="project_id",
+            project_id="projectId",
         )
         assert_matches_type(StorageListResponse, storage, path=["response"])
 
@@ -355,7 +355,7 @@ class TestAsyncStorage:
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
         storage = await async_client.beta.clusters.storage.list(
-            project_id="project_id",
+            project_id="projectId",
         )
         assert_matches_type(StorageListResponse, storage, path=["response"])
 

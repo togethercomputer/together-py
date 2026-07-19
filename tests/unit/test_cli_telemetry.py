@@ -230,6 +230,17 @@ def test_parse_command_and_flags_inserts_implicit_retrieve_for_ft_job_id() -> No
     assert is_beta is False
 
 
+def test_parse_command_and_flags_inserts_implicit_retrieve_for_beta_endpoint_deployment_id() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "dep_control", "--json"])
+    assert cmd == "endpoints retrieve"
+    assert "id" in flags
+    assert is_beta is True
+    assert argv == ["beta", "endpoints", "retrieve", "dep_control", "--json"]
+
+
 def test_parse_command_and_flags_implicit_retrieve_fine_tuning_spelling() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens

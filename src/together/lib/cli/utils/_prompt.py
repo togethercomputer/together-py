@@ -6,7 +6,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._console import console
 
 if TYPE_CHECKING:
-    import questionary
+    pass
 
 custom_style_fancy = [
     ("qmark", "fg:#caaef5 bold"),  # token in front of the question
@@ -31,21 +31,33 @@ custom_style_fancy = [
 #             )
 
 
+async def confirm(message: str) -> bool:
+    try:
+        import questionary
+
+        style = questionary.Style(custom_style_fancy)
+
+        result = await questionary.confirm(message, style=style).unsafe_ask_async()
+        return bool(result)
+    except Exception:
+        return False
+
+
 class PromptParameter:
     message: str | None = None
     instructions: str | None = None
-    choices: list[str | questionary.Choice] | None = None
+    choices: list[str | tuple[str, str]] | None = None
     type: Literal["text", "select", "checkbox", "confirm"] = "text"
 
     def __init__(
         self,
         message: str | None = None,
         instructions: str | None = None,
-        choices: list[str | questionary.Choice] | None = None,
+        choices: list[str | tuple[str, str]] | None = None,
     ):
-        self.message = message
-        self.instructions = instructions
-        self.choices = choices
+        self.message = message or self.message
+        self.instructions = instructions or self.instructions
+        self.choices = choices or self.choices
 
     async def preprompt(self, _config: CLIConfig) -> None:
         pass
@@ -59,10 +71,16 @@ class PromptParameter:
             console.print(f"[dim]{self.instructions}[/dim]")
 
         if self.choices is not None:
+            choices: list[questionary.Choice] = []
+            for choice in self.choices:
+                if isinstance(choice, tuple):
+                    choices.append(questionary.Choice(title=choice[0], value=choice[1]))
+                else:
+                    choices.append(questionary.Choice(title=choice, value=choice))
             return cast(
                 str | bool,
                 await questionary.select(
-                    self.message or field, choices=self.choices, style=style, show_selected=True
+                    self.message or field, choices=choices, style=style, show_selected=True
                 ).unsafe_ask_async(),
             )
 

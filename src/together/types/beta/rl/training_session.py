@@ -45,6 +45,9 @@ class TrainingSession(BaseModel):
     created_at: datetime
     """Timestamp when the training session was created"""
 
+    created_by: str
+    """ID of the user who created the training session"""
+
     inference_checkpoints: List[InferenceCheckpoint]
     """List of saved inference checkpoints for this session"""
 

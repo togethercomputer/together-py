@@ -138,6 +138,12 @@ class FinetuneResponse(BaseModel):
     user_id: str
     """ID of the user who owns the fine-tune job."""
 
+    adapter_object_id: Optional[str] = None
+    """Together model registry object ID for the final adapter weights on LoRA jobs."""
+
+    adapter_object_revision_id: Optional[str] = None
+    """Together model registry revision ID for the final adapter weights on LoRA jobs."""
+
     batch_size: Union[int, Literal["max"], None] = None
 
     created_at: Optional[datetime] = None
@@ -180,6 +186,15 @@ class FinetuneResponse(BaseModel):
     max_grad_norm: Optional[float] = None
 
     model: Optional[str] = None
+
+    api_model_object_id: Optional[str] = FieldInfo(alias="model_object_id", default=None)
+    """Together model registry object ID for the final model weights (e.g. `ml_...`)."""
+
+    api_model_object_revision_id: Optional[str] = FieldInfo(alias="model_object_revision_id", default=None)
+    """Together model registry revision ID for the final model weights (e.g.
+
+    `rv_...`).
+    """
 
     x_model_output_name: Optional[str] = FieldInfo(alias="model_output_name", default=None)
 

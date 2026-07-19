@@ -52,6 +52,9 @@ class ModelResources(BaseModel):
     created_at: datetime
     """Timestamp when the model resource was created"""
 
+    created_by: str
+    """ID of the user who created the model resource"""
+
     lora_enabled: bool
     """Whether the resource hosts LoRA sessions or a full-weight session"""
 

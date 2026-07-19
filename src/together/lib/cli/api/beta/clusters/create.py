@@ -37,7 +37,6 @@ NumCapacityPoolGpusParameter = Annotated[
 ]
 NumPreemptibleGpusParameter = Annotated[Optional[int], Parameter(help="Number of preemptible GPUs to request")]
 NumReservedGpusParameter = Annotated[Optional[int], Parameter(help="Number of prepaid reserved GPUs to request")]
-ProjectIDParameter = Annotated[Optional[str], Parameter(help="Project ID for the cluster")]
 ReservationEndTimeParameter = Annotated[Optional[str], Parameter(help="Reservation end time for scheduled capacity")]
 ReservationStartTimeParameter = Annotated[
     Optional[str], Parameter(help="Reservation start time for scheduled capacity")
@@ -64,7 +63,6 @@ async def create(
     num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
     num_preemptible_gpus: NumPreemptibleGpusParameter = None,
     num_reserved_gpus: NumReservedGpusParameter = None,
-    project_id: ProjectIDParameter = None,
     reservation_end_time: ReservationEndTimeParameter = None,
     reservation_start_time: ReservationStartTimeParameter = None,
     slurm_image: SlurmImageParameter = None,
@@ -100,8 +98,8 @@ async def create(
         params["num_preemptible_gpus"] = num_preemptible_gpus
     if num_reserved_gpus is not None:
         params["num_reserved_gpus"] = num_reserved_gpus
-    if project_id:
-        params["project_id"] = project_id
+    if config.project_id:
+        params["project_id"] = config.project_id
     if reservation_end_time:
         params["reservation_end_time"] = reservation_end_time
     if reservation_start_time:

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
+
+from ..._utils import PropertyInfo
 
 __all__ = ["ClusterListParams"]
 
 
 class ClusterListParams(TypedDict, total=False):
-    project_id: str
+    project_id: Annotated[str, PropertyInfo(alias="projectId")]
     """Optional UMS project ID to filter clusters by.
 
     When set, only clusters belonging to this project are returned. The caller must

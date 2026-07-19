@@ -12,6 +12,12 @@ class SessionListParams(TypedDict, total=False):
     after: str
     """Cursor for pagination (ID of the last session from the previous page)"""
 
+    created_by: str
+    """Filter sessions in the current project by the creator ID.
+
+    Pass "me" to show sessions you created.
+    """
+
     limit: int
     """Maximum number of sessions to return (1-100)"""
 

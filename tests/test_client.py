@@ -454,6 +454,17 @@ class TestTogether:
         )
         assert request.url.raw_path == b"/files/a%2Fb?beta=true&limit=10"
 
+    def test_project_id_client_params(self, client: Together) -> None:
+        # Test with base client (no custom params)
+        with pytest.raises(ValueError, match="Missing project_id argument;"):
+            client.beta.endpoints.create(name="name")
+
+        client = Together(
+            base_url=base_url, api_key=api_key, _strict_response_validation=True, project_id="My Project ID"
+        )
+        with client as c2:
+            c2.beta.endpoints.create(name="name")
+
     def test_request_extra_json(self, client: Together) -> None:
         request = client._build_request(
             FinalRequestOptions(
@@ -1421,6 +1432,17 @@ class TestAsyncTogether:
             )
         )
         assert request.url.raw_path == b"/files/a%2Fb?beta=true&limit=10"
+
+    async def test_project_id_client_params(self, async_client: AsyncTogether) -> None:
+        # Test with base client (no custom params)
+        with pytest.raises(ValueError, match="Missing project_id argument;"):
+            await async_client.beta.endpoints.create(name="name")
+
+        client = AsyncTogether(
+            base_url=base_url, api_key=api_key, _strict_response_validation=True, project_id="My Project ID"
+        )
+        async with client as c2:
+            await c2.beta.endpoints.create(name="name")
 
     def test_request_extra_json(self, client: Together) -> None:
         request = client._build_request(

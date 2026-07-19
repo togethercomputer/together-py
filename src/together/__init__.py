@@ -6,7 +6,6 @@ from . import types
 from .lib import (
     DownloadError,
     FileTypeError,
-    FinetuneTrainingLimits,
 )
 from ._types import NOT_GIVEN, Omit, NoneType, NotGiven, Transport, ProxiesTypes, omit, not_given
 from ._utils import file_from_path
@@ -86,7 +85,6 @@ __all__ = [
     "DefaultHttpxClient",
     "DefaultAsyncHttpxClient",
     "DefaultAioHttpClient",
-    "FinetuneTrainingLimits",
     "DownloadError",
     "FileTypeError",
 ]

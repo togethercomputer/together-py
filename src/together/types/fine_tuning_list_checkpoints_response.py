@@ -32,6 +32,15 @@ class Data(BaseModel):
     checkpoint: Optional[Literal["model", "adapter"]] = None
     """Canonical artifact selector for checkpoint download requests."""
 
+    object_id: Optional[str] = None
+    """Together model registry object ID for the checkpoint artifact (e.g. `ml_...`)."""
+
+    object_revision_id: Optional[str] = None
+    """Together model registry revision ID for the checkpoint artifact (e.g.
+
+    `rv_...`).
+    """
+
 
 class FineTuningListCheckpointsResponse(BaseModel):
     data: List[Data]

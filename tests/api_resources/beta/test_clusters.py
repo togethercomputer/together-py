@@ -283,7 +283,7 @@ class TestClusters:
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
         cluster = client.beta.clusters.list(
-            project_id="project_id",
+            project_id="projectId",
         )
         assert_matches_type(ClusterListResponse, cluster, path=["response"])
 
@@ -636,7 +636,7 @@ class TestAsyncClusters:
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
         cluster = await async_client.beta.clusters.list(
-            project_id="project_id",
+            project_id="projectId",
         )
         assert_matches_type(ClusterListResponse, cluster, path=["response"])
 

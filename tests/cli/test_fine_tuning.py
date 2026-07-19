@@ -309,11 +309,6 @@ class TestFineTuningCancel:
         assert result.exit_code == 0
         assert "Cancelled" in result.output
 
-    def test_cancel_json_requires_non_interactive(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1", "--json"])
-        assert result.exit_code == 1
-        assert "To use json mode, you must use --non-interactive" in result.output
-
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_not_cancellable_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         body = {**_FT_RETRIEVE_BODY, "status": "completed"}

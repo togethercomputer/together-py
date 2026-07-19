@@ -113,6 +113,7 @@ class TestSessions:
     def test_method_list_with_all_params(self, client: Together) -> None:
         session = client.beta.rl.sessions.list(
             after="after",
+            created_by="created_by",
             limit=0,
             model_resources_id="model_resources_id",
             status=["TRAINING_SESSION_STATUS_CREATING"],
@@ -276,6 +277,7 @@ class TestAsyncSessions:
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
         session = await async_client.beta.rl.sessions.list(
             after="after",
+            created_by="created_by",
             limit=0,
             model_resources_id="model_resources_id",
             status=["TRAINING_SESSION_STATUS_CREATING"],

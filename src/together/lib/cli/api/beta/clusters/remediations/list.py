@@ -27,7 +27,19 @@ RemediationModeParameter = Annotated[
 ]
 RemediationStateParameter = Annotated[
     Optional[
-        list[Literal["PENDING_APPROVAL", "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "AUTO_RESOLVED"]]
+        list[
+            Literal[
+                "PENDING_APPROVAL",
+                "PENDING",
+                "RUNNING",
+                "SUCCEEDED",
+                "FAILED",
+                "CANCELLED",
+                "AUTO_RESOLVED",
+                "QUARANTINING",
+                "QUARANTINED",
+            ]
+        ]
     ],
     Parameter(help="Filter by remediation state. Can be used multiple times."),
 ]
@@ -55,6 +67,7 @@ async def list(
                 "REMEDIATION_MODE_HOST_AWARE",
                 "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
                 "REMEDIATION_MODE_REBOOT_VM",
+                "REMEDIATION_MODE_HOST_POWER_CYCLE",
             ]
         ],
         [f"REMEDIATION_MODE_{value}" for value in mode] if mode else [],

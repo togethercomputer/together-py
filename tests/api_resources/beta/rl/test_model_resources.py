@@ -111,6 +111,7 @@ class TestModelResources:
     def test_method_list_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.list(
             after="after",
+            created_by="created_by",
             limit=0,
             status=["MODEL_RESOURCES_STATUS_PENDING"],
         )
@@ -279,6 +280,7 @@ class TestAsyncModelResources:
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.list(
             after="after",
+            created_by="created_by",
             limit=0,
             status=["MODEL_RESOURCES_STATUS_PENDING"],
         )

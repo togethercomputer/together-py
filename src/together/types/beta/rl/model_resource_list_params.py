@@ -12,6 +12,12 @@ class ModelResourceListParams(TypedDict, total=False):
     after: str
     """Cursor for pagination"""
 
+    created_by: str
+    """Filter resources in the current project by the creator ID.
+
+    Pass "me" to show resources you created.
+    """
+
     limit: int
     """Maximum number of resources to return (1-100)"""
 

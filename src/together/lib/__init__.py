@@ -1,7 +1,6 @@
 from .types import (
     DownloadError,
     FileTypeError,
-    FinetuneTrainingLimits,
 )
 from .utils import (
     check_file,
@@ -18,7 +17,6 @@ __all__ = [
     "AsyncDownloadManager",
     "AsyncUploadManager",
     "UploadManager",
-    "FinetuneTrainingLimits",
     "DownloadError",
     "FileTypeError",
     "check_file",

@@ -140,6 +140,7 @@ class ModelResourcesResource(SyncAPIResource):
         self,
         *,
         after: str | Omit = omit,
+        created_by: str | Omit = omit,
         limit: int | Omit = omit,
         status: List[
             Literal[
@@ -165,6 +166,9 @@ class ModelResourcesResource(SyncAPIResource):
         Args:
           after: Cursor for pagination
 
+          created_by: Filter resources in the current project by the creator ID. Pass "me" to show
+              resources you created.
+
           limit: Maximum number of resources to return (1-100)
 
           status: Status filters. When omitted, resources in any status are returned.
@@ -187,6 +191,7 @@ class ModelResourcesResource(SyncAPIResource):
                 query=maybe_transform(
                     {
                         "after": after,
+                        "created_by": created_by,
                         "limit": limit,
                         "status": status,
                     },
@@ -349,6 +354,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         self,
         *,
         after: str | Omit = omit,
+        created_by: str | Omit = omit,
         limit: int | Omit = omit,
         status: List[
             Literal[
@@ -374,6 +380,9 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         Args:
           after: Cursor for pagination
 
+          created_by: Filter resources in the current project by the creator ID. Pass "me" to show
+              resources you created.
+
           limit: Maximum number of resources to return (1-100)
 
           status: Status filters. When omitted, resources in any status are returned.
@@ -396,6 +405,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
                 query=await async_maybe_transform(
                     {
                         "after": after,
+                        "created_by": created_by,
                         "limit": limit,
                         "status": status,
                     },

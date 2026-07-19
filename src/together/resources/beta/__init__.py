@@ -24,6 +24,14 @@ from .beta import (
     BetaResourceWithStreamingResponse,
     AsyncBetaResourceWithStreamingResponse,
 )
+from .models import (
+    ModelsResource,
+    AsyncModelsResource,
+    ModelsResourceWithRawResponse,
+    AsyncModelsResourceWithRawResponse,
+    ModelsResourceWithStreamingResponse,
+    AsyncModelsResourceWithStreamingResponse,
+)
 from .clusters import (
     ClustersResource,
     AsyncClustersResource,
@@ -31,6 +39,14 @@ from .clusters import (
     AsyncClustersResourceWithRawResponse,
     ClustersResourceWithStreamingResponse,
     AsyncClustersResourceWithStreamingResponse,
+)
+from .endpoints import (
+    EndpointsResource,
+    AsyncEndpointsResource,
+    EndpointsResourceWithRawResponse,
+    AsyncEndpointsResourceWithRawResponse,
+    EndpointsResourceWithStreamingResponse,
+    AsyncEndpointsResourceWithStreamingResponse,
 )
 
 __all__ = [
@@ -40,6 +56,18 @@ __all__ = [
     "AsyncRlResourceWithRawResponse",
     "RlResourceWithStreamingResponse",
     "AsyncRlResourceWithStreamingResponse",
+    "EndpointsResource",
+    "AsyncEndpointsResource",
+    "EndpointsResourceWithRawResponse",
+    "AsyncEndpointsResourceWithRawResponse",
+    "EndpointsResourceWithStreamingResponse",
+    "AsyncEndpointsResourceWithStreamingResponse",
+    "ModelsResource",
+    "AsyncModelsResource",
+    "ModelsResourceWithRawResponse",
+    "AsyncModelsResourceWithRawResponse",
+    "ModelsResourceWithStreamingResponse",
+    "AsyncModelsResourceWithStreamingResponse",
     "JigResource",
     "AsyncJigResource",
     "JigResourceWithRawResponse",
