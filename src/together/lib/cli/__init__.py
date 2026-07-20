@@ -85,6 +85,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
 )
+from together.lib.cli.utils._version_check import check_for_update
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
@@ -231,6 +232,8 @@ async def launcher(
         setup_logging()
 
     (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
+
+    await check_for_update(non_interactive=bool(non_interactive or output_json))
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
     # and never call the Together API. They must not be gated on an API key or the

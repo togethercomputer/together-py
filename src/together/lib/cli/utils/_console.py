@@ -31,3 +31,4 @@ custom_theme = Theme(
 )
 
 console = Console(theme=custom_theme, highlight=False)
+error_console = Console(theme=custom_theme, highlight=False, stderr=True)

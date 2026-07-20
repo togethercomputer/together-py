@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 
+import pytest
+
 from tests.cli.utils import CliRunner
 from together._version import __version__
 
@@ -41,3 +43,16 @@ class TestMainGlobalOptions:
             call_kw = ctor.call_args.kwargs
             assert call_kw.get("timeout") == 99
             assert call_kw.get("max_retries") == 3
+
+    def test_non_interactive_option_is_forwarded_to_version_check(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        from unittest.mock import AsyncMock
+
+        check_for_update = AsyncMock()
+        monkeypatch.setattr("together.lib.cli.check_for_update", check_for_update)
+
+        result = cli_runner.invoke(["--non-interactive", "models"])
+
+        assert result.exit_code == 0
+        check_for_update.assert_awaited_once_with(non_interactive=True)

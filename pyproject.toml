@@ -26,6 +26,7 @@ dependencies = [
   "types-pyyaml>=6.0.12.20250915",
   "tomli>=2.0.0; python_version < '3.11'",
   "detect-agent>=0.2.0",
+  "packaging>=26.2,<27",
 ]
 
 requires-python = ">= 3.10"
