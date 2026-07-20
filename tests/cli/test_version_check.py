@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -11,12 +10,18 @@ import pytest
 from together.lib.cli.utils import _version_check
 
 
-class _Response(BytesIO):
+class _Response:
+    def __init__(self, body: bytes):
+        self.body = body
+
+    def read(self) -> bytes:
+        return self.body
+
     def __enter__(self) -> _Response:
         return self
 
     def __exit__(self, *_args: object) -> None:
-        self.close()
+        pass
 
 
 def test_latest_version_uses_fresh_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 
 import pytest
 
@@ -56,3 +57,21 @@ class TestMainGlobalOptions:
 
         assert result.exit_code == 0
         check_for_update.assert_awaited_once_with(non_interactive=True)
+
+    def test_update_notice_does_not_corrupt_json_output(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        cli_runner.env.pop("TOGETHER_DISABLE_VERSION_CHECK")
+        monkeypatch.setattr("together.lib.cli.utils._version_check.__version__", "1.0.0")
+        monkeypatch.setattr("together.lib.cli.utils._version_check._latest_version", lambda: "1.1.0")
+        monkeypatch.setattr(
+            "together.lib.cli.utils._version_check._upgrade_command",
+            lambda: ["python", "-m", "pip", "install", "--upgrade", "together"],
+        )
+
+        result = cli_runner.invoke(["--json", "telemetry", "status"])
+
+        assert result.exit_code == 0
+        assert json.loads(result.out_out)["telemetry"] in {"enabled", "disabled"}
+        assert "1.0.0 → 1.1.0" not in result.out_out
+        assert "1.0.0 → 1.1.0" in result.err_out

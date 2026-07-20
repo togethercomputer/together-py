@@ -9,9 +9,10 @@ import shutil
 import asyncio
 import subprocess
 import urllib.request
-from typing import Any, cast
+from typing import cast
 from pathlib import Path
 
+from rich.markup import escape as escape_rich_markup
 from packaging.version import Version, InvalidVersion
 
 from together import __version__
@@ -41,12 +42,13 @@ def _cache_path() -> Path:
 
 def _read_cached_version(now: float) -> str | None:
     try:
-        data = json.loads(_cache_path().read_text(encoding="utf-8"))
+        data: object = json.loads(_cache_path().read_text(encoding="utf-8"))
         if not isinstance(data, dict):
             return None
+        cache = cast(dict[str, object], data)
 
-        checked_at = data.get("checked_at")
-        latest_version = data.get("latest_version")
+        checked_at = cache.get("checked_at")
+        latest_version = cache.get("latest_version")
         if not isinstance(checked_at, (int, float)) or not isinstance(latest_version, str):
             return None
         if not 0 <= now - checked_at < _CACHE_TTL_SECONDS:
@@ -85,14 +87,16 @@ def _fetch_latest_version() -> str:
         },
     )
     with urllib.request.urlopen(request, timeout=_REQUEST_TIMEOUT_SECONDS) as response:
-        payload = cast(Any, json.load(response))
+        payload: object = json.load(response)
 
     if not isinstance(payload, dict):
         raise ValueError("PyPI returned an invalid response")
-    info = payload.get("info")
+    response_data = cast(dict[str, object], payload)
+    info = response_data.get("info")
     if not isinstance(info, dict):
         raise ValueError("PyPI response did not include package info")
-    latest_version = info.get("version")
+    package_info = cast(dict[str, object], info)
+    latest_version = package_info.get("version")
     if not isinstance(latest_version, str):
         raise ValueError("PyPI response did not include a package version")
 
@@ -126,6 +130,12 @@ def _upgrade_command() -> list[str]:
     return [sys.executable, "-m", "pip", "install", "--upgrade", "together"]
 
 
+def _format_command(command: list[str]) -> str:
+    if sys.platform == "win32":
+        return subprocess.list2cmdline(command)
+    return shlex.join(command)
+
+
 def _is_interactive() -> bool:
     return sys.stdin.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
 
@@ -145,7 +155,7 @@ async def check_for_update(*, non_interactive: bool) -> None:
             return
 
         command = _upgrade_command()
-        command_text = shlex.join(command)
+        command_text = escape_rich_markup(_format_command(command))
         error_console.print(
             f"[warning]A new Together CLI version is available: {__version__} → {latest_version}.[/warning]"
         )
