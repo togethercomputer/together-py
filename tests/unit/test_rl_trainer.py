@@ -36,6 +36,7 @@ from together.lib.beta.rl import (
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
+from together.types.beta.rl.sample_result import Rollout, RolloutSequence
 from together.types.beta.rl.sample_operation import SampleOperation
 
 
@@ -170,6 +171,64 @@ def test_sample_batch_passes_multiple_prompts(monkeypatch: pytest.MonkeyPatch) -
     _, _, kwargs = client.beta.rl.operations.last_call
     assert kwargs["prompts"] == prompts
     trainer.stop()
+
+
+def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
+    result = SampleResult(
+        rollouts=[Rollout(sequences=[RolloutSequence(tokens=[1, 2])], prompt_logprobs=[-0.5, -1.5])]
+    )
+    _patch_submit_and_wait(monkeypatch, result)
+    client = FakeClient()
+    trainer = _make_trainer(client)
+
+    prompt = Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[1, 2]))])
+    logprobs = trainer.compute_logprobs(prompt)
+
+    assert logprobs == [-0.5, -1.5]
+    assert client.beta.rl.operations.last_call is not None
+    method, args, kwargs = client.beta.rl.operations.last_call
+    assert method == "sample"
+    assert args == ("sess",)
+    assert kwargs["prompts"] == [prompt]
+    assert kwargs["num_samples"] == 1
+    assert kwargs["sampling_params"]["return_prompt_logprobs"] is True
+    assert kwargs["sampling_params"]["max_tokens"] == 1
+    trainer.stop()
+
+
+def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
+    result = SampleResult(
+        rollouts=[
+            Rollout(sequences=[RolloutSequence(tokens=[1, 2])], prompt_logprobs=[-0.5, -1.5]),
+            Rollout(sequences=[RolloutSequence(tokens=[3, 4])], prompt_logprobs=[-0.1, -0.2]),
+        ]
+    )
+    _patch_submit_and_wait(monkeypatch, result)
+    client = FakeClient()
+    trainer = _make_trainer(client)
+
+    prompts = [
+        Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[1, 2]))]),
+        Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[3, 4]))]),
+    ]
+    logprobs = trainer.compute_logprobs_batch(prompts)
+
+    assert logprobs == [[-0.5, -1.5], [-0.1, -0.2]]
+    assert client.beta.rl.operations.last_call is not None
+    method, args, kwargs = client.beta.rl.operations.last_call
+    assert method == "sample"
+    assert args == ("sess",)
+    assert kwargs["prompts"] == prompts
+    assert kwargs["num_samples"] == 1
+    assert kwargs["sampling_params"]["return_prompt_logprobs"] is True
+    assert kwargs["sampling_params"]["max_tokens"] == 1
+    trainer.stop()
+
+
+def test_prompt_logprobs_from_result_raises_when_missing() -> None:
+    result = SampleResult(rollouts=[Rollout(sequences=[RolloutSequence(tokens=[1, 2])])])
+    with pytest.raises(RuntimeError, match="prompt logprobs"):
+        rl_trainer_module._prompt_logprobs_from_result(result)
 
 
 def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:

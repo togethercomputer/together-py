@@ -12,6 +12,7 @@ the full API reference remains in [api.md](api.md).
 - `Trainer.create(model_resources_id=...)` is the lower-level equivalent of `attach_trainer` when you already
   have a resources ID.
 - `Trainer` is the handle you use for sampling, forward/backward, optimization steps, and checkpointing.
+- `trainer.compute_logprobs(...)` (and `compute_logprobs_batch(...)`) teacher-force scores arbitrary token sequences on the generator, returning per-token logprobs (for sampler↔trainer KL and cross-service logprob comparisons on a fixed token set).
 - Training operations return operation outputs directly.
 - After one or more training steps, call `trainer.create_inference_checkpoint()` to snapshot the model,
   then `trainer.download_checkpoint(...)` to pull the weights locally.
@@ -490,6 +491,32 @@ Prompt(chunks=[prompt_chunk])
 | `tokens`      | `list[str]`   | Generated token IDs (as strings).            |
 | `logprobs`    | `list[float]` | Log probability for each generated token.    |
 | `stop_reason` | `str`         | Reason generation stopped (e.g. `"length"`). |
+
+#### `trainer.compute_logprobs(...)`
+
+Teacher-force scores an existing token sequence on the generator, returning the log-probability
+of each prompt token under the current policy. Unlike `trainer.sample`, which reports logprobs
+only for the tokens the generator *itself drew*, this scores arbitrary/frozen tokens on the
+generator — the same measurement path the sampler uses at rollout time. Useful for
+sampler↔trainer KL and cross-service logprob comparisons on a fixed token set.
+
+```python
+def compute_logprobs(
+    prompt: Prompt,
+) -> list[float]
+```
+
+| Parameter | Type     | Default      | Description                                  |
+| --------- | -------- | ------------ | -------------------------------------------- |
+| `prompt`  | `Prompt` | _(required)_ | Tokenized sequence to score (see `sample`).  |
+
+**Returns:** `list[float]` — per-token logprobs for the prompt, following the generator's
+prompt-logprob convention (`log P(tokenᵢ | token_<i)`, offset by one from the input tokens).
+Like `sample`, it requires a session with a generator replica.
+
+Use `trainer.compute_logprobs_batch(prompts: Iterable[Prompt]) -> list[list[float]]` to score
+several sequences in one call (mirroring `sample` / `sample_batch`); it returns one list of
+per-token logprobs per input prompt.
 
 #### `trainer.forward_backward(...)`
 
