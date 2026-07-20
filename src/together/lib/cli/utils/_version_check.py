@@ -13,7 +13,6 @@ from typing import cast
 from pathlib import Path
 
 from rich.markup import escape as escape_rich_markup
-from packaging.version import Version, InvalidVersion
 
 from together import __version__
 from together.lib.utils import log_debug
@@ -26,6 +25,17 @@ _CACHE_TTL_SECONDS = 24 * 60 * 60
 _REQUEST_TIMEOUT_SECONDS = 1.0
 _DISABLE_ENV_VAR = "TOGETHER_DISABLE_VERSION_CHECK"
 _TRUTHY_ENV_VALUES = frozenset({"1", "true", "yes"})
+
+
+def _parse_version(version: str) -> tuple[int, int, int]:
+    parts = version.split(".")
+    if len(parts) != 3 or any(not part.isdigit() for part in parts):
+        raise ValueError(f"Invalid Together CLI version: {version}")
+    return (int(parts[0]), int(parts[1]), int(parts[2]))
+
+
+def _is_newer_version(latest_version: str, current_version: str) -> bool:
+    return _parse_version(latest_version) > _parse_version(current_version)
 
 
 def _cache_path() -> Path:
@@ -54,9 +64,9 @@ def _read_cached_version(now: float) -> str | None:
         if not 0 <= now - checked_at < _CACHE_TTL_SECONDS:
             return None
 
-        Version(latest_version)
+        _parse_version(latest_version)
         return latest_version
-    except (OSError, json.JSONDecodeError, InvalidVersion):
+    except (OSError, json.JSONDecodeError, ValueError):
         return None
 
 
@@ -100,7 +110,7 @@ def _fetch_latest_version() -> str:
     if not isinstance(latest_version, str):
         raise ValueError("PyPI response did not include a package version")
 
-    Version(latest_version)
+    _parse_version(latest_version)
     return latest_version
 
 
@@ -151,7 +161,7 @@ async def check_for_update(*, non_interactive: bool) -> None:
 
     try:
         latest_version = await asyncio.to_thread(_latest_version)
-        if Version(latest_version) <= Version(__version__):
+        if not _is_newer_version(latest_version, __version__):
             return
 
         command = _upgrade_command()

@@ -24,6 +24,24 @@ class _Response:
         pass
 
 
+@pytest.mark.parametrize(
+    ("latest_version", "current_version", "expected"),
+    [
+        ("2.10.0", "2.9.0", True),
+        ("3.0.0", "2.99.99", True),
+        ("2.9.1", "2.9.1", False),
+        ("2.9.0", "2.9.1", False),
+    ],
+)
+def test_is_newer_version(latest_version: str, current_version: str, expected: bool) -> None:
+    assert _version_check._is_newer_version(latest_version, current_version) is expected
+
+
+def test_parse_version_rejects_non_release_versions() -> None:
+    with pytest.raises(ValueError, match="Invalid Together CLI version"):
+        _version_check._parse_version("2.9.0rc1")
+
+
 def test_latest_version_uses_fresh_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     cache_path = tmp_path / "version-check.json"
     cache_path.write_text(json.dumps({"checked_at": 1000, "latest_version": "3.1.0"}), encoding="utf-8")
