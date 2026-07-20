@@ -21,9 +21,7 @@ class TestResolveCliTheme:
         assert resolve_cli_theme({"TOGETHER_CLI_THEME": "light"}) == "light"
 
     def test_tg_theme_wins_over_colorfgbg(self) -> None:
-        assert (
-            resolve_cli_theme({"TG_THEME": "dark", "COLORFGBG": "0;15"}) == "dark"
-        )
+        assert resolve_cli_theme({"TG_THEME": "dark", "COLORFGBG": "0;15"}) == "dark"
 
     def test_colorfgbg_light_background(self) -> None:
         assert resolve_cli_theme({"COLORFGBG": "0;15"}) == "light"
@@ -79,11 +77,36 @@ class TestBuildThemeContrast:
         console.print("[white]value[/white]")
         ansi = console.export_text(styles=True)
 
-        # Light theme truecolor codes for the chosen palette
-        assert "38;2;109;40;217" in ansi  # primary #6d28d9
-        assert "38;2;91;33;182" in ansi  # secondary #5b21b6
-        assert "38;2;75;85;99" in ansi  # muted/dim #4b5563
-        assert "38;2;17;24;39" in ansi  # white override #111827
+        # Light theme truecolor codes for the high-contrast palette
+        assert "38;2;76;29;149" in ansi  # primary #4c1d95
+        assert "38;2;17;24;39" in ansi  # secondary #111827
+        assert "38;2;31;41;55" in ansi  # muted/dim #1f2937
+        assert "38;2;0;0;0" in ansi  # white override #000000
         # Must not use ANSI dim or standard white on light theme for these tags
         assert "\x1b[2m" not in ansi
         assert "\x1b[37m" not in ansi
+
+    def test_light_theme_body_text_meets_aaa_contrast_on_white(self) -> None:
+        """Body styles should clear WCAG AAA (7:1) against white."""
+
+        def relative_luminance(hex_color: str) -> float:
+            raw = hex_color.lstrip("#")
+            channels = [int(raw[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+
+            def linearize(channel: float) -> float:
+                return channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+
+            r, g, b = (linearize(c) for c in channels)
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+        def contrast_on_white(hex_color: str) -> float:
+            fg = relative_luminance(hex_color)
+            bg = 1.0
+            lighter, darker = max(fg, bg), min(fg, bg)
+            return (lighter + 0.05) / (darker + 0.05)
+
+        for key in ("primary", "secondary", "muted", "dim", "white"):
+            style = _LIGHT_STYLES[key]
+            hex_color = style.split()[-1]  # allow "bold #rrggbb"
+            ratio = contrast_on_white(hex_color)
+            assert ratio >= 7.0, f"{key}={style} contrast {ratio:.2f} < 7"

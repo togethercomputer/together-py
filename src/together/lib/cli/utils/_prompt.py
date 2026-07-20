@@ -22,16 +22,16 @@ _DARK_PROMPT_STYLES = [
 ]
 
 _LIGHT_PROMPT_STYLES = [
-    ("qmark", "fg:#6d28d9 bold"),
-    ("question", "bold #6d28d9"),
-    ("answer", "fg:#4b5563 bold"),
-    ("pointer", "fg:#6d28d9 bold"),
-    ("highlighted", "fg:#6d28d9 bold"),
-    ("selected", "fg:#6d28d9"),
-    ("separator", "fg:#6d28d9"),
+    ("qmark", "fg:#4c1d95 bold"),
+    ("question", "bold #4c1d95"),
+    ("answer", "fg:#111827 bold"),
+    ("pointer", "fg:#4c1d95 bold"),
+    ("highlighted", "fg:#4c1d95 bold"),
+    ("selected", "fg:#4c1d95"),
+    ("separator", "fg:#4c1d95"),
     ("instruction", ""),
-    ("text", "#4b5563"),
-    ("disabled", "fg:#6b7280 italic"),
+    ("text", "#1f2937"),
+    ("disabled", "fg:#4b5563 italic"),
 ]
 
 custom_style_fancy = _LIGHT_PROMPT_STYLES if cli_theme_name == "light" else _DARK_PROMPT_STYLES
