@@ -68,23 +68,15 @@ jobs:
       - name: Check whether production is ahead of staging
         id: diff
         run: |
-          # Match stlc-generate's codegen hold: ancestry, not tree equality.
-          # Same tip → done. Staging ancestor of prod → FF. Prod ancestor of
-          # staging → staging is ahead (normal between releases). Else forked.
-          STAGING_SHA=$(git rev-parse origin/main)
-          PRODUCTION_SHA=$(git rev-parse production/main)
-          if [ "$STAGING_SHA" = "$PRODUCTION_SHA" ]; then
-            echo "Staging and production are at the same tip ($STAGING_SHA)."
-            echo "behind=false" >> "$GITHUB_OUTPUT"
-          elif git -c credential.helper= merge-base --is-ancestor origin/main production/main; then
-            echo "Production is ahead of staging — will fast-forward."
-            echo "behind=true" >> "$GITHUB_OUTPUT"
-          elif git -c credential.helper= merge-base --is-ancestor production/main origin/main; then
-            echo "Staging is ahead of production. Nothing to pull back."
+          # Content compare: would merging production into staging change its tree?
+          # If not, staging already has production's content (release-please commits).
+          MERGED=$(git merge-tree --write-tree origin/main production/main) || MERGED=conflict
+          STAGING_TREE=$(git rev-parse 'origin/main^{tree}')
+          if [ "$MERGED" = "$STAGING_TREE" ]; then
+            echo "Staging already has production's content. Nothing to pull back."
             echo "behind=false" >> "$GITHUB_OUTPUT"
           else
-            echo "::error title=Back-sync blocked::staging and production mains have diverged (neither is an ancestor of the other)."
-            exit 1
+            echo "behind=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Sync production to staging (fast-forward)
