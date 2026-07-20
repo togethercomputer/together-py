@@ -45,18 +45,22 @@ class TestMainGlobalOptions:
             assert call_kw.get("timeout") == 99
             assert call_kw.get("max_retries") == 3
 
-    def test_non_interactive_option_is_forwarded_to_version_check(
+    def test_version_check_runs_after_command_with_non_interactive_option(
         self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
     ) -> None:
-        from unittest.mock import AsyncMock
+        calls: list[tuple[bool, str]] = []
 
-        check_for_update = AsyncMock()
+        async def check_for_update(*, non_interactive: bool) -> None:
+            calls.append((non_interactive, cli_runner.capsys.readouterr().out))
+
         monkeypatch.setattr("together.lib.cli.check_for_update", check_for_update)
 
-        result = cli_runner.invoke(["--non-interactive", "models"])
+        result = cli_runner.invoke(["--non-interactive", "telemetry", "status"])
 
         assert result.exit_code == 0
-        check_for_update.assert_awaited_once_with(non_interactive=True)
+        assert len(calls) == 1
+        assert calls[0][0] is True
+        assert "Telemetry:" in calls[0][1]
 
     def test_update_notice_does_not_corrupt_json_output(
         self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner

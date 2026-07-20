@@ -233,8 +233,6 @@ async def launcher(
 
     (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
-    await check_for_update(non_interactive=bool(non_interactive or output_json))
-
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
     # and never call the Together API. They must not be gated on an API key or the
     # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
@@ -397,8 +395,11 @@ async def launcher(
 
         sys.exit(1)
     finally:
-        flush_pending_events()
-        await client.close()
+        try:
+            flush_pending_events()
+            await client.close()
+        finally:
+            await check_for_update(non_interactive=bool(non_interactive or output_json))
 
 
 # Register commands
