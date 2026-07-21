@@ -163,8 +163,11 @@ class AsyncRealtimeTranscriptionSession:
             overflow=buffer.get("overflow", "drop_oldest"),
             pool=pool,
         )
+        # registered with the pool in start(), not here: the pool holds a
+        # strong reference (via the held_bytes closure) until close()/_fail(),
+        # so a session that is constructed but never started must not be
+        # pinned by the client-scoped pool forever
         self._pool = pool
-        pool.register(self, lambda: self.state.buffer.size, self.state.reclaim)
 
         # Liveness probing is internal (not part of the public API): a small
         # application-level ping catches silent failures — connection looks
@@ -229,9 +232,14 @@ class AsyncRealtimeTranscriptionSession:
                 "serves /realtime, e.g. https://api.together.ai/v1",
                 cause=exc,
             ) from exc
-        created = await self._await_session_created(connection)
+        try:
+            created = await self._await_session_created(connection)
+        except BaseException:
+            await _close_quietly(connection)
+            raise
         self.state.begin_epoch(self.state.write_head)
         self._sent_offset = self.state.write_head
+        self._pool.register(self, lambda: self.state.buffer.size, self.state.reclaim)
         self._attach(connection)
         self._emit(
             SessionStarted(
@@ -244,13 +252,25 @@ class AsyncRealtimeTranscriptionSession:
         self._watchdog_task = asyncio.create_task(self._watchdog_loop())
 
     async def close(self) -> None:
-        if self._closed:
-            return
+        # No early-return on _closed: _fail() sets it without awaiting the
+        # reader/reconnect tasks, so a close() after a terminal failure must
+        # still run the (idempotent) teardown below to be deterministic.
         self._closed = True
         self._writer_wakeup.set()
-        for task in (self._watchdog_task, self._writer_task, self._reconnect_task, self._reader_task):
-            if task is not None:
-                task.cancel()
+        tasks = [
+            task
+            for task in (self._watchdog_task, self._writer_task, self._reconnect_task, self._reader_task)
+            if task is not None
+        ]
+        for task in tasks:
+            task.cancel()
+        # await the cancellations so shutdown is deterministic: the sync facade
+        # stops the loop right after close() returns, and a still-pending task
+        # would be destroyed mid-teardown (asyncio warnings, half-closed socket)
+        current = asyncio.current_task()
+        pending = [task for task in tasks if task is not current]
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
         if self._connection is not None:
             try:
                 await self._connection.close()
@@ -632,7 +652,11 @@ class AsyncRealtimeTranscriptionSession:
                     await self._acquire_throttle()
                     try:
                         connection = await self._open_connection()
-                        created = await self._await_session_created(connection)
+                        try:
+                            created = await self._await_session_created(connection)
+                        except BaseException:
+                            await _close_quietly(connection)
+                            raise
                     finally:
                         self._throttle.release()
                 except Exception as exc:
@@ -694,10 +718,10 @@ class AsyncRealtimeTranscriptionSession:
     # -- internals: watchdog -------------------------------------------------------
 
     async def _watchdog_loop(self) -> None:
-        try:
-            next_echo = self._now() + self._jittered(self._echo_interval)
-            while not self._closed:
-                await asyncio.sleep(0.5)
+        next_echo = self._now() + self._jittered(self._echo_interval)
+        while not self._closed:
+            await asyncio.sleep(0.5)
+            try:
                 now = self._now()
                 connection = self._connection
                 if connection is None or self._reconnect_task is not None:
@@ -737,8 +761,16 @@ class AsyncRealtimeTranscriptionSession:
                 if self._keepalive_silence and self._last_append_at:
                     if now - self._last_append_at > 200.0:
                         await self.append(b"\x00" * int(self.state.bps * 0.1))  # 100ms of silence
-        except asyncio.CancelledError:
-            raise
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                # the keepalive append can raise (overflow='error', or a stored
+                # terminal failure via _raise_if_failed); the watchdog must
+                # survive it — dying here silently loses echo probing and
+                # keepalive while the session still looks healthy
+                if self._closed or self._failure is not None:
+                    return
+                log.exception("realtime watchdog iteration failed; liveness probing continues")
 
     def _jittered(self, interval: float) -> float:
         return interval * (0.8 + 0.4 * random.random())
@@ -822,10 +854,20 @@ class RealtimeTranscriptionSession:
     def start(self) -> None:
         async def _create() -> AsyncRealtimeTranscriptionSession:
             session = AsyncRealtimeTranscriptionSession(**self._kwargs)
-            await session.start()
+            try:
+                await session.start()
+            except BaseException:
+                await session.close()
+                raise
             return session
 
-        self._session = self._call(_create())
+        try:
+            self._session = self._call(_create())
+        except BaseException:
+            # a failed start (bad base_url, rejected handshake, bad kwargs)
+            # must not strand the background loop thread until atexit
+            self.close()
+            raise
 
     def __enter__(self) -> "RealtimeTranscriptionSession":
         self.start()

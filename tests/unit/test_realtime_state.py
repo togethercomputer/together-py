@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+import threading
+
 import pytest
 
 from together.lib.realtime._state import (
@@ -86,6 +89,54 @@ class TestBufferPool:
         assert state_big.buffer.size < 80
         assert state_small.consume_pending_gap() == 0
         assert state_big.consume_pending_gap() > 0  # un-acked audio was dropped
+
+    def test_cross_thread_reclaim_is_safe_against_owner_iteration(self) -> None:
+        """Under pool pressure, charge() reclaims from OTHER sessions' buffers
+        on the charging thread — concurrent with those sessions' own event
+        loops appending and iterating read_from(). Unsynchronized, this pops
+        from a deque mid-iteration (RuntimeError) or corrupts offsets."""
+        pool = BufferPool(max_bytes=10_000)
+        state_a = make_state(pool=pool, max_seconds=1000.0)
+        state_b = make_state(pool=pool, max_seconds=1000.0)
+        pool.register(state_a, lambda: state_a.buffer.size, state_a.reclaim)
+        pool.register(state_b, lambda: state_b.buffer.size, state_b.reclaim)
+
+        errors: list[BaseException] = []
+        stop = threading.Event()
+
+        def hammer_a() -> None:
+            # foreign thread: every append keeps the pool saturated, forcing
+            # reclaims from state_b (the largest holder) on THIS thread
+            try:
+                while not stop.is_set():
+                    state_a.record_append(b"a" * 256)
+            except BaseException as exc:  # pragma: no cover - failure path
+                errors.append(exc)
+
+        thread = threading.Thread(target=hammer_a)
+        # many small chunks widen the owner's read_from iteration window
+        for _ in range(200):
+            state_b.record_append(b"b" * 40)
+        switch_interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)  # force aggressive thread interleaving
+        thread.start()
+        try:
+            for _ in range(1_000):
+                for _ in range(8):
+                    state_b.record_append(b"b" * 40)
+                # owner-loop behavior: writer iterating the retained window
+                for _chunk in state_b.buffer.read_from(0):
+                    pass
+                _ = state_b.buffer.size
+        except BaseException as exc:  # pragma: no cover - failure path
+            errors.append(exc)
+        finally:
+            stop.set()
+            thread.join(timeout=10)
+            sys.setswitchinterval(switch_interval)
+
+        assert not errors, f"concurrent reclaim raced: {errors[0]!r}"
+        assert state_b.buffer.size == state_b.buffer.end_offset - state_b.buffer.start_offset
 
 
 class TestClassification:

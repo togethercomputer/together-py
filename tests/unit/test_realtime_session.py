@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import json
 import base64
+import socket
 import asyncio
+import logging
 import contextlib
 from typing import Any, Dict, List, Callable, Optional
 
@@ -28,7 +30,11 @@ from together.lib.realtime import (
     RealtimeSessionEvent,
     RealtimeConnectionError,
 )
-from together.lib.realtime._session import AsyncRealtimeTranscriptionSession
+from together.lib.realtime._state import BufferPool
+from together.lib.realtime._session import (
+    RealtimeTranscriptionSession,
+    AsyncRealtimeTranscriptionSession,
+)
 
 BPS = 32_000  # pcm_s16le_16000
 
@@ -506,3 +512,77 @@ class TestBufferGapEvents:
                 )
             gaps = [e for e in events if isinstance(e, BufferGap)]
             assert abs(gaps[0].dropped_seconds - 2.0) < 0.1
+
+
+class TestLifecycleHygiene:
+    async def test_pool_registration_tracks_lifecycle(self) -> None:
+        # registration happens at start(), not construction: the pool holds a
+        # strong reference, so a constructed-but-never-started session must
+        # not be pinned by the client-scoped pool forever
+        pool = BufferPool()
+        async with FakeRealtimeServer() as server:
+            session = make_session(server, pool=pool)
+            assert session not in pool._holders
+            await session.start()
+            assert session in pool._holders
+            await session.close()
+            assert session not in pool._holders
+
+    async def test_failed_start_leaves_no_pool_registration(self) -> None:
+        async with FakeRealtimeServer(reject_statuses=[401]) as server:
+            pool = BufferPool()
+            session = make_session(server, pool=pool)
+            with pytest.raises(RealtimeConnectionError):
+                await session.start()
+            assert session not in pool._holders
+
+    async def test_watchdog_survives_keepalive_append_failure(self, caplog: pytest.LogCaptureFixture) -> None:
+        # the keepalive append can raise (overflow='error', stored terminal
+        # failure); the watchdog must log and keep probing, not die unobserved
+        async with FakeRealtimeServer() as server:
+            session = make_session(server, turn_detection={"type": "none"}, keepalive_silence=True)
+            await session.start()
+            try:
+                watchdog = session._watchdog_task
+                assert watchdog is not None
+
+                async def _boom(_pcm: bytes) -> None:
+                    raise RuntimeError("injected append failure")
+
+                session._last_append_at = session._now() - 300.0  # keepalive due now
+                session.append = _boom  # type: ignore[method-assign]
+                with caplog.at_level(logging.ERROR, logger="together.realtime"):
+                    await asyncio.sleep(1.2)  # a couple of watchdog ticks
+                assert not watchdog.done()
+                assert any("watchdog iteration failed" in record.message for record in caplog.records)
+            finally:
+                await session.close()
+
+    async def test_close_awaits_background_tasks(self) -> None:
+        # close() must not return with tasks merely cancel()ed but pending:
+        # the sync facade stops the loop immediately after, destroying them
+        async with FakeRealtimeServer(completed_every_bytes=BPS) as server:
+            session = make_session(server)
+            await session.start()
+            await session.append(seconds(0.1))
+            tasks = [
+                task
+                for task in (session._reader_task, session._writer_task, session._watchdog_task)
+                if task is not None
+            ]
+            assert len(tasks) == 3
+            await session.close()
+            assert all(task.done() for task in tasks)
+
+    def test_sync_start_failure_stops_loop_thread(self) -> None:
+        # a failed start() must tear down the background loop thread instead
+        # of stranding it until atexit
+        probe = socket.socket()
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+        probe.close()  # nothing listening: connection refused immediately
+        client = AsyncTogether(api_key="test-key", base_url=f"http://127.0.0.1:{port}")
+        session = RealtimeTranscriptionSession(client=client, model="openai/whisper-large-v3")
+        with pytest.raises(RealtimeConnectionError):
+            session.start()
+        assert not session._thread.is_alive()

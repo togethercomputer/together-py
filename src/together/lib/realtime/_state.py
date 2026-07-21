@@ -119,6 +119,11 @@ class BackoffPolicy:
 # in the process. On exhaustion it reclaims from the largest holders first;
 # each holder's reclaim callback trims its own buffer and surfaces a
 # BufferGap to its consumer.
+#
+# Reclaim callbacks run synchronously on whatever thread called charge() —
+# under pressure that is another session's event-loop thread — so holders'
+# held_bytes/reclaim callbacks must be thread-safe (AudioBuffer locks
+# internally for this).
 # ---------------------------------------------------------------------------
 
 
@@ -177,6 +182,13 @@ class AudioBuffer:
     Offsets are monotonically increasing over the life of the session; the
     buffer retains the byte range [start_offset, end_offset). Raw PCM is
     stored (base64 encoding happens only at send time).
+
+    Thread safety: the pool reclaims from its largest holders on whatever
+    thread called charge(), so trim_to() can run concurrently with the owner
+    loop's append()/read_from() (and the sync facade calls pending_audio()
+    from the caller's thread). All chunk/offset state is guarded by `_lock`;
+    pool charge/release happen outside it so the only lock ordering is
+    pool lock -> buffer lock, never the reverse.
     """
 
     def __init__(self, pool: Optional[BufferPool] = None) -> None:
@@ -184,6 +196,7 @@ class AudioBuffer:
         self._start = 0
         self._end = 0
         self._pool = pool
+        self._lock = threading.Lock()
 
     @property
     def start_offset(self) -> int:
@@ -195,48 +208,57 @@ class AudioBuffer:
 
     @property
     def size(self) -> int:
-        return self._end - self._start
+        with self._lock:
+            return self._end - self._start
 
     def append(self, data: bytes) -> int:
         """Append PCM bytes; returns the global offset of the first byte."""
-        offset = self._end
-        if data:
-            self._chunks.append((offset, data))
-            self._end += len(data)
-            if self._pool is not None:
-                self._pool.charge(len(data))
+        with self._lock:
+            offset = self._end
+            if data:
+                self._chunks.append((offset, data))
+                self._end += len(data)
+        if data and self._pool is not None:
+            self._pool.charge(len(data))
         return offset
 
     def trim_to(self, offset: int) -> int:
         """Drop retained bytes below `offset`; returns bytes freed."""
-        target = min(max(offset, self._start), self._end)
-        freed = 0
-        while self._chunks:
-            chunk_start, data = self._chunks[0]
-            chunk_end = chunk_start + len(data)
-            if chunk_end <= target:
-                self._chunks.popleft()
-                freed += len(data)
-            elif chunk_start < target:
-                keep = data[target - chunk_start :]
-                self._chunks[0] = (target, keep)
-                freed += len(data) - len(keep)
-                break
+        with self._lock:
+            target = min(max(offset, self._start), self._end)
+            freed = 0
+            while self._chunks:
+                chunk_start, data = self._chunks[0]
+                chunk_end = chunk_start + len(data)
+                if chunk_end <= target:
+                    self._chunks.popleft()
+                    freed += len(data)
+                elif chunk_start < target:
+                    keep = data[target - chunk_start :]
+                    self._chunks[0] = (target, keep)
+                    freed += len(data) - len(keep)
+                    break
+                else:
+                    break
+            self._start = max(self._start, target)
+            if self._chunks:
+                # start_offset never exceeds the first retained chunk
+                self._start = min(self._start, self._chunks[0][0])
             else:
-                break
-        self._start = max(self._start, target)
-        if self._chunks:
-            # start_offset never exceeds the first retained chunk
-            self._start = min(self._start, self._chunks[0][0])
-        else:
-            self._start = self._end
+                self._start = self._end
         if freed and self._pool is not None:
             self._pool.release(freed)
         return freed
 
     def read_from(self, offset: int) -> Iterator[bytes]:
-        """Yield retained data from `offset` (clamped to what's available)."""
-        for chunk_start, data in self._chunks:
+        """Yield retained data from `offset` (clamped to what's available).
+
+        Iterates a snapshot: a concurrent pool reclaim may popleft/replace
+        chunks mid-iteration, and the chunks themselves are immutable bytes.
+        """
+        with self._lock:
+            chunks = list(self._chunks)
+        for chunk_start, data in chunks:
             chunk_end = chunk_start + len(data)
             if chunk_end <= offset:
                 continue
@@ -342,6 +364,9 @@ class RecoveryState:
         self.outstanding_commits: List[int] = []  # append offsets of un-retired manual commits
         self.metrics = SessionMetrics()
         self.pending_gap_bytes = 0  # overflow-trimmed unsafe bytes not yet surfaced
+        # pending_gap_bytes is the one field written off-loop (reclaim() runs on
+        # the pool's charging thread); guard it against a racing consume.
+        self._gap_lock = threading.Lock()
 
         self._segments: Dict[Tuple[int, str], SegmentInfo] = {}
         self._next_segment = 0
@@ -460,24 +485,35 @@ class RecoveryState:
         self.buffer.trim_to(target)
         if unsafe_dropped > 0:
             # Un-recovered audio was lost; surfaced by the session as BufferGap.
-            self.pending_gap_bytes += unsafe_dropped
-            self.metrics.gap_bytes += unsafe_dropped
+            self._note_gap(unsafe_dropped)
 
     def reclaim(self, nbytes: int) -> int:
-        """Pool-initiated reclamation (correlated-outage pressure). Oldest first."""
+        """Pool-initiated reclamation (correlated-outage pressure). Oldest first.
+
+        Runs on whatever thread charged the pool, concurrent with the owner
+        loop. The buffer's own lock makes the trim safe; the watermark/anchor/
+        commit reads here may be one event stale, which at worst trims audio
+        that just became replay-relevant — accounted for as `unsafe` below and
+        surfaced to the owner as a BufferGap.
+        """
         target = self._align(min(self.buffer.start_offset + nbytes, self.buffer.end_offset))
         safe = self._safe_trim_point()
         unsafe = max(0, target - safe) if safe is not None else target - self.buffer.start_offset
         freed = self.buffer.trim_to(target)
         if unsafe > 0:
-            self.pending_gap_bytes += unsafe
-            self.metrics.gap_bytes += unsafe
+            self._note_gap(unsafe)
         self.metrics.buffered_bytes = self.buffer.size
         return freed
 
+    def _note_gap(self, nbytes: int) -> None:
+        with self._gap_lock:
+            self.pending_gap_bytes += nbytes
+            self.metrics.gap_bytes += nbytes
+
     def consume_pending_gap(self) -> int:
-        gap, self.pending_gap_bytes = self.pending_gap_bytes, 0
-        return gap
+        with self._gap_lock:
+            gap, self.pending_gap_bytes = self.pending_gap_bytes, 0
+            return gap
 
     # -- reconnect -----------------------------------------------------------
 
