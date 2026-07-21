@@ -18,7 +18,6 @@ from together import __version__
 from together.lib.utils import log_debug
 from together.lib.cli.utils._prompt import confirm
 from together.lib.cli.utils._console import error_console
-from together.lib.cli.utils._completion import _is_agent_or_ci
 
 _PYPI_URL = "https://pypi.org/pypi/together/json"
 _CACHE_TTL_SECONDS = 24 * 60 * 60
@@ -146,15 +145,11 @@ def _format_command(command: list[str]) -> str:
     return shlex.join(command)
 
 
-def _is_interactive() -> bool:
-    return sys.stdin.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
-
-
 def _version_check_disabled() -> bool:
     return os.getenv(_DISABLE_ENV_VAR, "").strip().lower() in _TRUTHY_ENV_VALUES
 
 
-async def check_for_update(*, non_interactive: bool) -> None:
+async def check_for_update() -> None:
     """Notify the user when PyPI has a newer Together CLI, without blocking on failures."""
     if _version_check_disabled():
         return
@@ -166,13 +161,7 @@ async def check_for_update(*, non_interactive: bool) -> None:
 
         command = _upgrade_command()
         command_text = escape_rich_markup(_format_command(command))
-        error_console.print(
-            f"[warning]A new Together CLI version is available: {__version__} → {latest_version}.[/warning]"
-        )
-
-        if non_interactive or not _is_interactive():
-            error_console.print(f"Upgrade with: [bold]{command_text}[/bold]")
-            return
+        error_console.print(f"[dim]\nA new Together CLI version is available: {__version__} → {latest_version}.[/dim]")
 
         if not await confirm("Upgrade the Together CLI now?"):
             error_console.print(f"Upgrade later with: [bold]{command_text}[/bold]")

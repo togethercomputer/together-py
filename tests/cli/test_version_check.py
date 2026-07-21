@@ -82,7 +82,7 @@ async def test_check_for_update_prints_upgrade_command_when_non_interactive(monk
     )
     monkeypatch.setattr(_version_check, "error_console", output)
 
-    await _version_check.check_for_update(non_interactive=True)
+    await _version_check.check_for_update()
 
     rendered = " ".join(call.args[0] for call in output.print.call_args_list)
     assert "1.0.0 → 1.1.0" in rendered
@@ -102,7 +102,7 @@ async def test_check_for_update_prompts_and_upgrades_on_tty(monkeypatch: pytest.
     monkeypatch.setattr(_version_check, "confirm", confirm)
     monkeypatch.setattr(_version_check.subprocess, "run", run)
 
-    await _version_check.check_for_update(non_interactive=False)
+    await _version_check.check_for_update()
 
     confirm.assert_awaited_once_with("Upgrade the Together CLI now?")
     run.assert_called_once_with(["upgrade"], check=False)
@@ -116,4 +116,4 @@ async def test_check_for_update_fails_open(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
     monkeypatch.setattr(_version_check, "_latest_version", fail)
 
-    await _version_check.check_for_update(non_interactive=False)
+    await _version_check.check_for_update()

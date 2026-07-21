@@ -25,7 +25,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
-from together.lib.cli.utils._completion import install_completion
+from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
     JIG_HELP_EXAMPLES,
     EVALS_HELP_EXAMPLES,
@@ -250,11 +250,12 @@ async def launcher(
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
 
+    is_interactive = sys.stdin.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
+    non_interactive_mode = non_interactive or output_json or not is_interactive
+
     config = CLIConfig(
         client=client,
-        # TODO: Turn on non-interactive mode for agents
-        # TODO: Detect isTTY or CI
-        non_interactive=non_interactive or output_json or False,
+        non_interactive=non_interactive_mode,
         json=output_json or False,
         project_id=project_id,
     )
@@ -399,7 +400,8 @@ async def launcher(
             flush_pending_events()
             await client.close()
         finally:
-            await check_for_update(non_interactive=bool(non_interactive or output_json))
+            if not config.non_interactive:
+                await check_for_update()
 
 
 # Register commands

@@ -48,10 +48,10 @@ class TestMainGlobalOptions:
     def test_version_check_runs_after_command_with_non_interactive_option(
         self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
     ) -> None:
-        calls: list[tuple[bool, str]] = []
+        calls: list[str] = []
 
-        async def check_for_update(*, non_interactive: bool) -> None:
-            calls.append((non_interactive, cli_runner.capsys.readouterr().out))
+        async def check_for_update() -> None:
+            calls.append(cli_runner.capsys.readouterr().out)
 
         monkeypatch.setattr("together.lib.cli.check_for_update", check_for_update)
 
@@ -59,8 +59,7 @@ class TestMainGlobalOptions:
 
         assert result.exit_code == 0
         assert len(calls) == 1
-        assert calls[0][0] is True
-        assert "Telemetry:" in calls[0][1]
+        assert "Telemetry:" in calls[0]
 
     def test_update_notice_does_not_corrupt_json_output(
         self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
