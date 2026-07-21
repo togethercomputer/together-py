@@ -132,7 +132,6 @@ async def test_version_check_prompts_and_upgrades_on_tty(monkeypatch: pytest.Mon
     monkeypatch.setattr(_version_check, "__version__", "1.0.0")
     monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
     monkeypatch.setattr(_version_check, "_upgrade_command", lambda: ["upgrade"])
-    monkeypatch.setattr(_version_check, "_is_interactive", lambda: True)
     monkeypatch.setattr(_version_check, "error_console", output)
     monkeypatch.setattr(_version_check, "confirm", confirm)
     monkeypatch.setattr(_version_check.subprocess, "run", run)
