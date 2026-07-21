@@ -695,6 +695,8 @@ class TestBetaClustersCreate:
                 "--capacity-pool-id",
                 "pool-1",
                 "--install-traefik",
+                "--headlamp",
+                "--slurm-web",
                 "--num-capacity-pool-gpus",
                 "8",
                 "--num-preemptible-gpus",
@@ -722,6 +724,18 @@ class TestBetaClustersCreate:
         assert body["capacity_pool_id"] == "pool-1"
         assert "gpu_node_failover_enabled" not in body
         assert body["install_traefik"] is True
+        assert body["add_ons"] == [
+            {
+                "add_on_type": "headlamp",
+                "name": "headlamp",
+                "config": {"headlamp": {"enabled": True}},
+            },
+            {
+                "add_on_type": "slurm_web",
+                "name": "slurm_web",
+                "config": {"slurm_web": {"enabled": True}},
+            },
+        ]
         assert body["num_capacity_pool_gpus"] == 8
         assert body["num_preemptible_gpus"] == 8
         assert body["num_reserved_gpus"] == 8
@@ -768,10 +782,16 @@ class TestBetaClustersUpdate:
                 "16",
                 "--reservation-end-time",
                 "2026-06-02T00:00:00Z",
+                "--no-headlamp",
+                "--slurm-web",
             ],
         )
 
         put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
+        assert put_body["add_ons"] == [
+            {"name": "headlamp", "config": {"headlamp": {"enabled": False}}},
+            {"name": "slurm_web", "config": {"slurm_web": {"enabled": True}}},
+        ]
         assert put_body["num_preemptible_gpus"] == 8
         assert put_body["num_capacity_pool_gpus"] == 8
         assert put_body["num_reserved_gpus"] == 16
