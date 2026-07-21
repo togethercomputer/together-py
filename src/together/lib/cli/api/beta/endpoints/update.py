@@ -29,7 +29,7 @@ async def update(
         str,
         Parameter(help=("Deployment ID to update.")),
     ],
-    name: Annotated[Optional[str], Parameter(help="Updated deployment name")] = None,
+    name: Annotated[Optional[str], Parameter(help="Updated deployment endpoint string")] = None,
     min_replicas: Annotated[
         Optional[int], Parameter(help="New minimum replicas; set both replica bounds to 0 to stop the deployment")
     ] = None,

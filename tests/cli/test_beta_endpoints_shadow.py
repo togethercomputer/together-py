@@ -219,6 +219,12 @@ class TestResolveRateOrTargetQps:
 
 
 class TestBetaEndpointShadow:
+    def test_shadow_help_describes_name_as_endpoint_string(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "shadow", "--help"])
+
+        assert result.exit_code == 0
+        assert "Shadow deployment endpoint string" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_creates_experiment_deployment_and_target(
         self,

@@ -57,7 +57,7 @@ EndpointParameter = Annotated[
 ]
 DeploymentNameParameter = Annotated[
     Optional[str],
-    Parameter(help="Name for the new deployment; defaults to the model name plus a short unique suffix"),
+    Parameter(help="Endpoint string for the new deployment; defaults to the model name plus a short unique suffix"),
 ]
 
 

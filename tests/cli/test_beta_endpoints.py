@@ -107,6 +107,12 @@ def _mock_model_and_config(respx_mock: MockRouter) -> None:
 
 
 class TestBetaEndpointsDeploy:
+    def test_deploy_help_describes_deployment_name_as_endpoint_string(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
+
+        assert result.exit_code == 0
+        assert "Endpoint string for the new deployment" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(
         self,

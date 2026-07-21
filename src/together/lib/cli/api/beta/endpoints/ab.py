@@ -58,7 +58,7 @@ async def ab(
     ] = False,
     name: Annotated[
         Optional[str],
-        Parameter(help="Variant deployment name; defaults to the model name with a short suffix"),
+        Parameter(help="Variant deployment endpoint string; defaults to the model name with a short suffix"),
     ] = None,
     config: CLIConfigParameter,
 ) -> None:

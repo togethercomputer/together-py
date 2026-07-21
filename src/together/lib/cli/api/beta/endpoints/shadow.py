@@ -58,7 +58,7 @@ async def shadow(
     ] = None,
     name: Annotated[
         Optional[str],
-        Parameter(help="Shadow deployment name; defaults to the model name with a short suffix"),
+        Parameter(help="Shadow deployment endpoint string; defaults to the model name with a short suffix"),
     ] = None,
     rate: Annotated[
         Optional[float],

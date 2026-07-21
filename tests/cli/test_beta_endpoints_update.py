@@ -90,6 +90,12 @@ def _mock_endpoint_list(respx_mock: MockRouter) -> None:
 
 
 class TestBetaEndpointsUpdate:
+    def test_update_help_describes_name_as_endpoint_string(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "update", "--help"])
+
+        assert result.exit_code == 0
+        assert "Updated deployment endpoint string" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_update_by_deployment_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)

@@ -253,6 +253,12 @@ class TestVerifyControlReceivingTraffic:
 
 
 class TestEndpointsAb:
+    def test_ab_help_describes_name_as_endpoint_string(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "ab", "--help"])
+
+        assert result.exit_code == 0
+        assert "Variant deployment endpoint string" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_ab_creates_deployment_and_experiment(
         self,
