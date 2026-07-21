@@ -14,6 +14,7 @@ __all__ = [
     "AddOn",
     "AddOnConfig",
     "AddOnConfigDashboard",
+    "AddOnConfigHeadlamp",
     "AddOnConfigIngress",
     "AddOnConfigTorchpass",
     "ClusterConfig",
@@ -211,6 +212,13 @@ class AddOnConfigDashboard(TypedDict, total=False):
     enabled: bool
 
 
+class AddOnConfigHeadlamp(TypedDict, total=False):
+    """Configuration for the Headlamp Kubernetes dashboard add-on."""
+
+    enabled: bool
+    """Whether to enable the Headlamp Kubernetes dashboard add-on."""
+
+
 class AddOnConfigIngress(TypedDict, total=False):
     enabled: bool
 
@@ -226,6 +234,9 @@ class AddOnConfig(TypedDict, total=False):
     """Configuration for a cluster add-on."""
 
     dashboard: AddOnConfigDashboard
+
+    headlamp: AddOnConfigHeadlamp
+    """Configuration for the Headlamp Kubernetes dashboard add-on."""
 
     ingress: AddOnConfigIngress
 
