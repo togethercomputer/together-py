@@ -100,7 +100,7 @@ def _description_renderer(entry: HelpEntry) -> Any:
         return description
     from rich.text import Text
 
-    suffix = Text(f" [default: {entry.default}]", style="dim")
+    suffix = Text(f" [default: {entry.default}]", style="muted")
     if description is None:
         return suffix
     if hasattr(description, "append"):
@@ -128,7 +128,7 @@ human_formatter = DefaultFormatter(
         ),
         ColumnSpec(
             renderer=_description_renderer,
-            style="secondary",
+            style="muted",
             overflow="fold",
         ),
     )

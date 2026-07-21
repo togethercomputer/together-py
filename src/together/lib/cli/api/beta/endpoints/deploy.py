@@ -51,7 +51,7 @@ EndpointParameter = Annotated[
         help="""Endpoint that will contain the deployment.
 
 - Pass an existing endpoint name or ID (ep_...) to add a deployment to it.
-- Pass a new name to create the endpoint first. This name becomes the endpoint's immutable inference name.""",
+- Pass a new name to create the endpoint first. This name becomes the endpoint's immutable endpoint string.""",
     ),
     PromptParameter(instructions="What name would you like to use for your endpoint?", message="Endpoint Name"),
 ]

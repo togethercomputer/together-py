@@ -247,7 +247,7 @@ class EndpointsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Endpoint:
         """
-        Updates mutable endpoint fields such as its inference name, visibility, or
+        Updates mutable endpoint fields such as its endpoint string, visibility, or
         deployment traffic split. Use `updateMask` to select fields explicitly and
         `etag` in the request body for optimistic concurrency.
 
@@ -261,7 +261,7 @@ class EndpointsResource(SyncAPIResource):
           etag: Current endpoint version. The update is rejected if this value no longer
               matches.
 
-          name: Updated inference-addressable endpoint name.
+          name: Updated endpoint string.
 
           traffic_split: Replacement live traffic split. Use an empty list to stop routing live traffic.
 
@@ -821,7 +821,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Endpoint:
         """
-        Updates mutable endpoint fields such as its inference name, visibility, or
+        Updates mutable endpoint fields such as its endpoint string, visibility, or
         deployment traffic split. Use `updateMask` to select fields explicitly and
         `etag` in the request body for optimistic concurrency.
 
@@ -835,7 +835,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
           etag: Current endpoint version. The update is rejected if this value no longer
               matches.
 
-          name: Updated inference-addressable endpoint name.
+          name: Updated endpoint string.
 
           traffic_split: Replacement live traffic split. Use an empty list to stop routing live traffic.
 
