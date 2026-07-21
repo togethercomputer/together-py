@@ -32,8 +32,10 @@ AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster au
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
 InstallTraefikParameter = Annotated[Optional[bool], Parameter(help="Install Traefik ingress controller")]
-HeadlampParameter = Annotated[Optional[bool], Parameter(help="Enable the Headlamp Kubernetes dashboard add-on")]
-SlurmWebParameter = Annotated[Optional[bool], Parameter(help="Enable the Slurm Web add-on")]
+HeadlampParameter = Annotated[
+    Optional[bool], Parameter(help="Enable the Headlamp Kubernetes dashboard add-on", negative=())
+]
+SlurmWebParameter = Annotated[Optional[bool], Parameter(help="Enable the Slurm Web add-on", negative=())]
 NumCapacityPoolGpusParameter = Annotated[
     Optional[int], Parameter(help="Number of GPUs to allocate from a capacity pool")
 ]
