@@ -83,8 +83,8 @@ class DeploymentsResource(SyncAPIResource):
 
           autoscaling: Autoscaling configuration for a deployment.
 
-          name: Name for the deployment within its endpoint. Returned as a project- and
-              endpoint-qualified inference name.
+          name: Name for the deployment within its endpoint. Returned as a fully-qualified
+              endpoint string.
 
           validate_only: When true, validates the request without creating or provisioning a deployment.
 
@@ -246,7 +246,7 @@ class DeploymentsResource(SyncAPIResource):
           etag: Current deployment version. The update is rejected if this value no longer
               matches.
 
-          name: Updated inference-addressable deployment name.
+          name: Updated endpoint string.
 
           extra_headers: Send extra headers
 
@@ -487,8 +487,8 @@ class AsyncDeploymentsResource(AsyncAPIResource):
 
           autoscaling: Autoscaling configuration for a deployment.
 
-          name: Name for the deployment within its endpoint. Returned as a project- and
-              endpoint-qualified inference name.
+          name: Name for the deployment within its endpoint. Returned as a fully-qualified
+              endpoint string.
 
           validate_only: When true, validates the request without creating or provisioning a deployment.
 
@@ -650,7 +650,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
           etag: Current deployment version. The update is rejected if this value no longer
               matches.
 
-          name: Updated inference-addressable deployment name.
+          name: Updated endpoint string.
 
           extra_headers: Send extra headers
 

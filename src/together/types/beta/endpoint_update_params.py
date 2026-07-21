@@ -25,7 +25,7 @@ class EndpointUpdateParams(TypedDict, total=False):
     """
 
     name: str
-    """Updated inference-addressable endpoint name."""
+    """Updated endpoint string."""
 
     traffic_split: Annotated[Iterable[EndpointTrafficSplitEntryParam], PropertyInfo(alias="trafficSplit")]
     """Replacement live traffic split. Use an empty list to stop routing live traffic."""
