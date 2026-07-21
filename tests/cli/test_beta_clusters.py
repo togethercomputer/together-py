@@ -915,7 +915,7 @@ class TestBetaClustersRemediations:
                 "c1",
                 "i1",
                 "--mode",
-                "VM_ONLY",
+                "HOST_POWER_CYCLE",
                 "--reason",
                 "node unhealthy",
                 "--remediation-id",
@@ -928,7 +928,7 @@ class TestBetaClustersRemediations:
         request = cast(Call, route.calls[0]).request
         assert request.url.params["remediation_id"] == "rem-created"
         assert json.loads(request.content.decode()) == {
-            "mode": "REMEDIATION_MODE_VM_ONLY",
+            "mode": "REMEDIATION_MODE_HOST_POWER_CYCLE",
             "reason": "node unhealthy",
         }
         assert result.exit_code == 0
@@ -1001,7 +1001,9 @@ class TestBetaClustersRemediations:
                 "--mode",
                 "VM_ONLY",
                 "--mode",
-                "REBOOT_VM",
+                "HOST_POWER_CYCLE",
+                "--state",
+                "QUARANTINED",
                 "--state",
                 "PENDING_APPROVAL",
                 "--trigger",
@@ -1013,8 +1015,8 @@ class TestBetaClustersRemediations:
         )
 
         params = cast(Call, route.calls[0]).request.url.params
-        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_REBOOT_VM"
-        assert params["state"] == "PENDING_APPROVAL"
+        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_HOST_POWER_CYCLE"
+        assert params["state"] == "QUARANTINED,PENDING_APPROVAL"
         assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
         assert params["page_token"] == "next-token"
         assert result.exit_code == 0
@@ -1064,7 +1066,7 @@ class TestBetaClustersRemediations:
                 "--comment",
                 "go",
                 "--mode",
-                "REBOOT_VM",
+                "HOST_POWER_CYCLE",
                 "--json",
             ]
         )
@@ -1072,7 +1074,7 @@ class TestBetaClustersRemediations:
         assert json.loads(result.output)["state"] == "PENDING"
         assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {
             "comment": "go",
-            "mode": "REMEDIATION_MODE_REBOOT_VM",
+            "mode": "REMEDIATION_MODE_HOST_POWER_CYCLE",
         }
         assert result.exit_code == 0
 

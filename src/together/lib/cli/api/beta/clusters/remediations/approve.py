@@ -17,6 +17,7 @@ RemediationModeParameter = Annotated[
         "HOST_AWARE",
         "EVICT_WITHOUT_REPLACEMENT",
         "REBOOT_VM",
+        "HOST_POWER_CYCLE",
     ],
     Parameter(help="Remediation mode to use after approval"),
 ]
@@ -39,6 +40,7 @@ async def approve(
                 "REMEDIATION_MODE_HOST_AWARE",
                 "REMEDIATION_MODE_EVICT_WITHOUT_REPLACEMENT",
                 "REMEDIATION_MODE_REBOOT_VM",
+                "REMEDIATION_MODE_HOST_POWER_CYCLE",
             ],
             f"REMEDIATION_MODE_{mode}",
         )
