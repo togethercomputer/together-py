@@ -85,7 +85,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
 )
-from together.lib.cli.utils._version_check import check_for_update
+from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
@@ -227,6 +227,8 @@ async def launcher(
         Parameter(name="json", group=global_options, negative=(), help="Output the response in JSON format"),
     ] = False,
 ) -> None:
+    version_check = VersionCheck()
+
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
@@ -399,7 +401,7 @@ async def launcher(
             flush_pending_events()
             await client.close()
         finally:
-            await check_for_update(non_interactive=bool(non_interactive or output_json))
+            await version_check.inform(non_interactive=bool(non_interactive or output_json))
 
 
 # Register commands

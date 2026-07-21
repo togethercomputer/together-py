@@ -50,10 +50,11 @@ class TestMainGlobalOptions:
     ) -> None:
         calls: list[tuple[bool, str]] = []
 
-        async def check_for_update(*, non_interactive: bool) -> None:
-            calls.append((non_interactive, cli_runner.capsys.readouterr().out))
+        class FakeVersionCheck:
+            async def inform(self, *, non_interactive: bool) -> None:
+                calls.append((non_interactive, cli_runner.capsys.readouterr().out))
 
-        monkeypatch.setattr("together.lib.cli.check_for_update", check_for_update)
+        monkeypatch.setattr("together.lib.cli.VersionCheck", FakeVersionCheck)
 
         result = cli_runner.invoke(["--non-interactive", "telemetry", "status"])
 

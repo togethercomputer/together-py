@@ -154,34 +154,41 @@ def _version_check_disabled() -> bool:
     return os.getenv(_DISABLE_ENV_VAR, "").strip().lower() in _TRUTHY_ENV_VALUES
 
 
-async def check_for_update(*, non_interactive: bool) -> None:
-    """Notify the user when PyPI has a newer Together CLI, without blocking on failures."""
-    if _version_check_disabled():
-        return
+class VersionCheck:
+    """Resolve the latest CLI version in parallel, then inform the user when requested."""
 
-    try:
-        latest_version = await asyncio.to_thread(_latest_version)
-        if not _is_newer_version(latest_version, __version__):
+    def __init__(self) -> None:
+        self._latest_version: asyncio.Future[str] | None = None
+        if not _version_check_disabled():
+            self._latest_version = asyncio.get_running_loop().run_in_executor(None, _latest_version)
+
+    async def inform(self, *, non_interactive: bool) -> None:
+        if self._latest_version is None:
             return
 
-        command = _upgrade_command()
-        command_text = escape_rich_markup(_format_command(command))
-        error_console.print(
-            f"[warning]A new Together CLI version is available: {__version__} → {latest_version}.[/warning]"
-        )
+        try:
+            latest_version = await self._latest_version
+            if not _is_newer_version(latest_version, __version__):
+                return
 
-        if non_interactive or not _is_interactive():
-            error_console.print(f"Upgrade with: [bold]{command_text}[/bold]")
-            return
+            command = _upgrade_command()
+            command_text = escape_rich_markup(_format_command(command))
+            error_console.print(
+                f"[warning]A new Together CLI version is available: {__version__} → {latest_version}.[/warning]"
+            )
 
-        if not await confirm("Upgrade the Together CLI now?"):
-            error_console.print(f"Upgrade later with: [bold]{command_text}[/bold]")
-            return
+            if non_interactive or not _is_interactive():
+                error_console.print(f"Upgrade with: [bold]{command_text}[/bold]")
+                return
 
-        result = await asyncio.to_thread(subprocess.run, command, check=False)
-        if result.returncode == 0:
-            error_console.print("[success]Together CLI upgraded. The new version will be used next time.[/success]")
-        else:
-            error_console.print(f"[error]Upgrade failed.[/error] Run manually: [bold]{command_text}[/bold]")
-    except Exception as exc:
-        log_debug("Unable to check for a Together CLI update", error=exc)
+            if not await confirm("Upgrade the Together CLI now?"):
+                error_console.print(f"Upgrade later with: [bold]{command_text}[/bold]")
+                return
+
+            result = await asyncio.to_thread(subprocess.run, command, check=False)
+            if result.returncode == 0:
+                error_console.print("[success]Together CLI upgraded. The new version will be used next time.[/success]")
+            else:
+                error_console.print(f"[error]Upgrade failed.[/error] Run manually: [bold]{command_text}[/bold]")
+        except Exception as exc:
+            log_debug("Unable to check for a Together CLI update", error=exc)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import subprocess
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
@@ -72,7 +73,40 @@ def test_latest_version_fetches_pypi_and_caches(monkeypatch: pytest.MonkeyPatch,
     assert urlopen.call_args.kwargs == {"timeout": 1.0}
 
 
-async def test_check_for_update_prints_upgrade_command_when_non_interactive(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_starts_resolution_when_created(monkeypatch: pytest.MonkeyPatch) -> None:
+    started = threading.Event()
+    release = threading.Event()
+
+    def latest_version() -> str:
+        started.set()
+        release.wait()
+        return "1.0.0"
+
+    monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "__version__", "1.0.0")
+    monkeypatch.setattr(_version_check, "_latest_version", latest_version)
+
+    version_check = _version_check.VersionCheck()
+    try:
+        assert started.wait(timeout=1)
+    finally:
+        release.set()
+
+    await version_check.inform(non_interactive=True)
+
+
+async def test_disabled_version_check_does_not_start_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
+    latest_version = MagicMock()
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+    monkeypatch.setattr(_version_check, "_latest_version", latest_version)
+
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=True)
+
+    latest_version.assert_not_called()
+
+
+async def test_version_check_prints_upgrade_command_when_non_interactive(monkeypatch: pytest.MonkeyPatch) -> None:
     output = MagicMock()
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
     monkeypatch.setattr(_version_check, "__version__", "1.0.0")
@@ -82,14 +116,15 @@ async def test_check_for_update_prints_upgrade_command_when_non_interactive(monk
     )
     monkeypatch.setattr(_version_check, "error_console", output)
 
-    await _version_check.check_for_update(non_interactive=True)
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=True)
 
     rendered = " ".join(call.args[0] for call in output.print.call_args_list)
     assert "1.0.0 → 1.1.0" in rendered
     assert "python -m pip install -U together" in rendered
 
 
-async def test_check_for_update_prompts_and_upgrades_on_tty(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_prompts_and_upgrades_on_tty(monkeypatch: pytest.MonkeyPatch) -> None:
     output = MagicMock()
     confirm = AsyncMock(return_value=True)
     run = MagicMock(return_value=subprocess.CompletedProcess(["upgrade"], returncode=0))
@@ -102,18 +137,20 @@ async def test_check_for_update_prompts_and_upgrades_on_tty(monkeypatch: pytest.
     monkeypatch.setattr(_version_check, "confirm", confirm)
     monkeypatch.setattr(_version_check.subprocess, "run", run)
 
-    await _version_check.check_for_update(non_interactive=False)
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=False)
 
     confirm.assert_awaited_once_with("Upgrade the Together CLI now?")
     run.assert_called_once_with(["upgrade"], check=False)
     assert "upgraded" in output.print.call_args.args[0]
 
 
-async def test_check_for_update_fails_open(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_fails_open(monkeypatch: pytest.MonkeyPatch) -> None:
     def fail() -> str:
         raise TimeoutError
 
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
     monkeypatch.setattr(_version_check, "_latest_version", fail)
 
-    await _version_check.check_for_update(non_interactive=False)
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=False)
