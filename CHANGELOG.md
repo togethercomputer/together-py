@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.25.0](https://github.com/togethercomputer/together-py/compare/v2.24.1...v2.25.0) (2026-07-21)
+
+
+### Features
+
+* add headlamp add-on to gpu cluster ([9351f49](https://github.com/togethercomputer/together-py/commit/9351f495c3be345c7cbb5185b97016045d1aa5a6))
+* Add HOST_POWER_CYCLE to remediations CLI modes and state ([#444](https://github.com/togethercomputer/together-py/issues/444)) ([da019d3](https://github.com/togethercomputer/together-py/commit/da019d34c8fedaa1ce18e9549702af01d0dcd8af))
+* add Slurm Web addon to gpu cluster ([cfeb835](https://github.com/togethercomputer/together-py/commit/cfeb83532cdbf2b4883486788f1aa2fb53682632))
+* expose GPU cluster add-on flags for headlamp and slurm web ([#461](https://github.com/togethercomputer/together-py/issues/461)) ([9e6741d](https://github.com/togethercomputer/together-py/commit/9e6741d359a678330ce0bb3b196f52f12fe32189))
+
+
+### Bug Fixes
+
+* Improve CLI legibility on light/white terminal backgrounds ([#457](https://github.com/togethercomputer/together-py/issues/457)) ([5da1f1b](https://github.com/togethercomputer/together-py/commit/5da1f1b0514838af3350cad85938d2d19348e18b))
+* Revert server host change for chat completions inference ([aa92642](https://github.com/togethercomputer/together-py/commit/aa926427a0b0d3522d105e51201b84994a71ea3b))
+
 ## [2.24.1](https://github.com/togethercomputer/together-py/compare/v2.24.0...v2.24.1) (2026-07-18)
 
 
