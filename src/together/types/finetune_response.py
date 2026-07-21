@@ -190,6 +190,9 @@ class FinetuneResponse(BaseModel):
     api_model_object_id: Optional[str] = FieldInfo(alias="model_object_id", default=None)
     """Together model registry object ID for the final model weights (e.g. `ml_...`)."""
 
+    model_object_name: Optional[str] = None
+    """Qualified output model name `<project_slug>/<model_name>`, resolved server-side."""
+
     api_model_object_revision_id: Optional[str] = FieldInfo(alias="model_object_revision_id", default=None)
     """Together model registry revision ID for the final model weights (e.g.
 

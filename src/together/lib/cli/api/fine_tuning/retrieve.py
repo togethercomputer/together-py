@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 from datetime import datetime
 
 from cyclopts import Parameter
@@ -14,7 +14,27 @@ from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.components.model_dump import print_model_dump
 from together.lib.cli.components.plot_finetune_metrics import METRICS_WIDTH_PADDING, metrics_block_sparklines
 
+if TYPE_CHECKING:
+    from together.types import FinetuneResponse
+
 _NEST_INDENT = 4
+_MODELS_PAGE_URL = "https://api.together.ai/models"
+
+
+def _output_model_line(response: FinetuneResponse) -> str | None:
+    """The server-resolved ``<project_slug>/<model_name>`` output model, linked to its model page.
+
+    ``model_object_name`` is resolved on the fly by the API; the page URL keys off the model object
+    id. Returns ``None`` when the job has no resolved output model, so the caller falls back to the
+    raw output name in the response dump.
+    """
+    name = response.model_object_name
+    if not name:
+        return None
+    object_id = response.api_model_object_id
+    if object_id:
+        return f"[link={_MODELS_PAGE_URL}/{object_id}]{name}[/link]"
+    return name
 
 
 async def retrieve(
@@ -38,6 +58,10 @@ async def retrieve(
     if response.status not in COMPLETED_STATUSES:
         progress_text = generate_progress_bar(response, datetime.now().astimezone(), use_rich=True)
         console.print(progress_text)
+
+    output_model = _output_model_line(response)
+    if output_model is not None:
+        console.print(f"[bold]Output model:[/bold] {output_model}")
 
     print_model_dump(response, show_nulls=False)
 
