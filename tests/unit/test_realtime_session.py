@@ -586,3 +586,6 @@ class TestLifecycleHygiene:
         with pytest.raises(RealtimeConnectionError):
             session.start()
         assert not session._thread.is_alive()
+        # the loop must be closed, not merely stopped: a stopped loop leaks
+        # its selector/self-pipe fds and emits ResourceWarnings at GC time
+        assert session._loop.is_closed()

@@ -845,7 +845,13 @@ class RealtimeTranscriptionSession:
 
     def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
-        self._loop.run_forever()
+        try:
+            self._loop.run_forever()
+        finally:
+            # close on the loop's own thread once run_forever returns: a
+            # merely-stopped loop leaks its selector and self-pipe fds until
+            # GC (ResourceWarning noise, fd exhaustion across many sessions)
+            self._loop.close()
 
     def _call(self, coro: Any, timeout: Optional[float] = None) -> Any:
         future = asyncio.run_coroutine_threadsafe(coro, self._loop)
@@ -938,7 +944,12 @@ class RealtimeTranscriptionSession:
             except Exception:
                 pass
             self._session = None
-        if self._loop.is_running():
+        try:
+            # not gated on is_running(): scheduling stop before run_forever
+            # has begun still stops the loop the moment it starts, closing
+            # the construct-then-close race
             self._loop.call_soon_threadsafe(self._loop.stop)
+        except RuntimeError:
+            pass  # loop already stopped and closed
         if self._thread.is_alive():
             self._thread.join(timeout=5)
