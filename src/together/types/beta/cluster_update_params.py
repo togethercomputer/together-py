@@ -15,6 +15,7 @@ __all__ = [
     "AddOnConfigDashboard",
     "AddOnConfigHeadlamp",
     "AddOnConfigIngress",
+    "AddOnConfigSlurmWeb",
     "AddOnConfigTorchpass",
     "ClusterConfig",
     "ClusterConfigIngress",
@@ -84,6 +85,13 @@ class AddOnConfigIngress(TypedDict, total=False):
     enabled: bool
 
 
+class AddOnConfigSlurmWeb(TypedDict, total=False):
+    """Configuration for the Slurm Web add-on."""
+
+    enabled: bool
+    """Whether to enable the Slurm Web add-on."""
+
+
 class AddOnConfigTorchpass(TypedDict, total=False):
     """Configuration for the Model Aware TorchPass add-on."""
 
@@ -100,6 +108,9 @@ class AddOnConfig(TypedDict, total=False):
     """Configuration for the Headlamp Kubernetes dashboard add-on."""
 
     ingress: AddOnConfigIngress
+
+    slurm_web: AddOnConfigSlurmWeb
+    """Configuration for the Slurm Web add-on."""
 
     torchpass: AddOnConfigTorchpass
     """Configuration for the Model Aware TorchPass add-on."""

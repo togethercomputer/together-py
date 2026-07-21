@@ -64,6 +64,7 @@ class TestClusters:
                         "dashboard": {"enabled": True},
                         "headlamp": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "slurm_web": {"enabled": True},
                         "torchpass": {"enabled": True},
                     },
                 }
@@ -214,6 +215,7 @@ class TestClusters:
                         "dashboard": {"enabled": True},
                         "headlamp": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "slurm_web": {"enabled": True},
                         "torchpass": {"enabled": True},
                     },
                 }
@@ -419,6 +421,7 @@ class TestAsyncClusters:
                         "dashboard": {"enabled": True},
                         "headlamp": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "slurm_web": {"enabled": True},
                         "torchpass": {"enabled": True},
                     },
                 }
@@ -569,6 +572,7 @@ class TestAsyncClusters:
                         "dashboard": {"enabled": True},
                         "headlamp": {"enabled": True},
                         "ingress": {"enabled": True},
+                        "slurm_web": {"enabled": True},
                         "torchpass": {"enabled": True},
                     },
                 }

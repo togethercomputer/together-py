@@ -14,11 +14,13 @@ __all__ = [
     "AddOnConfigDashboard",
     "AddOnConfigHeadlamp",
     "AddOnConfigIngress",
+    "AddOnConfigSlurmWeb",
     "AddOnConfigTorchpass",
     "AddOnState",
     "AddOnStateDashboard",
     "AddOnStateHeadlamp",
     "AddOnStateIngress",
+    "AddOnStateSlurmWeb",
     "AddOnStateTorchpass",
     "ControlPlaneNode",
     "ControlPlaneNodePhaseTransition",
@@ -52,6 +54,13 @@ class AddOnConfigIngress(BaseModel):
     enabled: Optional[bool] = None
 
 
+class AddOnConfigSlurmWeb(BaseModel):
+    """Configuration for the Slurm Web add-on."""
+
+    enabled: Optional[bool] = None
+    """Whether to enable the Slurm Web add-on."""
+
+
 class AddOnConfigTorchpass(BaseModel):
     """Configuration for the Model Aware TorchPass add-on."""
 
@@ -68,6 +77,9 @@ class AddOnConfig(BaseModel):
     """Configuration for the Headlamp Kubernetes dashboard add-on."""
 
     ingress: Optional[AddOnConfigIngress] = None
+
+    slurm_web: Optional[AddOnConfigSlurmWeb] = None
+    """Configuration for the Slurm Web add-on."""
 
     torchpass: Optional[AddOnConfigTorchpass] = None
     """Configuration for the Model Aware TorchPass add-on."""
@@ -87,6 +99,12 @@ class AddOnStateIngress(BaseModel):
     pass
 
 
+class AddOnStateSlurmWeb(BaseModel):
+    """State for the Slurm Web add-on."""
+
+    pass
+
+
 class AddOnStateTorchpass(BaseModel):
     """State for the Model Aware TorchPass add-on."""
 
@@ -102,6 +120,9 @@ class AddOnState(BaseModel):
     """State for the Headlamp Kubernetes dashboard add-on."""
 
     ingress: Optional[AddOnStateIngress] = None
+
+    slurm_web: Optional[AddOnStateSlurmWeb] = None
+    """State for the Slurm Web add-on."""
 
     torchpass: Optional[AddOnStateTorchpass] = None
     """State for the Model Aware TorchPass add-on."""
