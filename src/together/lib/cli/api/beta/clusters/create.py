@@ -64,8 +64,8 @@ async def create(
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
     install_traefik: InstallTraefikParameter = None,
-    headlamp: HeadlampParameter = None,
-    slurm_web: SlurmWebParameter = None,
+    headlamp_addon: HeadlampParameter = None,
+    slurm_web_addon: SlurmWebParameter = None,
     num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
     num_preemptible_gpus: NumPreemptibleGpusParameter = None,
     num_reserved_gpus: NumReservedGpusParameter = None,
@@ -99,20 +99,20 @@ async def create(
     if install_traefik is not None:
         params["install_traefik"] = install_traefik
     add_ons: list[AddOn] = []
-    if headlamp is not None:
+    if headlamp_addon is not None:
         add_ons.append(
             {
                 "add_on_type": "headlamp",
                 "name": "headlamp",
-                "config": {"headlamp": {"enabled": headlamp}},
+                "config": {"headlamp": {"enabled": headlamp_addon}},
             }
         )
-    if slurm_web is not None:
+    if slurm_web_addon is not None:
         add_ons.append(
             {
                 "add_on_type": "slurm_web",
                 "name": "slurm_web",
-                "config": {"slurm_web": {"enabled": slurm_web}},
+                "config": {"slurm_web": {"enabled": slurm_web_addon}},
             }
         )
     if add_ons:
