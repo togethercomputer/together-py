@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import threading
+from typing import List
 
 import pytest
 
@@ -121,13 +122,22 @@ class TestBufferPool:
         sys.setswitchinterval(1e-6)  # force aggressive thread interleaving
         thread.start()
         try:
-            for _ in range(1_000):
+            for i in range(1_000):
                 for _ in range(8):
                     state_b.record_append(b"b" * 40)
                 # owner-loop behavior: writer iterating the retained window
                 for _chunk in state_b.buffer.read_from(0):
                     pass
                 _ = state_b.buffer.size
+                # commit-ledger churn: reclaim's _safe_trim_point() does a
+                # check-then-min on outstanding_commits, which the owner
+                # empties by reassignment (record_completed) and IN PLACE
+                # (record_clear) — races here raise ValueError/TypeError
+                state_b.record_commit()
+                if i % 3 == 0:
+                    state_b.record_completed()  # reassigns commits, sets anchor
+                if i % 7 == 0:
+                    state_b.record_clear()  # clears commits in place, Nones anchor
         except BaseException as exc:  # pragma: no cover - failure path
             errors.append(exc)
         finally:
@@ -137,6 +147,27 @@ class TestBufferPool:
 
         assert not errors, f"concurrent reclaim raced: {errors[0]!r}"
         assert state_b.buffer.size == state_b.buffer.end_offset - state_b.buffer.start_offset
+
+    def test_trim_point_and_replay_plan_tolerate_commit_clear_race(self) -> None:
+        """The owner loop's record_clear() empties outstanding_commits IN
+        PLACE while a cross-thread caller (pool reclaim, sync-facade
+        pending_audio) sits between the emptiness check and min(). The
+        interleaving window is a few bytecodes, so simulate it
+        deterministically: emptiness check triggers the concurrent clear."""
+
+        class VanishingList(List[int]):
+            def __bool__(self) -> bool:
+                result = len(self) > 0
+                self.clear()  # record_clear() lands right after the check
+                return result
+
+        for method in ("_safe_trim_point", "replay_plan"):
+            state = make_state()
+            state.record_append(seconds(10))
+            state.record_completed()  # anchor set: the commit floor is reachable
+            state.record_commit()
+            state.outstanding_commits = VanishingList(state.outstanding_commits)
+            getattr(state, method)()  # must not raise ValueError on min([])
 
 
 class TestClassification:

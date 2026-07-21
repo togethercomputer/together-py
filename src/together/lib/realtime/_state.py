@@ -448,17 +448,23 @@ class RecoveryState:
         # The watermark rides the server's consumed-speech clock and the
         # anchor includes decode latency; both are approximate, so both keep
         # the replay margin as a safety buffer.
-        if self.watermark is not None:
-            point: Optional[int] = self.watermark - self.replay_margin_bytes
-        elif self.anchor is not None:
-            point = self.anchor - self.replay_margin_bytes
+        #
+        # Cross-thread callers (pool reclaim, sync-facade pending_audio) race
+        # the owner loop's writes: read each field once and snapshot the
+        # commit list — record_clear() empties it IN PLACE, so a bare truthy
+        # check followed by min() can see it drain in between and raise.
+        watermark = self.watermark
+        anchor = self.anchor
+        if watermark is not None:
+            point = watermark - self.replay_margin_bytes
+        elif anchor is not None:
+            point = anchor - self.replay_margin_bytes
         else:
-            point = None
-        if point is None:
             return None
         # Never trim past an outstanding manual commit's replay window.
-        if self.outstanding_commits:
-            point = min(point, min(self.outstanding_commits) - self.replay_margin_bytes)
+        commits = list(self.outstanding_commits)
+        if commits:
+            point = min(point, min(commits) - self.replay_margin_bytes)
         return self._align(max(point, 0))
 
     def _trim_safe(self) -> None:
@@ -528,15 +534,21 @@ class RecoveryState:
         arrival anchor; `replay_margin` (default 0) optionally rewinds further
         for pre-roll. `max_replay_seconds=None` removes the cap.
         """
+        # Single reads + commit-list snapshot for the same reason as
+        # _safe_trim_point: pending_audio() calls this from the sync facade's
+        # caller thread, racing the owner loop's record_clear/record_completed.
         head = self.write_head
-        if self.watermark is not None:
-            desired = self.watermark - self.replay_margin_bytes
-        elif self.anchor is not None:
-            desired = self.anchor - self.replay_margin_bytes
+        watermark = self.watermark
+        anchor = self.anchor
+        commits = list(self.outstanding_commits)
+        if watermark is not None:
+            desired = watermark - self.replay_margin_bytes
+        elif anchor is not None:
+            desired = anchor - self.replay_margin_bytes
         else:
             desired = self.buffer.start_offset
-        if self.outstanding_commits:
-            desired = min(desired, min(self.outstanding_commits) - self.replay_margin_bytes)
+        if commits:
+            desired = min(desired, min(commits) - self.replay_margin_bytes)
         desired = max(desired, 0)
 
         gap = 0
@@ -554,7 +566,7 @@ class RecoveryState:
         return ReplayPlan(
             start_offset=desired,
             gap_bytes=gap,
-            resend_commit=bool(self.outstanding_commits),
+            resend_commit=bool(commits),
         )
 
     def begin_epoch(self, replay_start: int) -> int:
