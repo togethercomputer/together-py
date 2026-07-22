@@ -256,7 +256,7 @@ class TestBetaEndpointsList:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_handles_deployment_without_hardware(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+        _mock_model_and_config(respx_mock)
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
