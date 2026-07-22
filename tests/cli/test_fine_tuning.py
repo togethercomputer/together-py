@@ -96,6 +96,24 @@ _FT_CREATE_BODY = {
     "status": "pending",
 }
 
+_FT_PREVIEW_BODY = {
+    "dataset_format": "instruction",
+    "max_seq_length": 4096,
+    "model": "meta-llama/Llama-3-8b",
+    "train_on_inputs": True,
+    "rows": [
+        {
+            "input_ids": [101, 102, 103],
+            "labels": [-100, 102, 103],
+            "num_tokens": 3,
+            "num_trained_tokens": 2,
+            "tokens": ["<s>", "hello", "world"],
+            "trained_spans": [[1, 3]],
+            "truncated": False,
+        }
+    ],
+}
+
 
 class TestFineTuningCreate:
     @pytest.mark.respx(base_url=base_url)
@@ -267,6 +285,61 @@ class TestFineTuningList:
         result = cli_runner.invoke(["ft", "list"])
         assert result.exit_code == 0
         assert "ft-newer" in result.output
+
+
+class TestFineTuningPreview:
+    @pytest.mark.respx(base_url=base_url)
+    def test_preview_json_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "preview",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--top-k",
+                "2",
+                "--train-on-inputs",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0
+        body = json.loads(cast(Call, route.calls[0]).request.content)
+        assert body == {
+            "model": "meta-llama/Llama-3-8b",
+            "training_file": "file-train",
+            "top_k": 2,
+            "train_on_inputs": True,
+            "training_method": "sft",
+        }
+        parsed = json.loads(result.output)
+        assert parsed["dataset_format"] == "instruction"
+        assert parsed["rows"][0]["tokens"] == ["<s>", "hello", "world"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_preview_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "ft",
+                "preview",
+                "-t",
+                "file-train",
+                "-M",
+                "meta-llama/Llama-3-8b",
+            ]
+        )
+
+        assert result.exit_code == 0
+        assert "Dataset format" in result.output
+        assert "instruction" in result.output
+        assert "hello" in result.output
+        assert "2 / 3" in result.output
 
 
 class TestFineTuningRetrieve:

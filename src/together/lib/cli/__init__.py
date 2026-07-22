@@ -71,6 +71,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
+    FINE_TUNING_PREVIEW_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
@@ -453,6 +454,11 @@ fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.list_metrics:list_metrics"),
     help="Retrieve training metrics for a fine-tuning job",
     help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
+)
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.preview:preview"),
+    help="Preview how a training file will be tokenized",
+    help_epilogue=FINE_TUNING_PREVIEW_HELP_EXAMPLES,
 )
 
 ## Models API commands
