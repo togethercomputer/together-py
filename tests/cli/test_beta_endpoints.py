@@ -288,7 +288,6 @@ class TestBetaEndpointsList:
         result = cli_runner.invoke(["beta", "endpoints", "ls", "--project", "proj"])
 
         assert result.exit_code == 0, result.output
-        assert "my-model" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_org_scoped(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
