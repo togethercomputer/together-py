@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.26.0](https://github.com/togethercomputer/together-py/compare/v2.25.0...v2.26.0) (2026-07-22)
+
+
+### Features
+
+* add fine-tunes preview endpoint ([f8225fd](https://github.com/togethercomputer/together-py/commit/f8225fdf6172941bebad9be7b5db02a7d6fd57fe))
+* Detect outdated CLI versions and auto-prompt/suggest upgrade path to users. ([#456](https://github.com/togethercomputer/together-py/issues/456)) ([e870160](https://github.com/togethercomputer/together-py/commit/e870160e35a6c0e5ba1563ce365215d612dfc3fd))
+
+
+### Bug Fixes
+
+* Ensure `endpoints deploy` command uses the deploy id and revision id when provided ([#463](https://github.com/togethercomputer/together-py/issues/463)) ([7859f99](https://github.com/togethercomputer/together-py/commit/7859f995e6177114cccfe8b1e60a124ebda3e07e))
+
 ## [2.25.0](https://github.com/togethercomputer/together-py/compare/v2.24.1...v2.25.0) (2026-07-21)
 
 
