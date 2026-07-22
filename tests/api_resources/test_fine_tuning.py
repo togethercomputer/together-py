@@ -15,6 +15,7 @@ from together.types import (
     FinetuneResponse,
     FinetuneModelLimits,
     FineTuningListResponse,
+    FineTunePreviewResponse,
     FineTuningCancelResponse,
     FineTuningDeleteResponse,
     FineTuningListEventsResponse,
@@ -444,6 +445,51 @@ class TestFineTuning:
 
         assert cast(Any, response.is_closed) is True
 
+    @parametrize
+    def test_method_preview(self, client: Together) -> None:
+        fine_tuning = client.fine_tuning.preview(
+            model="model",
+            training_file="training_file",
+        )
+        assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_method_preview_with_all_params(self, client: Together) -> None:
+        fine_tuning = client.fine_tuning.preview(
+            model="model",
+            training_file="training_file",
+            top_k=1,
+            train_on_inputs=True,
+            training_method="sft",
+        )
+        assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_raw_response_preview(self, client: Together) -> None:
+        response = client.fine_tuning.with_raw_response.preview(
+            model="model",
+            training_file="training_file",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tuning = response.parse()
+        assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    def test_streaming_response_preview(self, client: Together) -> None:
+        with client.fine_tuning.with_streaming_response.preview(
+            model="model",
+            training_file="training_file",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tuning = response.parse()
+            assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
 
 class TestAsyncFineTuning:
     parametrize = pytest.mark.parametrize(
@@ -855,5 +901,50 @@ class TestAsyncFineTuning:
 
             fine_tuning = await response.parse()
             assert_matches_type(FinetuneModelLimits, fine_tuning, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_preview(self, async_client: AsyncTogether) -> None:
+        fine_tuning = await async_client.fine_tuning.preview(
+            model="model",
+            training_file="training_file",
+        )
+        assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_method_preview_with_all_params(self, async_client: AsyncTogether) -> None:
+        fine_tuning = await async_client.fine_tuning.preview(
+            model="model",
+            training_file="training_file",
+            top_k=1,
+            train_on_inputs=True,
+            training_method="sft",
+        )
+        assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_raw_response_preview(self, async_client: AsyncTogether) -> None:
+        response = await async_client.fine_tuning.with_raw_response.preview(
+            model="model",
+            training_file="training_file",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        fine_tuning = await response.parse()
+        assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_preview(self, async_client: AsyncTogether) -> None:
+        async with async_client.fine_tuning.with_streaming_response.preview(
+            model="model",
+            training_file="training_file",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            fine_tuning = await response.parse()
+            assert_matches_type(FineTunePreviewResponse, fine_tuning, path=["response"])
 
         assert cast(Any, response.is_closed) is True
