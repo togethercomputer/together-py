@@ -404,10 +404,12 @@ class TestBetaEndpointShadow:
 
         assert result.exit_code == 0, result.output
         url = str(cast(Call, configs_route.calls[0]).request.url)
-        assert "referenceModelId=ml_1" in url
+        # Configs are resolved via the model's baseModelId; deploy target stays ml_1.
+        assert "referenceModelId=ml_base" in url
 
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
         assert deployment_body["config"] == "projects/proj/configs/cr_1"
+        assert deployment_body["model"] == "projects/proj/models/ml_1"
 
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_errors_on_multiple_configs(
@@ -416,6 +418,7 @@ class TestBetaEndpointShadow:
         cli_runner: CliRunner,
     ) -> None:
         _mock_endpoint(respx_mock)
+        respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
         respx_mock.get("/projects/proj/configs").mock(
             return_value=httpx.Response(
                 200,
