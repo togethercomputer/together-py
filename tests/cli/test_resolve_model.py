@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from together import APIError
+from together import NotFoundError
 from together.types.beta import Model
 from together.lib.cli.utils.config import CLIConfig
 from together.types.beta.models.config import Config
@@ -100,7 +100,7 @@ async def test_raw_model_id_resolves_via_configs() -> None:
     # Not found under --project → fall back to configs reference-model lookup.
     client.beta.models.retrieve = AsyncMock(
         side_effect=[
-            APIError(message="Model not found", request=MagicMock(), body=None),
+            NotFoundError(message="Model not found", response=MagicMock(), body=None),
             retrieved,
         ]
     )
@@ -329,7 +329,7 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
 async def test_raw_model_rejects_mismatched_config_id() -> None:
     client = MagicMock()
     client.beta.models.retrieve = AsyncMock(
-        side_effect=APIError(message="Model not found", request=MagicMock(), body=None),
+        side_effect=NotFoundError(message="Model not found", response=MagicMock(), body=None),
     )
     client.beta.models.configs.list = AsyncMock(
         return_value=MagicMock(data=[_config()]),

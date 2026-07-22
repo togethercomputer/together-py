@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import NamedTuple
 
-from together import APIError
+from together import NotFoundError
 from together.types.beta import Model, Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -79,9 +79,8 @@ async def resolve_model_and_config(
         if config.project_id:
             try:
                 model = await config.client.beta.models.retrieve(id=model_input, project_id=config.project_id)
-            except APIError as e:
-                if "not found" not in e.message.lower():
-                    raise
+            except NotFoundError:
+                pass
             else:
                 reference_model_id = model.base_model_id or model.id
                 assert reference_model_id is not None
@@ -127,10 +126,8 @@ async def _resolve_explicit_model(
     """Load the user-specified model and pair it with a compatible config."""
     try:
         model = await config.client.beta.models.retrieve(id=model_id, project_id=project_id)
-    except APIError as e:
-        if "not found" in e.message.lower():
-            raise ValueError(f"Model {model_input} not found.") from None
-        raise
+    except NotFoundError:
+        raise ValueError(f"Model {model_input} not found.") from None
 
     reference_model_id = model.base_model_id or model.id
     assert reference_model_id is not None
@@ -202,10 +199,8 @@ async def _retrieve_model_from_reference(
 
     try:
         return await config.client.beta.models.retrieve(id=model_id, project_id=project_id)
-    except APIError as e:
-        if "not found" in e.message.lower():
-            raise ValueError(f"Model {model_input} not found.") from None
-        raise
+    except NotFoundError:
+        raise ValueError(f"Model {model_input} not found.") from None
 
 
 async def _find_private_model_by_name(config: CLIConfigParameter, name: str) -> Model:
