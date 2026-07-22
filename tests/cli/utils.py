@@ -26,6 +26,7 @@ class CliRunner:
         self.env = {
             "TOGETHER_BASE_URL": base_url,
             "TOGETHER_API_KEY": API_KEY,
+            "TOGETHER_DISABLE_VERSION_CHECK": "1",
             # Avoid launcher whoami resolve; tests that exercise it should delete this.
             "TOGETHER_PROJECT_ID": "proj",
         }

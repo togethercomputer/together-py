@@ -25,7 +25,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
-from together.lib.cli.utils._completion import install_completion
+from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
     JIG_HELP_EXAMPLES,
     EVALS_HELP_EXAMPLES,
@@ -85,6 +85,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
 )
+from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
@@ -249,11 +250,12 @@ async def launcher(
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
 
+    is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
+    non_interactive_mode = non_interactive or output_json or not is_interactive
+
     config = CLIConfig(
         client=client,
-        # TODO: Turn on non-interactive mode for agents
-        # TODO: Detect isTTY or CI
-        non_interactive=non_interactive or output_json or False,
+        non_interactive=non_interactive_mode,
         json=output_json or False,
         project_id=project_id,
     )
@@ -339,12 +341,15 @@ async def launcher(
         CliTrackingEvents.CommandStarted,
         {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
     )
+    version_check = VersionCheck()
+    command_succeeded = False
     try:
         await run_command()
         track_cli(
             CliTrackingEvents.CommandCompleted,
             {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
         )
+        command_succeeded = True
     except KeyboardInterrupt:
         track_cli(
             CliTrackingEvents.CommandUserAborted,
@@ -359,6 +364,7 @@ async def launcher(
                 CliTrackingEvents.CommandCompleted,
                 {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
             )
+            command_succeeded = True
             sys.exit(0)
 
         track_cli(
@@ -394,8 +400,14 @@ async def launcher(
 
         sys.exit(1)
     finally:
-        flush_pending_events()
-        await client.close()
+        try:
+            flush_pending_events()
+            await client.close()
+        finally:
+            await version_check.inform(
+                non_interactive=config.non_interactive,
+                allow_prompt=command_succeeded,
+            )
 
 
 # Register commands

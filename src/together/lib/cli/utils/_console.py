@@ -115,3 +115,4 @@ def create_console(theme_name: CliThemeName | None = None) -> Console:
 cli_theme_name: CliThemeName = resolve_cli_theme()
 custom_theme = build_theme(cli_theme_name)
 console = create_console(cli_theme_name)
+error_console = Console(theme=custom_theme, highlight=False, stderr=True)
