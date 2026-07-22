@@ -25,9 +25,9 @@ from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.lora_config_param import LoraConfigParam
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
-from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
 from ....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
+from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from ....types.beta.rl.operation_sample_params import Prompt, SamplingParams, OperationSampleParams
 from ....types.beta.rl.operation_forward_params import OperationForwardParams
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
@@ -188,15 +188,34 @@ class Trainer:
 
     def sample(
         self,
-        *,
-        prompts: Iterable[Prompt],
+        prompt: Prompt,
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
+        *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
         return self.run(
             self.sample_async(
+                prompt,
+                num_samples=num_samples,
+                sampling_params=sampling_params,
+                timeout=timeout,
+                interval=interval,
+            )
+        )
+
+    def sample_batch(
+        self,
+        prompts: Iterable[Prompt],
+        num_samples: int | None = None,
+        sampling_params: SamplingParams | None = None,
+        *,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> SampleResult:
+        return self.run(
+            self.sample_batch_async(
                 prompts=prompts,
                 num_samples=num_samples,
                 sampling_params=sampling_params,
@@ -435,10 +454,27 @@ class Trainer:
 
     async def sample_async(
         self,
+        prompt: Prompt,
+        num_samples: int | None = None,
+        sampling_params: SamplingParams | None = None,
         *,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> SampleResult:
+        return await self.sample_batch_async(
+            [prompt],
+            num_samples=num_samples,
+            sampling_params=sampling_params,
+            timeout=timeout,
+            interval=interval,
+        )
+
+    async def sample_batch_async(
+        self,
         prompts: Iterable[Prompt],
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
+        *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
