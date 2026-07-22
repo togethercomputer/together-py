@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from together.types import FinetuneResponse
 
 _NEST_INDENT = 4
-_MODELS_PAGE_URL = "https://api.together.ai/models"
 
 
 def _output_model_line(response: FinetuneResponse) -> str | None:
@@ -32,7 +31,7 @@ def _output_model_line(response: FinetuneResponse) -> str | None:
         return None
     object_id = response.api_model_object_id
     if object_id is not None:
-        return f"[link={_MODELS_PAGE_URL}/{object_id}]{name}[/link]"
+        return f"[link=https://api.together.ai/models/{object_id}]{name}[/link]"
     return name
 
 
