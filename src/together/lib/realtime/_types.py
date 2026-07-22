@@ -111,10 +111,9 @@ class SessionCreatedEvent(BaseModel):
     session: Optional[RealtimeSessionInfo] = None
 
 
-# Per-segment/token quality signals some backends attach to delta/completed
-# frames (off the OpenAI spec). Populated only when the engine decodes with
-# beam>=2; greedy decode omits them. All fields optional so frames that don't
-# carry them still parse.
+# Per-token quality signals the server may attach to delta/completed frames
+# (off the OpenAI spec). Present only when the server includes them; all fields
+# optional so frames without them still parse.
 class RealtimeLogprobs(BaseModel):
     avg_logprob: Optional[float] = None
     token_logprobs: Optional[List[float]] = None
@@ -310,11 +309,10 @@ class TurnDetectionParam(TypedDict, total=False):
 class ReconnectOptions(TypedDict, total=False):
     max_attempts: int
     """Maximum consecutive same-endpoint reconnect attempts before giving up
-    (default 2). Kept low because a websocket drop is usually a transient blip
-    (one ipop/traefik pod); if a couple quick reconnects don't recover, a
-    RealtimeConnectionError is raised so a failover loop can rotate endpoints.
-    Endpoint-level 'no healthy upstream' failures bypass this and raise
-    RealtimeConnectionError(code='no_healthy_upstream') immediately."""
+    (default 2). Kept low because a websocket drop is usually a transient blip;
+    if a couple quick reconnects don't recover, a RealtimeConnectionError is
+    raised so a failover loop can rotate endpoints. Failures the server reports
+    as terminal (code='no_healthy_upstream') bypass this and raise immediately."""
     max_elapsed: float
     """Maximum seconds spent in a single reconnect episode (default 120)."""
     backoff_initial: float

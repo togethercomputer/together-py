@@ -448,7 +448,7 @@ class TestFatalErrors:
         RealtimeConnectionError with code='no_healthy_upstream' immediately (no
         same-endpoint reconnect), so existing failover loops rotate on it."""
         async with FakeRealtimeServer(
-            fatal_error={"message": "all engine pods exhausted", "code": "no_healthy_upstream"}
+            fatal_error={"message": "endpoint cannot currently serve", "code": "no_healthy_upstream"}
         ) as server:
             # high reconnect budget on purpose: RETRY_ELSEWHERE must bypass it
             session = make_session(server, reconnect={"max_attempts": 10})

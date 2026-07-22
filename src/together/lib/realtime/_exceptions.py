@@ -23,10 +23,11 @@ class RealtimeConnectionError(RealtimeError):
     exhausted, handshake rejected, or the server reported it cannot serve. Either
     way the endpoint is unusable; a failover loop should rotate to another one.
 
-    `code` carries the server reason when present, e.g. "no_healthy_upstream"
-    (no healthy engine behind this endpoint — raised immediately, without
-    exhausting same-endpoint reconnects). Also carries the attempts made, the
-    last underlying cause, and the raw server event when available.
+    `code` carries the server-reported reason when present, e.g.
+    "no_healthy_upstream" — the endpoint cannot currently serve, so it is raised
+    immediately without exhausting same-endpoint reconnects. Also carries the
+    attempts made, the last underlying cause, and the raw server event when
+    available.
     """
 
     def __init__(

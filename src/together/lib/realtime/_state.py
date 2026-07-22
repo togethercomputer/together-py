@@ -49,8 +49,8 @@ class FailureKind(enum.Enum):
 
 _FATAL_CODES = {"model_not_available", "model_not_accessible"}
 _AUTH_CODES = {"invalid_api_key", "missing_api_key"}
-# The endpoint says it cannot serve (no healthy upstream / capacity exhausted).
-# Retrying the same endpoint is futile — fail over to another one immediately.
+# Server-reported reasons that mean this endpoint cannot currently serve, so
+# retrying it is futile — fail over to another endpoint immediately.
 _RETRY_ELSEWHERE_CODES = {"no_healthy_upstream"}
 _FATAL_MESSAGE_MARKERS = (
     "unsupported format",

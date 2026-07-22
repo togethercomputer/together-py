@@ -547,9 +547,9 @@ class AsyncRealtimeTranscriptionSession:
         if kind is FailureKind.RETRYABLE:
             self._schedule_reconnect(message)
         elif kind is FailureKind.RETRY_ELSEWHERE:
-            # Endpoint can't serve (no healthy upstream); reconnecting here is
-            # futile — fail immediately (with the server code) so a failover loop
-            # rotates to another endpoint.
+            # Server reported this endpoint can't currently serve; reconnecting
+            # here is futile — fail immediately (with the server code) so a
+            # failover loop rotates to another endpoint.
             self._fail(
                 RealtimeConnectionError(
                     message,

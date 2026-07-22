@@ -7,8 +7,8 @@ never transcribed so nothing is lost across the switch.
 
 The SDK handles transient failures on a single endpoint internally (surfaced
 only as Reconnecting/Reconnected events — nothing to handle). When an endpoint
-is unrecoverable, SDK calls raise RealtimeConnectionError — including the case
-where the server reports no healthy upstream (exc.code == "no_healthy_upstream",
+is unrecoverable, SDK calls raise RealtimeConnectionError — including when the
+server reports it cannot currently serve (exc.code == "no_healthy_upstream",
 raised immediately with no same-endpoint retry). One except handles both.
 Moving to another endpoint is application code: the loop below handles failover.
 
