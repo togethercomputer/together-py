@@ -122,7 +122,7 @@ prompt = Prompt(chunks=[prompt_chunk])
 
 sampling = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 sample_result = trainer.sample(
-    prompts=[prompt],
+    prompt,
     num_samples=4,
     sampling_params=sampling,
 )
@@ -355,7 +355,7 @@ async def main() -> None:
         ),
     )
     prompt = Prompt(chunks=[prompt_chunk])
-    await trainer.sample_async(prompts=[prompt])
+    await trainer.sample_async(prompt)
 
 
 asyncio.run(main())
@@ -452,7 +452,12 @@ Generates text completions with logprobs from the current model.
 
 ```python
 def sample(
-    *,
+    prompt: Prompt,
+    num_samples: int | None = None,
+    sampling_params: SamplingParams | None = None,
+) -> SampleResult
+
+def sample_batch(
     prompts: Iterable[Prompt],
     num_samples: int | None = None,
     sampling_params: SamplingParams | None = None,
@@ -461,9 +466,11 @@ def sample(
 
 | Parameter         | Type                          | Default      | Description                                                |
 | ----------------- | ----------------------------- | ------------ | ---------------------------------------------------------- |
-| `prompts`         | `Iterable[Prompt]`            | _(required)_ | Tokenized prompts as model input dicts.                    |
+| `prompt`          | `Prompt`                      | _(required)_ | A tokenized prompt represented as a model input dict.      |
 | `num_samples`     | `int \| None`                 | `None`       | Number of completions to generate per prompt (server default: 1). |
 | `sampling_params` | `SamplingParams \| None`      | `None`       | Sampling configuration dict.                               |
+
+Use `sample_batch` with `Iterable[Prompt]` to sample multiple prompts in one operation.
 
 A prompt has the shape:
 
@@ -626,7 +633,7 @@ with ModelResources.create(
             ),
         )
         prompt = Prompt(chunks=[prompt_chunk])
-        trainer.sample(prompts=[prompt])
+        trainer.sample(prompt)
 ```
 
 ---

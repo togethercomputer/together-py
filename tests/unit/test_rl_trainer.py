@@ -16,14 +16,14 @@ from together.lib.beta.rl import (
     Logprob,
     Trainer,
     Gradient,
-    MuonOptimizerParams,
-    AdamwOptimizerParams,
     PromptChunk,
     SampleResult,
     ForwardResult,
     OptimStepResult,
     SampleLossInputs,
     SampleModelInput,
+    MuonOptimizerParams,
+    AdamwOptimizerParams,
     ForwardBackwardResult,
     SampleModelInputChunk,
     PromptChunkEncodedText,
@@ -138,13 +138,13 @@ def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any) -> None
     monkeypatch.setattr(Trainer, "_submit_and_wait", fake)
 
 
-def test_sample_passes_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sample_wraps_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, SampleResult(rollouts=[]))
     client = FakeClient()
     trainer = _make_trainer(client)
 
     prompt = Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[101, 102]))])
-    result = trainer.sample(prompts=[prompt], num_samples=3)
+    result = trainer.sample(prompt, num_samples=3)
 
     assert result.rollouts == []
     assert client.beta.rl.operations.last_call is not None
@@ -155,7 +155,7 @@ def test_sample_passes_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
     trainer.stop()
 
 
-def test_sample_multiple_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sample_batch_passes_multiple_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, SampleResult(rollouts=[]))
     client = FakeClient()
     trainer = _make_trainer(client)
@@ -164,7 +164,7 @@ def test_sample_multiple_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
         Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[1, 2]))]),
         Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[3, 4]))]),
     ]
-    trainer.sample(prompts=prompts)
+    trainer.sample_batch(prompts)
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call

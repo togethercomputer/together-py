@@ -17,13 +17,13 @@ from together.lib.beta.rl import (
     Prompt,
     Sample,
     Trainer,
-    MuonOptimizerParams,
-    AdamwOptimizerParams,
     PromptChunk,
     LossGrpoParams,
     SamplingParams,
     SampleLossInputs,
     SampleModelInput,
+    MuonOptimizerParams,
+    AdamwOptimizerParams,
     SampleModelInputChunk,
     PromptChunkEncodedText,
     SampleLossInputsLossMask,
@@ -68,7 +68,7 @@ class TestRLRequestBody:
             seed="123",
         )
 
-        await trainer.sample_async(prompts=[prompt], num_samples=2, sampling_params=sampling)
+        await trainer.sample_batch_async([prompt], num_samples=2, sampling_params=sampling)
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
@@ -186,9 +186,7 @@ class TestRLRequestBody:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_optim_step_muon_in_wire_body(
-        self, async_client: AsyncTogether, respx_mock: MockRouter
-    ) -> None:
+    async def test_optim_step_muon_in_wire_body(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
         respx_mock.post("/rl/training-sessions/sess/operations/optim-step").mock(
             return_value=httpx.Response(200, json={"id": "op-1"})
         )
