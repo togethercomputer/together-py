@@ -104,7 +104,7 @@ async def preview(
     console.print(f"[muted]Train on inputs:[/muted] {response.train_on_inputs}")
 
     table = ListTable(title="Preview rows", empty_message="No preview rows returned")
-    table.add_primary_column("Row", width=5)
+    table.add_primary_column("Row")
     table.add_column("Tokens", ratio=4)
     table.add_column("Trained Spans")
     table.add_column("Trained / Total", justify="right")
