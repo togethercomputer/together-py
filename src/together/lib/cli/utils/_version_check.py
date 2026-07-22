@@ -22,6 +22,7 @@ from together.lib.cli.utils._console import error_console
 _PYPI_URL = "https://pypi.org/pypi/together/json"
 _CACHE_TTL_SECONDS = 24 * 60 * 60
 _REQUEST_TIMEOUT_SECONDS = 1.0
+_RESOLUTION_TIMEOUT_SECONDS = _REQUEST_TIMEOUT_SECONDS + 0.5
 _DISABLE_ENV_VAR = "TOGETHER_DISABLE_VERSION_CHECK"
 _TRUTHY_ENV_VALUES = frozenset({"1", "true", "yes"})
 
@@ -157,12 +158,15 @@ class VersionCheck:
         if not _version_check_disabled():
             self._latest_version = asyncio.get_running_loop().run_in_executor(None, _latest_version)
 
-    async def inform(self, *, non_interactive: bool) -> None:
+    async def inform(self, *, non_interactive: bool, allow_prompt: bool) -> None:
         if self._latest_version is None:
             return
 
         try:
-            latest_version = await self._latest_version
+            latest_version = await asyncio.wait_for(
+                self._latest_version,
+                timeout=_RESOLUTION_TIMEOUT_SECONDS,
+            )
             if not _is_newer_version(latest_version, __version__):
                 return
 
@@ -172,7 +176,7 @@ class VersionCheck:
                 f"[dim]\nA new Together CLI version is available: {__version__} → {latest_version}.[/dim]"
             )
 
-            if non_interactive:
+            if non_interactive or not allow_prompt:
                 error_console.print(f"Upgrade with: [bold]{command_text}[/bold]")
                 return
 
@@ -185,5 +189,7 @@ class VersionCheck:
                 error_console.print("[success]Together CLI upgraded. The new version will be used next time.[/success]")
             else:
                 error_console.print(f"[error]Upgrade failed.[/error] Run manually: [bold]{command_text}[/bold]")
+        except KeyboardInterrupt:
+            return
         except Exception as exc:
             log_debug("Unable to check for a Together CLI update", error=exc)

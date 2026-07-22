@@ -227,8 +227,6 @@ async def launcher(
         Parameter(name="json", group=global_options, negative=(), help="Output the response in JSON format"),
     ] = False,
 ) -> None:
-    version_check = VersionCheck()
-
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
@@ -252,7 +250,7 @@ async def launcher(
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
 
-    is_interactive = sys.stdin.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
+    is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
     non_interactive_mode = non_interactive or output_json or not is_interactive
 
     config = CLIConfig(
@@ -343,12 +341,15 @@ async def launcher(
         CliTrackingEvents.CommandStarted,
         {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
     )
+    version_check = VersionCheck()
+    command_succeeded = False
     try:
         await run_command()
         track_cli(
             CliTrackingEvents.CommandCompleted,
             {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
         )
+        command_succeeded = True
     except KeyboardInterrupt:
         track_cli(
             CliTrackingEvents.CommandUserAborted,
@@ -363,6 +364,7 @@ async def launcher(
                 CliTrackingEvents.CommandCompleted,
                 {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
             )
+            command_succeeded = True
             sys.exit(0)
 
         track_cli(
@@ -402,7 +404,10 @@ async def launcher(
             flush_pending_events()
             await client.close()
         finally:
-            await version_check.inform(non_interactive=config.non_interactive)
+            await version_check.inform(
+                non_interactive=config.non_interactive,
+                allow_prompt=command_succeeded,
+            )
 
 
 # Register commands
