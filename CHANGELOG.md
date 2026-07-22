@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.26.1](https://github.com/togethercomputer/together-py/compare/v2.26.0...v2.26.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* handle optional endpoint deployment hardware in CLI ([#468](https://github.com/togethercomputer/together-py/issues/468)) ([cda03cc](https://github.com/togethercomputer/together-py/commit/cda03ccb7284b757b75852e6794a67ff0042caf9))
+* Update types for deployment summary to acknowledge optionality on hardware property ([c6b9a0b](https://github.com/togethercomputer/together-py/commit/c6b9a0bdf9eb681491bc886f74ac5578aa2bd6aa))
+
 ## [2.26.0](https://github.com/togethercomputer/together-py/compare/v2.25.0...v2.26.0) (2026-07-22)
 
 
