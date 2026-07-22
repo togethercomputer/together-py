@@ -50,7 +50,7 @@ class ConnectionLog:
 
 
 class FakeRealtimeServer:
-    """Scriptable stand-in for the ipop realtime endpoint."""
+    """Scriptable stand-in for the realtime transcription endpoint."""
 
     def __init__(
         self,
