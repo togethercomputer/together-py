@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from typing import NamedTuple
 
-from together import APIError
+from together import NotFoundError
 from together.types.beta import Model, Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -18,9 +19,12 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
 # Logic for resolving a model + config from a user input string
 #
 # 1. Raw model id (e.g. ml_...)
-#    → GET /configs?referenceModelId=... for the config and model path
+#    → retrieve from --project when possible; config via baseModelId / id
+#    → else GET /configs?referenceModelId=... (public / reference models)
 # 2. Full model path (projects/.../models/...)
-#    → parse the model id, then same as (1)
+#    → retrieve that model (keep it as the deploy target), resolve config via
+#      baseModelId (or the model id when it is itself a reference model).
+#      Preserve an optional /revisions/... pin on the deploy path.
 # 3. Named model (prefix/model-name)
 #    a. prefix == project slug → list private models by name, resolve config via
 #       baseModelId (path 1), but deploy the custom model path
@@ -31,7 +35,13 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
 #   - one profile + no --config → use that profile's config
 #   - --config given → use the profile whose config matches
 # After either path, re-validate against the user's --config when provided.
-MODEL_PATH_RE = re.compile(r"^projects/([^/]+)/models/([^/]+)(?:/revisions/[^/]+)?$")
+MODEL_PATH_RE = re.compile(r"^projects/([^/]+)/models/([^/]+)(?:/revisions/([^/]+))?$")
+
+
+class ResolvedModelAndConfig(NamedTuple):
+    model: Model
+    config: Config
+    revision_id: str | None = None
 
 
 async def resolve_model(
@@ -40,8 +50,8 @@ async def resolve_model(
     *,
     config_id: str | None = None,
 ) -> Model:
-    model, _config = await resolve_model_and_config(config, model_input, config_id=config_id)
-    return model
+    resolved = await resolve_model_and_config(config, model_input, config_id=config_id)
+    return resolved.model
 
 
 async def resolve_model_and_config(
@@ -49,15 +59,38 @@ async def resolve_model_and_config(
     model_input: str,
     *,
     config_id: str | None = None,
-) -> tuple[Model, Config]:
+) -> ResolvedModelAndConfig:
     """Resolve a deployable model and the config revision to pair with it."""
-    # 1 / 2. Full model path or raw model id → configs list by referenceModelId
+    # 2. Full model path → keep the user's model; config from its base/reference.
     path_match = MODEL_PATH_RE.match(model_input)
     if path_match:
-        _project_id, model_id = path_match.groups()
-        return await _resolve_via_configs(config, model_id, config_id=config_id, model_input=model_input)
+        project_id, model_id, revision_id = path_match.group(1), path_match.group(2), path_match.group(3)
+        return await _resolve_explicit_model(
+            config,
+            model_id=model_id,
+            project_id=project_id,
+            config_id=config_id,
+            model_input=model_input,
+            revision_id=revision_id,
+        )
 
+    # 1. Raw model id
     if "/" not in model_input:
+        if config.project_id:
+            try:
+                model = await config.client.beta.models.retrieve(id=model_input, project_id=config.project_id)
+            except NotFoundError:
+                pass
+            else:
+                reference_model_id = model.base_model_id or model.id
+                assert reference_model_id is not None
+                return await _resolve_config_for_model(
+                    config,
+                    model,
+                    reference_model_id=reference_model_id,
+                    config_id=config_id,
+                    model_input=model_input,
+                )
         return await _resolve_via_configs(config, model_input, config_id=config_id, model_input=model_input)
 
     # 3. Named model (prefix/model-name)
@@ -70,15 +103,60 @@ async def resolve_model_and_config(
         reference_model_id = model.base_model_id or model.id
         assert reference_model_id is not None
         # Config comes from the base/reference model; deploy path stays the custom model.
-        _base_model, selected_config = await _resolve_via_configs(
+        return await _resolve_config_for_model(
             config,
-            reference_model_id,
+            model,
+            reference_model_id=reference_model_id,
             config_id=config_id,
             model_input=model_input,
         )
-        return model, selected_config
 
     return await _resolve_public_model_and_config(config, model_input, config_id=config_id)
+
+
+async def _resolve_explicit_model(
+    config: CLIConfigParameter,
+    *,
+    model_id: str,
+    project_id: str,
+    config_id: str | None,
+    model_input: str,
+    revision_id: str | None = None,
+) -> ResolvedModelAndConfig:
+    """Load the user-specified model and pair it with a compatible config."""
+    try:
+        model = await config.client.beta.models.retrieve(id=model_id, project_id=project_id)
+    except NotFoundError:
+        raise ValueError(f"Model {model_input} not found.") from None
+
+    reference_model_id = model.base_model_id or model.id
+    assert reference_model_id is not None
+    return await _resolve_config_for_model(
+        config,
+        model,
+        reference_model_id=reference_model_id,
+        config_id=config_id,
+        model_input=model_input,
+        revision_id=revision_id,
+    )
+
+
+async def _resolve_config_for_model(
+    config: CLIConfigParameter,
+    model: Model,
+    *,
+    reference_model_id: str,
+    config_id: str | None,
+    model_input: str,
+    revision_id: str | None = None,
+) -> ResolvedModelAndConfig:
+    selected = resolve_config(
+        await resolve_configs(config, reference_model_id),
+        config_id,
+        model=model_input,
+    )
+    selected = validate_requested_config(selected, config_id, model=model_input)
+    return ResolvedModelAndConfig(model=model, config=selected, revision_id=revision_id)
 
 
 async def _resolve_via_configs(
@@ -87,7 +165,12 @@ async def _resolve_via_configs(
     *,
     config_id: str | None,
     model_input: str,
-) -> tuple[Model, Config]:
+) -> ResolvedModelAndConfig:
+    """Resolve a public/reference model id through the configs API.
+
+    The deploy target is the config's reference model — correct when the user
+    passed a bare reference-model id that is not retrievable under --project.
+    """
     selected = resolve_config(
         await resolve_configs(config, reference_model_id),
         config_id,
@@ -95,7 +178,7 @@ async def _resolve_via_configs(
     )
     selected = validate_requested_config(selected, config_id, model=model_input)
     model = await _retrieve_model_from_reference(config, selected, model_input=model_input)
-    return model, selected
+    return ResolvedModelAndConfig(model=model, config=selected)
 
 
 async def _retrieve_model_from_reference(
@@ -108,7 +191,7 @@ async def _retrieve_model_from_reference(
     path = selected.reference_model or ""
     match = MODEL_PATH_RE.match(path)
     if match:
-        project_id, model_id = match.groups()
+        project_id, model_id = match.group(1), match.group(2)
     elif selected.reference_model_id and selected.project_id:
         project_id, model_id = selected.project_id, selected.reference_model_id
     else:
@@ -116,10 +199,8 @@ async def _retrieve_model_from_reference(
 
     try:
         return await config.client.beta.models.retrieve(id=model_id, project_id=project_id)
-    except APIError as e:
-        if "not found" in e.message.lower():
-            raise ValueError(f"Model {model_input} not found.") from None
-        raise
+    except NotFoundError:
+        raise ValueError(f"Model {model_input} not found.") from None
 
 
 async def _find_private_model_by_name(config: CLIConfigParameter, name: str) -> Model:
@@ -236,7 +317,7 @@ async def _resolve_public_model_and_config(
     model_input: str,
     *,
     config_id: str | None = None,
-) -> tuple[Model, Config]:
+) -> ResolvedModelAndConfig:
     supported_models = await config.client.beta.models.list_supported(search=model_input)
     if not supported_models.data:
         raise ValueError(f"Model {model_input} not found.")
@@ -255,7 +336,7 @@ Please specify a more specific model ID. To find a more specific model variant t
     match = MODEL_PATH_RE.match(profile.model or "")
     if not match:
         raise ValueError(f"Invalid model path: {profile.model}")
-    project_id, model_id = match.groups()
+    project_id, model_id, revision_id = match.group(1), match.group(2), match.group(3)
 
     selected_config = validate_requested_config(
         config_from_profile(profile),
@@ -263,11 +344,14 @@ Please specify a more specific model ID. To find a more specific model variant t
         model=model_input,
     )
     model = Model.construct(id=model_id, projectId=project_id, name=public_model.name or model_id)
-    return model, selected_config
+    return ResolvedModelAndConfig(model=model, config=selected_config, revision_id=revision_id)
 
 
-def construct_model_path(model: Model) -> str:
-    return f"projects/{model.project_id}/models/{model.id}"
+def construct_model_path(model: Model, revision_id: str | None = None) -> str:
+    path = f"projects/{model.project_id}/models/{model.id}"
+    if revision_id:
+        return f"{path}/revisions/{revision_id}"
+    return path
 
 
 async def resolve_endpoint(config: CLIConfigParameter, endpoint_id_or_name: str) -> Endpoint:
