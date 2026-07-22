@@ -107,6 +107,34 @@ def _mock_model_and_config(respx_mock: MockRouter) -> None:
 
 
 class TestBetaEndpointsDeploy:
+    @pytest.mark.parametrize("model_revision", ["rev_in_path", "rev_from_flag"])
+    def test_deploy_rejects_model_path_and_revision_flag(
+        self,
+        cli_runner: CliRunner,
+        model_revision: str,
+    ) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "projects/proj/models/ml_1/revisions/rev_in_path",
+                "--model-revision",
+                model_revision,
+                "--config",
+                "cr_1",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "Do not pass --model-revision when --model already includes a revision" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(
         self,

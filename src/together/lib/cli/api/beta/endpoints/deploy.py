@@ -30,6 +30,7 @@ from together.types.beta.endpoints.deployment_create_params import (
     PlacementProfile,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
+    MODEL_PATH_RE,
     construct_model_path,
     resolve_model_and_config,
 )
@@ -174,6 +175,13 @@ async def deploy(
     config: CLIConfigParameter,
 ) -> None:
     """Create a deployment on a new or existing dedicated inference endpoint."""
+    model_path_match = MODEL_PATH_RE.match(model)
+    if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
+        raise ValueError(
+            "Do not pass --model-revision when --model already includes a revision. "
+            "Specify the revision only in the fully qualified --model path."
+        )
+
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
     # Prefer revision pin from a fully-qualified model path; fall back to the
