@@ -151,7 +151,7 @@ class AsyncRealtimeTranscriptionSession:
         self._backoff = BackoffPolicy(
             initial=reconnect.get("backoff_initial", 0.5),
             maximum=reconnect.get("backoff_max", 15.0),
-            max_attempts=reconnect.get("max_attempts", 10),
+            max_attempts=reconnect.get("max_attempts", 2),
             max_elapsed=reconnect.get("max_elapsed", 120.0),
         )
         pool = pool if pool is not None else _DEFAULT_POOL
@@ -489,6 +489,8 @@ class AsyncRealtimeTranscriptionSession:
                     audio_start=seg.audio_start,
                     audio_end=self.state.to_seconds(self.state.write_head),
                     replayed=seg.replayed,
+                    logprobs=event.logprobs,
+                    tokens=event.tokens,
                     raw=event,
                 )
             )
@@ -509,6 +511,8 @@ class AsyncRealtimeTranscriptionSession:
                     audio_start=seg.audio_start,
                     audio_end=self.state.to_seconds(self.state.anchor or self.state.write_head),
                     replayed=seg.replayed,
+                    logprobs=event.logprobs,
+                    tokens=event.tokens,
                     raw=event,
                 )
             )
@@ -542,6 +546,17 @@ class AsyncRealtimeTranscriptionSession:
         message = (event.error.message if event.error else None) or "realtime session failed"
         if kind is FailureKind.RETRYABLE:
             self._schedule_reconnect(message)
+        elif kind is FailureKind.RETRY_ELSEWHERE:
+            # Endpoint can't serve (no healthy upstream); reconnecting here is
+            # futile — fail immediately (with the server code) so a failover loop
+            # rotates to another endpoint.
+            self._fail(
+                RealtimeConnectionError(
+                    message,
+                    code=event.error.code if event.error else None,
+                    raw=event,
+                )
+            )
         elif kind is FailureKind.IDLE_TIMEOUT:
             plan = self.state.replay_plan()
             if plan.start_offset < self.state.write_head or plan.resend_commit:

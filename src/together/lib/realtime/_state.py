@@ -41,6 +41,7 @@ __all__ = [
 
 class FailureKind(enum.Enum):
     RETRYABLE = "retryable"
+    RETRY_ELSEWHERE = "retry_elsewhere"
     FATAL = "fatal"
     FATAL_AUTH = "fatal_auth"
     IDLE_TIMEOUT = "idle_timeout"
@@ -48,6 +49,9 @@ class FailureKind(enum.Enum):
 
 _FATAL_CODES = {"model_not_available", "model_not_accessible"}
 _AUTH_CODES = {"invalid_api_key", "missing_api_key"}
+# The endpoint says it cannot serve (no healthy upstream / capacity exhausted).
+# Retrying the same endpoint is futile — fail over to another one immediately.
+_RETRY_ELSEWHERE_CODES = {"no_healthy_upstream"}
 _FATAL_MESSAGE_MARKERS = (
     "unsupported format",
     "unsupported input sample rate",
@@ -75,6 +79,8 @@ def classify_fatal_error(error: Optional[RealtimeErrorInfo]) -> FailureKind:
         return FailureKind.FATAL_AUTH
     if code in _FATAL_CODES:
         return FailureKind.FATAL
+    if code in _RETRY_ELSEWHERE_CODES:
+        return FailureKind.RETRY_ELSEWHERE
     if code in _IDLE_TIMEOUT_CODES:
         return FailureKind.IDLE_TIMEOUT
 
@@ -102,7 +108,7 @@ class BackoffPolicy:
 
     initial: float = 0.5
     maximum: float = 15.0
-    max_attempts: int = 10
+    max_attempts: int = 2
     max_elapsed: float = 120.0
     rng: Callable[[], float] = random.random  # returns [0, 1)
 

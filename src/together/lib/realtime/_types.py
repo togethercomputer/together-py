@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import base64
-from typing import Any, Dict, Union, Mapping, Optional, cast
+from typing import Any, Dict, List, Union, Mapping, Optional, cast
 from typing_extensions import Literal, Required, Annotated, TypeAlias, TypedDict
 
 from ..._utils import PropertyInfo
@@ -15,6 +15,8 @@ __all__ = [
     # wire (server -> client) events
     "RealtimeErrorInfo",
     "RealtimeSessionInfo",
+    "RealtimeLogprobs",
+    "TranscriptionToken",
     "SessionCreatedEvent",
     "TranscriptionDeltaEvent",
     "TranscriptionCompletedEvent",
@@ -109,6 +111,24 @@ class SessionCreatedEvent(BaseModel):
     session: Optional[RealtimeSessionInfo] = None
 
 
+# Per-segment/token quality signals some backends attach to delta/completed
+# frames (off the OpenAI spec). Populated only when the engine decodes with
+# beam>=2; greedy decode omits them. All fields optional so frames that don't
+# carry them still parse.
+class RealtimeLogprobs(BaseModel):
+    avg_logprob: Optional[float] = None
+    token_logprobs: Optional[List[float]] = None
+    """Parallel to token_texts: token_logprobs[i] is the logprob of token_texts[i]."""
+    token_texts: Optional[List[str]] = None
+
+
+class TranscriptionToken(BaseModel):
+    token_id: Optional[int] = None
+    text: Optional[str] = None
+    confidence: Optional[float] = None
+    """Softmax probability of the emitted token (exp of its logprob)."""
+
+
 class TranscriptionDeltaEvent(BaseModel):
     type: Literal["conversation.item.input_audio_transcription.delta"]
     item_id: Optional[str] = None
@@ -117,6 +137,8 @@ class TranscriptionDeltaEvent(BaseModel):
     """Server-side consumed-speech clock — NOT a position on the appended-audio
     timeline (silence is skipped); do not use for buffer accounting."""
     duration: Optional[float] = None
+    logprobs: Optional[RealtimeLogprobs] = None
+    tokens: Optional[List[TranscriptionToken]] = None
 
 
 class TranscriptionCompletedEvent(BaseModel):
@@ -126,6 +148,8 @@ class TranscriptionCompletedEvent(BaseModel):
     start: Optional[float] = None
     """See TranscriptionDeltaEvent.start — informational only."""
     duration: Optional[float] = None
+    logprobs: Optional[RealtimeLogprobs] = None
+    tokens: Optional[List[TranscriptionToken]] = None
 
 
 class TranscriptionFailedEvent(BaseModel):
@@ -135,6 +159,9 @@ class TranscriptionFailedEvent(BaseModel):
     """Present on per-turn failures ("delta"/"completed"); absent on fatal
     session errors (which are followed by a server-side close)."""
     error: Optional[RealtimeErrorInfo] = None
+    start: Optional[float] = None
+    """Stream position of the dropped span (with duration), when the server
+    provides it — lets a client locate the audio it can slice and resume."""
     duration: Optional[float] = None
 
     @property
@@ -282,7 +309,12 @@ class TurnDetectionParam(TypedDict, total=False):
 
 class ReconnectOptions(TypedDict, total=False):
     max_attempts: int
-    """Maximum consecutive reconnect attempts before giving up (default 10)."""
+    """Maximum consecutive same-endpoint reconnect attempts before giving up
+    (default 2). Kept low because a websocket drop is usually a transient blip
+    (one ipop/traefik pod); if a couple quick reconnects don't recover, a
+    RealtimeConnectionError is raised so a failover loop can rotate endpoints.
+    Endpoint-level 'no healthy upstream' failures bypass this and raise
+    RealtimeConnectionError(code='no_healthy_upstream') immediately."""
     max_elapsed: float
     """Maximum seconds spent in a single reconnect episode (default 120)."""
     backoff_initial: float
@@ -328,6 +360,8 @@ class TranscriptDelta(BaseModel):
     audio_start: Optional[float] = None
     audio_end: Optional[float] = None
     replayed: bool = False
+    logprobs: Optional[RealtimeLogprobs] = None
+    tokens: Optional[List[TranscriptionToken]] = None
     raw: Optional[TranscriptionDeltaEvent] = None
 
 
@@ -338,6 +372,8 @@ class TranscriptCompleted(BaseModel):
     audio_start: Optional[float] = None
     audio_end: Optional[float] = None
     replayed: bool = False
+    logprobs: Optional[RealtimeLogprobs] = None
+    tokens: Optional[List[TranscriptionToken]] = None
     raw: Optional[TranscriptionCompletedEvent] = None
 
 

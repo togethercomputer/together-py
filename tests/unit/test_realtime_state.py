@@ -186,6 +186,7 @@ class TestClassification:
             (RealtimeErrorInfo(code="model_not_accessible"), FailureKind.FATAL),
             (RealtimeErrorInfo(code="invalid_api_key"), FailureKind.FATAL_AUTH),
             (RealtimeErrorInfo(code="idle_timeout"), FailureKind.IDLE_TIMEOUT),
+            (RealtimeErrorInfo(code="no_healthy_upstream"), FailureKind.RETRY_ELSEWHERE),
             (
                 RealtimeErrorInfo(type="service_unavailable_error", message="Service unavailable: Timeout"),
                 FailureKind.IDLE_TIMEOUT,

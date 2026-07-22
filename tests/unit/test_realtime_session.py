@@ -443,6 +443,22 @@ class TestFatalErrors:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
                 assert err.value.code == "model_not_available"
 
+    async def test_no_healthy_upstream_fails_over_immediately(self) -> None:
+        """An endpoint that reports no_healthy_upstream must raise
+        RealtimeConnectionError with code='no_healthy_upstream' immediately (no
+        same-endpoint reconnect), so existing failover loops rotate on it."""
+        async with FakeRealtimeServer(
+            fatal_error={"message": "all engine pods exhausted", "code": "no_healthy_upstream"}
+        ) as server:
+            # high reconnect budget on purpose: RETRY_ELSEWHERE must bypass it
+            session = make_session(server, reconnect={"max_attempts": 10})
+            async with session:
+                with pytest.raises(RealtimeConnectionError) as err:
+                    await collect_until(session, lambda _evs: False, timeout=5.0)
+            assert err.value.code == "no_healthy_upstream"
+            # immediate: it did not burn same-endpoint reconnect attempts
+            assert len(server.connections) == 1
+
     async def test_initial_handshake_failure_raises_typed_error_naming_target(self) -> None:
         async with FakeRealtimeServer(reject_statuses=[401]) as server:
             session = make_session(server)

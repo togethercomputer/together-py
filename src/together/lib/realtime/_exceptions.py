@@ -19,15 +19,30 @@ class RealtimeError(TogetherError):
 
 
 class RealtimeConnectionError(RealtimeError):
-    """Raised when the websocket connection could not be (re)established.
+    """Raised when an endpoint could not be established or kept usable — reconnect
+    exhausted, handshake rejected, or the server reported it cannot serve. Either
+    way the endpoint is unusable; a failover loop should rotate to another one.
 
-    Carries the number of attempts made and the last underlying cause.
+    `code` carries the server reason when present, e.g. "no_healthy_upstream"
+    (no healthy engine behind this endpoint — raised immediately, without
+    exhausting same-endpoint reconnects). Also carries the attempts made, the
+    last underlying cause, and the raw server event when available.
     """
 
-    def __init__(self, message: str, *, attempts: int = 0, cause: Optional[BaseException] = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        attempts: int = 0,
+        cause: Optional[BaseException] = None,
+        code: Optional[str] = None,
+        raw: Optional[Any] = None,
+    ) -> None:
         super().__init__(message)
         self.attempts = attempts
         self.__cause__ = cause
+        self.code = code
+        self.raw = raw
 
 
 class RealtimeSessionError(RealtimeError):

@@ -5,8 +5,11 @@ Stream live audio to a primary endpoint; when it fails beyond recovery,
 resume on the next endpoint in the ring, carrying over any speech that was
 never transcribed so nothing is lost across the switch.
 
-The SDK handles transient failures on a single endpoint internally.
-When an endpoint is unrecoverable, SDK calls raise RealtimeConnectionError.
+The SDK handles transient failures on a single endpoint internally (surfaced
+only as Reconnecting/Reconnected events — nothing to handle). When an endpoint
+is unrecoverable, SDK calls raise RealtimeConnectionError — including the case
+where the server reports no healthy upstream (exc.code == "no_healthy_upstream",
+raised immediately with no same-endpoint retry). One except handles both.
 Moving to another endpoint is application code: the loop below handles failover.
 
 Usage:
@@ -99,8 +102,9 @@ async def transcribe_with_failover(audio: bytes) -> str:
                 transcripts.append(await session.flush())
                 return " ".join(t for t in transcripts if t)
         except RealtimeConnectionError as exc:
-            # Endpoint is unrecoverable: keep its transcripts, take back the
-            # audio it never transcribed, and move to the next endpoint.
+            # Endpoint unrecoverable (incl. exc.code == "no_healthy_upstream"):
+            # keep its transcripts, take back the audio it never transcribed,
+            # and move to the next endpoint.
             transcripts.extend(session.transcripts)
             carry_over = session.pending_audio()
             print(f"--- {model} failed ({exc}); carrying over {len(carry_over) / (SAMPLE_RATE * 2):.1f}s of audio")
