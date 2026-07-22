@@ -466,6 +466,10 @@ fine_tuning_app.command(
     help="Retrieve training metrics for a fine-tuning job",
     help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
 )
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.preview:preview"),
+    help="Preview how a fine-tuning training file will be tokenized",
+)
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))

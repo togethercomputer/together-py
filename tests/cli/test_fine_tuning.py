@@ -82,6 +82,24 @@ _FT_METRICS_BODY = {
     ]
 }
 
+_FT_PREVIEW_BODY = {
+    "dataset_format": "conversation",
+    "max_seq_length": 4096,
+    "model": "meta-llama/Llama-3-8b",
+    "train_on_inputs": False,
+    "rows": [
+        {
+            "input_ids": [1, 2, 3],
+            "labels": [-100, 2, 3],
+            "num_tokens": 3,
+            "num_trained_tokens": 2,
+            "tokens": ["<s>", " hello", " world"],
+            "trained_spans": [[1, 3]],
+            "truncated": False,
+        }
+    ],
+}
+
 _MODEL_LIMITS_BODY = {
     "max_num_epochs": 10,
     "max_learning_rate": 1,
@@ -390,6 +408,63 @@ class TestFineTuningListMetrics:
         assert params["logged_at_to"] == "2024-01-02T00:00:00+00:00"
         assert params["resolution"] == "50"
         assert json.loads(result.output) == _FT_METRICS_BODY["metrics"]
+
+
+class TestFineTuningPreview:
+    @pytest.mark.respx(base_url=base_url)
+    def test_preview_json_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/fine-tunes/preview").mock(
+            return_value=httpx.Response(200, json=_FT_PREVIEW_BODY)
+        )
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "preview",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--top-k",
+                "5",
+                "--no-train-on-inputs",
+                "--training-method",
+                "sft",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0
+        assert json.loads(result.output) == _FT_PREVIEW_BODY
+        request_body = json.loads(cast(Call, route.calls[0]).request.content)
+        assert request_body == {
+            "model": "meta-llama/Llama-3-8b",
+            "training_file": "file-train",
+            "top_k": 5,
+            "train_on_inputs": False,
+            "training_method": "sft",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_preview_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "preview",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+            ]
+        )
+
+        assert result.exit_code == 0
+        assert "conversation" in result.output
+        assert "Preview Rows" in result.output
+        assert "1-3" in result.output
+        assert "hello" in result.output
 
 
 class TestFineTuningDownload:
