@@ -757,7 +757,7 @@ Sample(
 
 | Field             | Type                               | When to use                                                                 |
 | ----------------- | ---------------------------------- | --------------------------------------------------------------------------- |
-| `loss_mask`       | `SampleLossInputsLossMask`        | Always required. `1` for tokens that contribute to the loss, `0` otherwise. |
+| `loss_mask`       | `SampleLossInputsLossMask`        | Required for cross-entropy; optional for GRPO. `1` for tokens that contribute to the loss, `0` otherwise. |
 | `target_tokens`   | `SampleLossInputsTargetTokens`    | Always required. Next-token targets (shifted by 1).                         |
 | `grpo_inputs`     | `SampleLossInputsGrpoInputs`      | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
 
@@ -837,7 +837,7 @@ Aggregation types:
 | `GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON` | Fixed-horizon aggregation (default). |
 | `GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN`    | Mean over valid tokens.              |
 
-Requires `loss_mask`, `target_tokens`, and `grpo_inputs` (with `advantages`, `generator_logprobs`, and optionally `reference_logprobs`) in `loss_inputs`.
+Requires `target_tokens` and `grpo_inputs` (with `advantages`, `generator_logprobs`, and optionally `reference_logprobs`) in `loss_inputs`; `loss_mask` is optional.
 
 ---
 
