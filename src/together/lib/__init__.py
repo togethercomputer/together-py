@@ -10,6 +10,10 @@ from .resources import (
     DownloadManager,
     AsyncUploadManager,
     AsyncDownloadManager,
+    load_tokenized_dataset,
+    download_tokenized_dataset,
+    async_load_tokenized_dataset,
+    async_download_tokenized_dataset,
 )
 
 __all__ = [
@@ -20,4 +24,8 @@ __all__ = [
     "DownloadError",
     "FileTypeError",
     "check_file",
+    "download_tokenized_dataset",
+    "async_download_tokenized_dataset",
+    "load_tokenized_dataset",
+    "async_load_tokenized_dataset",
 ]

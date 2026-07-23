@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Union, Optional, cast
+from typing import TYPE_CHECKING, Any, Union, Optional, cast
+from pathlib import Path
 from datetime import datetime
 from typing_extensions import Literal
 
@@ -39,6 +40,10 @@ from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib
 from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import create_finetune_request
 from ..types.finetune_model_limits import FinetuneModelLimits
+from ..lib.resources.tokenized_dataset import (
+    download_tokenized_dataset as _download_tokenized_dataset,
+    async_download_tokenized_dataset as _async_download_tokenized_dataset,
+)
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
@@ -46,6 +51,9 @@ from ..types.fine_tuning_list_events_response import FineTuningListEventsRespons
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
 from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
+
+if TYPE_CHECKING:
+    from datasets import DatasetDict
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
@@ -496,6 +504,68 @@ class FineTuningResource(SyncAPIResource):
             ),
             cast_to=BinaryAPIResponse,
         )
+
+    def download_tokenized_dataset(
+        self,
+        *,
+        ft_id: str,
+        output_dir: Path | str | None = None,
+        force_download: bool = False,
+        return_dataset_object: bool = False,
+    ) -> DatasetDict | None:
+        """Download and unpack a tokenized dataset sample archive for a fine-tuning job.
+
+        The archive contains HuggingFace ``save_to_disk`` directories (``train_dataset`` and
+        optionally ``eval_dataset``) with at most 100 rows per split.
+
+        Args:
+            ft_id: Fine-tune ID. A string that starts with ``ft-``.
+            output_dir: Directory to unpack into. Defaults to
+                ``~/.cache/together/tokenized-datasets/{ft_id}/``.
+            force_download: Re-download even if a cached unpack already exists.
+            return_dataset_object: If True, return a HuggingFace ``DatasetDict``
+                (``\"train\"`` / optional ``\"validation\"``). Requires
+                ``pip install together[datasets]`` and raises ``ImportError`` if
+                ``datasets`` is missing. If False, returns ``None`` after unpacking.
+        """
+        if not ft_id:
+            raise ValueError(f"Expected a non-empty value for `ft_id` but received {ft_id!r}")
+        return _download_tokenized_dataset(
+            self._client,
+            ft_id,
+            output_dir=Path(output_dir) if output_dir is not None else None,
+            force_download=force_download,
+            return_dataset_object=return_dataset_object,
+        )
+
+    def get_tokenized_dataset(
+        self,
+        *,
+        ft_id: str,
+        cache_dir: Path | str | None = None,
+        force_download: bool = False,
+    ) -> DatasetDict:
+        """Load a tokenized dataset sample for a fine-tuning job as a HuggingFace ``DatasetDict``.
+
+        Keys are ``\"train\"`` and, when present, ``\"validation\"``. Requires
+        ``pip install together[datasets]``.
+
+        Args:
+            ft_id: Fine-tune ID. A string that starts with ``ft-``.
+            cache_dir: Directory for the unpacked archive cache. Defaults to
+                ``~/.cache/together/tokenized-datasets/{ft_id}/``.
+            force_download: Re-download even if a cached unpack already exists.
+        """
+        if not ft_id:
+            raise ValueError(f"Expected a non-empty value for `ft_id` but received {ft_id!r}")
+        dataset = self.download_tokenized_dataset(
+            ft_id=ft_id,
+            output_dir=cache_dir,
+            force_download=force_download,
+            return_dataset_object=True,
+        )
+        assert dataset is not None
+        return dataset
 
     def estimate_price(
         self,
@@ -1187,6 +1257,68 @@ class AsyncFineTuningResource(AsyncAPIResource):
             ),
             cast_to=AsyncBinaryAPIResponse,
         )
+
+    async def download_tokenized_dataset(
+        self,
+        *,
+        ft_id: str,
+        output_dir: Path | str | None = None,
+        force_download: bool = False,
+        return_dataset_object: bool = False,
+    ) -> DatasetDict | None:
+        """Download and unpack a tokenized dataset sample archive for a fine-tuning job.
+
+        The archive contains HuggingFace ``save_to_disk`` directories (``train_dataset`` and
+        optionally ``eval_dataset``) with at most 100 rows per split.
+
+        Args:
+            ft_id: Fine-tune ID. A string that starts with ``ft-``.
+            output_dir: Directory to unpack into. Defaults to
+                ``~/.cache/together/tokenized-datasets/{ft_id}/``.
+            force_download: Re-download even if a cached unpack already exists.
+            return_dataset_object: If True, return a HuggingFace ``DatasetDict``
+                (``\"train\"`` / optional ``\"validation\"``). Requires
+                ``pip install together[datasets]`` and raises ``ImportError`` if
+                ``datasets`` is missing. If False, returns ``None`` after unpacking.
+        """
+        if not ft_id:
+            raise ValueError(f"Expected a non-empty value for `ft_id` but received {ft_id!r}")
+        return await _async_download_tokenized_dataset(
+            self._client,
+            ft_id,
+            output_dir=Path(output_dir) if output_dir is not None else None,
+            force_download=force_download,
+            return_dataset_object=return_dataset_object,
+        )
+
+    async def get_tokenized_dataset(
+        self,
+        *,
+        ft_id: str,
+        cache_dir: Path | str | None = None,
+        force_download: bool = False,
+    ) -> DatasetDict:
+        """Load a tokenized dataset sample for a fine-tuning job as a HuggingFace ``DatasetDict``.
+
+        Keys are ``\"train\"`` and, when present, ``\"validation\"``. Requires
+        ``pip install together[datasets]``.
+
+        Args:
+            ft_id: Fine-tune ID. A string that starts with ``ft-``.
+            cache_dir: Directory for the unpacked archive cache. Defaults to
+                ``~/.cache/together/tokenized-datasets/{ft_id}/``.
+            force_download: Re-download even if a cached unpack already exists.
+        """
+        if not ft_id:
+            raise ValueError(f"Expected a non-empty value for `ft_id` but received {ft_id!r}")
+        dataset = await self.download_tokenized_dataset(
+            ft_id=ft_id,
+            output_dir=cache_dir,
+            force_download=force_download,
+            return_dataset_object=True,
+        )
+        assert dataset is not None
+        return dataset
 
     async def estimate_price(
         self,

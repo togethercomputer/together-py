@@ -428,3 +428,59 @@ class TestFineTuningDownload:
         payload = json.loads(result.output.strip())
         assert payload["id"] == "ft-abcd-12"
         assert payload["size"] == 1
+
+
+class TestFineTuningDownloadTokenizedDataset:
+    def test_download_tokenized_dataset_json(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        out_dir = tmp_path / "sample"
+        out_dir.mkdir()
+
+        async def _fake_download(
+            self: object,
+            *,
+            ft_id: str,
+            output_dir: Path | None = None,
+            return_dataset_object: bool = False,
+            **_: object,
+        ) -> None:
+            assert ft_id == "ft-abc"
+            assert output_dir == out_dir
+            assert return_dataset_object is False
+            return None
+
+        with patch(
+            "together.resources.fine_tuning.AsyncFineTuningResource.download_tokenized_dataset",
+            _fake_download,
+        ):
+            result = cli_runner.invoke(
+                [
+                    "fine-tuning",
+                    "download-tokenized-dataset",
+                    "ft-abc",
+                    "--output-dir",
+                    str(out_dir),
+                    "--json",
+                ],
+            )
+
+        assert result.exit_code == 0
+        payload = json.loads(result.output.strip())
+        assert payload["id"] == "ft-abc"
+        assert payload["path"] == str(out_dir.resolve())
+
+    def test_download_tokenized_dataset_not_found(self, cli_runner: CliRunner) -> None:
+        from together import NotFoundError
+
+        async def _fake_download(self: object, *, ft_id: str, **_: object) -> Path:
+            request = httpx.Request("GET", "http://example/fine-tunes/ft-missing/download-tokenized-dataset")
+            response = httpx.Response(404, request=request)
+            raise NotFoundError("not found", response=response, body=None)
+
+        with patch(
+            "together.resources.fine_tuning.AsyncFineTuningResource.download_tokenized_dataset",
+            _fake_download,
+        ):
+            result = cli_runner.invoke(["ft", "download-tokenized-dataset", "ft-missing"])
+
+        assert result.exit_code != 0
+        assert "Tokenized dataset sample not found" in result.output

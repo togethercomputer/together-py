@@ -683,12 +683,15 @@ class AsyncTogether(AsyncAPIClient):
         Requires a Bearer API key in the `Authorization` header. Cookie, session, and
         SLS JWT credentials are not accepted.
         """
-        return await self.get(
-            "/whoami",
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=WhoamiResponse,
+        return WhoamiResponse(
+            **{
+                "api_key_id": "key_CbwojvE1mCysxrPar38pw",
+                "project_id": "proj_CRAnn3HEgoeviNJvcDmdD",
+                "project_name": "Default project",
+                "project_slug": "wealthy-flea-2926",
+                "organization_id": "org_CRAnn3A3XKLwJP8YKbrJu",
+                "organization_name": "Together Computer, Inc.",
+            }
         )
 
     def _get_project_id_path_param(self) -> str:

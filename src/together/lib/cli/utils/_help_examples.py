@@ -86,6 +86,9 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download a fine-tuned model's weights:
   [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
 
+[dim]-[/dim] Download a tokenized dataset sample:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized-sample[/primary]
+
 [dim]-[/dim] List checkpoints for a fine-tuning job:
   [primary]tg ft list-checkpoints <ft-job-id>[/primary]
 
@@ -133,6 +136,11 @@ FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Download a fine-tuned model's weights from a specific checkpoint:
   [primary]tg ft download <ft-job-id> --checkpoint-step 1 --output-dir ./my-model[/primary]
+"""
+
+FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Download a tokenized dataset sample (≤100 rows) for a fine-tuning job:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized-sample[/primary]
 """
 
 ## Endpoints API commands

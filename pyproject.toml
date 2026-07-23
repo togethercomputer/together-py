@@ -57,6 +57,7 @@ aiohttp = ["aiohttp", "httpx_aiohttp>=0.1.9"]
 aiofiles = ["aiofiles>=25.0.0", "types-aiofiles"]
 pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
 cli = ["PyYAML", "questionary>=2.1.1"]
+datasets = ["datasets>=2.14.0", "zstandard>=0.22.0"]
 
 [project.scripts]
 together = "together.lib.cli:main"
