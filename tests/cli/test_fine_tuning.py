@@ -433,3 +433,45 @@ class TestFineTuningDownload:
         payload = json.loads(result.output.strip())
         assert payload["id"] == "ft-abcd-12"
         assert payload["size"] == 1
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_defaults_to_merged_checkpoint_for_lora_job(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/fine-tunes/ft-abcd-12").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    **_FT_RETRIEVE_BODY,
+                    "training_type": {
+                        "type": "Lora",
+                        "lora_alpha": 16,
+                        "lora_r": 8,
+                    },
+                },
+            )
+        )
+        out_file = tmp_path / "weights.tar"
+        out_file.write_bytes(b"x")
+
+        class _DM:
+            def __init__(self, _client: object) -> None:
+                pass
+
+            async def download(self, **kwargs: object) -> tuple[str, int]:
+                assert "checkpoint=merged" in str(kwargs.get("url", ""))
+                return str(out_file), 1
+
+        with patch.object(_ft_download_mod, "AsyncDownloadManager", _DM):
+            result = cli_runner.invoke(
+                [
+                    "fine-tuning",
+                    "download",
+                    "ft-abcd-12",
+                    "--output-dir",
+                    str(tmp_path),
+                    "--json",
+                ],
+            )
+
+        assert result.exit_code == 0
