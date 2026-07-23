@@ -235,6 +235,14 @@ class TestBetaEndpointsDeploy:
 
 
 class TestBetaEndpointsList:
+    def test_list_alias_is_hidden_from_help(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "--help"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        assert "ls List project, organization, or public endpoints" in output
+        assert "list List project, organization, or public endpoints" not in output
+
     @pytest.mark.parametrize("command", ["list", "ls"])
     @pytest.mark.respx(base_url=base_url)
     def test_list_sends_cursor_pagination(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

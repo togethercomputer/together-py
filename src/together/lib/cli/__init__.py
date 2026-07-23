@@ -643,11 +643,15 @@ beta_endpoints_app.command(
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.list:list"),
-    name="list",
-    alias="ls",
+    name="ls",
     help="List project, organization, or public endpoints",
     help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
     sort_key=2,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.list:list"),
+    name="list",
+    show=False,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
