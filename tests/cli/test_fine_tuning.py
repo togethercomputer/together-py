@@ -125,14 +125,14 @@ class TestFineTuningCreate:
                 "file-train",
                 "--model",
                 "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+                "--non-interactive",
             ],
-            input="y\n",
         )
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "not available for multimodal datasets" in output
-        assert "Do you want to proceed?" in result.output
+        assert "Do you want to proceed?" not in result.output
         assert "ft-created" in result.output
         assert estimate.calls
         assert create.calls

@@ -649,6 +649,11 @@ beta_endpoints_app.command(
     sort_key=2,
 )
 beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.list:list"),
+    name="list",
+    show=False,
+)
+beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
     name="get",
     help="Get endpoint or deployment details by ID",
