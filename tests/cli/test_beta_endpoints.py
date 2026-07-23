@@ -301,8 +301,14 @@ class TestBetaEndpointsList:
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
-        assert "ls: List project, organization, or public endpoints" in output
+        # Agent formatter: "ls: …"; human/Rich formatter: "ls …" (no colon).
+        assert "List project, organization, or public endpoints" in output
+        assert (
+            "ls: List project, organization, or public endpoints" in output
+            or "ls List project, organization, or public endpoints" in output
+        )
         assert "list: List project, organization, or public endpoints" not in output
+        assert "list List project, organization, or public endpoints" not in output
 
     @pytest.mark.parametrize("command", ["list", "ls"])
     @pytest.mark.respx(base_url=base_url)
