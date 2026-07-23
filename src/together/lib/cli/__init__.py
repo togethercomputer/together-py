@@ -67,6 +67,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_CONFIGS_HELP_EXAMPLES,
+    FINE_TUNING_PREVIEW_HELP_EXAMPLES,
     BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
@@ -469,6 +470,7 @@ fine_tuning_app.command(
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.preview:preview"),
     help="Preview how a fine-tuning training file will be tokenized",
+    help_epilogue=FINE_TUNING_PREVIEW_HELP_EXAMPLES,
 )
 
 ## Models API commands

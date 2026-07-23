@@ -7,11 +7,11 @@ from rich.markup import escape as escape_rich_markup
 
 from together import omit
 from together._utils._json import openapi_dumps
-from together.types.fine_tune_preview_row import FineTunePreviewRow
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
+from together.types.fine_tune_preview_row import FineTunePreviewRow
 
 _TOKEN_PREVIEW_LIMIT = 32
 

@@ -412,10 +412,21 @@ class TestFineTuningListMetrics:
 
 class TestFineTuningPreview:
     @pytest.mark.respx(base_url=base_url)
-    def test_preview_json_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        route = respx_mock.post("/fine-tunes/preview").mock(
-            return_value=httpx.Response(200, json=_FT_PREVIEW_BODY)
-        )
+    @pytest.mark.parametrize(
+        ("train_on_inputs_flag", "expected_train_on_inputs"),
+        [
+            ("--train-on-inputs", True),
+            ("--no-train-on-inputs", False),
+        ],
+    )
+    def test_preview_json_sends_params(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+        train_on_inputs_flag: str,
+        expected_train_on_inputs: bool,
+    ) -> None:
+        route = respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
 
         result = cli_runner.invoke(
             [
@@ -427,7 +438,7 @@ class TestFineTuningPreview:
                 "meta-llama/Llama-3-8b",
                 "--top-k",
                 "5",
-                "--no-train-on-inputs",
+                train_on_inputs_flag,
                 "--training-method",
                 "sft",
                 "--json",
@@ -441,7 +452,7 @@ class TestFineTuningPreview:
             "model": "meta-llama/Llama-3-8b",
             "training_file": "file-train",
             "top_k": 5,
-            "train_on_inputs": False,
+            "train_on_inputs": expected_train_on_inputs,
             "training_method": "sft",
         }
 
