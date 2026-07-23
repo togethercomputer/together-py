@@ -237,9 +237,7 @@ class TestBetaEndpointsDeploy:
 class TestBetaEndpointsList:
     @pytest.mark.parametrize("command", ["list", "ls"])
     @pytest.mark.respx(base_url=base_url)
-    def test_list_sends_cursor_pagination(
-        self, command: str, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
+    def test_list_sends_cursor_pagination(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
