@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from rich.box import ROUNDED
+from rich.box import ROUNDED, Box
 from rich.align import Align
 from rich.panel import Panel
 from rich.table import Table
@@ -11,20 +11,30 @@ from rich.padding import Padding
 
 
 class ListTable:
-    def __init__(self, title: str | None = None, *, empty_message: str | None = None) -> None:
+    def __init__(
+        self,
+        title: str | None = None,
+        *,
+        empty_message: str | None = None,
+        box: Box | None = ROUNDED,
+        show_lines: bool = True,
+        padding: tuple[int, int, int, int] | tuple[int, int] = (0, 2),
+        width: int | None = None,
+    ) -> None:
         self._title = title
         self._empty_message = empty_message
         self.has_primary_column = False
         self.table = Table(
-            box=ROUNDED,
+            box=box,
             title=f"\n{title}" if title else None,
             title_style="primary",
             title_justify="left",
             header_style="table.header",
             border_style="table.border",
-            padding=(0, 2),
+            padding=padding,
             expand=True,
-            show_lines=True,
+            show_lines=show_lines,
+            width=width,
         )
 
     def add_primary_column(
@@ -34,9 +44,14 @@ class ListTable:
         self.table.add_column(name, ratio=ratio, justify=justify, style="primary")
 
     def add_column(
-        self, name: str, *, ratio: int | None = 1, justify: Literal["left", "center", "right"] = "left"
+        self,
+        name: str,
+        *,
+        ratio: int | None = 1,
+        justify: Literal["left", "center", "right"] = "left",
+        width: int | None = None,
     ) -> None:
-        self.table.add_column(name, ratio=ratio, justify=justify, style="muted")
+        self.table.add_column(name, ratio=ratio, justify=justify, style="muted", width=width)
 
     def add_row(self, *values: Any) -> None:
         self.table.add_row(*values)

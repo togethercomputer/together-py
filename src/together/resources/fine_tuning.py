@@ -12,6 +12,7 @@ from rich import print as rprint
 from ..types import (
     fine_tuning_delete_params,
     fine_tuning_content_params,
+    fine_tuning_preview_params,
     fine_tuning_list_metrics_params,
     fine_tuning_model_limits_params,
     fine_tuning_estimate_price_params,
@@ -40,6 +41,7 @@ from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import create_finetune_request
 from ..types.finetune_model_limits import FinetuneModelLimits
 from ..types.fine_tuning_list_response import FineTuningListResponse
+from ..types.fine_tune_preview_response import FineTunePreviewResponse
 from ..types.fine_tuning_cancel_response import FineTuningCancelResponse
 from ..types.fine_tuning_delete_response import FineTuningDeleteResponse
 from ..types.fine_tuning_list_events_response import FineTuningListEventsResponse
@@ -748,6 +750,64 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FinetuneModelLimits,
         )
 
+    def preview(
+        self,
+        *,
+        model: str,
+        training_file: str,
+        top_k: int | Omit = omit,
+        train_on_inputs: bool | Omit = omit,
+        training_method: Literal["sft"] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTunePreviewResponse:
+        """
+        Preview how sampled rows from a fine-tuning training file will be tokenized
+        before packing.
+
+        Args:
+          model: Name of the base model whose tokenizer and chat template will be used.
+
+          training_file: File-ID of the uploaded JSONL training file to sample for preview.
+
+          top_k: Maximum number of rows from the start of the training file to tokenize.
+
+          train_on_inputs: Whether prompt or user-message tokens should contribute to training loss in the
+              preview.
+
+          training_method: Fine-tuning method to preview. Only supervised fine-tuning is currently
+              supported.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/fine-tunes/preview",
+            body=maybe_transform(
+                {
+                    "model": model,
+                    "training_file": training_file,
+                    "top_k": top_k,
+                    "train_on_inputs": train_on_inputs,
+                    "training_method": training_method,
+                },
+                fine_tuning_preview_params.FineTuningPreviewParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTunePreviewResponse,
+        )
+
 
 class AsyncFineTuningResource(AsyncAPIResource):
     @cached_property
@@ -1439,6 +1499,64 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FinetuneModelLimits,
         )
 
+    async def preview(
+        self,
+        *,
+        model: str,
+        training_file: str,
+        top_k: int | Omit = omit,
+        train_on_inputs: bool | Omit = omit,
+        training_method: Literal["sft"] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTunePreviewResponse:
+        """
+        Preview how sampled rows from a fine-tuning training file will be tokenized
+        before packing.
+
+        Args:
+          model: Name of the base model whose tokenizer and chat template will be used.
+
+          training_file: File-ID of the uploaded JSONL training file to sample for preview.
+
+          top_k: Maximum number of rows from the start of the training file to tokenize.
+
+          train_on_inputs: Whether prompt or user-message tokens should contribute to training loss in the
+              preview.
+
+          training_method: Fine-tuning method to preview. Only supervised fine-tuning is currently
+              supported.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/fine-tunes/preview",
+            body=await async_maybe_transform(
+                {
+                    "model": model,
+                    "training_file": training_file,
+                    "top_k": top_k,
+                    "train_on_inputs": train_on_inputs,
+                    "training_method": training_method,
+                },
+                fine_tuning_preview_params.FineTuningPreviewParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTunePreviewResponse,
+        )
+
 
 class FineTuningResourceWithRawResponse:
     def __init__(self, fine_tuning: FineTuningResource) -> None:
@@ -1474,6 +1592,9 @@ class FineTuningResourceWithRawResponse:
         )
         self.model_limits = to_raw_response_wrapper(
             fine_tuning.model_limits,
+        )
+        self.preview = to_raw_response_wrapper(
+            fine_tuning.preview,
         )
 
 
@@ -1512,6 +1633,9 @@ class AsyncFineTuningResourceWithRawResponse:
         self.model_limits = async_to_raw_response_wrapper(
             fine_tuning.model_limits,
         )
+        self.preview = async_to_raw_response_wrapper(
+            fine_tuning.preview,
+        )
 
 
 class FineTuningResourceWithStreamingResponse:
@@ -1549,6 +1673,9 @@ class FineTuningResourceWithStreamingResponse:
         self.model_limits = to_streamed_response_wrapper(
             fine_tuning.model_limits,
         )
+        self.preview = to_streamed_response_wrapper(
+            fine_tuning.preview,
+        )
 
 
 class AsyncFineTuningResourceWithStreamingResponse:
@@ -1585,4 +1712,7 @@ class AsyncFineTuningResourceWithStreamingResponse:
         )
         self.model_limits = async_to_streamed_response_wrapper(
             fine_tuning.model_limits,
+        )
+        self.preview = async_to_streamed_response_wrapper(
+            fine_tuning.preview,
         )

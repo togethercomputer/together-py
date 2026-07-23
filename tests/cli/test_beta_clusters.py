@@ -233,7 +233,6 @@ class TestBetaClustersSSHHelpers:
             "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
             "/tmp/id",
             "/tmp/id-cert.pub",
-            "/tmp/known_hosts",
             ("sinfo", "-h"),
         )
 
@@ -241,10 +240,11 @@ class TestBetaClustersSSHHelpers:
         assert "jhu@slurm-login" in cmd
         assert cmd[cmd.index("--") + 1] == "jhu@slurm-login"
         assert cmd[-2:] == ["sinfo", "-h"]
+        # First hop (client -> bastion) verifies; second hop (bastion -> host) does not.
         assert any("ProxyCommand=ssh" in arg for arg in cmd)
-        assert "StrictHostKeyChecking=ask" in cmd
-        assert "UserKnownHostsFile=/tmp/known_hosts" in cmd
-        assert "HostKeyAlias=slurm-login.ssh.t-abc123.s1.us-central-2a.cloud.together.ai" in cmd
+        assert any("StrictHostKeyChecking=ask" in arg for arg in cmd)  # first hop (inside ProxyCommand)
+        assert "StrictHostKeyChecking=no" in cmd  # second hop (own -o element)
+        assert "UserKnownHostsFile=/dev/null" in cmd
 
     def test_ssh_config_entry_points_plain_ssh_at_cached_cert(self) -> None:
         entry = ssh_cli._ssh_config_entry(
@@ -254,7 +254,6 @@ class TestBetaClustersSSHHelpers:
             "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
             "/home/jhu/.together/ssh/t-abc123/jhu/id",
             "/home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub",
-            "/home/jhu/.together/ssh/t-abc123/jhu/known_hosts",
         )
 
         assert "Host test-oidc" in entry
@@ -262,8 +261,10 @@ class TestBetaClustersSSHHelpers:
         assert "User jhu" in entry
         assert "IdentityFile /home/jhu/.together/ssh/t-abc123/jhu/id" in entry
         assert "CertificateFile /home/jhu/.together/ssh/t-abc123/jhu/id-cert.pub" in entry
-        assert "StrictHostKeyChecking ask" in entry
-        assert "UserKnownHostsFile /home/jhu/.together/ssh/t-abc123/jhu/known_hosts" in entry
+        # Second hop insecure; first hop (in the ProxyCommand) still verifies.
+        assert "StrictHostKeyChecking no" in entry
+        assert "UserKnownHostsFile /dev/null" in entry
+        assert "StrictHostKeyChecking=ask" in entry  # first hop inside ProxyCommand
         assert "ProxyCommand ssh" in entry
 
     @pytest.mark.parametrize(
@@ -285,7 +286,6 @@ class TestBetaClustersSSHHelpers:
                 bastion,
                 "/tmp/id",
                 "/tmp/id-cert.pub",
-                "/tmp/known_hosts",
                 (),
             )
 
@@ -298,7 +298,6 @@ class TestBetaClustersSSHHelpers:
                 "ssh.t-abc123.s1.us-central-2a.cloud.together.ai",
                 "/tmp/id",
                 "/tmp/id-cert.pub",
-                "/tmp/known_hosts",
             )
 
     def test_get_or_create_keypair_replaces_partial_cache(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
@@ -696,13 +695,15 @@ class TestBetaClustersCreate:
                 "--capacity-pool-id",
                 "pool-1",
                 "--install-traefik",
+                "--headlamp-addon",
+                "--slurm-web-addon",
                 "--num-capacity-pool-gpus",
                 "8",
                 "--num-preemptible-gpus",
                 "8",
                 "--num-reserved-gpus",
                 "8",
-                "--project-id",
+                "--project",
                 "proj-1",
                 "--reservation-start-time",
                 "2026-06-01T00:00:00Z",
@@ -715,6 +716,7 @@ class TestBetaClustersCreate:
             ],
         )
 
+        assert result.exit_code == 0, result.output
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
         assert body["auto_scale"] is True
@@ -722,6 +724,18 @@ class TestBetaClustersCreate:
         assert body["capacity_pool_id"] == "pool-1"
         assert "gpu_node_failover_enabled" not in body
         assert body["install_traefik"] is True
+        assert body["add_ons"] == [
+            {
+                "add_on_type": "headlamp",
+                "name": "headlamp",
+                "config": {"headlamp": {"enabled": True}},
+            },
+            {
+                "add_on_type": "slurm_web",
+                "name": "slurm_web",
+                "config": {"slurm_web": {"enabled": True}},
+            },
+        ]
         assert body["num_capacity_pool_gpus"] == 8
         assert body["num_preemptible_gpus"] == 8
         assert body["num_reserved_gpus"] == 8
@@ -768,10 +782,16 @@ class TestBetaClustersUpdate:
                 "16",
                 "--reservation-end-time",
                 "2026-06-02T00:00:00Z",
+                "--no-headlamp",
+                "--slurm-web",
             ],
         )
 
         put_body = json.loads(cast(Call, put.calls[0]).request.content.decode())
+        assert put_body["add_ons"] == [
+            {"name": "headlamp", "config": {"headlamp": {"enabled": False}}},
+            {"name": "slurm_web", "config": {"slurm_web": {"enabled": True}}},
+        ]
         assert put_body["num_preemptible_gpus"] == 8
         assert put_body["num_capacity_pool_gpus"] == 8
         assert put_body["num_reserved_gpus"] == 16
@@ -895,7 +915,7 @@ class TestBetaClustersRemediations:
                 "c1",
                 "i1",
                 "--mode",
-                "VM_ONLY",
+                "HOST_POWER_CYCLE",
                 "--reason",
                 "node unhealthy",
                 "--remediation-id",
@@ -908,7 +928,7 @@ class TestBetaClustersRemediations:
         request = cast(Call, route.calls[0]).request
         assert request.url.params["remediation_id"] == "rem-created"
         assert json.loads(request.content.decode()) == {
-            "mode": "REMEDIATION_MODE_VM_ONLY",
+            "mode": "REMEDIATION_MODE_HOST_POWER_CYCLE",
             "reason": "node unhealthy",
         }
         assert result.exit_code == 0
@@ -981,7 +1001,9 @@ class TestBetaClustersRemediations:
                 "--mode",
                 "VM_ONLY",
                 "--mode",
-                "REBOOT_VM",
+                "HOST_POWER_CYCLE",
+                "--state",
+                "QUARANTINED",
                 "--state",
                 "PENDING_APPROVAL",
                 "--trigger",
@@ -993,8 +1015,8 @@ class TestBetaClustersRemediations:
         )
 
         params = cast(Call, route.calls[0]).request.url.params
-        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_REBOOT_VM"
-        assert params["state"] == "PENDING_APPROVAL"
+        assert params["mode"] == "REMEDIATION_MODE_VM_ONLY,REMEDIATION_MODE_HOST_POWER_CYCLE"
+        assert params["state"] == "QUARANTINED,PENDING_APPROVAL"
         assert params["trigger"] == "REMEDIATION_TRIGGER_AUTOMATED"
         assert params["page_token"] == "next-token"
         assert result.exit_code == 0
@@ -1044,7 +1066,7 @@ class TestBetaClustersRemediations:
                 "--comment",
                 "go",
                 "--mode",
-                "REBOOT_VM",
+                "HOST_POWER_CYCLE",
                 "--json",
             ]
         )
@@ -1052,7 +1074,7 @@ class TestBetaClustersRemediations:
         assert json.loads(result.output)["state"] == "PENDING"
         assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {
             "comment": "go",
-            "mode": "REMEDIATION_MODE_REBOOT_VM",
+            "mode": "REMEDIATION_MODE_HOST_POWER_CYCLE",
         }
         assert result.exit_code == 0
 
@@ -1097,3 +1119,19 @@ class TestBetaClustersRemediations:
         assert json.loads(result.output)["state"] == "CANCELLED"
         assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"comment": "skip"}
         assert result.exit_code == 0
+
+
+def test_ssh_second_hop_host_key_checking_disabled() -> None:
+    """Second hop (bastion -> ephemeral cluster host) skips host-key verification;
+    first hop (client -> bastion) keeps StrictHostKeyChecking=ask."""
+    from together.lib.cli.api.beta.clusters.ssh import _ssh_command, _ssh_config_entry
+
+    cmd = " ".join(_ssh_command("me", "worker1", "bastion.x", "/k", "/c", ("uptime",)))
+    assert "StrictHostKeyChecking=no" in cmd
+    assert "UserKnownHostsFile=/dev/null" in cmd
+    assert "StrictHostKeyChecking=ask" in cmd  # proxy (first hop) still verifies
+
+    entry = _ssh_config_entry("myalias", "me", "worker1", "bastion.x", "/k", "/c")
+    assert "StrictHostKeyChecking no" in entry
+    assert "UserKnownHostsFile /dev/null" in entry
+    assert "StrictHostKeyChecking=ask" in entry  # first hop in ProxyCommand

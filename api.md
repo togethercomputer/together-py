@@ -12,12 +12,231 @@ Methods:
 
 # Beta
 
+## Endpoints
+
+Types:
+
+```python
+from together.types.beta import (
+    AbMember,
+    DeploymentAutoscaling,
+    DeploymentPlacementConfig,
+    DeploymentStatus,
+    Endpoint,
+    EndpointDeployment,
+    EndpointDeploymentSummary,
+    EndpointTrafficSplitEntry,
+    ShadowAdaptiveKeyBasedSampling,
+    ShadowAdaptiveUniformSampling,
+    ShadowEndpointSource,
+    ShadowKeyBasedSampling,
+    ShadowSource,
+    ShadowUniformSampling,
+    EndpointDeleteResponse,
+    EndpointAnalyticsResponse,
+    EndpointListEventsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">create</a>(\*, project_id, \*\*<a href="src/together/types/beta/endpoint_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint.py">Endpoint</a></code>
+- <code title="get /projects/{projectId}/endpoints/{id}">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/endpoint.py">Endpoint</a></code>
+- <code title="patch /projects/{projectId}/endpoints/{id}">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">update</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/endpoint_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint.py">Endpoint</a></code>
+- <code title="get /projects/{projectId}/endpoints">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/endpoint_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint.py">SyncCursorPagination[Endpoint]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{id}">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">delete</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/endpoint_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint_delete_response.py">EndpointDeleteResponse</a></code>
+- <code title="get /projects/{projectId}/endpoints/{id}/analytics">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">analytics</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/endpoint_analytics_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint_analytics_response.py">EndpointAnalyticsResponse</a></code>
+- <code title="get /projects/{projectId}/endpoints/{id}/events">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">list_events</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/endpoint_list_events_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint_list_events_response.py">SyncCursorPagination[EndpointListEventsResponse]</a></code>
+- <code title="get /organizations/{organizationId}/endpoints">client.beta.endpoints.<a href="./src/together/resources/beta/endpoints/endpoints.py">list_org_scoped</a>(organization_id, \*\*<a href="src/together/types/beta/endpoint_list_org_scoped_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint.py">SyncCursorPagination[Endpoint]</a></code>
+
+### PlacementProfiles
+
+Types:
+
+```python
+from together.types.beta.endpoints import PlacementProfile
+```
+
+Methods:
+
+- <code title="get /projects/{projectId}/placement-profiles/{id}">client.beta.endpoints.placement_profiles.<a href="./src/together/resources/beta/endpoints/placement_profiles.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/endpoints/placement_profile.py">PlacementProfile</a></code>
+- <code title="get /projects/{projectId}/placement-profiles">client.beta.endpoints.placement_profiles.<a href="./src/together/resources/beta/endpoints/placement_profiles.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/endpoints/placement_profile_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/placement_profile.py">SyncCursorPagination[PlacementProfile]</a></code>
+
+### AbExperiments
+
+Types:
+
+```python
+from together.types.beta.endpoints import AbExperiment, AbExperimentDeleteResponse
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/abExperiments">client.beta.endpoints.ab_experiments.<a href="./src/together/resources/beta/endpoints/ab_experiments.py">create</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/ab_experiment_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/ab_experiment.py">AbExperiment</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/abExperiments/{id}">client.beta.endpoints.ab_experiments.<a href="./src/together/resources/beta/endpoints/ab_experiments.py">retrieve</a>(id, \*, project_id, endpoint_id) -> <a href="./src/together/types/beta/endpoints/ab_experiment.py">AbExperiment</a></code>
+- <code title="patch /projects/{projectId}/endpoints/{endpointId}/abExperiments/{id}">client.beta.endpoints.ab_experiments.<a href="./src/together/resources/beta/endpoints/ab_experiments.py">update</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/ab_experiment_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/ab_experiment.py">AbExperiment</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/abExperiments">client.beta.endpoints.ab_experiments.<a href="./src/together/resources/beta/endpoints/ab_experiments.py">list</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/ab_experiment_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/ab_experiment.py">SyncCursorPagination[AbExperiment]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{endpointId}/abExperiments/{id}">client.beta.endpoints.ab_experiments.<a href="./src/together/resources/beta/endpoints/ab_experiments.py">delete</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/ab_experiment_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/ab_experiment_delete_response.py">AbExperimentDeleteResponse</a></code>
+
+### ShadowExperiments
+
+Types:
+
+```python
+from together.types.beta.endpoints import ShadowExperiment, ShadowExperimentDeleteResponse
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/shadowExperiments">client.beta.endpoints.shadow_experiments.<a href="./src/together/resources/beta/endpoints/shadow_experiments/shadow_experiments.py">create</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiment_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiment.py">ShadowExperiment</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{id}">client.beta.endpoints.shadow_experiments.<a href="./src/together/resources/beta/endpoints/shadow_experiments/shadow_experiments.py">retrieve</a>(id, \*, project_id, endpoint_id) -> <a href="./src/together/types/beta/endpoints/shadow_experiment.py">ShadowExperiment</a></code>
+- <code title="patch /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{id}">client.beta.endpoints.shadow_experiments.<a href="./src/together/resources/beta/endpoints/shadow_experiments/shadow_experiments.py">update</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiment_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiment.py">ShadowExperiment</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/shadowExperiments">client.beta.endpoints.shadow_experiments.<a href="./src/together/resources/beta/endpoints/shadow_experiments/shadow_experiments.py">list</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiment_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiment.py">SyncCursorPagination[ShadowExperiment]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{id}">client.beta.endpoints.shadow_experiments.<a href="./src/together/resources/beta/endpoints/shadow_experiments/shadow_experiments.py">delete</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiment_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiment_delete_response.py">ShadowExperimentDeleteResponse</a></code>
+
+#### Targets
+
+Types:
+
+```python
+from together.types.beta.endpoints.shadow_experiments import (
+    ShadowExperimentTarget,
+    TargetDeleteResponse,
+)
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">create</a>(\*, project_id, endpoint_id, experiment_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/shadow_experiment_target.py">ShadowExperimentTarget</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets/{id}">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">retrieve</a>(id, \*, project_id, endpoint_id, experiment_id) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/shadow_experiment_target.py">ShadowExperimentTarget</a></code>
+- <code title="patch /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets/{id}">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">update</a>(id, \*, project_id, endpoint_id, experiment_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/shadow_experiment_target.py">ShadowExperimentTarget</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">list</a>(endpoint_id, experiment_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/shadow_experiment_target.py">SyncCursorPagination[ShadowExperimentTarget]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets/{id}">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">delete</a>(id, \*, project_id, endpoint_id, experiment_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/target_delete_response.py">TargetDeleteResponse</a></code>
+
+### Hardware
+
+Types:
+
+```python
+from together.types.beta.endpoints import InferenceInstanceType, HardwareListResponse
+```
+
+Methods:
+
+- <code title="get /public/inference-instance-types/{id}">client.beta.endpoints.hardware.<a href="./src/together/resources/beta/endpoints/hardware.py">retrieve</a>(id) -> <a href="./src/together/types/beta/endpoints/inference_instance_type.py">InferenceInstanceType</a></code>
+- <code title="get /public/inference-instance-types">client.beta.endpoints.hardware.<a href="./src/together/resources/beta/endpoints/hardware.py">list</a>() -> <a href="./src/together/types/beta/endpoints/hardware_list_response.py">HardwareListResponse</a></code>
+
+### Adapters
+
+Types:
+
+```python
+from together.types.beta.endpoints import (
+    AdapterCreateResponse,
+    AdapterRetrieveResponse,
+    AdapterUpdateResponse,
+    AdapterListResponse,
+    AdapterDeleteResponse,
+)
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/deployments/{deploymentId}/adapters">client.beta.endpoints.adapters.<a href="./src/together/resources/beta/endpoints/adapters.py">create</a>(\*, project_id, endpoint_id, deployment_id, \*\*<a href="src/together/types/beta/endpoints/adapter_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/adapter_create_response.py">AdapterCreateResponse</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/deployments/{deploymentId}/adapters/{id}">client.beta.endpoints.adapters.<a href="./src/together/resources/beta/endpoints/adapters.py">retrieve</a>(id, \*, project_id, endpoint_id, deployment_id) -> <a href="./src/together/types/beta/endpoints/adapter_retrieve_response.py">AdapterRetrieveResponse</a></code>
+- <code title="patch /projects/{projectId}/endpoints/{endpointId}/deployments/{deploymentId}/adapters/{id}">client.beta.endpoints.adapters.<a href="./src/together/resources/beta/endpoints/adapters.py">update</a>(id, \*, project_id, endpoint_id, deployment_id, \*\*<a href="src/together/types/beta/endpoints/adapter_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/adapter_update_response.py">AdapterUpdateResponse</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/deployments/{deploymentId}/adapters">client.beta.endpoints.adapters.<a href="./src/together/resources/beta/endpoints/adapters.py">list</a>(endpoint_id, deployment_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/adapter_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/adapter_list_response.py">SyncCursorPagination[AdapterListResponse]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{endpointId}/deployments/{deploymentId}/adapters/{id}">client.beta.endpoints.adapters.<a href="./src/together/resources/beta/endpoints/adapters.py">delete</a>(id, \*, project_id, endpoint_id, deployment_id, \*\*<a href="src/together/types/beta/endpoints/adapter_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/adapter_delete_response.py">AdapterDeleteResponse</a></code>
+
+### Deployments
+
+Types:
+
+```python
+from together.types.beta.endpoints import DeploymentDeleteResponse
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/deployments">client.beta.endpoints.deployments.<a href="./src/together/resources/beta/endpoints/deployments.py">create</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/deployment_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint_deployment.py">EndpointDeployment</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/deployments/{id}">client.beta.endpoints.deployments.<a href="./src/together/resources/beta/endpoints/deployments.py">retrieve</a>(id, \*, project_id, endpoint_id) -> <a href="./src/together/types/beta/endpoint_deployment.py">EndpointDeployment</a></code>
+- <code title="patch /projects/{projectId}/endpoints/{endpointId}/deployments/{id}">client.beta.endpoints.deployments.<a href="./src/together/resources/beta/endpoints/deployments.py">update</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/deployment_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint_deployment.py">EndpointDeployment</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/deployments">client.beta.endpoints.deployments.<a href="./src/together/resources/beta/endpoints/deployments.py">list</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/deployment_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoint_deployment.py">SyncCursorPagination[EndpointDeployment]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{endpointId}/deployments/{id}">client.beta.endpoints.deployments.<a href="./src/together/resources/beta/endpoints/deployments.py">delete</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/deployment_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/deployment_delete_response.py">DeploymentDeleteResponse</a></code>
+
+## Models
+
+Types:
+
+```python
+from together.types.beta import (
+    Model,
+    SupportedModel,
+    SupportedModelDeploymentProfile,
+    SupportedModelPerformanceBenchmarks,
+    ModelDeleteResponse,
+    ModelListFilesResponse,
+    ModelListRevisionsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/models">client.beta.models.<a href="./src/together/resources/beta/models/models.py">create</a>(\*, project_id, \*\*<a href="src/together/types/beta/model_create_params.py">params</a>) -> <a href="./src/together/types/beta/model.py">Model</a></code>
+- <code title="get /projects/{projectId}/models/{id}">client.beta.models.<a href="./src/together/resources/beta/models/models.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/model.py">Model</a></code>
+- <code title="patch /projects/{projectId}/models/{id}">client.beta.models.<a href="./src/together/resources/beta/models/models.py">update</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/model_update_params.py">params</a>) -> <a href="./src/together/types/beta/model.py">Model</a></code>
+- <code title="get /projects/{projectId}/models">client.beta.models.<a href="./src/together/resources/beta/models/models.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/model_list_params.py">params</a>) -> <a href="./src/together/types/beta/model.py">SyncCursorPagination[Model]</a></code>
+- <code title="delete /projects/{projectId}/models/{id}">client.beta.models.<a href="./src/together/resources/beta/models/models.py">delete</a>(id, \*, project_id) -> <a href="./src/together/types/beta/model_delete_response.py">ModelDeleteResponse</a></code>
+- <code title="get /projects/{projectId}/models/{id}/files">client.beta.models.<a href="./src/together/resources/beta/models/models.py">list_files</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/model_list_files_params.py">params</a>) -> <a href="./src/together/types/beta/model_list_files_response.py">ModelListFilesResponse</a></code>
+- <code title="get /organizations/{organizationId}/models">client.beta.models.<a href="./src/together/resources/beta/models/models.py">list_org_scoped</a>(organization_id, \*\*<a href="src/together/types/beta/model_list_org_scoped_params.py">params</a>) -> <a href="./src/together/types/beta/model.py">SyncCursorPagination[Model]</a></code>
+- <code title="get /projects/{projectId}/models/{id}/revisions">client.beta.models.<a href="./src/together/resources/beta/models/models.py">list_revisions</a>(id, \*, project_id) -> <a href="./src/together/types/beta/model_list_revisions_response.py">ModelListRevisionsResponse</a></code>
+- <code title="get /supported-models">client.beta.models.<a href="./src/together/resources/beta/models/models.py">list_supported</a>(\*\*<a href="src/together/types/beta/model_list_supported_params.py">params</a>) -> <a href="./src/together/types/beta/supported_model.py">SyncCursorPagination[SupportedModel]</a></code>
+- <code title="get /supported-models/{id}">client.beta.models.<a href="./src/together/resources/beta/models/models.py">retrieve_supported</a>(id) -> <a href="./src/together/types/beta/supported_model.py">SupportedModel</a></code>
+
+### RemoteUploads
+
+Types:
+
+```python
+from together.types.beta.models import (
+    RemoteUploadCreateResponse,
+    RemoteUploadRetrieveResponse,
+    RemoteUploadListResponse,
+    RemoteUploadEventsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/models/uploads">client.beta.models.remote_uploads.<a href="./src/together/resources/beta/models/remote_uploads.py">create</a>(\*, project_id, \*\*<a href="src/together/types/beta/models/remote_upload_create_params.py">params</a>) -> <a href="./src/together/types/beta/models/remote_upload_create_response.py">RemoteUploadCreateResponse</a></code>
+- <code title="get /projects/{projectId}/models/uploads/{id}">client.beta.models.remote_uploads.<a href="./src/together/resources/beta/models/remote_uploads.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/models/remote_upload_retrieve_response.py">RemoteUploadRetrieveResponse</a></code>
+- <code title="get /projects/{projectId}/models/uploads">client.beta.models.remote_uploads.<a href="./src/together/resources/beta/models/remote_uploads.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/models/remote_upload_list_params.py">params</a>) -> <a href="./src/together/types/beta/models/remote_upload_list_response.py">SyncCursorPagination[RemoteUploadListResponse]</a></code>
+- <code title="get /projects/{projectId}/models/uploads/{id}/events">client.beta.models.remote_uploads.<a href="./src/together/resources/beta/models/remote_uploads.py">events</a>(id, \*, project_id, \*\*<a href="src/together/types/beta/models/remote_upload_events_params.py">params</a>) -> <a href="./src/together/types/beta/models/remote_upload_events_response.py">RemoteUploadEventsResponse</a></code>
+
+### Configs
+
+Types:
+
+```python
+from together.types.beta.models import Config
+```
+
+Methods:
+
+- <code title="get /projects/{projectId}/configs/{id}">client.beta.models.configs.<a href="./src/together/resources/beta/models/configs.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/models/config.py">Config</a></code>
+- <code title="get /projects/{projectId}/configs">client.beta.models.configs.<a href="./src/together/resources/beta/models/configs.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/models/config_list_params.py">params</a>) -> <a href="./src/together/types/beta/models/config.py">SyncCursorPagination[Config]</a></code>
+
 ## Jig
 
 Types:
 
 ```python
-from together.types.beta import Deployment, DeploymentLogs, JigListResponse
+from together.types.beta import (
+    ContainerDeploymentStatus,
+    Deployment,
+    DeploymentLogs,
+    JigListResponse,
+)
 ```
 
 Methods:
@@ -206,6 +425,8 @@ Types:
 
 ```python
 from together.types import (
+    FineTunePreviewResponse,
+    FineTunePreviewRow,
     FinetuneEvent,
     FinetuneEventType,
     FinetuneModelLimits,
@@ -233,6 +454,7 @@ Methods:
 - <code title="get /fine-tunes/{id}/events">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_events</a>(id) -> <a href="./src/together/types/fine_tuning_list_events_response.py">FineTuningListEventsResponse</a></code>
 - <code title="get /fine-tunes/{id}/metrics">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_metrics</a>(id, \*\*<a href="src/together/types/fine_tuning_list_metrics_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_list_metrics_response.py">FineTuningListMetricsResponse</a></code>
 - <code title="get /fine-tunes/models/limits">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">model_limits</a>(\*\*<a href="src/together/types/fine_tuning_model_limits_params.py">params</a>) -> <a href="./src/together/types/finetune_model_limits.py">FinetuneModelLimits</a></code>
+- <code title="post /fine-tunes/preview">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">preview</a>(\*\*<a href="src/together/types/fine_tuning_preview_params.py">params</a>) -> <a href="./src/together/types/fine_tune_preview_response.py">FineTunePreviewResponse</a></code>
 
 # CodeInterpreter
 

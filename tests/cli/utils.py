@@ -23,7 +23,13 @@ API_KEY = "0000000000000000000000000000000000000000"
 
 class CliRunner:
     def __init__(self, capsys: pytest.CaptureFixture[str]):
-        self.env = {"TOGETHER_BASE_URL": base_url, "TOGETHER_API_KEY": API_KEY}
+        self.env = {
+            "TOGETHER_BASE_URL": base_url,
+            "TOGETHER_API_KEY": API_KEY,
+            "TOGETHER_DISABLE_VERSION_CHECK": "1",
+            # Avoid launcher whoami resolve; tests that exercise it should delete this.
+            "TOGETHER_PROJECT_ID": "proj",
+        }
         self.capsys = capsys
 
     def invoke(self, iargs: list[str], *, input: str | None = None) -> Result:

@@ -8,7 +8,7 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.types.beta.cluster_create_params import SharedVolume, ClusterCreateParams
+from together.types.beta.cluster_create_params import AddOn, SharedVolume, ClusterCreateParams
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
@@ -32,12 +32,15 @@ AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster au
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
 InstallTraefikParameter = Annotated[Optional[bool], Parameter(help="Install Traefik ingress controller")]
+HeadlampParameter = Annotated[
+    Optional[bool], Parameter(help="Enable the Headlamp Kubernetes dashboard add-on", negative=())
+]
+SlurmWebParameter = Annotated[Optional[bool], Parameter(help="Enable the Slurm Web add-on", negative=())]
 NumCapacityPoolGpusParameter = Annotated[
     Optional[int], Parameter(help="Number of GPUs to allocate from a capacity pool")
 ]
 NumPreemptibleGpusParameter = Annotated[Optional[int], Parameter(help="Number of preemptible GPUs to request")]
 NumReservedGpusParameter = Annotated[Optional[int], Parameter(help="Number of prepaid reserved GPUs to request")]
-ProjectIDParameter = Annotated[Optional[str], Parameter(help="Project ID for the cluster")]
 ReservationEndTimeParameter = Annotated[Optional[str], Parameter(help="Reservation end time for scheduled capacity")]
 ReservationStartTimeParameter = Annotated[
     Optional[str], Parameter(help="Reservation start time for scheduled capacity")
@@ -61,10 +64,11 @@ async def create(
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
     install_traefik: InstallTraefikParameter = None,
+    headlamp_addon: HeadlampParameter = None,
+    slurm_web_addon: SlurmWebParameter = None,
     num_capacity_pool_gpus: NumCapacityPoolGpusParameter = None,
     num_preemptible_gpus: NumPreemptibleGpusParameter = None,
     num_reserved_gpus: NumReservedGpusParameter = None,
-    project_id: ProjectIDParameter = None,
     reservation_end_time: ReservationEndTimeParameter = None,
     reservation_start_time: ReservationStartTimeParameter = None,
     slurm_image: SlurmImageParameter = None,
@@ -94,14 +98,33 @@ async def create(
         params["capacity_pool_id"] = capacity_pool_id
     if install_traefik is not None:
         params["install_traefik"] = install_traefik
+    add_ons: list[AddOn] = []
+    if headlamp_addon is not None:
+        add_ons.append(
+            {
+                "add_on_type": "headlamp",
+                "name": "headlamp",
+                "config": {"headlamp": {"enabled": headlamp_addon}},
+            }
+        )
+    if slurm_web_addon is not None:
+        add_ons.append(
+            {
+                "add_on_type": "slurm_web",
+                "name": "slurm_web",
+                "config": {"slurm_web": {"enabled": slurm_web_addon}},
+            }
+        )
+    if add_ons:
+        params["add_ons"] = add_ons
     if num_capacity_pool_gpus is not None:
         params["num_capacity_pool_gpus"] = num_capacity_pool_gpus
     if num_preemptible_gpus is not None:
         params["num_preemptible_gpus"] = num_preemptible_gpus
     if num_reserved_gpus is not None:
         params["num_reserved_gpus"] = num_reserved_gpus
-    if project_id:
-        params["project_id"] = project_id
+    if config.project_id:
+        params["project_id"] = config.project_id
     if reservation_end_time:
         params["reservation_end_time"] = reservation_end_time
     if reservation_start_time:

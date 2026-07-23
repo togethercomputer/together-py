@@ -13,6 +13,7 @@ from together.lib.cli.api._utils import (
     int_or_max_converter,
 )
 from together.lib.cli.utils.config import CLIConfigParameter
+from together.lib.cli.utils._prompt import confirm as prompt_confirm
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.resources.fine_tuning import validate_early_stopping
@@ -392,8 +393,7 @@ async def create(
 
     if not confirm:
         console.print(get_confirmation_message(price_line=price_line, warning=warning))
-        resp = input("Do you want to proceed? [Y/n]").strip().lower()
-        if resp and resp != "y" and resp != "yes":
+        if not config.non_interactive and not await prompt_confirm("Do you want to proceed?"):
             return
 
     console.print(f"Submitting a fine-tuning job with the following parameters:")
