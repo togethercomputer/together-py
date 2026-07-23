@@ -70,6 +70,7 @@ _FT_CHECKPOINT = {
     "checkpoint": "model",
     "created_at": "2024-01-01T00:00:00Z",
     "object_id": "ml-checkpoint",
+    "object_name": "project-slug/model-checkpoint",
     "object_revision_id": "rv-checkpoint",
     "path": "/p",
     "step": 5,
@@ -370,7 +371,7 @@ class TestFineTuningEventsAndCheckpoints:
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
         assert "Registry artifacts" in result.output
-        assert "ml-checkpoint@rv-checkpoint" in result.output
+        assert "project-slug/model-checkpoint@rv-checkpoint" in result.output
         assert "intermediate" in result.output
 
     @pytest.mark.respx(base_url=base_url)
