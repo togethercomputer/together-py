@@ -390,11 +390,12 @@ async def create(
         price_line = f"The estimated price of this job is [bold]{price_str}[/bold]."
         warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
 
-    if not confirm and not config.non_interactive:
+    if not confirm:
         console.print(get_confirmation_message(price_line=price_line, warning=warning))
-        resp = input("Do you want to proceed? [Y/n]").strip().lower()
-        if resp and resp != "y" and resp != "yes":
-            return
+        if not config.non_interactive:
+            resp = input("Do you want to proceed? [Y/n]").strip().lower()
+            if resp and resp != "y" and resp != "yes":
+                return
 
     console.print(f"Submitting a fine-tuning job with the following parameters:")
     print_model_dump(BaseModel(**training_args), show_nulls=False, expand=False, padding=(0, 2))
