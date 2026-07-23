@@ -136,7 +136,7 @@ class FinetuneResponse(BaseModel):
     ]
 
     user_id: str
-    """ID of the user who owns the fine-tune job."""
+    """ID of the user who created the fine-tune job."""
 
     adapter_object_id: Optional[str] = None
     """Together model registry object ID for the final adapter weights on LoRA jobs."""
