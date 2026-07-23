@@ -233,6 +233,67 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code == 0, result.output
         assert create_deployment_route.call_count == 1
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_reuses_endpoint_when_name_already_exists(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.post("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                409,
+                json={
+                    "code": 6,
+                    "message": "Already Exists",
+                    "details": [
+                        {
+                            "@type": "type.googleapis.com/common.errors.v1.ProblemDetail",
+                            "type": "https://api.together.ai/problems/already-exists",
+                            "title": "Already Exists",
+                            "status": 409,
+                            "detail": "Already Exists",
+                        }
+                    ],
+                },
+            )
+        )
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        list_route = respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_endpoint_body(name="my-project/test")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "test",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert create_deployment_route.call_count == 1
+        assert "filter=name%3D%22test%22" in str(cast(Call, list_route.calls[0]).request.url)
+
 
 class TestBetaEndpointsList:
     def test_list_alias_is_hidden_from_help(self, cli_runner: CliRunner) -> None:
@@ -240,8 +301,14 @@ class TestBetaEndpointsList:
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
-        assert "ls: List project, organization, or public endpoints" in output
+        # Agent formatter: "ls: …"; human/Rich formatter: "ls …" (no colon).
+        assert "List project, organization, or public endpoints" in output
+        assert (
+            "ls: List project, organization, or public endpoints" in output
+            or "ls List project, organization, or public endpoints" in output
+        )
         assert "list: List project, organization, or public endpoints" not in output
+        assert "list List project, organization, or public endpoints" not in output
 
     @pytest.mark.parametrize("command", ["list", "ls"])
     @pytest.mark.respx(base_url=base_url)
