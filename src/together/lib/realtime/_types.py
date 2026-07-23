@@ -312,7 +312,7 @@ class ReconnectOptions(TypedDict, total=False):
     (default 2). Kept low because a websocket drop is usually a transient blip;
     if a couple quick reconnects don't recover, a RealtimeConnectionError is
     raised so a failover loop can rotate endpoints. Failures the server reports
-    as terminal (code='no_healthy_upstream') bypass this and raise immediately."""
+    as terminal (code='no_healthy_workers') bypass this and raise immediately."""
     max_elapsed: float
     """Maximum seconds spent in a single reconnect episode (default 120)."""
     backoff_initial: float

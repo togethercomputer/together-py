@@ -24,7 +24,7 @@ class RealtimeConnectionError(RealtimeError):
     way the endpoint is unusable; a failover loop should rotate to another one.
 
     `code` carries the server-reported reason when present, e.g.
-    "no_healthy_upstream" — the endpoint cannot currently serve, so it is raised
+    "no_healthy_workers" — the endpoint cannot currently serve, so it is raised
     immediately without exhausting same-endpoint reconnects. Also carries the
     attempts made, the last underlying cause, and the raw server event when
     available.

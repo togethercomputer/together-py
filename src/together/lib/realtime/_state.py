@@ -51,7 +51,7 @@ _FATAL_CODES = {"model_not_available", "model_not_accessible"}
 _AUTH_CODES = {"invalid_api_key", "missing_api_key"}
 # Server-reported reasons that mean this endpoint cannot currently serve, so
 # retrying it is futile — fail over to another endpoint immediately.
-_RETRY_ELSEWHERE_CODES = {"no_healthy_upstream"}
+_RETRY_ELSEWHERE_CODES = {"no_healthy_workers"}
 _FATAL_MESSAGE_MARKERS = (
     "unsupported format",
     "unsupported input sample rate",

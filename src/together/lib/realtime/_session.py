@@ -83,7 +83,7 @@ _ECHO_TIMEOUT = 2.0
 _STALE_STREAM_TIMEOUT = 30.0
 
 # WebSocket close code (application-private range) the server pairs with the
-# no_healthy_upstream failed frame: this endpoint cannot serve, fail over to
+# no_healthy_workers failed frame: this endpoint cannot serve, fail over to
 # another one. The close is the primary signal; the JSON frame is informational.
 RETRY_ELSEWHERE_CLOSE_CODE = 4503
 
@@ -483,8 +483,8 @@ class AsyncRealtimeTranscriptionSession:
             if connection.close_code == RETRY_ELSEWHERE_CLOSE_CODE:
                 self._fail(
                     RealtimeConnectionError(
-                        "endpoint signaled no healthy upstream; failing over",
-                        code="no_healthy_upstream",
+                        "endpoint signaled no healthy workers; failing over",
+                        code="no_healthy_workers",
                     )
                 )
                 return

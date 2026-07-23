@@ -8,7 +8,7 @@ never transcribed so nothing is lost across the switch.
 The SDK handles transient failures on a single endpoint internally (surfaced
 only as Reconnecting/Reconnected events — nothing to handle). When an endpoint
 is unrecoverable, SDK calls raise RealtimeConnectionError — including when the
-server reports it cannot currently serve (exc.code == "no_healthy_upstream",
+server reports it cannot currently serve (exc.code == "no_healthy_workers",
 raised immediately with no same-endpoint retry). One except handles both.
 Moving to another endpoint is application code: the loop below handles failover.
 
@@ -102,7 +102,7 @@ async def transcribe_with_failover(audio: bytes) -> str:
                 transcripts.append(await session.flush())
                 return " ".join(t for t in transcripts if t)
         except RealtimeConnectionError as exc:
-            # Endpoint unrecoverable (incl. exc.code == "no_healthy_upstream"):
+            # Endpoint unrecoverable (incl. exc.code == "no_healthy_workers"):
             # keep its transcripts, take back the audio it never transcribed,
             # and move to the next endpoint.
             transcripts.extend(session.transcripts)

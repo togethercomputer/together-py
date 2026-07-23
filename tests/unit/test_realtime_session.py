@@ -111,7 +111,7 @@ class FakeRealtimeServer:
         )
         if self.close_without_frame and self.close_code is not None:
             # close code only, no JSON frame (e.g. frame lost, code survives)
-            await ws.close(self.close_code, "no_healthy_upstream")
+            await ws.close(self.close_code, "no_healthy_workers")
             return
         if self.fatal_error is not None:
             await ws.send(
@@ -123,7 +123,7 @@ class FakeRealtimeServer:
                 )
             )
             if self.close_code is not None:
-                await ws.close(self.close_code, "no_healthy_upstream")
+                await ws.close(self.close_code, "no_healthy_workers")
             else:
                 await ws.close()
             return
@@ -456,10 +456,10 @@ class TestFatalErrors:
 
     async def test_retry_elsewhere_close_code_fails_over_immediately(self) -> None:
         """A 4503 close code makes the SDK fail terminally with
-        code='no_healthy_upstream' (no same-endpoint reconnect), so a failover
+        code='no_healthy_workers' (no same-endpoint reconnect), so a failover
         loop rotates. The JSON frame is informational; the close drives it."""
         async with FakeRealtimeServer(
-            fatal_error={"message": "endpoint cannot currently serve", "code": "no_healthy_upstream"},
+            fatal_error={"message": "endpoint cannot currently serve", "code": "no_healthy_workers"},
             close_code=4503,
         ) as server:
             # high reconnect budget on purpose: the 4503 close must bypass it
@@ -467,7 +467,7 @@ class TestFatalErrors:
             async with session:
                 with pytest.raises(RealtimeConnectionError) as err:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
-            assert err.value.code == "no_healthy_upstream"
+            assert err.value.code == "no_healthy_workers"
             # immediate: it did not burn same-endpoint reconnect attempts
             assert len(server.connections) == 1
 
@@ -478,7 +478,7 @@ class TestFatalErrors:
             async with session:
                 with pytest.raises(RealtimeConnectionError) as err:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
-            assert err.value.code == "no_healthy_upstream"
+            assert err.value.code == "no_healthy_workers"
             assert len(server.connections) == 1
 
     async def test_initial_handshake_failure_raises_typed_error_naming_target(self) -> None:
