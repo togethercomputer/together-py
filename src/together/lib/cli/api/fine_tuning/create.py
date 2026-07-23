@@ -390,7 +390,7 @@ async def create(
         price_line = f"The estimated price of this job is [bold]{price_str}[/bold]."
         warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
 
-    if not confirm:
+    if not confirm and not config.non_interactive:
         console.print(get_confirmation_message(price_line=price_line, warning=warning))
         resp = input("Do you want to proceed? [Y/n]").strip().lower()
         if resp and resp != "y" and resp != "yes":
