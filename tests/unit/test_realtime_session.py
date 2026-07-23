@@ -59,6 +59,8 @@ class FakeRealtimeServer:
         drop_after_bytes: Optional[int] = None,
         completed_every_bytes: Optional[int] = None,
         fatal_error: Optional[Dict[str, Any]] = None,
+        close_code: Optional[int] = None,
+        close_without_frame: bool = False,
         complete_on_commit: bool = True,
         transcribed_fraction: float = 1.0,
         answer_echo: bool = True,
@@ -67,6 +69,8 @@ class FakeRealtimeServer:
         self.drop_after_bytes = drop_after_bytes
         self.completed_every_bytes = completed_every_bytes
         self.fatal_error = fatal_error
+        self.close_code = close_code
+        self.close_without_frame = close_without_frame
         self.complete_on_commit = complete_on_commit
         self.transcribed_fraction = transcribed_fraction
         self.answer_echo = answer_echo
@@ -105,6 +109,10 @@ class FakeRealtimeServer:
                 }
             )
         )
+        if self.close_without_frame and self.close_code is not None:
+            # close code only, no JSON frame (e.g. frame lost, code survives)
+            await ws.close(self.close_code, "no_healthy_upstream")
+            return
         if self.fatal_error is not None:
             await ws.send(
                 json.dumps(
@@ -114,7 +122,10 @@ class FakeRealtimeServer:
                     }
                 )
             )
-            await ws.close()
+            if self.close_code is not None:
+                await ws.close(self.close_code, "no_healthy_upstream")
+            else:
+                await ws.close()
             return
         emitted_at = 0
         try:
@@ -443,20 +454,31 @@ class TestFatalErrors:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
                 assert err.value.code == "model_not_available"
 
-    async def test_no_healthy_upstream_fails_over_immediately(self) -> None:
-        """An endpoint that reports no_healthy_upstream must raise
-        RealtimeConnectionError with code='no_healthy_upstream' immediately (no
-        same-endpoint reconnect), so existing failover loops rotate on it."""
+    async def test_retry_elsewhere_close_code_fails_over_immediately(self) -> None:
+        """A 4503 close code makes the SDK fail terminally with
+        code='no_healthy_upstream' (no same-endpoint reconnect), so a failover
+        loop rotates. The JSON frame is informational; the close drives it."""
         async with FakeRealtimeServer(
-            fatal_error={"message": "endpoint cannot currently serve", "code": "no_healthy_upstream"}
+            fatal_error={"message": "endpoint cannot currently serve", "code": "no_healthy_upstream"},
+            close_code=4503,
         ) as server:
-            # high reconnect budget on purpose: RETRY_ELSEWHERE must bypass it
+            # high reconnect budget on purpose: the 4503 close must bypass it
             session = make_session(server, reconnect={"max_attempts": 10})
             async with session:
                 with pytest.raises(RealtimeConnectionError) as err:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
             assert err.value.code == "no_healthy_upstream"
             # immediate: it did not burn same-endpoint reconnect attempts
+            assert len(server.connections) == 1
+
+    async def test_retry_elsewhere_close_code_without_frame_still_fails_over(self) -> None:
+        """The close code alone (no JSON frame) is enough to fail over."""
+        async with FakeRealtimeServer(close_code=4503, close_without_frame=True) as server:
+            session = make_session(server, reconnect={"max_attempts": 10})
+            async with session:
+                with pytest.raises(RealtimeConnectionError) as err:
+                    await collect_until(session, lambda _evs: False, timeout=5.0)
+            assert err.value.code == "no_healthy_upstream"
             assert len(server.connections) == 1
 
     async def test_initial_handshake_failure_raises_typed_error_naming_target(self) -> None:

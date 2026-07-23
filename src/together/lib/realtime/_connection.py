@@ -201,6 +201,11 @@ class AsyncRealtimeConnection:
 
         return self._ws.state is not State.OPEN
 
+    @property
+    def close_code(self) -> Optional[int]:
+        """WebSocket close code once the connection has closed (None while open)."""
+        return getattr(self._ws, "close_code", None)
+
     async def send(self, event: Mapping[str, Any]) -> None:
         await self._ws.send(json.dumps(dict(event)))
 

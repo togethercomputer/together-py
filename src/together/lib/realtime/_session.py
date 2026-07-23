@@ -82,6 +82,11 @@ _ECHO_INTERVAL = 5.0
 _ECHO_TIMEOUT = 2.0
 _STALE_STREAM_TIMEOUT = 30.0
 
+# WebSocket close code (application-private range) the server pairs with the
+# no_healthy_upstream failed frame: this endpoint cannot serve, fail over to
+# another one. The close is the primary signal; the JSON frame is informational.
+RETRY_ELSEWHERE_CLOSE_CODE = 4503
+
 
 class AsyncRealtimeTranscriptionSession:
     """Auto-reconnecting realtime transcription session (async).
@@ -472,6 +477,17 @@ class AsyncRealtimeTranscriptionSession:
         except Exception as exc:
             if self._closed or self.state.epoch != epoch:
                 return
+            # The server signals "fail over to another endpoint" with a WS close
+            # code; retrying this endpoint is futile, so fail terminally instead
+            # of reconnecting. Other closes are treated as recoverable drops.
+            if connection.close_code == RETRY_ELSEWHERE_CLOSE_CODE:
+                self._fail(
+                    RealtimeConnectionError(
+                        "endpoint signaled no healthy upstream; failing over",
+                        code="no_healthy_upstream",
+                    )
+                )
+                return
             self._schedule_reconnect(f"connection lost: {exc.__class__.__name__}")
 
     def _handle_server_event(self, event: object) -> None:
@@ -547,16 +563,10 @@ class AsyncRealtimeTranscriptionSession:
         if kind is FailureKind.RETRYABLE:
             self._schedule_reconnect(message)
         elif kind is FailureKind.RETRY_ELSEWHERE:
-            # Server reported this endpoint can't currently serve; reconnecting
-            # here is futile — fail immediately (with the server code) so a
-            # failover loop rotates to another endpoint.
-            self._fail(
-                RealtimeConnectionError(
-                    message,
-                    code=event.error.code if event.error else None,
-                    raw=event,
-                )
-            )
+            # Informational only: the server closes with RETRY_ELSEWHERE_CLOSE_CODE
+            # right after this frame, and that close is what drives failover (see
+            # _reader_loop). Don't reconnect here (futile) and don't fail yet.
+            return
         elif kind is FailureKind.IDLE_TIMEOUT:
             plan = self.state.replay_plan()
             if plan.start_offset < self.state.write_head or plan.resend_commit:
