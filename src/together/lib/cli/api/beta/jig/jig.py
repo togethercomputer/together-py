@@ -550,11 +550,6 @@ class Jig:
         """Path for buildx --metadata-file output, used to recover the pushed digest cross-process."""
         return self.config._path.parent / f".jig-{self.name}-{tag}.metadata.json"
 
-    def _custom_dockerfile(self) -> str | None:
-        """Configured dockerfile path, or None when it's the default."""
-        path = self.config.image.dockerfile_path
-        return path if path != "Dockerfile" else None
-
     def image_with_digest(self, tag: str = "latest") -> str:
         image = self.image(tag)
         try:
@@ -696,7 +691,7 @@ class Jig:
         elif _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
             ok = subprocess.run(["docker", "push", image]).returncode == 0
         else:
-            ok = _buildx_push(image, self._metadata_path(tag), dockerfile=self._custom_dockerfile())
+            ok = _buildx_push(image, self._metadata_path(tag), dockerfile=self.config.image.dockerfile_path)
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
@@ -728,7 +723,7 @@ class Jig:
         self._metadata_path(tag).unlink(missing_ok=True)
         extra_args = shlex.split(docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", ""))
         if not _buildx_push(
-            image, self._metadata_path(tag), dockerfile=self._custom_dockerfile(), extra_args=extra_args
+            image, self._metadata_path(tag), dockerfile=self.config.image.dockerfile_path, extra_args=extra_args
         ):
             raise JigError("Build+push failed")
         console.print("\N{CHECK MARK} Built and pushed")
@@ -1657,7 +1652,7 @@ def _image_is_warmed(image: str) -> bool:
 def _buildx_push(
     image: str,
     metadata_file: Path,
-    dockerfile: str | None = None,
+    dockerfile: str,
     context: str = ".",
     extra_args: list[str] | None = None,
 ) -> bool:
@@ -1679,7 +1674,7 @@ def _buildx_push(
         "--metadata-file",
         str(metadata_file),
     ]
-    if dockerfile:
+    if dockerfile != "Dockerfile":
         cmd.extend(["-f", dockerfile])
     cmd.extend(extra_args or [])
     cmd.append(context)
