@@ -358,15 +358,19 @@ async def resolve_endpoint(config: CLIConfigParameter, endpoint_id_or_name: str)
     if endpoint_id_or_name.startswith("ep_"):
         return await config.client.beta.endpoints.retrieve(id=endpoint_id_or_name)
 
+    bare_name = endpoint_id_or_name.rsplit("/", 1)[-1]
+    # Exact name filter avoids missing endpoints beyond the first list page.
+    endpoints = await config.client.beta.endpoints.list(filter=f'name="{bare_name}"')
+
     me = await config.client.whoami()
-    if endpoint_id_or_name.startswith(f"{me.project_slug}/") is False:
-        endpoint_id_or_name = f"{me.project_slug}/{endpoint_id_or_name}"
+    qualified_name = (
+        endpoint_id_or_name
+        if endpoint_id_or_name.startswith(f"{me.project_slug}/")
+        else f"{me.project_slug}/{bare_name}"
+    )
 
-    # TODO: loop through pagination
-    endpoints = await config.client.beta.endpoints.list()
-
-    for endpoint in endpoints.data:
-        if endpoint.name == endpoint_id_or_name:
+    for endpoint in endpoints.data or []:
+        if endpoint.name == qualified_name or endpoint.name.rsplit("/", 1)[-1] == bare_name:
             return endpoint
 
     raise ValueError(f"Endpoint {endpoint_id_or_name} not found.")

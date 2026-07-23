@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.table import Table
 from cyclopts.validators import Number
 
-from together import APIError, omit
+from together import ConflictError, omit
 from together.types.beta import Model, Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
 from together.types.beta.models import Config
@@ -31,6 +31,7 @@ from together.types.beta.endpoints.deployment_create_params import (
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     MODEL_PATH_RE,
+    resolve_endpoint,
     construct_model_path,
     resolve_model_and_config,
 )
@@ -358,24 +359,9 @@ async def _find_or_create_endpoint(config: CLIConfigParameter, endpoint_input: s
         endpoint = await config.client.beta.endpoints.retrieve(id=endpoint_input)
         return endpoint, False
 
-    # If the user gave us an endpoint name, we need to try to create it.
-    # The API will fail if the name conflicts, in which case we know the intent is to reuse
-    # an existing endpoint.
-    #
-    # The exception block will then search through the endpoints for the matching name.
+    # Create first; on name conflict, reuse the existing endpoint.
     try:
         endpoint = await config.client.beta.endpoints.create(name=endpoint_input)
         return endpoint, True
-    except APIError as e:
-        me = await config.client.whoami()
-        # Endpoint names in API include the project slug, so we add it if the user did not provide it.
-        endpoint_name = (
-            f"{me.project_slug}/{endpoint_input}" if not endpoint_input.startswith(me.project_slug) else endpoint_input
-        )
-        if "already exists" in e.message.lower():
-            # TODO: Paginate through the endpoints and find the matching name.
-            endpoints = await config.client.beta.endpoints.list()
-            for endpoint in endpoints.data:
-                if endpoint.name == endpoint_name:
-                    return endpoint, False
-        raise e
+    except ConflictError:
+        return await resolve_endpoint(config, endpoint_input), False

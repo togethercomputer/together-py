@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.1](https://github.com/togethercomputer/together-py/compare/v2.27.0...v2.27.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* Ensure deploy CLI command works with existing endpoint ([#472](https://github.com/togethercomputer/together-py/issues/472)) ([3c265a2](https://github.com/togethercomputer/together-py/commit/3c265a2a9d651364df17b4f514944ec32090b00c))
+
 ## [2.27.0](https://github.com/togethercomputer/together-py/compare/v2.26.1...v2.27.0) (2026-07-23)
 
 
