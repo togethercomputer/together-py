@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.27.0](https://github.com/togethercomputer/together-py/compare/v2.26.1...v2.27.0) (2026-07-23)
+
+
+### Features
+
+* **cli:** add fine-tuning preview command ([#466](https://github.com/togethercomputer/together-py/issues/466)) ([136b566](https://github.com/togethercomputer/together-py/commit/136b566736f931afe0c321bbd8932c77eef9deec))
+* **cli:** show fine-tune checkpoint artifact IDs ([#453](https://github.com/togethercomputer/together-py/issues/453)) ([aeedf20](https://github.com/togethercomputer/together-py/commit/aeedf206e77586eb34c26fc6d632e2e55aa05e2c))
+
+
+### Bug Fixes
+
+* **cli:** address non-interactive and endpoint list failures ([#470](https://github.com/togethercomputer/together-py/issues/470)) ([b43099d](https://github.com/togethercomputer/together-py/commit/b43099d79502c8bf7f8e46ab3109d47260cc7f37))
+* **cli:** default LoRA downloads to merged checkpoints ([#469](https://github.com/togethercomputer/together-py/issues/469)) ([854f3b8](https://github.com/togethercomputer/together-py/commit/854f3b8e4c421d2347adf05280fc1aff00a6044b))
+
 ## [2.26.1](https://github.com/togethercomputer/together-py/compare/v2.26.0...v2.26.1) (2026-07-22)
 
 

@@ -67,6 +67,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_CONFIGS_HELP_EXAMPLES,
+    FINE_TUNING_PREVIEW_HELP_EXAMPLES,
     BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
@@ -466,6 +467,11 @@ fine_tuning_app.command(
     help="Retrieve training metrics for a fine-tuning job",
     help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
 )
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.preview:preview"),
+    help="Preview how a fine-tuning training file will be tokenized",
+    help_epilogue=FINE_TUNING_PREVIEW_HELP_EXAMPLES,
+)
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
@@ -647,6 +653,11 @@ beta_endpoints_app.command(
     help="List project, organization, or public endpoints",
     help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
     sort_key=2,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.list:list"),
+    name="list",
+    show=False,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
