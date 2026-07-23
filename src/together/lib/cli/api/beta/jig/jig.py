@@ -16,6 +16,7 @@ import types
 import shutil
 import typing
 import asyncio
+import tempfile
 import subprocess
 import concurrent.futures
 from typing import TYPE_CHECKING, Any, Union, Callable, Optional, Annotated
@@ -667,7 +668,10 @@ class Jig:
         if warmup:
             _build_warm_image(image)
 
-    def push(self, tag: str = "latest") -> None:
+    def push(self, tag: str = "latest", source_image: str | None = None) -> None:
+        if source_image and not tag:
+            last = source_image.rsplit("/", 1)[-1]
+            tag = last.rsplit(":", 1)[1] if ":" in last else "latest"
         image = self.image(tag)
         host = self.registry().split("/")[0]
         login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
@@ -676,31 +680,18 @@ class Jig:
 
         console.print(f"Pushing {image}")
         self._metadata_path(tag).unlink(missing_ok=True)
+        if source_image:
+            if os.getenv("JIG_DISABLE_BUILDX"):
+                if subprocess.run(["docker", "tag", source_image, image]).returncode != 0:
+                    raise JigError(f"Failed to retag {source_image}")
+                ok = subprocess.run(["docker", "push", image]).returncode == 0
+            else:
+                ok = _push_image_as_zstd(source_image, image, self._metadata_path(tag))
         # Skip buildx for warmup-baked images: a buildx rebuild would drop the warmup layer.
-        if _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
+        elif _image_is_warmed(image) or os.getenv("JIG_DISABLE_BUILDX"):
             ok = subprocess.run(["docker", "push", image]).returncode == 0
         else:
-            builder = _ensure_zstd_builder()
-            if not builder:
-                raise JigError("`docker buildx` is required to build images.")
-            cmd = [
-                "docker",
-                "buildx",
-                "build",
-                "--builder",
-                builder,
-                "--platform",
-                "linux/amd64",
-                "--push",
-                "--output",
-                f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
-                "--metadata-file",
-                str(self._metadata_path(tag)),
-            ]
-            if self.config.image.dockerfile_path != "Dockerfile":
-                cmd.extend(["-f", self.config.image.dockerfile_path])
-            cmd.append(".")
-            ok = subprocess.run(cmd).returncode == 0
+            ok = _buildx_push(image, self._metadata_path(tag), dockerfile=self.config.image.dockerfile_path)
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
@@ -717,9 +708,6 @@ class Jig:
             self.build(tag, False, docker_args)
             self.push(tag)
             return
-        builder = _ensure_zstd_builder()
-        if not builder:
-            raise JigError("`docker buildx` is required to build images.")
 
         host = self.registry().split("/")[0]
         login_cmd = ["docker", "login", host, "--username", "user", "--password-stdin"]
@@ -733,27 +721,10 @@ class Jig:
 
         console.print(f"Building and pushing {image}")
         self._metadata_path(tag).unlink(missing_ok=True)
-        cmd = [
-            "docker",
-            "buildx",
-            "build",
-            "--builder",
-            builder,
-            "--platform",
-            "linux/amd64",
-            "--push",
-            "--output",
-            f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
-            "--metadata-file",
-            str(self._metadata_path(tag)),
-        ]
-        if self.config.image.dockerfile_path != "Dockerfile":
-            cmd.extend(["-f", self.config.image.dockerfile_path])
-        extra_args = docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", "")
-        if extra_args:
-            cmd.extend(shlex.split(extra_args))
-        cmd.append(".")
-        if subprocess.run(cmd).returncode != 0:
+        extra_args = shlex.split(docker_args or os.getenv("DOCKER_BUILD_EXTRA_ARGS", ""))
+        if not _buildx_push(
+            image, self._metadata_path(tag), dockerfile=self.config.image.dockerfile_path, extra_args=extra_args
+        ):
             raise JigError("Build+push failed")
         console.print("\N{CHECK MARK} Built and pushed")
 
@@ -1187,9 +1158,9 @@ def build(jig: Jig, tag: str, warmup: bool, docker_args: str | None) -> None:
     jig.build(tag, warmup, docker_args)
 
 
-def push(jig: Jig, tag: str) -> None:
+def push(jig: Jig, tag: str, source_image: str | None = None) -> None:
     """Push image to registry"""
-    jig.push(tag)
+    jig.push(tag, source_image)
 
 
 def deploy(
@@ -1456,13 +1427,18 @@ def build_cli(
 
 
 def push_cli(
-    tag: Annotated[str, Parameter(help="Image tag")] = "latest",
+    tag: Annotated[
+        Optional[str], Parameter(help="Image tag (defaults to 'latest', or source image's tag when --image is used)")
+    ] = None,
+    image: Annotated[
+        Optional[str], Parameter(name="--image", help="Existing local image to push (layers re-encoded as zstd)")
+    ] = None,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Push image to registry."""
-    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag))
+    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag or ("" if image else "latest"), image))
 
 
 def deploy_cli(
@@ -1671,6 +1647,71 @@ def _image_is_warmed(image: str) -> bool:
         text=True,
     )
     return r.returncode == 0 and r.stdout.strip() == "true"
+
+
+def _buildx_push(
+    image: str,
+    metadata_file: Path,
+    dockerfile: str,
+    context: str = ".",
+    extra_args: list[str] | None = None,
+) -> bool:
+    """Run `docker buildx build --push` through the zstd builder."""
+    builder = _ensure_zstd_builder()
+    if not builder:
+        raise JigError("`docker buildx` is required to build images.")
+    cmd = [
+        "docker",
+        "buildx",
+        "build",
+        "--builder",
+        builder,
+        "--platform",
+        "linux/amd64",
+        "--push",
+        "--output",
+        f"type=image,name={image},{BUILDX_OUTPUT_OPTS}",
+        "--metadata-file",
+        str(metadata_file),
+    ]
+    if dockerfile != "Dockerfile":
+        cmd.extend(["-f", dockerfile])
+    cmd.extend(extra_args or [])
+    cmd.append(context)
+    return subprocess.run(cmd).returncode == 0
+
+
+def _push_image_as_zstd(source_image: str, image: str, metadata_file: Path) -> bool:
+    """Push a local image with its layers re-encoded as zstd.
+
+    `docker push` through a legacy (non-containerd) image store recompresses
+    layers as gzip, losing the zstd cold-start benefit. Instead, export the
+    image as an OCI layout (`docker save`) and rebuild it through the zstd
+    builder with force-compression, which re-encodes every layer on push.
+    """
+    with tempfile.TemporaryDirectory(prefix="jig-push-") as tmp:
+        layout = Path(tmp) / "oci"
+        layout.mkdir()
+        console.print(f"Exporting {source_image}")
+        save = subprocess.Popen(["docker", "save", source_image], stdout=subprocess.PIPE)
+        tar = subprocess.run(["tar", "-x", "-C", str(layout)], stdin=save.stdout)
+        if save.stdout:
+            save.stdout.close()
+        if save.wait() != 0 or tar.returncode != 0:
+            raise JigError(f"Failed to export {source_image}")
+        index = layout / "index.json"
+        if not index.exists():
+            raise JigError("`docker save` did not produce an OCI layout; Docker 25+ is required for --image")
+        digest = json.loads(index.read_text())["manifests"][0]["digest"]
+        ctx = Path(tmp) / "ctx"
+        ctx.mkdir()
+        (ctx / "Dockerfile").write_text("FROM source-image\n")
+        return _buildx_push(
+            image,
+            metadata_file,
+            context=str(ctx),
+            extra_args=["--build-context", f"source-image=oci-layout://{layout}:source-image@{digest}"],
+        )
 
 
 def _ensure_zstd_builder(name: str = "jig-zstd") -> str | None:
