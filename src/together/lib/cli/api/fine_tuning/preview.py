@@ -23,7 +23,7 @@ def _format_token(token: str) -> str:
 def _format_tokens(row: FineTunePreviewRow) -> str:
     tokens = row.tokens[:_TOKEN_PREVIEW_LIMIT]
     labels = row.labels[:_TOKEN_PREVIEW_LIMIT]
-    formatted = []
+    formatted: list[str] = []
     for token, label in zip(tokens, labels):
         token_text = _format_token(token)
         formatted.append(f"[dim]{token_text}[/dim]" if label == -100 else token_text)
