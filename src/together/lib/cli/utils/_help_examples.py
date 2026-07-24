@@ -332,6 +332,9 @@ BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Shift live traffic weight (relative to other deployments):
   [primary]tg beta endpoints update <deployment-id> --traffic-weight 2[/primary]
 
+[dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
+  [primary]tg beta endpoints update <variant-deployment-id> --ab-percent 20[/primary]
+
 [dim]-[/dim] Rename a deployment:
   [primary]tg beta endpoints update <deployment-id> --name my-deployment-v2[/primary]
 """

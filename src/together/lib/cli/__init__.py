@@ -671,7 +671,7 @@ beta_endpoints_app.command(
 )  # This is just here to allow the default command to work
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.update:update"),
-    help="Update a deployment's name, autoscaling, or traffic weight",
+    help="Update a deployment's name, autoscaling, traffic weight, or A/B percent",
     help_epilogue=BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
     sort_key=4,
 )

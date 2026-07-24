@@ -10,6 +10,8 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.types.beta import AbMember
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import update_ab_member_percent
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -50,7 +52,68 @@ def _endpoint_body(**overrides: Any) -> dict[str, Any]:
                 "createdAt": "2026-01-01T00:00:00Z",
                 "autoscaling": {"minReplicas": 0, "maxReplicas": 0},
             },
+            {
+                "id": "dep_variant",
+                "name": "variant",
+                "model": "projects/proj/models/ml_variant/revisions/latest",
+                "modelId": "ml_variant",
+                "hardware": "1x-h100",
+                "state": "DEPLOYMENT_STATE_READY",
+                "readyReplicas": 1,
+                "desiredReplicas": 1,
+                "createdAt": "2026-01-01T00:00:00Z",
+                "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+            },
+            {
+                "id": "dep_other",
+                "name": "other",
+                "model": "projects/proj/models/ml_other/revisions/latest",
+                "modelId": "ml_other",
+                "hardware": "1x-h100",
+                "state": "DEPLOYMENT_STATE_READY",
+                "readyReplicas": 1,
+                "desiredReplicas": 1,
+                "createdAt": "2026-01-01T00:00:00Z",
+                "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+            },
         ],
+    }
+    body.update(overrides)
+    return body
+
+
+def _ab_experiment_body(
+    experiment_id: str = "abx_1",
+    members: list[dict[str, Any]] | None = None,
+    **overrides: Any,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": experiment_id,
+        "projectId": "proj",
+        "endpointId": "ep_1",
+        "name": "control-ab",
+        "members": members
+        or [
+            {
+                "deploymentId": "dep_control",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                "percent": 85,
+            },
+            {
+                "deploymentId": "dep_variant",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                "percent": 5,
+            },
+            {
+                "deploymentId": "dep_other",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                "percent": 10,
+            },
+        ],
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "createdBy": "user_1",
+        "etag": "etag-ab",
     }
     body.update(overrides)
     return body
@@ -133,3 +196,318 @@ class TestBetaEndpointsUpdate:
         result = cli_runner.invoke(["beta", "endpoints", "update", "--project", "proj", "dep_control"])
         assert result.exit_code != 0
         assert "At least one update option must be specified" in result.output
+
+    def test_update_ab_percent_counts_as_update_option(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            ["beta", "endpoints", "update", "--project", "proj", "dep_missing", "--ab-percent", "20"]
+        )
+        assert "At least one update option must be specified" not in result.output
+
+
+class TestUpdateAbMemberPercent:
+    def test_increase_takes_from_control_only(self) -> None:
+        members = [
+            AbMember.construct(
+                deploymentId="dep_control",
+                role="AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                percent=85,
+            ),
+            AbMember.construct(
+                deploymentId="dep_variant",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=5,
+            ),
+            AbMember.construct(
+                deploymentId="dep_other",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=10,
+            ),
+        ]
+
+        updated = update_ab_member_percent(members, "dep_variant", 20)
+
+        assert updated == [
+            {
+                "deployment_id": "dep_control",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                "percent": 70,
+            },
+            {
+                "deployment_id": "dep_variant",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                "percent": 20,
+            },
+            {
+                "deployment_id": "dep_other",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                "percent": 10,
+            },
+        ]
+
+    def test_decrease_returns_to_control_only(self) -> None:
+        members = [
+            AbMember.construct(
+                deploymentId="dep_control",
+                role="AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                percent=85,
+            ),
+            AbMember.construct(
+                deploymentId="dep_variant",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=10,
+            ),
+            AbMember.construct(
+                deploymentId="dep_other",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=5,
+            ),
+        ]
+
+        updated = update_ab_member_percent(members, "dep_variant", 2)
+
+        assert updated == [
+            {
+                "deployment_id": "dep_control",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                "percent": 93,
+            },
+            {
+                "deployment_id": "dep_variant",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                "percent": 2,
+            },
+            {
+                "deployment_id": "dep_other",
+                "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                "percent": 5,
+            },
+        ]
+
+    def test_rejects_control_member(self) -> None:
+        members = [
+            AbMember.construct(
+                deploymentId="dep_control",
+                role="AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                percent=90,
+            ),
+            AbMember.construct(
+                deploymentId="dep_variant",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=10,
+            ),
+        ]
+
+        with pytest.raises(ValueError, match="can only update variant deployments"):
+            update_ab_member_percent(members, "dep_control", 80)
+
+    def test_rejects_control_below_minimum(self) -> None:
+        members = [
+            AbMember.construct(
+                deploymentId="dep_control",
+                role="AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                percent=10,
+            ),
+            AbMember.construct(
+                deploymentId="dep_variant",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=80,
+            ),
+            AbMember.construct(
+                deploymentId="dep_other",
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=10,
+            ),
+        ]
+
+        with pytest.raises(ValueError, match="control would be 0%"):
+            update_ab_member_percent(members, "dep_variant", 90)
+
+
+class TestBetaEndpointsUpdateAbPercent:
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_increases_variant_takes_from_control(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
+            )
+        )
+        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_ab_experiment_body(
+                    members=[
+                        {
+                            "deploymentId": "dep_control",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                            "percent": 70,
+                        },
+                        {
+                            "deploymentId": "dep_variant",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                            "percent": 20,
+                        },
+                        {
+                            "deploymentId": "dep_other",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                            "percent": 10,
+                        },
+                    ]
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "20"))
+
+        assert result.exit_code == 0, result.output
+        req = cast(Call, update_ab.calls[0]).request
+        assert "updateMask=members" in str(req.url)
+        assert json.loads(req.content.decode()) == {
+            "etag": "etag-ab",
+            "members": [
+                {
+                    "deploymentId": "dep_control",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                    "percent": 70,
+                },
+                {
+                    "deploymentId": "dep_variant",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                    "percent": 20,
+                },
+                {
+                    "deploymentId": "dep_other",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                    "percent": 10,
+                },
+            ],
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_decreases_variant_returns_to_control(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _ab_experiment_body(
+                            members=[
+                                {
+                                    "deploymentId": "dep_control",
+                                    "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                                    "percent": 85,
+                                },
+                                {
+                                    "deploymentId": "dep_variant",
+                                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                                    "percent": 10,
+                                },
+                                {
+                                    "deploymentId": "dep_other",
+                                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                                    "percent": 5,
+                                },
+                            ]
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_ab_experiment_body(
+                    members=[
+                        {
+                            "deploymentId": "dep_control",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                            "percent": 93,
+                        },
+                        {
+                            "deploymentId": "dep_variant",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                            "percent": 2,
+                        },
+                        {
+                            "deploymentId": "dep_other",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                            "percent": 5,
+                        },
+                    ]
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "2"))
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, update_ab.calls[0]).request.content.decode()) == {
+            "etag": "etag-ab",
+            "members": [
+                {
+                    "deploymentId": "dep_control",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                    "percent": 93,
+                },
+                {
+                    "deploymentId": "dep_variant",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                    "percent": 2,
+                },
+                {
+                    "deploymentId": "dep_other",
+                    "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                    "percent": 5,
+                },
+            ],
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_errors_when_not_in_ab_experiment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [], "next_cursor": None},
+            )
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "20"))
+
+        assert result.exit_code != 0
+        assert "Deployment dep_variant is not part of an A/B experiment" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_rejects_control_member(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
+            )
+        )
+
+        result = cli_runner.invoke(_update_args("dep_control", "--ab-percent", "80"))
+
+        assert result.exit_code != 0
+        assert "can only update variant deployments" in result.output

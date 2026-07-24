@@ -12,8 +12,13 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.beta.endpoints.ab import print_ab_experiment_detail
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve as retrieve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
+    find_ab_for_deployment,
+    update_ab_member_percent,
+)
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     SCALING_METRIC_NAMES,
     ScalingMetricName,
@@ -83,6 +88,16 @@ async def update(
             validator=Number(gte=0),
         ),
     ] = None,
+    ab_percent: Annotated[
+        Optional[int],
+        Parameter(
+            help=(
+                "A/B experiment traffic percentage for this variant deployment. "
+                "Takes from or returns percentage to the control only; other variants are unchanged."
+            ),
+            validator=Number(gte=1, lte=99),
+        ),
+    ] = None,
     etag: Annotated[Optional[str], Parameter(help="ETag for optimistic concurrency")] = None,
     *,
     config: CLIConfigParameter,
@@ -115,7 +130,7 @@ async def update(
     if etag is not None:
         kwargs["etag"] = etag
 
-    if not update_mask and traffic_weight is None:
+    if not update_mask and traffic_weight is None and ab_percent is None:
         console.print("Error: At least one update option must be specified.")
         sys.exit(1)
 
@@ -149,15 +164,54 @@ async def update(
             ),
         )
 
+    updated_ab: Any = None
+    if ab_percent is not None:
+        ab_experiment = await find_ab_for_deployment(
+            config.client,
+            endpoint.id,
+            id,
+            config.project_id,
+        )
+        if ab_experiment is None:
+            raise ValueError(f"Deployment {id} is not part of an A/B experiment.")
+
+        members = update_ab_member_percent(ab_experiment.members, id, ab_percent)
+        updated_ab = await show_loading_status(
+            "Updating A/B experiment...",
+            config.client.beta.endpoints.ab_experiments.update(
+                id=ab_experiment.id,
+                endpoint_id=endpoint.id,
+                update_mask="members",
+                members=members,
+                etag=ab_experiment.etag or omit,
+                project_id=config.project_id,
+            ),
+        )
+
     if config.json:
+        payload: dict[str, Any] = {}
         if updated is not None:
-            console.print_json(openapi_dumps(updated).decode("utf-8"))
+            payload["deployment"] = updated
+        if updated_ab is not None:
+            payload["ab_experiment"] = updated_ab
+        if traffic_weight is not None:
+            payload["endpoint"] = endpoint
+        if not payload:
+            payload["endpoint"] = endpoint
+        if len(payload) == 1:
+            console.print_json(openapi_dumps(next(iter(payload.values()))).decode("utf-8"))
         else:
-            console.print_json(openapi_dumps(endpoint).decode("utf-8"))
+            console.print_json(openapi_dumps(payload).decode("utf-8"))
         return
 
     if updated is not None:
         console.print(f"[green]√[/green] Updated deployment {updated.name or id}.\n\n")
-    else:
+    if traffic_weight is not None:
         console.print(f"[green]√[/green] Updated traffic weight for deployment {id}.\n\n")
+    if updated_ab is not None:
+        console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
+        print_ab_experiment_detail(updated_ab)
+        console.print()
+    if updated is None and traffic_weight is None and updated_ab is None:
+        console.print(f"[green]√[/green] Updated deployment {id}.\n\n")
     await retrieve_endpoint(endpoint.id, config=config)
