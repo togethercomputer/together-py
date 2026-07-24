@@ -30,7 +30,23 @@ def update_ab_member_percent(
     deployment_id: str,
     new_percent: int,
 ) -> list[AbMemberParam]:
-    """Set a variant's AB percent by taking from or returning to control only."""
+    """Set a variant's AB percent by taking from or returning to control only.
+
+    Rules:
+    - ``deployment_id`` must identify a *variant* member (not control). Control
+      percent is derived: ``100 - sum(variants)``.
+    - Only the target variant and the control member change. All other variants
+      keep their current percent.
+    - Increasing a variant takes the delta from control.
+    - Decreasing a variant returns the delta to control.
+    - Control must remain >= 1% after the update.
+
+    Examples (control=85, variant_a=5, variant_b=10):
+    - Set variant_a to 20 → control=70, variant_a=20, variant_b=10
+    - Set variant_a to 2  → control=88, variant_a=2,  variant_b=10
+    - Set control to 80   → ValueError (control is not updatable)
+    - Set variant_a to 95 → ValueError (control would be 0%)
+    """
     target = next((m for m in members if m.deployment_id == deployment_id), None)
     if target is None:
         raise ValueError(f"Deployment {deployment_id} is not a member of the A/B experiment.")
