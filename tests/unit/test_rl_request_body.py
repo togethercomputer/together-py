@@ -13,25 +13,25 @@ from respx.models import Call
 
 from together import AsyncTogether
 from together.lib.beta.rl import (
-    Loss,
     Prompt,
     Sample,
     Trainer,
     PromptChunk,
-    LossGrpoParams,
+    LossMaskParam,
+    GrpoLossParams,
     SamplingParams,
-    SampleLossInputs,
+    LossConfigParam,
+    LossInputsParam,
     SampleModelInput,
+    LossLogprobsParam,
+    GrpoLossInputsParam,
+    LossAdvantagesParam,
     MuonOptimizerParams,
     AdamwOptimizerParams,
+    LossTargetTokensParam,
     SampleModelInputChunk,
     PromptChunkEncodedText,
-    SampleLossInputsLossMask,
-    SampleLossInputsGrpoInputs,
-    SampleLossInputsTargetTokens,
     SampleModelInputChunkEncodedText,
-    SampleLossInputsGrpoInputsAdvantages,
-    SampleLossInputsGrpoInputsGeneratorLogprobs,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -108,21 +108,21 @@ class TestRLRequestBody:
                         )
                     ]
                 ),
-                loss_inputs=SampleLossInputs(
-                    loss_mask=SampleLossInputsLossMask(
+                loss_inputs=LossInputsParam(
+                    loss_mask=LossMaskParam(
                         data=[0, 1, 1],
                         dtype="D_TYPE_INT64",
                     ),
-                    target_tokens=SampleLossInputsTargetTokens(
+                    target_tokens=LossTargetTokensParam(
                         data=[2, 3, 0],
                         dtype="D_TYPE_INT64",
                     ),
-                    grpo_inputs=SampleLossInputsGrpoInputs(
-                        advantages=SampleLossInputsGrpoInputsAdvantages(
+                    grpo_inputs=GrpoLossInputsParam(
+                        advantages=LossAdvantagesParam(
                             data=[1.0, 1.0, 1.0],
                             dtype="D_TYPE_FLOAT32",
                         ),
-                        generator_logprobs=SampleLossInputsGrpoInputsGeneratorLogprobs(
+                        generator_logprobs=LossLogprobsParam(
                             data=[-0.1, -0.2, -0.3],
                             dtype="D_TYPE_FLOAT32",
                         ),
@@ -130,9 +130,9 @@ class TestRLRequestBody:
                 ),
             )
         ]
-        loss = Loss(
+        loss = LossConfigParam(
             type="LOSS_TYPE_GRPO",
-            grpo_params=LossGrpoParams(
+            grpo_params=GrpoLossParams(
                 agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
                 beta=0.1,
             ),

@@ -10,7 +10,6 @@ import httpx
 import pytest
 
 from together.lib.beta.rl import (
-    Loss,
     Prompt,
     Sample,
     Logprob,
@@ -19,18 +18,19 @@ from together.lib.beta.rl import (
     PromptChunk,
     SampleResult,
     ForwardResult,
+    LossMaskParam,
+    LossConfigParam,
+    LossInputsParam,
     OptimStepResult,
-    SampleLossInputs,
     SampleModelInput,
     MuonOptimizerParams,
     AdamwOptimizerParams,
     ForwardBackwardResult,
+    LossTargetTokensParam,
     SampleModelInputChunk,
     PromptChunkEncodedText,
-    SampleLossInputsLossMask,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
-    SampleLossInputsTargetTokens,
     SampleModelInputChunkEncodedText,
     trainer as rl_trainer_module,
     _payloads as rl_payloads_module,
@@ -229,16 +229,16 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
                     )
                 ]
             ),
-            loss_inputs=SampleLossInputs(
-                target_tokens=SampleLossInputsTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-                loss_mask=SampleLossInputsLossMask(
+            loss_inputs=LossInputsParam(
+                target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
+                loss_mask=LossMaskParam(
                     data=[1, 0, 1],
                     dtype="D_TYPE_INT64",
                 ),
             ),
         )
     ]
-    loss = Loss(type="LOSS_TYPE_CROSS_ENTROPY")
+    loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
 
     result = trainer.forward_backward(samples=samples, loss=loss)
 
@@ -543,9 +543,9 @@ def _small_sample() -> Sample:
                 )
             ],
         ),
-        loss_inputs=SampleLossInputs(
-            target_tokens=SampleLossInputsTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-            loss_mask=SampleLossInputsLossMask(
+        loss_inputs=LossInputsParam(
+            target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
+            loss_mask=LossMaskParam(
                 data=[1, 0, 1],
                 dtype="D_TYPE_INT64",
             ),
@@ -561,7 +561,7 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
 
     result = trainer.forward_backward(
         samples=[_small_sample()],
-        loss=Loss(type="LOSS_TYPE_CROSS_ENTROPY"),
+        loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
 
     assert result.loss == 0.5
@@ -591,9 +591,9 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
                 )
             ],
         ),
-        loss_inputs=SampleLossInputs(
-            target_tokens=SampleLossInputsTargetTokens(data=long_tokens, dtype="D_TYPE_INT64"),
-            loss_mask=SampleLossInputsLossMask(
+        loss_inputs=LossInputsParam(
+            target_tokens=LossTargetTokensParam(data=long_tokens, dtype="D_TYPE_INT64"),
+            loss_mask=LossMaskParam(
                 data=long_mask,
                 dtype="D_TYPE_INT64",
             ),
@@ -602,7 +602,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
 
     result = await trainer.forward_backward_async(
         samples=[sample],
-        loss=Loss(type="LOSS_TYPE_CROSS_ENTROPY"),
+        loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
 
     assert result.loss == 2.0
@@ -641,13 +641,13 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
                             )
                         ],
                     ),
-                    loss_inputs=SampleLossInputs(
-                        target_tokens=SampleLossInputsTargetTokens(data=list(range(50)), dtype="D_TYPE_INT64"),
-                        loss_mask=SampleLossInputsLossMask(data=[1] * 50, dtype="D_TYPE_INT64"),
+                    loss_inputs=LossInputsParam(
+                        target_tokens=LossTargetTokensParam(data=list(range(50)), dtype="D_TYPE_INT64"),
+                        loss_mask=LossMaskParam(data=[1] * 50, dtype="D_TYPE_INT64"),
                     ),
                 )
             ],
-            loss=Loss(type="LOSS_TYPE_CROSS_ENTROPY"),
+            loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
         )
 
     assert client.captured_put_body is None
