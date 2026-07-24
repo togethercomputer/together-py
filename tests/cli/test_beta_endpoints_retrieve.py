@@ -64,9 +64,7 @@ class TestBetaEndpointsRetrieve:
     def test_retrieve_endpoint_when_experiment_access_is_denied(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body())
-        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         ab_route = respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(403, json={"error": "Endpoint access requires a canonical endpoint API path"})
         )
