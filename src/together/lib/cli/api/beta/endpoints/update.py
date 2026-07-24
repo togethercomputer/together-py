@@ -170,7 +170,6 @@ async def update(
             config.client,
             endpoint.id,
             id,
-            config.project_id,
         )
         if ab_experiment is None:
             raise ValueError(f"Deployment {id} is not part of an A/B experiment.")

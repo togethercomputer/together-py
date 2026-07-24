@@ -9,13 +9,11 @@ async def find_ab_for_deployment(
     client: AsyncClient,
     endpoint_id: str,
     deployment_id: str,
-    project_id: str | None,
 ) -> AbExperiment | None:
     cursor: str | None = None
     while True:
         page = await client.beta.endpoints.ab_experiments.list(
             endpoint_id=endpoint_id,
-            project_id=project_id,
             after=cursor or omit,
         )
         for experiment in page.data:

@@ -155,7 +155,7 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
             )
             actions.append(f"deleted empty shadow experiment {shadow.id}")
 
-    ab = await find_ab_for_deployment(config.client, endpoint.id, deployment_id, config.project_id)
+    ab = await find_ab_for_deployment(config.client, endpoint.id, deployment_id)
     if ab is not None:
         removed = next(m for m in ab.members if m.deployment_id == deployment_id)
         remaining_members = [m for m in ab.members if m.deployment_id != deployment_id]
