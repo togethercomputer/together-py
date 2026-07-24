@@ -15,7 +15,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE, resolve_model
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
 async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParameter) -> dict[str, str]:
@@ -37,7 +37,11 @@ async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParam
         except Exception:
             return model_id, model_id
 
-    return dict(await asyncio.gather(*(fetch_model_name(model_resource_path, model_id) for model_resource_path, model_id in model_resource_paths)))
+    return dict(
+        await asyncio.gather(
+            *(fetch_model_name(model_resource_path, model_id) for model_resource_path, model_id in model_resource_paths)
+        )
+    )
 
 
 def _print_next_page(next_cursor: str | None, *, public: bool = False, org: bool = False) -> None:
