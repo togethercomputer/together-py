@@ -174,9 +174,7 @@ def test_sample_batch_passes_multiple_prompts(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
-    result = SampleResult(
-        rollouts=[Rollout(sequences=[RolloutSequence(tokens=[1, 2])], prompt_logprobs=[-0.5, -1.5])]
-    )
+    result = SampleResult(rollouts=[Rollout(sequences=[RolloutSequence(tokens=[1, 2])], prompt_logprobs=[-0.5, -1.5])])
     _patch_submit_and_wait(monkeypatch, result)
     client = FakeClient()
     trainer = _make_trainer(client)

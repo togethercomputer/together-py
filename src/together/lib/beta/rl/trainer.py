@@ -84,7 +84,9 @@ def _prompt_logprobs_from_result(result: SampleResult) -> list[list[float]]:
     logprobs: list[list[float]] = []
     for index, rollout in enumerate(result.rollouts):
         if rollout.prompt_logprobs is None:
-            msg = f"Sample result for prompt {index} did not include prompt logprobs; the generator may not support them"
+            msg = (
+                f"Sample result for prompt {index} did not include prompt logprobs; the generator may not support them"
+            )
             raise RuntimeError(msg)
         logprobs.append(rollout.prompt_logprobs)
     return logprobs
