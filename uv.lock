@@ -250,11 +250,11 @@ wheels = [
 
 [[package]]
 name = "detect-agent"
-version = "0.2.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ef/76/5a4f8fb1ce9d4d9af1299b66b487089d6e68c398ceb40dbb733905ce518c/detect_agent-0.2.0.tar.gz", hash = "sha256:da0287ca55c96c6ceb36004dd77cd05b7e6aa4c227f29760efdb163c24803ca6", size = 15004, upload-time = "2026-04-15T14:36:48.249Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/ea/92fea3787c033488e4aeb56d07abfecb10428b4b2ebd5c7f0376c343741b/detect_agent-0.5.0.tar.gz", hash = "sha256:2344df2b332acaf2f220d119bba26f6f2aeb4f3f3e317ad5718d4dd57df9c5de", size = 45402, upload-time = "2026-07-24T17:16:15.626Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/22/91e9fd72f3724b63a39054f793e601ce5e73de4ab6740aea89e4123d1413/detect_agent-0.2.0-py3-none-any.whl", hash = "sha256:769f1885003605d2fca806fddcd7d3c5189c3460c4771f95ff856d464ea56a18", size = 3504, upload-time = "2026-04-15T14:36:49.151Z" },
+    { url = "https://files.pythonhosted.org/packages/21/41/1b201289f128a2c1d247e6777eb6804bff852643ada516e092a63020dc71/detect_agent-0.5.0-py3-none-any.whl", hash = "sha256:58dd50744a4e87ea7e658442675f72b7a998cdc3d8b1e0f7130e253d0f892d65", size = 11198, upload-time = "2026-07-24T17:16:14.837Z" },
 ]
 
 [[package]]
@@ -1559,7 +1559,7 @@ wheels = [
 
 [[package]]
 name = "together"
-version = "2.27.1"
+version = "2.28.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -1633,7 +1633,7 @@ requires-dist = [
     { name = "aiohttp", marker = "extra == 'aiohttp'" },
     { name = "anyio", specifier = ">=3.5.0,<5" },
     { name = "cyclopts", specifier = ">=4.6.0" },
-    { name = "detect-agent", specifier = ">=0.2.0" },
+    { name = "detect-agent", specifier = ">=0.5.0" },
     { name = "distro", specifier = ">=1.7.0,<2" },
     { name = "filelock", specifier = ">=3.13.1" },
     { name = "httpx", specifier = ">=0.23.0,<1" },
