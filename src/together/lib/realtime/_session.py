@@ -419,6 +419,20 @@ class AsyncRealtimeTranscriptionSession:
             event = await asyncio.wait_for(connection.recv(), timeout=10.0)
         except asyncio.TimeoutError:
             raise RealtimeConnectionError("timed out waiting for session.created") from None
+        except Exception as exc:
+            # An endpoint that is unhealthy AT CONNECT TIME closes before ever
+            # sending session.created; without this, the raw websockets error
+            # would leak out of start() and a failover loop keyed on
+            # RealtimeConnectionError (and .code) would miss it.
+            if connection.close_code == RETRY_ELSEWHERE_CLOSE_CODE:
+                raise RealtimeConnectionError(
+                    "endpoint signaled no healthy workers; failing over",
+                    code="no_healthy_workers",
+                    cause=exc,
+                ) from exc
+            raise RealtimeConnectionError(
+                f"connection closed before session.created ({exc.__class__.__name__})", cause=exc
+            ) from exc
         if not isinstance(event, SessionCreatedEvent):
             raise RealtimeConnectionError(f"expected session.created, got {getattr(event, 'type', event)!r}")
         await self._configure_session(connection)
@@ -685,6 +699,19 @@ class AsyncRealtimeTranscriptionSession:
                     finally:
                         self._throttle.release()
                 except Exception as exc:
+                    # A 4503 close before session.created means this endpoint
+                    # cannot serve; retrying it is futile — fail over now
+                    # instead of burning the remaining reconnect budget.
+                    if isinstance(exc, RealtimeConnectionError) and exc.code == "no_healthy_workers":
+                        self._fail(
+                            RealtimeConnectionError(
+                                "endpoint signaled no healthy workers; failing over",
+                                attempts=attempt,
+                                code="no_healthy_workers",
+                                cause=exc,
+                            )
+                        )
+                        return
                     status = handshake_status_of(exc)
                     kind = classify_handshake_status(status) if status is not None else FailureKind.RETRYABLE
                     if kind is FailureKind.FATAL_AUTH or kind is FailureKind.FATAL:

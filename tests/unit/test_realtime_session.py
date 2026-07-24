@@ -61,6 +61,7 @@ class FakeRealtimeServer:
         fatal_error: Optional[Dict[str, Any]] = None,
         close_code: Optional[int] = None,
         close_without_frame: bool = False,
+        close_before_created_from: Optional[int] = None,
         complete_on_commit: bool = True,
         transcribed_fraction: float = 1.0,
         answer_echo: bool = True,
@@ -71,6 +72,10 @@ class FakeRealtimeServer:
         self.fatal_error = fatal_error
         self.close_code = close_code
         self.close_without_frame = close_without_frame
+        self.close_before_created_from = close_before_created_from
+        """1-based connection index from which the server closes (with
+        close_code) before ever sending session.created — an endpoint that is
+        unhealthy at connect time."""
         self.complete_on_commit = complete_on_commit
         self.transcribed_fraction = transcribed_fraction
         self.answer_echo = answer_echo
@@ -100,6 +105,9 @@ class FakeRealtimeServer:
         conn.path = getattr(ws.request, "path", "")
         self.connections.append(conn)
         item = len(self.connections) * 100
+        if self.close_before_created_from is not None and len(self.connections) >= self.close_before_created_from:
+            await ws.close(self.close_code or 1000, "unhealthy at connect")
+            return
         await ws.send(
             json.dumps(
                 {
@@ -480,6 +488,45 @@ class TestFatalErrors:
                     await collect_until(session, lambda _evs: False, timeout=5.0)
             assert err.value.code == "no_healthy_workers"
             assert len(server.connections) == 1
+
+    async def test_4503_before_session_created_raises_typed_error_on_start(self) -> None:
+        """An endpoint unhealthy AT CONNECT TIME closes 4503 before ever
+        sending session.created; start() must raise the same typed error a
+        failover loop already handles, not a raw websockets exception."""
+        async with FakeRealtimeServer(close_code=4503, close_before_created_from=1) as server:
+            session = make_session(server)
+            with pytest.raises(RealtimeConnectionError) as err:
+                await session.start()
+            await session.close()
+            assert err.value.code == "no_healthy_workers"
+
+    async def test_other_close_before_session_created_raises_typed_error(self) -> None:
+        """Any pre-session.created close surfaces as RealtimeConnectionError
+        (code-less), never as a leaked websockets.ConnectionClosed."""
+        async with FakeRealtimeServer(close_code=1013, close_before_created_from=1) as server:
+            session = make_session(server)
+            with pytest.raises(RealtimeConnectionError) as err:
+                await session.start()
+            await session.close()
+            assert err.value.code is None
+
+    async def test_4503_before_session_created_on_reconnect_fails_over_immediately(self) -> None:
+        """If the endpoint turns unhealthy between a drop and the reconnect
+        handshake, the 4503-before-created must fail terminally with the code
+        instead of classifying as retryable and burning reconnect attempts."""
+        async with FakeRealtimeServer(
+            drop_after_bytes=int(0.1 * BPS),
+            close_code=4503,
+            close_before_created_from=2,
+        ) as server:
+            session = make_session(server, reconnect={"max_attempts": 10})
+            async with session:
+                await session.append(seconds(0.2))  # triggers the drop
+                with pytest.raises(RealtimeConnectionError) as err:
+                    await collect_until(session, lambda _evs: False, timeout=10.0)
+            assert err.value.code == "no_healthy_workers"
+            # one live connection + one failed reconnect attempt, no retry burn
+            assert len(server.connections) == 2
 
     async def test_initial_handshake_failure_raises_typed_error_naming_target(self) -> None:
         async with FakeRealtimeServer(reject_statuses=[401]) as server:
