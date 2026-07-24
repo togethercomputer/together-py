@@ -11,7 +11,7 @@ from respx.models import Call
 
 from tests.cli.utils import CliRunner
 from together.types.beta import AbMember
-from together.lib.cli.api.beta.endpoints._utils._ab_experiments import update_ab_member_percent
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import build_ab_members_with_percent
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -224,7 +224,7 @@ class TestUpdateAbMemberPercent:
             ),
         ]
 
-        updated = update_ab_member_percent(members, "dep_variant", 20)
+        updated = build_ab_members_with_percent(members, "dep_variant", 20)
 
         assert updated == [
             {
@@ -263,7 +263,7 @@ class TestUpdateAbMemberPercent:
             ),
         ]
 
-        updated = update_ab_member_percent(members, "dep_variant", 2)
+        updated = build_ab_members_with_percent(members, "dep_variant", 2)
 
         assert updated == [
             {
@@ -298,7 +298,7 @@ class TestUpdateAbMemberPercent:
         ]
 
         with pytest.raises(ValueError, match="can only update variant deployments"):
-            update_ab_member_percent(members, "dep_control", 80)
+            build_ab_members_with_percent(members, "dep_control", 80)
 
     def test_rejects_control_below_minimum(self) -> None:
         members = [
@@ -320,7 +320,7 @@ class TestUpdateAbMemberPercent:
         ]
 
         with pytest.raises(ValueError, match="control would be 0%"):
-            update_ab_member_percent(members, "dep_variant", 90)
+            build_ab_members_with_percent(members, "dep_variant", 90)
 
 
 class TestBetaEndpointsUpdateAbPercent:

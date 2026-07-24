@@ -17,7 +17,7 @@ from together.lib.cli.api.beta.endpoints.retrieve import retrieve as retrieve_en
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
     find_ab_for_deployment,
-    update_ab_member_percent,
+    build_ab_members_with_percent,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     SCALING_METRIC_NAMES,
@@ -174,7 +174,7 @@ async def update(
         if ab_experiment is None:
             raise ValueError(f"Deployment {id} is not part of an A/B experiment.")
 
-        members = update_ab_member_percent(ab_experiment.members, id, ab_percent)
+        members = build_ab_members_with_percent(ab_experiment.members, id, ab_percent)
         updated_ab = await show_loading_status(
             "Updating A/B experiment...",
             config.client.beta.endpoints.ab_experiments.update(

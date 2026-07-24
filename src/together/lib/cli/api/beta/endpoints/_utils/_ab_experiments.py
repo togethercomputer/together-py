@@ -25,12 +25,12 @@ async def find_ab_for_deployment(
     return None
 
 
-def update_ab_member_percent(
+def build_ab_members_with_percent(
     members: list[AbMember],
     deployment_id: str,
     new_percent: int,
 ) -> list[AbMemberParam]:
-    """Set a variant's AB percent by taking from or returning to control only.
+    """Build AB member params with a variant percent adjusted against control.
 
     Rules:
     - ``deployment_id`` must identify a *variant* member (not control). Control
