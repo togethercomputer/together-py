@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Tuple, Optional
 
 from together import AsyncClient, omit
 from together.types.beta import Endpoint

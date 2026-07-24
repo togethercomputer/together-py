@@ -18,7 +18,7 @@ from together.types.beta.endpoints import AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint, resolve_model
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
 
