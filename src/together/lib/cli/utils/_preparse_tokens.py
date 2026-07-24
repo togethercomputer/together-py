@@ -84,7 +84,7 @@ def _telemetry_command_for_default(
     if parsed_command.endswith(f" {default_name}") or parsed_command == default_name:
         return parsed_command
     if not parsed_command:
-        return default_name
+        return str(default_name)
     return f"{parsed_command} {default_name}"
 
 

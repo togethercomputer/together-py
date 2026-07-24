@@ -26,9 +26,7 @@ async def retrieve(
     id: Annotated[
         str,
         Parameter(
-            help=(
-                "Endpoint name, endpoint ID (ep_...), deployment name, or deployment ID (dep_...) to retrieve"
-            )
+            help=("Endpoint name, endpoint ID (ep_...), deployment name, or deployment ID (dep_...) to retrieve")
         ),
     ],
     *,

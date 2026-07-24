@@ -130,9 +130,7 @@ class TestBetaEndpointsRetrieve:
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body())
-        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         _mock_endpoint_get_side_resources(respx_mock)
 
         result = cli_runner.invoke(["beta", "endpoints", "get", "my-endpoint", "--project", "proj", "--json"])
@@ -151,9 +149,7 @@ class TestBetaEndpointsRetrieve:
                 json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
             )
         )
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body())
-        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         _mock_endpoint_get_side_resources(respx_mock)
 
         result = cli_runner.invoke(["beta", "endpoints", "my-endpoint", "--project", "proj", "--json"])
