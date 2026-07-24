@@ -175,6 +175,39 @@ class TestFilesRetrieveContent:
         assert (out / "newer.jsonl").read_bytes() == b"line1\nline2\n"
         assert content_route.call_count == 1
 
+    @pytest.mark.parametrize(
+        "malicious_filename",
+        [
+            "../../etc/cron.d/malicious",
+            "..\\..\\windows\\system32\\malicious",
+            "/etc/passwd",
+            "../outside.jsonl",
+        ],
+    )
+    @pytest.mark.respx(base_url=base_url)
+    def test_output_directory_rejects_path_traversal_filename(
+        self,
+        malicious_filename: str,
+        respx_mock: MockRouter,
+        tmp_path: Path,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"safe-bytes"))
+        row = {**FILE_ROW_NEWER, "filename": malicious_filename}
+        respx_mock.get("/files/file-1").mock(return_value=httpx.Response(200, json=row))
+        out = tmp_path / "downloads"
+        out.mkdir()
+
+        result = cli_runner.invoke(["files", "download", "file-1", "--output", str(out)])
+
+        assert result.exit_code == 0
+        saved = list(out.iterdir())
+        assert len(saved) == 1
+        assert saved[0].is_file()
+        assert saved[0].read_bytes() == b"safe-bytes"
+        assert saved[0].resolve().is_relative_to(out.resolve())
+        assert not (tmp_path / "outside.jsonl").exists()
+        assert not (tmp_path / "etc").exists()
     @pytest.mark.respx(base_url=base_url)
     def test_specifying_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"stdout-bytes"))
