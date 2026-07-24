@@ -9,7 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.rl import SupportedModels
+from together.types.beta.rl import RlSupportedModels
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -20,7 +20,7 @@ class TestSupportedModels:
     @parametrize
     def test_method_get(self, client: Together) -> None:
         supported_model = client.beta.rl.supported_models.get()
-        assert_matches_type(SupportedModels, supported_model, path=["response"])
+        assert_matches_type(RlSupportedModels, supported_model, path=["response"])
 
     @parametrize
     def test_raw_response_get(self, client: Together) -> None:
@@ -29,7 +29,7 @@ class TestSupportedModels:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         supported_model = response.parse()
-        assert_matches_type(SupportedModels, supported_model, path=["response"])
+        assert_matches_type(RlSupportedModels, supported_model, path=["response"])
 
     @parametrize
     def test_streaming_response_get(self, client: Together) -> None:
@@ -38,7 +38,7 @@ class TestSupportedModels:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             supported_model = response.parse()
-            assert_matches_type(SupportedModels, supported_model, path=["response"])
+            assert_matches_type(RlSupportedModels, supported_model, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -51,7 +51,7 @@ class TestAsyncSupportedModels:
     @parametrize
     async def test_method_get(self, async_client: AsyncTogether) -> None:
         supported_model = await async_client.beta.rl.supported_models.get()
-        assert_matches_type(SupportedModels, supported_model, path=["response"])
+        assert_matches_type(RlSupportedModels, supported_model, path=["response"])
 
     @parametrize
     async def test_raw_response_get(self, async_client: AsyncTogether) -> None:
@@ -60,7 +60,7 @@ class TestAsyncSupportedModels:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         supported_model = await response.parse()
-        assert_matches_type(SupportedModels, supported_model, path=["response"])
+        assert_matches_type(RlSupportedModels, supported_model, path=["response"])
 
     @parametrize
     async def test_streaming_response_get(self, async_client: AsyncTogether) -> None:
@@ -69,6 +69,6 @@ class TestAsyncSupportedModels:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             supported_model = await response.parse()
-            assert_matches_type(SupportedModels, supported_model, path=["response"])
+            assert_matches_type(RlSupportedModels, supported_model, path=["response"])
 
         assert cast(Any, response.is_closed) is True

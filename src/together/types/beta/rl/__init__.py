@@ -7,54 +7,83 @@ from .loss_type import LossType as LossType
 from .lora_config import LoraConfig as LoraConfig
 from .sample_result import SampleResult as SampleResult
 from .forward_result import ForwardResult as ForwardResult
+from .checkpoint_file import CheckpointFile as CheckpointFile
+from .dro_loss_params import DroLossParams as DroLossParams
+from .loss_mask_param import LossMaskParam as LossMaskParam
 from .model_resources import ModelResources as ModelResources
+from .ppo_loss_params import PpoLossParams as PpoLossParams
+from .grpo_loss_params import GrpoLossParams as GrpoLossParams
 from .optimizer_config import OptimizerConfig as OptimizerConfig
 from .sample_operation import SampleOperation as SampleOperation
-from .supported_models import SupportedModels as SupportedModels
 from .training_session import TrainingSession as TrainingSession
 from .weight_sync_type import WeightSyncType as WeightSyncType
+from .cispo_loss_params import CispoLossParams as CispoLossParams
 from .forward_operation import ForwardOperation as ForwardOperation
 from .lora_config_param import LoraConfigParam as LoraConfigParam
+from .loss_config_param import LossConfigParam as LossConfigParam
+from .loss_inputs_param import LossInputsParam as LossInputsParam
 from .optim_step_result import OptimStepResult as OptimStepResult
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
+from .rl_supported_model import RlSupportedModel as RlSupportedModel
+from .loss_logprobs_param import LossLogprobsParam as LossLogprobsParam
+from .rl_supported_models import RlSupportedModels as RlSupportedModels
 from .session_list_params import SessionListParams as SessionListParams
 from .training_checkpoint import TrainingCheckpoint as TrainingCheckpoint
+from .grpo_loss_ratio_type import GrpoLossRatioType as GrpoLossRatioType
 from .inference_checkpoint import InferenceCheckpoint as InferenceCheckpoint
 from .optim_step_operation import OptimStepOperation as OptimStepOperation
+from .dro_loss_inputs_param import DroLossInputsParam as DroLossInputsParam
+from .loss_advantages_param import LossAdvantagesParam as LossAdvantagesParam
+from .model_resources_error import ModelResourcesError as ModelResourcesError
 from .muon_optimizer_config import MuonOptimizerConfig as MuonOptimizerConfig
 from .muon_optimizer_params import MuonOptimizerParams as MuonOptimizerParams
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy
+from .ppo_loss_inputs_param import PpoLossInputsParam as PpoLossInputsParam
 from .session_create_params import SessionCreateParams as SessionCreateParams
-from .session_list_response import SessionListResponse as SessionListResponse
 from .adamw_optimizer_params import AdamwOptimizerParams as AdamwOptimizerParams
+from .grpo_loss_inputs_param import GrpoLossInputsParam as GrpoLossInputsParam
 from .model_resources_status import ModelResourcesStatus as ModelResourcesStatus
 from .optimizer_config_param import OptimizerConfigParam as OptimizerConfigParam
 from .policy_version_segment import PolicyVersionSegment as PolicyVersionSegment
+from .training_session_error import TrainingSessionError as TrainingSessionError
+from .cispo_loss_inputs_param import CispoLossInputsParam as CispoLossInputsParam
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
 from .training_session_status import TrainingSessionStatus as TrainingSessionStatus
+from .loss_target_tokens_param import LossTargetTokensParam as LossTargetTokensParam
 from .operation_forward_params import OperationForwardParams as OperationForwardParams
 from .training_operation_error import TrainingOperationError as TrainingOperationError
+from .cross_entropy_loss_params import CrossEntropyLossParams as CrossEntropyLossParams
 from .training_operation_status import TrainingOperationStatus as TrainingOperationStatus
 from .checkpoint_download_params import CheckpointDownloadParams as CheckpointDownloadParams
 from .forward_backward_operation import ForwardBackwardOperation as ForwardBackwardOperation
 from .grpo_loss_aggregation_type import GrpoLossAggregationType as GrpoLossAggregationType
 from .model_resource_list_params import ModelResourceListParams as ModelResourceListParams
 from .model_resource_stop_params import ModelResourceStopParams as ModelResourceStopParams
+from .model_resources_error_code import ModelResourcesErrorCode as ModelResourcesErrorCode
 from .training_checkpoint_result import TrainingCheckpointResult as TrainingCheckpointResult
 from .inference_checkpoint_result import InferenceCheckpointResult as InferenceCheckpointResult
 from .muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfigParam
 from .operation_optim_step_params import OperationOptimStepParams as OperationOptimStepParams
+from .training_session_error_code import TrainingSessionErrorCode as TrainingSessionErrorCode
 from .adamw_optimizer_config_param import AdamwOptimizerConfigParam as AdamwOptimizerConfigParam
 from .checkpoint_download_response import CheckpointDownloadResponse as CheckpointDownloadResponse
 from .model_resource_create_params import ModelResourceCreateParams as ModelResourceCreateParams
-from .model_resource_list_response import ModelResourceListResponse as ModelResourceListResponse
 from .policy_version_segment_param import PolicyVersionSegmentParam as PolicyVersionSegmentParam
+from .model_resources_list_response import ModelResourcesListResponse as ModelResourcesListResponse
 from .training_checkpoint_operation import TrainingCheckpointOperation as TrainingCheckpointOperation
 from .training_operation_error_code import TrainingOperationErrorCode as TrainingOperationErrorCode
 from .inference_checkpoint_operation import InferenceCheckpointOperation as InferenceCheckpointOperation
+from .training_sessions_list_response import TrainingSessionsListResponse as TrainingSessionsListResponse
 from .custom_forward_backward_operation import CustomForwardBackwardOperation as CustomForwardBackwardOperation
 from .operation_forward_backward_params import OperationForwardBackwardParams as OperationForwardBackwardParams
+from .model_resource_estimate_cost_params import ModelResourceEstimateCostParams as ModelResourceEstimateCostParams
+from .importance_sampling_loss_inputs_param import (
+    ImportanceSamplingLossInputsParam as ImportanceSamplingLossInputsParam,
+)
+from .model_resources_estimate_cost_response import (
+    ModelResourcesEstimateCostResponse as ModelResourcesEstimateCostResponse,
+)
 from .operation_custom_forward_backward_params import (
     OperationCustomForwardBackwardParams as OperationCustomForwardBackwardParams,
 )

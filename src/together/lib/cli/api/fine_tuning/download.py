@@ -56,13 +56,13 @@ async def download(
     ft_job = await show_loading_status(
         "Retrieving fine-tuning job...", config.client.fine_tuning.retrieve(fine_tune_id)
     )
-    loosely_typed_checkpoint_type: str = checkpoint_type if checkpoint_type is not None else ""
+    loosely_typed_checkpoint_type: str = checkpoint_type or "default"
     if isinstance(ft_job.training_type, TrainingTypeFullTrainingType):
         if checkpoint_type is not None and checkpoint_type != "default":
             raise ValueError("Only DEFAULT checkpoint type is allowed for FullTrainingType")
         loosely_typed_checkpoint_type = "model_output_path"
     elif isinstance(ft_job.training_type, TrainingTypeLoRaTrainingType):
-        if checkpoint_type == "default":
+        if checkpoint_type in {None, "default"}:
             loosely_typed_checkpoint_type = "merged"
 
         if loosely_typed_checkpoint_type not in {

@@ -43,6 +43,7 @@ from .eval_status_response import EvalStatusResponse as EvalStatusResponse
 from .file_delete_response import FileDeleteResponse as FileDeleteResponse
 from .rerank_create_params import RerankCreateParams as RerankCreateParams
 from .batch_create_response import BatchCreateResponse as BatchCreateResponse
+from .fine_tune_preview_row import FineTunePreviewRow as FineTunePreviewRow
 from .finetune_model_limits import FinetuneModelLimits as FinetuneModelLimits
 from .image_generate_params import ImageGenerateParams as ImageGenerateParams
 from .model_upload_response import ModelUploadResponse as ModelUploadResponse
@@ -55,7 +56,9 @@ from .completion_create_params import CompletionCreateParams as CompletionCreate
 from .audio_speech_stream_chunk import AudioSpeechStreamChunk as AudioSpeechStreamChunk
 from .fine_tuning_delete_params import FineTuningDeleteParams as FineTuningDeleteParams
 from .fine_tuning_list_response import FineTuningListResponse as FineTuningListResponse
+from .fine_tune_preview_response import FineTunePreviewResponse as FineTunePreviewResponse
 from .fine_tuning_content_params import FineTuningContentParams as FineTuningContentParams
+from .fine_tuning_preview_params import FineTuningPreviewParams as FineTuningPreviewParams
 from .fine_tuning_cancel_response import FineTuningCancelResponse as FineTuningCancelResponse
 from .fine_tuning_delete_response import FineTuningDeleteResponse as FineTuningDeleteResponse
 from .endpoint_list_hardware_params import EndpointListHardwareParams as EndpointListHardwareParams

@@ -10,6 +10,8 @@ from .rl.rl import (
     RlResourceWithStreamingResponse,
     AsyncRlResourceWithStreamingResponse,
 )
+from typing import TYPE_CHECKING
+
 from .jig.jig import (
     JigResource,
     AsyncJigResource,
@@ -45,14 +47,13 @@ from .endpoints.endpoints import (
     AsyncEndpointsResourceWithStreamingResponse,
 )
 
+if TYPE_CHECKING:
+    from ..realtime import RealtimeResource, AsyncRealtimeResource
+
 __all__ = ["BetaResource", "AsyncBetaResource"]
 
 
 class BetaResource(SyncAPIResource):
-    @cached_property
-    def rl(self) -> RlResource:
-        return RlResource(self._client)
-
     @cached_property
     def endpoints(self) -> EndpointsResource:
         return EndpointsResource(self._client)
@@ -62,8 +63,20 @@ class BetaResource(SyncAPIResource):
         return ModelsResource(self._client)
 
     @cached_property
+    def rl(self) -> RlResource:
+        return RlResource(self._client)
+
+    @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
+
+    # Handwritten (not generated): realtime transcription over WebSocket.
+    # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
+    @cached_property
+    def realtime(self) -> RealtimeResource:
+        from ..realtime import RealtimeResource
+
+        return RealtimeResource(self._client)
 
     @cached_property
     def clusters(self) -> ClustersResource:
@@ -91,10 +104,6 @@ class BetaResource(SyncAPIResource):
 
 class AsyncBetaResource(AsyncAPIResource):
     @cached_property
-    def rl(self) -> AsyncRlResource:
-        return AsyncRlResource(self._client)
-
-    @cached_property
     def endpoints(self) -> AsyncEndpointsResource:
         return AsyncEndpointsResource(self._client)
 
@@ -103,8 +112,20 @@ class AsyncBetaResource(AsyncAPIResource):
         return AsyncModelsResource(self._client)
 
     @cached_property
+    def rl(self) -> AsyncRlResource:
+        return AsyncRlResource(self._client)
+
+    @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
+
+    # Handwritten (not generated): realtime transcription over WebSocket.
+    # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
+    @cached_property
+    def realtime(self) -> AsyncRealtimeResource:
+        from ..realtime import AsyncRealtimeResource
+
+        return AsyncRealtimeResource(self._client)
 
     @cached_property
     def clusters(self) -> AsyncClustersResource:
@@ -135,16 +156,16 @@ class BetaResourceWithRawResponse:
         self._beta = beta
 
     @cached_property
-    def rl(self) -> RlResourceWithRawResponse:
-        return RlResourceWithRawResponse(self._beta.rl)
-
-    @cached_property
     def endpoints(self) -> EndpointsResourceWithRawResponse:
         return EndpointsResourceWithRawResponse(self._beta.endpoints)
 
     @cached_property
     def models(self) -> ModelsResourceWithRawResponse:
         return ModelsResourceWithRawResponse(self._beta.models)
+
+    @cached_property
+    def rl(self) -> RlResourceWithRawResponse:
+        return RlResourceWithRawResponse(self._beta.rl)
 
     @cached_property
     def jig(self) -> JigResourceWithRawResponse:
@@ -160,16 +181,16 @@ class AsyncBetaResourceWithRawResponse:
         self._beta = beta
 
     @cached_property
-    def rl(self) -> AsyncRlResourceWithRawResponse:
-        return AsyncRlResourceWithRawResponse(self._beta.rl)
-
-    @cached_property
     def endpoints(self) -> AsyncEndpointsResourceWithRawResponse:
         return AsyncEndpointsResourceWithRawResponse(self._beta.endpoints)
 
     @cached_property
     def models(self) -> AsyncModelsResourceWithRawResponse:
         return AsyncModelsResourceWithRawResponse(self._beta.models)
+
+    @cached_property
+    def rl(self) -> AsyncRlResourceWithRawResponse:
+        return AsyncRlResourceWithRawResponse(self._beta.rl)
 
     @cached_property
     def jig(self) -> AsyncJigResourceWithRawResponse:
@@ -185,16 +206,16 @@ class BetaResourceWithStreamingResponse:
         self._beta = beta
 
     @cached_property
-    def rl(self) -> RlResourceWithStreamingResponse:
-        return RlResourceWithStreamingResponse(self._beta.rl)
-
-    @cached_property
     def endpoints(self) -> EndpointsResourceWithStreamingResponse:
         return EndpointsResourceWithStreamingResponse(self._beta.endpoints)
 
     @cached_property
     def models(self) -> ModelsResourceWithStreamingResponse:
         return ModelsResourceWithStreamingResponse(self._beta.models)
+
+    @cached_property
+    def rl(self) -> RlResourceWithStreamingResponse:
+        return RlResourceWithStreamingResponse(self._beta.rl)
 
     @cached_property
     def jig(self) -> JigResourceWithStreamingResponse:
@@ -210,16 +231,16 @@ class AsyncBetaResourceWithStreamingResponse:
         self._beta = beta
 
     @cached_property
-    def rl(self) -> AsyncRlResourceWithStreamingResponse:
-        return AsyncRlResourceWithStreamingResponse(self._beta.rl)
-
-    @cached_property
     def endpoints(self) -> AsyncEndpointsResourceWithStreamingResponse:
         return AsyncEndpointsResourceWithStreamingResponse(self._beta.endpoints)
 
     @cached_property
     def models(self) -> AsyncModelsResourceWithStreamingResponse:
         return AsyncModelsResourceWithStreamingResponse(self._beta.models)
+
+    @cached_property
+    def rl(self) -> AsyncRlResourceWithStreamingResponse:
+        return AsyncRlResourceWithStreamingResponse(self._beta.rl)
 
     @cached_property
     def jig(self) -> AsyncJigResourceWithStreamingResponse:

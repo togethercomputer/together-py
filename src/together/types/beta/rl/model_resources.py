@@ -2,13 +2,13 @@
 
 from typing import Optional
 from datetime import datetime
-from typing_extensions import Literal
 
 from ...._models import BaseModel
 from .optimizer_config import OptimizerConfig
+from .model_resources_error import ModelResourcesError
 from .model_resources_status import ModelResourcesStatus
 
-__all__ = ["ModelResources", "ComputeConfig", "Error"]
+__all__ = ["ModelResources", "ComputeConfig"]
 
 
 class ComputeConfig(BaseModel):
@@ -19,22 +19,6 @@ class ComputeConfig(BaseModel):
 
     0 means the resource runs the trainer only, with no generator.
     """
-
-
-class Error(BaseModel):
-    """Structured detail for the model resource's current error.
-
-    Set when the resource is in an error state.
-    """
-
-    code: Literal["MODEL_RESOURCES_ERROR_CODE_CAPACITY_UNAVAILABLE", "MODEL_RESOURCES_ERROR_CODE_PROVISIONING_FAILED"]
-    """Finite machine-readable reason code for UI branching"""
-
-    message: str
-    """User-safe human-readable detail for the current status"""
-
-    occurred_at: datetime
-    """Timestamp when this error was reported"""
 
 
 class ModelResources(BaseModel):
@@ -67,7 +51,7 @@ class ModelResources(BaseModel):
     updated_at: datetime
     """Timestamp when the model resource was last updated"""
 
-    error: Optional[Error] = None
+    error: Optional[ModelResourcesError] = None
     """Structured detail for the model resource's current error.
 
     Set when the resource is in an error state.

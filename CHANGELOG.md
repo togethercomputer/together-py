@@ -1,5 +1,84 @@
 # Changelog
 
+## [2.28.0](https://github.com/togethercomputer/together-py/compare/v2.27.1...v2.28.0) (2026-07-24)
+
+
+### Features
+
+* Add realtime transcription SDK methods ([57ca1d8](https://github.com/togethercomputer/together-py/commit/57ca1d8790ab79a3dd92aaeefb8fab7b25199e7b))
+
+## [2.27.1](https://github.com/togethercomputer/together-py/compare/v2.27.0...v2.27.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* Ensure deploy CLI command works with existing endpoint ([#472](https://github.com/togethercomputer/together-py/issues/472)) ([3c265a2](https://github.com/togethercomputer/together-py/commit/3c265a2a9d651364df17b4f514944ec32090b00c))
+
+## [2.27.0](https://github.com/togethercomputer/together-py/compare/v2.26.1...v2.27.0) (2026-07-23)
+
+
+### Features
+
+* **cli:** add fine-tuning preview command ([#466](https://github.com/togethercomputer/together-py/issues/466)) ([136b566](https://github.com/togethercomputer/together-py/commit/136b566736f931afe0c321bbd8932c77eef9deec))
+* **cli:** show fine-tune checkpoint artifact IDs ([#453](https://github.com/togethercomputer/together-py/issues/453)) ([aeedf20](https://github.com/togethercomputer/together-py/commit/aeedf206e77586eb34c26fc6d632e2e55aa05e2c))
+
+
+### Bug Fixes
+
+* **cli:** address non-interactive and endpoint list failures ([#470](https://github.com/togethercomputer/together-py/issues/470)) ([b43099d](https://github.com/togethercomputer/together-py/commit/b43099d79502c8bf7f8e46ab3109d47260cc7f37))
+* **cli:** default LoRA downloads to merged checkpoints ([#469](https://github.com/togethercomputer/together-py/issues/469)) ([854f3b8](https://github.com/togethercomputer/together-py/commit/854f3b8e4c421d2347adf05280fc1aff00a6044b))
+
+## [2.26.1](https://github.com/togethercomputer/together-py/compare/v2.26.0...v2.26.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* handle optional endpoint deployment hardware in CLI ([#468](https://github.com/togethercomputer/together-py/issues/468)) ([cda03cc](https://github.com/togethercomputer/together-py/commit/cda03ccb7284b757b75852e6794a67ff0042caf9))
+* Update types for deployment summary to acknowledge optionality on hardware property ([c6b9a0b](https://github.com/togethercomputer/together-py/commit/c6b9a0bdf9eb681491bc886f74ac5578aa2bd6aa))
+
+## [2.26.0](https://github.com/togethercomputer/together-py/compare/v2.25.0...v2.26.0) (2026-07-22)
+
+
+### Features
+
+* add fine-tunes preview endpoint ([f8225fd](https://github.com/togethercomputer/together-py/commit/f8225fdf6172941bebad9be7b5db02a7d6fd57fe))
+* Detect outdated CLI versions and auto-prompt/suggest upgrade path to users. ([#456](https://github.com/togethercomputer/together-py/issues/456)) ([e870160](https://github.com/togethercomputer/together-py/commit/e870160e35a6c0e5ba1563ce365215d612dfc3fd))
+
+
+### Bug Fixes
+
+* Ensure `endpoints deploy` command uses the deploy id and revision id when provided ([#463](https://github.com/togethercomputer/together-py/issues/463)) ([7859f99](https://github.com/togethercomputer/together-py/commit/7859f995e6177114cccfe8b1e60a124ebda3e07e))
+
+## [2.25.0](https://github.com/togethercomputer/together-py/compare/v2.24.1...v2.25.0) (2026-07-21)
+
+
+### Features
+
+* add headlamp add-on to gpu cluster ([9351f49](https://github.com/togethercomputer/together-py/commit/9351f495c3be345c7cbb5185b97016045d1aa5a6))
+* Add HOST_POWER_CYCLE to remediations CLI modes and state ([#444](https://github.com/togethercomputer/together-py/issues/444)) ([da019d3](https://github.com/togethercomputer/together-py/commit/da019d34c8fedaa1ce18e9549702af01d0dcd8af))
+* add Slurm Web addon to gpu cluster ([cfeb835](https://github.com/togethercomputer/together-py/commit/cfeb83532cdbf2b4883486788f1aa2fb53682632))
+* expose GPU cluster add-on flags for headlamp and slurm web ([#461](https://github.com/togethercomputer/together-py/issues/461)) ([9e6741d](https://github.com/togethercomputer/together-py/commit/9e6741d359a678330ce0bb3b196f52f12fe32189))
+
+
+### Bug Fixes
+
+* Improve CLI legibility on light/white terminal backgrounds ([#457](https://github.com/togethercomputer/together-py/issues/457)) ([5da1f1b](https://github.com/togethercomputer/together-py/commit/5da1f1b0514838af3350cad85938d2d19348e18b))
+* Revert server host change for chat completions inference ([aa92642](https://github.com/togethercomputer/together-py/commit/aa926427a0b0d3522d105e51201b84994a71ea3b))
+
+## [2.24.1](https://github.com/togethercomputer/together-py/compare/v2.24.0...v2.24.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **cli:** [TCL-7938] keyless OIDC `beta clusters ssh` + insecure second hop ([236203b](https://github.com/togethercomputer/together-py/commit/236203b414530784c191f6a80e76f74c86811416))
+* **cli:** don't require an API key for OIDC-based `beta clusters ssh` ([0a4ead7](https://github.com/togethercomputer/together-py/commit/0a4ead7272d8a869846238eb7448e40c02f84085))
+* **cli:** second SSH hop insecure by default + keep API-key gate typing clean ([35f798d](https://github.com/togethercomputer/together-py/commit/35f798dcc9de61d8ae6d9b1a072fcd07d7737e02))
+
+
+### Documentation
+
+* expose fine-tune artifact ids ([cac9173](https://github.com/togethercomputer/together-py/commit/cac917318ddf66159780ff7c17f4297476a5e4b9))
+
 ## [2.24.0](https://github.com/togethercomputer/together-py/compare/v2.23.0...v2.24.0) (2026-07-16)
 
 

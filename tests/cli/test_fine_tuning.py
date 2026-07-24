@@ -67,7 +67,10 @@ _FT_EVENT = {
 
 _FT_CHECKPOINT = {
     "checkpoint_type": "intermediate",
+    "checkpoint": "model",
     "created_at": "2024-01-01T00:00:00Z",
+    "object_id": "ml-checkpoint",
+    "object_revision_id": "rv-checkpoint",
     "path": "/p",
     "step": 5,
 }
@@ -80,6 +83,24 @@ _FT_METRICS_BODY = {
             "logged_at": "2024-01-01T00:00:00Z",
         }
     ]
+}
+
+_FT_PREVIEW_BODY = {
+    "dataset_format": "conversation",
+    "max_seq_length": 4096,
+    "model": "meta-llama/Llama-3-8b",
+    "train_on_inputs": False,
+    "rows": [
+        {
+            "input_ids": [1, 2, 3],
+            "labels": [-100, 2, 3],
+            "num_tokens": 3,
+            "num_trained_tokens": 2,
+            "tokens": ["<s>", " hello", " world"],
+            "trained_spans": [[1, 3]],
+            "truncated": False,
+        }
+    ],
 }
 
 _MODEL_LIMITS_BODY = {
@@ -122,14 +143,14 @@ class TestFineTuningCreate:
                 "file-train",
                 "--model",
                 "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+                "--non-interactive",
             ],
-            input="y\n",
         )
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "not available for multimodal datasets" in output
-        assert "Do you want to proceed?" in result.output
+        assert "Do you want to proceed?" not in result.output
         assert "ft-created" in result.output
         assert estimate.calls
         assert create.calls
@@ -348,6 +369,8 @@ class TestFineTuningEventsAndCheckpoints:
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
+        assert "Registry artifacts" in result.output
+        assert "ml-checkpoint@rv-checkpoint" in result.output
         assert "intermediate" in result.output
 
     @pytest.mark.respx(base_url=base_url)
@@ -392,6 +415,74 @@ class TestFineTuningListMetrics:
         assert json.loads(result.output) == _FT_METRICS_BODY["metrics"]
 
 
+class TestFineTuningPreview:
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize(
+        ("train_on_inputs_flag", "expected_train_on_inputs"),
+        [
+            ("--train-on-inputs", True),
+            ("--no-train-on-inputs", False),
+        ],
+    )
+    def test_preview_json_sends_params(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+        train_on_inputs_flag: str,
+        expected_train_on_inputs: bool,
+    ) -> None:
+        route = respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "preview",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--top-k",
+                "5",
+                train_on_inputs_flag,
+                "--training-method",
+                "sft",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0
+        assert json.loads(result.output) == _FT_PREVIEW_BODY
+        request_body = json.loads(cast(Call, route.calls[0]).request.content)
+        assert request_body == {
+            "model": "meta-llama/Llama-3-8b",
+            "training_file": "file-train",
+            "top_k": 5,
+            "train_on_inputs": expected_train_on_inputs,
+            "training_method": "sft",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_preview_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/fine-tunes/preview").mock(return_value=httpx.Response(200, json=_FT_PREVIEW_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "preview",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+            ]
+        )
+
+        assert result.exit_code == 0
+        assert "conversation" in result.output
+        assert "Preview Rows" in result.output
+        assert "1-3" in result.output
+        assert "hello" in result.output
+
+
 class TestFineTuningDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_invokes_download_manager(
@@ -428,3 +519,45 @@ class TestFineTuningDownload:
         payload = json.loads(result.output.strip())
         assert payload["id"] == "ft-abcd-12"
         assert payload["size"] == 1
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_defaults_to_merged_checkpoint_for_lora_job(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/fine-tunes/ft-abcd-12").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    **_FT_RETRIEVE_BODY,
+                    "training_type": {
+                        "type": "Lora",
+                        "lora_alpha": 16,
+                        "lora_r": 8,
+                    },
+                },
+            )
+        )
+        out_file = tmp_path / "weights.tar"
+        out_file.write_bytes(b"x")
+
+        class _DM:
+            def __init__(self, _client: object) -> None:
+                pass
+
+            async def download(self, **kwargs: object) -> tuple[str, int]:
+                assert "checkpoint=merged" in str(kwargs.get("url", ""))
+                return str(out_file), 1
+
+        with patch.object(_ft_download_mod, "AsyncDownloadManager", _DM):
+            result = cli_runner.invoke(
+                [
+                    "fine-tuning",
+                    "download",
+                    "ft-abcd-12",
+                    "--output-dir",
+                    str(tmp_path),
+                    "--json",
+                ],
+            )
+
+        assert result.exit_code == 0

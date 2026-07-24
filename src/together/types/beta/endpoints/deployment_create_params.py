@@ -22,7 +22,7 @@ class DeploymentCreateParams(TypedDict, total=False):
     name: Required[str]
     """Name for the deployment within its endpoint.
 
-    Returned as a project- and endpoint-qualified inference name.
+    Returned as a fully-qualified endpoint string.
     """
 
     validate_only: Annotated[bool, PropertyInfo(alias="validateOnly")]

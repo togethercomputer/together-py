@@ -162,7 +162,7 @@ def render_header(endpoint: Endpoint, ab_experiments: list[AbExperiment], shadow
     header_table = Table(expand=True, show_header=False, show_edge=False, show_lines=False, box=None, pad_edge=False)
     header_table.add_column("Key", justify="right", style="dim")
     header_table.add_column("Value", justify="left", ratio=4)
-    header_table.add_row("  Inference Name", endpoint.name)
+    header_table.add_row("  Endpoint string", endpoint.name)
     header_table.add_row("  Endpoint ID", endpoint.id)
     header_table.add_row("  Created at", format_datetime(endpoint.created_at))
     if endpoint.updated_at:

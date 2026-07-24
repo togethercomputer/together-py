@@ -249,13 +249,22 @@ class TestOperations:
             session_id="session_id",
             loss={
                 "type": "LOSS_TYPE_GRPO",
+                "cispo_params": {
+                    "clip_high_threshold": 4,
+                    "clip_low_threshold": 0,
+                },
                 "cross_entropy_params": {},
+                "dro_params": {"beta": 0.05},
                 "grpo_params": {
                     "agg_type": "GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON",
                     "beta": 0.1,
-                    "clip_high": 0.28,
-                    "clip_low": 0.2,
+                    "clip_high_threshold": 1.2,
+                    "clip_low_threshold": 0.8,
                     "ratio_type": "GRPO_LOSS_RATIO_TYPE_TOKEN",
+                },
+                "ppo_params": {
+                    "clip_high_threshold": 1.2,
+                    "clip_low_threshold": 0.8,
                 },
             },
             samples=[
@@ -264,6 +273,26 @@ class TestOperations:
                         "target_tokens": {
                             "data": [123, 456, 789],
                             "dtype": "D_TYPE_INT64",
+                        },
+                        "cispo_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                        },
+                        "dro_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
                         },
                         "grpo_inputs": {
                             "advantages": {
@@ -279,9 +308,29 @@ class TestOperations:
                                 "dtype": "D_TYPE_FLOAT32",
                             },
                         },
+                        "importance_sampling_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                        },
                         "loss_mask": {
                             "data": [0, 0, 1],
                             "dtype": "D_TYPE_INT64",
+                        },
+                        "ppo_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
                         },
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
@@ -770,7 +819,8 @@ class TestOperations:
             prompts=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
             sampling_params={
-                "max_tokens": 100,
+                "max_tokens": 512,
+                "return_prompt_logprobs": False,
                 "seed": "42",
                 "stop": ["\n", "END"],
                 "temperature": 1,
@@ -1044,13 +1094,22 @@ class TestAsyncOperations:
             session_id="session_id",
             loss={
                 "type": "LOSS_TYPE_GRPO",
+                "cispo_params": {
+                    "clip_high_threshold": 4,
+                    "clip_low_threshold": 0,
+                },
                 "cross_entropy_params": {},
+                "dro_params": {"beta": 0.05},
                 "grpo_params": {
                     "agg_type": "GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON",
                     "beta": 0.1,
-                    "clip_high": 0.28,
-                    "clip_low": 0.2,
+                    "clip_high_threshold": 1.2,
+                    "clip_low_threshold": 0.8,
                     "ratio_type": "GRPO_LOSS_RATIO_TYPE_TOKEN",
+                },
+                "ppo_params": {
+                    "clip_high_threshold": 1.2,
+                    "clip_low_threshold": 0.8,
                 },
             },
             samples=[
@@ -1059,6 +1118,26 @@ class TestAsyncOperations:
                         "target_tokens": {
                             "data": [123, 456, 789],
                             "dtype": "D_TYPE_INT64",
+                        },
+                        "cispo_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                        },
+                        "dro_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
                         },
                         "grpo_inputs": {
                             "advantages": {
@@ -1074,9 +1153,29 @@ class TestAsyncOperations:
                                 "dtype": "D_TYPE_FLOAT32",
                             },
                         },
+                        "importance_sampling_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                        },
                         "loss_mask": {
                             "data": [0, 0, 1],
                             "dtype": "D_TYPE_INT64",
+                        },
+                        "ppo_inputs": {
+                            "advantages": {
+                                "data": [0.5, 0.5],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
+                            "generator_logprobs": {
+                                "data": [-1.2, -0.8],
+                                "dtype": "D_TYPE_FLOAT32",
+                            },
                         },
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
@@ -1565,7 +1664,8 @@ class TestAsyncOperations:
             prompts=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
             sampling_params={
-                "max_tokens": 100,
+                "max_tokens": 512,
+                "return_prompt_logprobs": False,
                 "seed": "42",
                 "stop": ["\n", "END"],
                 "temperature": 1,

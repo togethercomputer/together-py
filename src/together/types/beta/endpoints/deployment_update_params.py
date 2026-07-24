@@ -30,4 +30,4 @@ class DeploymentUpdateParams(TypedDict, total=False):
     """
 
     name: str
-    """Updated inference-addressable deployment name."""
+    """Updated endpoint string."""

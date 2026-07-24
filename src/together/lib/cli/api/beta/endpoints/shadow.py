@@ -92,7 +92,8 @@ async def shadow(
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
 
     endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
-    resolved_model, config_value = await resolve_model_and_config(config, model, config_id=config_id)
+    resolved = await resolve_model_and_config(config, model, config_id=config_id)
+    resolved_model, config_value = resolved.model, resolved.config
 
     autoscaling = build_autoscaling(
         min_replicas=1,
@@ -122,7 +123,7 @@ async def shadow(
             endpoint_id=endpoint_id,
             name=name,
             enable_lora=enable_lora,
-            model=construct_model_path(resolved_model),
+            model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,
         ),

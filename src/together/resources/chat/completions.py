@@ -521,9 +521,7 @@ class CompletionsResource(SyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         return self._post(
-            "/chat/completions"
-            if self._client._base_url_overridden
-            else "https://api-inference.together.ai/v1/chat/completions",
+            "/chat/completions",
             body=maybe_transform(
                 {
                     "messages": messages,
@@ -1061,9 +1059,7 @@ class AsyncCompletionsResource(AsyncAPIResource):
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ChatCompletion | AsyncStream[ChatCompletionChunk]:
         return await self._post(
-            "/chat/completions"
-            if self._client._base_url_overridden
-            else "https://api-inference.together.ai/v1/chat/completions",
+            "/chat/completions",
             body=await async_maybe_transform(
                 {
                     "messages": messages,

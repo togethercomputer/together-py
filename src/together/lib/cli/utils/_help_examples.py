@@ -91,6 +91,9 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Cancel a fine-tuning job:
   [primary]tg ft cancel <ft-job-id>[/primary]
+
+[dim]-[/dim] Preview how a training file will be tokenized:
+  [primary]tg ft preview --model Qwen/Qwen2-1.5B --training-file <file-id>[/primary]
 """
 
 FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -125,6 +128,17 @@ FINE_TUNING_LIST_METRICS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Save ASCII plots to a file:
   [primary]tg ft list-metrics <ft-job-id> > plots.txt[/primary]
+"""
+
+FINE_TUNING_PREVIEW_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Preview tokenization for the first rows in a training file:
+  [primary]tg ft preview --model Qwen/Qwen2-1.5B --training-file <file-id>[/primary]
+
+[dim]-[/dim] Preview more rows and include prompt tokens in training loss:
+  [primary]tg ft preview -M Qwen/Qwen2-1.5B -t <file-id> --top-k 10 --train-on-inputs[/primary]
+
+[dim]-[/dim] Save the raw preview response:
+  [primary]tg ft preview -M Qwen/Qwen2-1.5B -t <file-id> --json > preview.json[/primary]
 """
 
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]

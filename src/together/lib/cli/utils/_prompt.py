@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, cast
 
 from together.lib.cli.utils.config import CLIConfig
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._console import console, cli_theme_name
 
 if TYPE_CHECKING:
     pass
 
-custom_style_fancy = [
+_DARK_PROMPT_STYLES = [
     ("qmark", "fg:#caaef5 bold"),  # token in front of the question
     ("question", "bold #caaef5"),  # question text
     ("answer", "fg:#98a0b3 bold"),  # submitted answer text behind the question
@@ -20,6 +20,21 @@ custom_style_fancy = [
     ("text", "#98a0b3"),  # plain text
     ("disabled", "fg:#858585 italic"),  # disabled choices for select and checkbox prompts
 ]
+
+_LIGHT_PROMPT_STYLES = [
+    ("qmark", "fg:#4c1d95 bold"),
+    ("question", "bold #4c1d95"),
+    ("answer", "fg:#111827 bold"),
+    ("pointer", "fg:#4c1d95 bold"),
+    ("highlighted", "fg:#4c1d95 bold"),
+    ("selected", "fg:#4c1d95"),
+    ("separator", "fg:#4c1d95"),
+    ("instruction", ""),
+    ("text", "#1f2937"),
+    ("disabled", "fg:#4b5563 italic"),
+]
+
+custom_style_fancy = _LIGHT_PROMPT_STYLES if cli_theme_name == "light" else _DARK_PROMPT_STYLES
 
 
 # class NameValidator(questionary.Validator):

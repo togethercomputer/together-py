@@ -188,8 +188,11 @@ def _format_replicas(deployment: EndpointDeploymentSummary) -> str:
     return f"{ready}/{desired} ready"
 
 
-def _prettify_hardware(hardware: str) -> str:
+def _prettify_hardware(hardware: str | None) -> str:
     import re
+
+    if hardware is None:
+        return "[dim]—[/dim]"
 
     match = re.search(r"(\d+)x(.*)", hardware)
     if match:

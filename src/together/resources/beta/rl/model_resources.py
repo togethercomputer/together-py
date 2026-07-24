@@ -22,10 +22,12 @@ from ....types.beta.rl import (
     model_resource_list_params,
     model_resource_stop_params,
     model_resource_create_params,
+    model_resource_estimate_cost_params,
 )
 from ....types.beta.rl.model_resources import ModelResources
 from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam
-from ....types.beta.rl.model_resource_list_response import ModelResourceListResponse
+from ....types.beta.rl.model_resources_list_response import ModelResourcesListResponse
+from ....types.beta.rl.model_resources_estimate_cost_response import ModelResourcesEstimateCostResponse
 
 __all__ = ["ModelResourcesResource", "AsyncModelResourcesResource"]
 
@@ -159,7 +161,7 @@ class ModelResourcesResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ModelResourceListResponse:
+    ) -> ModelResourcesListResponse:
         """
         Lists the caller's model resources.
 
@@ -198,7 +200,58 @@ class ModelResourcesResource(SyncAPIResource):
                     model_resource_list_params.ModelResourceListParams,
                 ),
             ),
-            cast_to=ModelResourceListResponse,
+            cast_to=ModelResourcesListResponse,
+        )
+
+    def estimate_cost(
+        self,
+        *,
+        base_model: str,
+        compute_config: model_resource_estimate_cost_params.ComputeConfig | Omit = omit,
+        lora_enabled: bool | Omit = omit,
+        optimizer_config: OptimizerConfigParam | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> ModelResourcesEstimateCostResponse:
+        """
+        Estimates a model resource's on-demand hourly price without creating it.
+
+        Args:
+          base_model: Base model to provision the resource for
+
+          compute_config: Compute layout to provision.
+
+          lora_enabled: Whether the resource hosts LoRA sessions or a single full-weight session
+
+          optimizer_config: Optimizer configuration for this resource.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/rl/model-resources/estimate-cost",
+            body=maybe_transform(
+                {
+                    "base_model": base_model,
+                    "compute_config": compute_config,
+                    "lora_enabled": lora_enabled,
+                    "optimizer_config": optimizer_config,
+                },
+                model_resource_estimate_cost_params.ModelResourceEstimateCostParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=ModelResourcesEstimateCostResponse,
         )
 
     def stop(
@@ -373,7 +426,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ModelResourceListResponse:
+    ) -> ModelResourcesListResponse:
         """
         Lists the caller's model resources.
 
@@ -412,7 +465,58 @@ class AsyncModelResourcesResource(AsyncAPIResource):
                     model_resource_list_params.ModelResourceListParams,
                 ),
             ),
-            cast_to=ModelResourceListResponse,
+            cast_to=ModelResourcesListResponse,
+        )
+
+    async def estimate_cost(
+        self,
+        *,
+        base_model: str,
+        compute_config: model_resource_estimate_cost_params.ComputeConfig | Omit = omit,
+        lora_enabled: bool | Omit = omit,
+        optimizer_config: OptimizerConfigParam | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> ModelResourcesEstimateCostResponse:
+        """
+        Estimates a model resource's on-demand hourly price without creating it.
+
+        Args:
+          base_model: Base model to provision the resource for
+
+          compute_config: Compute layout to provision.
+
+          lora_enabled: Whether the resource hosts LoRA sessions or a single full-weight session
+
+          optimizer_config: Optimizer configuration for this resource.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/rl/model-resources/estimate-cost",
+            body=await async_maybe_transform(
+                {
+                    "base_model": base_model,
+                    "compute_config": compute_config,
+                    "lora_enabled": lora_enabled,
+                    "optimizer_config": optimizer_config,
+                },
+                model_resource_estimate_cost_params.ModelResourceEstimateCostParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=ModelResourcesEstimateCostResponse,
         )
 
     async def stop(
@@ -471,6 +575,9 @@ class ModelResourcesResourceWithRawResponse:
         self.list = to_raw_response_wrapper(
             model_resources.list,
         )
+        self.estimate_cost = to_raw_response_wrapper(
+            model_resources.estimate_cost,
+        )
         self.stop = to_raw_response_wrapper(
             model_resources.stop,
         )
@@ -488,6 +595,9 @@ class AsyncModelResourcesResourceWithRawResponse:
         )
         self.list = async_to_raw_response_wrapper(
             model_resources.list,
+        )
+        self.estimate_cost = async_to_raw_response_wrapper(
+            model_resources.estimate_cost,
         )
         self.stop = async_to_raw_response_wrapper(
             model_resources.stop,
@@ -507,6 +617,9 @@ class ModelResourcesResourceWithStreamingResponse:
         self.list = to_streamed_response_wrapper(
             model_resources.list,
         )
+        self.estimate_cost = to_streamed_response_wrapper(
+            model_resources.estimate_cost,
+        )
         self.stop = to_streamed_response_wrapper(
             model_resources.stop,
         )
@@ -524,6 +637,9 @@ class AsyncModelResourcesResourceWithStreamingResponse:
         )
         self.list = async_to_streamed_response_wrapper(
             model_resources.list,
+        )
+        self.estimate_cost = async_to_streamed_response_wrapper(
+            model_resources.estimate_cost,
         )
         self.stop = async_to_streamed_response_wrapper(
             model_resources.stop,

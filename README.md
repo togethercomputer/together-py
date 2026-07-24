@@ -168,6 +168,80 @@ async for chat_completion in stream:
     print(chat_completion.choices)
 ```
 
+## Realtime transcription
+
+Transcribe live audio — a microphone, a phone call, a meeting — as it is being
+spoken. You stream PCM audio over a WebSocket and receive interim text within
+moments and a finalized transcript for each utterance. Requires the `realtime`
+extra:
+
+```sh
+uv add "together[realtime]"
+```
+
+Use `client.beta.realtime.transcription()`: a session built for live sources. If
+the connection drops mid-conversation, the session holds on to the speech the
+server hadn't transcribed yet, reconnects automatically, and picks up where
+the transcript left off — words spoken during the outage still come back as
+text.
+
+```python
+from together import AsyncTogether
+from together.realtime import TranscriptDelta, TranscriptCompleted
+
+client = AsyncTogether()
+
+async with client.beta.realtime.transcription(
+    model="openai/whisper-large-v3",
+    sample_rate=16_000,
+) as session:
+    # feed audio from your capture source as it arrives (any chunk size)
+    await session.append(pcm_chunk)  # 16 kHz mono 16-bit PCM
+
+    async for event in session:
+        if isinstance(event, TranscriptDelta):
+            print("interim:", event.text)   # updates while a phrase is spoken
+        elif isinstance(event, TranscriptCompleted):
+            print("final:", event.text)     # one per finished utterance
+
+    transcript = await session.flush()  # finalize whatever was said last
+```
+
+What to know before integrating:
+
+- **Audio in**: 16 kHz mono 16-bit PCM (`pcm_s16le_16000`). Resample your
+  source before appending — passing `sample_rate=` lets the SDK reject a
+  mismatch loudly instead of incorrecly transcribing different sample rate .
+  `append()` never blocks on network state, so it is safe to call from a capture loop.
+- **Utterance boundaries**: detected server-side by default — final
+  transcripts arrive on their own as the speaker pauses. To control
+  segmentation yourself, pass `turn_detection={"type": "none"}` and call
+  `await session.commit()` when each segment ends.
+- **Tuning**: `language`, `prompt`, and turn-detection parameters
+  (`min_silence_duration_ms`, `max_speech_duration_s`, ...) are passed
+  through to the service.
+- **When the connection drops**: The session emits
+  `Reconnecting`/`Reconnected` events and tries to retry the connection.
+   Transcripts recomputed from speech that was carried across the reconnect are marked
+  `replayed=True` and may overlap text you already received; voice agents
+  that act on each final can set `buffer={"max_replay_seconds": 0}` to
+  resume live with no re-emission instead.
+- **If audio is ever dropped** (an outage longer than the retention window),
+  the session tells you with a `BufferGap` event.
+- **If an endpoint fails for good**, calls raise `RealtimeConnectionError`.
+  To keep a conversation alive across endpoint outages, run a failover ring —
+  see [`examples/realtime_failover.py`](examples/realtime_failover.py):
+  on failure, `session.pending_audio()` hands you the un-transcribed speech
+  to seed a new session on another endpoint.
+- **Sync applications**: `Together().beta.realtime.transcription(...)` mirrors the
+  async API on a background thread — good for a handful of sessions; use the
+  async client for high concurrency.
+- **Full manual control** (raw wire events, no automatic recovery):
+  `client.beta.realtime.connect()`.
+
+See [`examples/realtime_transcription.py`](examples/realtime_transcription.py)
+for a runnable end-to-end example.
+
 ## Using types
 
 Nested request parameters are [TypedDicts](https://docs.python.org/3/library/typing.html#typing.TypedDict). Responses are [Pydantic models](https://docs.pydantic.dev) which also provide helper methods for things like:

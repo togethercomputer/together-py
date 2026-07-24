@@ -25,7 +25,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
-from together.lib.cli.utils._completion import install_completion
+from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
     JIG_HELP_EXAMPLES,
     EVALS_HELP_EXAMPLES,
@@ -67,6 +67,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_CREATE_HELP_EXAMPLES,
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_CONFIGS_HELP_EXAMPLES,
+    FINE_TUNING_PREVIEW_HELP_EXAMPLES,
     BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
@@ -85,6 +86,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
 )
+from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
 from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
@@ -102,6 +104,12 @@ _GLOBAL_PARAM_HELP = {
     "--help": "Display this message and exit",
     "--version": "Display application version",
 }
+
+# Commands that authenticate out-of-band (OIDC / step-ca) and make no Together
+# API calls, so the launcher must not require an API key or run the up-front
+# whoami() for them. Values match preparse_tokens() command paths (beta prefix
+# stripped; reported separately via is_beta_command).
+_NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
 
 
 async def _resolve_project_id(client: AsyncTogether) -> str:
@@ -130,6 +138,7 @@ def _create_client(
     timeout: Optional[int],
     max_retries: Optional[int],
     project_id: Optional[str],
+    require_api_key: bool = True,
 ) -> AsyncTogether:
     try:
         client = AsyncTogether(
@@ -172,7 +181,10 @@ def _create_client(
 
     client._client.event_hooks["request"].append(track_request)
 
-    if client.api_key == "":
+    # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
+    # calls, so a missing key is not fatal for them. The block hook installed
+    # above still errors clearly if such a command ever does hit the API.
+    if require_api_key and client.api_key == "":
         console.print(
             "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
         )
@@ -219,21 +231,35 @@ async def launcher(
     if debug:
         os.environ.setdefault("TOGETHER_LOG", "debug")
         setup_logging()
-    client = _create_client(api_key, base_url, timeout, max_retries, project_id)
 
-    if client.project_id is None:
+    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
+
+    # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
+    # and never call the Together API. They must not be gated on an API key or the
+    # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
+    # its auth is entirely the cluster's Dex OIDC flow (see
+    # together.lib.cli.api.beta.clusters.ssh). Before the whoami() was added for
+    # project resolution these commands worked with no key; skip client setup so
+    # they stay keyless.
+    no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+
+    client = _create_client(api_key, base_url, timeout, max_retries, project_id, require_api_key=not no_auth_command)
+
+    # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
+    # Together API call and would reintroduce the API-key dependency for keyless
+    # commands like `beta clusters ssh`.
+    if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
+
+    is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
+    non_interactive_mode = non_interactive or output_json or not is_interactive
 
     config = CLIConfig(
         client=client,
-        # TODO: Turn on non-interactive mode for agents
-        # TODO: Detect isTTY or CI
-        non_interactive=non_interactive or output_json or False,
+        non_interactive=non_interactive_mode,
         json=output_json or False,
         project_id=project_id,
     )
-
-    (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     if output_json:
         explicit_args.append("json")
@@ -316,12 +342,15 @@ async def launcher(
         CliTrackingEvents.CommandStarted,
         {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
     )
+    version_check = VersionCheck()
+    command_succeeded = False
     try:
         await run_command()
         track_cli(
             CliTrackingEvents.CommandCompleted,
             {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
         )
+        command_succeeded = True
     except KeyboardInterrupt:
         track_cli(
             CliTrackingEvents.CommandUserAborted,
@@ -336,6 +365,7 @@ async def launcher(
                 CliTrackingEvents.CommandCompleted,
                 {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
             )
+            command_succeeded = True
             sys.exit(0)
 
         track_cli(
@@ -371,8 +401,14 @@ async def launcher(
 
         sys.exit(1)
     finally:
-        flush_pending_events()
-        await client.close()
+        try:
+            flush_pending_events()
+            await client.close()
+        finally:
+            await version_check.inform(
+                non_interactive=config.non_interactive,
+                allow_prompt=command_succeeded,
+            )
 
 
 # Register commands
@@ -430,6 +466,11 @@ fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.list_metrics:list_metrics"),
     help="Retrieve training metrics for a fine-tuning job",
     help_epilogue=FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
+)
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.preview:preview"),
+    help="Preview how a fine-tuning training file will be tokenized",
+    help_epilogue=FINE_TUNING_PREVIEW_HELP_EXAMPLES,
 )
 
 ## Models API commands
@@ -612,6 +653,11 @@ beta_endpoints_app.command(
     help="List project, organization, or public endpoints",
     help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
     sort_key=2,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.list:list"),
+    name="list",
+    show=False,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.retrieve:retrieve"),

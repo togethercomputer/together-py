@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.table import Table
 from cyclopts.validators import Number
 
-from together import APIError, omit
+from together import ConflictError, omit
 from together.types.beta import Model, Endpoint, DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
 from together.types.beta.models import Config
@@ -30,6 +30,8 @@ from together.types.beta.endpoints.deployment_create_params import (
     PlacementProfile,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
+    MODEL_PATH_RE,
+    resolve_endpoint,
     construct_model_path,
     resolve_model_and_config,
 )
@@ -51,7 +53,7 @@ EndpointParameter = Annotated[
         help="""Endpoint that will contain the deployment.
 
 - Pass an existing endpoint name or ID (ep_...) to add a deployment to it.
-- Pass a new name to create the endpoint first. This name becomes the endpoint's immutable inference name.""",
+- Pass a new name to create the endpoint first. This name becomes the endpoint's immutable endpoint string.""",
     ),
     PromptParameter(instructions="What name would you like to use for your endpoint?", message="Endpoint Name"),
 ]
@@ -174,7 +176,18 @@ async def deploy(
     config: CLIConfigParameter,
 ) -> None:
     """Create a deployment on a new or existing dedicated inference endpoint."""
-    resolved_model, config_value = await resolve_model_and_config(config, model, config_id=config_id)
+    model_path_match = MODEL_PATH_RE.match(model)
+    if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
+        raise ValueError(
+            "Do not pass --model-revision when --model already includes a revision. "
+            "Specify the revision only in the fully qualified --model path."
+        )
+
+    resolved = await resolve_model_and_config(config, model, config_id=config_id)
+    resolved_model, config_value = resolved.model, resolved.config
+    # Prefer revision pin from a fully-qualified model path; fall back to the
+    # deprecated --model-revision flag.
+    resolved_revision = resolved.revision_id or model_revision
 
     autoscaling = build_autoscaling(
         min_replicas=min_replicas,
@@ -200,16 +213,18 @@ async def deploy(
     else:
         placement_value = placement.to_json()
 
+    model_path = construct_model_path(resolved_model, resolved_revision)
+
     if not config.json:
         _print_deployment_preview(
             endpoint=endpoint_name_or_id,
             deployment_name=deployment_name,
             model=resolved_model,
+            model_path=model_path,
             config_value=config_value,
             autoscaling=autoscaling,
             placement=placement_value,
             enable_lora=enable_lora,
-            model_revision=model_revision,
             traffic_weight=traffic_weight,
         )
     await assert_explicit_project_id(config)
@@ -222,11 +237,12 @@ async def deploy(
             config.client.beta.endpoints.deployments.create(
                 endpoint.id,
                 name=deployment_name,
-                model=construct_model_path(resolved_model),
+                model=model_path,
                 config=construct_config_path(config_value),
                 autoscaling=autoscaling,
                 enable_lora=enable_lora if enable_lora is not None else omit,
-                model_revision_id=model_revision or omit,
+                # Revision is already embedded in model_path when present.
+                model_revision_id=omit,
                 placement=placement_value or omit,
             ),
         )
@@ -267,11 +283,11 @@ def _print_deployment_preview(
     endpoint: str,
     deployment_name: str,
     model: Model,
+    model_path: str,
     config_value: Config,
     autoscaling: DeploymentAutoscalingParam,
     placement: Placement | None,
     enable_lora: bool | None,
-    model_revision: str | None,
     traffic_weight: float | None,
 ) -> None:
     table = Table(expand=True, show_header=False, show_edge=False, show_lines=False, box=None, pad_edge=False)
@@ -302,9 +318,6 @@ def _print_deployment_preview(
         if percentile := metric.get("percentile"):
             add_row("--scaling-percentile", percentile)
 
-    if model_revision:
-        add_row("--model-revision", model_revision)
-
     if placement is not None:
         if "profile" in placement:
             add_row("--placement", placement["profile"])  # type: ignore[typeddict-item]
@@ -324,7 +337,7 @@ def _print_deployment_preview(
         add_row("--enable-lora", "true" if enable_lora else "false")
     if traffic_weight is not None:
         add_row("--traffic-weight", str(traffic_weight))
-    add_row("--model", model.name)
+    add_row("--model", f"{model.name} ({model_path})")
     add_row("--config", config_value.id)  # type: ignore
 
     table.add_row("\n".join(args))
@@ -346,24 +359,9 @@ async def _find_or_create_endpoint(config: CLIConfigParameter, endpoint_input: s
         endpoint = await config.client.beta.endpoints.retrieve(id=endpoint_input)
         return endpoint, False
 
-    # If the user gave us an endpoint name, we need to try to create it.
-    # The API will fail if the name conflicts, in which case we know the intent is to reuse
-    # an existing endpoint.
-    #
-    # The exception block will then search through the endpoints for the matching name.
+    # Create first; on name conflict, reuse the existing endpoint.
     try:
         endpoint = await config.client.beta.endpoints.create(name=endpoint_input)
         return endpoint, True
-    except APIError as e:
-        me = await config.client.whoami()
-        # Endpoint names in API include the project slug, so we add it if the user did not provide it.
-        endpoint_name = (
-            f"{me.project_slug}/{endpoint_input}" if not endpoint_input.startswith(me.project_slug) else endpoint_input
-        )
-        if "already exists" in e.message.lower():
-            # TODO: Paginate through the endpoints and find the matching name.
-            endpoints = await config.client.beta.endpoints.list()
-            for endpoint in endpoints.data:
-                if endpoint.name == endpoint_name:
-                    return endpoint, False
-        raise e
+    except ConflictError:
+        return await resolve_endpoint(config, endpoint_input), False

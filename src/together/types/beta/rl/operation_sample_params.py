@@ -41,6 +41,12 @@ class SamplingParams(TypedDict, total=False):
     max_tokens: int
     """Maximum number of tokens to generate per completion"""
 
+    return_prompt_logprobs: bool
+    """
+    When true, also return teacher-forced log-probabilities for the prompt tokens in
+    `SampleRollout.prompt_logprobs`.
+    """
+
     seed: Union[str, int]
     """Random seed for reproducibility"""
 

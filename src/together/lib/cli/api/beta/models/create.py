@@ -30,7 +30,7 @@ class PromptBaseModel(PromptParameter):
             for profile in model.deployment_profiles:
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:
-                    _, model_id = match.groups()
+                    model_id = match.group(2)
                     self.choices.append((f"{model.name} ({profile.quantization})", model_id))
 
 

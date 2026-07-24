@@ -2,7 +2,6 @@
 
 from typing import List, Union, Optional
 from datetime import datetime
-from typing_extensions import Literal
 
 from pydantic import Field as FieldInfo
 
@@ -10,30 +9,10 @@ from ...._models import BaseModel
 from .lora_config import LoraConfig
 from .training_checkpoint import TrainingCheckpoint
 from .inference_checkpoint import InferenceCheckpoint
+from .training_session_error import TrainingSessionError
 from .training_session_status import TrainingSessionStatus
 
-__all__ = ["TrainingSession", "Error"]
-
-
-class Error(BaseModel):
-    """Structured detail for the training session's current error.
-
-    Set when the session is in an error state.
-    """
-
-    code: Literal[
-        "TRAINING_SESSION_ERROR_CODE_RESOURCE_UNAVAILABLE",
-        "TRAINING_SESSION_ERROR_CODE_RESOURCE_AT_CAPACITY",
-        "TRAINING_SESSION_ERROR_CODE_TIMED_OUT",
-        "TRAINING_SESSION_ERROR_CODE_SESSION_FAILED",
-    ]
-    """Finite machine-readable reason code for UI branching"""
-
-    message: str
-    """User-safe human-readable detail for the current status"""
-
-    occurred_at: datetime
-    """Timestamp when this error was reported"""
+__all__ = ["TrainingSession"]
 
 
 class TrainingSession(BaseModel):
@@ -72,7 +51,7 @@ class TrainingSession(BaseModel):
     updated_at: datetime
     """Timestamp when the training session was last updated"""
 
-    error: Optional[Error] = None
+    error: Optional[TrainingSessionError] = None
     """Structured detail for the training session's current error.
 
     Set when the session is in an error state.

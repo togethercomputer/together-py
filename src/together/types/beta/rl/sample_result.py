@@ -27,6 +27,13 @@ class Rollout(BaseModel):
     sequences: List[RolloutSequence]
     """Completions generated for one prompt"""
 
+    prompt_logprobs: Optional[List[float]] = None
+    """
+    Teacher-forced log-probabilities for the prompt tokens, one per token after the
+    first (log P(token*i | token*<i)). Present only when return_prompt_logprobs was
+    set on the request.
+    """
+
 
 class SampleResult(BaseModel):
     """Result of a sample operation"""

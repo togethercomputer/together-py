@@ -11,7 +11,8 @@ from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types.beta.rl import (
     ModelResources,
-    ModelResourceListResponse,
+    ModelResourcesListResponse,
+    ModelResourcesEstimateCostResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -105,7 +106,7 @@ class TestModelResources:
     @parametrize
     def test_method_list(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.list()
-        assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+        assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
 
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
@@ -115,7 +116,7 @@ class TestModelResources:
             limit=0,
             status=["MODEL_RESOURCES_STATUS_PENDING"],
         )
-        assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+        assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
 
     @parametrize
     def test_raw_response_list(self, client: Together) -> None:
@@ -124,7 +125,7 @@ class TestModelResources:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         model_resource = response.parse()
-        assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+        assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
 
     @parametrize
     def test_streaming_response_list(self, client: Together) -> None:
@@ -133,7 +134,51 @@ class TestModelResources:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             model_resource = response.parse()
-            assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+            assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_estimate_cost(self, client: Together) -> None:
+        model_resource = client.beta.rl.model_resources.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+        )
+        assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
+
+    @parametrize
+    def test_method_estimate_cost_with_all_params(self, client: Together) -> None:
+        model_resource = client.beta.rl.model_resources.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+            compute_config={"num_generator_replicas": 2},
+            lora_enabled=True,
+            optimizer_config={
+                "adamw": {},
+                "muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_ORIGINAL"},
+            },
+        )
+        assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
+
+    @parametrize
+    def test_raw_response_estimate_cost(self, client: Together) -> None:
+        response = client.beta.rl.model_resources.with_raw_response.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        model_resource = response.parse()
+        assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
+
+    @parametrize
+    def test_streaming_response_estimate_cost(self, client: Together) -> None:
+        with client.beta.rl.model_resources.with_streaming_response.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            model_resource = response.parse()
+            assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -274,7 +319,7 @@ class TestAsyncModelResources:
     @parametrize
     async def test_method_list(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.list()
-        assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+        assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
 
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -284,7 +329,7 @@ class TestAsyncModelResources:
             limit=0,
             status=["MODEL_RESOURCES_STATUS_PENDING"],
         )
-        assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+        assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
 
     @parametrize
     async def test_raw_response_list(self, async_client: AsyncTogether) -> None:
@@ -293,7 +338,7 @@ class TestAsyncModelResources:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         model_resource = await response.parse()
-        assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+        assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
 
     @parametrize
     async def test_streaming_response_list(self, async_client: AsyncTogether) -> None:
@@ -302,7 +347,51 @@ class TestAsyncModelResources:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             model_resource = await response.parse()
-            assert_matches_type(ModelResourceListResponse, model_resource, path=["response"])
+            assert_matches_type(ModelResourcesListResponse, model_resource, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_estimate_cost(self, async_client: AsyncTogether) -> None:
+        model_resource = await async_client.beta.rl.model_resources.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+        )
+        assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
+
+    @parametrize
+    async def test_method_estimate_cost_with_all_params(self, async_client: AsyncTogether) -> None:
+        model_resource = await async_client.beta.rl.model_resources.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+            compute_config={"num_generator_replicas": 2},
+            lora_enabled=True,
+            optimizer_config={
+                "adamw": {},
+                "muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_ORIGINAL"},
+            },
+        )
+        assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
+
+    @parametrize
+    async def test_raw_response_estimate_cost(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.rl.model_resources.with_raw_response.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        model_resource = await response.parse()
+        assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_estimate_cost(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.rl.model_resources.with_streaming_response.estimate_cost(
+            base_model="Qwen/Qwen3-0.6B",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            model_resource = await response.parse()
+            assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

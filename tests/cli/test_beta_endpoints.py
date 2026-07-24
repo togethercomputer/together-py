@@ -107,6 +107,34 @@ def _mock_model_and_config(respx_mock: MockRouter) -> None:
 
 
 class TestBetaEndpointsDeploy:
+    @pytest.mark.parametrize("model_revision", ["rev_in_path", "rev_from_flag"])
+    def test_deploy_rejects_model_path_and_revision_flag(
+        self,
+        cli_runner: CliRunner,
+        model_revision: str,
+    ) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "projects/proj/models/ml_1/revisions/rev_in_path",
+                "--model-revision",
+                model_revision,
+                "--config",
+                "cr_1",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "Do not pass --model-revision when --model already includes a revision" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(
         self,
@@ -132,6 +160,7 @@ class TestBetaEndpointsDeploy:
                             "model": "projects/proj/models/ml_1/revisions/latest",
                             "modelId": "ml_1",
                             "hardware": "1x-h100",
+                            "estimatedEffectiveTrafficShare": 1,
                             "state": "DEPLOYMENT_STATE_READY",
                             "readyReplicas": 1,
                             "desiredReplicas": 1,
@@ -204,10 +233,86 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code == 0, result.output
         assert create_deployment_route.call_count == 1
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_reuses_endpoint_when_name_already_exists(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.post("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                409,
+                json={
+                    "code": 6,
+                    "message": "Already Exists",
+                    "details": [
+                        {
+                            "@type": "type.googleapis.com/common.errors.v1.ProblemDetail",
+                            "type": "https://api.together.ai/problems/already-exists",
+                            "title": "Already Exists",
+                            "status": 409,
+                            "detail": "Already Exists",
+                        }
+                    ],
+                },
+            )
+        )
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        list_route = respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_endpoint_body(name="my-project/test")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "test",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert create_deployment_route.call_count == 1
+        assert "filter=name%3D%22test%22" in str(cast(Call, list_route.calls[0]).request.url)
+
 
 class TestBetaEndpointsList:
+    def test_list_alias_is_hidden_from_help(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "--help"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        # Agent formatter: "ls: …"; human/Rich formatter: "ls …" (no colon).
+        assert "List project, organization, or public endpoints" in output
+        assert (
+            "ls: List project, organization, or public endpoints" in output
+            or "ls List project, organization, or public endpoints" in output
+        )
+        assert "list: List project, organization, or public endpoints" not in output
+        assert "list List project, organization, or public endpoints" not in output
+
+    @pytest.mark.parametrize("command", ["list", "ls"])
     @pytest.mark.respx(base_url=base_url)
-    def test_list_sends_cursor_pagination(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_list_sends_cursor_pagination(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
@@ -216,7 +321,7 @@ class TestBetaEndpointsList:
         )
 
         result = cli_runner.invoke(
-            ["beta", "endpoints", "ls", "--project", "proj", "--limit", "10", "--after", "tok", "--json"]
+            ["beta", "endpoints", command, "--project", "proj", "--limit", "10", "--after", "tok", "--json"]
         )
 
         assert result.exit_code == 0, result.output
@@ -224,6 +329,41 @@ class TestBetaEndpointsList:
         assert "limit=10" in url
         assert "after=tok" in url
         assert json.loads(result.output)["next_cursor"] == "next"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_handles_deployment_without_hardware(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _endpoint_body(
+                            deployments=[
+                                {
+                                    "id": "dep_1",
+                                    "name": "my-project/my-endpoint/my-dep",
+                                    "model": "projects/proj/models/ml_1/revisions/latest",
+                                    "modelId": "ml_1",
+                                    "estimatedEffectiveTrafficShare": 1,
+                                    "state": "DEPLOYMENT_STATE_READY",
+                                    "readyReplicas": 1,
+                                    "desiredReplicas": 1,
+                                    "createdAt": "2026-01-01T00:00:00Z",
+                                    "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+                                }
+                            ],
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "ls", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_org_scoped(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

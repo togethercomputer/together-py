@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import os
+import json
+
+import pytest
 
 from tests.cli.utils import CliRunner
 from together._version import __version__
@@ -41,3 +44,56 @@ class TestMainGlobalOptions:
             call_kw = ctor.call_args.kwargs
             assert call_kw.get("timeout") == 99
             assert call_kw.get("max_retries") == 3
+
+    def test_version_check_runs_after_command_with_non_interactive_option(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        calls: list[tuple[bool, bool, str]] = []
+
+        class FakeVersionCheck:
+            async def inform(self, *, non_interactive: bool, allow_prompt: bool) -> None:
+                calls.append((non_interactive, allow_prompt, cli_runner.capsys.readouterr().out))
+
+        monkeypatch.setattr("together.lib.cli.VersionCheck", FakeVersionCheck)
+
+        result = cli_runner.invoke(["--non-interactive", "telemetry", "status"])
+
+        assert result.exit_code == 0
+        assert len(calls) == 1
+        assert calls[0][0] is True
+        assert calls[0][1] is True
+        assert "Telemetry:" in calls[0][2]
+
+    def test_version_check_does_not_prompt_after_command_failure(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        calls: list[tuple[bool, bool]] = []
+
+        class FakeVersionCheck:
+            async def inform(self, *, non_interactive: bool, allow_prompt: bool) -> None:
+                calls.append((non_interactive, allow_prompt))
+
+        monkeypatch.setattr("together.lib.cli.VersionCheck", FakeVersionCheck)
+
+        result = cli_runner.invoke(["unknown-command"])
+
+        assert result.exit_code == 1
+        assert calls == [(True, False)]
+
+    def test_update_notice_does_not_corrupt_json_output(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        cli_runner.env.pop("TOGETHER_DISABLE_VERSION_CHECK")
+        monkeypatch.setattr("together.lib.cli.utils._version_check.__version__", "1.0.0")
+        monkeypatch.setattr("together.lib.cli.utils._version_check._latest_version", lambda: "1.1.0")
+        monkeypatch.setattr(
+            "together.lib.cli.utils._version_check._upgrade_command",
+            lambda: ["python", "-m", "pip", "install", "--upgrade", "together"],
+        )
+
+        result = cli_runner.invoke(["--json", "telemetry", "status"])
+
+        assert result.exit_code == 0
+        assert json.loads(result.out_out)["telemetry"] in {"enabled", "disabled"}
+        assert "1.0.0 → 1.1.0" not in result.out_out
+        assert "1.0.0 → 1.1.0" in result.err_out

@@ -10,6 +10,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.types.beta.cluster_update_params import AddOn
 
 
 async def update(
@@ -34,15 +35,30 @@ async def update(
         Optional[str],
         Parameter(help="Timestamp at which the cluster should be decommissioned"),
     ] = None,
+    headlamp: Annotated[
+        Optional[bool],
+        Parameter(help="Enable or disable the Headlamp Kubernetes dashboard add-on"),
+    ] = None,
+    slurm_web: Annotated[
+        Optional[bool],
+        Parameter(help="Enable or disable the Slurm Web add-on"),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
     """Update a cluster."""
 
+    add_ons: list[AddOn] = []
+    if headlamp is not None:
+        add_ons.append({"name": "headlamp", "config": {"headlamp": {"enabled": headlamp}}})
+    if slurm_web is not None:
+        add_ons.append({"name": "slurm_web", "config": {"slurm_web": {"enabled": slurm_web}}})
+
     await show_loading_status(
         "Updating cluster...",
         config.client.beta.clusters.update(
             cluster_id,
+            add_ons=add_ons if add_ons else omit,
             num_gpus=num_gpus if num_gpus is not None else omit,
             cluster_type=cluster_type if cluster_type is not None else omit,
             num_capacity_pool_gpus=num_capacity_pool_gpus if num_capacity_pool_gpus is not None else omit,

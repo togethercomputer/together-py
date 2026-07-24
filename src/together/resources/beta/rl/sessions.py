@@ -21,7 +21,7 @@ from ...._base_client import make_request_options
 from ....types.beta.rl import session_list_params, session_create_params
 from ....types.beta.rl.training_session import TrainingSession
 from ....types.beta.rl.lora_config_param import LoraConfigParam
-from ....types.beta.rl.session_list_response import SessionListResponse
+from ....types.beta.rl.training_sessions_list_response import TrainingSessionsListResponse
 
 __all__ = ["SessionsResource", "AsyncSessionsResource"]
 
@@ -159,7 +159,7 @@ class SessionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SessionListResponse:
+    ) -> TrainingSessionsListResponse:
         """
         Lists all training sessions.
 
@@ -201,7 +201,7 @@ class SessionsResource(SyncAPIResource):
                     session_list_params.SessionListParams,
                 ),
             ),
-            cast_to=SessionListResponse,
+            cast_to=TrainingSessionsListResponse,
         )
 
     def stop(
@@ -373,7 +373,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SessionListResponse:
+    ) -> TrainingSessionsListResponse:
         """
         Lists all training sessions.
 
@@ -415,7 +415,7 @@ class AsyncSessionsResource(AsyncAPIResource):
                     session_list_params.SessionListParams,
                 ),
             ),
-            cast_to=SessionListResponse,
+            cast_to=TrainingSessionsListResponse,
         )
 
     async def stop(

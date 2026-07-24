@@ -1,27 +1,15 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Union
+from typing import List
 
 from ...._models import BaseModel
+from .checkpoint_file import CheckpointFile
 
-__all__ = ["CheckpointDownloadResponse", "Data"]
-
-
-class Data(BaseModel):
-    """A downloadable file within a checkpoint"""
-
-    filename: str
-    """Name of the file"""
-
-    size: Union[str, int]
-    """File size in bytes"""
-
-    url: str
-    """Presigned URL for downloading the file"""
+__all__ = ["CheckpointDownloadResponse"]
 
 
 class CheckpointDownloadResponse(BaseModel):
     """Presigned download URLs for a checkpoint's files"""
 
-    data: List[Data]
+    data: List[CheckpointFile]
     """List of files with presigned download URLs"""

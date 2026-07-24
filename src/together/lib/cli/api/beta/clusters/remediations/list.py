@@ -20,6 +20,7 @@ RemediationModeParameter = Annotated[
                 "HOST_AWARE",
                 "EVICT_WITHOUT_REPLACEMENT",
                 "REBOOT_VM",
+                "HOST_POWER_CYCLE",
             ]
         ]
     ],
@@ -128,6 +129,8 @@ def _colorize(state: str) -> str:
         "FAILED": "red",
         "CANCELLED": "dim",
         "AUTO_RESOLVED": "green",
+        "QUARANTINING": "yellow",
+        "QUARANTINED": "yellow",
     }
     color = state_colors[state] if state in state_colors else "white"
     return f"[{color}]{state}[/{color}]"

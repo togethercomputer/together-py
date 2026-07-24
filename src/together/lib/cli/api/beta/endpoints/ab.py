@@ -74,7 +74,8 @@ async def ab(
     )
     verify_control_receiving_traffic(endpoint, control)
 
-    resolved_model, config_value = await resolve_model_and_config(config, model, config_id=config_id)
+    resolved = await resolve_model_and_config(config, model, config_id=config_id)
+    resolved_model, config_value = resolved.model, resolved.config
 
     autoscaling = build_autoscaling(
         min_replicas=1,
@@ -103,7 +104,7 @@ async def ab(
             endpoint_id=endpoint.id,
             enable_lora=enable_lora,
             name=name,
-            model=construct_model_path(resolved_model),
+            model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,
         ),

@@ -30,10 +30,10 @@ class EndpointDeploymentSummary(BaseModel):
     created_at: datetime = FieldInfo(alias="createdAt")
     """Timestamp when the deployment was created."""
 
-    hardware: str
+    estimated_effective_traffic_share: float = FieldInfo(alias="estimatedEffectiveTrafficShare")
     """
-    Hardware configuration selected by the deployment's config, such as its GPU type
-    and count.
+    Estimated fraction from 0 to 1 of endpoint traffic currently routed to this
+    deployment.
     """
 
     model: str
@@ -73,10 +73,10 @@ class EndpointDeploymentSummary(BaseModel):
     desired_replicas: Optional[int] = FieldInfo(alias="desiredReplicas", default=None)
     """Number of replicas the autoscaler currently wants across all regions."""
 
-    estimated_effective_traffic_share: Optional[float] = FieldInfo(alias="estimatedEffectiveTrafficShare", default=None)
+    hardware: Optional[str] = None
     """
-    Estimated fraction from 0 to 1 of endpoint traffic currently routed to this
-    deployment.
+    Hardware configuration selected by the deployment's config, such as its GPU type
+    and count.
     """
 
     ready_replicas: Optional[int] = FieldInfo(alias="readyReplicas", default=None)

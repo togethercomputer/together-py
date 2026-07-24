@@ -35,6 +35,12 @@ class Data(BaseModel):
     object_id: Optional[str] = None
     """Together model registry object ID for the checkpoint artifact (e.g. `ml_...`)."""
 
+    object_name: Optional[str] = None
+    """
+    Together model registry name for the checkpoint artifact, formatted as
+    `<project_slug>/<checkpoint_name>`.
+    """
+
     object_revision_id: Optional[str] = None
     """Together model registry revision ID for the checkpoint artifact (e.g.
 

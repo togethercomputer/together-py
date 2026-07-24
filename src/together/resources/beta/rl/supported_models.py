@@ -14,7 +14,7 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.rl.supported_models import SupportedModels
+from ....types.beta.rl.rl_supported_models import RlSupportedModels
 
 __all__ = ["SupportedModelsResource", "AsyncSupportedModelsResource"]
 
@@ -48,7 +48,7 @@ class SupportedModelsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SupportedModels:
+    ) -> RlSupportedModels:
         """
         Returns the models supported by the RL service and their limits for
         training/sampling operations.
@@ -58,7 +58,7 @@ class SupportedModelsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SupportedModels,
+            cast_to=RlSupportedModels,
         )
 
 
@@ -91,7 +91,7 @@ class AsyncSupportedModelsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> SupportedModels:
+    ) -> RlSupportedModels:
         """
         Returns the models supported by the RL service and their limits for
         training/sampling operations.
@@ -101,7 +101,7 @@ class AsyncSupportedModelsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=SupportedModels,
+            cast_to=RlSupportedModels,
         )
 
 

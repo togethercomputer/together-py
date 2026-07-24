@@ -126,6 +126,7 @@ class TestJSONMode:
         fine_tuning.run_and_assert("delete ft-123 --force")
         fine_tuning.run_and_assert("list-events ft-123")
         fine_tuning.run_and_assert("list-checkpoints ft-123")
+        fine_tuning.run_and_assert("preview --training-file file-123 --model deepseek-ai/DeepSeek-R1")
         fine_tuning.run_and_assert("retrieve-checkpoint ft-123/checkpoint-123")
         fine_tuning.run_and_assert("retrieve-checkpoint ft-123/checkpoint-123")
 

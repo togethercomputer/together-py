@@ -427,7 +427,6 @@ def _ssh_command(
     bastion: str,
     key_path: str,
     cert_path: str,
-    known_hosts_path: str,
     remote_command: tuple[str, ...],
 ) -> list[str]:
     _validate_ssh_destination(login, host, bastion)
@@ -438,13 +437,16 @@ def _ssh_command(
         + " ".join(shlex.quote(arg) for arg in proxy_common)
         + f" -W %h:%p {shlex.quote(login)}@{shlex.quote(bastion)}"
     )
+    # Second hop (bastion -> target host): host-key verification disabled by
+    # default. Cluster hosts are ephemeral (reprovisioned by CAPI, cert-based
+    # user auth), so their host keys aren't pinned in a known_hosts file and
+    # StrictHostKeyChecking would just prompt/fail. Trust is established by the
+    # step-ca user certificate, not the target host key.
     inner_verification = [
         "-o",
-        "StrictHostKeyChecking=ask",
+        "StrictHostKeyChecking=no",
         "-o",
-        f"UserKnownHostsFile={known_hosts_path}",
-        "-o",
-        f"HostKeyAlias={host}.{bastion}",
+        "UserKnownHostsFile=/dev/null",
     ]
     return (
         ["ssh"]
@@ -479,7 +481,6 @@ def _ssh_config_entry(
     bastion: str,
     key_path: str,
     cert_path: str,
-    known_hosts_path: str,
 ) -> str:
     _validate_ssh_alias(alias)
     _validate_ssh_destination(login, host, bastion)
@@ -498,9 +499,10 @@ def _ssh_config_entry(
             f"  IdentityFile {_ssh_config_value(key_path)}",
             f"  CertificateFile {_ssh_config_value(cert_path)}",
             "  IdentitiesOnly yes",
-            "  StrictHostKeyChecking ask",
-            f"  UserKnownHostsFile {_ssh_config_value(known_hosts_path)}",
-            f"  HostKeyAlias {_ssh_config_value(f'{host}.{bastion}')}",
+            # Second hop insecure by default: ephemeral cluster hosts, cert-based
+            # user auth, no pinned host keys. Trust is the step-ca user cert.
+            "  StrictHostKeyChecking no",
+            "  UserKnownHostsFile /dev/null",
             f"  ProxyCommand {proxy}",
         ]
     )
@@ -690,8 +692,7 @@ async def ssh(
             crt = _sign(ca_url, ott, pub_blob, ca_ctx)
             _atomic_write(cert_path, f"{_CERT_ALGO[key_type]} {crt} together-ssh\n", 0o644)
 
-    known_hosts_path = os.path.join(os.path.dirname(key_path), "known_hosts")
-    cmd = _ssh_command(login, host, bastion, key_path, cert_path, known_hosts_path, remote_command)
+    cmd = _ssh_command(login, host, bastion, key_path, cert_path, remote_command)
     if ssh_config_alias is not None:
         entry = _ssh_config_entry(
             ssh_config_alias,
@@ -700,7 +701,6 @@ async def ssh(
             bastion,
             key_path,
             cert_path,
-            known_hosts_path,
         )
         if write_ssh_config:
             managed_config, main_config = _write_ssh_config(ssh_config_alias, entry, cache_root)

@@ -140,7 +140,7 @@ class FineTuningCancelResponse(BaseModel):
     """Last update timestamp of the fine-tune job"""
 
     user_id: str
-    """ID of the user who owns the fine-tune job."""
+    """ID of the user who created the fine-tune job."""
 
     batch_size: Optional[int] = None
     """Batch size used for training"""
