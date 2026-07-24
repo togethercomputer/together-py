@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .jig.jig import (
     JigResource,
     AsyncJigResource,
@@ -37,6 +39,9 @@ from .endpoints.endpoints import (
     AsyncEndpointsResourceWithStreamingResponse,
 )
 
+if TYPE_CHECKING:
+    from ..realtime import RealtimeResource, AsyncRealtimeResource
+
 __all__ = ["BetaResource", "AsyncBetaResource"]
 
 
@@ -52,6 +57,14 @@ class BetaResource(SyncAPIResource):
     @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
+
+    # Handwritten (not generated): realtime transcription over WebSocket.
+    # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
+    @cached_property
+    def realtime(self) -> RealtimeResource:
+        from ..realtime import RealtimeResource
+
+        return RealtimeResource(self._client)
 
     @cached_property
     def clusters(self) -> ClustersResource:
@@ -89,6 +102,14 @@ class AsyncBetaResource(AsyncAPIResource):
     @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
+
+    # Handwritten (not generated): realtime transcription over WebSocket.
+    # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
+    @cached_property
+    def realtime(self) -> AsyncRealtimeResource:
+        from ..realtime import AsyncRealtimeResource
+
+        return AsyncRealtimeResource(self._client)
 
     @cached_property
     def clusters(self) -> AsyncClustersResource:
