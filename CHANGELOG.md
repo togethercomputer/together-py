@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.0](https://github.com/togethercomputer/together-py/compare/v2.27.1...v2.28.0) (2026-07-24)
+
+
+### Features
+
+* Add realtime transcription SDK methods ([57ca1d8](https://github.com/togethercomputer/together-py/commit/57ca1d8790ab79a3dd92aaeefb8fab7b25199e7b))
+
 ## [2.27.1](https://github.com/togethercomputer/together-py/compare/v2.27.0...v2.27.1) (2026-07-23)
 
 
