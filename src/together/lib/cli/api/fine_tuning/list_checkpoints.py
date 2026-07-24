@@ -7,7 +7,9 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 
 
-def _format_registry_artifact(object_id: str | None, revision_id: str | None) -> str:
+def _format_registry_artifact(object_name: str | None, object_id: str | None, revision_id: str | None) -> str:
+    if object_name:
+        return object_name
     if object_id and revision_id:
         return f"{object_id}@{revision_id}"
     return object_id or revision_id or ""
@@ -43,7 +45,11 @@ async def list_checkpoints(
             if "intermediate" in checkpoint.checkpoint_type.lower()
             else fine_tune_id
         )
-        registry_artifact = _format_registry_artifact(checkpoint.object_id, checkpoint.object_revision_id)
+        registry_artifact = _format_registry_artifact(
+            checkpoint.object_name,
+            checkpoint.object_id,
+            checkpoint.object_revision_id,
+        )
         if registry_artifact:
             registry_artifacts.append((name, registry_artifact))
         table.add_row(

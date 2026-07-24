@@ -70,6 +70,7 @@ _FT_CHECKPOINT = {
     "checkpoint": "model",
     "created_at": "2024-01-01T00:00:00Z",
     "object_id": "ml-checkpoint",
+    "object_name": "project/checkpoint",
     "object_revision_id": "rv-checkpoint",
     "path": "/p",
     "step": 5,
@@ -370,8 +371,21 @@ class TestFineTuningEventsAndCheckpoints:
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
         assert "Registry artifacts" in result.output
-        assert "ml-checkpoint@rv-checkpoint" in result.output
+        assert "project/checkpoint" in result.output
+        assert "ml-checkpoint@rv-checkpoint" not in result.output
         assert "intermediate" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_checkpoints_table_falls_back_to_object_id_and_revision(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        checkpoint = {**_FT_CHECKPOINT, "object_name": None}
+        respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
+            return_value=httpx.Response(200, json={"data": [checkpoint]})
+        )
+        result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
+        assert result.exit_code == 0
+        assert "ml-checkpoint@rv-checkpoint" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_empty_message(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
