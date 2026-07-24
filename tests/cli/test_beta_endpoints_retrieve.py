@@ -59,6 +59,29 @@ def _deployment_body(**overrides: Any) -> dict[str, Any]:
     return body
 
 
+def _whoami_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "api_key_id": "key-1",
+        "organization_id": "org-1",
+        "organization_name": "Acme",
+        "project_id": "proj",
+        "project_name": "My Project",
+        "project_slug": "my-project",
+        "user_id": "user-1",
+    }
+    body.update(overrides)
+    return body
+
+
+def _mock_endpoint_get_side_resources(respx_mock: MockRouter) -> None:
+    respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+        return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+    )
+    respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+        return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+    )
+
+
 class TestBetaEndpointsRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_deployment_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -92,6 +115,69 @@ class TestBetaEndpointsRetrieve:
         )
 
         result = cli_runner.invoke(["beta", "endpoints", "dep_control", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["id"] == "dep_control"
+        assert payload["endpointId"] == "ep_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(200, json=_endpoint_body())
+        )
+        _mock_endpoint_get_side_resources(respx_mock)
+
+        result = cli_runner.invoke(["beta", "endpoints", "get", "my-endpoint", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["id"] == "ep_1"
+        assert payload["name"] == "my-project/my-endpoint"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(200, json=_endpoint_body())
+        )
+        _mock_endpoint_get_side_resources(respx_mock)
+
+        result = cli_runner.invoke(["beta", "endpoints", "my-endpoint", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["id"] == "ep_1"
+        assert payload["name"] == "my-project/my-endpoint"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_implicit_retrieve_deployment_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        # Name lookup as endpoint fails (no matching endpoint), then deployment name resolves.
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "control", "--project", "proj", "--json"])
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)

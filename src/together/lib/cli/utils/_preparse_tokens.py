@@ -14,7 +14,9 @@ _COMMAND_ID_IDENTIFIERS = {
     "evals": re.compile(r"^eval-"),
     "endpoints": re.compile(r"^endpoint-"),
     "beta models configs": re.compile(r"^ep_"),
-    "beta endpoints": re.compile(r"^(ep_|dep_)"),
+    # Any non-flag token: registered subcommands are already consumed by parse_commands,
+    # so leftover args are treated as an endpoint/deployment id or name for retrieve.
+    "beta endpoints": re.compile(r"^(?!--).+"),
     "beta models": re.compile(r"^ml_"),
     "beta endpoints deployments": re.compile(r"^dep_"),
     "beta clusters": _UUID_RE,

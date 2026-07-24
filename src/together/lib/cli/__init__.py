@@ -662,7 +662,7 @@ beta_endpoints_app.command(
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
     name="get",
-    help="Get endpoint or deployment details by ID",
+    help="Get endpoint or deployment details by name or ID",
     help_epilogue=BETA_ENDPOINTS_GET_HELP_EXAMPLES,
     sort_key=3,
 )
