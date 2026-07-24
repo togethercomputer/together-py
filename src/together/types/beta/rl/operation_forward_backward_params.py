@@ -50,8 +50,5 @@ class Sample(TypedDict, total=False):
     model_input: Required[SampleModelInput]
     """Model input"""
 
-    policy_segments: Iterable[PolicyVersionSegmentParam]
-    """Policy versions that produced this sample's tokens.
-
-    Echo back from `SampleResult.policy_segments`.
-    """
+    policy_segments: Required[Iterable[PolicyVersionSegmentParam]]
+    """Policy versions associated with this sample's tokens"""

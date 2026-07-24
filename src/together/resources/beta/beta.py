@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .rl.rl import (
     RlResource,
     AsyncRlResource,
@@ -10,8 +12,6 @@ from .rl.rl import (
     RlResourceWithStreamingResponse,
     AsyncRlResourceWithStreamingResponse,
 )
-from typing import TYPE_CHECKING
-
 from .jig.jig import (
     JigResource,
     AsyncJigResource,

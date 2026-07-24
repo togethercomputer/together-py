@@ -645,7 +645,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        prompts: Iterable[operation_sample_params.Prompt],
+        model_inputs: Iterable[operation_sample_params.ModelInput],
         num_samples: int | Omit = omit,
         sampling_params: operation_sample_params.SamplingParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -662,7 +662,7 @@ class OperationsResource(SyncAPIResource):
         Args:
           session_id: Training session ID
 
-          prompts: Input prompts as tokenized chunks
+          model_inputs: Model inputs to sample from
 
           num_samples: Number of completions to generate per prompt
 
@@ -682,7 +682,7 @@ class OperationsResource(SyncAPIResource):
             path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=maybe_transform(
                 {
-                    "prompts": prompts,
+                    "model_inputs": model_inputs,
                     "num_samples": num_samples,
                     "sampling_params": sampling_params,
                 },
@@ -1298,7 +1298,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        prompts: Iterable[operation_sample_params.Prompt],
+        model_inputs: Iterable[operation_sample_params.ModelInput],
         num_samples: int | Omit = omit,
         sampling_params: operation_sample_params.SamplingParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -1315,7 +1315,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         Args:
           session_id: Training session ID
 
-          prompts: Input prompts as tokenized chunks
+          model_inputs: Model inputs to sample from
 
           num_samples: Number of completions to generate per prompt
 
@@ -1335,7 +1335,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=await async_maybe_transform(
                 {
-                    "prompts": prompts,
+                    "model_inputs": model_inputs,
                     "num_samples": num_samples,
                     "sampling_params": sampling_params,
                 },

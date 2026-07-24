@@ -200,9 +200,9 @@ async with client.beta.realtime.transcription(
 
     async for event in session:
         if isinstance(event, TranscriptDelta):
-            print("interim:", event.text)   # updates while a phrase is spoken
+            print("interim:", event.text)  # updates while a phrase is spoken
         elif isinstance(event, TranscriptCompleted):
-            print("final:", event.text)     # one per finished utterance
+            print("final:", event.text)  # one per finished utterance
 
     transcript = await session.flush()  # finalize whatever was said last
 ```

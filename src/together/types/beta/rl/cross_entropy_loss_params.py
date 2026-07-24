@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypedDict
 
 __all__ = ["CrossEntropyLossParams"]
 
-CrossEntropyLossParams: TypeAlias = object
+
+class CrossEntropyLossParams(TypedDict, total=False):
+    """Cross-entropy loss parameters (currently empty)."""
+
+    pass

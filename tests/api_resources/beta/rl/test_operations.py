@@ -110,6 +110,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -124,6 +130,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -142,6 +154,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         ) as response:
@@ -163,6 +181,12 @@ class TestOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{}]},
+                        "policy_segments": [
+                            {
+                                "start_token": 0,
+                                "version": 5,
+                            }
+                        ],
                     }
                 ],
             )
@@ -175,6 +199,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -188,6 +218,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -205,6 +241,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         ) as response:
@@ -225,6 +267,12 @@ class TestOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{}]},
+                        "policy_segments": [
+                            {
+                                "start_token": 0,
+                                "version": 5,
+                            }
+                        ],
                     }
                 ],
             )
@@ -238,6 +286,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -354,6 +408,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -372,6 +432,12 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         ) as response:
@@ -393,6 +459,12 @@ class TestOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{}]},
+                        "policy_segments": [
+                            {
+                                "start_token": 0,
+                                "version": 5,
+                            }
+                        ],
                     }
                 ],
             )
@@ -808,7 +880,7 @@ class TestOperations:
     def test_method_sample(self, client: Together) -> None:
         operation = client.beta.rl.operations.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{}]}],
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -816,7 +888,7 @@ class TestOperations:
     def test_method_sample_with_all_params(self, client: Together) -> None:
         operation = client.beta.rl.operations.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
             sampling_params={
                 "max_tokens": 512,
@@ -834,7 +906,7 @@ class TestOperations:
     def test_raw_response_sample(self, client: Together) -> None:
         response = client.beta.rl.operations.with_raw_response.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{}]}],
         )
 
         assert response.is_closed is True
@@ -846,7 +918,7 @@ class TestOperations:
     def test_streaming_response_sample(self, client: Together) -> None:
         with client.beta.rl.operations.with_streaming_response.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{}]}],
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -861,7 +933,7 @@ class TestOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
-                prompts=[{"chunks": [{}]}],
+                model_inputs=[{"chunks": [{}]}],
             )
 
 
@@ -955,6 +1027,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -969,6 +1047,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -987,6 +1071,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         ) as response:
@@ -1008,6 +1098,12 @@ class TestAsyncOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{}]},
+                        "policy_segments": [
+                            {
+                                "start_token": 0,
+                                "version": 5,
+                            }
+                        ],
                     }
                 ],
             )
@@ -1020,6 +1116,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -1033,6 +1135,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -1050,6 +1158,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         ) as response:
@@ -1070,6 +1184,12 @@ class TestAsyncOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{}]},
+                        "policy_segments": [
+                            {
+                                "start_token": 0,
+                                "version": 5,
+                            }
+                        ],
                     }
                 ],
             )
@@ -1083,6 +1203,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -1199,6 +1325,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         )
@@ -1217,6 +1349,12 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{}]},
+                    "policy_segments": [
+                        {
+                            "start_token": 0,
+                            "version": 5,
+                        }
+                    ],
                 }
             ],
         ) as response:
@@ -1238,6 +1376,12 @@ class TestAsyncOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{}]},
+                        "policy_segments": [
+                            {
+                                "start_token": 0,
+                                "version": 5,
+                            }
+                        ],
                     }
                 ],
             )
@@ -1653,7 +1797,7 @@ class TestAsyncOperations:
     async def test_method_sample(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{}]}],
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -1661,7 +1805,7 @@ class TestAsyncOperations:
     async def test_method_sample_with_all_params(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
             sampling_params={
                 "max_tokens": 512,
@@ -1679,7 +1823,7 @@ class TestAsyncOperations:
     async def test_raw_response_sample(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.operations.with_raw_response.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{}]}],
         )
 
         assert response.is_closed is True
@@ -1691,7 +1835,7 @@ class TestAsyncOperations:
     async def test_streaming_response_sample(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.operations.with_streaming_response.sample(
             session_id="session_id",
-            prompts=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{}]}],
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1706,5 +1850,5 @@ class TestAsyncOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
-                prompts=[{"chunks": [{}]}],
+                model_inputs=[{"chunks": [{}]}],
             )

@@ -15,25 +15,33 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
 async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParameter) -> dict[str, str]:
-    model_ids = {
-        deployment.api_model_id
+    model_resource_paths = {
+        (deployment.model, deployment.api_model_id)
         for endpoint in endpoints
         for deployment in endpoint.deployments or []
-        if deployment.api_model_id
+        if deployment.model and deployment.api_model_id
     }
 
-    async def fetch_model_name(model_id: str) -> tuple[str, str]:
+    async def fetch_model_name(model_resource_path: str, model_id: str) -> tuple[str, str]:
         try:
-            # TODO: We should be able to just do a GET on the deployment.api_model instead of trying to resolve from the id.
-            return model_id, (await resolve_model(config, model_id)).name
+            match = MODEL_PATH_RE.match(model_resource_path)
+            if match is None:
+                return model_id, model_id
+            project_id, model_id = match.group(1), match.group(2)
+            model = await config.client.beta.models.retrieve(model_id, project_id=project_id)
+            return model_id, model.name
         except Exception:
             return model_id, model_id
 
-    return dict(await asyncio.gather(*(fetch_model_name(model_id) for model_id in model_ids)))
+    return dict(
+        await asyncio.gather(
+            *(fetch_model_name(model_resource_path, model_id) for model_resource_path, model_id in model_resource_paths)
+        )
+    )
 
 
 def _print_next_page(next_cursor: str | None, *, public: bool = False, org: bool = False) -> None:

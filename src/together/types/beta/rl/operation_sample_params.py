@@ -7,12 +7,12 @@ from typing_extensions import Required, TypedDict
 
 from ...._types import SequenceNotStr
 
-__all__ = ["OperationSampleParams", "Prompt", "PromptChunk", "PromptChunkEncodedText", "SamplingParams"]
+__all__ = ["OperationSampleParams", "ModelInput", "ModelInputChunk", "ModelInputChunkEncodedText", "SamplingParams"]
 
 
 class OperationSampleParams(TypedDict, total=False):
-    prompts: Required[Iterable[Prompt]]
-    """Input prompts as tokenized chunks"""
+    model_inputs: Required[Iterable[ModelInput]]
+    """Model inputs to sample from"""
 
     num_samples: int
     """Number of completions to generate per prompt"""
@@ -21,17 +21,17 @@ class OperationSampleParams(TypedDict, total=False):
     """Optional sampling parameters"""
 
 
-class PromptChunkEncodedText(TypedDict, total=False):
+class ModelInputChunkEncodedText(TypedDict, total=False):
     tokens: Required[SequenceNotStr[Union[str, int]]]
     """Pre-tokenized text input"""
 
 
-class PromptChunk(TypedDict, total=False):
-    encoded_text: PromptChunkEncodedText
+class ModelInputChunk(TypedDict, total=False):
+    encoded_text: ModelInputChunkEncodedText
 
 
-class Prompt(TypedDict, total=False):
-    chunks: Required[Iterable[PromptChunk]]
+class ModelInput(TypedDict, total=False):
+    chunks: Required[Iterable[ModelInputChunk]]
     """Input chunks for the model"""
 
 
@@ -43,8 +43,8 @@ class SamplingParams(TypedDict, total=False):
 
     return_prompt_logprobs: bool
     """
-    When true, also return teacher-forced log-probabilities for the prompt tokens in
-    `SampleRollout.prompt_logprobs`.
+    When true, also return teacher-forced log-probabilities for the model input
+    tokens in `SampleResult.prompt_logprobs`.
     """
 
     seed: Union[str, int]
