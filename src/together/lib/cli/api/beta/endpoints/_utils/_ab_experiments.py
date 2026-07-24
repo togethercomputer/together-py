@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from together import AsyncClient, omit
+from together import AsyncClient
 from together.types.beta import AbMember, AbMemberParam
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 
@@ -10,18 +10,9 @@ async def find_ab_for_deployment(
     endpoint_id: str,
     deployment_id: str,
 ) -> AbExperiment | None:
-    cursor: str | None = None
-    while True:
-        page = await client.beta.endpoints.ab_experiments.list(
-            endpoint_id=endpoint_id,
-            after=cursor or omit,
-        )
-        for experiment in page.data:
-            if any(m.deployment_id == deployment_id for m in experiment.members):
-                return experiment
-        if not page.next_cursor:
-            break
-        cursor = page.next_cursor
+    async for experiment in client.beta.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
+        if any(m.deployment_id == deployment_id for m in experiment.members):
+            return experiment
     return None
 
 
