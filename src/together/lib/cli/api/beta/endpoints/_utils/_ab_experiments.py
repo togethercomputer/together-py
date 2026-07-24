@@ -38,9 +38,7 @@ def update_ab_member_percent(
         raise ValueError(f"Deployment {deployment_id} is not a member of the A/B experiment.")
 
     if target.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL":
-        raise ValueError(
-            "--ab-percent can only update variant deployments; control percent is derived from variants."
-        )
+        raise ValueError("--ab-percent can only update variant deployments; control percent is derived from variants.")
 
     control = next((m for m in members if m.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL"), None)
     if control is None:
