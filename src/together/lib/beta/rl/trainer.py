@@ -23,6 +23,7 @@ from ....types.beta.rl.forward_result import ForwardResult
 from ....types.beta.rl.training_session import TrainingSession
 from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.lora_config_param import LoraConfigParam
+from ....types.beta.rl.loss_config_param import LossConfigParam
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
@@ -32,7 +33,7 @@ from ....types.beta.rl.operation_sample_params import Prompt, SamplingParams, Op
 from ....types.beta.rl.operation_forward_params import OperationForwardParams
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
-from ....types.beta.rl.operation_forward_backward_params import Loss, Sample, OperationForwardBackwardParams
+from ....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
 from ....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
 
 logger = logging.getLogger("together")
@@ -243,7 +244,7 @@ class Trainer:
         self,
         *,
         samples: Iterable[Sample],
-        loss: Loss,
+        loss: LossConfigParam,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
@@ -550,7 +551,7 @@ class Trainer:
         self,
         *,
         samples: Iterable[Sample],
-        loss: Loss,
+        loss: LossConfigParam,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
