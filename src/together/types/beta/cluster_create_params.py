@@ -40,9 +40,6 @@ class ClusterCreateParams(TypedDict, total=False):
     cluster_name: Required[str]
     """Name of the GPU cluster."""
 
-    cuda_version: str
-    """Legacy CUDA version for this cluster. For example, 12.5"""
-
     gpu_type: Required[
         Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"]
     ]
@@ -53,16 +50,6 @@ class ClusterCreateParams(TypedDict, total=False):
 
     This must be multiple of 8. For example, 8, 16 or 24
     """
-
-    nvidia_driver_version: str
-    """Legacy Nvidia driver version for this cluster.
-
-    For example, 550. Only some combination of cuda_version and
-    nvidia_driver_version are supported.
-    """
-
-    nvidia_version_id: str
-    """NVIDIA version catalog ID for this cluster."""
 
     region: Required[str]
     """Region to create the GPU cluster in.
@@ -110,6 +97,14 @@ class ClusterCreateParams(TypedDict, total=False):
     cluster_type: Literal["KUBERNETES", "SLURM"]
     """Type of cluster to create."""
 
+    cuda_version: str
+    """Legacy CUDA selector for this cluster.
+
+    Bare semantic values such as 12.5 select ubuntu-22.04; existing OS-suffixed
+    values remain accepted for compatibility. Must be paired with
+    nvidia_driver_version. Prefer nvidia_version_id for new integrations.
+    """
+
     duration_days: int
     """Duration in days to keep the cluster running."""
 
@@ -138,6 +133,20 @@ class ClusterCreateParams(TypedDict, total=False):
 
     When omitted for RESERVED billing on create, the server defaults this to
     num_gpus.
+    """
+
+    nvidia_driver_version: str
+    """Legacy NVIDIA driver selector for this cluster.
+
+    For example, 550. Must be paired with cuda_version. Prefer nvidia_version_id for
+    new integrations.
+    """
+
+    nvidia_version_id: str
+    """Canonical region-specific NVIDIA version ID.
+
+    If cuda_version and nvidia_driver_version are also set, they must resolve to the
+    same catalog entry.
     """
 
     oidc_config: OidcConfig
