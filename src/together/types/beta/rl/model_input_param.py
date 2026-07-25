@@ -7,7 +7,7 @@ from typing_extensions import Required, TypedDict
 
 from ...._types import SequenceNotStr
 
-__all__ = ["ModelInputParam", "Chunk", "ChunkEncodedText"]
+__all__ = ["ModelInput", "Chunk", "ChunkEncodedText"]
 
 
 class ChunkEncodedText(TypedDict, total=False):
@@ -19,6 +19,6 @@ class Chunk(TypedDict, total=False):
     encoded_text: ChunkEncodedText
 
 
-class ModelInputParam(TypedDict, total=False):
+class ModelInput(TypedDict, total=False):
     chunks: Required[Iterable[Chunk]]
     """Input chunks for the model"""

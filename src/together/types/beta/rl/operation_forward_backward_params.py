@@ -7,7 +7,7 @@ from typing_extensions import Required, TypedDict
 
 from .loss_config_param import LossConfigParam
 from .loss_inputs_param import LossInputsParam
-from .model_input_param import ModelInputParam
+from .model_input_param import ModelInput
 from .policy_version_segment_param import PolicyVersionSegmentParam
 
 __all__ = ["OperationForwardBackwardParams", "Sample"]
@@ -25,7 +25,7 @@ class Sample(TypedDict, total=False):
     loss_inputs: Required[LossInputsParam]
     """Loss function inputs"""
 
-    model_input: Required[ModelInputParam]
+    model_input: Required[ModelInput]
     """Model input"""
 
     policy_segments: Required[Iterable[PolicyVersionSegmentParam]]

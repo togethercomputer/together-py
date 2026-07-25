@@ -33,7 +33,7 @@ from ....types.beta.rl.sample_operation import SampleOperation
 from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.loss_config_param import LossConfigParam
-from ....types.beta.rl.model_input_param import ModelInputParam
+from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
 from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
 from ....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
@@ -648,7 +648,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        model_inputs: Iterable[ModelInputParam],
+        model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -1301,7 +1301,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        model_inputs: Iterable[ModelInputParam],
+        model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.

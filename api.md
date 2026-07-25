@@ -294,6 +294,7 @@ from together.types.beta.rl import (
     PpoLossParams,
     SampleOperation,
     SampleResult,
+    SampledSequence,
     SamplingParams,
     StopReason,
     TrainingCheckpointOperation,

@@ -1,25 +1,12 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import List, Union, Optional
+from typing import List, Optional
 
 from ...._models import BaseModel
-from .stop_reason import StopReason
+from .sampled_sequence import SampledSequence
 from .policy_version_segment import PolicyVersionSegment
 
-__all__ = ["SampleResult", "Sequence"]
-
-
-class Sequence(BaseModel):
-    """A single generated completion sequence with tokens and logprobs"""
-
-    stop_reason: StopReason
-    """Reason for stopping generation"""
-
-    tokens: List[Union[str, int]]
-    """Generated token IDs"""
-
-    logprobs: Optional[List[float]] = None
-    """Log probabilities for each generated token"""
+__all__ = ["SampleResult"]
 
 
 class SampleResult(BaseModel):
@@ -28,7 +15,7 @@ class SampleResult(BaseModel):
     policy_segments: List[PolicyVersionSegment]
     """Policy versions that produced these completions"""
 
-    sequences: List[Sequence]
+    sequences: List[SampledSequence]
     """Generated completions"""
 
     prompt_logprobs: Optional[List[float]] = None

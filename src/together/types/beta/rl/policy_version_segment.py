@@ -6,13 +6,13 @@ __all__ = ["PolicyVersionSegment"]
 
 
 class PolicyVersionSegment(BaseModel):
-    """A (policy version, starting token) span within a rollout.
+    """A (policy version, starting token) span within a sampled sequence.
 
     Version 0 is the initial model; each optim_step call increments the version by 1.
     """
 
     start_token: int
-    """Index of the first token of this segment within the rollout's token sequence.
+    """Index of the first token of this segment within the sampled sequence.
 
     Always 0 for the first segment.
     """

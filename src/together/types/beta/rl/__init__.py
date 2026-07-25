@@ -17,6 +17,7 @@ from .sampling_params import SamplingParams as SamplingParams
 from .grpo_loss_params import GrpoLossParams as GrpoLossParams
 from .optimizer_config import OptimizerConfig as OptimizerConfig
 from .sample_operation import SampleOperation as SampleOperation
+from .sampled_sequence import SampledSequence as SampledSequence
 from .training_session import TrainingSession as TrainingSession
 from .weight_sync_type import WeightSyncType as WeightSyncType
 from .cispo_loss_params import CispoLossParams as CispoLossParams
@@ -24,7 +25,7 @@ from .forward_operation import ForwardOperation as ForwardOperation
 from .lora_config_param import LoraConfigParam as LoraConfigParam
 from .loss_config_param import LossConfigParam as LossConfigParam
 from .loss_inputs_param import LossInputsParam as LossInputsParam
-from .model_input_param import ModelInputParam as ModelInputParam
+from .model_input_param import ModelInput as ModelInput
 from .optim_step_result import OptimStepResult as OptimStepResult
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
 from .rl_supported_model import RlSupportedModel as RlSupportedModel
