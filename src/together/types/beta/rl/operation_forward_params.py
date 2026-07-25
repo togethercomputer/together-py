@@ -2,20 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Union, Iterable
+from typing import Iterable
 from typing_extensions import Required, TypedDict
 
-from ...._types import SequenceNotStr
 from .loss_inputs_param import LossInputsParam
+from .model_input_param import ModelInputParam
 from .policy_version_segment_param import PolicyVersionSegmentParam
 
-__all__ = [
-    "OperationForwardParams",
-    "Sample",
-    "SampleModelInput",
-    "SampleModelInputChunk",
-    "SampleModelInputChunkEncodedText",
-]
+__all__ = ["OperationForwardParams", "Sample"]
 
 
 class OperationForwardParams(TypedDict, total=False):
@@ -23,27 +17,11 @@ class OperationForwardParams(TypedDict, total=False):
     """Batch of training samples for which to compute per-token log-probabilities"""
 
 
-class SampleModelInputChunkEncodedText(TypedDict, total=False):
-    tokens: Required[SequenceNotStr[Union[str, int]]]
-    """Pre-tokenized text input"""
-
-
-class SampleModelInputChunk(TypedDict, total=False):
-    encoded_text: SampleModelInputChunkEncodedText
-
-
-class SampleModelInput(TypedDict, total=False):
-    """Model input"""
-
-    chunks: Required[Iterable[SampleModelInputChunk]]
-    """Input chunks for the model"""
-
-
 class Sample(TypedDict, total=False):
     loss_inputs: Required[LossInputsParam]
     """Loss function inputs"""
 
-    model_input: Required[SampleModelInput]
+    model_input: Required[ModelInputParam]
     """Model input"""
 
     policy_segments: Required[Iterable[PolicyVersionSegmentParam]]

@@ -5,6 +5,7 @@ from __future__ import annotations
 from .d_type import DType as DType
 from .loss_type import LossType as LossType
 from .lora_config import LoraConfig as LoraConfig
+from .stop_reason import StopReason as StopReason
 from .sample_result import SampleResult as SampleResult
 from .forward_result import ForwardResult as ForwardResult
 from .checkpoint_file import CheckpointFile as CheckpointFile
@@ -12,6 +13,7 @@ from .dro_loss_params import DroLossParams as DroLossParams
 from .loss_mask_param import LossMaskParam as LossMaskParam
 from .model_resources import ModelResources as ModelResources
 from .ppo_loss_params import PpoLossParams as PpoLossParams
+from .sampling_params import SamplingParams as SamplingParams
 from .grpo_loss_params import GrpoLossParams as GrpoLossParams
 from .optimizer_config import OptimizerConfig as OptimizerConfig
 from .sample_operation import SampleOperation as SampleOperation
@@ -22,6 +24,7 @@ from .forward_operation import ForwardOperation as ForwardOperation
 from .lora_config_param import LoraConfigParam as LoraConfigParam
 from .loss_config_param import LossConfigParam as LossConfigParam
 from .loss_inputs_param import LossInputsParam as LossInputsParam
+from .model_input_param import ModelInputParam as ModelInputParam
 from .optim_step_result import OptimStepResult as OptimStepResult
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
 from .rl_supported_model import RlSupportedModel as RlSupportedModel

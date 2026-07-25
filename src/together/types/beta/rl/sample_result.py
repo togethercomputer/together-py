@@ -1,9 +1,9 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union, Optional
-from typing_extensions import Literal
 
 from ...._models import BaseModel
+from .stop_reason import StopReason
 from .policy_version_segment import PolicyVersionSegment
 
 __all__ = ["SampleResult", "Sequence"]
@@ -12,7 +12,7 @@ __all__ = ["SampleResult", "Sequence"]
 class Sequence(BaseModel):
     """A single generated completion sequence with tokens and logprobs"""
 
-    stop_reason: Literal["STOP_REASON_LENGTH", "STOP_REASON_STOP"]
+    stop_reason: StopReason
     """Reason for stopping generation"""
 
     tokens: List[Union[str, int]]
