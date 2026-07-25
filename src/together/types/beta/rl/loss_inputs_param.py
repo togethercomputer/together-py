@@ -32,6 +32,10 @@ class LossInputsParam(TypedDict, total=False):
     """Inputs required when the loss type is importance sampling"""
 
     loss_mask: LossMaskParam
-    """Per-token loss mask (1=compute loss, 0=ignore)"""
+    """Per-token loss mask (1=compute loss, 0=ignore).
+
+    Required for cross-entropy forward-backward; optional for forward and
+    advantage-based losses, where omission includes all tokens.
+    """
 
     ppo_inputs: PpoLossInputsParam

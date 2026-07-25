@@ -18,6 +18,7 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.rl import (
+    SamplingParams,
     WeightSyncType,
     MuonOptimizerParams,
     AdamwOptimizerParams,
@@ -27,10 +28,12 @@ from ....types.beta.rl import (
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
+from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.sample_operation import SampleOperation
 from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.loss_config_param import LossConfigParam
+from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
 from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
 from ....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
@@ -645,9 +648,9 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        prompts: Iterable[operation_sample_params.Prompt],
+        model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
-        sampling_params: operation_sample_params.SamplingParams | Omit = omit,
+        sampling_params: SamplingParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -662,7 +665,7 @@ class OperationsResource(SyncAPIResource):
         Args:
           session_id: Training session ID
 
-          prompts: Input prompts as tokenized chunks
+          model_inputs: Model inputs to sample from
 
           num_samples: Number of completions to generate per prompt
 
@@ -682,7 +685,7 @@ class OperationsResource(SyncAPIResource):
             path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=maybe_transform(
                 {
-                    "prompts": prompts,
+                    "model_inputs": model_inputs,
                     "num_samples": num_samples,
                     "sampling_params": sampling_params,
                 },
@@ -1298,9 +1301,9 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        prompts: Iterable[operation_sample_params.Prompt],
+        model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
-        sampling_params: operation_sample_params.SamplingParams | Omit = omit,
+        sampling_params: SamplingParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1315,7 +1318,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         Args:
           session_id: Training session ID
 
-          prompts: Input prompts as tokenized chunks
+          model_inputs: Model inputs to sample from
 
           num_samples: Number of completions to generate per prompt
 
@@ -1335,7 +1338,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=await async_maybe_transform(
                 {
-                    "prompts": prompts,
+                    "model_inputs": model_inputs,
                     "num_samples": num_samples,
                     "sampling_params": sampling_params,
                 },
