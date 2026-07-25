@@ -511,12 +511,12 @@ class Trainer:
             timeout=timeout,
             interval=interval,
         )
-        result = await resolve_result_payload(
+        resolved = await resolve_result_payload(
             self._client,
             session_id=self._session_id,
             result=cast(SampleBatchResult, result),
         )
-        return result.results
+        return resolved.results
 
     async def forward_async(
         self,
