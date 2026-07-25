@@ -375,8 +375,17 @@ async def create(
             training_method=training_method_cls,
         ),
     )
-    if finetune_price_estimation_result.estimation_available is False:
-        unavailable_reason = finetune_price_estimation_result.unavailable_reason
+    estimated_price = (
+        finetune_price_estimation_result.estimated_total_price
+        if finetune_price_estimation_result.estimation_available is not False
+        else None
+    )
+    if finetune_price_estimation_result.estimation_available is False or estimated_price is None:
+        unavailable_reason = (
+            finetune_price_estimation_result.unavailable_reason
+            if finetune_price_estimation_result.estimation_available is False
+            else None
+        )
         price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
             unavailable_reason,
             _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,
@@ -387,7 +396,7 @@ async def create(
             price_line += " " + _FILE_DETAILS_HINT.format(file_id=file_id)
         warning = ""
     else:
-        price_str = f"${finetune_price_estimation_result.estimated_total_price:.2f}"
+        price_str = f"${estimated_price:.2f}"
         price_line = f"The estimated price of this job is [bold]{price_str}[/bold]."
         warning = _WARNING_MESSAGE_INSUFFICIENT_FUNDS if not finetune_price_estimation_result.allowed_to_proceed else ""
 
