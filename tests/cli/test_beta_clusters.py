@@ -20,7 +20,8 @@ from respx.models import Call
 
 from together import TogetherError
 from tests.cli.utils import CliRunner
-from together.lib.cli.api.beta.clusters import ssh as ssh_cli
+from together.types.beta import ClusterListRegionsResponse
+from together.lib.cli.api.beta.clusters import ssh as ssh_cli, create as create_cli
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -47,11 +48,30 @@ def _cluster_body(cluster_id: str = "cluster-1", name: str = "my-cluster", **ove
     return body
 
 
-_REGIONS_BODY = {
+_REGIONS_BODY: dict[str, Any] = {
     "regions": [
         {
             "name": "us-central-8",
-            "driver_versions": [{"cuda_version": "12.6", "nvidia_driver_version": "565"}],
+            "driver_versions": [
+                {
+                    "id": "nvidia-595-22",
+                    "cuda_version": "13.2",
+                    "nvidia_driver_version": "595",
+                    "os": "ubuntu-22.04",
+                },
+                {
+                    "id": "nvidia-595-24",
+                    "cuda_version": "13.2",
+                    "nvidia_driver_version": "595",
+                    "os": "ubuntu-24.04",
+                },
+                {
+                    "id": "nvidia-565-22",
+                    "cuda_version": "12.6",
+                    "nvidia_driver_version": "565",
+                    "os": "ubuntu-22.04",
+                },
+            ],
             "supported_instance_types": ["H100_SXM"],
         }
     ]
@@ -612,6 +632,200 @@ class TestBetaClustersListRegions:
         assert json.loads(result.output) == _REGIONS_BODY
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_regions_omits_missing_id_and_os(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        legacy_body = {
+            "regions": [
+                {
+                    "name": "us-central-8",
+                    "driver_versions": [
+                        {
+                            "cuda_version": "12.6 Ubuntu 22.04",
+                            "nvidia_driver_version": "565",
+                        }
+                    ],
+                    "supported_instance_types": ["H100_SXM"],
+                }
+            ]
+        }
+        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=legacy_body))
+
+        result = cli_runner.invoke(["beta", "clusters", "list-regions"])
+
+        assert result.exit_code == 0
+        assert "NVIDIA Driver:" in result.output
+        assert "ID:" not in result.output
+        assert "OS:" not in result.output
+        assert "None" not in result.output
+
+
+class TestBetaClustersNvidiaVersionSelection:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("nvidia_driver_version", "cuda_version", "os_name", "message"),
+        [
+            ("595", None, None, "must be provided together"),
+            (None, None, "ubuntu-24.04", "--os requires both"),
+            (None, None, None, "Use --nvidia-version-id"),
+        ],
+    )
+    async def test_non_interactive_selection_requires_complete_selector(
+        self,
+        nvidia_driver_version: str | None,
+        cuda_version: str | None,
+        os_name: str | None,
+        message: str,
+    ) -> None:
+        with pytest.raises(TogetherError, match=message):
+            await create_cli._set_nvidia_version_params(
+                config=cast(Any, None),
+                params={},
+                catalog=None,
+                interactive=False,
+                nvidia_version_id=None,
+                nvidia_driver_version=nvidia_driver_version,
+                cuda_version=cuda_version,
+                os_name=os_name,
+            )
+
+    def test_prompt_selects_one_coherent_duplicate_cuda_row(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        catalog = ClusterListRegionsResponse(**_REGIONS_BODY)
+
+        def select_second_version(_prompt: str) -> str:
+            return "2"
+
+        monkeypatch.setattr("builtins.input", select_second_version)
+
+        selected = create_cli._prompt_nvidia_version(catalog.regions[0].driver_versions)
+
+        assert selected.id == "nvidia-595-24"
+        assert selected.nvidia_driver_version == "595"
+        assert selected.cuda_version == "13.2"
+        assert selected.os == "ubuntu-24.04"
+
+    @pytest.mark.asyncio
+    async def test_prompt_falls_back_to_legacy_pair_when_catalog_has_no_id(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        catalog = ClusterListRegionsResponse(
+            **cast(
+                Any,
+                {
+                    "regions": [
+                        {
+                            "name": "us-central-8",
+                            "driver_versions": [
+                                {
+                                    "cuda_version": "12.6 Ubuntu 22.04",
+                                    "nvidia_driver_version": "565",
+                                }
+                            ],
+                            "supported_instance_types": ["H100_SXM"],
+                        }
+                    ]
+                },
+            )
+        )
+
+        def select_first_version(_prompt: str) -> str:
+            return "1"
+
+        monkeypatch.setattr("builtins.input", select_first_version)
+        params: dict[str, Any] = {"region": "us-central-8"}
+
+        await create_cli._set_nvidia_version_params(
+            config=cast(Any, None),
+            params=params,
+            catalog=catalog,
+            interactive=True,
+            nvidia_version_id=None,
+            nvidia_driver_version=None,
+            cuda_version=None,
+            os_name=None,
+        )
+
+        assert params["nvidia_driver_version"] == "565"
+        assert params["cuda_version"] == "12.6 Ubuntu 22.04"
+        assert "nvidia_version_id" not in params
+
+    def test_semantic_selection_uses_os_to_disambiguate_duplicate_cuda_rows(self) -> None:
+        selected = create_cli._resolve_nvidia_version(
+            ClusterListRegionsResponse(**_REGIONS_BODY),
+            region="us-central-8",
+            nvidia_driver_version="595",
+            cuda_version="13.2",
+            os_name="ubuntu-22.04",
+        )
+
+        assert selected.id == "nvidia-595-22"
+
+    def test_semantic_selection_requires_disambiguation_for_duplicate_cuda_rows(self) -> None:
+        with pytest.raises(TogetherError, match="Add --os or use --nvidia-version-id"):
+            create_cli._resolve_nvidia_version(
+                ClusterListRegionsResponse(**_REGIONS_BODY),
+                region="us-central-8",
+                nvidia_driver_version="595",
+                cuda_version="13.2",
+                os_name=None,
+            )
+
+    def test_semantic_selection_with_duplicate_os_recommends_id_only(self) -> None:
+        catalog = ClusterListRegionsResponse(
+            **cast(
+                Any,
+                {
+                    "regions": [
+                        {
+                            "name": "us-central-8",
+                            "driver_versions": [
+                                {
+                                    "id": "first",
+                                    "cuda_version": "13.2",
+                                    "nvidia_driver_version": "595",
+                                    "os": "ubuntu-24.04",
+                                },
+                                {
+                                    "id": "second",
+                                    "cuda_version": "13.2",
+                                    "nvidia_driver_version": "595",
+                                    "os": "ubuntu-24.04",
+                                },
+                            ],
+                            "supported_instance_types": ["H100_SXM"],
+                        }
+                    ]
+                },
+            )
+        )
+
+        with pytest.raises(TogetherError, match=r"Use --nvidia-version-id\. Matches"):
+            create_cli._resolve_nvidia_version(
+                catalog,
+                region="us-central-8",
+                nvidia_driver_version="595",
+                cuda_version="13.2",
+                os_name="ubuntu-24.04",
+            )
+
+    @pytest.mark.parametrize(
+        ("region", "cuda_version", "message"),
+        [
+            ("us-east-1", "13.2", "No NVIDIA versions are available in region 'us-east-1'"),
+            ("us-central-8", "13.3", "No NVIDIA version matches"),
+        ],
+    )
+    def test_semantic_selection_rejects_region_mismatch_and_no_match(
+        self, region: str, cuda_version: str, message: str
+    ) -> None:
+        with pytest.raises(TogetherError, match=message):
+            create_cli._resolve_nvidia_version(
+                ClusterListRegionsResponse(**_REGIONS_BODY),
+                region=region,
+                nvidia_driver_version="595",
+                cuda_version=cuda_version,
+                os_name="ubuntu-24.04",
+            )
+
 
 class TestBetaClustersRetrieve:
     @pytest.mark.respx(base_url=base_url)
@@ -661,7 +875,84 @@ class TestBetaClustersCreate:
         assert body["volume_id"] == "vol-attach"
         assert body["num_gpus"] == 8
         assert body["billing_type"] == "ON_DEMAND"
+        assert body["nvidia_driver_version"] == "565"
+        assert body["cuda_version"] == "12.6"
+        assert "nvidia_version_id" not in body
         assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_direct_nvidia_version_id_posts_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created = _cluster_body("new-id", "direct-id")
+        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-version-id",
+                "nvidia-595-24",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "direct-id",
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body["nvidia_version_id"] == "nvidia-595-24"
+        assert "nvidia_driver_version" not in body
+        assert "cuda_version" not in body
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_semantic_nvidia_selection_posts_resolved_id(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
+        created = _cluster_body("new-id", "semantic-selection")
+        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-driver-version",
+                "595",
+                "--cuda-version",
+                "13.2",
+                "--os",
+                "ubuntu-24.04",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "semantic-selection",
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body["nvidia_version_id"] == "nvidia-595-24"
+        assert "nvidia_driver_version" not in body
+        assert "cuda_version" not in body
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_accepts_new_cluster_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
