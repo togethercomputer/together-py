@@ -20,16 +20,19 @@ from ...._client import AsyncTogether
 from ...._base_client import DefaultAsyncHttpxClient
 from ....types.beta.rl.sample_result import SampleResult
 from ....types.beta.rl.forward_result import ForwardResult
+from ....types.beta.rl.sampling_params import SamplingParams
+from ....types.beta.rl.sample_operation import Output as SampleBatchResult
 from ....types.beta.rl.training_session import TrainingSession
 from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.lora_config_param import LoraConfigParam
 from ....types.beta.rl.loss_config_param import LossConfigParam
+from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
 from ....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
 from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
-from ....types.beta.rl.operation_sample_params import Prompt, SamplingParams, OperationSampleParams
+from ....types.beta.rl.operation_sample_params import OperationSampleParams
 from ....types.beta.rl.operation_forward_params import OperationForwardParams
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
@@ -189,7 +192,7 @@ class Trainer:
 
     def sample(
         self,
-        prompt: Prompt,
+        prompt: ModelInput,
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
@@ -208,13 +211,13 @@ class Trainer:
 
     def sample_batch(
         self,
-        prompts: Iterable[Prompt],
+        prompts: Iterable[ModelInput],
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> SampleResult:
+    ) -> list[SampleResult]:
         return self.run(
             self.sample_batch_async(
                 prompts=prompts,
@@ -455,32 +458,33 @@ class Trainer:
 
     async def sample_async(
         self,
-        prompt: Prompt,
+        prompt: ModelInput,
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
-        return await self.sample_batch_async(
+        results = await self.sample_batch_async(
             [prompt],
             num_samples=num_samples,
             sampling_params=sampling_params,
             timeout=timeout,
             interval=interval,
         )
+        return results[0]
 
     async def sample_batch_async(
         self,
-        prompts: Iterable[Prompt],
+        prompts: Iterable[ModelInput],
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> SampleResult:
-        prompts = list(prompts)
-        body: dict[str, Any] = {"prompts": prompts}
+    ) -> list[SampleResult]:
+        model_inputs = list(prompts)
+        body: dict[str, Any] = {"model_inputs": model_inputs}
         if sampling_params is not None:
             body["sampling_params"] = sampling_params
         if num_samples is not None:
@@ -492,12 +496,12 @@ class Trainer:
             body=body,
             expected_type=OperationSampleParams,
         )
-        prompts = cast("list[Prompt]", body["prompts"])
+        model_inputs = cast("list[ModelInput]", body["model_inputs"])
 
         extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
         operation = await self._client.beta.rl.operations.sample(
             self._session_id,
-            prompts=prompts,
+            model_inputs=model_inputs,
             num_samples=num_samples if num_samples is not None else omit,
             sampling_params=sampling_params if sampling_params is not None else omit,
             extra_body=extra_body,
@@ -507,12 +511,12 @@ class Trainer:
             timeout=timeout,
             interval=interval,
         )
-        result = cast(SampleResult, result)
-        return await resolve_result_payload(
+        resolved = await resolve_result_payload(
             self._client,
             session_id=self._session_id,
-            result=result,
+            result=cast(SampleBatchResult, result),
         )
+        return resolved.results
 
     async def forward_async(
         self,

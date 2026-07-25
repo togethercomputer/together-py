@@ -6,6 +6,7 @@ from ....types.beta.rl.forward_result import Logprob, ForwardResult
 from ....types.beta.rl.dro_loss_params import DroLossParams
 from ....types.beta.rl.loss_mask_param import LossMaskParam
 from ....types.beta.rl.ppo_loss_params import PpoLossParams
+from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.grpo_loss_params import GrpoLossParams
 from ....types.beta.rl.training_session import TrainingSession
 from ....types.beta.rl.weight_sync_type import WeightSyncType
@@ -13,6 +14,13 @@ from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.lora_config_param import LoraConfigParam
 from ....types.beta.rl.loss_config_param import LossConfigParam
 from ....types.beta.rl.loss_inputs_param import LossInputsParam
+
+# TODO(MOSH-3489): Remove these aliases once Stainless generates named model-input chunk types.
+from ....types.beta.rl.model_input_param import (
+    Chunk as ModelInputChunk,
+    ModelInput,
+    ChunkEncodedText as EncodedTextChunk,
+)
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.loss_logprobs_param import LossLogprobsParam
@@ -28,24 +36,13 @@ from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam
 from ....types.beta.rl.policy_version_segment import PolicyVersionSegment
 from ....types.beta.rl.cispo_loss_inputs_param import CispoLossInputsParam
 from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
-from ....types.beta.rl.operation_sample_params import (
-    Prompt,
-    PromptChunk,
-    SamplingParams,
-    PromptChunkEncodedText,
-)
 from ....types.beta.rl.loss_target_tokens_param import LossTargetTokensParam
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 from ....types.beta.rl.muon_optimizer_config_param import MuonOptimizerConfigParam
 from ....types.beta.rl.policy_version_segment_param import PolicyVersionSegmentParam
-from ....types.beta.rl.operation_forward_backward_params import (
-    Sample,
-    SampleModelInput,
-    SampleModelInputChunk,
-    SampleModelInputChunkEncodedText,
-)
+from ....types.beta.rl.operation_forward_backward_params import Sample
 from ....types.beta.rl.importance_sampling_loss_inputs_param import ImportanceSamplingLossInputsParam
 from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 
@@ -66,14 +63,11 @@ __all__ = [
     "CheckpointVariant",
     "Gradient",
     "WeightSyncType",
-    # Request types (nested — sample prompts)
-    "Prompt",
-    "PromptChunk",
-    "PromptChunkEncodedText",
+    # Request types (nested — sample model inputs)
+    "ModelInput",
+    "ModelInputChunk",
+    "EncodedTextChunk",
     # Request types (nested — training sample)
-    "SampleModelInput",
-    "SampleModelInputChunk",
-    "SampleModelInputChunkEncodedText",
     "PolicyVersionSegmentParam",
     # Request types (nested — loss configs)
     "GrpoLossParams",

@@ -10,28 +10,25 @@ import httpx
 import pytest
 
 from together.lib.beta.rl import (
-    Prompt,
     Sample,
     Logprob,
     Trainer,
     Gradient,
-    PromptChunk,
+    ModelInput,
     SampleResult,
     ForwardResult,
     LossMaskParam,
     LossConfigParam,
     LossInputsParam,
+    ModelInputChunk,
     OptimStepResult,
-    SampleModelInput,
+    EncodedTextChunk,
     MuonOptimizerParams,
     AdamwOptimizerParams,
     ForwardBackwardResult,
     LossTargetTokensParam,
-    SampleModelInputChunk,
-    PromptChunkEncodedText,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
-    SampleModelInputChunkEncodedText,
     trainer as rl_trainer_module,
     _payloads as rl_payloads_module,
     _operations as rl_ops,
@@ -138,37 +135,43 @@ def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any) -> None
     monkeypatch.setattr(Trainer, "_submit_and_wait", fake)
 
 
-def test_sample_wraps_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, SampleResult(rollouts=[]))
+def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
+    expected = SampleResult(policy_segments=[], sequences=[])
+    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[expected]))
     client = FakeClient()
     trainer = _make_trainer(client)
 
-    prompt = Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[101, 102]))])
-    result = trainer.sample(prompt, num_samples=3)
+    model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
+    result = trainer.sample(prompt=model_input, num_samples=3)
 
-    assert result.rollouts == []
+    assert result is expected
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
-    assert kwargs["prompts"] == [prompt]
+    assert kwargs["model_inputs"] == [model_input]
     trainer.stop()
 
 
-def test_sample_batch_passes_multiple_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, SampleResult(rollouts=[]))
+def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPatch) -> None:
+    expected = [
+        SampleResult(policy_segments=[], sequences=[]),
+        SampleResult(policy_segments=[], sequences=[]),
+    ]
+    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=expected))
     client = FakeClient()
     trainer = _make_trainer(client)
 
-    prompts = [
-        Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[1, 2]))]),
-        Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[3, 4]))]),
+    model_inputs = [
+        ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
+        ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[3, 4]))]),
     ]
-    trainer.sample_batch(prompts)
+    result = trainer.sample_batch(prompts=model_inputs)
 
+    assert result == expected
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
-    assert kwargs["prompts"] == prompts
+    assert kwargs["model_inputs"] == model_inputs
     trainer.stop()
 
 
@@ -220,15 +223,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
 
     samples = [
         Sample(
-            model_input=SampleModelInput(
-                chunks=[
-                    SampleModelInputChunk(
-                        encoded_text=SampleModelInputChunkEncodedText(
-                            tokens=[1, 2, 3],
-                        ),
-                    )
-                ]
-            ),
+            model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
             loss_inputs=LossInputsParam(
                 target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
                 loss_mask=LossMaskParam(
@@ -236,6 +231,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
                     dtype="D_TYPE_INT64",
                 ),
             ),
+            policy_segments=[],
         )
     ]
     loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
@@ -536,12 +532,8 @@ async def test_submit_and_wait_raises_on_empty_output(monkeypatch: pytest.Monkey
 
 def _small_sample() -> Sample:
     return Sample(
-        model_input=SampleModelInput(
-            chunks=[
-                SampleModelInputChunk(
-                    encoded_text=SampleModelInputChunkEncodedText(tokens=[1, 2, 3]),
-                )
-            ],
+        model_input=ModelInput(
+            chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
         ),
         loss_inputs=LossInputsParam(
             target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
@@ -550,6 +542,7 @@ def _small_sample() -> Sample:
                 dtype="D_TYPE_INT64",
             ),
         ),
+        policy_segments=[],
     )
 
 
@@ -584,12 +577,8 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     long_tokens = list(range(20))
     long_mask = [1] * 20
     sample = Sample(
-        model_input=SampleModelInput(
-            chunks=[
-                SampleModelInputChunk(
-                    encoded_text=SampleModelInputChunkEncodedText(tokens=long_tokens),
-                )
-            ],
+        model_input=ModelInput(
+            chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=long_tokens))],
         ),
         loss_inputs=LossInputsParam(
             target_tokens=LossTargetTokensParam(data=long_tokens, dtype="D_TYPE_INT64"),
@@ -598,6 +587,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
                 dtype="D_TYPE_INT64",
             ),
         ),
+        policy_segments=[],
     )
 
     result = await trainer.forward_backward_async(
@@ -634,17 +624,14 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
         trainer.forward_backward(
             samples=[
                 Sample(
-                    model_input=SampleModelInput(
-                        chunks=[
-                            SampleModelInputChunk(
-                                encoded_text=SampleModelInputChunkEncodedText(tokens=list(range(50))),
-                            )
-                        ],
+                    model_input=ModelInput(
+                        chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=list(range(50))))],
                     ),
                     loss_inputs=LossInputsParam(
                         target_tokens=LossTargetTokensParam(data=list(range(50)), dtype="D_TYPE_INT64"),
                         loss_mask=LossMaskParam(data=[1] * 50, dtype="D_TYPE_INT64"),
                     ),
+                    policy_segments=[],
                 )
             ],
             loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
