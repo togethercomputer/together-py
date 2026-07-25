@@ -8,21 +8,22 @@ __all__ = ["ClusterListRegionsResponse", "Region", "RegionDriverVersion"]
 
 
 class RegionDriverVersion(BaseModel):
-    """
-    CUDA/NVIDIA driver versions pair available in the region to use in the create cluster request.
-    """
-
-    id: Optional[str] = None
-    """Identifier to send as nvidia_version_id in a create request."""
+    """NVIDIA software configuration available in the region."""
 
     cuda_version: str
-    """CUDA driver version."""
+    """Semantic CUDA version without operating system text."""
 
     nvidia_driver_version: str
     """NVIDIA driver version."""
 
+    id: Optional[str] = None
+    """
+    Region-specific NVIDIA catalog ID to send as nvidia_version_id when creating a
+    cluster.
+    """
+
     os: Optional[str] = None
-    """Operating system used by this NVIDIA version."""
+    """Operating system image family for this catalog entry."""
 
 
 class Region(BaseModel):
