@@ -13,25 +13,22 @@ from respx.models import Call
 
 from together import AsyncTogether
 from together.lib.beta.rl import (
-    Prompt,
     Sample,
     Trainer,
-    PromptChunk,
+    ModelInput,
     LossMaskParam,
     GrpoLossParams,
     SamplingParams,
     LossConfigParam,
     LossInputsParam,
-    SampleModelInput,
+    ModelInputChunk,
     LossLogprobsParam,
     GrpoLossInputsParam,
     LossAdvantagesParam,
     MuonOptimizerParams,
     AdamwOptimizerParams,
     LossTargetTokensParam,
-    SampleModelInputChunk,
-    PromptChunkEncodedText,
-    SampleModelInputChunkEncodedText,
+    ModelInputChunkEncodedText,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -52,13 +49,13 @@ class TestRLRequestBody:
                 json={
                     "id": "op-1",
                     "status": "TRAINING_OPERATION_STATUS_COMPLETED",
-                    "output": {"rollouts": []},
+                    "output": {"results": []},
                 },
             )
         )
 
         trainer = Trainer("sess", _client=async_client)
-        prompt = Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[101, 102]))])
+        model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=ModelInputChunkEncodedText(tokens=[101, 102]))])
         sampling = SamplingParams(
             max_tokens=16,
             temperature=0.7,
@@ -68,16 +65,21 @@ class TestRLRequestBody:
             seed="123",
         )
 
-        await trainer.sample_batch_async([prompt], num_samples=2, sampling_params=sampling)
+        result = await trainer.sample_batch_async(
+            prompts=[model_input],
+            num_samples=2,
+            sampling_params=sampling,
+        )
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
         body = json.loads(request.content)
         assert body == {
-            "prompts": [prompt],
+            "model_inputs": [model_input],
             "num_samples": 2,
             "sampling_params": sampling,
         }
+        assert result == []
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -99,10 +101,10 @@ class TestRLRequestBody:
         trainer = Trainer("sess", _client=async_client)
         samples = [
             Sample(
-                model_input=SampleModelInput(
+                model_input=ModelInput(
                     chunks=[
-                        SampleModelInputChunk(
-                            encoded_text=SampleModelInputChunkEncodedText(
+                        ModelInputChunk(
+                            encoded_text=ModelInputChunkEncodedText(
                                 tokens=[1, 2, 3],
                             ),
                         )
