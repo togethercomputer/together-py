@@ -485,11 +485,11 @@ Prompt(chunks=[prompt_chunk])
 
 **Returns:** `SampleResult`. The resolved value has `.rollouts`, where each rollout has `.sequences` (`SampleSequence`):
 
-| Field         | Type          | Description                                  |
-| ------------- | ------------- | -------------------------------------------- |
-| `tokens`      | `list[str]`   | Generated token IDs (as strings).            |
-| `logprobs`    | `list[float]` | Log probability for each generated token.    |
-| `stop_reason` | `str`         | Reason generation stopped (e.g. `"length"`). |
+| Field         | Type                   | Description                                  |
+| ------------- | ---------------------- | -------------------------------------------- |
+| `tokens`      | `list[str]`            | Generated token IDs (as strings).            |
+| `logprobs`    | `list[float] \| None`  | Log probability for each generated token.    |
+| `stop_reason` | `str`                  | Reason generation stopped (e.g. `"length"`). |
 
 #### `trainer.forward_backward(...)`
 
