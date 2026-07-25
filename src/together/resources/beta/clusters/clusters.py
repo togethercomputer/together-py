@@ -77,11 +77,12 @@ class ClustersResource(SyncAPIResource):
         *,
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
-        cuda_version: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
         num_gpus: int,
-        nvidia_driver_version: str,
         region: str,
+        cuda_version: str | Omit = omit,
+        nvidia_driver_version: str | Omit = omit,
+        nvidia_version_id: str | Omit = omit,
         acceptance_tests_params: cluster_create_params.AcceptanceTestsParams | Omit = omit,
         add_ons: Iterable[cluster_create_params.AddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
@@ -127,15 +128,17 @@ class ClustersResource(SyncAPIResource):
 
           cluster_name: Name of the GPU cluster.
 
-          cuda_version: CUDA version for this cluster. For example, 12.5
+          cuda_version: Legacy CUDA version for this cluster. For example, 12.5
 
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
-          nvidia_driver_version: Nvidia driver version for this cluster. For example, 550. Only some combination
+          nvidia_driver_version: Legacy Nvidia driver version for this cluster. For example, 550. Only some combination
               of cuda_version and nvidia_driver_version are supported.
+
+          nvidia_version_id: NVIDIA version catalog ID for this cluster.
 
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
@@ -213,6 +216,7 @@ class ClustersResource(SyncAPIResource):
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
                     "nvidia_driver_version": nvidia_driver_version,
+                    "nvidia_version_id": nvidia_version_id,
                     "region": region,
                     "acceptance_tests_params": acceptance_tests_params,
                     "add_ons": add_ons,
@@ -484,11 +488,12 @@ class AsyncClustersResource(AsyncAPIResource):
         *,
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
-        cuda_version: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
         num_gpus: int,
-        nvidia_driver_version: str,
         region: str,
+        cuda_version: str | Omit = omit,
+        nvidia_driver_version: str | Omit = omit,
+        nvidia_version_id: str | Omit = omit,
         acceptance_tests_params: cluster_create_params.AcceptanceTestsParams | Omit = omit,
         add_ons: Iterable[cluster_create_params.AddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
@@ -534,15 +539,17 @@ class AsyncClustersResource(AsyncAPIResource):
 
           cluster_name: Name of the GPU cluster.
 
-          cuda_version: CUDA version for this cluster. For example, 12.5
+          cuda_version: Legacy CUDA version for this cluster. For example, 12.5
 
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
 
-          nvidia_driver_version: Nvidia driver version for this cluster. For example, 550. Only some combination
+          nvidia_driver_version: Legacy Nvidia driver version for this cluster. For example, 550. Only some combination
               of cuda_version and nvidia_driver_version are supported.
+
+          nvidia_version_id: NVIDIA version catalog ID for this cluster.
 
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
@@ -620,6 +627,7 @@ class AsyncClustersResource(AsyncAPIResource):
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
                     "nvidia_driver_version": nvidia_driver_version,
+                    "nvidia_version_id": nvidia_version_id,
                     "region": region,
                     "acceptance_tests_params": acceptance_tests_params,
                     "add_ons": add_ons,

@@ -24,9 +24,16 @@ async def list_regions(
     for region in response.regions:
         driver_versions: list[str] = []
         for driver_version in region.driver_versions or []:
-            driver_versions.append(
-                f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue] [dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]"
-            )
+            details = [
+                f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue]",
+                f"[dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]",
+            ]
+            if driver_version.os:
+                details.append(f"[dim]OS:[/dim] [blue]{driver_version.os}[/blue]")
+            if driver_version.id:
+                details.append(f"[dim]ID:[/dim] [blue]{driver_version.id}[/blue]")
+
+            driver_versions.append(" ".join(details))
 
         table.add_row(region.name, "\n".join(region.supported_instance_types or []), "\n".join(driver_versions))
 

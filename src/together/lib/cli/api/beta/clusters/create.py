@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import getpass
-from typing import Any, List, Literal, Optional, Annotated, cast
+from typing import Any, Literal, Optional, Sequence, Annotated, cast
 
 from cyclopts import Parameter
 
+from together import TogetherError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.beta.cluster_create_params import AddOn, SharedVolume, ClusterCreateParams
+from together.types.beta.cluster_list_regions_response import (
+    RegionDriverVersion,
+    ClusterListRegionsResponse,
+)
 
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
@@ -19,6 +24,10 @@ BillingTypeParameter = Annotated[
 ]
 NvidiaDriverVersionParameter = Annotated[Optional[str], Parameter(help="Nvidia driver version to use for the cluster")]
 CudaVersionParameter = Annotated[Optional[str], Parameter(help="CUDA version to use for the cluster")]
+OSParameter = Annotated[Optional[str], Parameter(help="Operating system for NVIDIA version selection")]
+NvidiaVersionIDParameter = Annotated[
+    Optional[str], Parameter(help="NVIDIA version catalog ID to use directly for the cluster")
+]
 DurationDaysParameter = Annotated[
     Optional[int], Parameter(help="Duration in days to keep the cluster running for reserved clusters")
 ]
@@ -48,6 +57,147 @@ ReservationStartTimeParameter = Annotated[
 SlurmImageParameter = Annotated[Optional[str], Parameter(help="Custom Slurm image for Slurm clusters")]
 SlurmShmSizeGibParameter = Annotated[Optional[int], Parameter(help="Shared memory size in GiB for Slurm clusters")]
 
+_DEFAULT_NVIDIA_VERSION_CHOICE = 1
+
+
+def _format_nvidia_version(version: RegionDriverVersion) -> str:
+    details = f"driver {version.nvidia_driver_version}, CUDA {version.cuda_version}"
+    if version.os:
+        details += f", OS {version.os}"
+    if version.id:
+        details += f" ({version.id})"
+
+    return details
+
+
+def _region_nvidia_versions(
+    catalog: ClusterListRegionsResponse,
+    region: str,
+) -> list[RegionDriverVersion]:
+    for catalog_region in catalog.regions:
+        if catalog_region.name == region:
+            return catalog_region.driver_versions
+
+    raise TogetherError(f"No NVIDIA versions are available in region '{region}'. Run `tg beta clusters list-regions`.")
+
+
+def _resolve_nvidia_version(
+    catalog: ClusterListRegionsResponse,
+    *,
+    region: str,
+    nvidia_driver_version: str | None,
+    cuda_version: str | None,
+    os_name: str | None,
+) -> RegionDriverVersion:
+    matches = [
+        version
+        for version in _region_nvidia_versions(catalog, region)
+        if (nvidia_driver_version is None or version.nvidia_driver_version == nvidia_driver_version)
+        and (cuda_version is None or version.cuda_version == cuda_version)
+        and (os_name is None or version.os == os_name)
+    ]
+    requested = ", ".join(
+        value
+        for value in (
+            f"driver {nvidia_driver_version}" if nvidia_driver_version else "",
+            f"CUDA {cuda_version}" if cuda_version else "",
+            f"OS {os_name}" if os_name else "",
+        )
+        if value
+    )
+
+    if not matches:
+        raise TogetherError(
+            f"No NVIDIA version matches {requested} in region '{region}'. Run `tg beta clusters list-regions`."
+        )
+    if len(matches) > 1:
+        choices = "; ".join(_format_nvidia_version(version) for version in matches)
+        guidance = "Use --nvidia-version-id." if os_name else "Add --os or use --nvidia-version-id."
+        raise TogetherError(
+            f"Multiple NVIDIA versions match {requested} in region '{region}'. {guidance} Matches: {choices}"
+        )
+
+    return matches[0]
+
+
+def _prompt_nvidia_version(versions: Sequence[RegionDriverVersion]) -> RegionDriverVersion:
+    if not versions:
+        raise TogetherError("No NVIDIA versions are available in the selected region.")
+
+    console.print("Clusters: Available NVIDIA versions:")
+    for choice, version in enumerate(versions, start=_DEFAULT_NVIDIA_VERSION_CHOICE):
+        console.print(f"  {choice}. {_format_nvidia_version(version)}")
+
+    raw_choice = input(f"Clusters: Select NVIDIA version [{_DEFAULT_NVIDIA_VERSION_CHOICE}]: ").strip()
+    try:
+        choice = int(raw_choice) if raw_choice else _DEFAULT_NVIDIA_VERSION_CHOICE
+    except ValueError as exc:
+        raise TogetherError("Select an NVIDIA version by its listed number.") from exc
+    if choice < _DEFAULT_NVIDIA_VERSION_CHOICE or choice > len(versions):
+        raise TogetherError(f"Select an NVIDIA version from 1 to {len(versions)}.")
+
+    return versions[choice - _DEFAULT_NVIDIA_VERSION_CHOICE]
+
+
+async def _set_nvidia_version_params(
+    *,
+    config: CLIConfigParameter,
+    params: dict[str, Any],
+    catalog: ClusterListRegionsResponse | None,
+    interactive: bool,
+    nvidia_version_id: str | None,
+    nvidia_driver_version: str | None,
+    cuda_version: str | None,
+    os_name: str | None,
+) -> None:
+    semantic_version_given = any(value is not None for value in (nvidia_driver_version, cuda_version, os_name))
+    if nvidia_version_id and semantic_version_given:
+        raise TogetherError("Use either --nvidia-version-id or --nvidia-driver-version/--cuda-version/--os, not both.")
+
+    has_driver = nvidia_driver_version is not None
+    has_cuda = cuda_version is not None
+    if not nvidia_version_id and (has_driver != has_cuda or (os_name is not None and not has_driver)):
+        raise TogetherError("--nvidia-driver-version and --cuda-version must be provided together; --os requires both.")
+
+    if nvidia_version_id:
+        params["nvidia_version_id"] = nvidia_version_id
+        params.pop("nvidia_driver_version", None)
+        params.pop("cuda_version", None)
+        return
+
+    if not interactive and not has_driver:
+        raise TogetherError(
+            "Use --nvidia-version-id or provide --nvidia-driver-version and --cuda-version in non-interactive mode."
+        )
+
+    if not interactive and os_name is None:
+        return
+
+    region = params.get("region")
+    if not region:
+        raise TogetherError("--region is required when selecting an NVIDIA version.")
+
+    if catalog is None:
+        catalog = await config.client.beta.clusters.list_regions()
+    if semantic_version_given:
+        selected = _resolve_nvidia_version(
+            catalog,
+            region=region,
+            nvidia_driver_version=nvidia_driver_version,
+            cuda_version=cuda_version,
+            os_name=os_name,
+        )
+    else:
+        selected = _prompt_nvidia_version(_region_nvidia_versions(catalog, region))
+
+    if selected.id:
+        params["nvidia_version_id"] = selected.id
+        params.pop("nvidia_driver_version", None)
+        params.pop("cuda_version", None)
+    else:
+        params["nvidia_driver_version"] = selected.nvidia_driver_version
+        params["cuda_version"] = selected.cuda_version
+
 
 async def create(
     name: NameParameter = None,
@@ -56,6 +206,8 @@ async def create(
     billing_type: BillingTypeParameter = None,
     nvidia_driver_version: NvidiaDriverVersionParameter = None,
     cuda_version: CudaVersionParameter = None,
+    os: OSParameter = None,
+    nvidia_version_id: NvidiaVersionIDParameter = None,
     duration_days: DurationDaysParameter = None,
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
@@ -135,7 +287,9 @@ async def create(
         params["slurm_shm_size_gib"] = slurm_shm_size_gib
 
     # JSON Mode skips hand holding through the argument setup
-    if not config.json and not config.non_interactive:
+    interactive = not config.json and not config.non_interactive
+    catalog: ClusterListRegionsResponse | None = None
+    if interactive:
         if not name:
             params["cluster_name"] = (
                 input(f"Clusters: Cluster name: [{getpass.getuser()}] ").strip() or getpass.getuser()
@@ -145,9 +299,9 @@ async def create(
                 "Clusters: Cluster GPU type (H100_SXM, H200_SXM, RTX_6000_PCI, L40_PCIE, B200_SXM, H100_SXM_INF): "
             ).strip()
         if not region:
-            regions = await config.client.beta.clusters.list_regions()
+            catalog = await config.client.beta.clusters.list_regions()
             params["region"] = (
-                input(f"Clusters: Cluster region [{regions.regions[0].name}]: ").strip() or regions.regions[0].name
+                input(f"Clusters: Cluster region [{catalog.regions[0].name}]: ").strip() or catalog.regions[0].name
             )
         if num_gpus is None:
             n = input("Clusters: Cluster GPUs count (8-64): ").strip()
@@ -157,22 +311,19 @@ async def create(
             params["num_preemptible_gpus"] = int(n) if n else 0
         if not billing_type:
             params["billing_type"] = input("Clusters: Cluster billing type [ON_DEMAND]: ").strip() or "ON_DEMAND"
-        if not nvidia_driver_version:
-            regions = await config.client.beta.clusters.list_regions()
-            nvidia_driver_versions: List[str] = []
-            for r in regions.regions:
-                if r.name == params.get("region"):
-                    for driver_version in r.driver_versions:
-                        nvidia_driver_versions.append(driver_version.nvidia_driver_version)
-            params["nvidia_driver_version"] = input(f"Clusters: Cluster Nvidia driver version [550]: ").strip() or "550"
-        if not cuda_version:
-            regions = await config.client.beta.clusters.list_regions()
-            cuda_versions: List[str] = []
-            for r in regions.regions:
-                if r.name == params.get("region"):
-                    for driver_version in r.driver_versions:
-                        cuda_versions.append(driver_version.cuda_version)
-            params["cuda_version"] = input(f"Clusters: Cluster CUDA version [12.5]: ").strip() or "12.5"
+
+    await _set_nvidia_version_params(
+        config=config,
+        params=params,
+        catalog=catalog,
+        interactive=interactive,
+        nvidia_version_id=nvidia_version_id,
+        nvidia_driver_version=nvidia_driver_version,
+        cuda_version=cuda_version,
+        os_name=os,
+    )
+
+    if interactive:
         if duration_days is None and params.get("billing_type") == "RESERVED":
             d = input("Clusters: Cluster reserved duration (1-90 days) [3]: ").strip()
             params["duration_days"] = int(d) if d else 3

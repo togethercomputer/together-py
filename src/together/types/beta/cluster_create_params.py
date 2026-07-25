@@ -40,8 +40,8 @@ class ClusterCreateParams(TypedDict, total=False):
     cluster_name: Required[str]
     """Name of the GPU cluster."""
 
-    cuda_version: Required[str]
-    """CUDA version for this cluster. For example, 12.5"""
+    cuda_version: str
+    """Legacy CUDA version for this cluster. For example, 12.5"""
 
     gpu_type: Required[
         Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"]
@@ -54,12 +54,15 @@ class ClusterCreateParams(TypedDict, total=False):
     This must be multiple of 8. For example, 8, 16 or 24
     """
 
-    nvidia_driver_version: Required[str]
-    """Nvidia driver version for this cluster.
+    nvidia_driver_version: str
+    """Legacy Nvidia driver version for this cluster.
 
     For example, 550. Only some combination of cuda_version and
     nvidia_driver_version are supported.
     """
+
+    nvidia_version_id: str
+    """NVIDIA version catalog ID for this cluster."""
 
     region: Required[str]
     """Region to create the GPU cluster in.
