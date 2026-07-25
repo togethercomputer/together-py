@@ -381,16 +381,16 @@ async def create(
         else None
     )
     if finetune_price_estimation_result.estimation_available is False or estimated_price is None:
-        unavailable_reason = (
-            finetune_price_estimation_result.unavailable_reason
-            if finetune_price_estimation_result.estimation_available is False
-            else None
-        )
-        price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
-            unavailable_reason,
-            _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,
-        )
-        file_arg = _PRICE_ESTIMATION_UNAVAILABLE_FILE_ARG_BY_REASON.get(unavailable_reason)
+        if finetune_price_estimation_result.estimation_available is False:
+            unavailable_reason = finetune_price_estimation_result.unavailable_reason
+            price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINES_BY_REASON.get(
+                unavailable_reason,
+                _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT,
+            )
+            file_arg = _PRICE_ESTIMATION_UNAVAILABLE_FILE_ARG_BY_REASON.get(unavailable_reason)
+        else:
+            price_line = _PRICE_ESTIMATION_UNAVAILABLE_LINE_DEFAULT
+            file_arg = None
         file_id = training_args.get(file_arg) if file_arg else None
         if file_id:
             price_line += " " + _FILE_DETAILS_HINT.format(file_id=file_id)
