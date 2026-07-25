@@ -21,6 +21,8 @@ from together.lib.beta.rl import (
     SamplingParams,
     LossConfigParam,
     LossInputsParam,
+    ModelInputChunk,
+    EncodedTextChunk,
     LossLogprobsParam,
     GrpoLossInputsParam,
     LossAdvantagesParam,
@@ -53,7 +55,7 @@ class TestRLRequestBody:
         )
 
         trainer = Trainer("sess", _client=async_client)
-        model_input = ModelInput(chunks=[{"encoded_text": {"tokens": [101, 102]}}])
+        model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
         sampling = SamplingParams(
             max_tokens=16,
             temperature=0.7,
@@ -99,7 +101,7 @@ class TestRLRequestBody:
         trainer = Trainer("sess", _client=async_client)
         samples = [
             Sample(
-                model_input=ModelInput(chunks=[{"encoded_text": {"tokens": [1, 2, 3]}}]),
+                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
                 loss_inputs=LossInputsParam(
                     loss_mask=LossMaskParam(
                         data=[0, 1, 1],
