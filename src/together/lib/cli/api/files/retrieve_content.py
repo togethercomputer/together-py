@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import base64
 import sys
+import base64
+from typing import Optional, Annotated
 from pathlib import Path
-from typing import Annotated, Optional
 
 from cyclopts import Parameter, validators
 
