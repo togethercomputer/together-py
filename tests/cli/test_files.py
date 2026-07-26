@@ -149,6 +149,32 @@ class TestFilesRetrieveContent:
         # Rich may soft-wrap long paths across lines
         assert str(out) in result.output.replace("\n", "")
 
+    @pytest.mark.parametrize(
+        ("directory_name", "create_directory"), [("existing.with-dot", True), ("new-directory", False)]
+    )
+    @pytest.mark.respx(base_url=base_url)
+    def test_specifying_output_directory(
+        self,
+        directory_name: str,
+        create_directory: bool,
+        respx_mock: MockRouter,
+        tmp_path: Path,
+        cli_runner: CliRunner,
+    ) -> None:
+        content_route = respx_mock.get("/files/file-1/content").mock(
+            return_value=httpx.Response(200, content=b"line1\nline2\n")
+        )
+        respx_mock.get("/files/file-1").mock(return_value=httpx.Response(200, json=FILE_ROW_NEWER))
+        out = tmp_path / directory_name
+        if create_directory:
+            out.mkdir()
+
+        result = cli_runner.invoke(["files", "download", "file-1", "--output", str(out)])
+
+        assert result.exit_code == 0
+        assert (out / "newer.jsonl").read_bytes() == b"line1\nline2\n"
+        assert content_route.call_count == 1
+
     @pytest.mark.respx(base_url=base_url)
     def test_specifying_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"stdout-bytes"))

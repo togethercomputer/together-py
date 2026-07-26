@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
-import sys
 import base64
-from typing import Optional, Annotated
+import sys
 from pathlib import Path
+from typing import Annotated, Optional
 
 from cyclopts import Parameter, validators
 
@@ -56,11 +55,13 @@ async def retrieve_content(
         return
 
     if output is not None:
-        os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
-        has_extension = Path(output).suffix != ""
-        out_path = output if has_extension else f"{output}/{await get_filename(config.client, id)}"
+        if output.is_dir() or output.suffix == "":
+            output.mkdir(parents=True, exist_ok=True)
+            out_path = output / await get_filename(config.client, id)
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            out_path = output
 
-        response = await config.client.files.content(id=id)
         await response.write_to_file(out_path)
 
         if config.json:
