@@ -32,9 +32,7 @@ logger = logging.getLogger("together")
 _COMPLETED = "TRAINING_OPERATION_STATUS_COMPLETED"
 _FAILED = "TRAINING_OPERATION_STATUS_FAILED"
 
-_BACKOFF_FACTOR = 2.0
-_MAX_POLL_INTERVAL = 2.0
-_TRANSIENT_STATUS_CODES = frozenset({408, 409, 429})
+_MAX_POLL_INTERVAL = 5.0
 
 
 async def async_retrieve_operation(
@@ -80,19 +78,20 @@ async def async_retrieve_operation(
 
 
 def _poll_delays(initial: float) -> Iterator[float]:
-    """Sleep durations between polls: exponential growth up to `_MAX_POLL_INTERVAL`,
-    jittered so operations dispatched together don't poll in lockstep."""
+    """Waits between successive polls, doubling up to `_MAX_POLL_INTERVAL`.
+
+    The jitter matters as much as the growth: a batch of operations dispatched together
+    would otherwise poll in lockstep and reach the API as a synchronized spike.
+    """
     interval = initial
     while True:
         yield random.uniform(interval / 2, interval)
-        interval = min(interval * _BACKOFF_FACTOR, _MAX_POLL_INTERVAL)
+        interval = min(interval * 2, _MAX_POLL_INTERVAL)
 
 
-def _is_transient(exc: Exception) -> bool:
-    """Whether a failed poll means "not ready yet" rather than "the operation failed"."""
-    if isinstance(exc, APIStatusError):
-        return exc.status_code in _TRANSIENT_STATUS_CODES or exc.status_code >= 500
-    return isinstance(exc, APIConnectionError)
+def _means_not_ready(client: AsyncTogether, exc: Exception) -> bool:
+    """Whether a failed poll describes the API rather than the operation."""
+    return (isinstance(exc, APIStatusError) and client._should_retry(exc.response)) or isinstance(exc, APIConnectionError)
 
 
 async def async_wait_for_operation(
@@ -103,21 +102,24 @@ async def async_wait_for_operation(
     timeout: float | None,
     interval: float,
 ) -> OperationResponse:
-    """Poll until the operation completes, `timeout` elapses, or it genuinely fails."""
+    """Poll until the operation completes, fails, or `timeout` elapses."""
     deadline = None if timeout is None else time.monotonic() + timeout
     delays = _poll_delays(interval)
     current = operation
-    last_transient: Exception | None = None
+    last_poll_failure: Exception | None = None
 
     while True:
         if current.status == _FAILED:
             raise RuntimeError(f"Operation ({current.id}) failed: {current.error}")
         if current.status == _COMPLETED:
             return current
-        if deadline is not None and time.monotonic() >= deadline:
-            raise TimeoutError("Timed out waiting for operation to complete") from last_transient
 
-        await asyncio.sleep(next(delays))
+        delay = next(delays)
+        if deadline is not None:
+            delay = min(delay, deadline - time.monotonic())
+            if delay <= 0:
+                raise TimeoutError(f"Timed out waiting for operation ({current.id}) to complete") from last_poll_failure
+        await asyncio.sleep(delay)
 
         try:
             current = await async_retrieve_operation(
@@ -126,7 +128,7 @@ async def async_wait_for_operation(
                 operation=current,
             )
         except Exception as exc:
-            if not _is_transient(exc):
+            if not _means_not_ready(client, exc):
                 raise
-            last_transient = exc
-            logger.debug("Transient error polling operation (%s), retrying: %s", current.id, exc)
+            last_poll_failure = exc
+            logger.debug("Poll for operation (%s) failed, still waiting: %s", current.id, exc)
