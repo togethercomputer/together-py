@@ -408,6 +408,18 @@ class TestFineTuningEventsAndCheckpoints:
         assert "intermediate" in result.output
 
     @pytest.mark.respx(base_url=base_url)
+    def test_list_checkpoints_table_falls_back_to_object_id_and_revision(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        checkpoint = {**_FT_CHECKPOINT, "object_name": None}
+        respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
+            return_value=httpx.Response(200, json={"data": [checkpoint]})
+        )
+        result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
+        assert result.exit_code == 0
+        assert "ml-checkpoint@rv-checkpoint" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_empty_message(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(return_value=httpx.Response(200, json={"data": []}))
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
