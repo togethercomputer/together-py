@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 from together import AsyncClient
 from together.types.beta import AbMember, AbMemberParam
+from together.lib.utils.tools import format_datetime
+from together.lib.cli.utils._console import console
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 
 
@@ -72,3 +76,95 @@ def build_ab_members_with_percent(
             )
         )
     return result
+
+
+def calculate_ab_members(
+    *,
+    control_deployment_id: str,
+    new_deployment_id: str,
+    new_percent: int,
+    existing_members: list[AbMember] | None = None,
+) -> list[AbMemberParam]:
+    existing_variants: list[AbMember] = []
+
+    if existing_members:
+        control_member = next(
+            (member for member in existing_members if member.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL"),
+            None,
+        )
+        if control_member is None:
+            raise ValueError("Existing A/B experiment has no control member.")
+        if control_member.deployment_id != control_deployment_id:
+            raise ValueError(
+                "Control deployment does not match the existing A/B experiment control member. "
+                f"Expected {control_member.deployment_id}, got {control_deployment_id}."
+            )
+        existing_variants = [
+            member for member in existing_members if member.role == "AB_EXPERIMENT_MEMBER_ROLE_VARIANT"
+        ]
+
+    existing_variant_total = sum(member.percent for member in existing_variants)
+    control_percent = 100 - existing_variant_total - new_percent
+    if control_percent < 1:
+        raise ValueError(
+            f"Cannot allocate {new_percent}% to the new variant: control would be {control_percent}% (minimum 1%)."
+        )
+
+    members: list[AbMemberParam] = [
+        AbMemberParam(
+            deployment_id=control_deployment_id,
+            role="AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+            percent=control_percent,
+        ),
+        *[
+            AbMemberParam(
+                deployment_id=member.deployment_id,
+                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                percent=member.percent,
+            )
+            for member in existing_variants
+        ],
+        AbMemberParam(
+            deployment_id=new_deployment_id,
+            role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+            percent=new_percent,
+        ),
+    ]
+    return members
+
+
+def print_ab_experiment_detail(experiment: Any) -> None:
+    if experiment is None:
+        console.print("A/B experiment not found.")
+        return
+
+    console.print(f"[dim][primary]Name:[/primary][/dim]\t\t[bold]{experiment.name}[/bold]")
+    if getattr(experiment, "id", None):
+        console.print(f"[dim][primary]ID:[/primary][/dim]\t\t{experiment.id}")
+    if getattr(experiment, "endpoint_id", None):
+        console.print(f"[dim][primary]Endpoint:[/primary][/dim]\t{experiment.endpoint_id}")
+    if getattr(experiment, "project_id", None):
+        console.print(f"[dim][primary]Project:[/primary][/dim]\t{experiment.project_id}")
+    if getattr(experiment, "description", None):
+        console.print(f"[dim][primary]Description:[/primary][/dim]\t{experiment.description}")
+    if getattr(experiment, "etag", None):
+        console.print(f"[dim][primary]ETag:[/primary][/dim]\t\t{experiment.etag}")
+    if getattr(experiment, "members", None):
+        console.print("[dim][primary]Members:[/primary][/dim]")
+        for member in experiment.members:
+            role = format_member_role(member.role)
+            console.print(f"\t\t{member.deployment_id} ({role}): {member.percent}%")
+    if getattr(experiment, "created_at", None):
+        console.print(f"[dim][primary]Created:[/primary][/dim]\t{format_datetime(experiment.created_at)}")
+    if getattr(experiment, "updated_at", None):
+        console.print(f"[dim][primary]Updated:[/primary][/dim]\t{format_datetime(experiment.updated_at)}")
+
+
+def format_member_role(role: str | None) -> str:
+    if not role:
+        return ""
+    if role.endswith("_CONTROL"):
+        return "CONTROL"
+    if role.endswith("_VARIANT"):
+        return "VARIANT"
+    return role

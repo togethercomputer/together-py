@@ -12,11 +12,12 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.endpoints.ab import print_ab_experiment_detail
+from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve as retrieve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
     find_ab_for_deployment,
+    print_ab_experiment_detail,
     build_ab_members_with_percent,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
@@ -100,12 +101,7 @@ async def update(
     ] = None,
     etag: Annotated[
         Optional[str],
-        Parameter(
-            help=(
-                "ETag for optimistic concurrency. Applies to the deployment update, "
-                "and to the A/B experiment update when --ab-percent is set."
-            )
-        ),
+        Parameter(help="ETag for optimistic concurrency on the deployment update."),
     ] = None,
     *,
     config: CLIConfigParameter,
@@ -144,6 +140,23 @@ async def update(
 
     endpoint = await find_endpoint_by_deployment(config.client, id)
 
+    # Validate / compute A/B members before any mutations so failures leave no partial state.
+    ab_members = None
+    ab_experiment: AbExperiment | None = None
+    ab_already_at_percent = False
+    if ab_percent is not None:
+        ab_experiment = await find_ab_for_deployment(
+            config.client,
+            endpoint.id,
+            id,
+        )
+        if ab_experiment is None:
+            raise ValueError(f"Deployment {id} is not part of an A/B experiment.")
+
+        ab_members = build_ab_members_with_percent(ab_experiment.members, id, ab_percent)
+        current = next(m for m in ab_experiment.members if m.deployment_id == id)
+        ab_already_at_percent = current.percent == ab_percent
+
     updated: Any = None
     if update_mask:
         updated = await show_loading_status(
@@ -172,48 +185,50 @@ async def update(
             ),
         )
 
-    updated_ab: Any = None
+    updated_ab: AbExperiment | None = None
     if ab_percent is not None:
-        ab_experiment = await find_ab_for_deployment(
-            config.client,
-            endpoint.id,
-            id,
-        )
-        if ab_experiment is None:
-            raise ValueError(f"Deployment {id} is not part of an A/B experiment.")
-
-        members = build_ab_members_with_percent(ab_experiment.members, id, ab_percent)
-        updated_ab = await show_loading_status(
-            "Updating A/B experiment...",
-            config.client.beta.endpoints.ab_experiments.update(
-                id=ab_experiment.id,
-                endpoint_id=endpoint.id,
-                update_mask="members",
-                members=members,
-                etag=etag if etag is not None else (ab_experiment.etag or omit),
-            ),
-        )
+        assert ab_experiment is not None
+        if ab_already_at_percent:
+            updated_ab = ab_experiment
+        else:
+            assert ab_members is not None
+            updated_ab = await show_loading_status(
+                "Updating A/B experiment...",
+                config.client.beta.endpoints.ab_experiments.update(
+                    id=ab_experiment.id,
+                    endpoint_id=endpoint.id,
+                    update_mask="members",
+                    members=ab_members,
+                    etag=ab_experiment.etag or omit,
+                ),
+            )
 
     if config.json:
-        payload: dict[str, Any] = {}
-        if updated is not None:
-            payload["deployment"] = updated
-        if updated_ab is not None:
-            payload["ab_experiment"] = updated_ab
-        if traffic_weight is not None:
-            payload["endpoint"] = endpoint
-        if len(payload) == 1:
-            console.print_json(openapi_dumps(next(iter(payload.values()))).decode("utf-8"))
-        else:
+        # Preserve pre--ab-percent unwrapped precedence for existing flag combos.
+        # Only wrap when --ab-percent is involved (may combine with other updates).
+        if ab_percent is not None:
+            payload: dict[str, Any] = {"ab_experiment": updated_ab}
+            if updated is not None:
+                payload["deployment"] = updated
+            if traffic_weight is not None:
+                payload["endpoint"] = endpoint
             console.print_json(openapi_dumps(payload).decode("utf-8"))
+        elif updated is not None:
+            console.print_json(openapi_dumps(updated).decode("utf-8"))
+        else:
+            console.print_json(openapi_dumps(endpoint).decode("utf-8"))
         return
 
     if updated is not None:
         console.print(f"[green]√[/green] Updated deployment {updated.name or id}.\n\n")
     if traffic_weight is not None:
         console.print(f"[green]√[/green] Updated traffic weight for deployment {id}.\n\n")
-    if updated_ab is not None:
-        console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
+    if ab_percent is not None:
+        assert updated_ab is not None
+        if ab_already_at_percent:
+            console.print(f"Deployment {id} is already at {ab_percent}%.\n\n")
+        else:
+            console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
         print_ab_experiment_detail(updated_ab)
         console.print()
     await retrieve_endpoint(endpoint.id, config=config)

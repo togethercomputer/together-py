@@ -485,7 +485,7 @@ class TestBetaEndpointsUpdateAbPercent:
         }
 
     @pytest.mark.respx(base_url=base_url)
-    def test_update_ab_percent_uses_user_supplied_etag(
+    def test_update_ab_percent_ignores_user_etag_for_experiment(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
@@ -497,14 +497,22 @@ class TestBetaEndpointsUpdateAbPercent:
                 json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
             )
         )
+        update_dep = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+            return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="renamed"))
+        )
         update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
             return_value=httpx.Response(200, json=_ab_experiment_body())
         )
 
-        result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "20", "--etag", "user-etag"))
+        result = cli_runner.invoke(
+            _update_args("dep_variant", "--name", "renamed", "--ab-percent", "20", "--etag", "user-etag")
+        )
 
         assert result.exit_code == 0, result.output
-        assert json.loads(cast(Call, update_ab.calls[0]).request.content.decode())["etag"] == "user-etag"
+        dep_body = json.loads(cast(Call, update_dep.calls[0]).request.content.decode())
+        ab_body = json.loads(cast(Call, update_ab.calls[0]).request.content.decode())
+        assert dep_body["etag"] == "user-etag"
+        assert ab_body["etag"] == "etag-ab"
 
     @pytest.mark.respx(base_url=base_url)
     def test_update_ab_percent_errors_when_not_in_ab_experiment(
@@ -521,6 +529,27 @@ class TestBetaEndpointsUpdateAbPercent:
         )
 
         result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "20"))
+
+        assert result.exit_code != 0
+        assert "Deployment dep_variant is not part of an A/B experiment" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_validates_before_mutations(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [], "next_cursor": None},
+            )
+        )
+        # Intentionally not mocking the deployment PATCH: if validation ran after
+        # mutations, that call would be an unmocked request and fail the test.
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--name", "renamed", "--ab-percent", "20"))
 
         assert result.exit_code != 0
         assert "Deployment dep_variant is not part of an A/B experiment" in result.output
@@ -543,3 +572,105 @@ class TestBetaEndpointsUpdateAbPercent:
 
         assert result.exit_code != 0
         assert "can only update variant deployments" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_noop_skips_patch(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
+            )
+        )
+        # Intentionally not mocking the AB PATCH: a no-op must not issue one.
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "5"))
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["ab_experiment"]["id"] == "abx_1"
+        assert "deployment" not in payload
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_json_wraps_payload(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+            return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="renamed"))
+        )
+        respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_ab_experiment_body(
+                    members=[
+                        {
+                            "deploymentId": "dep_control",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
+                            "percent": 70,
+                        },
+                        {
+                            "deploymentId": "dep_variant",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                            "percent": 20,
+                        },
+                        {
+                            "deploymentId": "dep_other",
+                            "role": "AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
+                            "percent": 10,
+                        },
+                    ]
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--name", "renamed", "--ab-percent", "20"))
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert set(payload.keys()) == {"deployment", "ab_experiment"}
+        assert payload["deployment"]["id"] == "dep_variant"
+        assert payload["ab_experiment"]["id"] == "abx_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_name_and_traffic_weight_json_keeps_unwrapped_deployment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
+            return_value=httpx.Response(200, json=_deployment_body(id="dep_variant", name="renamed"))
+        )
+        respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_endpoint_body(
+                    trafficSplit=[
+                        {"deploymentId": "dep_control", "weight": 1.0},
+                        {"deploymentId": "dep_variant", "weight": 2.0},
+                    ]
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--name", "renamed", "--traffic-weight", "2"))
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        # Pre--ab-percent precedence: bare deployment object, not a wrapped multi-key payload.
+        assert payload["id"] == "dep_variant"
+        assert "deployment" not in payload
+        assert "endpoint" not in payload
