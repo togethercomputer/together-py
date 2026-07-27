@@ -208,6 +208,7 @@ class TestFilesRetrieveContent:
         assert saved[0].resolve().is_relative_to(out.resolve())
         assert not (tmp_path / "outside.jsonl").exists()
         assert not (tmp_path / "etc").exists()
+
     @pytest.mark.respx(base_url=base_url)
     def test_specifying_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/files/file-1/content").mock(return_value=httpx.Response(200, content=b"stdout-bytes"))
