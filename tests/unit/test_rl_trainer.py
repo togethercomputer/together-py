@@ -563,6 +563,40 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     trainer.stop()
 
 
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [
+        ("ppo", "LOSS_TYPE_PPO"),
+        ("cross_entropy", "LOSS_TYPE_CROSS_ENTROPY"),
+        ("LOSS_TYPE_PPO", "LOSS_TYPE_PPO"),
+    ],
+)
+def test_resolve_loss_type(given: str, expected: str) -> None:
+    loss = cast(Any, {"type": given, "grpo_params": {"beta": 0.1}})
+
+    assert rl_trainer_module._resolve_loss_type(loss) == {"type": expected, "grpo_params": {"beta": 0.1}}
+    assert loss["type"] == given, "input config must not be mutated"
+
+
+def test_resolve_loss_type_rejects_unknown_name() -> None:
+    with pytest.raises(ValueError, match="Unknown loss type"):
+        rl_trainer_module._resolve_loss_type(cast(Any, {"type": "gspo"}))
+
+
+def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Short loss names reach the API in their proto spelling."""
+    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    client = FakeClient()
+    trainer = _make_trainer(client)
+
+    trainer.forward_backward(samples=[_small_sample()], loss=cast(Any, {"type": "ppo"}))
+
+    assert client.beta.rl.operations.last_call is not None
+    _, _, kwargs = client.beta.rl.operations.last_call
+    assert kwargs["loss"] == {"type": "LOSS_TYPE_PPO"}
+    trainer.stop()
+
+
 async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     """Payloads exceeding the threshold are uploaded; inline samples have truncated sequences."""
     _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=2.0, metrics={}))

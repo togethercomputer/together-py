@@ -5,7 +5,7 @@ import time
 import asyncio
 import logging
 from types import TracebackType
-from typing import Any, TypeVar, Iterable, cast
+from typing import Any, TypeVar, Iterable, cast, get_args
 from pathlib import Path
 from dataclasses import field, dataclass
 from collections.abc import Coroutine
@@ -18,6 +18,7 @@ from ...._types import omit
 from ._payloads import prepare_operation_body, resolve_result_payload
 from ...._client import AsyncTogether
 from ...._base_client import DefaultAsyncHttpxClient
+from ....types.beta.rl.loss_type import LossType
 from ....types.beta.rl.sample_result import SampleResult
 from ....types.beta.rl.forward_result import ForwardResult
 from ....types.beta.rl.sampling_params import SamplingParams
@@ -66,6 +67,23 @@ _CLIENT_LIMITS = httpx.Limits(max_connections=_RL_MAX_CONNECTIONS, max_keepalive
 # Multi-turn RL rollouts bridge synchronous, network-blocking env steps onto this
 # loop via asyncio.to_thread, which dispatches to the loop's default executor.
 _THREAD_POOL_SIZE_ENV = "TOGETHER_RL_THREAD_POOL_SIZE"
+
+
+# Other RL SDKs spell loss types in short form ("ppo"); the API speaks proto enums.
+_PROTO_LOSS_TYPES = frozenset(get_args(LossType))
+_PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {
+    proto.removeprefix("LOSS_TYPE_").lower(): proto for proto in _PROTO_LOSS_TYPES
+}
+
+
+def _resolve_loss_type(loss: LossConfigParam) -> LossConfigParam:
+    given = loss["type"]
+    if given in _PROTO_LOSS_TYPES:
+        return loss
+    if given not in _PROTO_LOSS_TYPE_BY_SHORT_NAME:
+        msg = f"Unknown loss type {given!r}; expected one of {sorted(_PROTO_LOSS_TYPE_BY_SHORT_NAME)}"
+        raise ValueError(msg)
+    return {**loss, "type": _PROTO_LOSS_TYPE_BY_SHORT_NAME[given]}
 
 
 def _new_event_loop() -> asyncio.AbstractEventLoop:
@@ -561,10 +579,11 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
+        proto_loss = _resolve_loss_type(loss)
         body, large_payload_id = await prepare_operation_body(
             self._client,
             session_id=self._session_id,
-            body={"loss": loss, "samples": list(samples)},
+            body={"loss": proto_loss, "samples": list(samples)},
             expected_type=OperationForwardBackwardParams,
         )
         samples = cast(list[Any], body["samples"])
@@ -572,7 +591,7 @@ class Trainer:
         extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
         operation = await self._client.beta.rl.operations.forward_backward(
             self._session_id,
-            loss=loss,
+            loss=proto_loss,
             samples=samples,
             extra_body=extra_body,
         )
