@@ -688,6 +688,29 @@ class TestBetaClustersNvidiaVersionSelection:
                 os_name=os_name,
             )
 
+    @pytest.mark.asyncio
+    async def test_interactive_explicit_legacy_pair_passes_through(self) -> None:
+        params: dict[str, Any] = {
+            "region": "us-central-8",
+            "nvidia_driver_version": "595",
+            "cuda_version": "13.2",
+        }
+
+        await create_cli._set_nvidia_version_params(
+            config=cast(Any, None),
+            params=params,
+            catalog=ClusterListRegionsResponse(**_REGIONS_BODY),
+            interactive=True,
+            nvidia_version_id=None,
+            nvidia_driver_version="595",
+            cuda_version="13.2",
+            os_name=None,
+        )
+
+        assert params["nvidia_driver_version"] == "595"
+        assert params["cuda_version"] == "13.2"
+        assert "nvidia_version_id" not in params
+
     def test_prompt_selects_one_coherent_duplicate_cuda_row(self, monkeypatch: pytest.MonkeyPatch) -> None:
         catalog = ClusterListRegionsResponse(**_REGIONS_BODY)
 

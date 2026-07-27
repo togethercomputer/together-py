@@ -170,7 +170,7 @@ async def _set_nvidia_version_params(
             "Use --nvidia-version-id or provide --nvidia-driver-version and --cuda-version in non-interactive mode."
         )
 
-    if not interactive and os_name is None:
+    if has_driver and os_name is None:
         return
 
     region = params.get("region")
