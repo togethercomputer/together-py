@@ -17,7 +17,6 @@ from together.lib.cli.api.beta.endpoints.retrieve import retrieve as retrieve_en
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
     find_ab_for_deployment,
-    print_ab_experiment_detail,
     build_ab_members_with_percent,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
@@ -224,11 +223,8 @@ async def update(
     if traffic_weight is not None:
         console.print(f"[green]√[/green] Updated traffic weight for deployment {id}.\n\n")
     if ab_percent is not None:
-        assert updated_ab is not None
         if ab_already_at_percent:
             console.print(f"Deployment {id} is already at {ab_percent}%.\n\n")
         else:
             console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
-        print_ab_experiment_detail(updated_ab)
-        console.print()
     await retrieve_endpoint(endpoint.id, config=config)
