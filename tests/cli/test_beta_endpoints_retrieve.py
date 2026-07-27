@@ -181,9 +181,7 @@ class TestBetaEndpointsRetrieve:
         assert payload["endpointId"] == "ep_1"
 
     @pytest.mark.respx(base_url=base_url)
-    def test_retrieve_deployment_by_ambiguous_name_errors(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
+    def test_retrieve_deployment_by_ambiguous_name_errors(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         other = _endpoint_body(
             id="ep_2",
