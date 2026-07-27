@@ -70,6 +70,7 @@ _FT_CHECKPOINT = {
     "checkpoint": "model",
     "created_at": "2024-01-01T00:00:00Z",
     "object_id": "ml-checkpoint",
+    "object_name": "project-slug/model-checkpoint",
     "object_revision_id": "rv-checkpoint",
     "path": "/p",
     "step": 5,
@@ -153,6 +154,39 @@ class TestFineTuningCreate:
         assert "Do you want to proceed?" not in result.output
         assert "ft-created" in result.output
         assert estimate.calls
+        assert create.calls
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_handles_missing_estimated_price(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "estimation_available": True,
+                    "estimated_total_price": None,
+                    "allowed_to_proceed": True,
+                },
+            )
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--non-interactive",
+            ],
+        )
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        assert "Price estimation is not available for this job." in output
+        assert "ft-created" in result.output
         assert create.calls
 
     @pytest.mark.respx(base_url=base_url)
@@ -370,8 +404,20 @@ class TestFineTuningEventsAndCheckpoints:
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
         assert "Registry artifacts" in result.output
-        assert "ml-checkpoint@rv-checkpoint" in result.output
+        assert "project-slug/model-checkpoint@rv-checkpoint" in result.output
         assert "intermediate" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_checkpoints_table_falls_back_to_object_id_and_revision(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        checkpoint = {**_FT_CHECKPOINT, "object_name": None}
+        respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
+            return_value=httpx.Response(200, json={"data": [checkpoint]})
+        )
+        result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
+        assert result.exit_code == 0
+        assert "ml-checkpoint@rv-checkpoint" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_empty_message(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

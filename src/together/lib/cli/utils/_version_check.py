@@ -50,42 +50,80 @@ def _cache_path() -> Path:
     return Path.home() / ".cache" / "together" / "version-check.json"
 
 
-def _read_cached_version(now: float) -> str | None:
+def _load_cache() -> dict[str, object] | None:
     try:
         data: object = json.loads(_cache_path().read_text(encoding="utf-8"))
         if not isinstance(data, dict):
             return None
-        cache = cast(dict[str, object], data)
-
-        checked_at = cache.get("checked_at")
-        latest_version = cache.get("latest_version")
-        if not isinstance(checked_at, (int, float)) or not isinstance(latest_version, str):
-            return None
-        if not 0 <= now - checked_at < _CACHE_TTL_SECONDS:
-            return None
-
-        _parse_version(latest_version)
-        return latest_version
-    except (OSError, json.JSONDecodeError, ValueError):
+        return cast(dict[str, object], data)
+    except (OSError, ValueError):  # JSONDecodeError and UnicodeDecodeError are both ValueError
         return None
 
 
-def _write_cached_version(latest_version: str, now: float) -> None:
+def _write_cache(cache: dict[str, object]) -> None:
     path = _cache_path()
     tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path.write_text(
-            json.dumps({"checked_at": now, "latest_version": latest_version}, sort_keys=True) + "\n",
+            json.dumps(cache, sort_keys=True) + "\n",
             encoding="utf-8",
         )
         tmp_path.replace(path)
     except OSError as exc:
-        log_debug("Unable to cache the latest Together CLI version", error=exc)
+        log_debug("Unable to cache Together CLI version-check state", error=exc)
         try:
             tmp_path.unlink(missing_ok=True)
         except OSError:
             pass
+
+
+def _is_fresh_timestamp(timestamp: object, now: float) -> bool:
+    if not isinstance(timestamp, (int, float)):
+        return False
+    return 0 <= now - timestamp < _CACHE_TTL_SECONDS
+
+
+def _read_cached_version(now: float) -> str | None:
+    cache = _load_cache()
+    if cache is None:
+        return None
+
+    checked_at = cache.get("checked_at")
+    latest_version = cache.get("latest_version")
+    if not isinstance(latest_version, str) or not _is_fresh_timestamp(checked_at, now):
+        return None
+
+    try:
+        _parse_version(latest_version)
+    except ValueError:
+        return None
+    return latest_version
+
+
+def _write_cached_version(latest_version: str, now: float) -> None:
+    cache = _load_cache() or {}
+    payload: dict[str, object] = {
+        "checked_at": now,
+        "latest_version": latest_version,
+    }
+    informed_at = cache.get("informed_at")
+    if isinstance(informed_at, (int, float)):
+        payload["informed_at"] = informed_at
+    _write_cache(payload)
+
+
+def _was_informed_recently(now: float) -> bool:
+    cache = _load_cache()
+    if cache is None:
+        return False
+    return _is_fresh_timestamp(cache.get("informed_at"), now)
+
+
+def _mark_informed(now: float) -> None:
+    cache = _load_cache() or {}
+    cache["informed_at"] = now
+    _write_cache(cache)
 
 
 def _fetch_latest_version() -> str:
@@ -169,6 +207,13 @@ class VersionCheck:
             )
             if not _is_newer_version(latest_version, __version__):
                 return
+
+            # PyPI lookups are cached separately; this gate ensures we only prompt/inform
+            # the user once per day even when every command reuses a cached "outdated" result.
+            now = time.time()
+            if _was_informed_recently(now):
+                return
+            _mark_informed(now)
 
             command = _upgrade_command()
             command_text = escape_rich_markup(_format_command(command))
