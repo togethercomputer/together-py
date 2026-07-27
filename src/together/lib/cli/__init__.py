@@ -397,7 +397,10 @@ async def launcher(
         elif not isinstance(e, APIError):
             # API Errors are handled better inside the run_command() function
             # We don't want to raise them here as that will print a stack trace which we do not want.
-            console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
+            if config.json:
+                console.print_json(openapi_dumps({"error": str(e)}).decode("utf-8"))
+            else:
+                console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
 
         sys.exit(1)
     finally:
