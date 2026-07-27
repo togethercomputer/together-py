@@ -112,6 +112,16 @@ _MODEL_LIMITS_BODY = {
     "max_seq_length_sft": 4096,
     "max_seq_length_dpo": 4096,
 }
+_MODEL_LIMITS_WITH_LORA_BODY = {
+    **_MODEL_LIMITS_BODY,
+    "lora_training": {
+        "max_batch_size": 128,
+        "max_batch_size_dpo": 64,
+        "max_rank": 64,
+        "min_batch_size": 8,
+        "target_modules": ["q_proj", "v_proj", "w_up", "w_gate", "w_down"],
+    },
+}
 
 _FT_CREATE_BODY = {
     "id": "ft-created",
@@ -222,6 +232,40 @@ class TestFineTuningCreate:
         assert "The estimated price of this job is $123.45." in output
         assert "insufficient funds" in result.output
         assert create.calls
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_sends_combined_lora_trainable_modules(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        modules = "q_proj,v_proj,w_up,w_gate,w_down"
+        respx_mock.get("/fine-tunes/models/limits").mock(
+            return_value=httpx.Response(200, json=_MODEL_LIMITS_WITH_LORA_BODY)
+        )
+        estimate = respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--lora",
+                "--lora-trainable-modules",
+                modules,
+                "--non-interactive",
+            ],
+        )
+
+        assert result.exit_code == 0
+        estimate_body = json.loads(estimate.calls.last.request.content)
+        create_body = json.loads(create.calls.last.request.content)
+        assert estimate_body["training_type"]["lora_trainable_modules"] == modules
+        assert create_body["lora_trainable_modules"] == modules
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_early_stopping_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

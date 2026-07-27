@@ -134,7 +134,10 @@ async def create(
     lora_dropout: Annotated[float, Parameter(help="LoRA adapters' dropout")] = 0,
     lora_alpha: Annotated[float, Parameter(help="LoRA adapters' alpha")] = DEFAULT_LORA_ALPHA,
     lora_trainable_modules: Annotated[
-        str, Parameter(help="Trainable modules for LoRA adapters (e.g. 'all-linear', 'q_proj,v_proj')")
+        str,
+        Parameter(
+            help="Comma-separated LoRA target modules (e.g. 'all-linear', 'q_proj,v_proj,w_up,w_gate,w_down')",
+        ),
     ] = "all-linear",
     training_method: Annotated[
         Literal["sft", "dpo"],
