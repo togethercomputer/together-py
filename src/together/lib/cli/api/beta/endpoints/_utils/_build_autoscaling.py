@@ -140,6 +140,13 @@ def build_autoscaling(
     scaling_metrics: list[ScalingMetric] | None = None,
     required: bool = False,
 ) -> DeploymentAutoscalingParam | None:
+    if (min_replicas == 0) != (max_replicas == 0):
+        console.print(
+            "Error: --min-replicas and --max-replicas must both be 0 to stop a deployment. "
+            "Pass --min-replicas 0 --max-replicas 0."
+        )
+        sys.exit(1)
+
     if min_replicas is not None and max_replicas is not None and min_replicas > max_replicas:
         console.print(f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})")
         sys.exit(1)

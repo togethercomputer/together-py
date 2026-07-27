@@ -74,3 +74,43 @@ def test_build_autoscaling_includes_single_metric() -> None:
             }
         ],
     }
+
+
+@pytest.mark.parametrize(
+    ("min_replicas", "max_replicas"),
+    [
+        (0, 1),
+        (0, None),
+        (1, 0),
+        (None, 0),
+    ],
+)
+def test_build_autoscaling_requires_both_replica_bounds_to_stop(
+    min_replicas: int | None,
+    max_replicas: int | None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit):
+        build_autoscaling(
+            min_replicas=min_replicas,
+            max_replicas=max_replicas,
+            scale_up_window=None,
+            scale_down_window=None,
+            scale_to_zero_window=None,
+            required=False,
+        )
+
+    assert "--min-replicas and --max-replicas must both be 0" in capsys.readouterr().out
+
+
+def test_build_autoscaling_accepts_stopped_deployment() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=0,
+        max_replicas=0,
+        scale_up_window=None,
+        scale_down_window=None,
+        scale_to_zero_window=None,
+        required=True,
+    )
+
+    assert autoscaling == {"min_replicas": 0, "max_replicas": 0}
