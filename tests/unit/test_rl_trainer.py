@@ -360,11 +360,8 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     fake_client.beta.rl.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_RUNNING")
     )
-
-    def fake_together(**_kw: Any) -> MagicMock:
-        return fake_client
-
-    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", fake_together)
+    create_client = MagicMock(return_value=fake_client)
+    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", create_client)
 
     trainer = await Trainer.create_async(
         model_resources_id="res-1",
@@ -375,6 +372,7 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     )
 
     assert trainer._session_id == "sess-1"
+    assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
     await_args = fake_client.beta.rl.sessions.create.await_args
     assert await_args is not None
@@ -460,15 +458,13 @@ async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPat
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_RUNNING")
     )
     fake_client.close = AsyncMock()
-
-    def fake_together(**_kw: Any) -> MagicMock:
-        return fake_client
-
-    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", fake_together)
+    create_client = MagicMock(return_value=fake_client)
+    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", create_client)
 
     trainer = await Trainer.attach_async(session_id="sess-1")
 
     assert trainer._session_id == "sess-1"
+    assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
     fake_client.beta.rl.sessions.create.assert_not_awaited()
     fake_client.close.assert_not_awaited()
