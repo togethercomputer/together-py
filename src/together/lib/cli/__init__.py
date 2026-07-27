@@ -662,13 +662,15 @@ beta_endpoints_app.command(
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.retrieve:retrieve"),
     name="get",
-    help="Get endpoint or deployment details by ID",
+    help="Get endpoint or deployment details by name or ID",
     help_epilogue=BETA_ENDPOINTS_GET_HELP_EXAMPLES,
     sort_key=3,
 )
-beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.retrieve:retrieve"), show=False
-)  # This is just here to allow the default command to work
+# Explicit `retrieve` stays registered (hidden) for `tg beta endpoints retrieve …`.
+beta_endpoints_app.command((f"{_CLI}.beta.endpoints.retrieve:retrieve"), show=False)
+# Implicit get: `tg beta endpoints <name-or-id>` — cyclopts App.default, not token rewriting.
+# (Nested meta.default is not invoked by the root meta launcher's parse_known_args.)
+beta_endpoints_app.default(beta_endpoints_app["retrieve"].default_command)
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.update:update"),
     help="Update a deployment's name, autoscaling, or traffic weight",
