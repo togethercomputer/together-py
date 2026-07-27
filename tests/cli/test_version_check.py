@@ -73,6 +73,28 @@ def test_latest_version_fetches_pypi_and_caches(monkeypatch: pytest.MonkeyPatch,
     assert urlopen.call_args.kwargs == {"timeout": 1.0}
 
 
+def test_load_cache_returns_none_for_non_utf8(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    cache_path = tmp_path / "version-check.json"
+    cache_path.write_bytes(b"\xff\xfe{not-utf8")
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: cache_path)
+
+    assert _version_check._load_cache() is None
+
+
+def test_latest_version_rewrites_non_utf8_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    cache_path = tmp_path / "version-check.json"
+    cache_path.write_bytes(b"\xff\xfe{not-utf8")
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: cache_path)
+    monkeypatch.setattr(_version_check.time, "time", lambda: 1000)
+    monkeypatch.setattr(_version_check, "_fetch_latest_version", lambda: "3.2.1")
+
+    assert _version_check._latest_version() == "3.2.1"
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "checked_at": 1000,
+        "latest_version": "3.2.1",
+    }
+
+
 async def test_version_check_starts_resolution_when_created(monkeypatch: pytest.MonkeyPatch) -> None:
     started = threading.Event()
     release = threading.Event()

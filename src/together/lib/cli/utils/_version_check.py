@@ -56,7 +56,7 @@ def _load_cache() -> dict[str, object] | None:
         if not isinstance(data, dict):
             return None
         return cast(dict[str, object], data)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, ValueError):  # JSONDecodeError and UnicodeDecodeError are both ValueError
         return None
 
 
