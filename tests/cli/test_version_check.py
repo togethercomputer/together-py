@@ -132,9 +132,12 @@ async def test_version_check_stops_waiting_after_timeout(monkeypatch: pytest.Mon
     output.print.assert_not_called()
 
 
-async def test_version_check_prints_upgrade_command_when_non_interactive(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_prints_upgrade_command_when_non_interactive(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     output = MagicMock()
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: tmp_path / "version-check.json")
     monkeypatch.setattr(_version_check, "__version__", "1.0.0")
     monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
     monkeypatch.setattr(
@@ -150,10 +153,13 @@ async def test_version_check_prints_upgrade_command_when_non_interactive(monkeyp
     assert "python -m pip install -U together" in rendered
 
 
-async def test_version_check_does_not_prompt_after_failed_command(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_does_not_prompt_after_failed_command(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     output = MagicMock()
     confirm = AsyncMock()
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: tmp_path / "version-check.json")
     monkeypatch.setattr(_version_check, "__version__", "1.0.0")
     monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
     monkeypatch.setattr(_version_check, "_upgrade_command", lambda: ["upgrade"])
@@ -167,11 +173,12 @@ async def test_version_check_does_not_prompt_after_failed_command(monkeypatch: p
     assert "Upgrade with:" in output.print.call_args.args[0]
 
 
-async def test_version_check_prompts_and_upgrades_on_tty(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_prompts_and_upgrades_on_tty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     output = MagicMock()
     confirm = AsyncMock(return_value=True)
     run = MagicMock(return_value=subprocess.CompletedProcess(["upgrade"], returncode=0))
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: tmp_path / "version-check.json")
     monkeypatch.setattr(_version_check, "__version__", "1.0.0")
     monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
     monkeypatch.setattr(_version_check, "_upgrade_command", lambda: ["upgrade"])
@@ -187,9 +194,10 @@ async def test_version_check_prompts_and_upgrades_on_tty(monkeypatch: pytest.Mon
     assert "upgraded" in output.print.call_args.args[0]
 
 
-async def test_version_check_prompt_interrupt_does_not_escape(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_version_check_prompt_interrupt_does_not_escape(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     confirm = AsyncMock(side_effect=KeyboardInterrupt)
     monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: tmp_path / "version-check.json")
     monkeypatch.setattr(_version_check, "__version__", "1.0.0")
     monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
     monkeypatch.setattr(_version_check, "confirm", confirm)
@@ -209,3 +217,72 @@ async def test_version_check_fails_open(monkeypatch: pytest.MonkeyPatch) -> None
 
     version_check = _version_check.VersionCheck()
     await version_check.inform(non_interactive=False, allow_prompt=True)
+
+
+async def test_version_check_informs_at_most_once_per_day(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    output = MagicMock()
+    cache_path = tmp_path / "version-check.json"
+    monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: cache_path)
+    monkeypatch.setattr(_version_check, "__version__", "1.0.0")
+    monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
+    monkeypatch.setattr(_version_check, "_upgrade_command", lambda: ["upgrade"])
+    monkeypatch.setattr(_version_check, "error_console", output)
+    monkeypatch.setattr(_version_check.time, "time", lambda: 1_000.0)
+
+    first = _version_check.VersionCheck()
+    await first.inform(non_interactive=True, allow_prompt=True)
+    assert output.print.call_count == 2
+    assert json.loads(cache_path.read_text(encoding="utf-8"))["informed_at"] == 1_000.0
+
+    output.reset_mock()
+    second = _version_check.VersionCheck()
+    await second.inform(non_interactive=True, allow_prompt=True)
+    output.print.assert_not_called()
+
+
+async def test_version_check_informs_again_after_ttl(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    output = MagicMock()
+    cache_path = tmp_path / "version-check.json"
+    cache_path.write_text(
+        json.dumps(
+            {
+                "checked_at": 1_000.0,
+                "informed_at": 1_000.0,
+                "latest_version": "1.1.0",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("TOGETHER_DISABLE_VERSION_CHECK", raising=False)
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: cache_path)
+    monkeypatch.setattr(_version_check, "__version__", "1.0.0")
+    monkeypatch.setattr(_version_check, "_latest_version", lambda: "1.1.0")
+    monkeypatch.setattr(_version_check, "_upgrade_command", lambda: ["upgrade"])
+    monkeypatch.setattr(_version_check, "error_console", output)
+    monkeypatch.setattr(_version_check.time, "time", lambda: 1_000.0 + _version_check._CACHE_TTL_SECONDS)
+
+    version_check = _version_check.VersionCheck()
+    await version_check.inform(non_interactive=True, allow_prompt=True)
+
+    assert output.print.call_count == 2
+    assert (
+        json.loads(cache_path.read_text(encoding="utf-8"))["informed_at"] == 1_000.0 + _version_check._CACHE_TTL_SECONDS
+    )
+
+
+def test_write_cached_version_preserves_informed_at(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    cache_path = tmp_path / "version-check.json"
+    cache_path.write_text(
+        json.dumps({"checked_at": 500, "informed_at": 750, "latest_version": "1.0.0"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(_version_check, "_cache_path", lambda: cache_path)
+
+    _version_check._write_cached_version("1.2.0", now=1_000.0)
+
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "checked_at": 1_000.0,
+        "informed_at": 750,
+        "latest_version": "1.2.0",
+    }
