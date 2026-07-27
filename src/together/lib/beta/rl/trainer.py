@@ -54,7 +54,7 @@ DEFAULT_SESSION_CREATION_TIMEOUT: float | None = 3600.0
 DEFAULT_SESSION_CREATION_INTERVAL: float = 10.0
 DEFAULT_OPERATION_TIMEOUT: float | None = 300.0
 DEFAULT_CHECKPOINT_TIMEOUT: float | None = 7200.0  # 2 h — large models (e.g. 400B) can take well over 5 min
-DEFAULT_OPERATION_INTERVAL: float = 0.1
+DEFAULT_OPERATION_INTERVAL: float = 0.1  # starting poll interval; backs off from there
 _MAX_RETRIES = 5
 
 # RL operations are long-lived and chatty; bump httpx defaults so polling and
