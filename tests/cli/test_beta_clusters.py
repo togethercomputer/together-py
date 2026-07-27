@@ -861,6 +861,39 @@ class TestBetaClustersRetrieve:
 
 
 class TestBetaClustersCreate:
+    def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "create",
+                "--json",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-version-id",
+                "nvidia-595-24",
+                "--nvidia-driver-version",
+                "595",
+                "--cuda-version",
+                "13.2",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "invalid-selector",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert json.loads(result.output) == {
+            "error": "Use either --nvidia-version-id or --nvidia-driver-version/--cuda-version/--os, not both."
+        }
+
     @pytest.mark.respx(base_url=base_url)
     def test_create_non_interactive_posts_expected_body(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         created = _cluster_body("new-id", "together-py-testing-suite")
