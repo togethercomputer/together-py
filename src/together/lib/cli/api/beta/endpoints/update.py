@@ -31,10 +31,17 @@ async def update(
     ],
     name: Annotated[Optional[str], Parameter(help="Updated deployment name")] = None,
     min_replicas: Annotated[
-        Optional[int], Parameter(help="New minimum replicas; set both replica bounds to 0 to stop the deployment")
+        Optional[int],
+        Parameter(help="New minimum replicas. To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."),
     ] = None,
     max_replicas: Annotated[
-        Optional[int], Parameter(help="New maximum replicas; must be greater than or equal to --min-replicas")
+        Optional[int],
+        Parameter(
+            help=(
+                "New maximum replicas; must be greater than or equal to --min-replicas. "
+                "To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."
+            )
+        ),
     ] = None,
     scale_up_window: Annotated[
         Optional[str],
@@ -101,6 +108,7 @@ async def update(
             scaling_percentile=scaling_percentile,
         ),
         required=False,
+        infer_replica_defaults=False,
     )
 
     update_mask: list[str] = []

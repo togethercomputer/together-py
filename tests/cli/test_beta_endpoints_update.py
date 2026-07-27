@@ -120,6 +120,13 @@ class TestBetaEndpointsUpdate:
             "autoscaling": {"minReplicas": 0, "maxReplicas": 0},
         }
 
+    @pytest.mark.parametrize("flag", ["--min-replicas", "--max-replicas"])
+    def test_update_stop_requires_both_zero_bounds(self, cli_runner: CliRunner, flag: str) -> None:
+        result = cli_runner.invoke(_update_args("dep_idle", flag, "0"))
+
+        assert result.exit_code != 0
+        assert "pass both --min-replicas 0 and --max-replicas 0" in result.output.replace("\n", " ")
+
     @pytest.mark.respx(base_url=base_url)
     def test_update_unknown_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
