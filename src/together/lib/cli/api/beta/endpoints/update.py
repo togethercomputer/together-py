@@ -98,7 +98,15 @@ async def update(
             validator=Number(gte=1, lte=99),
         ),
     ] = None,
-    etag: Annotated[Optional[str], Parameter(help="ETag for optimistic concurrency")] = None,
+    etag: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "ETag for optimistic concurrency. Applies to the deployment update, "
+                "and to the A/B experiment update when --ab-percent is set."
+            )
+        ),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -182,8 +190,7 @@ async def update(
                 endpoint_id=endpoint.id,
                 update_mask="members",
                 members=members,
-                etag=ab_experiment.etag or omit,
-                project_id=config.project_id,
+                etag=etag if etag is not None else (ab_experiment.etag or omit),
             ),
         )
 

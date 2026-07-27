@@ -475,6 +475,28 @@ class TestBetaEndpointsUpdateAbPercent:
         }
 
     @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_uses_user_supplied_etag(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_ab_experiment_body()], "next_cursor": None},
+            )
+        )
+        update_ab = respx_mock.patch("/projects/proj/endpoints/ep_1/abExperiments/abx_1").mock(
+            return_value=httpx.Response(200, json=_ab_experiment_body())
+        )
+
+        result = cli_runner.invoke(_update_args("dep_variant", "--ab-percent", "20", "--etag", "user-etag"))
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, update_ab.calls[0]).request.content.decode())["etag"] == "user-etag"
+
+    @pytest.mark.respx(base_url=base_url)
     def test_update_ab_percent_errors_when_not_in_ab_experiment(
         self,
         respx_mock: MockRouter,
