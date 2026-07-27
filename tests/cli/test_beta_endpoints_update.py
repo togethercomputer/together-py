@@ -197,11 +197,21 @@ class TestBetaEndpointsUpdate:
         assert result.exit_code != 0
         assert "At least one update option must be specified" in result.output
 
-    def test_update_ab_percent_counts_as_update_option(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(
-            ["beta", "endpoints", "update", "--project", "proj", "dep_missing", "--ab-percent", "20"]
-        )
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_ab_percent_counts_as_update_option(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        # Prove --ab-percent clears the "at least one option" guard by reaching
+        # deployment lookup (not by asserting the absence of an error string).
+        _mock_endpoint_list(respx_mock)
+
+        result = cli_runner.invoke(_update_args("dep_missing", "--ab-percent", "20"))
+
+        assert result.exit_code != 0
         assert "At least one update option must be specified" not in result.output
+        assert "Deployment dep_missing not found" in result.output
 
 
 class TestUpdateAbMemberPercent:
