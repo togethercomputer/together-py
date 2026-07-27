@@ -202,8 +202,6 @@ async def update(
             payload["ab_experiment"] = updated_ab
         if traffic_weight is not None:
             payload["endpoint"] = endpoint
-        if not payload:
-            payload["endpoint"] = endpoint
         if len(payload) == 1:
             console.print_json(openapi_dumps(next(iter(payload.values()))).decode("utf-8"))
         else:
@@ -218,6 +216,4 @@ async def update(
         console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
         print_ab_experiment_detail(updated_ab)
         console.print()
-    if updated is None and traffic_weight is None and updated_ab is None:
-        console.print(f"[green]√[/green] Updated deployment {id}.\n\n")
     await retrieve_endpoint(endpoint.id, config=config)
