@@ -10,10 +10,10 @@ on:
     # change (e.g. a community PR between releases) can't hold codegen for long.
     - cron: "7,37 * * * *"
   workflow_dispatch: {}
-  repository_dispatch:
-    types: [prod-released]
-  release:
-    types: [published]
+  # repository_dispatch:
+  #   types: [prod-released]
+  # release:
+  #   types: [published]
   push:
     # main only. stlc preview/integrated/codegen branches never push to main.
     branches: [main]
@@ -147,49 +147,49 @@ jobs:
       #         || echo "::warning::Alert webhook POST failed"
       #     fi
 
-  notify-back-sync:
-    # On every push to production main, tell staging to back-sync now instead of
-    # waiting for the poll. Skip pushes by the workflow app (stlc-promote FF) —
-    # those already made production match staging, so a back-sync is a no-op.
-    # Dispatch-only: it cannot write production or staging contents.
-    runs-on: ubuntu-latest
-    if: >-
-      github.repository == 'togethercomputer/together-py' &&
-      github.event_name == 'push' &&
-      github.actor != 'stlc-workflow-app[bot]'
-    permissions:
-      contents: read
-    env:
-      STAGING_REPO: togethercomputer/together-py-staging
-    steps:
-      - name: Mint STLC app token (scoped to SDK staging repo)
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2
-        with:
-          client-id: ${{ secrets.STLC_RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.STLC_RELEASE_APP_PRIVATE_KEY }}
-          owner: togethercomputer
-          repositories: together-py-staging
+  # notify-back-sync:
+  #   # On every push to production main, tell staging to back-sync now instead of
+  #   # waiting for the poll. Skip pushes by the workflow app (stlc-promote FF) —
+  #   # those already made production match staging, so a back-sync is a no-op.
+  #   # Dispatch-only: it cannot write production or staging contents.
+  #   runs-on: ubuntu-latest
+  #   if: >-
+  #     github.repository == 'togethercomputer/together-py' &&
+  #     github.event_name == 'push' &&
+  #     github.actor != 'stlc-workflow-app[bot]'
+  #   permissions:
+  #     contents: read
+  #   env:
+  #     STAGING_REPO: togethercomputer/together-py-staging
+  #   steps:
+  #     - name: Mint STLC app token (scoped to SDK staging repo)
+  #       id: app-token
+  #       uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2
+  #       with:
+  #         client-id: ${{ secrets.STLC_RELEASE_APP_CLIENT_ID }}
+  #         private-key: ${{ secrets.STLC_RELEASE_APP_PRIVATE_KEY }}
+  #         owner: togethercomputer
+  #         repositories: together-py-staging
 
-      - name: Dispatch back-sync to staging
-        env:
-          DISPATCH_TOKEN: ${{ steps.app-token.outputs.token }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
+  #     - name: Dispatch back-sync to staging
+  #       env:
+  #         DISPATCH_TOKEN: ${{ steps.app-token.outputs.token }}
+  #         REF_NAME: ${{ github.ref_name }}
+  #       run: |
+  #         set -euo pipefail
 
-          payload=$(jq -n --arg ref "$REF_NAME" '{event_type:"prod-released",client_payload:{ref:$ref}}')
-          code=$(curl -sS -o /tmp/dispatch.txt -w '%{http_code}' -X POST \
-            -H "Authorization: Bearer ${DISPATCH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${STAGING_REPO}/dispatches" \
-            -d "$payload")
-          if [ "$code" = "204" ]; then
-            echo "Back-sync dispatched to ${STAGING_REPO}."
-          else
-            echo "Dispatch failed (HTTP $code)" >&2; cat /tmp/dispatch.txt >&2; exit 1
-          fi
+  #         payload=$(jq -n --arg ref "$REF_NAME" '{event_type:"prod-released",client_payload:{ref:$ref}}')
+  #         code=$(curl -sS -o /tmp/dispatch.txt -w '%{http_code}' -X POST \
+  #           -H "Authorization: Bearer ${DISPATCH_TOKEN}" \
+  #           -H "Accept: application/vnd.github+json" \
+  #           -H "X-GitHub-Api-Version: 2022-11-28" \
+  #           "https://api.github.com/repos/${STAGING_REPO}/dispatches" \
+  #           -d "$payload")
+  #         if [ "$code" = "204" ]; then
+  #           echo "Back-sync dispatched to ${STAGING_REPO}."
+  #         else
+  #           echo "Dispatch failed (HTTP $code)" >&2; cat /tmp/dispatch.txt >&2; exit 1
+  #         fi
 
       # Optional alerting workflow.
       # If we want to add this back in, we need an incoming webhook (Slack/Teams/etc) that the workflow POSTs to when a run fails, so a stalled build or tracking sync pages a human instead of sitting red in the Actions tab.
