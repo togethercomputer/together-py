@@ -148,12 +148,15 @@ jobs:
       #     fi
 
   notify-back-sync:
-    # On a published release, tell staging to back-sync now instead of waiting for
-    # the poll. Dispatch-only: it cannot write production or staging contents.
+    # On every push to production main, tell staging to back-sync now instead of
+    # waiting for the poll. Skip pushes by the workflow app (stlc-promote FF) —
+    # those already made production match staging, so a back-sync is a no-op.
+    # Dispatch-only: it cannot write production or staging contents.
     runs-on: ubuntu-latest
     if: >-
       github.repository == 'togethercomputer/together-py' &&
-      (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
+      github.event_name == 'push' &&
+      github.actor != 'stlc-workflow-app[bot]'
     permissions:
       contents: read
     env:
