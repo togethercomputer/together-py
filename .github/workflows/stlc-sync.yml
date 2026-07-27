@@ -41,7 +41,7 @@ jobs:
 
       - name: Mint STLC app token (scoped to SDK staging repos)
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2
         with:
           client-id: ${{ secrets.STLC_WORKFLOW_APP_CLIENT_ID }}
           private-key: ${{ secrets.STLC_WORKFLOW_APP_PRIVATE_KEY }}
@@ -162,12 +162,12 @@ jobs:
     env:
       STAGING_REPO: togethercomputer/together-py-staging
     steps:
-      - name: Mint STLC app token (scoped to SDK staging repos)
+      - name: Mint STLC app token (scoped to SDK staging repo)
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2
         with:
-          client-id: ${{ secrets.STLC_WORKFLOW_APP_CLIENT_ID }}
-          private-key: ${{ secrets.STLC_WORKFLOW_APP_PRIVATE_KEY }}
+          client-id: ${{ secrets.STLC_RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.STLC_RELEASE_APP_PRIVATE_KEY }}
           owner: togethercomputer
           repositories: together-py-staging
 
@@ -227,7 +227,7 @@ jobs:
     steps:
       - name: Mint STLC app token (scoped to SDK staging repos)
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2
         with:
           client-id: ${{ secrets.STLC_WORKFLOW_APP_CLIENT_ID }}
           private-key: ${{ secrets.STLC_WORKFLOW_APP_PRIVATE_KEY }}
