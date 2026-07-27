@@ -106,8 +106,7 @@ class DataTrainingTypeLoRaTrainingType(BaseModel):
     """Comma-separated LoRA target modules.
 
     Use `all-linear` for model defaults; MoE expert modules (`w_up`, `w_gate`,
-    `w_down`) are supported on compatible models and cannot be mixed with attention
-    modules.
+    `w_down`) can be combined with attention modules on compatible models.
     """
 
 
