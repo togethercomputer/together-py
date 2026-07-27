@@ -112,7 +112,7 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scale_to_zero_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None,
+    scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[True],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam: ...
@@ -126,7 +126,7 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scale_to_zero_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None,
+    scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[False],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam | None: ...
