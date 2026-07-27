@@ -265,7 +265,7 @@ class TestFineTuningCreate:
         estimate_body = json.loads(estimate.calls.last.request.content)
         create_body = json.loads(create.calls.last.request.content)
         assert estimate_body["training_type"]["lora_trainable_modules"] == modules
-        assert create_body["lora_trainable_modules"] == modules
+        assert create_body["training_type"]["lora_trainable_modules"] == modules
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_early_stopping_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
