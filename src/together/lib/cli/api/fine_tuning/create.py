@@ -130,11 +130,17 @@ async def create(
     max_grad_norm: Annotated[float, Parameter(help="Max gradient norm for clipping (0 to disable)")] = 1.0,
     weight_decay: Annotated[float, Parameter(help="Weight decay")] = 0.0,
     lora: Annotated[Optional[bool], Parameter(help="Whether to use LoRA adapters for fine-tuning")] = None,
-    lora_r: Annotated[int, Parameter(help="LoRA adapters' rank")] = DEFAULT_LORA_R,
-    lora_dropout: Annotated[float, Parameter(help="LoRA adapters' dropout")] = 0,
-    lora_alpha: Annotated[float, Parameter(help="LoRA adapters' alpha")] = DEFAULT_LORA_ALPHA,
+    lora_r: Annotated[int, Parameter(help="Rank of the LoRA adapter matrices")] = DEFAULT_LORA_R,
+    lora_dropout: Annotated[float, Parameter(help="Dropout probability applied to LoRA adapter inputs")] = 0,
+    lora_alpha: Annotated[float, Parameter(help="Scaling factor applied to the LoRA adapter weights")] = DEFAULT_LORA_ALPHA,
     lora_trainable_modules: Annotated[
-        str, Parameter(help="Trainable modules for LoRA adapters (e.g. 'all-linear', 'q_proj,v_proj')")
+        str,
+        Parameter(
+            help=(
+                "LoRA target modules (e.g. 'all-linear', 'q_proj,v_proj'). "
+                "Fine-tunes targeting MoE expert modules (w_up, w_gate, w_down) produce adapter-only output."
+            )
+        ),
     ] = "all-linear",
     training_method: Annotated[
         Literal["sft", "dpo"],

@@ -130,6 +130,16 @@ _FT_CREATE_BODY = {
 
 
 class TestFineTuningCreate:
+    def test_create_help_describes_lora_options(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["fine-tuning", "create", "--help"])
+
+        assert result.exit_code == 0
+        assert "Rank of the LoRA adapter matrices" in result.output
+        assert "Dropout probability applied to LoRA adapter inputs" in result.output
+        assert "Scaling factor applied to the LoRA adapter weights" in result.output
+        assert "MoE expert modules" in result.output
+        assert "adapter-only output" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/models/limits").mock(
