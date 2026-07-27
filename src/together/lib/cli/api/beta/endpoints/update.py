@@ -32,9 +32,7 @@ async def update(
     name: Annotated[Optional[str], Parameter(help="Updated deployment name")] = None,
     min_replicas: Annotated[
         Optional[int],
-        Parameter(
-            help="New minimum replicas. To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."
-        ),
+        Parameter(help="New minimum replicas. To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."),
     ] = None,
     max_replicas: Annotated[
         Optional[int],
