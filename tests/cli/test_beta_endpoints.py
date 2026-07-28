@@ -449,13 +449,13 @@ class TestBetaEndpointsListEvents:
         query = parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)
         assert query["limit"] == ["10000"]
         assert query["after"] == ["tok"]
-        assert query["deploymentIds"] == ["dep_1", "dep_2"]
+        assert query["deploymentIds"] == ["dep_1,dep_2"]
         assert query["minLevel"] == ["LEVEL_WARN"]
-        assert query["since"] == ["2026-01-01T00:00:00"]
-        assert query["sourceKinds"] == ["SOURCE_KIND_ENDPOINT", "SOURCE_KIND_DEPLOYMENT"]
+        assert query["since"] == ["2026-01-01T00:00:00+00:00"]
+        assert query["sourceKinds"] == ["SOURCE_KIND_ENDPOINT,SOURCE_KIND_DEPLOYMENT"]
         assert query["subjectId"] == ["rollout_1"]
-        assert query["types"] == ["deployment.scaled", "condition.set"]
-        assert query["until"] == ["2026-01-02T00:00:00"]
+        assert query["types"] == ["deployment.scaled,condition.set"]
+        assert query["until"] == ["2026-01-02T00:00:00+00:00"]
         payload = json.loads(result.output)
         assert payload["data"][0]["id"] == "evt_1"
         assert payload["next_cursor"] == "next"
