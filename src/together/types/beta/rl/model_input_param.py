@@ -2,23 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Union, Iterable
+from typing import Iterable
 from typing_extensions import Required, TypedDict
 
-from ...._types import SequenceNotStr
+from .model_input_chunk_param import ModelInputChunk
 
-__all__ = ["ModelInput", "Chunk", "ChunkEncodedText"]
-
-
-class ChunkEncodedText(TypedDict, total=False):
-    tokens: Required[SequenceNotStr[Union[str, int]]]
-    """Pre-tokenized text input"""
-
-
-class Chunk(TypedDict, total=False):
-    encoded_text: ChunkEncodedText
+__all__ = ["ModelInput"]
 
 
 class ModelInput(TypedDict, total=False):
-    chunks: Required[Iterable[Chunk]]
+    chunks: Required[Iterable[ModelInputChunk]]
     """Input chunks for the model"""

@@ -85,11 +85,24 @@ async def deploy(
         ),
     ] = None,
     min_replicas: Annotated[
-        Optional[int], Parameter(help="Minimum replicas to keep running; set both replica bounds to 0 to start stopped")
-    ] = 1,
+        Optional[int],
+        Parameter(
+            help=(
+                "Minimum replicas to keep running. Defaults to 1 when omitted. "
+                "If only this flag is set, max replicas matches it (including 0 to start stopped)."
+            )
+        ),
+    ] = None,
     max_replicas: Annotated[
-        Optional[int], Parameter(help="Maximum replicas allowed; must be greater than or equal to --min-replicas")
-    ] = 1,
+        Optional[int],
+        Parameter(
+            help=(
+                "Maximum replicas allowed; must be greater than or equal to --min-replicas. "
+                "Defaults to the min replicas value when omitted (or 1 when neither flag is set). "
+                "Passing only --max-replicas 0 also sets min replicas to 0."
+            )
+        ),
+    ] = None,
     scale_up_window: Annotated[
         Optional[str],
         Parameter(

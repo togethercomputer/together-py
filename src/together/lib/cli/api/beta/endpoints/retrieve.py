@@ -18,12 +18,17 @@ from together.types.beta.endpoints import AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model
-from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
+from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
 
 async def retrieve(
-    id: Annotated[str, Parameter(help="Endpoint ID (ep_...) or deployment ID (dep_...) to retrieve")],
+    id: Annotated[
+        str,
+        Parameter(
+            help=("Endpoint name, endpoint ID (ep_...), deployment name, or deployment ID (dep_...) to retrieve")
+        ),
+    ],
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -32,13 +37,24 @@ async def retrieve(
         await _retrieve_deployment(id, config=config)
         return
 
-    await _retrieve_endpoint(id, config=config)
+    if id.startswith("ep_"):
+        await _retrieve_endpoint(id, config=config)
+        return
+
+    try:
+        endpoint = await resolve_endpoint(config, id)
+    except ValueError:
+        # Not an endpoint name — try as a deployment name before failing.
+        await _retrieve_deployment(id, config=config)
+        return
+
+    await _retrieve_endpoint(endpoint.id, config=config)
 
 
-async def _retrieve_deployment(deployment_id: str, *, config: CLIConfigParameter) -> None:
-    endpoint = await show_loading_status(
+async def _retrieve_deployment(deployment_id_or_name: str, *, config: CLIConfigParameter) -> None:
+    endpoint, deployment_id = await show_loading_status(
         "Resolving deployment...",
-        find_endpoint_by_deployment(config.client, deployment_id),
+        resolve_deployment_id(config.client, deployment_id_or_name),
     )
     deployment = await show_loading_status(
         "Loading deployment...",

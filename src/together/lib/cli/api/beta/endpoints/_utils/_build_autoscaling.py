@@ -112,8 +112,9 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scale_to_zero_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None,
+    scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[True],
+    infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam: ...
 
 
@@ -125,8 +126,9 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scale_to_zero_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None,
+    scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[False],
+    infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam | None: ...
 
 
@@ -139,7 +141,31 @@ def build_autoscaling(
     scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = None,
     required: bool = False,
+    infer_replica_defaults: bool = True,
 ) -> DeploymentAutoscalingParam | None:
+    if infer_replica_defaults:
+        if min_replicas is None and max_replicas is None and required:
+            min_replicas, max_replicas = 1, 1
+        elif min_replicas is not None and max_replicas is None:
+            # Stopped (0) or fixed-size (N): mirror the only bound the user set.
+            max_replicas = min_replicas
+        elif max_replicas == 0 and min_replicas is None:
+            min_replicas = 0
+        elif max_replicas is not None and min_replicas is None and required:
+            # Create/deploy with only --max-replicas N (N > 0): keep the usual min of 1.
+            min_replicas = 1
+    elif (min_replicas == 0 or max_replicas == 0) and not (min_replicas == 0 and max_replicas == 0):
+        # Updates are patchy: don't invent the other bound when stopping.
+        console.print("Error: to stop a deployment, pass both --min-replicas 0 and --max-replicas 0.")
+        sys.exit(1)
+
+    if min_replicas is not None and max_replicas is not None and (min_replicas == 0) != (max_replicas == 0):
+        console.print(
+            "Error: --min-replicas and --max-replicas must both be 0 to stop a deployment. "
+            "Pass --min-replicas 0 --max-replicas 0."
+        )
+        sys.exit(1)
+
     if min_replicas is not None and max_replicas is not None and min_replicas > max_replicas:
         console.print(f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})")
         sys.exit(1)

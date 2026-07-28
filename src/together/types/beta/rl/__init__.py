@@ -52,8 +52,10 @@ from .policy_version_segment import PolicyVersionSegment as PolicyVersionSegment
 from .training_session_error import TrainingSessionError as TrainingSessionError
 from .cispo_loss_inputs_param import CispoLossInputsParam as CispoLossInputsParam
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
+from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
 from .training_session_status import TrainingSessionStatus as TrainingSessionStatus
+from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
 from .loss_target_tokens_param import LossTargetTokensParam as LossTargetTokensParam
 from .operation_forward_params import OperationForwardParams as OperationForwardParams
 from .training_operation_error import TrainingOperationError as TrainingOperationError

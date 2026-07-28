@@ -109,7 +109,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -129,7 +129,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -153,7 +153,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -180,7 +180,7 @@ class TestOperations:
                 samples=[
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                        "model_input": {"chunks": [{}]},
+                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                         "policy_segments": [
                             {
                                 "start_token": 0,
@@ -198,7 +198,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -217,7 +217,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -240,7 +240,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -266,7 +266,7 @@ class TestOperations:
                 samples=[
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                        "model_input": {"chunks": [{}]},
+                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                         "policy_segments": [
                             {
                                 "start_token": 0,
@@ -285,7 +285,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -407,7 +407,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -431,7 +431,7 @@ class TestOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -458,7 +458,7 @@ class TestOperations:
                 samples=[
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                        "model_input": {"chunks": [{}]},
+                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                         "policy_segments": [
                             {
                                 "start_token": 0,
@@ -880,7 +880,7 @@ class TestOperations:
     def test_method_sample(self, client: Together) -> None:
         operation = client.beta.rl.operations.sample(
             session_id="session_id",
-            model_inputs=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -906,7 +906,7 @@ class TestOperations:
     def test_raw_response_sample(self, client: Together) -> None:
         response = client.beta.rl.operations.with_raw_response.sample(
             session_id="session_id",
-            model_inputs=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
         )
 
         assert response.is_closed is True
@@ -918,7 +918,7 @@ class TestOperations:
     def test_streaming_response_sample(self, client: Together) -> None:
         with client.beta.rl.operations.with_streaming_response.sample(
             session_id="session_id",
-            model_inputs=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -933,7 +933,7 @@ class TestOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
-                model_inputs=[{"chunks": [{}]}],
+                model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             )
 
 
@@ -1026,7 +1026,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1046,7 +1046,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1070,7 +1070,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1097,7 +1097,7 @@ class TestAsyncOperations:
                 samples=[
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                        "model_input": {"chunks": [{}]},
+                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                         "policy_segments": [
                             {
                                 "start_token": 0,
@@ -1115,7 +1115,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1134,7 +1134,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1157,7 +1157,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1183,7 +1183,7 @@ class TestAsyncOperations:
                 samples=[
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                        "model_input": {"chunks": [{}]},
+                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                         "policy_segments": [
                             {
                                 "start_token": 0,
@@ -1202,7 +1202,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1324,7 +1324,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1348,7 +1348,7 @@ class TestAsyncOperations:
             samples=[
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                    "model_input": {"chunks": [{}]},
+                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     "policy_segments": [
                         {
                             "start_token": 0,
@@ -1375,7 +1375,7 @@ class TestAsyncOperations:
                 samples=[
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
-                        "model_input": {"chunks": [{}]},
+                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                         "policy_segments": [
                             {
                                 "start_token": 0,
@@ -1797,7 +1797,7 @@ class TestAsyncOperations:
     async def test_method_sample(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.sample(
             session_id="session_id",
-            model_inputs=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -1823,7 +1823,7 @@ class TestAsyncOperations:
     async def test_raw_response_sample(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.operations.with_raw_response.sample(
             session_id="session_id",
-            model_inputs=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
         )
 
         assert response.is_closed is True
@@ -1835,7 +1835,7 @@ class TestAsyncOperations:
     async def test_streaming_response_sample(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.operations.with_streaming_response.sample(
             session_id="session_id",
-            model_inputs=[{"chunks": [{}]}],
+            model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1850,5 +1850,5 @@ class TestAsyncOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
-                model_inputs=[{"chunks": [{}]}],
+                model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             )

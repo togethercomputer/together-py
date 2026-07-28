@@ -16,8 +16,5 @@ class LoraConfigParam(TypedDict, total=False):
     dropout: float
     """Dropout of the LoRA adapter"""
 
-    enable: bool
-    """Whether to enable LoRA fine-tuning. If false, full fine-tuning is used."""
-
     rank: int
     """Rank of the LoRA adapter"""

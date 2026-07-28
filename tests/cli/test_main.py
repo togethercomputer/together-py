@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+from pathlib import Path
 
 import pytest
 
@@ -81,7 +82,7 @@ class TestMainGlobalOptions:
         assert calls == [(True, False)]
 
     def test_update_notice_does_not_corrupt_json_output(
-        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner, tmp_path: Path
     ) -> None:
         cli_runner.env.pop("TOGETHER_DISABLE_VERSION_CHECK")
         monkeypatch.setattr("together.lib.cli.utils._version_check.__version__", "1.0.0")
@@ -89,6 +90,10 @@ class TestMainGlobalOptions:
         monkeypatch.setattr(
             "together.lib.cli.utils._version_check._upgrade_command",
             lambda: ["python", "-m", "pip", "install", "--upgrade", "together"],
+        )
+        monkeypatch.setattr(
+            "together.lib.cli.utils._version_check._cache_path",
+            lambda: tmp_path / "version-check.json",
         )
 
         result = cli_runner.invoke(["--json", "telemetry", "status"])
