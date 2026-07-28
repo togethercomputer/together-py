@@ -18,7 +18,7 @@ the full API reference remains in [api.md](api.md).
   then `trainer.download_checkpoint(...)` to pull the weights locally.
 - To save/resume from the full training state, call `trainer.create_training_checkpoint()` to get a `checkpoint_id`, stop the trainer, then attach a new trainer with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) to continue on a new session over the same resources.
 - Use `trainer.session` to fetch the full session state from the API (status, checkpoints, step).
-- All request data uses typed constructors (`Prompt`, `Sample`, `Loss`, etc.) exported from `together.lib.beta.rl`. Plain dicts also work at runtime since these are `TypedDict`s.
+- All request data uses typed constructors (`ModelInput`, `Sample`, `LossConfigParam`, etc.) exported from `together.lib.beta.rl`. Plain dicts also work at runtime since these are `TypedDict`s.
 
 ## Quickstart: SFT-style loop (sync)
 
@@ -27,14 +27,14 @@ import os
 from together.lib.beta.rl import (
     ModelResources,
     AdamwOptimizerParams,
-    Loss,
+    EncodedTextChunk,
+    LossConfigParam,
+    LossInputsParam,
+    LossMaskParam,
+    LossTargetTokensParam,
+    ModelInput,
+    ModelInputChunk,
     Sample,
-    SampleLossInputs,
-    SampleLossInputsLossMask,
-    SampleLossInputsTargetTokens,
-    SampleModelInput,
-    SampleModelInputChunk,
-    SampleModelInputChunkEncodedText,
 )
 
 resources = ModelResources.create(
@@ -49,29 +49,30 @@ tokens = [101, 102, 103]  # your tokenizer output
 loss_mask = [0, 1, 1]
 target_tokens = [102, 103, 0]
 
-chunk = SampleModelInputChunk(
-    encoded_text=SampleModelInputChunkEncodedText(
+chunk = ModelInputChunk(
+    encoded_text=EncodedTextChunk(
         tokens=tokens,
     ),
 )
 
 samples = [
     Sample(
-        model_input=SampleModelInput(chunks=[chunk]),
-        loss_inputs=SampleLossInputs(
-            loss_mask=SampleLossInputsLossMask(
+        model_input=ModelInput(chunks=[chunk]),
+        loss_inputs=LossInputsParam(
+            loss_mask=LossMaskParam(
                 data=loss_mask,
                 dtype="D_TYPE_INT64",
             ),
-            target_tokens=SampleLossInputsTargetTokens(
+            target_tokens=LossTargetTokensParam(
                 data=target_tokens,
                 dtype="D_TYPE_INT64",
             ),
         ),
+        policy_segments=[],
     )
 ]
 
-loss = Loss(type="LOSS_TYPE_CROSS_ENTROPY")
+loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
 trainer.forward_backward(samples=samples, loss=loss)
 
 trainer.optim_step(
@@ -88,22 +89,20 @@ import os
 from together.lib.beta.rl import (
     ModelResources,
     AdamwOptimizerParams,
-    Loss,
-    LossGrpoParams,
-    Prompt,
-    PromptChunk,
-    PromptChunkEncodedText,
+    EncodedTextChunk,
+    GrpoLossInputsParam,
+    GrpoLossParams,
+    LossAdvantagesParam,
+    LossConfigParam,
+    LossInputsParam,
+    LossLogprobsParam,
+    LossMaskParam,
+    LossTargetTokensParam,
+    ModelInput,
+    ModelInputChunk,
+    PolicyVersionSegmentParam,
     Sample,
     SamplingParams,
-    SampleLossInputs,
-    SampleLossInputsGrpoInputs,
-    SampleLossInputsGrpoInputsAdvantages,
-    SampleLossInputsGrpoInputsGeneratorLogprobs,
-    SampleLossInputsLossMask,
-    SampleLossInputsTargetTokens,
-    SampleModelInput,
-    SampleModelInputChunk,
-    SampleModelInputChunkEncodedText,
 )
 
 resources = ModelResources.create(
@@ -114,12 +113,12 @@ resources = ModelResources.create(
 trainer = resources.attach_trainer()
 
 prompt_tokens = [101, 102, 103]  # your tokenizer output
-prompt_chunk = PromptChunk(
-    encoded_text=PromptChunkEncodedText(
+prompt_chunk = ModelInputChunk(
+    encoded_text=EncodedTextChunk(
         tokens=prompt_tokens,
     ),
 )
-prompt = Prompt(chunks=[prompt_chunk])
+prompt = ModelInput(chunks=[prompt_chunk])
 
 sampling = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 sample_result = trainer.sample(
@@ -128,10 +127,13 @@ sample_result = trainer.sample(
     sampling_params=sampling,
 )
 
-sequences = sample_result.rollouts[0].sequences
+policy_segments = [
+    PolicyVersionSegmentParam(version=segment.version, start_token=segment.start_token)
+    for segment in sample_result.policy_segments
+]
 samples = []
-for seq in sequences:
-    response_tokens = [int(t) for t in (seq.tokens or [])]
+for seq in sample_result.sequences:
+    response_tokens = [int(t) for t in seq.tokens]
     response_logprobs = [float(v) for v in (seq.logprobs or [])]
     model_tokens = prompt_tokens + response_tokens
     loss_mask = [0] * len(prompt_tokens) + [1] * len(response_tokens)
@@ -139,38 +141,39 @@ for seq in sequences:
     advantages = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
     logprobs = [0.0] * len(prompt_tokens) + response_logprobs
 
-    chunk = SampleModelInputChunk(
-        encoded_text=SampleModelInputChunkEncodedText(
+    chunk = ModelInputChunk(
+        encoded_text=EncodedTextChunk(
             tokens=model_tokens,
         ),
     )
     samples.append(Sample(
-        model_input=SampleModelInput(chunks=[chunk]),
-        loss_inputs=SampleLossInputs(
-            loss_mask=SampleLossInputsLossMask(
+        model_input=ModelInput(chunks=[chunk]),
+        loss_inputs=LossInputsParam(
+            loss_mask=LossMaskParam(
                 data=loss_mask,
                 dtype="D_TYPE_INT64",
             ),
-            target_tokens=SampleLossInputsTargetTokens(
+            target_tokens=LossTargetTokensParam(
                 data=target_tokens,
                 dtype="D_TYPE_INT64",
             ),
-            grpo_inputs=SampleLossInputsGrpoInputs(
-                advantages=SampleLossInputsGrpoInputsAdvantages(
+            grpo_inputs=GrpoLossInputsParam(
+                advantages=LossAdvantagesParam(
                     data=advantages,
                     dtype="D_TYPE_FLOAT32",
                 ),
-                generator_logprobs=SampleLossInputsGrpoInputsGeneratorLogprobs(
+                generator_logprobs=LossLogprobsParam(
                     data=logprobs,
                     dtype="D_TYPE_FLOAT32",
                 ),
             ),
         ),
+        policy_segments=policy_segments,
     ))
 
-loss = Loss(
+loss = LossConfigParam(
     type="LOSS_TYPE_GRPO",
-    grpo_params=LossGrpoParams(
+    grpo_params=GrpoLossParams(
         agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
         beta=0.0,
     ),
@@ -286,6 +289,7 @@ through the standard chat completions API:
 ```python
 import time
 from together import Together
+from together.types import AutoscalingParam
 
 client = Together(api_key="...", base_url="...")
 
@@ -308,8 +312,7 @@ assert available, "No hardware available for this model"
 endpoint = client.endpoints.create(
     model=model_name,
     hardware=available[0].id,
-    min_replicas=1,
-    max_replicas=1,
+    autoscaling=AutoscalingParam(min_replicas=1, max_replicas=1),
     inactive_timeout=10,
 )
 
@@ -317,7 +320,7 @@ endpoint = client.endpoints.create(
 while endpoint.state != "STARTED":
     time.sleep(5)
     print(f"Endpoint state: {endpoint.state}")
-    endpoint = client.endpoints.get(endpoint.id)
+    endpoint = client.endpoints.retrieve(endpoint.id)
 
 # Run inference
 response = client.chat.completions.create(
@@ -337,9 +340,9 @@ import os
 import asyncio
 from together.lib.beta.rl import (
     ModelResources,
-    Prompt,
-    PromptChunk,
-    PromptChunkEncodedText,
+    EncodedTextChunk,
+    ModelInput,
+    ModelInputChunk,
 )
 
 
@@ -350,12 +353,12 @@ async def main() -> None:
         base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
     )
     trainer = await resources.attach_trainer_async()
-    prompt_chunk = PromptChunk(
-        encoded_text=PromptChunkEncodedText(
+    prompt_chunk = ModelInputChunk(
+        encoded_text=EncodedTextChunk(
             tokens=[101, 102, 103],
         ),
     )
-    prompt = Prompt(chunks=[prompt_chunk])
+    prompt = ModelInput(chunks=[prompt_chunk])
     await trainer.sample_async(prompt)
 
 
@@ -402,7 +405,6 @@ Trainer.create(
     base_url: str | httpx.URL | None = None,
     resume_from_checkpoint_id: str | None = None,
     lora_config: LoraConfigParam | None = None,
-    optimizer_config: OptimizerConfigParam | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
 ) -> Trainer
@@ -418,7 +420,6 @@ Attaches a session to existing model resources. To start from a base model, prov
 | `base_url`                  | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `resume_from_checkpoint_id` | `str \| None`   | `None`       | Training checkpoint ID to resume from. |
 | `lora_config`   | `LoraConfigParam \| None`  | `None`       | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
-| `optimizer_config` | `OptimizerConfigParam \| None` | `None` | Optional optimizer selection and hyperparameters for the session. |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
@@ -453,44 +454,53 @@ Generates text completions with logprobs from the current model.
 
 ```python
 def sample(
-    prompt: Prompt,
+    prompt: ModelInput,
     num_samples: int | None = None,
     sampling_params: SamplingParams | None = None,
 ) -> SampleResult
 
 def sample_batch(
-    prompts: Iterable[Prompt],
+    prompts: Iterable[ModelInput],
     num_samples: int | None = None,
     sampling_params: SamplingParams | None = None,
-) -> SampleResult
+) -> list[SampleResult]
 ```
 
 | Parameter         | Type                          | Default      | Description                                                |
 | ----------------- | ----------------------------- | ------------ | ---------------------------------------------------------- |
-| `prompt`          | `Prompt`                      | _(required)_ | A tokenized prompt represented as a model input dict.      |
+| `prompt`          | `ModelInput`                  | _(required)_ | A tokenized prompt represented as a model input dict.      |
 | `num_samples`     | `int \| None`                 | `None`       | Number of completions to generate per prompt (server default: 1). |
 | `sampling_params` | `SamplingParams \| None`      | `None`       | Sampling configuration dict.                               |
 
-Use `sample_batch` with `Iterable[Prompt]` to sample multiple prompts in one operation.
+Use `sample_batch` with `Iterable[ModelInput]` to sample multiple prompts in one operation; it returns one
+`SampleResult` per prompt, in input order.
 
 A prompt has the shape:
 
 ```python
-prompt_chunk = PromptChunk(
-    encoded_text=PromptChunkEncodedText(
+prompt_chunk = ModelInputChunk(
+    encoded_text=EncodedTextChunk(
         tokens=[101, 102, 103],
     ),
 )
-Prompt(chunks=[prompt_chunk])
+ModelInput(chunks=[prompt_chunk])
 ```
 
-**Returns:** `SampleResult`. The resolved value has `.rollouts`, where each rollout has `.sequences` (`SampleSequence`):
+**Returns:** `SampleResult` — the completions for one prompt:
 
-| Field         | Type                   | Description                                  |
-| ------------- | ---------------------- | -------------------------------------------- |
-| `tokens`      | `list[str]`            | Generated token IDs (as strings).            |
-| `logprobs`    | `list[float] \| None`  | Log probability for each generated token.    |
-| `stop_reason` | `str`                  | Reason generation stopped (e.g. `"length"`). |
+| Field             | Type                      | Description                                                                                  |
+| ----------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
+| `sequences`       | `list[SampledSequence]`   | One entry per requested completion (see below).                                              |
+| `policy_segments` | `list[PolicyVersionSegment]` | Policy versions that produced these completions. Usually one segment `(version, start_token=0)`; longer generations may span several when the policy was updated mid-generation. |
+| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens; present only when `return_prompt_logprobs` was requested (see [`compute_logprobs`](#trainercompute_logprobs)). |
+
+Each `SampledSequence` has:
+
+| Field         | Type                    | Description                                                          |
+| ------------- | ----------------------- | -------------------------------------------------------------------- |
+| `tokens`      | `list[str \| int]`      | Generated token IDs.                                                 |
+| `logprobs`    | `list[float] \| None`   | Log probability for each generated token.                            |
+| `stop_reason` | `StopReason`            | `"STOP_REASON_LENGTH"` or `"STOP_REASON_STOP"`.                      |
 
 #### `trainer.compute_logprobs(...)`
 
@@ -526,14 +536,14 @@ Runs a forward and backward pass to compute gradients.
 def forward_backward(
     *,
     samples: Iterable[Sample],
-    loss: Loss,
+    loss: LossConfigParam,
 ) -> ForwardBackwardResult
 ```
 
 | Parameter | Type                | Default      | Description                                                    |
 | --------- | ------------------- | ------------ | -------------------------------------------------------------- |
 | `samples` | `Iterable[Sample]`  | _(required)_ | Batch of training samples (see [Training sample](#training-sample)). |
-| `loss`    | `Loss`              | _(required)_ | Loss configuration (see [Loss configs](#loss-configurations)). |
+| `loss`    | `LossConfigParam`   | _(required)_ | Loss configuration (see [Loss configs](#loss-configurations)). |
 
 **Returns:** `ForwardBackwardResult`. The resolved value has:
 
@@ -643,9 +653,9 @@ Stops the training session. Called automatically when using `Trainer` as a conte
 ```python
 from together.lib.beta.rl import (
     ModelResources,
-    Prompt,
-    PromptChunk,
-    PromptChunkEncodedText,
+    EncodedTextChunk,
+    ModelInput,
+    ModelInputChunk,
 )
 
 with ModelResources.create(
@@ -654,12 +664,12 @@ with ModelResources.create(
     base_url="...",
 ) as resources:
     with resources.attach_trainer() as trainer:
-        prompt_chunk = PromptChunk(
-            encoded_text=PromptChunkEncodedText(
+        prompt_chunk = ModelInputChunk(
+            encoded_text=EncodedTextChunk(
                 tokens=[101, 102, 103],
             ),
         )
-        prompt = Prompt(chunks=[prompt_chunk])
+        prompt = ModelInput(chunks=[prompt_chunk])
         trainer.sample(prompt)
 ```
 
@@ -682,6 +692,7 @@ ModelResources.create(
     base_url: str | httpx.URL | None = None,
     lora_enabled: bool = True,
     num_generator_replicas: int = 1,
+    optimizer_config: OptimizerConfigParam | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
 ) -> ModelResources
@@ -694,6 +705,7 @@ ModelResources.create(
 | `base_url`      | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `lora_enabled`  | `bool`          | `True`       | Enable LoRA adapters on the provisioned resources.              |
 | `num_generator_replicas` | `int`  | `1`          | Number of generator replicas to provision. `0` runs the trainer only, with no generator. |
+| `optimizer_config` | `OptimizerConfigParam \| None` | `None` | Optimizer selection and hyperparameters for sessions on these resources (e.g. Muon). Defaults to AdamW. |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
@@ -760,43 +772,56 @@ Stops the resources and releases the GPUs. Stop attached trainers first. Called 
 A training sample has the shape:
 
 ```python
-chunk = SampleModelInputChunk(
-    encoded_text=SampleModelInputChunkEncodedText(
+chunk = ModelInputChunk(
+    encoded_text=EncodedTextChunk(
         tokens=[1, 2, 3],
     ),
 )
 Sample(
-    model_input=SampleModelInput(chunks=[chunk]),
-    loss_inputs=SampleLossInputs(
-        loss_mask=SampleLossInputsLossMask(
+    model_input=ModelInput(chunks=[chunk]),
+    loss_inputs=LossInputsParam(
+        loss_mask=LossMaskParam(
             data=[0, 1, 1],
             dtype="D_TYPE_INT64",
         ),
-        target_tokens=SampleLossInputsTargetTokens(
+        target_tokens=LossTargetTokensParam(
             data=[2, 3, 0],
             dtype="D_TYPE_INT64",
         ),
     ),
+    policy_segments=[],
 )
 ```
 
-`SampleLossInputs` fields:
+`Sample` fields:
 
-| Field             | Type                               | When to use                                                                 |
-| ----------------- | ---------------------------------- | --------------------------------------------------------------------------- |
-| `loss_mask`       | `SampleLossInputsLossMask`        | Required for cross-entropy; optional for GRPO. `1` for tokens that contribute to the loss, `0` otherwise. |
-| `target_tokens`   | `SampleLossInputsTargetTokens`    | Always required. Next-token targets (shifted by 1).                         |
-| `grpo_inputs`     | `SampleLossInputsGrpoInputs`      | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
+| Field             | Type                                  | When to use                                                                 |
+| ----------------- | ------------------------------------- | --------------------------------------------------------------------------- |
+| `model_input`     | `ModelInput`                          | Always required. The full token sequence (prompt + response) to train on.   |
+| `loss_inputs`     | `LossInputsParam`                     | Always required. Per-token loss inputs (see below).                         |
+| `policy_segments` | `Iterable[PolicyVersionSegmentParam]` | Always required. Policy versions that generated these tokens; carry them over from `SampleResult.policy_segments`. Pass `[]` for tokens that did not come from sampling (e.g. SFT data). |
+
+`LossInputsParam` fields:
+
+| Field                        | Type                                | When to use                                                                 |
+| ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
+| `target_tokens`              | `LossTargetTokensParam`             | Always required. Next-token targets (shifted by 1).                         |
+| `loss_mask`                  | `LossMaskParam`                     | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. `1` for tokens that contribute to the loss, `0` otherwise. |
+| `grpo_inputs`                | `GrpoLossInputsParam`               | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
+| `ppo_inputs`                 | `PpoLossInputsParam`                | PPO loss only.                                                              |
+| `cispo_inputs`               | `CispoLossInputsParam`              | CISPO loss only.                                                            |
+| `dro_inputs`                 | `DroLossInputsParam`                | DRO loss only.                                                              |
+| `importance_sampling_inputs` | `ImportanceSamplingLossInputsParam` | Importance-sampling loss only.                                              |
 
 #### GRPO loss inputs
 
-`SampleLossInputsGrpoInputs` contains per-token data for the GRPO loss:
+`GrpoLossInputsParam` contains per-token data for the GRPO loss:
 
-| Field                  | Type                                            | Required      | Description                                                            |
-| ---------------------- | ----------------------------------------------- | ------------- | ---------------------------------------------------------------------- |
-| `advantages`           | `SampleLossInputsGrpoInputsAdvantages`         | Yes           | Per-token advantage values.                                            |
-| `generator_logprobs`   | `SampleLossInputsGrpoInputsGeneratorLogprobs`  | Yes           | Log probabilities from the generator model.                            |
-| `reference_logprobs`   | `SampleLossInputsGrpoInputsReferenceLogprobs`  | If `beta > 0` | Log probabilities from the reference model for KL penalty computation. |
+| Field                  | Type                    | Required      | Description                                                            |
+| ---------------------- | ----------------------- | ------------- | ---------------------------------------------------------------------- |
+| `advantages`           | `LossAdvantagesParam`   | Yes           | Per-token advantage values.                                            |
+| `generator_logprobs`   | `LossLogprobsParam`     | Yes           | Log probabilities from the generator model.                            |
+| `reference_logprobs`   | `LossLogprobsParam`     | If `beta > 0` | Log probabilities from the reference model for KL penalty computation. |
 
 Each tensor TypedDict has `data` (list of floats) and `dtype` (`"D_TYPE_FLOAT32"`).
 
@@ -815,23 +840,31 @@ SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 | `top_p`       | `float` | `1.0`           | Nucleus sampling probability threshold.                |
 | `top_k`       | `int`   | `-1` (disabled) | Top-k sampling limit.                                  |
 | `stop`        | `list[str]` | --          | Stop sequences; generation stops when any is produced. |
-| `seed`        | `str`   | --              | Random seed for reproducibility.                       |
+| `seed`        | `str \| int` | --             | Random seed for reproducibility.                       |
+| `return_prompt_logprobs` | `bool` | `False` | Also return teacher-forced logprobs for the prompt tokens in `SampleResult.prompt_logprobs`. See [`compute_logprobs`](#trainercompute_logprobs). |
 
 ---
 
 ### Loss configurations
 
-The `Loss` TypedDict passed to `forward_backward` controls the loss function.
+The `LossConfigParam` TypedDict passed to `forward_backward` controls the loss function.
 
-| Value                     | Description                           |
-| ------------------------- | ------------------------------------- |
-| `LOSS_TYPE_CROSS_ENTROPY` | Standard next-token prediction (SFT). |
-| `LOSS_TYPE_GRPO`          | Group Relative Policy Optimization.   |
+| `type`                          | Params field           | Description                           |
+| ------------------------------- | ---------------------- | ------------------------------------- |
+| `LOSS_TYPE_CROSS_ENTROPY`       | `cross_entropy_params` | Standard next-token prediction (SFT). |
+| `LOSS_TYPE_GRPO`                | `grpo_params`          | Group Relative Policy Optimization.   |
+| `LOSS_TYPE_PPO`                 | `ppo_params`           | Proximal Policy Optimization.         |
+| `LOSS_TYPE_CISPO`               | `cispo_params`         | Clipped importance-sampling policy optimization. |
+| `LOSS_TYPE_DRO`                 | `dro_params`           | Direct Reward Optimization.           |
+| `LOSS_TYPE_IMPORTANCE_SAMPLING` | --                     | Plain importance-sampling loss.       |
+
+Short names are accepted too — `type="grpo"` is converted to `"LOSS_TYPE_GRPO"` before the request is sent,
+so loop code written against other RL SDKs works unchanged.
 
 #### Cross-entropy (SFT)
 
 ```python
-loss = Loss(type="LOSS_TYPE_CROSS_ENTROPY")
+loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
 ```
 
 Standard next-token prediction loss. Requires `loss_mask` and `target_tokens` in `loss_inputs`.
@@ -839,9 +872,9 @@ Standard next-token prediction loss. Requires `loss_mask` and `target_tokens` in
 #### GRPO
 
 ```python
-loss = Loss(
+loss = LossConfigParam(
     type="LOSS_TYPE_GRPO",
-    grpo_params=LossGrpoParams(
+    grpo_params=GrpoLossParams(
         agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
         beta=0.0,
     ),
@@ -850,12 +883,13 @@ loss = Loss(
 
 `grpo_params` fields:
 
-| Field       | Type    | Default                                    | Description                                                                               |
-| ----------- | ------- | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `agg_type`  | `str`   | `GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON` | How to aggregate per-token loss (see below).                                              |
-| `beta`      | `float` | `0.0`                                      | KL penalty coefficient. When > 0, `reference_logprobs` must be provided in `grpo_inputs`. |
-| `clip_low`  | `float` | `0.2`                                      | Lower clip bound for the importance-sampling ratio.                                       |
-| `clip_high` | `float` | `0.28`                                     | Upper clip bound for the importance-sampling ratio.                                       |
+| Field                 | Type    | Default                                    | Description                                                                               |
+| --------------------- | ------- | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `agg_type`            | `str`   | `GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON` | How to aggregate per-token loss (see below).                                              |
+| `beta`                | `float` | `0.0`                                      | KL penalty coefficient. When > 0, `reference_logprobs` must be provided in `grpo_inputs`. |
+| `clip_low_threshold`  | `float` | _(server default)_                         | Lower bound the importance-sampling ratio is clamped to (e.g. `0.8`). Must be <= 1.       |
+| `clip_high_threshold` | `float` | _(server default)_                         | Upper bound the importance-sampling ratio is clamped to (e.g. `1.2`). Must be >= 1.       |
+| `ratio_type`          | `str`   | `GRPO_LOSS_RATIO_TYPE_TOKEN`               | Token-level ratios (standard GRPO) or `GRPO_LOSS_RATIO_TYPE_SEQUENCE` for GSPO-style loss. |
 
 Aggregation types:
 
@@ -863,6 +897,7 @@ Aggregation types:
 | ------------------------------------------ | ------------------------------------ |
 | `GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON` | Fixed-horizon aggregation (default). |
 | `GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN`    | Mean over valid tokens.              |
+| `GRPO_LOSS_AGGREGATION_TYPE_SEQUENCE_MEAN` | Mean over sequences.                 |
 
 Requires `target_tokens` and `grpo_inputs` (with `advantages`, `generator_logprobs`, and optionally `reference_logprobs`) in `loss_inputs`; `loss_mask` is optional.
 
