@@ -77,6 +77,24 @@ def _new_event_loop() -> asyncio.AbstractEventLoop:
     return loop
 
 
+def _prompt_logprobs_from_result(result: SampleResult) -> list[list[float]]:
+    """Extract the per-prompt teacher-forced logprobs from a sample result.
+
+    Raises:
+        RuntimeError: if any rollout is missing prompt logprobs, which happens when the
+            generator does not support them or `return_prompt_logprobs` was not requested.
+    """
+    logprobs: list[list[float]] = []
+    for index, rollout in enumerate(result.rollouts):
+        if rollout.prompt_logprobs is None:
+            msg = (
+                f"Sample result for prompt {index} did not include prompt logprobs; the generator may not support them"
+            )
+            raise RuntimeError(msg)
+        logprobs.append(rollout.prompt_logprobs)
+    return logprobs
+
+
 @dataclass
 class Trainer:
     _session_id: str
@@ -224,6 +242,36 @@ class Trainer:
                 prompts=prompts,
                 num_samples=num_samples,
                 sampling_params=sampling_params,
+                timeout=timeout,
+                interval=interval,
+            )
+        )
+
+    def compute_logprobs(
+        self,
+        prompt: Prompt,
+        *,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> list[float]:
+        return self.run(
+            self.compute_logprobs_async(
+                prompt,
+                timeout=timeout,
+                interval=interval,
+            )
+        )
+
+    def compute_logprobs_batch(
+        self,
+        prompts: Iterable[Prompt],
+        *,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> list[list[float]]:
+        return self.run(
+            self.compute_logprobs_batch_async(
+                prompts,
                 timeout=timeout,
                 interval=interval,
             )
@@ -519,6 +567,57 @@ class Trainer:
             result=cast(SampleBatchResult, result),
         )
         return resolved.results
+
+    async def compute_logprobs_async(
+        self,
+        prompt: Prompt,
+        *,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> list[float]:
+        """Teacher-force score the given token sequence on the generator, returning the
+        log-probability of each prompt token under the current policy.
+
+        The measurement is taken on the generator rather than the trainer's forward pass, so it
+        matches the logprobs the sampler would produce at rollout time. Like `sample`, this requires
+        a session with a generator replica.
+
+        Raises:
+            RuntimeError: if the generator did not return prompt logprobs.
+        """
+        result = await self.sample_async(
+            prompt,
+            num_samples=1,
+            sampling_params=SamplingParams(return_prompt_logprobs=True, max_tokens=1),
+            timeout=timeout,
+            interval=interval,
+        )
+        return _prompt_logprobs_from_result(result)[0]
+
+    async def compute_logprobs_batch_async(
+        self,
+        prompts: Iterable[Prompt],
+        *,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> list[list[float]]:
+        """Teacher-force score each of the given token sequences on the generator, returning the
+        log-probability of each prompt token under the current policy.
+
+        This is the batched form of `compute_logprobs`; one list of logprobs is returned per input
+        prompt. Like `sample_batch`, this requires a session with a generator replica.
+
+        Raises:
+            RuntimeError: if the generator did not return prompt logprobs.
+        """
+        result = await self.sample_batch_async(
+            prompts,
+            num_samples=1,
+            sampling_params=SamplingParams(return_prompt_logprobs=True, max_tokens=1),
+            timeout=timeout,
+            interval=interval,
+        )
+        return _prompt_logprobs_from_result(result)
 
     async def forward_async(
         self,
