@@ -34,11 +34,7 @@ async def cancel(
 
     if can_prompt:
         console.print("[yellow]You will be billed for any completed training steps upon cancellation.[/yellow]\n")
-        try:
-            confirm_response = input(f"Do you want to cancel job {fine_tune_id}? [y/N]")
-        except EOFError:
-            console.print("Cancel not submitted. Use --non-interactive to cancel without prompting.")
-            return
+        confirm_response = input(f"Do you want to cancel job {fine_tune_id}? [y/N]")
         if "y" not in confirm_response.lower():
             if config.json:
                 console.print_json(openapi_dumps({"status": "Cancel not submitted"}).decode("utf-8"))
