@@ -167,7 +167,6 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
                     id=ab.id,
                     endpoint_id=endpoint.id,
                     etag=ab.etag or omit,
-                    project_id=config.project_id,
                 ),
             )
             actions.append(f"deleted A/B experiment {ab.id}")
@@ -181,7 +180,6 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
                     update_mask="members",
                     members=members,
                     etag=ab.etag or omit,
-                    project_id=config.project_id,
                 ),
             )
             actions.append(f"removed from A/B experiment {ab.id}")
@@ -258,7 +256,6 @@ async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParamete
             id=experiment.id,
             endpoint_id=endpoint_id,
             etag=experiment.etag or omit,
-            project_id=config.project_id,
         ),
     )
     return {"message": f"Deleted A/B experiment {experiment_id}", "id": experiment_id, "type": "ab_experiment"}

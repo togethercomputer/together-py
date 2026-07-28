@@ -160,9 +160,7 @@ def print_ab_experiment_detail(experiment: Any) -> None:
         console.print(f"[dim][primary]Updated:[/primary][/dim]\t{format_datetime(experiment.updated_at)}")
 
 
-def format_member_role(role: str | None) -> str:
-    if not role:
-        return ""
+def format_member_role(role: str) -> str:
     if role.endswith("_CONTROL"):
         return "CONTROL"
     if role.endswith("_VARIANT"):

@@ -127,7 +127,6 @@ async def ab(
                 endpoint_id=endpoint.id,
                 name=experiment_name,
                 members=members,
-                project_id=config.project_id,
             ),
         )
     else:
@@ -140,7 +139,6 @@ async def ab(
                 update_mask="members",
                 members=members,
                 etag=existing_experiment.etag or omit,
-                project_id=config.project_id,
             ),
         )
 

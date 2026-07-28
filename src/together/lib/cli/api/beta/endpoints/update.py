@@ -34,6 +34,7 @@ async def update(
         str,
         Parameter(help=("Deployment ID to update.")),
     ],
+    *,
     name: Annotated[Optional[str], Parameter(help="Updated deployment name")] = None,
     min_replicas: Annotated[
         Optional[int], Parameter(help="New minimum replicas; set both replica bounds to 0 to stop the deployment")
@@ -100,9 +101,10 @@ async def update(
     ] = None,
     etag: Annotated[
         Optional[str],
-        Parameter(help="ETag for optimistic concurrency on the deployment update."),
+        Parameter(
+            help="ETag for optimistic concurrency on the deployment update (does not apply to ab_percent or traffic_weight)."
+        ),
     ] = None,
-    *,
     config: CLIConfigParameter,
 ) -> None:
     """Update a deployment's parameters on an endpoint."""
