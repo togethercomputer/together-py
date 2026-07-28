@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.29.0](https://github.com/togethercomputer/together-py/compare/v2.28.0...v2.29.0) (2026-07-28)
+
+
+### Features
+
+* **cli:** add --ab-percent to beta endpoints update (ENG-91343) ([#479](https://github.com/togethercomputer/together-py/issues/479)) ([#94](https://github.com/togethercomputer/together-py/issues/94)) ([6da2943](https://github.com/togethercomputer/together-py/commit/6da294325ba53404a31d4356be6b3822f5b1c71a))
+
+
+### Bug Fixes
+
+* **cli:** Avoid printing configs in endpoint ls command ([#481](https://github.com/togethercomputer/together-py/issues/481)) ([8db153c](https://github.com/togethercomputer/together-py/commit/8db153cfc72f673ee3c76f48bedd465a0d965c2f))
+* **cli:** display fine-tune checkpoint object names ([#477](https://github.com/togethercomputer/together-py/issues/477)) ([38bdfc2](https://github.com/togethercomputer/together-py/commit/38bdfc2becb1b85f1790ce405c5942cdddf7c6fe))
+* **cli:** handle dotted file download directories ([#484](https://github.com/togethercomputer/together-py/issues/484)) ([28a9c95](https://github.com/togethercomputer/together-py/commit/28a9c956a808c4975a65621c356aba1ea22e2b8b))
+* **cli:** handle missing fine-tuning price estimates ([#482](https://github.com/togethercomputer/together-py/issues/482)) ([ae1910e](https://github.com/togethercomputer/together-py/commit/ae1910e9904298c635618b74a9a82ad006468c68))
+* **cli:** Improve endpoint replica parameter bounds and inference for beta endpoint commands ([#486](https://github.com/togethercomputer/together-py/issues/486)) ([fb7c42c](https://github.com/togethercomputer/together-py/commit/fb7c42c2a6a2bb5f852fb70117967148581f3ed3))
+* **cli:** inform about CLI upgrades at most once per day (DX-844) ([#488](https://github.com/togethercomputer/together-py/issues/488)) ([5c1bb3a](https://github.com/togethercomputer/together-py/commit/5c1bb3a63ef7546c71797918491bd3b1e847c6b2))
+* **cli:** show fine-tune checkpoint registry names ([#474](https://github.com/togethercomputer/together-py/issues/474)) ([e9e3254](https://github.com/togethercomputer/together-py/commit/e9e3254f9eca3ec667c8a44d208c01e19762b461))
+
+
+### Chores
+
+* bump detect-agent to &gt;=0.5.0 ([#480](https://github.com/togethercomputer/together-py/issues/480)) ([03e6864](https://github.com/togethercomputer/together-py/commit/03e68640f85d93c598ac770630e5d7eaa7646277))
+
+
 ## [2.28.0](https://github.com/togethercomputer/together-py/compare/v2.27.1...v2.28.0) (2026-07-24)
 
 
