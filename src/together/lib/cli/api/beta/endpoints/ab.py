@@ -7,14 +7,13 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from cyclopts.validators import Number
 
-from together import AsyncClient, omit
+from together import omit
 from together._utils._json import openapi_dumps
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
 from together.lib.cli.api.beta.endpoints._utils._parameters import ModelParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
@@ -23,6 +22,7 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
 )
 from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
     calculate_ab_members,
+    find_ab_experiment_by_name,
     print_ab_experiment_detail,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
@@ -180,24 +180,3 @@ def verify_control_receiving_traffic(endpoint: Endpoint, control_deployment_id: 
             f"Control deployment {control_deployment_id} is not in the endpoint traffic split. "
             "Route traffic to the control deployment before starting an A/B experiment."
         )
-
-
-async def find_ab_experiment_by_name(
-    client: AsyncClient,
-    *,
-    endpoint_id: str,
-    name: str,
-) -> AbExperiment | None:
-    cursor: str | None = None
-    while True:
-        page = await client.beta.endpoints.ab_experiments.list(
-            endpoint_id=endpoint_id,
-            after=cursor or omit,
-        )
-        for experiment in page.data:
-            if experiment.name == name:
-                return experiment
-        if not page.next_cursor:
-            break
-        cursor = page.next_cursor
-    return None

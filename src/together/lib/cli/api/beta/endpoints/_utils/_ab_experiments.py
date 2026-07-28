@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from together import AsyncClient
 from together.types.beta import AbMember, AbMemberParam
 from together.lib.utils.tools import format_datetime
@@ -16,6 +14,18 @@ async def find_ab_for_deployment(
 ) -> AbExperiment | None:
     async for experiment in client.beta.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
         if any(m.deployment_id == deployment_id for m in experiment.members):
+            return experiment
+    return None
+
+
+async def find_ab_experiment_by_name(
+    client: AsyncClient,
+    *,
+    endpoint_id: str,
+    name: str,
+) -> AbExperiment | None:
+    async for experiment in client.beta.endpoints.ab_experiments.list(endpoint_id=endpoint_id):
+        if experiment.name == name:
             return experiment
     return None
 
@@ -42,9 +52,7 @@ def build_ab_members_with_percent(
     - Set control to 80   → ValueError (control is not updatable)
     - Set variant_a to 95 → ValueError (control would be 0%)
     """
-    target = next((m for m in members if m.deployment_id == deployment_id), None)
-    if target is None:
-        raise ValueError(f"Deployment {deployment_id} is not a member of the A/B experiment.")
+    target = next(m for m in members if m.deployment_id == deployment_id)
 
     if target.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL":
         raise ValueError("--ab-percent can only update variant deployments; control percent is derived from variants.")
@@ -133,31 +141,24 @@ def calculate_ab_members(
     return members
 
 
-def print_ab_experiment_detail(experiment: Any) -> None:
+def print_ab_experiment_detail(experiment: AbExperiment | None) -> None:
     if experiment is None:
         console.print("A/B experiment not found.")
         return
 
     console.print(f"[dim][primary]Name:[/primary][/dim]\t\t[bold]{experiment.name}[/bold]")
-    if getattr(experiment, "id", None):
-        console.print(f"[dim][primary]ID:[/primary][/dim]\t\t{experiment.id}")
-    if getattr(experiment, "endpoint_id", None):
-        console.print(f"[dim][primary]Endpoint:[/primary][/dim]\t{experiment.endpoint_id}")
-    if getattr(experiment, "project_id", None):
-        console.print(f"[dim][primary]Project:[/primary][/dim]\t{experiment.project_id}")
-    if getattr(experiment, "description", None):
+    console.print(f"[dim][primary]ID:[/primary][/dim]\t\t{experiment.id}")
+    console.print(f"[dim][primary]Endpoint:[/primary][/dim]\t{experiment.endpoint_id}")
+    console.print(f"[dim][primary]Project:[/primary][/dim]\t{experiment.project_id}")
+    if experiment.description:
         console.print(f"[dim][primary]Description:[/primary][/dim]\t{experiment.description}")
-    if getattr(experiment, "etag", None):
-        console.print(f"[dim][primary]ETag:[/primary][/dim]\t\t{experiment.etag}")
-    if getattr(experiment, "members", None):
-        console.print("[dim][primary]Members:[/primary][/dim]")
-        for member in experiment.members:
-            role = format_member_role(member.role)
-            console.print(f"\t\t{member.deployment_id} ({role}): {member.percent}%")
-    if getattr(experiment, "created_at", None):
-        console.print(f"[dim][primary]Created:[/primary][/dim]\t{format_datetime(experiment.created_at)}")
-    if getattr(experiment, "updated_at", None):
-        console.print(f"[dim][primary]Updated:[/primary][/dim]\t{format_datetime(experiment.updated_at)}")
+    console.print(f"[dim][primary]ETag:[/primary][/dim]\t\t{experiment.etag}")
+    console.print("[dim][primary]Members:[/primary][/dim]")
+    for member in experiment.members:
+        role = format_member_role(member.role)
+        console.print(f"\t\t{member.deployment_id} ({role}): {member.percent}%")
+    console.print(f"[dim][primary]Created:[/primary][/dim]\t{format_datetime(experiment.created_at)}")
+    console.print(f"[dim][primary]Updated:[/primary][/dim]\t{format_datetime(experiment.updated_at)}")
 
 
 def format_member_role(role: str) -> str:

@@ -78,7 +78,7 @@ async def resolve_model_and_config(
     if "/" not in model_input:
         if config.project_id:
             try:
-                model = await config.client.beta.models.retrieve(model_input)
+                model = await config.client.beta.models.retrieve(id=model_input, project_id=config.project_id)
             except NotFoundError:
                 pass
             else:
