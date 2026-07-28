@@ -502,19 +502,19 @@ sampler↔trainer KL and cross-service logprob comparisons on a fixed token set.
 
 ```python
 def compute_logprobs(
-    prompt: Prompt,
+    prompt: ModelInput,
 ) -> list[float]
 ```
 
-| Parameter | Type     | Default      | Description                                  |
-| --------- | -------- | ------------ | -------------------------------------------- |
-| `prompt`  | `Prompt` | _(required)_ | Tokenized sequence to score (see `sample`).  |
+| Parameter | Type         | Default      | Description                                 |
+| --------- | ------------ | ------------ | ------------------------------------------- |
+| `prompt`  | `ModelInput` | _(required)_ | Tokenized sequence to score (see `sample`). |
 
 **Returns:** `list[float]` — per-token logprobs for the prompt, following the generator's
 prompt-logprob convention (`log P(tokenᵢ | token_<i)`, offset by one from the input tokens).
 Like `sample`, it requires a session with a generator replica.
 
-Use `trainer.compute_logprobs_batch(prompts: Iterable[Prompt]) -> list[list[float]]` to score
+Use `trainer.compute_logprobs_batch(prompts: Iterable[ModelInput]) -> list[list[float]]` to score
 several sequences in one call (mirroring `sample` / `sample_batch`); it returns one list of
 per-token logprobs per input prompt.
 

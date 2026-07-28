@@ -95,21 +95,21 @@ def _new_event_loop() -> asyncio.AbstractEventLoop:
     return loop
 
 
-def _prompt_logprobs_from_result(result: SampleResult) -> list[list[float]]:
-    """Extract the per-prompt teacher-forced logprobs from a sample result.
+def _prompt_logprobs_from_results(results: Iterable[SampleResult]) -> list[list[float]]:
+    """Extract the teacher-forced logprobs from one sample result per prompt.
 
     Raises:
-        RuntimeError: if any rollout is missing prompt logprobs, which happens when the
+        RuntimeError: if any result is missing prompt logprobs, which happens when the
             generator does not support them or `return_prompt_logprobs` was not requested.
     """
     logprobs: list[list[float]] = []
-    for index, rollout in enumerate(result.rollouts):
-        if rollout.prompt_logprobs is None:
+    for index, result in enumerate(results):
+        if result.prompt_logprobs is None:
             msg = (
                 f"Sample result for prompt {index} did not include prompt logprobs; the generator may not support them"
             )
             raise RuntimeError(msg)
-        logprobs.append(rollout.prompt_logprobs)
+        logprobs.append(result.prompt_logprobs)
     return logprobs
 
 
@@ -267,7 +267,7 @@ class Trainer:
 
     def compute_logprobs(
         self,
-        prompt: Prompt,
+        prompt: ModelInput,
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
@@ -282,7 +282,7 @@ class Trainer:
 
     def compute_logprobs_batch(
         self,
-        prompts: Iterable[Prompt],
+        prompts: Iterable[ModelInput],
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
@@ -588,7 +588,7 @@ class Trainer:
 
     async def compute_logprobs_async(
         self,
-        prompt: Prompt,
+        prompt: ModelInput,
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
@@ -603,18 +603,16 @@ class Trainer:
         Raises:
             RuntimeError: if the generator did not return prompt logprobs.
         """
-        result = await self.sample_async(
-            prompt,
-            num_samples=1,
-            sampling_params=SamplingParams(return_prompt_logprobs=True, max_tokens=1),
+        logprobs = await self.compute_logprobs_batch_async(
+            [prompt],
             timeout=timeout,
             interval=interval,
         )
-        return _prompt_logprobs_from_result(result)[0]
+        return logprobs[0]
 
     async def compute_logprobs_batch_async(
         self,
-        prompts: Iterable[Prompt],
+        prompts: Iterable[ModelInput],
         *,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
@@ -628,14 +626,14 @@ class Trainer:
         Raises:
             RuntimeError: if the generator did not return prompt logprobs.
         """
-        result = await self.sample_batch_async(
+        results = await self.sample_batch_async(
             prompts,
             num_samples=1,
             sampling_params=SamplingParams(return_prompt_logprobs=True, max_tokens=1),
             timeout=timeout,
             interval=interval,
         )
-        return _prompt_logprobs_from_result(result)
+        return _prompt_logprobs_from_results(results)
 
     async def forward_async(
         self,

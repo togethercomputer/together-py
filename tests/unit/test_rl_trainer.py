@@ -33,7 +33,6 @@ from together.lib.beta.rl import (
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
-from together.types.beta.rl.sample_result import Rollout, RolloutSequence
 from together.types.beta.rl.sample_operation import SampleOperation
 
 
@@ -177,20 +176,20 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
 
 
 def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
-    result = SampleResult(rollouts=[Rollout(sequences=[RolloutSequence(tokens=[1, 2])], prompt_logprobs=[-0.5, -1.5])])
-    _patch_submit_and_wait(monkeypatch, result)
+    result = SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.5, -1.5])
+    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[result]))
     client = FakeClient()
     trainer = _make_trainer(client)
 
-    prompt = Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[1, 2]))])
-    logprobs = trainer.compute_logprobs(prompt)
+    model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))])
+    logprobs = trainer.compute_logprobs(model_input)
 
     assert logprobs == [-0.5, -1.5]
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
-    assert kwargs["prompts"] == [prompt]
+    assert kwargs["model_inputs"] == [model_input]
     assert kwargs["num_samples"] == 1
     assert kwargs["sampling_params"]["return_prompt_logprobs"] is True
     assert kwargs["sampling_params"]["max_tokens"] == 1
@@ -198,38 +197,36 @@ def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPat
 
 
 def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
-    result = SampleResult(
-        rollouts=[
-            Rollout(sequences=[RolloutSequence(tokens=[1, 2])], prompt_logprobs=[-0.5, -1.5]),
-            Rollout(sequences=[RolloutSequence(tokens=[3, 4])], prompt_logprobs=[-0.1, -0.2]),
-        ]
-    )
-    _patch_submit_and_wait(monkeypatch, result)
+    results = [
+        SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.5, -1.5]),
+        SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.1, -0.2]),
+    ]
+    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=results))
     client = FakeClient()
     trainer = _make_trainer(client)
 
-    prompts = [
-        Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[1, 2]))]),
-        Prompt(chunks=[PromptChunk(encoded_text=PromptChunkEncodedText(tokens=[3, 4]))]),
+    model_inputs = [
+        ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
+        ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[3, 4]))]),
     ]
-    logprobs = trainer.compute_logprobs_batch(prompts)
+    logprobs = trainer.compute_logprobs_batch(model_inputs)
 
     assert logprobs == [[-0.5, -1.5], [-0.1, -0.2]]
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
-    assert kwargs["prompts"] == prompts
+    assert kwargs["model_inputs"] == model_inputs
     assert kwargs["num_samples"] == 1
     assert kwargs["sampling_params"]["return_prompt_logprobs"] is True
     assert kwargs["sampling_params"]["max_tokens"] == 1
     trainer.stop()
 
 
-def test_prompt_logprobs_from_result_raises_when_missing() -> None:
-    result = SampleResult(rollouts=[Rollout(sequences=[RolloutSequence(tokens=[1, 2])])])
+def test_prompt_logprobs_from_results_raises_when_missing() -> None:
+    result = SampleResult(policy_segments=[], sequences=[])
     with pytest.raises(RuntimeError, match="prompt logprobs"):
-        rl_trainer_module._prompt_logprobs_from_result(result)
+        rl_trainer_module._prompt_logprobs_from_results([result])
 
 
 def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
