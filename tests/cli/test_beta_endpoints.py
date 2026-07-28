@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 from typing import Any, cast
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
@@ -91,6 +92,21 @@ def _whoami_body(**overrides: Any) -> dict[str, Any]:
         "project_name": "My Project",
         "project_slug": "my-project",
         "user_id": "user-1",
+    }
+    body.update(overrides)
+    return body
+
+
+def _event_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": "evt_1",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "endpointId": "ep_1",
+        "level": "LEVEL_INFO",
+        "source": "endpoint-controller",
+        "sourceKind": "SOURCE_KIND_ENDPOINT",
+        "type": "endpoint.updated",
+        "message": "Endpoint updated",
     }
     body.update(overrides)
     return body
@@ -381,3 +397,72 @@ class TestBetaEndpointsList:
         assert result.exit_code == 0, result.output
         assert route.call_count == 1
         assert json.loads(result.output)["data"][0]["id"] == "ep_1"
+
+
+class TestBetaEndpointsListEvents:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_events_sends_sdk_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/projects/proj/endpoints/ep_1/events").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_event_body()], "next_cursor": "next"},
+            )
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "list-events",
+                "ep_1",
+                "--project",
+                "proj",
+                "--limit",
+                "10000",
+                "--after",
+                "tok",
+                "--deployment-ids",
+                "dep_1",
+                "--deployment-ids",
+                "dep_2",
+                "--min-level",
+                "LEVEL_WARN",
+                "--since",
+                "2026-01-01T00:00:00Z",
+                "--source-kinds",
+                "SOURCE_KIND_ENDPOINT",
+                "--source-kinds",
+                "SOURCE_KIND_DEPLOYMENT",
+                "--subject-id",
+                "rollout_1",
+                "--types",
+                "deployment.scaled",
+                "--types",
+                "condition.set",
+                "--until",
+                "2026-01-02T00:00:00Z",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        query = parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)
+        assert query["limit"] == ["10000"]
+        assert query["after"] == ["tok"]
+        assert query["deploymentIds"] == ["dep_1", "dep_2"]
+        assert query["minLevel"] == ["LEVEL_WARN"]
+        assert query["since"] == ["2026-01-01T00:00:00"]
+        assert query["sourceKinds"] == ["SOURCE_KIND_ENDPOINT", "SOURCE_KIND_DEPLOYMENT"]
+        assert query["subjectId"] == ["rollout_1"]
+        assert query["types"] == ["deployment.scaled", "condition.set"]
+        assert query["until"] == ["2026-01-02T00:00:00"]
+        payload = json.loads(result.output)
+        assert payload["data"][0]["id"] == "evt_1"
+        assert payload["next_cursor"] == "next"
+
+    def test_list_events_help_mentions_current_limit(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "list-events", "--help"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        assert "Maximum number of events to return. Max 10000, defaults to 50." in output
