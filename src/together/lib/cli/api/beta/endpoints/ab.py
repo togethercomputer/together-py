@@ -7,21 +7,23 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from cyclopts.validators import Number
 
-from together import AsyncClient, omit
-from together.types.beta import AbMember, AbMemberParam
+from together import omit
 from together._utils._json import openapi_dumps
-from together.lib.utils.tools import format_datetime
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
 from together.lib.cli.api.beta.endpoints._utils._parameters import ModelParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     construct_model_path,
     resolve_model_and_config,
+)
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
+    calculate_ab_members,
+    find_ab_experiment_by_name,
+    print_ab_experiment_detail,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
@@ -37,10 +39,10 @@ async def ab(
     percent: Annotated[
         int,
         Parameter(
-            help="Percentage of live traffic to allocate to the new variant (1–100)",
-            validator=Number(gte=1, lte=100),
+            help="Percentage of live traffic to allocate to the new variant (1–99)",
+            validator=Number(gte=1, lte=99),
         ),
-        PromptParameter(message="Traffic percent to allocate to the new variant (1–100)"),
+        PromptParameter(message="Traffic percent to allocate to the new variant (1–99)"),
     ],
     config_id: Annotated[
         Optional[str],
@@ -125,7 +127,6 @@ async def ab(
                 endpoint_id=endpoint.id,
                 name=experiment_name,
                 members=members,
-                project_id=config.project_id,
             ),
         )
     else:
@@ -138,7 +139,6 @@ async def ab(
                 update_mask="members",
                 members=members,
                 etag=existing_experiment.etag or omit,
-                project_id=config.project_id,
             ),
         )
 
@@ -180,116 +180,3 @@ def verify_control_receiving_traffic(endpoint: Endpoint, control_deployment_id: 
             f"Control deployment {control_deployment_id} is not in the endpoint traffic split. "
             "Route traffic to the control deployment before starting an A/B experiment."
         )
-
-
-def calculate_ab_members(
-    *,
-    control_deployment_id: str,
-    new_deployment_id: str,
-    new_percent: int,
-    existing_members: list[AbMember] | None = None,
-) -> list[AbMemberParam]:
-    existing_variants: list[AbMember] = []
-
-    if existing_members:
-        control_member = next(
-            (member for member in existing_members if member.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL"),
-            None,
-        )
-        if control_member is None:
-            raise ValueError("Existing A/B experiment has no control member.")
-        if control_member.deployment_id != control_deployment_id:
-            raise ValueError(
-                "Control deployment does not match the existing A/B experiment control member. "
-                f"Expected {control_member.deployment_id}, got {control_deployment_id}."
-            )
-        existing_variants = [
-            member for member in existing_members if member.role == "AB_EXPERIMENT_MEMBER_ROLE_VARIANT"
-        ]
-
-    existing_variant_total = sum(member.percent for member in existing_variants)
-    control_percent = 100 - existing_variant_total - new_percent
-    if control_percent < 1:
-        raise ValueError(
-            f"Cannot allocate {new_percent}% to the new variant: control would be {control_percent}% (minimum 1%)."
-        )
-
-    members: list[AbMemberParam] = [
-        AbMemberParam(
-            deployment_id=control_deployment_id,
-            role="AB_EXPERIMENT_MEMBER_ROLE_CONTROL",
-            percent=control_percent,
-        ),
-        *[
-            AbMemberParam(
-                deployment_id=member.deployment_id,
-                role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
-                percent=member.percent,
-            )
-            for member in existing_variants
-        ],
-        AbMemberParam(
-            deployment_id=new_deployment_id,
-            role="AB_EXPERIMENT_MEMBER_ROLE_VARIANT",
-            percent=new_percent,
-        ),
-    ]
-    return members
-
-
-async def find_ab_experiment_by_name(
-    client: AsyncClient,
-    *,
-    endpoint_id: str,
-    name: str,
-) -> AbExperiment | None:
-    cursor: str | None = None
-    while True:
-        page = await client.beta.endpoints.ab_experiments.list(
-            endpoint_id=endpoint_id,
-            after=cursor or omit,
-        )
-        for experiment in page.data:
-            if experiment.name == name:
-                return experiment
-        if not page.next_cursor:
-            break
-        cursor = page.next_cursor
-    return None
-
-
-def print_ab_experiment_detail(experiment: Any) -> None:
-    if experiment is None:
-        console.print("A/B experiment not found.")
-        return
-
-    console.print(f"[dim][primary]Name:[/primary][/dim]\t\t[bold]{experiment.name}[/bold]")
-    if getattr(experiment, "id", None):
-        console.print(f"[dim][primary]ID:[/primary][/dim]\t\t{experiment.id}")
-    if getattr(experiment, "endpoint_id", None):
-        console.print(f"[dim][primary]Endpoint:[/primary][/dim]\t{experiment.endpoint_id}")
-    if getattr(experiment, "project_id", None):
-        console.print(f"[dim][primary]Project:[/primary][/dim]\t{experiment.project_id}")
-    if getattr(experiment, "description", None):
-        console.print(f"[dim][primary]Description:[/primary][/dim]\t{experiment.description}")
-    if getattr(experiment, "etag", None):
-        console.print(f"[dim][primary]ETag:[/primary][/dim]\t\t{experiment.etag}")
-    if getattr(experiment, "members", None):
-        console.print("[dim][primary]Members:[/primary][/dim]")
-        for member in experiment.members:
-            role = format_member_role(member.role)
-            console.print(f"\t\t{member.deployment_id} ({role}): {member.percent}%")
-    if getattr(experiment, "created_at", None):
-        console.print(f"[dim][primary]Created:[/primary][/dim]\t{format_datetime(experiment.created_at)}")
-    if getattr(experiment, "updated_at", None):
-        console.print(f"[dim][primary]Updated:[/primary][/dim]\t{format_datetime(experiment.updated_at)}")
-
-
-def format_member_role(role: str | None) -> str:
-    if not role:
-        return ""
-    if role.endswith("_CONTROL"):
-        return "CONTROL"
-    if role.endswith("_VARIANT"):
-        return "VARIANT"
-    return role

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 import base64
 from typing import Optional, Annotated
@@ -15,9 +14,32 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 
 
+def safe_download_filename(filename: str, *, fallback: str) -> str:
+    """Return a single path segment from a server-controlled filename.
+
+    Strips directory components so values like ``../../etc/passwd`` cannot escape
+    the user-specified ``--output`` directory.
+    """
+    name = Path(str(filename).replace("\\", "/")).name
+    if not name or name in {".", ".."}:
+        name = Path(str(fallback).replace("\\", "/")).name
+    if not name or name in {".", ".."}:
+        return "download"
+    return name
+
+
+def resolve_download_path(output_dir: Path, filename: str) -> Path:
+    """Join *filename* under *output_dir*, rejecting paths that escape it."""
+    out_path = (output_dir / filename).resolve()
+    output_resolved = output_dir.resolve()
+    if not out_path.is_relative_to(output_resolved):
+        return output_resolved / "download"
+    return out_path
+
+
 async def get_filename(client: AsyncTogether, id: str) -> str:
     r = await client.files.retrieve(id=id)
-    return r.filename or id
+    return safe_download_filename(r.filename or "", fallback=id)
 
 
 async def retrieve_content(
@@ -56,11 +78,13 @@ async def retrieve_content(
         return
 
     if output is not None:
-        os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
-        has_extension = Path(output).suffix != ""
-        out_path = output if has_extension else f"{output}/{await get_filename(config.client, id)}"
+        if output.is_dir() or output.suffix == "":
+            output.mkdir(parents=True, exist_ok=True)
+            out_path = resolve_download_path(output, await get_filename(config.client, id))
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            out_path = output
 
-        response = await config.client.files.content(id=id)
         await response.write_to_file(out_path)
 
         if config.json:

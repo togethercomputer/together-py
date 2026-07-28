@@ -230,15 +230,37 @@ def test_parse_command_and_flags_inserts_implicit_retrieve_for_ft_job_id() -> No
     assert is_beta is False
 
 
-def test_parse_command_and_flags_inserts_implicit_retrieve_for_beta_endpoint_deployment_id() -> None:
+def test_parse_command_and_flags_attributes_beta_endpoints_default_retrieve_for_deployment_id() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
 
+    # App.default handles implicit get — argv is not rewritten to insert `retrieve`.
     cmd, flags, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "dep_control", "--json"])
     assert cmd == "endpoints retrieve"
     assert "id" in flags
     assert is_beta is True
-    assert argv == ["beta", "endpoints", "retrieve", "dep_control", "--json"]
+    assert argv == ["beta", "endpoints", "dep_control", "--json"]
+
+
+def test_parse_command_and_flags_attributes_beta_endpoints_default_retrieve_for_name() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "my-endpoint", "--json"])
+    assert cmd == "endpoints retrieve"
+    assert "id" in flags
+    assert is_beta is True
+    assert argv == ["beta", "endpoints", "my-endpoint", "--json"]
+
+
+def test_parse_command_and_flags_does_not_treat_beta_endpoints_subcommand_as_retrieve() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, _, is_beta, argv = preparse_tokens(app, ["beta", "endpoints", "deploy", "ml_1", "--endpoint", "e"])
+    assert cmd == "endpoints deploy"
+    assert is_beta is True
+    assert argv == ["beta", "endpoints", "deploy", "ml_1", "--endpoint", "e"]
 
 
 def test_parse_command_and_flags_implicit_retrieve_fine_tuning_spelling() -> None:

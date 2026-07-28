@@ -34,7 +34,6 @@ class TestSessions:
             lora_config={
                 "alpha": 64,
                 "dropout": 0,
-                "enable": True,
                 "rank": 32,
             },
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
@@ -198,7 +197,6 @@ class TestAsyncSessions:
             lora_config={
                 "alpha": 64,
                 "dropout": 0,
-                "enable": True,
                 "rank": 32,
             },
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",

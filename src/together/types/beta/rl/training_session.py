@@ -30,9 +30,6 @@ class TrainingSession(BaseModel):
     inference_checkpoints: List[InferenceCheckpoint]
     """List of saved inference checkpoints for this session"""
 
-    lora_config: LoraConfig
-    """LoRA adapter configuration for this session"""
-
     api_model_resources_id: str = FieldInfo(alias="model_resources_id")
     """Model resource this session is attached to.
 
@@ -55,6 +52,12 @@ class TrainingSession(BaseModel):
     """Structured detail for the training session's current error.
 
     Set when the session is in an error state.
+    """
+
+    lora_config: Optional[LoraConfig] = None
+    """LoRA adapter configuration.
+
+    Present only for sessions running on a LoRA-enabled model resource.
     """
 
     resume_from_checkpoint_id: Optional[str] = None

@@ -282,7 +282,7 @@ BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints ls[/primary]
 
 [dim]-[/dim] Inspect an endpoint or deployment:
-  [primary]tg beta endpoints <endpoint-or-deployment-id>[/primary]
+  [primary]tg beta endpoints <endpoint-or-deployment-name-or-id>[/primary]
 
 [dim]-[/dim] Scale a deployment and adjust its traffic weight:
   [primary]tg beta endpoints update <deployment-id> --min-replicas 2 --max-replicas 8 --traffic-weight 1[/primary]
@@ -331,6 +331,9 @@ BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Shift live traffic weight (relative to other deployments):
   [primary]tg beta endpoints update <deployment-id> --traffic-weight 2[/primary]
+
+[dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
+  [primary]tg beta endpoints update <variant-deployment-id> --ab-percent 20[/primary]
 
 [dim]-[/dim] Rename a deployment:
   [primary]tg beta endpoints update <deployment-id> --name my-deployment-v2[/primary]
@@ -391,14 +394,16 @@ BETA_ENDPOINTS_LS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 BETA_ENDPOINTS_GET_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Get endpoint details (includes deployments and traffic split):
+[dim]-[/dim] Get endpoint details by name or ID (includes deployments and traffic split):
+  [primary]tg beta endpoints my-endpoint[/primary]
   [primary]tg beta endpoints ep_xxxxxxxxxxxx[/primary]
 
-[dim]-[/dim] Get a single deployment:
+[dim]-[/dim] Get a single deployment by name or ID:
+  [primary]tg beta endpoints control[/primary]
   [primary]tg beta endpoints dep_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Machine-readable output:
-  [primary]tg beta endpoints ep_xxxxxxxxxxxx --json[/primary]
+  [primary]tg beta endpoints my-endpoint --json[/primary]
 """
 
 ## Beta models API commands

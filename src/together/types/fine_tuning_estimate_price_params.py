@@ -85,20 +85,26 @@ class TrainingTypeFullTrainingType(TypedDict, total=False):
 
 
 class TrainingTypeLoRaTrainingType(TypedDict, total=False):
+    """LoRA training configuration for a fine-tuning job."""
+
     lora_alpha: Required[int]
+    """Scaling factor applied to the LoRA adapter weights."""
 
     lora_r: Required[int]
+    """Rank of the LoRA adapter matrices."""
 
     type: Required[Literal["Lora"]]
+    """Identifies this request as a LoRA fine-tune."""
 
     lora_dropout: float
+    """Dropout probability applied to LoRA adapter inputs."""
 
     lora_trainable_modules: str
     """Comma-separated LoRA target modules.
 
     Use `all-linear` for model defaults; MoE expert modules (`w_up`, `w_gate`,
-    `w_down`) are supported on compatible models and cannot be mixed with attention
-    modules.
+    `w_down`) can be combined with attention modules on compatible models.
+    Fine-tunes that target any expert module produce adapter-only output.
     """
 
 

@@ -305,7 +305,8 @@ class OperationsResource(SyncAPIResource):
           adamw_params: Per-step AdamW optimizer overrides.
 
           max_grad_norm: Maximum gradient norm for this step, gradients across all model parameters are
-              clipped to this value.
+              clipped to this value. Set to 0 to disable gradient clipping. When unset,
+              gradients are clipped to the session default (1.0).
 
           muon_params: Per-step Muon optimizer overrides
 
@@ -958,7 +959,8 @@ class AsyncOperationsResource(AsyncAPIResource):
           adamw_params: Per-step AdamW optimizer overrides.
 
           max_grad_norm: Maximum gradient norm for this step, gradients across all model parameters are
-              clipped to this value.
+              clipped to this value. Set to 0 to disable gradient clipping. When unset,
+              gradients are clipped to the session default (1.0).
 
           muon_params: Per-step Muon optimizer overrides
 

@@ -16,8 +16,5 @@ class LoraConfig(BaseModel):
     dropout: Optional[float] = None
     """Dropout of the LoRA adapter"""
 
-    enable: Optional[bool] = None
-    """Whether to enable LoRA fine-tuning. If false, full fine-tuning is used."""
-
     rank: Optional[int] = None
     """Rank of the LoRA adapter"""

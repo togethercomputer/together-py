@@ -14,7 +14,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "evals": re.compile(r"^eval-"),
     "endpoints": re.compile(r"^endpoint-"),
     "beta models configs": re.compile(r"^ep_"),
-    "beta endpoints": re.compile(r"^(ep_|dep_)"),
+    # `beta endpoints` uses App.default(retrieve) instead of token rewriting.
     "beta models": re.compile(r"^ml_"),
     "beta endpoints deployments": re.compile(r"^dep_"),
     "beta clusters": _UUID_RE,
@@ -23,12 +23,18 @@ _COMMAND_ID_IDENTIFIERS = {
     "beta jig volumes": _UUID_RE,
 }
 
+# Help/version flags registered on every App — not user subcommands.
+_BUILTIN_APP_COMMAND_NAMES = frozenset({"--help", "-h", "--version"})
+
 
 def _expand_implicit_retrieve_tokens(app: App, *tokens: str) -> list[str]:
     """
     Some commands (e.g. ft, eval, endpoint, cluster, volume) allow the user to provide an ID instead of a command.
     When this happens, we need to expand the tokens to include the retrieve command.
     For example, if the user runs "tg ft ft-12345678-90ab", we need to expand it to "tg ft retrieve ft-12345678-90ab".
+
+    ``beta endpoints`` is intentionally excluded: it registers retrieve via ``App.default``, so cyclopts
+    binds leftover tokens without rewriting argv.
     """
 
     (command_tokens, _app, args_tokens) = app.parse_commands(tokens)
@@ -43,6 +49,43 @@ def _expand_implicit_retrieve_tokens(app: App, *tokens: str) -> list[str]:
         return list(command_tokens) + ["retrieve"] + list(args_tokens)
 
     return list(tokens)
+
+
+def _leaf_app_has_user_commands(leaf: App) -> bool:
+    """True when ``leaf`` is a command group (has subcommands), not a single-command App."""
+    for name in leaf:
+        if name not in _BUILTIN_APP_COMMAND_NAMES:
+            return True
+    return False
+
+
+def _telemetry_command_for_default(
+    parsed_command: str,
+    apps: tuple[App, ...] | list[App],
+    rest_after_chain: list[str] | tuple[str, ...],
+) -> str:
+    """
+    When a command-group App has ``default_command`` and leftover non-flag args, cyclopts will run
+    that default (e.g. ``tg beta endpoints <name>`` → retrieve). Attribute telemetry to that default.
+    """
+    if not apps or not rest_after_chain:
+        return parsed_command
+    if str(rest_after_chain[0]).startswith("-"):
+        return parsed_command
+
+    leaf = apps[-1]
+    default_command = leaf.default_command
+    if default_command is None or not _leaf_app_has_user_commands(leaf):
+        return parsed_command
+
+    default_name = getattr(default_command, "__name__", None)
+    if not default_name:
+        return parsed_command
+    if parsed_command.endswith(f" {default_name}") or parsed_command == default_name:
+        return parsed_command
+    if not parsed_command:
+        return str(default_name)
+    return f"{parsed_command} {default_name}"
 
 
 def _long_option_names_in_tokens(tokens: list[str]) -> list[str]:
@@ -104,7 +147,7 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
     """
     argv = list(tokens)
     argv = _expand_implicit_retrieve_tokens(app, *argv)
-    chain, _, rest_after_chain = app.parse_commands(argv, include_parent_meta=False)
+    chain, apps, rest_after_chain = app.parse_commands(argv, include_parent_meta=False)
     legacy_cmd, legacy_beta = _legacy_command_before_first_option(argv)
 
     if chain:
@@ -117,6 +160,9 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
     else:
         parsed_command = legacy_cmd
         is_beta_command = legacy_beta
+
+    # App.default handlers (e.g. beta endpoints retrieve) don't rewrite argv; still tag telemetry.
+    parsed_command = _telemetry_command_for_default(parsed_command, apps, rest_after_chain)
 
     explicit_args: list[str] = []
     try:

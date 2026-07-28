@@ -28,7 +28,7 @@ class EndpointListEventsParams(TypedDict, total=False):
     """
 
     limit: int
-    """Maximum number of events to return. Max 500, defaults to 50."""
+    """Maximum number of events to return. Max 10000, defaults to 50."""
 
     min_level: Annotated[
         Literal["LEVEL_DEBUG", "LEVEL_INFO", "LEVEL_WARN", "LEVEL_ERROR"], PropertyInfo(alias="minLevel")
