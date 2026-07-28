@@ -14,13 +14,7 @@ from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.lora_config_param import LoraConfigParam
 from ....types.beta.rl.loss_config_param import LossConfigParam
 from ....types.beta.rl.loss_inputs_param import LossInputsParam
-
-# TODO(MOSH-3489): Remove these aliases once Stainless generates named model-input chunk types.
-from ....types.beta.rl.model_input_param import (
-    Chunk as ModelInputChunk,
-    ModelInput,
-    ChunkEncodedText as EncodedTextChunk,
-)
+from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.loss_logprobs_param import LossLogprobsParam
@@ -36,6 +30,8 @@ from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam
 from ....types.beta.rl.policy_version_segment import PolicyVersionSegment
 from ....types.beta.rl.cispo_loss_inputs_param import CispoLossInputsParam
 from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
+from ....types.beta.rl.model_input_chunk_param import ModelInputChunk
+from ....types.beta.rl.encoded_text_chunk_param import EncodedTextChunk
 from ....types.beta.rl.loss_target_tokens_param import LossTargetTokensParam
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
