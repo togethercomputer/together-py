@@ -535,7 +535,7 @@ class EndpointsResource(SyncAPIResource):
               endpoint. Supplying this filter excludes endpoint-scoped events unless
               `SOURCE_KIND_ENDPOINT` is also included in `sourceKinds`.
 
-          limit: Maximum number of events to return. Max 500, defaults to 50.
+          limit: Maximum number of events to return. Max 10000, defaults to 50.
 
           min_level: Minimum severity. Omit to disable severity filtering.
 
@@ -1111,7 +1111,7 @@ class AsyncEndpointsResource(AsyncAPIResource):
               endpoint. Supplying this filter excludes endpoint-scoped events unless
               `SOURCE_KIND_ENDPOINT` is also included in `sourceKinds`.
 
-          limit: Maximum number of events to return. Max 500, defaults to 50.
+          limit: Maximum number of events to return. Max 10000, defaults to 50.
 
           min_level: Minimum severity. Omit to disable severity filtering.
 
