@@ -13,10 +13,10 @@ from tests.cli.utils import CliRunner
 from together.types.beta import AbMember
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.api.beta.endpoints.ab import (
-    calculate_ab_members,
     build_ab_experiment_name,
     verify_control_receiving_traffic,
 )
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import calculate_ab_members
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
