@@ -16,6 +16,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import find_ab_for_deployment
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 
 
@@ -154,7 +155,7 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
             )
             actions.append(f"deleted empty shadow experiment {shadow.id}")
 
-    ab = await _find_ab_for_deployment(config.client, endpoint.id, deployment_id, config.project_id)
+    ab = await find_ab_for_deployment(config.client, endpoint.id, deployment_id)
     if ab is not None:
         removed = next(m for m in ab.members if m.deployment_id == deployment_id)
         remaining_members = [m for m in ab.members if m.deployment_id != deployment_id]
@@ -166,7 +167,6 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
                     id=ab.id,
                     endpoint_id=endpoint.id,
                     etag=ab.etag or omit,
-                    project_id=config.project_id,
                 ),
             )
             actions.append(f"deleted A/B experiment {ab.id}")
@@ -180,7 +180,6 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
                     update_mask="members",
                     members=members,
                     etag=ab.etag or omit,
-                    project_id=config.project_id,
                 ),
             )
             actions.append(f"removed from A/B experiment {ab.id}")
@@ -257,7 +256,6 @@ async def _delete_ab_experiment(experiment_id: str, *, config: CLIConfigParamete
             id=experiment.id,
             endpoint_id=endpoint_id,
             etag=experiment.etag or omit,
-            project_id=config.project_id,
         ),
     )
     return {"message": f"Deleted A/B experiment {experiment_id}", "id": experiment_id, "type": "ab_experiment"}
@@ -326,28 +324,6 @@ async def _find_shadow_for_deployment(
         for target in experiment.targets or []:
             if target.target_deployment_id == deployment_id:
                 return experiment
-    return None
-
-
-async def _find_ab_for_deployment(
-    client: AsyncClient,
-    endpoint_id: str,
-    deployment_id: str,
-    project_id: str | None,
-) -> AbExperiment | None:
-    cursor: str | None = None
-    while True:
-        page = await client.beta.endpoints.ab_experiments.list(
-            endpoint_id=endpoint_id,
-            project_id=project_id,
-            after=cursor or omit,
-        )
-        for experiment in page.data:
-            if any(m.deployment_id == deployment_id for m in experiment.members):
-                return experiment
-        if not page.next_cursor:
-            break
-        cursor = page.next_cursor
     return None
 
 
