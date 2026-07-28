@@ -365,6 +365,21 @@ class TestFineTuningCancel:
         assert "Cancelled" in result.output
 
     @pytest.mark.respx(base_url=base_url)
+    def test_cancel_eof_does_not_submit(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        running = {**_FT_RETRIEVE_BODY, "status": "running"}
+        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=running))
+        cancel_route = respx_mock.post("/fine-tunes/ft-1/cancel").mock(
+            return_value=httpx.Response(200, json={**running, "status": "cancel_requested"})
+        )
+
+        result = cli_runner.invoke(["fine-tuning", "cancel", "ft-1"])
+
+        assert result.exit_code == 0
+        assert "Cancel not submitted" in result.output
+        assert "--non-interactive" in result.output
+        assert cancel_route.called is False
+
+    @pytest.mark.respx(base_url=base_url)
     def test_cancel_not_cancellable_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         body = {**_FT_RETRIEVE_BODY, "status": "completed"}
         respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
