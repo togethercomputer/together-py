@@ -379,7 +379,7 @@ Types:
 
 ```python
 from together.types.beta.rl import (
-    AdamwOptimizerParams,
+    AdamParams,
     CispoLossInputs,
     CispoLossParams,
     CrossEntropyLossParams,
@@ -404,17 +404,17 @@ from together.types.beta.rl import (
     LossConfig,
     LossInputs,
     LossLogprobs,
-    LossMask,
     LossTargetTokens,
     LossType,
     ModelInput,
     ModelInputChunk,
-    MuonOptimizerParams,
+    MuonParams,
     OptimStepOperation,
     OptimStepResult,
     PolicyVersionSegment,
     PpoLossInputs,
     PpoLossParams,
+    PromptTopLogprobs,
     SampleOperation,
     SampleResult,
     SampledSequence,
@@ -426,6 +426,7 @@ from together.types.beta.rl import (
     TrainingOperationErrorCode,
     TrainingOperationStatus,
     WeightSyncType,
+    Weights,
 )
 ```
 

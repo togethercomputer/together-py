@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .loss_mask_param import LossMaskParam
+from .weights_param import WeightsParam
 from .dro_loss_inputs_param import DroLossInputsParam
 from .ppo_loss_inputs_param import PpoLossInputsParam
 from .grpo_loss_inputs_param import GrpoLossInputsParam
@@ -31,11 +31,7 @@ class LossInputsParam(TypedDict, total=False):
     importance_sampling_inputs: ImportanceSamplingLossInputsParam
     """Inputs required when the loss type is importance sampling"""
 
-    loss_mask: LossMaskParam
-    """Per-token loss mask (1=compute loss, 0=ignore).
-
-    Required for cross-entropy forward-backward; optional for forward and
-    advantage-based losses, where omission includes all tokens.
-    """
-
     ppo_inputs: PpoLossInputsParam
+
+    weights: WeightsParam
+    """Per-token weights (1=compute loss, 0=ignore)."""
