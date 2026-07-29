@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Iterable, cast, get_args
+from dataclasses import dataclass
 
+from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
+from .._payloads import prepare_operation_body, resolve_result_payload
+from .....types.beta.rl.loss_type import LossType
+from .....types.beta.rl.forward_result import ForwardResult
+from .....types.beta.rl.weight_sync_type import WeightSyncType
+from .....types.beta.rl.loss_config_param import LossConfigParam
+from .....types.beta.rl.optim_step_result import OptimStepResult
+from .....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
 from .....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
-from .....types.beta.rl.forward_result import ForwardResult
-from .....types.beta.rl.loss_config_param import LossConfigParam
-from .....types.beta.rl.loss_type import LossType
-from .....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
-from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
 from .....types.beta.rl.operation_forward_params import OperationForwardParams
 from .....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
-from .....types.beta.rl.optim_step_result import OptimStepResult
-from .....types.beta.rl.weight_sync_type import WeightSyncType
-from .._payloads import prepare_operation_body, resolve_result_payload
-from .session import DEFAULT_OPERATION_INTERVAL, DEFAULT_OPERATION_TIMEOUT, SessionClient
+from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
 
 _PROTO_LOSS_TYPES = frozenset(get_args(LossType))
 _PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Iterable, cast
+from dataclasses import dataclass
 
+from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
-from .....types.beta.rl.model_input_param import ModelInput
-from .....types.beta.rl.operation_sample_params import OperationSampleParams
-from .....types.beta.rl.sample_operation import Output as SampleBatchResult
+from .._payloads import prepare_operation_body, resolve_result_payload
 from .....types.beta.rl.sample_result import SampleResult
 from .....types.beta.rl.sampling_params import SamplingParams
-from .._payloads import prepare_operation_body, resolve_result_payload
-from .session import DEFAULT_OPERATION_INTERVAL, DEFAULT_OPERATION_TIMEOUT, SessionClient
+from .....types.beta.rl.sample_operation import Output as SampleBatchResult
+from .....types.beta.rl.model_input_param import ModelInput
+from .....types.beta.rl.operation_sample_params import OperationSampleParams
 
 
 def _prompt_logprobs_from_results(results: Iterable[SampleResult]) -> list[list[float]]:
