@@ -12,14 +12,14 @@ import pytest
 from together.lib.beta.rl import (
     Sample,
     Logprob,
-    SessionClient,
-    TrainingClient,
-    SamplingClient,
     Gradient,
     ModelInput,
     SampleResult,
     ForwardResult,
     LossMaskParam,
+    SessionClient,
+    SamplingClient,
+    TrainingClient,
     LossConfigParam,
     LossInputsParam,
     ModelInputChunk,
@@ -34,9 +34,11 @@ from together.lib.beta.rl import (
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
-from together.lib.beta.rl.clients import session as session_client_module
-from together.lib.beta.rl.clients import training as training_client_module
-from together.lib.beta.rl.clients import sampling as sampling_client_module
+from together.lib.beta.rl.clients import (
+    session as session_client_module,
+    sampling as sampling_client_module,
+    training as training_client_module,
+)
 from together.types.beta.rl.sample_operation import SampleOperation
 
 
@@ -177,7 +179,7 @@ def test_trainer_only_session_rejects_sampling_access() -> None:
 
     assert session.has_sampling is False
     with pytest.raises(RuntimeError, match="does not have sampling capability"):
-        session.sampling
+        _ = session.sampling
 
 
 def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -612,7 +614,7 @@ async def test_attach_async_hides_sampling_for_trainer_only_resources(monkeypatc
 
     assert session.has_sampling is False
     with pytest.raises(RuntimeError, match="does not have sampling capability"):
-        session.sampling
+        _ = session.sampling
 
 
 async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:

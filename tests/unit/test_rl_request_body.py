@@ -14,9 +14,9 @@ from respx.models import Call
 from together import AsyncTogether
 from together.lib.beta.rl import (
     Sample,
-    SessionClient,
     ModelInput,
     LossMaskParam,
+    SessionClient,
     GrpoLossParams,
     SamplingParams,
     LossConfigParam,
@@ -56,7 +56,6 @@ class TestRLRequestBody:
 
         trainer = SessionClient("sess", _client=async_client)
         sampling_client = trainer.sampling
-        assert sampling_client is not None
         model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
         sampling = SamplingParams(
             max_tokens=16,
