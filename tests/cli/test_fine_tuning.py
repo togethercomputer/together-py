@@ -397,6 +397,7 @@ class TestFineTuningEventsAndCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_events_paginates_by_created_at(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        cursor = "2024-01-01T00:00:19Z"
         events = [
             {
                 **_FT_EVENT,
@@ -414,7 +415,7 @@ class TestFineTuningEventsAndCheckpoints:
                 "list-events",
                 "ft-1",
                 "--after",
-                events[19]["created_at"],
+                cursor,
                 "--json",
             ]
         )
