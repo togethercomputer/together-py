@@ -19,6 +19,8 @@ from ._payloads import prepare_operation_body, resolve_result_payload
 from ...._client import AsyncTogether
 from ...._base_client import DefaultAsyncHttpxClient
 from ....types.beta.rl.loss_type import LossType
+from ....types.beta.rl.adam_params import AdamParams
+from ....types.beta.rl.muon_params import MuonParams
 from ....types.beta.rl.sample_result import SampleResult
 from ....types.beta.rl.forward_result import ForwardResult
 from ....types.beta.rl.sampling_params import SamplingParams
@@ -30,8 +32,6 @@ from ....types.beta.rl.loss_config_param import LossConfigParam
 from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
-from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
-from ....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
 from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from ....types.beta.rl.operation_sample_params import OperationSampleParams
 from ....types.beta.rl.operation_forward_params import OperationForwardParams
@@ -100,7 +100,7 @@ def _prompt_logprobs_from_results(results: Iterable[SampleResult]) -> list[list[
 
     Raises:
         RuntimeError: if any result is missing prompt logprobs, which happens when the
-            generator does not support them or `return_prompt_logprobs` was not requested.
+            generator does not support them or `prompt_logprobs` was not requested.
     """
     logprobs: list[list[float]] = []
     for index, result in enumerate(results):
@@ -233,6 +233,7 @@ class Trainer:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
@@ -241,6 +242,7 @@ class Trainer:
                 prompt,
                 num_samples=num_samples,
                 sampling_params=sampling_params,
+                prompt_logprobs=prompt_logprobs,
                 timeout=timeout,
                 interval=interval,
             )
@@ -252,6 +254,7 @@ class Trainer:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
@@ -260,6 +263,7 @@ class Trainer:
                 prompts=prompts,
                 num_samples=num_samples,
                 sampling_params=sampling_params,
+                prompt_logprobs=prompt_logprobs,
                 timeout=timeout,
                 interval=interval,
             )
@@ -348,17 +352,15 @@ class Trainer:
         self,
         *,
         weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
-        adamw_params: AdamwOptimizerParams | None = None,
-        max_grad_norm: float | None = None,
-        muon_params: MuonOptimizerParams | None = None,
+        adam_params: AdamParams | None = None,
+        muon_params: MuonParams | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> OptimStepResult:
         return self.run(
             self.optim_step_async(
                 weight_sync_type=weight_sync_type,
-                adamw_params=adamw_params,
-                max_grad_norm=max_grad_norm,
+                adam_params=adam_params,
                 muon_params=muon_params,
                 timeout=timeout,
                 interval=interval,
@@ -530,6 +532,7 @@ class Trainer:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
@@ -537,6 +540,7 @@ class Trainer:
             [prompt],
             num_samples=num_samples,
             sampling_params=sampling_params,
+            prompt_logprobs=prompt_logprobs,
             timeout=timeout,
             interval=interval,
         )
@@ -548,15 +552,17 @@ class Trainer:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
-        model_inputs = list(prompts)
-        body: dict[str, Any] = {"model_inputs": model_inputs}
+        body: dict[str, Any] = {"model_inputs": list(prompts)}
         if sampling_params is not None:
             body["sampling_params"] = sampling_params
         if num_samples is not None:
             body["num_samples"] = num_samples
+        if prompt_logprobs is not None:
+            body["prompt_logprobs"] = prompt_logprobs
 
         body, large_payload_id = await prepare_operation_body(
             self._client,
@@ -564,14 +570,14 @@ class Trainer:
             body=body,
             expected_type=OperationSampleParams,
         )
-        model_inputs = cast("list[ModelInput]", body["model_inputs"])
 
         extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
         operation = await self._client.beta.rl.operations.sample(
             self._session_id,
-            model_inputs=model_inputs,
-            num_samples=num_samples if num_samples is not None else omit,
-            sampling_params=sampling_params if sampling_params is not None else omit,
+            model_inputs=cast("list[ModelInput]", body["model_inputs"]),
+            num_samples=body.get("num_samples", omit),
+            sampling_params=body.get("sampling_params", omit),
+            prompt_logprobs=body.get("prompt_logprobs", omit),
             extra_body=extra_body,
         )
         result = await self._submit_and_wait(
@@ -594,7 +600,8 @@ class Trainer:
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[float]:
         """Teacher-force score the given token sequence on the generator, returning the
-        log-probability of each prompt token under the current policy.
+        log-probability of each prompt token under the current policy. One entry per prompt
+        token; entry 0 is always 0, since the first token has no conditioning context.
 
         The measurement is taken on the generator rather than the trainer's forward pass, so it
         matches the logprobs the sampler would produce at rollout time. Like `sample`, this requires
@@ -618,7 +625,8 @@ class Trainer:
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[list[float]]:
         """Teacher-force score each of the given token sequences on the generator, returning the
-        log-probability of each prompt token under the current policy.
+        log-probability of each prompt token under the current policy. One entry per prompt
+        token; entry 0 is always 0, since the first token has no conditioning context.
 
         This is the batched form of `compute_logprobs`; one list of logprobs is returned per input
         prompt. Like `sample_batch`, this requires a session with a generator replica.
@@ -629,7 +637,8 @@ class Trainer:
         results = await self.sample_batch_async(
             prompts,
             num_samples=1,
-            sampling_params=SamplingParams(return_prompt_logprobs=True, max_tokens=1),
+            sampling_params=SamplingParams(max_tokens=1),
+            prompt_logprobs=True,
             timeout=timeout,
             interval=interval,
         )
@@ -736,17 +745,15 @@ class Trainer:
         self,
         *,
         weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
-        adamw_params: AdamwOptimizerParams | None = None,
-        max_grad_norm: float | None = None,
-        muon_params: MuonOptimizerParams | None = None,
+        adam_params: AdamParams | None = None,
+        muon_params: MuonParams | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> OptimStepResult:
         operation = await self._client.beta.rl.operations.optim_step(
             self._session_id,
             weight_sync_type=weight_sync_type,
-            adamw_params=adamw_params if adamw_params is not None else omit,
-            max_grad_norm=max_grad_norm if max_grad_norm is not None else omit,
+            adam_params=adam_params if adam_params is not None else omit,
             muon_params=muon_params if muon_params is not None else omit,
         )
         result = await self._submit_and_wait(

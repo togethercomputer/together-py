@@ -15,8 +15,10 @@ from together import AsyncTogether
 from together.lib.beta.rl import (
     Sample,
     Trainer,
+    AdamParams,
     ModelInput,
-    LossMaskParam,
+    MuonParams,
+    WeightsParam,
     GrpoLossParams,
     SamplingParams,
     LossConfigParam,
@@ -26,8 +28,6 @@ from together.lib.beta.rl import (
     LossLogprobsParam,
     GrpoLossInputsParam,
     LossAdvantagesParam,
-    MuonOptimizerParams,
-    AdamwOptimizerParams,
     LossTargetTokensParam,
 )
 
@@ -103,7 +103,7 @@ class TestRLRequestBody:
             Sample(
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
                 loss_inputs=LossInputsParam(
-                    loss_mask=LossMaskParam(
+                    weights=WeightsParam(
                         data=[0, 1, 1],
                         dtype="D_TYPE_INT64",
                     ),
@@ -116,7 +116,7 @@ class TestRLRequestBody:
                             data=[1.0, 1.0, 1.0],
                             dtype="D_TYPE_FLOAT32",
                         ),
-                        generator_logprobs=LossLogprobsParam(
+                        logprobs=LossLogprobsParam(
                             data=[-0.1, -0.2, -0.3],
                             dtype="D_TYPE_FLOAT32",
                         ),
@@ -162,21 +162,22 @@ class TestRLRequestBody:
 
         trainer = Trainer("sess", _client=async_client)
 
-        adamw = AdamwOptimizerParams(
+        adam = AdamParams(
             beta1=0.9,
             beta2=0.95,
             eps=1e-8,
+            grad_clip_norm=1.0,
             learning_rate=1e-4,
             weight_decay=0.1,
         )
-        await trainer.optim_step_async(adamw_params=adamw)
+        await trainer.optim_step_async(adam_params=adam)
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
         body = json.loads(request.content)
         assert body == {
             "weight_sync_type": "WEIGHT_SYNC_TYPE_UNSPECIFIED",
-            "adamw_params": adamw,
+            "adam_params": adam,
         }
 
     @parametrize
@@ -197,7 +198,14 @@ class TestRLRequestBody:
         )
 
         trainer = Trainer("sess", _client=async_client)
-        muon = MuonOptimizerParams(learning_rate=0.02, momentum=0.95, newton_schulz_steps=5, weight_decay=0.0)
+        muon = MuonParams(
+            learning_rate=0.02,
+            momentum=0.95,
+            newton_schulz_steps=5,
+            weight_decay=0.0,
+            grad_clip_norm=1.0,
+            adam=AdamParams(beta1=0.9, learning_rate=1e-4),
+        )
         await trainer.optim_step_async(
             muon_params=muon,
         )
