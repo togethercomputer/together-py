@@ -64,6 +64,7 @@ def _new_event_loop() -> asyncio.AbstractEventLoop:
         logger.info("RL rollout thread pool widened to %s workers", pool_size)
     return loop
 
+
 @dataclass
 class SessionClient:
     _session_id: str

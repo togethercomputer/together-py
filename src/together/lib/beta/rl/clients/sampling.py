@@ -18,8 +18,7 @@ def _prompt_logprobs_from_results(results: Iterable[SampleResult]) -> list[list[
     for index, result in enumerate(results):
         if result.prompt_logprobs is None:
             msg = (
-                f"Sample result for prompt {index} did not include prompt logprobs; "
-                "the generator may not support them"
+                f"Sample result for prompt {index} did not include prompt logprobs; the generator may not support them"
             )
             raise RuntimeError(msg)
         logprobs.append(result.prompt_logprobs)
