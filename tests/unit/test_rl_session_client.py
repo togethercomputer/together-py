@@ -12,7 +12,9 @@ import pytest
 from together.lib.beta.rl import (
     Sample,
     Logprob,
-    Trainer,
+    SessionClient,
+    TrainingClient,
+    SamplingClient,
     Gradient,
     ModelInput,
     SampleResult,
@@ -29,10 +31,12 @@ from together.lib.beta.rl import (
     LossTargetTokensParam,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
-    trainer as rl_trainer_module,
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
+from together.lib.beta.rl.clients import session as session_client_module
+from together.lib.beta.rl.clients import training as training_client_module
+from together.lib.beta.rl.clients import sampling as sampling_client_module
 from together.types.beta.rl.sample_operation import SampleOperation
 
 
@@ -79,13 +83,29 @@ class FakeSessions:
         return {"id": "stop-op"}
 
     async def retrieve(self, _session_id: str) -> Any:
-        return SimpleNamespace(status=self.status_value)
+        return SimpleNamespace(
+            status=self.status_value,
+            api_model_resources_id="res-1",
+        )
+
+
+class FakeModelResources:
+    def __init__(self, num_generator_replicas: int = 1) -> None:
+        self.num_generator_replicas = num_generator_replicas
+
+    async def retrieve(self, _model_resources_id: str) -> Any:
+        return SimpleNamespace(
+            compute_config=SimpleNamespace(
+                num_generator_replicas=self.num_generator_replicas,
+            )
+        )
 
 
 class FakeRL:
     def __init__(self) -> None:
         self.operations = FakeOperations()
         self.sessions = FakeSessions()
+        self.model_resources = FakeModelResources()
 
 
 class FakeBeta:
@@ -122,27 +142,52 @@ class FakeClient:
         return httpx.Response(self._upload_put_status, request=httpx.Request("PUT", url))
 
 
-def _make_trainer(client: FakeClient | None = None) -> Trainer:
+def _make_session(client: FakeClient | None = None) -> SessionClient:
     if client is None:
         client = FakeClient()
-    return Trainer("sess", _client=cast(Any, client))
+    return SessionClient("sess", _client=cast(Any, client))
+
+
+def _sampling(session: SessionClient) -> SamplingClient:
+    sampling = session.sampling
+    assert sampling is not None
+    return sampling
 
 
 def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any) -> None:
     async def fake(_self: Any, _operation: Any, *, timeout: float | None, interval: float) -> Any:  # noqa: ARG001
         return result
 
-    monkeypatch.setattr(Trainer, "_submit_and_wait", fake)
+    monkeypatch.setattr(SessionClient, "_submit_and_wait", fake)
+
+
+def test_session_exposes_capability_clients() -> None:
+    session = _make_session()
+
+    assert isinstance(session.training, TrainingClient)
+    assert isinstance(session.sampling, SamplingClient)
+    assert session.training.session_id == session.session_id
+    sampling = session.sampling
+    assert sampling is not None
+    assert sampling.session_id == session.session_id
+
+
+def test_trainer_only_session_rejects_sampling_access() -> None:
+    session = SessionClient("sess", _client=cast(Any, FakeClient()), _has_sampling=False)
+
+    assert session.has_sampling is False
+    with pytest.raises(RuntimeError, match="does not have sampling capability"):
+        session.sampling
 
 
 def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = SampleResult(policy_segments=[], sequences=[])
     _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[expected]))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
-    result = trainer.sample(prompt=model_input, num_samples=3)
+    result = _sampling(trainer).sample(prompt=model_input, num_samples=3)
 
     assert result is expected
     assert client.beta.rl.operations.last_call is not None
@@ -160,13 +205,13 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
     ]
     _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=expected))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     model_inputs = [
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[3, 4]))]),
     ]
-    result = trainer.sample_batch(prompts=model_inputs)
+    result = _sampling(trainer).sample_batch(prompts=model_inputs)
 
     assert result == expected
     assert client.beta.rl.operations.last_call is not None
@@ -179,10 +224,10 @@ def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPat
     result = SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.5, -1.5])
     _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[result]))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))])
-    logprobs = trainer.compute_logprobs(model_input)
+    logprobs = _sampling(trainer).compute_logprobs(model_input)
 
     assert logprobs == [-0.5, -1.5]
     assert client.beta.rl.operations.last_call is not None
@@ -203,13 +248,13 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
     ]
     _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=results))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     model_inputs = [
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[3, 4]))]),
     ]
-    logprobs = trainer.compute_logprobs_batch(model_inputs)
+    logprobs = _sampling(trainer).compute_logprobs_batch(model_inputs)
 
     assert logprobs == [[-0.5, -1.5], [-0.1, -0.2]]
     assert client.beta.rl.operations.last_call is not None
@@ -226,7 +271,7 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
 def test_prompt_logprobs_from_results_raises_when_missing() -> None:
     result = SampleResult(policy_segments=[], sequences=[])
     with pytest.raises(RuntimeError, match="prompt logprobs"):
-        rl_trainer_module._prompt_logprobs_from_results([result])
+        sampling_client_module._prompt_logprobs_from_results([result])
 
 
 def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -235,10 +280,10 @@ def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
         ForwardResult(logprobs=[Logprob(data=[-1.0, -2.0, -3.0])]),
     )
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     samples = [_small_sample()]
-    result = trainer.forward(samples=samples)
+    result = trainer.training.forward(samples=samples)
 
     assert result.logprobs[0].data == [-1.0, -2.0, -3.0]
     assert client.beta.rl.operations.last_call is not None
@@ -253,11 +298,11 @@ def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, {"metrics": {"grad_norm": 0.5}})
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     samples = [_small_sample()]
     gradients = [Gradient(data=[0.1, -0.2, 0.3], dtype="D_TYPE_FLOAT32")]
-    result = trainer.custom_forward_backward(samples=samples, gradients=gradients)
+    result = trainer.training.custom_forward_backward(samples=samples, gradients=gradients)
 
     assert result == {"metrics": {"grad_norm": 0.5}}
     assert client.beta.rl.operations.last_call is not None
@@ -273,7 +318,7 @@ def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytes
 def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     samples = [
         Sample(
@@ -290,7 +335,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
     ]
     loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
 
-    result = trainer.forward_backward(samples=samples, loss=loss)
+    result = trainer.training.forward_backward(samples=samples, loss=loss)
 
     assert result.loss == 1.0
     assert client.beta.rl.operations.last_call is not None
@@ -305,9 +350,9 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
 def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, OptimStepResult(step="1"))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
-    result = trainer.optim_step(
+    result = trainer.training.optim_step(
         adamw_params=AdamwOptimizerParams(beta1=0.9, learning_rate=1e-4),
     )
 
@@ -322,9 +367,9 @@ def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, OptimStepResult(step="1"))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
-    trainer.optim_step(
+    trainer.training.optim_step(
         muon_params=MuonOptimizerParams(learning_rate=0.02, momentum=0.95),
     )
 
@@ -338,9 +383,9 @@ def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> Non
 def test_optim_step_forwards_max_grad_norm(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, OptimStepResult(step="1"))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
-    trainer.optim_step(max_grad_norm=1.0)
+    trainer.training.optim_step(max_grad_norm=1.0)
 
     assert client.beta.rl.operations.last_call is not None
     method, _, kwargs = client.beta.rl.operations.last_call
@@ -352,7 +397,7 @@ def test_optim_step_forwards_max_grad_norm(monkeypatch: pytest.MonkeyPatch) -> N
 def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, TrainingCheckpointResult(checkpoint_id="ckpt-1"))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     result = trainer.create_training_checkpoint()
 
@@ -367,7 +412,7 @@ def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_create_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_submit_and_wait(monkeypatch, InferenceCheckpointResult(model_name="model-1"))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     result = trainer.create_inference_checkpoint()
 
@@ -375,19 +420,29 @@ def test_create_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     trainer.stop()
 
 
-def test_session_property() -> None:
+def test_retrieve_returns_session() -> None:
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
-    session = trainer.session
+    session = trainer.retrieve()
 
     assert session.status == "TRAINING_SESSION_STATUS_RUNNING"
     trainer.stop()
 
 
+async def test_retrieve_async_returns_session() -> None:
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    session = await trainer.retrieve_async()
+
+    assert session.status == "TRAINING_SESSION_STATUS_RUNNING"
+    await trainer.stop_async()
+
+
 def test_stop_closes_client() -> None:
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     trainer.stop()
 
@@ -397,7 +452,7 @@ def test_stop_closes_client() -> None:
 
 def test_context_manager_stops() -> None:
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     with trainer:
         assert trainer._session_id == "sess"
@@ -414,10 +469,15 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     fake_client.beta.rl.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_RUNNING")
     )
+    fake_client.beta.rl.model_resources.retrieve = AsyncMock(
+        return_value=SimpleNamespace(
+            compute_config=SimpleNamespace(num_generator_replicas=1),
+        )
+    )
     create_client = MagicMock(return_value=fake_client)
-    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", create_client)
+    monkeypatch.setattr(session_client_module, "AsyncTogether", create_client)
 
-    trainer = await Trainer.create_async(
+    trainer = await SessionClient.create_async(
         model_resources_id="res-1",
         api_key="api-key",
         base_url="http://127.0.0.1:4010",
@@ -426,6 +486,7 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     )
 
     assert trainer._session_id == "sess-1"
+    assert isinstance(trainer.sampling, SamplingClient)
     assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
     await_args = fake_client.beta.rl.sessions.create.await_args
@@ -440,15 +501,20 @@ async def test_create_async_closes_client_on_terminal_status(monkeypatch: pytest
     fake_client.beta.rl.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_ERROR")
     )
+    fake_client.beta.rl.model_resources.retrieve = AsyncMock(
+        return_value=SimpleNamespace(
+            compute_config=SimpleNamespace(num_generator_replicas=1),
+        )
+    )
     fake_client.close = AsyncMock()
 
     def fake_together(**_kw: Any) -> MagicMock:
         return fake_client
 
-    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", fake_together)
+    monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
 
     with pytest.raises(RuntimeError, match="TRAINING_SESSION_STATUS_ERROR"):
-        await Trainer.create_async(
+        await SessionClient.create_async(
             model_resources_id="res-1",
             api_key="api-key",
             base_url="http://127.0.0.1:4010",
@@ -471,7 +537,7 @@ async def test_create_async_closes_client_on_terminal_status(monkeypatch: pytest
 async def test_wait_for_creation_raises_on_terminal_status(status: str) -> None:
     client = MagicMock()
     client.beta.rl.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
-    trainer = Trainer("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", _client=cast(Any, client))
 
     with pytest.raises(RuntimeError, match=status):
         await trainer._wait_for_creation_async(timeout=1.0, interval=0.0)
@@ -482,7 +548,7 @@ async def test_wait_for_creation_times_out() -> None:
     client.beta.rl.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_CREATING")
     )
-    trainer = Trainer("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", _client=cast(Any, client))
 
     with pytest.raises(TimeoutError):
         await trainer._wait_for_creation_async(timeout=0.0, interval=0.0)
@@ -493,7 +559,7 @@ async def test_stop_async_closes_client_and_event_loop() -> None:
     client.beta.rl.sessions.stop = AsyncMock(return_value={"id": "stop-op"})
     client.close = AsyncMock()
     event_loop = asyncio.new_event_loop()
-    trainer = Trainer("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", _client=cast(Any, client))
     trainer._event_loop = event_loop
 
     result = await trainer.stop_async()
@@ -509,19 +575,44 @@ async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPat
     fake_client = MagicMock()
     fake_client.beta.rl.sessions.create = AsyncMock()
     fake_client.beta.rl.sessions.retrieve = AsyncMock(
-        return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_RUNNING")
+        return_value=SimpleNamespace(
+            status="TRAINING_SESSION_STATUS_RUNNING",
+            api_model_resources_id="res-1",
+        )
+    )
+    fake_client.beta.rl.model_resources.retrieve = AsyncMock(
+        return_value=SimpleNamespace(
+            compute_config=SimpleNamespace(num_generator_replicas=1),
+        )
     )
     fake_client.close = AsyncMock()
     create_client = MagicMock(return_value=fake_client)
-    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", create_client)
+    monkeypatch.setattr(session_client_module, "AsyncTogether", create_client)
 
-    trainer = await Trainer.attach_async(session_id="sess-1")
+    trainer = await SessionClient.attach_async(session_id="sess-1")
 
     assert trainer._session_id == "sess-1"
+    assert isinstance(trainer.sampling, SamplingClient)
     assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
     fake_client.beta.rl.sessions.create.assert_not_awaited()
     fake_client.close.assert_not_awaited()
+
+
+async def test_attach_async_hides_sampling_for_trainer_only_resources(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_client = FakeClient()
+    fake_client.beta.rl.model_resources.num_generator_replicas = 0
+
+    def fake_together(**_kwargs: Any) -> FakeClient:
+        return fake_client
+
+    monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
+
+    session = await SessionClient.attach_async(session_id="sess-1")
+
+    assert session.has_sampling is False
+    with pytest.raises(RuntimeError, match="does not have sampling capability"):
+        session.sampling
 
 
 async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -532,10 +623,10 @@ async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.M
     def fake_together(**_kw: Any) -> MagicMock:
         return fake_client
 
-    monkeypatch.setattr(rl_trainer_module, "AsyncTogether", fake_together)
+    monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
 
     with pytest.raises(RuntimeError, match="not found"):
-        await Trainer.attach_async(session_id="missing")
+        await SessionClient.attach_async(session_id="missing")
 
     fake_client.close.assert_awaited_once()
 
@@ -544,7 +635,7 @@ async def test_detach_async_closes_client_without_stopping() -> None:
     client = MagicMock()
     client.beta.rl.sessions.stop = AsyncMock()
     client.close = AsyncMock()
-    trainer = Trainer("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", _client=cast(Any, client))
 
     await trainer.detach_async()
 
@@ -557,7 +648,7 @@ def test_detach_closes_event_loop_without_stopping() -> None:
     client.beta.rl.sessions.stop = AsyncMock()
     client.close = AsyncMock()
     event_loop = asyncio.new_event_loop()
-    trainer = Trainer("sess", _client=cast(Any, client))
+    trainer = SessionClient("sess", _client=cast(Any, client))
     trainer._event_loop = event_loop
 
     trainer.detach()
@@ -573,7 +664,7 @@ async def test_submit_and_wait_raises_on_empty_output(monkeypatch: pytest.Monkey
         return SampleOperation(id="op-1", status="TRAINING_OPERATION_STATUS_COMPLETED", output=None)
 
     monkeypatch.setattr(rl_ops, "async_wait_for_operation", fake_wait)
-    trainer = _make_trainer()
+    trainer = _make_session()
 
     op = SampleOperation(id="op-1", status="TRAINING_OPERATION_STATUS_PENDING")
     with pytest.raises(RuntimeError, match="empty output"):
@@ -600,9 +691,9 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     """Small payloads are sent inline without triggering upload."""
     _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
-    result = trainer.forward_backward(
+    result = trainer.training.forward_backward(
         samples=[_small_sample()],
         loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
@@ -628,22 +719,22 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
 def test_resolve_loss_type(given: str, expected: str) -> None:
     loss = cast(Any, {"type": given, "grpo_params": {"beta": 0.1}})
 
-    assert rl_trainer_module._resolve_loss_type(loss) == {"type": expected, "grpo_params": {"beta": 0.1}}
+    assert training_client_module._resolve_loss_type(loss) == {"type": expected, "grpo_params": {"beta": 0.1}}
     assert loss["type"] == given, "input config must not be mutated"
 
 
 def test_resolve_loss_type_rejects_unknown_name() -> None:
     with pytest.raises(ValueError, match="Unknown loss type"):
-        rl_trainer_module._resolve_loss_type(cast(Any, {"type": "gspo"}))
+        training_client_module._resolve_loss_type(cast(Any, {"type": "gspo"}))
 
 
 def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch) -> None:
     """Short loss names reach the API in their proto spelling."""
     _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
-    trainer.forward_backward(samples=[_small_sample()], loss=cast(Any, {"type": "ppo"}))
+    trainer.training.forward_backward(samples=[_small_sample()], loss=cast(Any, {"type": "ppo"}))
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
@@ -656,7 +747,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=2.0, metrics={}))
     monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 10)
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     long_tokens = list(range(20))
     long_mask = [1] * 20
@@ -674,7 +765,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         policy_segments=[],
     )
 
-    result = await trainer.forward_backward_async(
+    result = await trainer.training.forward_backward_async(
         samples=[sample],
         loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
@@ -702,10 +793,10 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 10)
     monkeypatch.setattr(rl_payloads_module, "_MAX_PAYLOAD_SIZE", 20)
     client = FakeClient()
-    trainer = _make_trainer(client)
+    trainer = _make_session(client)
 
     with pytest.raises(ValueError, match="exceeds"):
-        trainer.forward_backward(
+        trainer.training.forward_backward(
             samples=[
                 Sample(
                     model_input=ModelInput(

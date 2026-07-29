@@ -1,5 +1,4 @@
-from .trainer import Trainer
-from .model_resources import ModelResources
+from .clients import SessionClient, TrainingClient, SamplingClient, ModelResourcesClient
 from ....types.beta.rl.lora_config import LoraConfig
 from ....types.beta.rl.sample_result import SampleResult
 from ....types.beta.rl.forward_result import Logprob, ForwardResult
@@ -43,8 +42,10 @@ from ....types.beta.rl.importance_sampling_loss_inputs_param import ImportanceSa
 from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 
 __all__ = [
-    "Trainer",
-    "ModelResources",
+    "ModelResourcesClient",
+    "SessionClient",
+    "TrainingClient",
+    "SamplingClient",
     "ModelResourcesStatus",
     # Request types (top-level)
     "Sample",

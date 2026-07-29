@@ -6,18 +6,20 @@ the full API reference remains in [api.md](api.md).
 
 ## Concepts at a glance
 
-- `ModelResources.create(...)` provisions GPU resources for a base model and waits until `READY`.
-- `resources.attach_trainer(...)` starts a training session on those resources and waits until `RUNNING`,
-  returning a `Trainer`. Attach more than once for multi-LoRA. Delete the resources when done.
-- `Trainer.create(model_resources_id=...)` is the lower-level equivalent of `attach_trainer` when you already
+- `ModelResourcesClient.create(...)` provisions GPU resources for a base model and waits until `READY`.
+- `resources.create_session(...)` starts a session on those resources and waits until `RUNNING`,
+  returning a `SessionClient`. Create more than one session for multi-LoRA. Delete the resources when done.
+- `SessionClient.create(model_resources_id=...)` is the lower-level equivalent of `create_session` when you already
   have a resources ID.
-- `Trainer` is the handle you use for sampling, forward/backward, optimization steps, and checkpointing.
-- `trainer.compute_logprobs(...)` (and `compute_logprobs_batch(...)`) teacher-force scores arbitrary token sequences on the generator, returning per-token logprobs (for sampler↔trainer KL and cross-service logprob comparisons on a fixed token set).
+- `SessionClient` owns lifecycle and checkpoints. Use `session.training` for training operations and
+  `session.sampling` for sampling operations. Accessing `session.sampling` on a trainer-only resource raises
+  a clear capability error; use `session.has_sampling` when capability discovery is needed.
+- `session.sampling.compute_logprobs(...)` (and `compute_logprobs_batch(...)`) teacher-force scores arbitrary token sequences on the generator, returning per-token logprobs (for sampler↔trainer KL and cross-service logprob comparisons on a fixed token set).
 - Training operations return operation outputs directly.
-- After one or more training steps, call `trainer.create_inference_checkpoint()` to snapshot the model,
-  then `trainer.download_checkpoint(...)` to pull the weights locally.
-- To save/resume from the full training state, call `trainer.create_training_checkpoint()` to get a `checkpoint_id`, stop the trainer, then attach a new trainer with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) to continue on a new session over the same resources.
-- Use `trainer.session` to fetch the full session state from the API (status, checkpoints, step).
+- After one or more training steps, call `session.create_inference_checkpoint()` to snapshot the model,
+  then `session.download_checkpoint(...)` to pull the weights locally.
+- To save/resume from the full training state, call `session.create_training_checkpoint()` to get a `checkpoint_id`, stop the session, then create a new session with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) over the same resources.
+- Use `session.retrieve()` to fetch the full session state from the API (status, checkpoints, step).
 - All request data uses typed constructors (`ModelInput`, `Sample`, `LossConfigParam`, etc.) exported from `together.lib.beta.rl`. Plain dicts also work at runtime since these are `TypedDict`s.
 
 ## Quickstart: SFT-style loop (sync)
@@ -25,7 +27,7 @@ the full API reference remains in [api.md](api.md).
 ```python
 import os
 from together.lib.beta.rl import (
-    ModelResources,
+    ModelResourcesClient,
     AdamwOptimizerParams,
     EncodedTextChunk,
     LossConfigParam,
@@ -37,13 +39,13 @@ from together.lib.beta.rl import (
     Sample,
 )
 
-resources = ModelResources.create(
+resources = ModelResourcesClient.create(
     base_model="Qwen/Qwen3-0.6B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
     num_generator_replicas=0,  # SFT does not need a generator; provisions a trainer-only resource.
 )
-trainer = resources.attach_trainer()
+session = resources.create_session()
 
 tokens = [101, 102, 103]  # your tokenizer output
 loss_mask = [0, 1, 1]
@@ -73,9 +75,9 @@ samples = [
 ]
 
 loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
-trainer.forward_backward(samples=samples, loss=loss)
+session.training.forward_backward(samples=samples, loss=loss)
 
-trainer.optim_step(
+session.training.optim_step(
     adamw_params=AdamwOptimizerParams(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
@@ -87,7 +89,7 @@ trainer.optim_step(
 ```python
 import os
 from together.lib.beta.rl import (
-    ModelResources,
+    ModelResourcesClient,
     AdamwOptimizerParams,
     EncodedTextChunk,
     GrpoLossInputsParam,
@@ -105,12 +107,12 @@ from together.lib.beta.rl import (
     SamplingParams,
 )
 
-resources = ModelResources.create(
+resources = ModelResourcesClient.create(
     base_model="Qwen/Qwen3-0.6B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
 )
-trainer = resources.attach_trainer()
+session = resources.create_session()
 
 prompt_tokens = [101, 102, 103]  # your tokenizer output
 prompt_chunk = ModelInputChunk(
@@ -121,7 +123,7 @@ prompt_chunk = ModelInputChunk(
 prompt = ModelInput(chunks=[prompt_chunk])
 
 sampling = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
-sample_result = trainer.sample(
+sample_result = session.sampling.sample(
     prompt,
     num_samples=4,
     sampling_params=sampling,
@@ -178,9 +180,9 @@ loss = LossConfigParam(
         beta=0.0,
     ),
 )
-trainer.forward_backward(samples=samples, loss=loss)
+session.training.forward_backward(samples=samples, loss=loss)
 
-optim = trainer.optim_step(
+optim = session.training.optim_step(
     adamw_params=AdamwOptimizerParams(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
@@ -190,34 +192,34 @@ print("step", optim.step)
 
 ## Multi-LoRA: shared model resources (sync)
 
-Provision GPU resources once with `ModelResources.create(...)`, then attach multiple LoRA training sessions
-to them. Each attached trainer is a regular `Trainer` — train, checkpoint, and stop each one independently.
+Provision GPU resources once with `ModelResourcesClient.create(...)`, then create multiple LoRA sessions
+on them. Each `SessionClient` has independent training state, checkpoints, and lifecycle.
 
 ```python
 import os
-from together.lib.beta.rl import ModelResources, LoraConfigParam
+from together.lib.beta.rl import ModelResourcesClient, LoraConfigParam
 
-resources = ModelResources.create(
+resources = ModelResourcesClient.create(
     base_model="Qwen/Qwen3-0.6B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
 )
 
-trainer_a = resources.attach_trainer(lora_config=LoraConfigParam(rank=8, alpha=16))
-trainer_b = resources.attach_trainer(lora_config=LoraConfigParam(rank=16, alpha=32))
+session_a = resources.create_session(lora_config=LoraConfigParam(rank=8, alpha=16))
+session_b = resources.create_session(lora_config=LoraConfigParam(rank=16, alpha=32))
 
-# ... run forward_backward / optim_step / sample on each trainer independently ...
+# ... use session.training and session.sampling on each session independently ...
 
-trainer_a.stop()
-trainer_b.stop()
+session_a.stop()
+session_b.stop()
 resources.stop()
 ```
 
-`ModelResources` also works as a context manager; on exit it stops the resources:
+`ModelResourcesClient` also works as a context manager; on exit it stops the resources:
 
 ```python
-with ModelResources.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...") as resources:
-    with resources.attach_trainer() as trainer:
+with ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...") as resources:
+    with resources.create_session() as session:
         ...
 ```
 
@@ -227,26 +229,26 @@ Training checkpoints persist full training state (adapter, optimizer, step) so y
 
 **Flow:**
 
-1. Run training (`forward_backward`, `optim_step`, etc.) on the trainer.
-2. Call `trainer.create_training_checkpoint()` and wait until the operation completes; read `checkpoint_id`.
-3. Stop the trainer.
-4. Attach a new trainer with `resume_from_checkpoint_id=checkpoint_id` over the same resources (and optional `lora_config` if you used one).
-5. Continue training on the new trainer.
+1. Run training (`forward_backward`, `optim_step`, etc.) through `session.training`.
+2. Call `session.create_training_checkpoint()` and wait until the operation completes; read `checkpoint_id`.
+3. Stop the session.
+4. Create a new session with `resume_from_checkpoint_id=checkpoint_id` over the same resources (and optional `lora_config` if you used one).
+5. Continue training through the new session's `training` client.
 
-Saved checkpoints also appear on `trainer.session.training_checkpoints`.
+Saved checkpoints also appear on `session.retrieve().training_checkpoints`.
 
 ```python
-from together.lib.beta.rl import ModelResources, Trainer
+from together.lib.beta.rl import ModelResourcesClient, SessionClient
 
-resources = ModelResources.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
-trainer = resources.attach_trainer()
+resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
+session = resources.create_session()
 # ... train ...
 
-save_result = trainer.create_training_checkpoint()
+save_result = session.create_training_checkpoint()
 checkpoint_id = save_result.checkpoint_id
-trainer.stop()
+session.stop()
 
-trainer = Trainer.create(
+session = SessionClient.create(
     model_resources_id=resources.model_resources_id,
     api_key="...",
     base_url="...",
@@ -260,16 +262,16 @@ trainer = Trainer.create(
 After training, create an inference checkpoint and download the model weights:
 
 ```python
-ckpt = trainer.create_inference_checkpoint()
+ckpt = session.create_inference_checkpoint()
 print(f"Checkpoint registered as: {ckpt.api_model_name}")
 
-# The checkpoint ID is available via trainer.session
-checkpoint_id = trainer.session.inference_checkpoints[-1].id
+# The checkpoint ID is available via session.retrieve()
+checkpoint_id = session.retrieve().inference_checkpoints[-1].id
 
 # Download merged weights to a local directory
 from pathlib import Path
 
-paths = trainer.download_checkpoint(
+paths = session.download_checkpoint(
     checkpoint_id,
     variant="CHECKPOINT_VARIANT_MERGED",
     output_dir=Path("./my_checkpoint"),
@@ -294,7 +296,7 @@ from together.types import AutoscalingParam
 client = Together(api_key="...", base_url="...")
 
 # Get the registered model name from the checkpoint
-ckpt = trainer.session.inference_checkpoints[-1]
+ckpt = session.retrieve().inference_checkpoints[-1]
 model_name = ckpt.registration.api_model_name
 
 # Find available hardware for the model
@@ -333,13 +335,13 @@ print(response.choices[0].message.content)
 
 ## Async usage
 
-Trainer methods are synchronous by default. For async workflows, use the `*_async` methods:
+RL client methods are synchronous by default. For async workflows, use the `*_async` methods:
 
 ```python
 import os
 import asyncio
 from together.lib.beta.rl import (
-    ModelResources,
+    ModelResourcesClient,
     EncodedTextChunk,
     ModelInput,
     ModelInputChunk,
@@ -347,37 +349,37 @@ from together.lib.beta.rl import (
 
 
 async def main() -> None:
-    resources = await ModelResources.create_async(
+    resources = await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
         api_key=os.environ.get("TOGETHER_API_KEY"),
         base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
     )
-    trainer = await resources.attach_trainer_async()
+    session = await resources.create_session_async()
     prompt_chunk = ModelInputChunk(
         encoded_text=EncodedTextChunk(
             tokens=[101, 102, 103],
         ),
     )
     prompt = ModelInput(chunks=[prompt_chunk])
-    await trainer.sample_async(prompt)
+    await session.sampling.sample_async(prompt)
 
 
 asyncio.run(main())
 ```
 
-`ModelResources` follows the same split: `create_async`, `attach_trainer_async`, `retrieve_async`, and
+`ModelResourcesClient` follows the same split: `create_async`, `create_session_async`, `retrieve_async`, and
 `stop_async`, plus `async with` support.
 
-## Trainer lifecycle
+## Session lifecycle
 
-1. Provision resources with `ModelResources.create(...)`, then attach a trainer with `resources.attach_trainer(...)` (or `Trainer.create(model_resources_id=...)`).
-2. Use the `Trainer` methods to run `sample`, `forward_backward`, and `optim_step` operations.
+1. Provision resources with `ModelResourcesClient.create(...)`, then create a session with `resources.create_session(...)` (or `SessionClient.create(model_resources_id=...)`).
+2. Use `session.sampling` for `sample` and `session.training` for `forward_backward` and `optim_step`.
 3. Optionally call `create_inference_checkpoint()` to snapshot the model and `download_checkpoint(...)` to pull weights locally.
-4. To pause and resume later: `trainer.create_training_checkpoint()` → save `checkpoint_id`, `trainer.stop()`, then attach a new trainer with `resume_from_checkpoint_id=...` over the same resources.
-5. Close the trainer when finished (context manager or `stop()`).
+4. To pause and resume later: `session.create_training_checkpoint()` → save `checkpoint_id`, `session.stop()`, then create a new session with `resume_from_checkpoint_id=...` over the same resources.
+5. Close the session when finished (context manager or `stop()`).
 
-Attach more than one trainer to the same resources for multi-LoRA, and stop the resources after stopping the
-trainers.
+Create more than one session on the same resources for multi-LoRA, and stop the resources after stopping the
+sessions.
 
 ## Configuration notes
 
@@ -389,16 +391,16 @@ trainers.
 
 ## API Reference
 
-### `Trainer.create`
+### `SessionClient.create`
 
 ```python
-from together.lib.beta.rl import Trainer
+from together.lib.beta.rl import SessionClient
 ```
 
 Creates a training session and polls until it reaches `RUNNING` status.
 
 ```python
-Trainer.create(
+SessionClient.create(
     *,
     model_resources_id: str,
     api_key: str | None = None,
@@ -407,15 +409,15 @@ Trainer.create(
     lora_config: LoraConfigParam | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
-) -> Trainer
+) -> SessionClient
 ```
 
 Attaches a session to existing model resources. To start from a base model, provision resources first with
-[`ModelResources.create`](#modelresourcescreate) (or use `resources.attach_trainer(...)`).
+[`ModelResourcesClient.create`](#modelresourcesclientcreate) (or use `resources.create_session(...)`).
 
 | Parameter                   | Type            | Default      | Description                                                     |
 | --------------------------- | --------------- | ------------ | --------------------------------------------------------------- |
-| `model_resources_id`        | `str`           | _(required)_ | ID of the model resources to attach to (see [ModelResources](#modelresourcescreate)). The base model and session type are inherited from the resources. |
+| `model_resources_id`        | `str`           | _(required)_ | ID of the model resources to attach to (see [ModelResourcesClient](#modelresourcesclientcreate)). The base model and session type are inherited from the resources. |
 | `api_key`                   | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`                  | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `resume_from_checkpoint_id` | `str \| None`   | `None`       | Training checkpoint ID to resume from. |
@@ -423,7 +425,7 @@ Attaches a session to existing model resources. To start from a base model, prov
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
-**Returns:** a `Trainer` once the underlying session is `RUNNING`.
+**Returns:** a `SessionClient` once the underlying session is `RUNNING`.
 
 **Raises:**
 
@@ -432,23 +434,30 @@ Attaches a session to existing model resources. To start from a base model, prov
 
 ---
 
-### `Trainer`
+### `SessionClient`
 
 ```python
-from together.lib.beta.rl import Trainer
+from together.lib.beta.rl import SessionClient
 ```
 
-A dataclass that wraps a running training session. Returned by `Trainer.create(...)` and `Trainer.create_async(...)`.
+A dataclass that owns a running session's lifecycle and checkpoints. Returned by `SessionClient.create(...)`
+and `SessionClient.create_async(...)`.
 
 #### Properties
 
 | Property  | Type              | Description                                                            |
 | --------- | ----------------- | ---------------------------------------------------------------------- |
-| `session` | `TrainingSession` | Fetches full session state from the API (status, checkpoints, step).   |
+| `training` | `TrainingClient` | Session-scoped forward, backward, and optimizer operations.            |
+| `has_sampling` | `bool` | Whether the session's MR has a generator. |
+| `sampling` | `SamplingClient` | Session-scoped sampling operations. Raises `RuntimeError` when the MR has no generator. |
 
 Client and event loop internals are private implementation details.
 
-#### `trainer.sample(...)`
+#### `session.retrieve()`
+
+Fetches the current session state from the API. Use `retrieve_async()` in async workflows.
+
+#### `session.sampling.sample(...)`
 
 Generates text completions with logprobs from the current model.
 
@@ -492,7 +501,7 @@ ModelInput(chunks=[prompt_chunk])
 | ----------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
 | `sequences`       | `list[SampledSequence]`   | One entry per requested completion (see below).                                              |
 | `policy_segments` | `list[PolicyVersionSegment]` | Policy versions that produced these completions. Usually one segment `(version, start_token=0)`; longer generations may span several when the policy was updated mid-generation. |
-| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens; present only when `return_prompt_logprobs` was requested (see [`compute_logprobs`](#trainercompute_logprobs)). |
+| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens; present only when `return_prompt_logprobs` was requested (see `session.sampling.compute_logprobs`). |
 
 Each `SampledSequence` has:
 
@@ -502,10 +511,10 @@ Each `SampledSequence` has:
 | `logprobs`    | `list[float] \| None`   | Log probability for each generated token.                            |
 | `stop_reason` | `StopReason`            | `"STOP_REASON_LENGTH"` or `"STOP_REASON_STOP"`.                      |
 
-#### `trainer.compute_logprobs(...)`
+#### `session.sampling.compute_logprobs(...)`
 
 Teacher-force scores an existing token sequence on the generator, returning the log-probability
-of each prompt token under the current policy. Unlike `trainer.sample`, which reports logprobs
+of each prompt token under the current policy. Unlike `session.sampling.sample`, which reports logprobs
 only for the tokens the generator *itself drew*, this scores arbitrary/frozen tokens on the
 generator — the same measurement path the sampler uses at rollout time. Useful for
 sampler↔trainer KL and cross-service logprob comparisons on a fixed token set.
@@ -524,11 +533,11 @@ def compute_logprobs(
 prompt-logprob convention (`log P(tokenᵢ | token_<i)`, offset by one from the input tokens).
 Like `sample`, it requires a session with a generator replica.
 
-Use `trainer.compute_logprobs_batch(prompts: Iterable[ModelInput]) -> list[list[float]]` to score
+Use `session.sampling.compute_logprobs_batch(prompts: Iterable[ModelInput]) -> list[list[float]]` to score
 several sequences in one call (mirroring `sample` / `sample_batch`); it returns one list of
 per-token logprobs per input prompt.
 
-#### `trainer.forward_backward(...)`
+#### `session.training.forward_backward(...)`
 
 Runs a forward and backward pass to compute gradients.
 
@@ -552,7 +561,7 @@ def forward_backward(
 | `loss`    | `float`            | Scalar loss value for the batch.                                                     |
 | `metrics` | `dict[str, float]` | Loss-specific metrics (e.g. `loss/clip/high_fraction`, `loss/kl_ref/mean` for GRPO). |
 
-#### `trainer.optim_step(...)`
+#### `session.training.optim_step(...)`
 
 Applies accumulated gradients and updates model parameters.
 
@@ -595,7 +604,7 @@ def optim_step(
 
 **Returns:** `OptimStepResult`. The step counter is at `.step`.
 
-#### `trainer.create_inference_checkpoint()`
+#### `session.create_inference_checkpoint()`
 
 Snapshots the current model state into a downloadable inference checkpoint.
 
@@ -606,9 +615,9 @@ def create_inference_checkpoint() -> InferenceCheckpointResult
 **Returns:** `InferenceCheckpointResult`. The resolved value has `.api_model_name` — the registered model name for the checkpoint.
 
 After the operation completes, the checkpoint appears in the session's `inference_checkpoints` list
-(visible via `trainer.session`).
+(visible via `session.retrieve()`).
 
-#### `trainer.create_training_checkpoint()`
+#### `session.create_training_checkpoint()`
 
 Saves full training state (adapter + optimizer + step) to storage so you can later resume from it.
 
@@ -616,12 +625,12 @@ Saves full training state (adapter + optimizer + step) to storage so you can lat
 def create_training_checkpoint() -> TrainingCheckpointResult
 ```
 
-**Returns:** `TrainingCheckpointResult`. The resolved value has `.checkpoint_id` — the ID to pass as `resume_from_checkpoint_id` when creating a new trainer.
+**Returns:** `TrainingCheckpointResult`. The resolved value has `.checkpoint_id` — the ID to pass as `resume_from_checkpoint_id` when creating a new session.
 
 After the operation completes, the checkpoint appears in the session's `training_checkpoints` list
-(visible via `trainer.session`).
+(visible via `session.retrieve()`).
 
-#### `trainer.download_checkpoint(...)`
+#### `session.download_checkpoint(...)`
 
 Downloads all files for a checkpoint to a local directory.
 
@@ -642,50 +651,50 @@ def download_checkpoint(
 
 **Returns:** list of `Path` objects pointing to the downloaded files.
 
-#### `trainer.stop()`
+#### `session.stop()`
 
-Stops the training session. Called automatically when using `Trainer` as a context manager.
+Stops the session. Called automatically when using `SessionClient` as a context manager.
 
 #### Context manager
 
-`Trainer` supports the `with` statement. On exit it calls `stop()` automatically:
+`SessionClient` supports the `with` statement. On exit it calls `stop()` automatically:
 
 ```python
 from together.lib.beta.rl import (
-    ModelResources,
+    ModelResourcesClient,
     EncodedTextChunk,
     ModelInput,
     ModelInputChunk,
 )
 
-with ModelResources.create(
+with ModelResourcesClient.create(
     base_model="Qwen/Qwen3-0.6B",
     api_key="...",
     base_url="...",
 ) as resources:
-    with resources.attach_trainer() as trainer:
+    with resources.create_session() as session:
         prompt_chunk = ModelInputChunk(
             encoded_text=EncodedTextChunk(
                 tokens=[101, 102, 103],
             ),
         )
         prompt = ModelInput(chunks=[prompt_chunk])
-        trainer.sample(prompt)
+        session.sampling.sample(prompt)
 ```
 
 ---
 
-### `ModelResources.create`
+### `ModelResourcesClient.create`
 
 ```python
-from together.lib.beta.rl import ModelResources
+from together.lib.beta.rl import ModelResourcesClient
 ```
 
 Provisions shared GPU model resources and polls until they reach `READY` status. Multiple LoRA training
-sessions can then be attached via `attach_trainer`.
+sessions can then be created via `create_session`.
 
 ```python
-ModelResources.create(
+ModelResourcesClient.create(
     *,
     base_model: str,
     api_key: str | None = None,
@@ -695,7 +704,7 @@ ModelResources.create(
     optimizer_config: OptimizerConfigParam | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
-) -> ModelResources
+) -> ModelResourcesClient
 ```
 
 | Parameter       | Type            | Default      | Description                                                     |
@@ -709,7 +718,7 @@ ModelResources.create(
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
-**Returns:** a `ModelResources` once the underlying resources are `READY`.
+**Returns:** a `ModelResourcesClient` once the underlying resources are `READY`.
 
 **Raises:**
 
@@ -720,10 +729,10 @@ On failure the partially created resources are stopped automatically.
 
 ---
 
-### `ModelResources`
+### `ModelResourcesClient`
 
-A dataclass that wraps provisioned model resources. Returned by `ModelResources.create(...)` and
-`ModelResources.create_async(...)`.
+A dataclass that wraps provisioned model resources. Returned by `ModelResourcesClient.create(...)` and
+`ModelResourcesClient.create_async(...)`.
 
 #### Properties
 
@@ -731,30 +740,32 @@ A dataclass that wraps provisioned model resources. Returned by `ModelResources.
 | -------------------- | ----- | ------------------------------------ |
 | `model_resources_id` | `str` | ID of the provisioned resources.     |
 
-#### `resources.attach_trainer(...)`
+#### `resources.create_session(...)`
 
 Creates a training session on these resources and polls until it reaches `RUNNING` status.
 
 ```python
-def attach_trainer(
+def create_session(
     *,
+    resume_from_checkpoint_id: str | None = None,
     lora_config: LoraConfigParam | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
-) -> Trainer
+) -> SessionClient
 ```
 
-| Parameter     | Type                      | Default  | Description                                                     |
-| ------------- | ------------------------- | -------- | --------------------------------------------------------------- |
-| `lora_config` | `LoraConfigParam \| None` | `None`   | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
-| `timeout`     | `float \| None`           | `3600.0` | Max seconds to wait. `None` waits indefinitely.                 |
-| `interval`    | `float`                   | `10.0`   | Polling interval in seconds.                                    |
+| Parameter                   | Type                      | Default  | Description                                                     |
+| --------------------------- | ------------------------- | -------- | --------------------------------------------------------------- |
+| `resume_from_checkpoint_id` | `str \| None`             | `None`   | Training checkpoint ID to resume from.                          |
+| `lora_config`               | `LoraConfigParam \| None` | `None`   | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
+| `timeout`                   | `float \| None`           | `3600.0` | Max seconds to wait. `None` waits indefinitely.                 |
+| `interval`                  | `float`                   | `10.0`   | Polling interval in seconds.                                    |
 
-The trainer inherits the resources' API key, base URL, base model, and session type.
+The session inherits the resources' API key, base URL, base model, and session type.
 
-**Returns:** a `Trainer` attached to these resources — same handle as `Trainer.create(...)` returns.
+**Returns:** a `SessionClient` on these resources — same handle as `SessionClient.create(...)` returns.
 
-**Raises:** same as `Trainer.create` -- `RuntimeError` on terminal session status, `TimeoutError` on timeout.
+**Raises:** same as `SessionClient.create` -- `RuntimeError` on terminal session status, `TimeoutError` on timeout.
 
 #### `resources.retrieve()`
 
@@ -763,7 +774,7 @@ Fetches the current resources state from the API (status, base model).
 #### `resources.stop()`
 
 Stops the resources and releases the GPUs. Stop attached trainers first. Called automatically when using
-`ModelResources` as a context manager.
+`ModelResourcesClient` as a context manager.
 
 ---
 
@@ -827,7 +838,7 @@ Each tensor TypedDict has `data` (list of floats) and `dtype` (`"D_TYPE_FLOAT32"
 
 ### Sampling params
 
-Sampling parameters are passed as `SamplingParams` to `trainer.sample(...)`:
+Sampling parameters are passed as `SamplingParams` to `session.sampling.sample(...)`:
 
 ```python
 SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
@@ -841,7 +852,7 @@ SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 | `top_k`       | `int`   | `-1` (disabled) | Top-k sampling limit.                                  |
 | `stop`        | `list[str]` | --          | Stop sequences; generation stops when any is produced. |
 | `seed`        | `str \| int` | --             | Random seed for reproducibility.                       |
-| `return_prompt_logprobs` | `bool` | `False` | Also return teacher-forced logprobs for the prompt tokens in `SampleResult.prompt_logprobs`. See [`compute_logprobs`](#trainercompute_logprobs). |
+| `return_prompt_logprobs` | `bool` | `False` | Also return teacher-forced logprobs for the prompt tokens in `SampleResult.prompt_logprobs`. See `session.sampling.compute_logprobs`. |
 
 ---
 
@@ -905,13 +916,13 @@ Requires `target_tokens` and `grpo_inputs` (with `advantages`, `generator_logpro
 
 ### LoRA config
 
-When creating a trainer with a LoRA adapter, pass `LoraConfigParam` to `lora_config`:
+When creating a session with a LoRA adapter, pass `LoraConfigParam` to `lora_config`:
 
 ```python
-from together.lib.beta.rl import ModelResources, LoraConfigParam
+from together.lib.beta.rl import ModelResourcesClient, LoraConfigParam
 
-resources = ModelResources.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
-trainer = resources.attach_trainer(
+resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
+session = resources.create_session(
     lora_config=LoraConfigParam(alpha=16, dropout=0.05, rank=8),
 )
 ```
