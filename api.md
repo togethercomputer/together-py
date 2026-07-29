@@ -226,6 +226,154 @@ Methods:
 - <code title="get /projects/{projectId}/configs/{id}">client.beta.models.configs.<a href="./src/together/resources/beta/models/configs.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/models/config.py">Config</a></code>
 - <code title="get /projects/{projectId}/configs">client.beta.models.configs.<a href="./src/together/resources/beta/models/configs.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/models/config_list_params.py">params</a>) -> <a href="./src/together/types/beta/models/config.py">SyncCursorPagination[Config]</a></code>
 
+## Rl
+
+### Sessions
+
+Types:
+
+```python
+from together.types.beta.rl import (
+    InferenceCheckpoint,
+    LoraConfig,
+    TrainingCheckpoint,
+    TrainingSession,
+    TrainingSessionError,
+    TrainingSessionErrorCode,
+    TrainingSessionStatus,
+    TrainingSessionsListResponse,
+)
+```
+
+Methods:
+
+- <code title="post /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">create</a>(\*\*<a href="src/together/types/beta/rl/session_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/training_session.py">TrainingSession</a></code>
+- <code title="get /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">retrieve</a>(session_id) -> <a href="./src/together/types/beta/rl/training_session.py">TrainingSession</a></code>
+- <code title="get /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">list</a>(\*\*<a href="src/together/types/beta/rl/session_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/training_sessions_list_response.py">TrainingSessionsListResponse</a></code>
+- <code title="post /rl/training-sessions/{session_id}/stop">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">stop</a>(session_id) -> <a href="./src/together/types/beta/rl/training_session.py">TrainingSession</a></code>
+
+### Operations
+
+Types:
+
+```python
+from together.types.beta.rl import (
+    AdamwOptimizerParams,
+    CispoLossInputs,
+    CispoLossParams,
+    CrossEntropyLossParams,
+    CustomForwardBackwardOperation,
+    CustomForwardBackwardResult,
+    DType,
+    DroLossInputs,
+    DroLossParams,
+    ForwardBackwardOperation,
+    ForwardBackwardResult,
+    ForwardOperation,
+    ForwardResult,
+    GrpoLossAggregationType,
+    GrpoLossInputs,
+    GrpoLossParams,
+    GrpoLossRatioType,
+    ImportanceSamplingLossInputs,
+    InferenceCheckpointOperation,
+    InferenceCheckpointResult,
+    LossAdvantages,
+    LossConfig,
+    LossInputs,
+    LossLogprobs,
+    LossMask,
+    LossTargetTokens,
+    LossType,
+    ModelInput,
+    MuonOptimizerParams,
+    OptimStepOperation,
+    OptimStepResult,
+    PolicyVersionSegment,
+    PpoLossInputs,
+    PpoLossParams,
+    SampleOperation,
+    SampleResult,
+    SampledSequence,
+    SamplingParams,
+    StopReason,
+    TrainingCheckpointOperation,
+    TrainingCheckpointResult,
+    TrainingOperationError,
+    TrainingOperationErrorCode,
+    TrainingOperationStatus,
+    WeightSyncType,
+)
+```
+
+Methods:
+
+- <code title="post /rl/training-sessions/{session_id}/operations/inference-checkpoint">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">create_inference_checkpoint</a>(session_id) -> <a href="./src/together/types/beta/rl/inference_checkpoint_operation.py">InferenceCheckpointOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/training-checkpoint">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">create_training_checkpoint</a>(session_id) -> <a href="./src/together/types/beta/rl/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/custom-forward-backward">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">custom_forward_backward</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_custom_forward_backward_params.py">params</a>) -> <a href="./src/together/types/beta/rl/custom_forward_backward_operation.py">CustomForwardBackwardOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/forward">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">forward</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_forward_params.py">params</a>) -> <a href="./src/together/types/beta/rl/forward_operation.py">ForwardOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/forward-backward">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">forward_backward</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_forward_backward_params.py">params</a>) -> <a href="./src/together/types/beta/rl/forward_backward_operation.py">ForwardBackwardOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/optim-step">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">optim_step</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_optim_step_params.py">params</a>) -> <a href="./src/together/types/beta/rl/optim_step_operation.py">OptimStepOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_custom_forward_backward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/custom_forward_backward_operation.py">CustomForwardBackwardOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/forward/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_forward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/forward_operation.py">ForwardOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_forward_backward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/forward_backward_operation.py">ForwardBackwardOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_inference_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/inference_checkpoint_operation.py">InferenceCheckpointOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/optim-step/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_optim_step</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/optim_step_operation.py">OptimStepOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/sample/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_sample</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/sample_operation.py">SampleOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_training_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/sample">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">sample</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_sample_params.py">params</a>) -> <a href="./src/together/types/beta/rl/sample_operation.py">SampleOperation</a></code>
+
+### Checkpoints
+
+Types:
+
+```python
+from together.types.beta.rl import CheckpointDownloadResponse, CheckpointFile, CheckpointVariant
+```
+
+Methods:
+
+- <code title="get /rl/checkpoints/{id}/download">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">download</a>(id, \*\*<a href="src/together/types/beta/rl/checkpoint_download_params.py">params</a>) -> <a href="./src/together/types/beta/rl/checkpoint_download_response.py">CheckpointDownloadResponse</a></code>
+
+### ModelResources
+
+Types:
+
+```python
+from together.types.beta.rl import (
+    AdamwOptimizerConfig,
+    ModelResources,
+    ModelResourcesError,
+    ModelResourcesErrorCode,
+    ModelResourcesEstimateCostResponse,
+    ModelResourcesListResponse,
+    ModelResourcesStatus,
+    MuonOptimizerConfig,
+    MuonScalingStrategy,
+    OptimizerConfig,
+)
+```
+
+Methods:
+
+- <code title="post /rl/model-resources">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">create</a>(\*\*<a href="src/together/types/beta/rl/model_resource_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources.py">ModelResources</a></code>
+- <code title="get /rl/model-resources/{model_resources_id}">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">retrieve</a>(model_resources_id) -> <a href="./src/together/types/beta/rl/model_resources.py">ModelResources</a></code>
+- <code title="get /rl/model-resources">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">list</a>(\*\*<a href="src/together/types/beta/rl/model_resource_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources_list_response.py">ModelResourcesListResponse</a></code>
+- <code title="post /rl/model-resources/estimate-cost">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">estimate_cost</a>(\*\*<a href="src/together/types/beta/rl/model_resource_estimate_cost_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources_estimate_cost_response.py">ModelResourcesEstimateCostResponse</a></code>
+- <code title="post /rl/model-resources/{model_resources_id}/stop">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">stop</a>(model_resources_id, \*\*<a href="src/together/types/beta/rl/model_resource_stop_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources.py">ModelResources</a></code>
+
+### SupportedModels
+
+Types:
+
+```python
+from together.types.beta.rl import RlSupportedModel, RlSupportedModels
+```
+
+Methods:
+
+- <code title="get /rl/supported-models">client.beta.rl.supported_models.<a href="./src/together/resources/beta/rl/supported_models.py">get</a>() -> <a href="./src/together/types/beta/rl/rl_supported_models.py">RlSupportedModels</a></code>
+
 ## Jig
 
 Types:
