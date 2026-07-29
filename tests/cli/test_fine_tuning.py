@@ -396,6 +396,37 @@ class TestFineTuningEventsAndCheckpoints:
         assert json.loads(result.output)[0]["message"] == "training started"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_list_events_paginates_by_created_at(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        events = [
+            {
+                **_FT_EVENT,
+                "created_at": f"2024-01-01T00:00:{index:02d}Z",
+                "message": f"event {index}",
+            }
+            for index in range(21)
+        ]
+        respx_mock.get("/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": events}))
+
+        first_page = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
+        second_page = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "list-events",
+                "ft-1",
+                "--after",
+                events[19]["created_at"],
+                "--json",
+            ]
+        )
+
+        assert first_page.exit_code == 0
+        assert [event["message"] for event in json.loads(first_page.output)] == [
+            f"event {index}" for index in range(20)
+        ]
+        assert second_page.exit_code == 0
+        assert [event["message"] for event in json.loads(second_page.output)] == ["event 20"]
+
+    @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/ft-1/checkpoints").mock(
             return_value=httpx.Response(200, json={"data": [_FT_CHECKPOINT]})

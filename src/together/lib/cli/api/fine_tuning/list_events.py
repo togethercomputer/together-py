@@ -18,7 +18,7 @@ async def list_events(
     response = await config.client.fine_tuning.list_events(fine_tune_id)
     response.data = response.data or []
 
-    events, next_cursor = mock_pagination(response.data, cursor_field="id", cursor=after)
+    events, next_cursor = mock_pagination(response.data, cursor_field="created_at", cursor=after)
 
     if config.json:
         console.print_json(openapi_dumps(events).decode("utf-8"))
