@@ -14,5 +14,5 @@ class CispoLossInputsParam(TypedDict, total=False):
     advantages: Required[LossAdvantagesParam]
     """Per-token advantages for CISPO"""
 
-    generator_logprobs: Required[LossLogprobsParam]
-    """Generator log probabilities for CISPO"""
+    logprobs: Required[LossLogprobsParam]
+    """Log probabilities for CISPO"""

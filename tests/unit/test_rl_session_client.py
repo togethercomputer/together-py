@@ -13,10 +13,12 @@ from together.lib.beta.rl import (
     Sample,
     Logprob,
     Gradient,
+    AdamParams,
     ModelInput,
+    MuonParams,
     SampleResult,
+    WeightsParam,
     ForwardResult,
-    LossMaskParam,
     SessionClient,
     SamplingClient,
     TrainingClient,
@@ -25,8 +27,6 @@ from together.lib.beta.rl import (
     ModelInputChunk,
     OptimStepResult,
     EncodedTextChunk,
-    MuonOptimizerParams,
-    AdamwOptimizerParams,
     ForwardBackwardResult,
     LossTargetTokensParam,
     TrainingCheckpointResult,
@@ -223,7 +223,7 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
 
 
 def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
-    result = SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.5, -1.5])
+    result = SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[0.0, -1.5])
     _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[result]))
     client = FakeClient()
     trainer = _make_session(client)
@@ -231,22 +231,22 @@ def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPat
     model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))])
     logprobs = _sampling(trainer).compute_logprobs(model_input)
 
-    assert logprobs == [-0.5, -1.5]
+    assert logprobs == [0.0, -1.5]
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
     assert kwargs["model_inputs"] == [model_input]
     assert kwargs["num_samples"] == 1
-    assert kwargs["sampling_params"]["return_prompt_logprobs"] is True
+    assert kwargs["prompt_logprobs"] is True
     assert kwargs["sampling_params"]["max_tokens"] == 1
     trainer.stop()
 
 
 def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
     results = [
-        SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.5, -1.5]),
-        SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[-0.1, -0.2]),
+        SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[0.0, -1.5]),
+        SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[0.0, -0.2]),
     ]
     _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=results))
     client = FakeClient()
@@ -258,14 +258,14 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
     ]
     logprobs = _sampling(trainer).compute_logprobs_batch(model_inputs)
 
-    assert logprobs == [[-0.5, -1.5], [-0.1, -0.2]]
+    assert logprobs == [[0.0, -1.5], [0.0, -0.2]]
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
     assert kwargs["model_inputs"] == model_inputs
     assert kwargs["num_samples"] == 1
-    assert kwargs["sampling_params"]["return_prompt_logprobs"] is True
+    assert kwargs["prompt_logprobs"] is True
     assert kwargs["sampling_params"]["max_tokens"] == 1
     trainer.stop()
 
@@ -327,7 +327,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
             model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
             loss_inputs=LossInputsParam(
                 target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-                loss_mask=LossMaskParam(
+                weights=WeightsParam(
                     data=[1, 0, 1],
                     dtype="D_TYPE_INT64",
                 ),
@@ -355,14 +355,14 @@ def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
     trainer = _make_session(client)
 
     result = trainer.training.optim_step(
-        adamw_params=AdamwOptimizerParams(beta1=0.9, learning_rate=1e-4),
+        adam_params=AdamParams(beta1=0.9, learning_rate=1e-4, grad_clip_norm=1.0),
     )
 
     assert result.step == "1"
     assert client.beta.rl.operations.last_call is not None
     method, _, kwargs = client.beta.rl.operations.last_call
     assert method == "optim_step"
-    assert kwargs["adamw_params"] == {"beta1": 0.9, "learning_rate": 1e-4}
+    assert kwargs["adam_params"] == {"beta1": 0.9, "learning_rate": 1e-4, "grad_clip_norm": 1.0}
     trainer.stop()
 
 
@@ -372,27 +372,13 @@ def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> Non
     trainer = _make_session(client)
 
     trainer.training.optim_step(
-        muon_params=MuonOptimizerParams(learning_rate=0.02, momentum=0.95),
+        muon_params=MuonParams(learning_rate=0.02, momentum=0.95),
     )
 
     assert client.beta.rl.operations.last_call is not None
     method, _, kwargs = client.beta.rl.operations.last_call
     assert method == "optim_step"
     assert kwargs["muon_params"] == {"learning_rate": 0.02, "momentum": 0.95}
-    trainer.stop()
-
-
-def test_optim_step_forwards_max_grad_norm(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, OptimStepResult(step="1"))
-    client = FakeClient()
-    trainer = _make_session(client)
-
-    trainer.training.optim_step(max_grad_norm=1.0)
-
-    assert client.beta.rl.operations.last_call is not None
-    method, _, kwargs = client.beta.rl.operations.last_call
-    assert method == "optim_step"
-    assert kwargs["max_grad_norm"] == 1.0
     trainer.stop()
 
 
@@ -680,7 +666,7 @@ def _small_sample() -> Sample:
         ),
         loss_inputs=LossInputsParam(
             target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-            loss_mask=LossMaskParam(
+            weights=WeightsParam(
                 data=[1, 0, 1],
                 dtype="D_TYPE_INT64",
             ),
@@ -759,7 +745,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         ),
         loss_inputs=LossInputsParam(
             target_tokens=LossTargetTokensParam(data=long_tokens, dtype="D_TYPE_INT64"),
-            loss_mask=LossMaskParam(
+            weights=WeightsParam(
                 data=long_mask,
                 dtype="D_TYPE_INT64",
             ),
@@ -786,7 +772,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     assert len(kwargs["samples"]) == 1
     sent = kwargs["samples"][0]
     assert sent["model_input"]["chunks"][0]["encoded_text"]["tokens"] == long_tokens[:8]
-    assert sent["loss_inputs"]["loss_mask"]["data"] == long_mask[:8]
+    assert sent["loss_inputs"]["weights"]["data"] == long_mask[:8]
 
 
 def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -806,7 +792,7 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
                     ),
                     loss_inputs=LossInputsParam(
                         target_tokens=LossTargetTokensParam(data=list(range(50)), dtype="D_TYPE_INT64"),
-                        loss_mask=LossMaskParam(data=[1] * 50, dtype="D_TYPE_INT64"),
+                        weights=WeightsParam(data=[1] * 50, dtype="D_TYPE_INT64"),
                     ),
                     policy_segments=[],
                 )

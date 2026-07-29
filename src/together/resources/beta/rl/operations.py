@@ -18,16 +18,18 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.rl import (
+    AdamParams,
+    MuonParams,
     SamplingParams,
     WeightSyncType,
-    MuonOptimizerParams,
-    AdamwOptimizerParams,
     operation_sample_params,
     operation_forward_params,
     operation_optim_step_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
+from ....types.beta.rl.adam_params import AdamParams
+from ....types.beta.rl.muon_params import MuonParams
 from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.sample_operation import SampleOperation
 from ....types.beta.rl.weight_sync_type import WeightSyncType
@@ -35,8 +37,6 @@ from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.loss_config_param import LossConfigParam
 from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
-from ....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
-from ....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
 from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from ....types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
 from ....types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
@@ -282,9 +282,8 @@ class OperationsResource(SyncAPIResource):
         session_id: str,
         *,
         weight_sync_type: WeightSyncType,
-        adamw_params: AdamwOptimizerParams | Omit = omit,
-        max_grad_norm: float | Omit = omit,
-        muon_params: MuonOptimizerParams | Omit = omit,
+        adam_params: AdamParams | Omit = omit,
+        muon_params: MuonParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -302,13 +301,9 @@ class OperationsResource(SyncAPIResource):
           weight_sync_type: How the trainer's updated weights are propagated to the generator after this
               optimizer step. See `WeightSyncType` for accepted values.
 
-          adamw_params: Per-step AdamW optimizer overrides.
+          adam_params: Adam optimizer overrides for this step.
 
-          max_grad_norm: Maximum gradient norm for this step, gradients across all model parameters are
-              clipped to this value. Set to 0 to disable gradient clipping. When unset,
-              gradients are clipped to the session default (1.0).
-
-          muon_params: Per-step Muon optimizer overrides
+          muon_params: Muon optimizer overrides for this step.
 
           extra_headers: Send extra headers
 
@@ -325,8 +320,7 @@ class OperationsResource(SyncAPIResource):
             body=maybe_transform(
                 {
                     "weight_sync_type": weight_sync_type,
-                    "adamw_params": adamw_params,
-                    "max_grad_norm": max_grad_norm,
+                    "adam_params": adam_params,
                     "muon_params": muon_params,
                 },
                 operation_optim_step_params.OperationOptimStepParams,
@@ -651,7 +645,9 @@ class OperationsResource(SyncAPIResource):
         *,
         model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
+        prompt_logprobs: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
+        topk_prompt_logprobs: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -670,7 +666,14 @@ class OperationsResource(SyncAPIResource):
 
           num_samples: Number of completions to generate per prompt
 
+          prompt_logprobs: When true, also compute teacher-forced log-probabilities for the model input
+              tokens and return them in `SampleResult.prompt_logprobs`.
+
           sampling_params: Optional sampling parameters
+
+          topk_prompt_logprobs: Number of most likely alternative tokens to return per model input token in
+              `SampleResult.topk_prompt_logprobs`. 0 disables top-k prompt log-probabilities.
+              Maximum 20.
 
           extra_headers: Send extra headers
 
@@ -688,7 +691,9 @@ class OperationsResource(SyncAPIResource):
                 {
                     "model_inputs": model_inputs,
                     "num_samples": num_samples,
+                    "prompt_logprobs": prompt_logprobs,
                     "sampling_params": sampling_params,
+                    "topk_prompt_logprobs": topk_prompt_logprobs,
                 },
                 operation_sample_params.OperationSampleParams,
             ),
@@ -936,9 +941,8 @@ class AsyncOperationsResource(AsyncAPIResource):
         session_id: str,
         *,
         weight_sync_type: WeightSyncType,
-        adamw_params: AdamwOptimizerParams | Omit = omit,
-        max_grad_norm: float | Omit = omit,
-        muon_params: MuonOptimizerParams | Omit = omit,
+        adam_params: AdamParams | Omit = omit,
+        muon_params: MuonParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -956,13 +960,9 @@ class AsyncOperationsResource(AsyncAPIResource):
           weight_sync_type: How the trainer's updated weights are propagated to the generator after this
               optimizer step. See `WeightSyncType` for accepted values.
 
-          adamw_params: Per-step AdamW optimizer overrides.
+          adam_params: Adam optimizer overrides for this step.
 
-          max_grad_norm: Maximum gradient norm for this step, gradients across all model parameters are
-              clipped to this value. Set to 0 to disable gradient clipping. When unset,
-              gradients are clipped to the session default (1.0).
-
-          muon_params: Per-step Muon optimizer overrides
+          muon_params: Muon optimizer overrides for this step.
 
           extra_headers: Send extra headers
 
@@ -979,8 +979,7 @@ class AsyncOperationsResource(AsyncAPIResource):
             body=await async_maybe_transform(
                 {
                     "weight_sync_type": weight_sync_type,
-                    "adamw_params": adamw_params,
-                    "max_grad_norm": max_grad_norm,
+                    "adam_params": adam_params,
                     "muon_params": muon_params,
                 },
                 operation_optim_step_params.OperationOptimStepParams,
@@ -1305,7 +1304,9 @@ class AsyncOperationsResource(AsyncAPIResource):
         *,
         model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
+        prompt_logprobs: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
+        topk_prompt_logprobs: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1324,7 +1325,14 @@ class AsyncOperationsResource(AsyncAPIResource):
 
           num_samples: Number of completions to generate per prompt
 
+          prompt_logprobs: When true, also compute teacher-forced log-probabilities for the model input
+              tokens and return them in `SampleResult.prompt_logprobs`.
+
           sampling_params: Optional sampling parameters
+
+          topk_prompt_logprobs: Number of most likely alternative tokens to return per model input token in
+              `SampleResult.topk_prompt_logprobs`. 0 disables top-k prompt log-probabilities.
+              Maximum 20.
 
           extra_headers: Send extra headers
 
@@ -1342,7 +1350,9 @@ class AsyncOperationsResource(AsyncAPIResource):
                 {
                     "model_inputs": model_inputs,
                     "num_samples": num_samples,
+                    "prompt_logprobs": prompt_logprobs,
                     "sampling_params": sampling_params,
+                    "topk_prompt_logprobs": topk_prompt_logprobs,
                 },
                 operation_sample_params.OperationSampleParams,
             ),

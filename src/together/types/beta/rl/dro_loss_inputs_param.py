@@ -14,5 +14,5 @@ class DroLossInputsParam(TypedDict, total=False):
     advantages: Required[LossAdvantagesParam]
     """Per-token advantages for DRO"""
 
-    generator_logprobs: Required[LossLogprobsParam]
-    """Generator log probabilities for DRO"""
+    logprobs: Required[LossLogprobsParam]
+    """Log probabilities for DRO"""

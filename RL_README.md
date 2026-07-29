@@ -28,15 +28,15 @@ the full API reference remains in [api.md](api.md).
 import os
 from together.lib.beta.rl import (
     ModelResourcesClient,
-    AdamwOptimizerParams,
+    AdamParams,
     EncodedTextChunk,
     LossConfigParam,
     LossInputsParam,
-    LossMaskParam,
     LossTargetTokensParam,
     ModelInput,
     ModelInputChunk,
     Sample,
+    WeightsParam,
 )
 
 resources = ModelResourcesClient.create(
@@ -48,7 +48,7 @@ resources = ModelResourcesClient.create(
 session = resources.create_session()
 
 tokens = [101, 102, 103]  # your tokenizer output
-loss_mask = [0, 1, 1]
+weights = [0, 1, 1]
 target_tokens = [102, 103, 0]
 
 chunk = ModelInputChunk(
@@ -61,8 +61,8 @@ samples = [
     Sample(
         model_input=ModelInput(chunks=[chunk]),
         loss_inputs=LossInputsParam(
-            loss_mask=LossMaskParam(
-                data=loss_mask,
+            weights=WeightsParam(
+                data=weights,
                 dtype="D_TYPE_INT64",
             ),
             target_tokens=LossTargetTokensParam(
@@ -78,7 +78,7 @@ loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
 session.training.forward_backward(samples=samples, loss=loss)
 
 session.training.optim_step(
-    adamw_params=AdamwOptimizerParams(
+    adam_params=AdamParams(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
 )
@@ -90,7 +90,7 @@ session.training.optim_step(
 import os
 from together.lib.beta.rl import (
     ModelResourcesClient,
-    AdamwOptimizerParams,
+    AdamParams,
     EncodedTextChunk,
     GrpoLossInputsParam,
     GrpoLossParams,
@@ -98,13 +98,13 @@ from together.lib.beta.rl import (
     LossConfigParam,
     LossInputsParam,
     LossLogprobsParam,
-    LossMaskParam,
     LossTargetTokensParam,
     ModelInput,
     ModelInputChunk,
     PolicyVersionSegmentParam,
     Sample,
     SamplingParams,
+    WeightsParam,
 )
 
 resources = ModelResourcesClient.create(
@@ -138,7 +138,7 @@ for seq in sample_result.sequences:
     response_tokens = [int(t) for t in seq.tokens]
     response_logprobs = [float(v) for v in (seq.logprobs or [])]
     model_tokens = prompt_tokens + response_tokens
-    loss_mask = [0] * len(prompt_tokens) + [1] * len(response_tokens)
+    weights = [0] * len(prompt_tokens) + [1] * len(response_tokens)
     target_tokens = model_tokens[1:] + [0]
     advantages = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
     logprobs = [0.0] * len(prompt_tokens) + response_logprobs
@@ -151,8 +151,8 @@ for seq in sample_result.sequences:
     samples.append(Sample(
         model_input=ModelInput(chunks=[chunk]),
         loss_inputs=LossInputsParam(
-            loss_mask=LossMaskParam(
-                data=loss_mask,
+            weights=WeightsParam(
+                data=weights,
                 dtype="D_TYPE_INT64",
             ),
             target_tokens=LossTargetTokensParam(
@@ -164,7 +164,7 @@ for seq in sample_result.sequences:
                     data=advantages,
                     dtype="D_TYPE_FLOAT32",
                 ),
-                generator_logprobs=LossLogprobsParam(
+                logprobs=LossLogprobsParam(
                     data=logprobs,
                     dtype="D_TYPE_FLOAT32",
                 ),
@@ -183,7 +183,7 @@ loss = LossConfigParam(
 session.training.forward_backward(samples=samples, loss=loss)
 
 optim = session.training.optim_step(
-    adamw_params=AdamwOptimizerParams(
+    adam_params=AdamParams(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
 )
@@ -466,12 +466,16 @@ def sample(
     prompt: ModelInput,
     num_samples: int | None = None,
     sampling_params: SamplingParams | None = None,
+    *,
+    prompt_logprobs: bool | None = None,
 ) -> SampleResult
 
 def sample_batch(
     prompts: Iterable[ModelInput],
     num_samples: int | None = None,
     sampling_params: SamplingParams | None = None,
+    *,
+    prompt_logprobs: bool | None = None,
 ) -> list[SampleResult]
 ```
 
@@ -480,6 +484,7 @@ def sample_batch(
 | `prompt`          | `ModelInput`                  | _(required)_ | A tokenized prompt represented as a model input dict.      |
 | `num_samples`     | `int \| None`                 | `None`       | Number of completions to generate per prompt (server default: 1). |
 | `sampling_params` | `SamplingParams \| None`      | `None`       | Sampling configuration dict.                               |
+| `prompt_logprobs` | `bool \| None`                | `None`       | Also teacher-force score the prompt tokens and return them in `SampleResult.prompt_logprobs`. |
 
 Use `sample_batch` with `Iterable[ModelInput]` to sample multiple prompts in one operation; it returns one
 `SampleResult` per prompt, in input order.
@@ -501,7 +506,7 @@ ModelInput(chunks=[prompt_chunk])
 | ----------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
 | `sequences`       | `list[SampledSequence]`   | One entry per requested completion (see below).                                              |
 | `policy_segments` | `list[PolicyVersionSegment]` | Policy versions that produced these completions. Usually one segment `(version, start_token=0)`; longer generations may span several when the policy was updated mid-generation. |
-| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens; present only when `return_prompt_logprobs` was requested (see `session.sampling.compute_logprobs`). |
+| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens, one per prompt token (entry 0 is always `0`); present only when `prompt_logprobs=True` was requested (see `session.sampling.compute_logprobs`). |
 
 Each `SampledSequence` has:
 
@@ -529,8 +534,8 @@ def compute_logprobs(
 | --------- | ------------ | ------------ | ------------------------------------------- |
 | `prompt`  | `ModelInput` | _(required)_ | Tokenized sequence to score (see `sample`). |
 
-**Returns:** `list[float]` — per-token logprobs for the prompt, following the generator's
-prompt-logprob convention (`log P(tokenᵢ | token_<i)`, offset by one from the input tokens).
+**Returns:** `list[float]` — per-token logprobs for the prompt (`log P(tokenᵢ | token_<i)`), one entry
+per input token. Entry 0 is always `0`, since the first token has no conditioning context.
 Like `sample`, it requires a session with a generator replica.
 
 Use `session.sampling.compute_logprobs_batch(prompts: Iterable[ModelInput]) -> list[list[float]]` to score
@@ -569,28 +574,27 @@ Applies accumulated gradients and updates model parameters.
 def optim_step(
     *,
     weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
-    adamw_params: AdamwOptimizerParams | None = None,
-    muon_params: MuonOptimizerParams | None = None,
-    max_grad_norm: float | None = None,
+    adam_params: AdamParams | None = None,
+    muon_params: MuonParams | None = None,
 ) -> OptimStepResult
 ```
 
 | Parameter          | Type                          | Default                            | Description                                                                    |
 | ------------------ | ----------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
 | `weight_sync_type` | `WeightSyncType`              | `"WEIGHT_SYNC_TYPE_UNSPECIFIED"`   | How the trainer's updated weights are propagated to the generator after the step. |
-| `adamw_params`     | `AdamwOptimizerParams \| None`| `None`                             | Per-step AdamW optimizer overrides.                                            |
-| `muon_params`      | `MuonOptimizerParams \| None` | `None`                             | Per-step Muon optimizer overrides.                                             |
-| `max_grad_norm`    | `float \| None`               | `None`                             | Gradients across all model parameters are clipped to this value.               |
+| `adam_params`      | `AdamParams \| None`          | `None`                             | Per-step Adam optimizer overrides.                                             |
+| `muon_params`      | `MuonParams \| None`          | `None`                             | Per-step Muon optimizer overrides.                                             |
 
-`adamw_params` fields:
+`adam_params` fields:
 
-| Field           | Type    | Server default | Description                        |
-| --------------- | ------- | -------------- | ---------------------------------- |
-| `beta1`         | `float` | `0.9`          | First moment decay rate.           |
-| `beta2`         | `float` | `0.95`         | Second moment decay rate.          |
-| `eps`           | `float` | `1e-8`         | Epsilon for numerical stability.   |
-| `learning_rate` | `float` | —              | Learning rate for the AdamW-tuned parameters. |
-| `weight_decay`  | `float` | `0.1`          | Weight decay coefficient.          |
+| Field            | Type    | Server default | Description                        |
+| ---------------- | ------- | -------------- | ---------------------------------- |
+| `beta1`          | `float` | `0.9`          | First moment decay rate.           |
+| `beta2`          | `float` | `0.95`         | Second moment decay rate.          |
+| `eps`            | `float` | `1e-8`         | Epsilon for numerical stability.   |
+| `grad_clip_norm` | `float` | `1.0`          | Gradients across all model parameters are clipped to this value; `0` disables clipping. |
+| `learning_rate`  | `float` | —              | Learning rate for the Adam-tuned parameters. |
+| `weight_decay`   | `float` | `0.1`          | Weight decay coefficient.          |
 
 `muon_params` fields:
 
@@ -600,7 +604,8 @@ def optim_step(
 | `momentum`           | `float`                 | Momentum coefficient.                                            |
 | `newton_schulz_steps`| `int`                   | Number of Newton-Schulz iterations.                              |
 | `weight_decay`       | `float`                 | Weight decay coefficient.                                        |
-| `adamw`              | `AdamwOptimizerParams`  | AdamW overrides for the AdamW-tuned parameters in a Muon session. |
+| `grad_clip_norm`     | `float`                 | Gradients across all model parameters are clipped to this value; `0` disables clipping. |
+| `adam`               | `AdamParams`            | Adam overrides for the Adam-tuned parameters in a Muon session.  |
 
 **Returns:** `OptimStepResult`. The step counter is at `.step`.
 
@@ -791,7 +796,7 @@ chunk = ModelInputChunk(
 Sample(
     model_input=ModelInput(chunks=[chunk]),
     loss_inputs=LossInputsParam(
-        loss_mask=LossMaskParam(
+        weights=WeightsParam(
             data=[0, 1, 1],
             dtype="D_TYPE_INT64",
         ),
@@ -817,7 +822,7 @@ Sample(
 | Field                        | Type                                | When to use                                                                 |
 | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
 | `target_tokens`              | `LossTargetTokensParam`             | Always required. Next-token targets (shifted by 1).                         |
-| `loss_mask`                  | `LossMaskParam`                     | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. `1` for tokens that contribute to the loss, `0` otherwise. |
+| `weights`                    | `WeightsParam`                      | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. `1` for tokens that contribute to the loss, `0` otherwise. |
 | `grpo_inputs`                | `GrpoLossInputsParam`               | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
 | `ppo_inputs`                 | `PpoLossInputsParam`                | PPO loss only.                                                              |
 | `cispo_inputs`               | `CispoLossInputsParam`              | CISPO loss only.                                                            |
@@ -831,7 +836,7 @@ Sample(
 | Field                  | Type                    | Required      | Description                                                            |
 | ---------------------- | ----------------------- | ------------- | ---------------------------------------------------------------------- |
 | `advantages`           | `LossAdvantagesParam`   | Yes           | Per-token advantage values.                                            |
-| `generator_logprobs`   | `LossLogprobsParam`     | Yes           | Log probabilities from the generator model.                            |
+| `logprobs`             | `LossLogprobsParam`     | Yes           | Log probabilities from the generator model.                            |
 | `reference_logprobs`   | `LossLogprobsParam`     | If `beta > 0` | Log probabilities from the reference model for KL penalty computation. |
 
 Each tensor TypedDict has `data` (list of floats) and `dtype` (`"D_TYPE_FLOAT32"`).
@@ -852,7 +857,6 @@ SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 | `top_k`       | `int`   | `-1` (disabled) | Top-k sampling limit.                                  |
 | `stop`        | `list[str]` | --          | Stop sequences; generation stops when any is produced. |
 | `seed`        | `str \| int` | --             | Random seed for reproducibility.                       |
-| `return_prompt_logprobs` | `bool` | `False` | Also return teacher-forced logprobs for the prompt tokens in `SampleResult.prompt_logprobs`. See `session.sampling.compute_logprobs`. |
 
 ---
 
@@ -878,7 +882,7 @@ so loop code written against other RL SDKs works unchanged.
 loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
 ```
 
-Standard next-token prediction loss. Requires `loss_mask` and `target_tokens` in `loss_inputs`.
+Standard next-token prediction loss. Requires `weights` and `target_tokens` in `loss_inputs`.
 
 #### GRPO
 
@@ -910,7 +914,7 @@ Aggregation types:
 | `GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN`    | Mean over valid tokens.              |
 | `GRPO_LOSS_AGGREGATION_TYPE_SEQUENCE_MEAN` | Mean over sequences.                 |
 
-Requires `target_tokens` and `grpo_inputs` (with `advantages`, `generator_logprobs`, and optionally `reference_logprobs`) in `loss_inputs`; `loss_mask` is optional.
+Requires `target_tokens` and `grpo_inputs` (with `advantages`, `logprobs`, and optionally `reference_logprobs`) in `loss_inputs`; `weights` is optional.
 
 ---
 

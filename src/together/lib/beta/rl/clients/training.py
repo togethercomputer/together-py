@@ -7,12 +7,12 @@ from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, Sess
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .....types.beta.rl.loss_type import LossType
+from .....types.beta.rl.adam_params import AdamParams
+from .....types.beta.rl.muon_params import MuonParams
 from .....types.beta.rl.forward_result import ForwardResult
 from .....types.beta.rl.weight_sync_type import WeightSyncType
 from .....types.beta.rl.loss_config_param import LossConfigParam
 from .....types.beta.rl.optim_step_result import OptimStepResult
-from .....types.beta.rl.muon_optimizer_params import MuonOptimizerParams
-from .....types.beta.rl.adamw_optimizer_params import AdamwOptimizerParams
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from .....types.beta.rl.operation_forward_params import OperationForwardParams
 from .....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
@@ -181,17 +181,15 @@ class TrainingClient:
         self,
         *,
         weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
-        adamw_params: AdamwOptimizerParams | None = None,
-        max_grad_norm: float | None = None,
-        muon_params: MuonOptimizerParams | None = None,
+        adam_params: AdamParams | None = None,
+        muon_params: MuonParams | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> OptimStepResult:
         return self._session.run(
             self.optim_step_async(
                 weight_sync_type=weight_sync_type,
-                adamw_params=adamw_params,
-                max_grad_norm=max_grad_norm,
+                adam_params=adam_params,
                 muon_params=muon_params,
                 timeout=timeout,
                 interval=interval,
@@ -202,17 +200,15 @@ class TrainingClient:
         self,
         *,
         weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
-        adamw_params: AdamwOptimizerParams | None = None,
-        max_grad_norm: float | None = None,
-        muon_params: MuonOptimizerParams | None = None,
+        adam_params: AdamParams | None = None,
+        muon_params: MuonParams | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> OptimStepResult:
         operation = await self._session._client.beta.rl.operations.optim_step(
             self._session._session_id,
             weight_sync_type=weight_sync_type,
-            adamw_params=adamw_params if adamw_params is not None else omit,
-            max_grad_norm=max_grad_norm if max_grad_norm is not None else omit,
+            adam_params=adam_params if adam_params is not None else omit,
             muon_params=muon_params if muon_params is not None else omit,
         )
         result = await self._session._submit_and_wait(

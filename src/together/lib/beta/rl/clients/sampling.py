@@ -39,6 +39,7 @@ class SamplingClient:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
@@ -47,6 +48,7 @@ class SamplingClient:
                 prompt,
                 num_samples=num_samples,
                 sampling_params=sampling_params,
+                prompt_logprobs=prompt_logprobs,
                 timeout=timeout,
                 interval=interval,
             )
@@ -58,6 +60,7 @@ class SamplingClient:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
@@ -65,6 +68,7 @@ class SamplingClient:
             [prompt],
             num_samples=num_samples,
             sampling_params=sampling_params,
+            prompt_logprobs=prompt_logprobs,
             timeout=timeout,
             interval=interval,
         )
@@ -76,6 +80,7 @@ class SamplingClient:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
@@ -84,6 +89,7 @@ class SamplingClient:
                 prompts,
                 num_samples=num_samples,
                 sampling_params=sampling_params,
+                prompt_logprobs=prompt_logprobs,
                 timeout=timeout,
                 interval=interval,
             )
@@ -95,6 +101,7 @@ class SamplingClient:
         num_samples: int | None = None,
         sampling_params: SamplingParams | None = None,
         *,
+        prompt_logprobs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
@@ -104,6 +111,8 @@ class SamplingClient:
             body["sampling_params"] = sampling_params
         if num_samples is not None:
             body["num_samples"] = num_samples
+        if prompt_logprobs is not None:
+            body["prompt_logprobs"] = prompt_logprobs
 
         body, large_payload_id = await prepare_operation_body(
             self._session._client,
@@ -117,8 +126,9 @@ class SamplingClient:
         operation = await self._session._client.beta.rl.operations.sample(
             self._session._session_id,
             model_inputs=model_inputs,
-            num_samples=num_samples if num_samples is not None else omit,
-            sampling_params=sampling_params if sampling_params is not None else omit,
+            num_samples=body.get("num_samples", omit),
+            sampling_params=body.get("sampling_params", omit),
+            prompt_logprobs=body.get("prompt_logprobs", omit),
             extra_body=extra_body,
         )
         result = await self._session._submit_and_wait(
@@ -175,7 +185,8 @@ class SamplingClient:
         results = await self.sample_batch_async(
             prompts,
             num_samples=1,
-            sampling_params=SamplingParams(return_prompt_logprobs=True, max_tokens=1),
+            sampling_params=SamplingParams(max_tokens=1),
+            prompt_logprobs=True,
             timeout=timeout,
             interval=interval,
         )
