@@ -14,8 +14,8 @@ class GrpoLossInputsParam(TypedDict, total=False):
     advantages: Required[LossAdvantagesParam]
     """Per-token advantages for GRPO"""
 
-    generator_logprobs: Required[LossLogprobsParam]
-    """Generator log probabilities for GRPO"""
+    logprobs: Required[LossLogprobsParam]
+    """Log probabilities for GRPO"""
 
     reference_logprobs: LossLogprobsParam
     """Reference model log probabilities (required if beta > 0)"""

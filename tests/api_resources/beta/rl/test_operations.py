@@ -333,7 +333,7 @@ class TestOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
@@ -343,7 +343,7 @@ class TestOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
@@ -353,7 +353,7 @@ class TestOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
@@ -367,24 +367,24 @@ class TestOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                        },
-                        "loss_mask": {
-                            "data": [0, 0, 1],
-                            "dtype": "D_TYPE_INT64",
                         },
                         "ppo_inputs": {
                             "advantages": {
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
+                        },
+                        "weights": {
+                            "data": [0, 0, 1],
+                            "dtype": "D_TYPE_INT64",
                         },
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
@@ -482,22 +482,24 @@ class TestOperations:
         operation = client.beta.rl.operations.optim_step(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
-            adamw_params={
+            adam_params={
                 "beta1": 0.9,
                 "beta2": 0.95,
                 "eps": 1e-8,
+                "grad_clip_norm": 10,
                 "learning_rate": 0.0001,
                 "weight_decay": 0.1,
             },
-            max_grad_norm=10,
             muon_params={
-                "adamw": {
+                "adam": {
                     "beta1": 0.9,
                     "beta2": 0.95,
                     "eps": 1e-8,
+                    "grad_clip_norm": 10,
                     "learning_rate": 0.0001,
                     "weight_decay": 0.1,
                 },
+                "grad_clip_norm": 10,
                 "learning_rate": 0.02,
                 "momentum": 0.95,
                 "newton_schulz_steps": 5,
@@ -890,15 +892,16 @@ class TestOperations:
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
+            prompt_logprobs=False,
             sampling_params={
                 "max_tokens": 512,
-                "return_prompt_logprobs": False,
                 "seed": "42",
                 "stop": ["\n", "END"],
                 "temperature": 1,
                 "top_k": -1,
                 "top_p": 1,
             },
+            topk_prompt_logprobs=0,
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -1250,7 +1253,7 @@ class TestAsyncOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
@@ -1260,7 +1263,7 @@ class TestAsyncOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
@@ -1270,7 +1273,7 @@ class TestAsyncOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
@@ -1284,24 +1287,24 @@ class TestAsyncOperations:
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                        },
-                        "loss_mask": {
-                            "data": [0, 0, 1],
-                            "dtype": "D_TYPE_INT64",
                         },
                         "ppo_inputs": {
                             "advantages": {
                                 "data": [0.5, 0.5],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
-                            "generator_logprobs": {
+                            "logprobs": {
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
+                        },
+                        "weights": {
+                            "data": [0, 0, 1],
+                            "dtype": "D_TYPE_INT64",
                         },
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
@@ -1399,22 +1402,24 @@ class TestAsyncOperations:
         operation = await async_client.beta.rl.operations.optim_step(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
-            adamw_params={
+            adam_params={
                 "beta1": 0.9,
                 "beta2": 0.95,
                 "eps": 1e-8,
+                "grad_clip_norm": 10,
                 "learning_rate": 0.0001,
                 "weight_decay": 0.1,
             },
-            max_grad_norm=10,
             muon_params={
-                "adamw": {
+                "adam": {
                     "beta1": 0.9,
                     "beta2": 0.95,
                     "eps": 1e-8,
+                    "grad_clip_norm": 10,
                     "learning_rate": 0.0001,
                     "weight_decay": 0.1,
                 },
+                "grad_clip_norm": 10,
                 "learning_rate": 0.02,
                 "momentum": 0.95,
                 "newton_schulz_steps": 5,
@@ -1807,15 +1812,16 @@ class TestAsyncOperations:
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
+            prompt_logprobs=False,
             sampling_params={
                 "max_tokens": 512,
-                "return_prompt_logprobs": False,
                 "seed": "42",
                 "stop": ["\n", "END"],
                 "temperature": 1,
                 "top_k": -1,
                 "top_p": 1,
             },
+            topk_prompt_logprobs=0,
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 

@@ -14,5 +14,5 @@ class PpoLossInputsParam(TypedDict, total=False):
     advantages: Required[LossAdvantagesParam]
     """Per-token advantages for PPO"""
 
-    generator_logprobs: Required[LossLogprobsParam]
-    """Generator log probabilities for PPO"""
+    logprobs: Required[LossLogprobsParam]
+    """Log probabilities for PPO"""

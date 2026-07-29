@@ -8,14 +8,12 @@ from typing_extensions import Required, TypedDict
 from .d_type import DType
 from ...._types import SequenceNotStr
 
-__all__ = ["LossMaskParam"]
+__all__ = ["WeightsParam"]
 
 
-class LossMaskParam(TypedDict, total=False):
-    """Per-token loss mask (1=compute loss, 0=ignore)"""
-
+class WeightsParam(TypedDict, total=False):
     data: Required[SequenceNotStr[Union[str, int]]]
-    """Integer array of per-token mask values (0s and 1s)"""
+    """Per-token weights: 1 to include the token in the loss, 0 to ignore it."""
 
     dtype: DType
     """Data type of the integer array (must be D_TYPE_INT64)"""

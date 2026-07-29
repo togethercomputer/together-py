@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from .d_type import DType as DType
 from .loss_type import LossType as LossType
+from .adam_params import AdamParams as AdamParams
 from .lora_config import LoraConfig as LoraConfig
+from .muon_params import MuonParams as MuonParams
 from .stop_reason import StopReason as StopReason
 from .sample_result import SampleResult as SampleResult
+from .weights_param import WeightsParam as WeightsParam
 from .forward_result import ForwardResult as ForwardResult
 from .checkpoint_file import CheckpointFile as CheckpointFile
 from .dro_loss_params import DroLossParams as DroLossParams
-from .loss_mask_param import LossMaskParam as LossMaskParam
 from .model_resources import ModelResources as ModelResources
 from .ppo_loss_params import PpoLossParams as PpoLossParams
 from .sampling_params import SamplingParams as SamplingParams
@@ -30,6 +32,7 @@ from .optim_step_result import OptimStepResult as OptimStepResult
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
 from .rl_supported_model import RlSupportedModel as RlSupportedModel
 from .loss_logprobs_param import LossLogprobsParam as LossLogprobsParam
+from .prompt_top_logprobs import PromptTopLogprobs as PromptTopLogprobs
 from .rl_supported_models import RlSupportedModels as RlSupportedModels
 from .session_list_params import SessionListParams as SessionListParams
 from .training_checkpoint import TrainingCheckpoint as TrainingCheckpoint
@@ -40,11 +43,9 @@ from .dro_loss_inputs_param import DroLossInputsParam as DroLossInputsParam
 from .loss_advantages_param import LossAdvantagesParam as LossAdvantagesParam
 from .model_resources_error import ModelResourcesError as ModelResourcesError
 from .muon_optimizer_config import MuonOptimizerConfig as MuonOptimizerConfig
-from .muon_optimizer_params import MuonOptimizerParams as MuonOptimizerParams
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy
 from .ppo_loss_inputs_param import PpoLossInputsParam as PpoLossInputsParam
 from .session_create_params import SessionCreateParams as SessionCreateParams
-from .adamw_optimizer_params import AdamwOptimizerParams as AdamwOptimizerParams
 from .grpo_loss_inputs_param import GrpoLossInputsParam as GrpoLossInputsParam
 from .model_resources_status import ModelResourcesStatus as ModelResourcesStatus
 from .optimizer_config_param import OptimizerConfigParam as OptimizerConfigParam
@@ -52,8 +53,10 @@ from .policy_version_segment import PolicyVersionSegment as PolicyVersionSegment
 from .training_session_error import TrainingSessionError as TrainingSessionError
 from .cispo_loss_inputs_param import CispoLossInputsParam as CispoLossInputsParam
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
+from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
 from .training_session_status import TrainingSessionStatus as TrainingSessionStatus
+from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
 from .loss_target_tokens_param import LossTargetTokensParam as LossTargetTokensParam
 from .operation_forward_params import OperationForwardParams as OperationForwardParams
 from .training_operation_error import TrainingOperationError as TrainingOperationError

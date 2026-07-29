@@ -16,5 +16,5 @@ class ImportanceSamplingLossInputsParam(TypedDict, total=False):
     advantages: Required[LossAdvantagesParam]
     """Per-token advantages for importance sampling"""
 
-    generator_logprobs: Required[LossLogprobsParam]
-    """Generator log probabilities for importance sampling"""
+    logprobs: Required[LossLogprobsParam]
+    """Log probabilities for importance sampling"""

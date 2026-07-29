@@ -18,5 +18,18 @@ class OperationSampleParams(TypedDict, total=False):
     num_samples: int
     """Number of completions to generate per prompt"""
 
+    prompt_logprobs: bool
+    """
+    When true, also compute teacher-forced log-probabilities for the model input
+    tokens and return them in `SampleResult.prompt_logprobs`.
+    """
+
     sampling_params: SamplingParams
     """Optional sampling parameters"""
+
+    topk_prompt_logprobs: int
+    """
+    Number of most likely alternative tokens to return per model input token in
+    `SampleResult.topk_prompt_logprobs`. 0 disables top-k prompt log-probabilities.
+    Maximum 20.
+    """
