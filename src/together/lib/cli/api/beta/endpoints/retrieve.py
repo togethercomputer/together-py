@@ -18,6 +18,7 @@ from together.types.beta.endpoints import AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.beta.endpoints._utils._format import format_endpoint_type
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
@@ -180,6 +181,7 @@ def render_header(endpoint: Endpoint, ab_experiments: list[AbExperiment], shadow
     header_table.add_column("Value", justify="left", ratio=4)
     header_table.add_row("  Endpoint string", endpoint.name)
     header_table.add_row("  Endpoint ID", endpoint.id)
+    header_table.add_row("  Endpoint type", format_endpoint_type(endpoint.endpoint_type))
     header_table.add_row("  Created at", format_datetime(endpoint.created_at))
     if endpoint.updated_at:
         header_table.add_row("  Updated at", format_datetime(endpoint.updated_at))

@@ -18,6 +18,9 @@ def _endpoint_body(**overrides: Any) -> dict[str, Any]:
         "id": "ep_1",
         "projectId": "proj",
         "name": "my-project/my-endpoint",
+        "endpointType": "ENDPOINT_TYPE_DEDICATED",
+        "etag": "etag-1",
+        "visibility": "VISIBILITY_PRIVATE",
         "trafficSplit": [{"deploymentId": "dep_control", "weight": 1.0}],
         "deployments": [
             {
@@ -34,6 +37,7 @@ def _endpoint_body(**overrides: Any) -> dict[str, Any]:
             }
         ],
         "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
     }
     body.update(overrides)
     return body
@@ -139,6 +143,28 @@ class TestBetaEndpointsRetrieve:
         payload = json.loads(result.output)
         assert payload["id"] == "ep_1"
         assert payload["name"] == "my-project/my-endpoint"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_endpoint_displays_reserved_type(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_endpoint_body(
+                    endpointType="ENDPOINT_TYPE_RESERVED",
+                    trafficSplit=[],
+                    deployments=[],
+                ),
+            )
+        )
+        _mock_endpoint_get_side_resources(respx_mock)
+
+        result = cli_runner.invoke(["beta", "endpoints", "get", "ep_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Endpoint type" in result.output
+        assert "Reserved" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

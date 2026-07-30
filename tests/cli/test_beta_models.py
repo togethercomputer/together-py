@@ -221,8 +221,21 @@ class TestBetaModelsList:
 
 
 class TestBetaModelsPublic:
+    @pytest.mark.parametrize(
+        ("product", "expected_product"),
+        [
+            ("dedicated", "PRODUCT_DEDICATED"),
+            ("reserved", "PRODUCT_RESERVED"),
+        ],
+    )
     @pytest.mark.respx(base_url=base_url)
-    def test_public_maps_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_public_maps_filters(
+        self,
+        product: str,
+        expected_product: str,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
         route = respx_mock.get("/supported-models").mock(
             return_value=httpx.Response(
                 200,
@@ -246,7 +259,7 @@ class TestBetaModelsPublic:
                 "--modality",
                 "text",
                 "--product",
-                "dedicated",
+                product,
                 "--json",
             ]
         )
@@ -257,7 +270,7 @@ class TestBetaModelsPublic:
         assert "limit=5" in url
         assert "after=tok" in url
         assert "modality=MODALITY_TEXT" in url
-        assert "product=PRODUCT_DEDICATED" in url
+        assert f"product={expected_product}" in url
         assert json.loads(result.output)["next_cursor"] == "c1"
 
 

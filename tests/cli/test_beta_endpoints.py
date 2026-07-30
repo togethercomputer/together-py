@@ -367,6 +367,24 @@ class TestBetaEndpointsList:
         assert result.exit_code == 0, result.output
 
     @pytest.mark.respx(base_url=base_url)
+    def test_list_displays_reserved_endpoint_type(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_endpoint_body(endpointType="ENDPOINT_TYPE_RESERVED")],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "ls", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Reserved" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_list_org_scoped(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         route = respx_mock.get("/organizations/org-1/endpoints").mock(

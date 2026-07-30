@@ -15,6 +15,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
+from together.lib.cli.api.beta.endpoints._utils._format import format_endpoint_type
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
@@ -76,7 +77,7 @@ async def list(
             ),
         )
     else:
-        message = """No dedicated inference endpoints found. To create one, run:
+        message = """No beta endpoints found. To create a dedicated endpoint, run:
   [dim]-[/dim] [primary]tg beta endpoints deploy <MODEL_ID> --endpoint <ENDPOINT_NAME>[/primary]"""
         response = await show_loading_status(
             "Loading beta endpoints...",
@@ -104,6 +105,7 @@ def print_endpoints_table(
     table = ListTable(empty_message=empty_message, show_lines=False)
     table.add_column("ID", width=24)
     table.add_primary_column("Name", ratio=2)
+    table.add_column("Type")
     table.add_column("Model", ratio=2)
     table.add_column("GPU")
     table.add_column("Replicas")
@@ -164,12 +166,13 @@ def _endpoint_row_values(
     name: str,
     hide_details: bool = False,
     show_id: bool = False,
-) -> tuple[str, str, str, str, str]:
+) -> tuple[str, str, str, str, str, str]:
     url = f"https://api.together.ai/endpoints/{endpoint.id}"
     id_cell = f"[link={url}]{endpoint.id}[/link]" if show_id else ""
+    type_cell = format_endpoint_type(endpoint.endpoint_type) if show_id else ""
 
     if hide_details:
-        return id_cell, name, "", "", ""
+        return id_cell, name, type_cell, "", "", ""
     model_name = ""
     gpu = ""
     replicas = ""
@@ -177,7 +180,7 @@ def _endpoint_row_values(
         model_name = _truncate(model_names.get(deployment.api_model_id, deployment.api_model_id))
         gpu = _prettify_hardware(deployment.hardware)
         replicas = _format_replicas(deployment)
-    return id_cell, name, model_name, gpu, replicas
+    return id_cell, name, type_cell, model_name, gpu, replicas
 
 
 def _truncate(text: str, max_len: int = 30) -> str:

@@ -15,7 +15,7 @@ from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
 
 ModalityFilter = Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "MODALITY_VIDEO"]
-ProductFilter = Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING"]
+ProductFilter = Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING", "PRODUCT_RESERVED"]
 
 
 async def public(
@@ -27,7 +27,7 @@ async def public(
         Parameter(help="Filter by input modality"),
     ] = None,
     product: Annotated[
-        Optional[Literal["serverless", "dedicated", "fine-tuning"]],
+        Optional[Literal["serverless", "dedicated", "fine-tuning", "reserved"]],
         Parameter(help="Filter by product surface"),
     ] = None,
     *,
