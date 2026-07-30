@@ -30,8 +30,10 @@ class Endpoint(BaseModel):
     through the endpoint's deployment API for full details.
     """
 
-    endpoint_type: Literal["ENDPOINT_TYPE_DEDICATED", "ENDPOINT_TYPE_SERVERLESS"] = FieldInfo(alias="endpointType")
-    """Serving class of the endpoint."""
+    endpoint_type: Literal["ENDPOINT_TYPE_DEDICATED", "ENDPOINT_TYPE_SERVERLESS", "ENDPOINT_TYPE_RESERVED"] = FieldInfo(
+        alias="endpointType"
+    )
+    """Serving class of the endpoint. Reserved endpoints use reserved capacity."""
 
     etag: str
     """

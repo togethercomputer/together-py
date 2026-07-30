@@ -69,7 +69,7 @@ class SupportedModel(BaseModel):
     )
     """Output modalities produced by the model."""
 
-    products: List[Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING"]]
+    products: List[Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING", "PRODUCT_RESERVED"]]
     """Product surfaces where the model is offered."""
 
     publisher: str
