@@ -14,11 +14,11 @@ from respx.models import Call
 from together import AsyncTogether
 from together.lib.beta.rl import (
     Sample,
-    Trainer,
     AdamParams,
     ModelInput,
     MuonParams,
     WeightsParam,
+    SessionClient,
     GrpoLossParams,
     SamplingParams,
     LossConfigParam,
@@ -54,7 +54,8 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
+        sampling_client = trainer.sampling
         model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
         sampling = SamplingParams(
             max_tokens=16,
@@ -65,7 +66,7 @@ class TestRLRequestBody:
             seed="123",
         )
 
-        result = await trainer.sample_batch_async(
+        result = await sampling_client.sample_batch_async(
             prompts=[model_input],
             num_samples=2,
             sampling_params=sampling,
@@ -98,7 +99,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
         samples = [
             Sample(
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
@@ -133,7 +134,7 @@ class TestRLRequestBody:
             ),
         )
 
-        await trainer.forward_backward_async(samples=samples, loss=loss)
+        await trainer.training.forward_backward_async(samples=samples, loss=loss)
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
@@ -160,7 +161,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
 
         adam = AdamParams(
             beta1=0.9,
@@ -170,7 +171,7 @@ class TestRLRequestBody:
             learning_rate=1e-4,
             weight_decay=0.1,
         )
-        await trainer.optim_step_async(adam_params=adam)
+        await trainer.training.optim_step_async(adam_params=adam)
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
@@ -197,7 +198,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
         muon = MuonParams(
             learning_rate=0.02,
             momentum=0.95,
@@ -206,7 +207,7 @@ class TestRLRequestBody:
             grad_clip_norm=1.0,
             adam=AdamParams(beta1=0.9, learning_rate=1e-4),
         )
-        await trainer.optim_step_async(
+        await trainer.training.optim_step_async(
             muon_params=muon,
         )
 
@@ -235,7 +236,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
         await trainer.create_training_checkpoint_async()
 
         call = cast(Any, respx_mock.calls[0])
@@ -259,7 +260,7 @@ class TestRLRequestBody:
             )
         )
 
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
         await trainer.create_inference_checkpoint_async()
 
         call = cast(Any, respx_mock.calls[0])
@@ -274,6 +275,22 @@ class TestRLRequestBody:
         respx_mock: MockRouter,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
+        respx_mock.get("/rl/model-resources/res-1").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "res-1",
+                    "base_model": "Qwen/Qwen3-0.6B",
+                    "compute_config": {"num_generator_replicas": 1},
+                    "created_at": "2026-01-01T00:00:00Z",
+                    "created_by": "user-1",
+                    "lora_enabled": True,
+                    "optimizer_config": {},
+                    "status": "MODEL_RESOURCES_STATUS_READY",
+                    "updated_at": "2026-01-01T00:00:00Z",
+                },
+            )
+        )
         respx_mock.post("/rl/training-sessions").mock(
             return_value=httpx.Response(
                 200,
@@ -290,11 +307,11 @@ class TestRLRequestBody:
         def fake_together(**_kw: Any) -> AsyncTogether:
             return async_client
 
-        from together.lib.beta.rl import trainer as rl_trainer_module
+        from together.lib.beta.rl.clients import session as session_client_module
 
-        monkeypatch.setattr(rl_trainer_module, "AsyncTogether", fake_together)
+        monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
 
-        await Trainer.create_async(
+        await SessionClient.create_async(
             model_resources_id="res-1",
             timeout=1.0,
             interval=0.0,
@@ -315,7 +332,7 @@ class TestRLRequestBody:
                 )
             )
         )
-        trainer = Trainer("sess", _client=cast(Any, fake_client))
+        trainer = SessionClient("sess", _client=cast(Any, fake_client))
 
         paths = await trainer.download_checkpoint_async("ckpt-1", output_dir=tmp_path)
 
@@ -337,7 +354,7 @@ class TestRLRequestBody:
                 ]
             )
         )
-        trainer = Trainer("sess", _client=async_client)
+        trainer = SessionClient("sess", _client=async_client)
 
         paths = await trainer.download_checkpoint_async("ckpt-1", output_dir=tmp_path)
 

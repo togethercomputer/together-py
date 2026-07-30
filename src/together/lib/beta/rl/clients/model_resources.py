@@ -9,16 +9,16 @@ from collections.abc import Coroutine
 
 import httpx
 
-from .trainer import (
+from .session import (
     DEFAULT_SESSION_CREATION_TIMEOUT,
     DEFAULT_SESSION_CREATION_INTERVAL,
-    Trainer,
+    SessionClient,
 )
-from ...._types import omit
-from ...._client import AsyncTogether
-from ....types.beta.rl.model_resources import ModelResources as ModelResourcesModel
-from ....types.beta.rl.lora_config_param import LoraConfigParam
-from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam
+from ....._types import omit
+from ....._client import AsyncTogether
+from .....types.beta.rl.model_resources import ModelResources
+from .....types.beta.rl.lora_config_param import LoraConfigParam
+from .....types.beta.rl.optimizer_config_param import OptimizerConfigParam
 
 _T = TypeVar("_T")
 
@@ -34,16 +34,20 @@ _PROVISIONING_TIMEOUT = httpx.Timeout(timeout=300, connect=300)
 
 
 @dataclass
-class ModelResources:
+class ModelResourcesClient:
     _model_resources_id: str
     _client: AsyncTogether
-    _event_loop: asyncio.AbstractEventLoop | None = field(init=False, default=None)
+
+    _event_loop: asyncio.AbstractEventLoop | None = field(
+        init=False,
+        default=None,
+    )
 
     @property
     def model_resources_id(self) -> str:
         return self._model_resources_id
 
-    def __enter__(self) -> ModelResources:
+    def __enter__(self) -> ModelResourcesClient:
         return self
 
     def __exit__(
@@ -54,7 +58,7 @@ class ModelResources:
     ) -> None:
         self.stop()
 
-    async def __aenter__(self) -> ModelResources:
+    async def __aenter__(self) -> ModelResourcesClient:
         return self
 
     async def __aexit__(
@@ -76,7 +80,7 @@ class ModelResources:
             self._event_loop = None
 
     @classmethod
-    def _run_blocking(cls, coro: Coroutine[Any, Any, ModelResources]) -> ModelResources:
+    def _run_blocking(cls, coro: Coroutine[Any, Any, ModelResourcesClient]) -> ModelResourcesClient:
         """Drive an async constructor to completion on a fresh loop, then adopt that
         loop so subsequent blocking calls on the handle reuse it."""
         event_loop = asyncio.new_event_loop()
@@ -108,7 +112,7 @@ class ModelResources:
         optimizer_config: OptimizerConfigParam | None = None,
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
-    ) -> ModelResources:
+    ) -> ModelResourcesClient:
         return cls._run_blocking(
             cls.create_async(
                 api_key=api_key,
@@ -129,7 +133,7 @@ class ModelResources:
         model_resources_id: str,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-    ) -> ModelResources:
+    ) -> ModelResourcesClient:
         """Bind a fully-capable handle to an existing resource.
 
         Unlike :meth:`create`, this provisions no GPUs and does not wait for
@@ -151,7 +155,7 @@ class ModelResources:
         model_resources_id: str,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
-    ) -> ModelResources:
+    ) -> ModelResourcesClient:
         client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
         try:
             await client.beta.rl.model_resources.retrieve(model_resources_id)
@@ -172,7 +176,7 @@ class ModelResources:
         optimizer_config: OptimizerConfigParam | None = None,
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
-    ) -> ModelResources:
+    ) -> ModelResourcesClient:
         client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
         model_resources_id: str | None = None
         try:
@@ -216,39 +220,43 @@ class ModelResources:
                 raise TimeoutError(msg)
             await asyncio.sleep(interval)
 
-    def retrieve(self) -> ModelResourcesModel:
+    def retrieve(self) -> ModelResources:
         return self.run(self.retrieve_async())
 
-    async def retrieve_async(self) -> ModelResourcesModel:
+    async def retrieve_async(self) -> ModelResources:
         return await self._client.beta.rl.model_resources.retrieve(self._model_resources_id)
 
-    def attach_trainer(
+    def create_session(
         self,
         *,
+        resume_from_checkpoint_id: str | None = None,
         lora_config: LoraConfigParam | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
-    ) -> Trainer:
-        return Trainer.create(
+    ) -> SessionClient:
+        return SessionClient.create(
             api_key=self._client.api_key,
             base_url=self._client.base_url,
             model_resources_id=self._model_resources_id,
+            resume_from_checkpoint_id=resume_from_checkpoint_id,
             lora_config=lora_config,
             timeout=timeout,
             interval=interval,
         )
 
-    async def attach_trainer_async(
+    async def create_session_async(
         self,
         *,
+        resume_from_checkpoint_id: str | None = None,
         lora_config: LoraConfigParam | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
-    ) -> Trainer:
-        return await Trainer.create_async(
+    ) -> SessionClient:
+        return await SessionClient.create_async(
             api_key=self._client.api_key,
             base_url=self._client.base_url,
             model_resources_id=self._model_resources_id,
+            resume_from_checkpoint_id=resume_from_checkpoint_id,
             lora_config=lora_config,
             timeout=timeout,
             interval=interval,

@@ -1,6 +1,8 @@
-from .rl import Trainer, ModelResources
+from .rl import SessionClient, SamplingClient, TrainingClient, ModelResourcesClient
 
 __all__ = [
-    "Trainer",
-    "ModelResources",
+    "ModelResourcesClient",
+    "SessionClient",
+    "TrainingClient",
+    "SamplingClient",
 ]
