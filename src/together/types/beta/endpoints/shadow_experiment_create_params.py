@@ -48,7 +48,8 @@ class Target(TypedDict, total=False):
     target_deployment_id: Required[Annotated[str, PropertyInfo(alias="targetDeploymentId")]]
     """Deployment under the parent endpoint that receives mirrored traffic.
 
-    Exclude it from the endpoint's live traffic split.
+    It must not be a live traffic-split member or the source or target of an active
+    rollout; traffic-split weight 0 warm-up targets are allowed.
     """
 
     description: str

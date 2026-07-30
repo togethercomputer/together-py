@@ -77,8 +77,9 @@ class TargetsResource(SyncAPIResource):
           name: Human-readable target name, unique within the shadow experiment. At most 256
               characters.
 
-          target_deployment_id: Deployment under the parent endpoint that receives mirrored traffic. Exclude it
-              from the endpoint's live traffic split.
+          target_deployment_id: Deployment under the parent endpoint that receives mirrored traffic. It must not
+              be a live traffic-split member or the source or target of an active rollout;
+              traffic-split weight 0 warm-up targets are allowed.
 
           description: Optional free-form target description.
 
@@ -222,8 +223,9 @@ class TargetsResource(SyncAPIResource):
 
           name: Updated human-readable target name.
 
-          target_deployment_id: Replacement deployment under the parent endpoint. Exclude it from the endpoint's
-              live traffic split.
+          target_deployment_id: Replacement deployment under the parent endpoint. It must not be a live
+              traffic-split member or the source or target of an active rollout; traffic-split
+              weight 0 warm-up targets are allowed.
 
           extra_headers: Send extra headers
 
@@ -458,8 +460,9 @@ class AsyncTargetsResource(AsyncAPIResource):
           name: Human-readable target name, unique within the shadow experiment. At most 256
               characters.
 
-          target_deployment_id: Deployment under the parent endpoint that receives mirrored traffic. Exclude it
-              from the endpoint's live traffic split.
+          target_deployment_id: Deployment under the parent endpoint that receives mirrored traffic. It must not
+              be a live traffic-split member or the source or target of an active rollout;
+              traffic-split weight 0 warm-up targets are allowed.
 
           description: Optional free-form target description.
 
@@ -603,8 +606,9 @@ class AsyncTargetsResource(AsyncAPIResource):
 
           name: Updated human-readable target name.
 
-          target_deployment_id: Replacement deployment under the parent endpoint. Exclude it from the endpoint's
-              live traffic split.
+          target_deployment_id: Replacement deployment under the parent endpoint. It must not be a live
+              traffic-split member or the source or target of an active rollout; traffic-split
+              weight 0 warm-up targets are allowed.
 
           extra_headers: Send extra headers
 
