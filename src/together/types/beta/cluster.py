@@ -530,7 +530,7 @@ class Cluster(BaseModel):
     Set on cluster create or update; persists until changed.
     """
 
-    gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"]
+    gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"]
 
     gpu_worker_nodes: List[GPUWorkerNode]
 

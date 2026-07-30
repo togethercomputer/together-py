@@ -43,7 +43,9 @@ class ClusterCreateParams(TypedDict, total=False):
     cuda_version: Required[str]
     """CUDA version for this cluster. For example, 12.5"""
 
-    gpu_type: Required[Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF"]]
+    gpu_type: Required[
+        Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"]
+    ]
     """Type of GPU to use in the cluster"""
 
     num_gpus: Required[int]
