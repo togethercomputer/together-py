@@ -88,7 +88,11 @@ async def shadow(
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """Create a shadow deployment and mirror sampled live traffic without serving its responses."""
+    """Create a shadow deployment and mirror sampled live traffic without serving its responses.
+
+    The target deployment stays out of live traffic and active rollouts; weight-0
+    traffic-split warm-up deployments are valid shadow targets.
+    """
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
 
     endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
