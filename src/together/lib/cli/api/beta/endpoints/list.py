@@ -105,7 +105,7 @@ def print_endpoints_table(
     table = ListTable(empty_message=empty_message, show_lines=False)
     table.add_column("ID", width=24)
     table.add_primary_column("Name", ratio=2)
-    table.add_column("Type")
+    table.add_column("Type", width=10)
     table.add_column("Model", ratio=2)
     table.add_column("GPU")
     table.add_column("Replicas")
