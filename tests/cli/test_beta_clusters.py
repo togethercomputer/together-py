@@ -861,6 +861,14 @@ class TestBetaClustersRetrieve:
 
 
 class TestBetaClustersCreate:
+    def test_create_help_prefers_nvidia_version_id(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
+
+        assert result.exit_code == 0
+        assert "--nvidia-version-id <nvidia-version-id>" in result.output
+        assert "--nvidia-driver-version" in result.output
+        assert "--cuda-version" in result.output
+
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
             [
