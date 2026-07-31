@@ -404,11 +404,13 @@ class TestFineTuningEventsAndCheckpoints:
         assert result.exit_code == 0
         assert "ft-1:5" in result.output
         assert "Registry artifacts" in result.output
-        assert "project-slug/model-checkpoint@rv-checkpoint" in result.output
+        assert "project-slug/model-checkpoint" in result.output
         assert "intermediate" in result.output
+        # The revision is deliberately not rendered; it stays available in --json output.
+        assert "rv-checkpoint" not in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_checkpoints_table_falls_back_to_object_id_and_revision(
+    def test_list_checkpoints_table_falls_back_to_object_id(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         checkpoint = {**_FT_CHECKPOINT, "object_name": None}
@@ -417,7 +419,8 @@ class TestFineTuningEventsAndCheckpoints:
         )
         result = cli_runner.invoke(["fine-tuning", "list-checkpoints", "ft-1"])
         assert result.exit_code == 0
-        assert "ml-checkpoint@rv-checkpoint" in result.output
+        assert "ml-checkpoint" in result.output
+        assert "rv-checkpoint" not in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_empty_message(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
