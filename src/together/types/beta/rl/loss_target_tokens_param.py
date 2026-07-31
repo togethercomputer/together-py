@@ -8,10 +8,10 @@ from typing_extensions import Required, TypedDict
 from .d_type import DType
 from ...._types import SequenceNotStr
 
-__all__ = ["LossTargetTokensParam"]
+__all__ = ["LossTargetTokens"]
 
 
-class LossTargetTokensParam(TypedDict, total=False):
+class LossTargetTokens(TypedDict, total=False):
     data: Required[SequenceNotStr[Union[str, int]]]
     """Integer array of target tokens"""
 

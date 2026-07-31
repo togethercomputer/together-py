@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .loss_logprobs_param import LossLogprobsParam
-from .loss_advantages_param import LossAdvantagesParam
+from .loss_logprobs_param import LossLogprobs
+from .loss_advantages_param import LossAdvantages
 
-__all__ = ["PpoLossInputsParam"]
+__all__ = ["PpoLossInputs"]
 
 
-class PpoLossInputsParam(TypedDict, total=False):
-    advantages: Required[LossAdvantagesParam]
+class PpoLossInputs(TypedDict, total=False):
+    advantages: Required[LossAdvantages]
     """Per-token advantages for PPO"""
 
-    logprobs: Required[LossLogprobsParam]
+    logprobs: Required[LossLogprobs]
     """Log probabilities for PPO"""
