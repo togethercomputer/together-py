@@ -25,7 +25,7 @@ from ....types.beta.rl import (
     model_resource_estimate_cost_params,
 )
 from ....types.beta.rl.model_resources import ModelResources
-from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam
+from ....types.beta.rl.optimizer_config_param_param import OptimizerConfigParam
 from ....types.beta.rl.model_resources_list_response import ModelResourcesListResponse
 from ....types.beta.rl.model_resources_estimate_cost_response import ModelResourcesEstimateCostResponse
 

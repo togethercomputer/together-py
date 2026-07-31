@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing_extensions import TypedDict
 
-from .muon_optimizer_config_param import MuonOptimizerConfigParam
-from .adamw_optimizer_config_param import AdamwOptimizerConfigParam
+from .muon_optimizer_config_param_param import MuonOptimizerConfigParam
+from .adamw_optimizer_config_param_param import AdamwOptimizerConfigParam
 
 __all__ = ["OptimizerConfigParam"]
 

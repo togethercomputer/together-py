@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .optimizer_config_param import OptimizerConfigParam
+from .optimizer_config_param_param import OptimizerConfigParam
 
 __all__ = ["ModelResourceEstimateCostParams", "ComputeConfig"]
 
