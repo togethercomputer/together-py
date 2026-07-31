@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing_extensions import Required, TypedDict
 
 from .lora_config_param import LoraConfigParam
+from .session_metadata_param import SessionMetadataParam
 
-__all__ = ["SessionCreateParams", "Metadata", "MetadataWandb"]
+__all__ = ["SessionCreateParams"]
 
 
 class SessionCreateParams(TypedDict, total=False):
@@ -22,7 +23,7 @@ class SessionCreateParams(TypedDict, total=False):
     lora_config: LoraConfigParam
     """LoRA adapter configuration for the session"""
 
-    metadata: Metadata
+    metadata: SessionMetadataParam
     """Optional auxiliary metadata to associate with the training session"""
 
     resume_from_checkpoint_id: str
@@ -34,32 +35,3 @@ class SessionCreateParams(TypedDict, total=False):
     Accepts either a full model or a PEFT adapter directory. Mutually exclusive with
     resume_from_checkpoint_id.
     """
-
-
-class MetadataWandb(TypedDict, total=False):
-    """Weights & Biases details associated with the training session"""
-
-    entity: str
-    """Weights & Biases username or team that owns the project"""
-
-    group: str
-    """Weights & Biases group used to organize related runs"""
-
-    project: str
-    """Weights & Biases project containing the run"""
-
-    run_id: str
-    """Unique identifier assigned to the run by Weights & Biases"""
-
-    run_name: str
-    """Human-readable name of the Weights & Biases run"""
-
-    url: str
-    """HTTPS URL for the Weights & Biases run"""
-
-
-class Metadata(TypedDict, total=False):
-    """Optional auxiliary metadata to associate with the training session"""
-
-    wandb: MetadataWandb
-    """Weights & Biases details associated with the training session"""

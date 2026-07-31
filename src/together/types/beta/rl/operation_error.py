@@ -3,15 +3,15 @@
 from typing import Optional
 
 from ...._models import BaseModel
-from .training_operation_error_code import TrainingOperationErrorCode
+from .operation_error_code import OperationErrorCode
 
-__all__ = ["TrainingOperationError"]
+__all__ = ["OperationError"]
 
 
-class TrainingOperationError(BaseModel):
+class OperationError(BaseModel):
     """Error details for a failed training operation"""
 
-    code: Optional[TrainingOperationErrorCode] = None
+    code: Optional[OperationErrorCode] = None
     """Application error code"""
 
     message: Optional[str] = None

@@ -2,9 +2,9 @@
 
 from typing_extensions import Literal, TypeAlias
 
-__all__ = ["TrainingSessionStatus"]
+__all__ = ["SessionStatus"]
 
-TrainingSessionStatus: TypeAlias = Literal[
+SessionStatus: TypeAlias = Literal[
     "TRAINING_SESSION_STATUS_UNSPECIFIED",
     "TRAINING_SESSION_STATUS_CREATING",
     "TRAINING_SESSION_STATUS_RUNNING",

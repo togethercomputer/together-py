@@ -3,15 +3,15 @@
 from datetime import datetime
 
 from ...._models import BaseModel
-from .training_session_error_code import TrainingSessionErrorCode
+from .session_error_code import SessionErrorCode
 
-__all__ = ["TrainingSessionError"]
+__all__ = ["SessionError"]
 
 
-class TrainingSessionError(BaseModel):
+class SessionError(BaseModel):
     """Structured detail for the training session's current error"""
 
-    code: TrainingSessionErrorCode
+    code: SessionErrorCode
     """Finite machine-readable reason code for UI branching"""
 
     message: str

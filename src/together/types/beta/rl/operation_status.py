@@ -2,9 +2,9 @@
 
 from typing_extensions import Literal, TypeAlias
 
-__all__ = ["TrainingOperationStatus"]
+__all__ = ["OperationStatus"]
 
-TrainingOperationStatus: TypeAlias = Literal[
+OperationStatus: TypeAlias = Literal[
     "TRAINING_OPERATION_STATUS_UNSPECIFIED",
     "TRAINING_OPERATION_STATUS_PENDING",
     "TRAINING_OPERATION_STATUS_RUNNING",
