@@ -2,9 +2,9 @@
 
 from typing_extensions import Literal, TypeAlias
 
-__all__ = ["TrainingOperationErrorCode"]
+__all__ = ["OperationErrorCode"]
 
-TrainingOperationErrorCode: TypeAlias = Literal[
+OperationErrorCode: TypeAlias = Literal[
     "TRAINING_OPERATION_ERROR_CODE_UNSPECIFIED",
     "TRAINING_OPERATION_ERROR_CODE_RESOURCE_EXHAUSTED",
     "TRAINING_OPERATION_ERROR_CODE_TIMEOUT",

@@ -3,8 +3,8 @@
 from typing import Optional
 
 from ...._models import BaseModel
-from .training_operation_error import TrainingOperationError
-from .training_operation_status import TrainingOperationStatus
+from .operation_error import OperationError
+from .operation_status import OperationStatus
 
 __all__ = ["CustomForwardBackwardOperation"]
 
@@ -15,10 +15,10 @@ class CustomForwardBackwardOperation(BaseModel):
     id: str
     """Operation ID"""
 
-    status: TrainingOperationStatus
+    status: OperationStatus
     """Operation status"""
 
-    error: Optional[TrainingOperationError] = None
+    error: Optional[OperationError] = None
     """Error details on failure"""
 
     output: Optional[object] = None

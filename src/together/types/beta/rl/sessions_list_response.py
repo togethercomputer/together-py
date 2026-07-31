@@ -2,10 +2,10 @@
 
 from typing import List, Optional
 
+from .session import Session
 from ...._models import BaseModel
-from .training_session import TrainingSession
 
-__all__ = ["TrainingSessionsListResponse", "Meta"]
+__all__ = ["SessionsListResponse", "Meta"]
 
 
 class Meta(BaseModel):
@@ -24,10 +24,10 @@ class Meta(BaseModel):
     """
 
 
-class TrainingSessionsListResponse(BaseModel):
+class SessionsListResponse(BaseModel):
     """Paginated list of training sessions"""
 
-    data: Optional[List[TrainingSession]] = None
+    data: Optional[List[Session]] = None
     """List of training sessions"""
 
     meta: Optional[Meta] = None

@@ -10,8 +10,8 @@ import pytest
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types.beta.rl import (
-    TrainingSession,
-    TrainingSessionsListResponse,
+    Session,
+    SessionsListResponse,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -25,7 +25,7 @@ class TestSessions:
         session = client.beta.rl.sessions.create(
             model_resources_id="123e4567-e89b-12d3-a456-426614174000",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
@@ -50,7 +50,7 @@ class TestSessions:
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
             resume_from_hf_checkpoint="your-org/llama-3-8b-finetuned",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
@@ -61,7 +61,7 @@ class TestSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = response.parse()
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
@@ -72,7 +72,7 @@ class TestSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = response.parse()
-            assert_matches_type(TrainingSession, session, path=["response"])
+            assert_matches_type(Session, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -81,7 +81,7 @@ class TestSessions:
         session = client.beta.rl.sessions.retrieve(
             "session_id",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_raw_response_retrieve(self, client: Together) -> None:
@@ -92,7 +92,7 @@ class TestSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = response.parse()
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_streaming_response_retrieve(self, client: Together) -> None:
@@ -103,7 +103,7 @@ class TestSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = response.parse()
-            assert_matches_type(TrainingSession, session, path=["response"])
+            assert_matches_type(Session, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -117,7 +117,7 @@ class TestSessions:
     @parametrize
     def test_method_list(self, client: Together) -> None:
         session = client.beta.rl.sessions.list()
-        assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+        assert_matches_type(SessionsListResponse, session, path=["response"])
 
     @parametrize
     def test_method_list_with_all_params(self, client: Together) -> None:
@@ -128,7 +128,7 @@ class TestSessions:
             model_resources_id="model_resources_id",
             status=["TRAINING_SESSION_STATUS_CREATING"],
         )
-        assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+        assert_matches_type(SessionsListResponse, session, path=["response"])
 
     @parametrize
     def test_raw_response_list(self, client: Together) -> None:
@@ -137,7 +137,7 @@ class TestSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = response.parse()
-        assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+        assert_matches_type(SessionsListResponse, session, path=["response"])
 
     @parametrize
     def test_streaming_response_list(self, client: Together) -> None:
@@ -146,7 +146,7 @@ class TestSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = response.parse()
-            assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+            assert_matches_type(SessionsListResponse, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -155,7 +155,7 @@ class TestSessions:
         session = client.beta.rl.sessions.stop(
             "session_id",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_raw_response_stop(self, client: Together) -> None:
@@ -166,7 +166,7 @@ class TestSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = response.parse()
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     def test_streaming_response_stop(self, client: Together) -> None:
@@ -177,7 +177,7 @@ class TestSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = response.parse()
-            assert_matches_type(TrainingSession, session, path=["response"])
+            assert_matches_type(Session, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -199,7 +199,7 @@ class TestAsyncSessions:
         session = await async_client.beta.rl.sessions.create(
             model_resources_id="123e4567-e89b-12d3-a456-426614174000",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -224,7 +224,7 @@ class TestAsyncSessions:
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
             resume_from_hf_checkpoint="your-org/llama-3-8b-finetuned",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
@@ -235,7 +235,7 @@ class TestAsyncSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = await response.parse()
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
@@ -246,7 +246,7 @@ class TestAsyncSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = await response.parse()
-            assert_matches_type(TrainingSession, session, path=["response"])
+            assert_matches_type(Session, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -255,7 +255,7 @@ class TestAsyncSessions:
         session = await async_client.beta.rl.sessions.retrieve(
             "session_id",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_raw_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -266,7 +266,7 @@ class TestAsyncSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = await response.parse()
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_streaming_response_retrieve(self, async_client: AsyncTogether) -> None:
@@ -277,7 +277,7 @@ class TestAsyncSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = await response.parse()
-            assert_matches_type(TrainingSession, session, path=["response"])
+            assert_matches_type(Session, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -291,7 +291,7 @@ class TestAsyncSessions:
     @parametrize
     async def test_method_list(self, async_client: AsyncTogether) -> None:
         session = await async_client.beta.rl.sessions.list()
-        assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+        assert_matches_type(SessionsListResponse, session, path=["response"])
 
     @parametrize
     async def test_method_list_with_all_params(self, async_client: AsyncTogether) -> None:
@@ -302,7 +302,7 @@ class TestAsyncSessions:
             model_resources_id="model_resources_id",
             status=["TRAINING_SESSION_STATUS_CREATING"],
         )
-        assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+        assert_matches_type(SessionsListResponse, session, path=["response"])
 
     @parametrize
     async def test_raw_response_list(self, async_client: AsyncTogether) -> None:
@@ -311,7 +311,7 @@ class TestAsyncSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = await response.parse()
-        assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+        assert_matches_type(SessionsListResponse, session, path=["response"])
 
     @parametrize
     async def test_streaming_response_list(self, async_client: AsyncTogether) -> None:
@@ -320,7 +320,7 @@ class TestAsyncSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = await response.parse()
-            assert_matches_type(TrainingSessionsListResponse, session, path=["response"])
+            assert_matches_type(SessionsListResponse, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 
@@ -329,7 +329,7 @@ class TestAsyncSessions:
         session = await async_client.beta.rl.sessions.stop(
             "session_id",
         )
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_raw_response_stop(self, async_client: AsyncTogether) -> None:
@@ -340,7 +340,7 @@ class TestAsyncSessions:
         assert response.is_closed is True
         assert response.http_request.headers.get("X-Stainless-Lang") == "python"
         session = await response.parse()
-        assert_matches_type(TrainingSession, session, path=["response"])
+        assert_matches_type(Session, session, path=["response"])
 
     @parametrize
     async def test_streaming_response_stop(self, async_client: AsyncTogether) -> None:
@@ -351,7 +351,7 @@ class TestAsyncSessions:
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
 
             session = await response.parse()
-            assert_matches_type(TrainingSession, session, path=["response"])
+            assert_matches_type(Session, session, path=["response"])
 
         assert cast(Any, response.is_closed) is True
 

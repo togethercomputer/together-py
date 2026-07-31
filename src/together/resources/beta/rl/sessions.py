@@ -19,9 +19,10 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.rl import session_list_params, session_create_params
-from ....types.beta.rl.training_session import TrainingSession
+from ....types.beta.rl.session import Session
 from ....types.beta.rl.lora_config_param import LoraConfigParam
-from ....types.beta.rl.training_sessions_list_response import TrainingSessionsListResponse
+from ....types.beta.rl.session_metadata_param import SessionMetadataParam
+from ....types.beta.rl.sessions_list_response import SessionsListResponse
 
 __all__ = ["SessionsResource", "AsyncSessionsResource"]
 
@@ -52,7 +53,7 @@ class SessionsResource(SyncAPIResource):
         model_resources_id: str,
         display_name: str | Omit = omit,
         lora_config: LoraConfigParam | Omit = omit,
-        metadata: session_create_params.Metadata | Omit = omit,
+        metadata: SessionMetadataParam | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
         resume_from_hf_checkpoint: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -61,7 +62,7 @@ class SessionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSession:
+    ) -> Session:
         """
         Creates a training session and returns its details.
 
@@ -105,7 +106,7 @@ class SessionsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=TrainingSession,
+            cast_to=Session,
         )
 
     def retrieve(
@@ -118,7 +119,7 @@ class SessionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSession:
+    ) -> Session:
         """
         Gets a training session by its ID and returns its details.
 
@@ -140,7 +141,7 @@ class SessionsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=TrainingSession,
+            cast_to=Session,
         )
 
     def list(
@@ -167,7 +168,7 @@ class SessionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSessionsListResponse:
+    ) -> SessionsListResponse:
         """
         Lists all training sessions.
 
@@ -209,7 +210,7 @@ class SessionsResource(SyncAPIResource):
                     session_list_params.SessionListParams,
                 ),
             ),
-            cast_to=TrainingSessionsListResponse,
+            cast_to=SessionsListResponse,
         )
 
     def stop(
@@ -222,7 +223,7 @@ class SessionsResource(SyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSession:
+    ) -> Session:
         """
         Stops a training session.
 
@@ -244,7 +245,7 @@ class SessionsResource(SyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=TrainingSession,
+            cast_to=Session,
         )
 
 
@@ -274,7 +275,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         model_resources_id: str,
         display_name: str | Omit = omit,
         lora_config: LoraConfigParam | Omit = omit,
-        metadata: session_create_params.Metadata | Omit = omit,
+        metadata: SessionMetadataParam | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
         resume_from_hf_checkpoint: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -283,7 +284,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSession:
+    ) -> Session:
         """
         Creates a training session and returns its details.
 
@@ -327,7 +328,7 @@ class AsyncSessionsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=TrainingSession,
+            cast_to=Session,
         )
 
     async def retrieve(
@@ -340,7 +341,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSession:
+    ) -> Session:
         """
         Gets a training session by its ID and returns its details.
 
@@ -362,7 +363,7 @@ class AsyncSessionsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=TrainingSession,
+            cast_to=Session,
         )
 
     async def list(
@@ -389,7 +390,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSessionsListResponse:
+    ) -> SessionsListResponse:
         """
         Lists all training sessions.
 
@@ -431,7 +432,7 @@ class AsyncSessionsResource(AsyncAPIResource):
                     session_list_params.SessionListParams,
                 ),
             ),
-            cast_to=TrainingSessionsListResponse,
+            cast_to=SessionsListResponse,
         )
 
     async def stop(
@@ -444,7 +445,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> TrainingSession:
+    ) -> Session:
         """
         Stops a training session.
 
@@ -466,7 +467,7 @@ class AsyncSessionsResource(AsyncAPIResource):
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
-            cast_to=TrainingSession,
+            cast_to=Session,
         )
 
 

@@ -2,9 +2,9 @@
 
 from typing_extensions import Literal, TypeAlias
 
-__all__ = ["TrainingSessionErrorCode"]
+__all__ = ["SessionErrorCode"]
 
-TrainingSessionErrorCode: TypeAlias = Literal[
+SessionErrorCode: TypeAlias = Literal[
     "TRAINING_SESSION_ERROR_CODE_RESOURCE_UNAVAILABLE",
     "TRAINING_SESSION_ERROR_CODE_RESOURCE_AT_CAPACITY",
     "TRAINING_SESSION_ERROR_CODE_TIMED_OUT",

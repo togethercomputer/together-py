@@ -7,44 +7,16 @@ from pydantic import Field as FieldInfo
 
 from ...._models import BaseModel
 from .lora_config import LoraConfig
+from .session_error import SessionError
+from .session_status import SessionStatus
+from .session_metadata import SessionMetadata
 from .training_checkpoint import TrainingCheckpoint
 from .inference_checkpoint import InferenceCheckpoint
-from .training_session_error import TrainingSessionError
-from .training_session_status import TrainingSessionStatus
 
-__all__ = ["TrainingSession", "Metadata", "MetadataWandb"]
+__all__ = ["Session"]
 
 
-class MetadataWandb(BaseModel):
-    """Weights & Biases details associated with the training session"""
-
-    entity: Optional[str] = None
-    """Weights & Biases username or team that owns the project"""
-
-    group: Optional[str] = None
-    """Weights & Biases group used to organize related runs"""
-
-    project: Optional[str] = None
-    """Weights & Biases project containing the run"""
-
-    run_id: Optional[str] = None
-    """Unique identifier assigned to the run by Weights & Biases"""
-
-    run_name: Optional[str] = None
-    """Human-readable name of the Weights & Biases run"""
-
-    url: Optional[str] = None
-    """HTTPS URL for the Weights & Biases run"""
-
-
-class Metadata(BaseModel):
-    """Auxiliary metadata associated with the training session"""
-
-    wandb: Optional[MetadataWandb] = None
-    """Weights & Biases details associated with the training session"""
-
-
-class TrainingSession(BaseModel):
+class Session(BaseModel):
     """A training session and its current state"""
 
     id: str
@@ -59,7 +31,7 @@ class TrainingSession(BaseModel):
     inference_checkpoints: List[InferenceCheckpoint]
     """List of saved inference checkpoints for this session"""
 
-    metadata: Metadata
+    metadata: SessionMetadata
     """Auxiliary metadata associated with the training session"""
 
     api_model_resources_id: str = FieldInfo(alias="model_resources_id")
@@ -68,7 +40,7 @@ class TrainingSession(BaseModel):
     The session runs on that resource's GPU pods.
     """
 
-    status: TrainingSessionStatus
+    status: SessionStatus
     """Status of the training session"""
 
     step: Union[str, int]
@@ -83,7 +55,7 @@ class TrainingSession(BaseModel):
     display_name: Optional[str] = None
     """Display name used to identify the training session"""
 
-    error: Optional[TrainingSessionError] = None
+    error: Optional[SessionError] = None
     """Structured detail for the training session's current error.
 
     Set when the session is in an error state.

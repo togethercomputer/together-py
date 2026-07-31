@@ -236,21 +236,23 @@ Types:
 from together.types.beta.rl import (
     InferenceCheckpoint,
     LoraConfig,
+    Session,
+    SessionError,
+    SessionErrorCode,
+    SessionMetadata,
+    SessionStatus,
+    SessionsListResponse,
     TrainingCheckpoint,
-    TrainingSession,
-    TrainingSessionError,
-    TrainingSessionErrorCode,
-    TrainingSessionStatus,
-    TrainingSessionsListResponse,
+    WandbMetadata,
 )
 ```
 
 Methods:
 
-- <code title="post /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">create</a>(\*\*<a href="src/together/types/beta/rl/session_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/training_session.py">TrainingSession</a></code>
-- <code title="get /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">retrieve</a>(session_id) -> <a href="./src/together/types/beta/rl/training_session.py">TrainingSession</a></code>
-- <code title="get /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">list</a>(\*\*<a href="src/together/types/beta/rl/session_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/training_sessions_list_response.py">TrainingSessionsListResponse</a></code>
-- <code title="post /rl/training-sessions/{session_id}/stop">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">stop</a>(session_id) -> <a href="./src/together/types/beta/rl/training_session.py">TrainingSession</a></code>
+- <code title="post /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">create</a>(\*\*<a href="src/together/types/beta/rl/session_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
+- <code title="get /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">retrieve</a>(session_id) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
+- <code title="get /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">list</a>(\*\*<a href="src/together/types/beta/rl/session_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/sessions_list_response.py">SessionsListResponse</a></code>
+- <code title="post /rl/training-sessions/{session_id}/stop">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">stop</a>(session_id) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
 
 ### Operations
 
@@ -288,6 +290,9 @@ from together.types.beta.rl import (
     ModelInput,
     ModelInputChunk,
     MuonParams,
+    OperationError,
+    OperationErrorCode,
+    OperationStatus,
     OptimStepOperation,
     OptimStepResult,
     PolicyVersionSegment,
@@ -301,9 +306,6 @@ from together.types.beta.rl import (
     StopReason,
     TrainingCheckpointOperation,
     TrainingCheckpointResult,
-    TrainingOperationError,
-    TrainingOperationErrorCode,
-    TrainingOperationStatus,
     WeightSyncType,
     Weights,
 )
