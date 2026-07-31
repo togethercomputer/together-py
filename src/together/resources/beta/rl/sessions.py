@@ -20,9 +20,9 @@ from ...._response import (
 from ...._base_client import make_request_options
 from ....types.beta.rl import session_list_params, session_create_params
 from ....types.beta.rl.session import Session
+from ....types.beta.rl.lora_config_param import LoraConfigParam
+from ....types.beta.rl.session_metadata_param import SessionMetadataParam
 from ....types.beta.rl.sessions_list_response import SessionsListResponse
-from ....types.beta.rl.lora_config_param_param import LoraConfigParam
-from ....types.beta.rl.session_metadata_param_param import SessionMetadataParam
 
 __all__ = ["SessionsResource", "AsyncSessionsResource"]
 

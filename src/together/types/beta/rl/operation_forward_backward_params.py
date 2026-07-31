@@ -8,7 +8,7 @@ from typing_extensions import Required, TypedDict
 from .loss_config_param import LossConfig
 from .loss_inputs_param import LossInputs
 from .model_input_param import ModelInput
-from .policy_version_segment_param_param import PolicyVersionSegmentParam
+from .policy_version_segment_param import PolicyVersionSegmentParam
 
 __all__ = ["OperationForwardBackwardParams", "Sample"]
 
