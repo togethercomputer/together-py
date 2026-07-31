@@ -217,8 +217,7 @@ async def create_or_find_shadow_experiment(
         )
     except APIError as e:
         if "already exists" in e.message.lower():
-            experiments = await client.beta.endpoints.shadow_experiments.list(endpoint_id=endpoint_id)
-            for experiment in experiments.data:
+            async for experiment in client.beta.endpoints.shadow_experiments.list(endpoint_id=endpoint_id):
                 if experiment.name == name:
                     return experiment
             raise ValueError(
