@@ -37,5 +37,6 @@ class TargetUpdateParams(TypedDict, total=False):
     target_deployment_id: Annotated[str, PropertyInfo(alias="targetDeploymentId")]
     """Replacement deployment under the parent endpoint.
 
-    Exclude it from the endpoint's live traffic split.
+    It must not be a live traffic-split member or the source or target of an active
+    rollout; traffic-split weight 0 warm-up targets are allowed.
     """

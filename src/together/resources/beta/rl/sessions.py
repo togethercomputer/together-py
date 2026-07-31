@@ -50,7 +50,9 @@ class SessionsResource(SyncAPIResource):
         self,
         *,
         model_resources_id: str,
+        display_name: str | Omit = omit,
         lora_config: LoraConfigParam | Omit = omit,
+        metadata: session_create_params.Metadata | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
         resume_from_hf_checkpoint: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -67,7 +69,11 @@ class SessionsResource(SyncAPIResource):
           model_resources_id: Model resource to attach the session to. The session runs on that resource's GPU
               pods.
 
+          display_name: Optional display name used to identify the training session
+
           lora_config: LoRA adapter configuration for the session
+
+          metadata: Optional auxiliary metadata to associate with the training session
 
           resume_from_checkpoint_id: Checkpoint ID to resume from
 
@@ -88,7 +94,9 @@ class SessionsResource(SyncAPIResource):
             body=maybe_transform(
                 {
                     "model_resources_id": model_resources_id,
+                    "display_name": display_name,
                     "lora_config": lora_config,
+                    "metadata": metadata,
                     "resume_from_checkpoint_id": resume_from_checkpoint_id,
                     "resume_from_hf_checkpoint": resume_from_hf_checkpoint,
                 },
@@ -264,7 +272,9 @@ class AsyncSessionsResource(AsyncAPIResource):
         self,
         *,
         model_resources_id: str,
+        display_name: str | Omit = omit,
         lora_config: LoraConfigParam | Omit = omit,
+        metadata: session_create_params.Metadata | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
         resume_from_hf_checkpoint: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -281,7 +291,11 @@ class AsyncSessionsResource(AsyncAPIResource):
           model_resources_id: Model resource to attach the session to. The session runs on that resource's GPU
               pods.
 
+          display_name: Optional display name used to identify the training session
+
           lora_config: LoRA adapter configuration for the session
+
+          metadata: Optional auxiliary metadata to associate with the training session
 
           resume_from_checkpoint_id: Checkpoint ID to resume from
 
@@ -302,7 +316,9 @@ class AsyncSessionsResource(AsyncAPIResource):
             body=await async_maybe_transform(
                 {
                     "model_resources_id": model_resources_id,
+                    "display_name": display_name,
                     "lora_config": lora_config,
+                    "metadata": metadata,
                     "resume_from_checkpoint_id": resume_from_checkpoint_id,
                     "resume_from_hf_checkpoint": resume_from_hf_checkpoint,
                 },

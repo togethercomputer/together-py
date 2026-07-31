@@ -31,10 +31,21 @@ class TestSessions:
     def test_method_create_with_all_params(self, client: Together) -> None:
         session = client.beta.rl.sessions.create(
             model_resources_id="123e4567-e89b-12d3-a456-426614174000",
+            display_name="gsm8k-experiment-2",
             lora_config={
                 "alpha": 64,
                 "dropout": 0,
                 "rank": 32,
+            },
+            metadata={
+                "wandb": {
+                    "entity": "example-org",
+                    "group": "gsm8k-35b-sweep",
+                    "project": "grpo-gsm8k",
+                    "run_id": "abc123",
+                    "run_name": "exp2-thinking-4k-ctx",
+                    "url": "https://wandb.ai/example-org/example-project/runs/run-id",
+                }
             },
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
             resume_from_hf_checkpoint="your-org/llama-3-8b-finetuned",
@@ -194,10 +205,21 @@ class TestAsyncSessions:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         session = await async_client.beta.rl.sessions.create(
             model_resources_id="123e4567-e89b-12d3-a456-426614174000",
+            display_name="gsm8k-experiment-2",
             lora_config={
                 "alpha": 64,
                 "dropout": 0,
                 "rank": 32,
+            },
+            metadata={
+                "wandb": {
+                    "entity": "example-org",
+                    "group": "gsm8k-35b-sweep",
+                    "project": "grpo-gsm8k",
+                    "run_id": "abc123",
+                    "run_name": "exp2-thinking-4k-ctx",
+                    "url": "https://wandb.ai/example-org/example-project/runs/run-id",
+                }
             },
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
             resume_from_hf_checkpoint="your-org/llama-3-8b-finetuned",

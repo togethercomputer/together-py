@@ -38,7 +38,8 @@ class ShadowExperimentTarget(BaseModel):
     target_deployment_id: str = FieldInfo(alias="targetDeploymentId")
     """Deployment under the parent endpoint that receives mirrored traffic.
 
-    Shadow targets should be excluded from the endpoint's live traffic split.
+    It must not be a live traffic-split member or the source or target of an active
+    rollout; traffic-split weight 0 warm-up targets are allowed.
     """
 
     updated_at: datetime = FieldInfo(alias="updatedAt")

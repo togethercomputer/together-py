@@ -12,7 +12,36 @@ from .inference_checkpoint import InferenceCheckpoint
 from .training_session_error import TrainingSessionError
 from .training_session_status import TrainingSessionStatus
 
-__all__ = ["TrainingSession"]
+__all__ = ["TrainingSession", "Metadata", "MetadataWandb"]
+
+
+class MetadataWandb(BaseModel):
+    """Weights & Biases details associated with the training session"""
+
+    entity: Optional[str] = None
+    """Weights & Biases username or team that owns the project"""
+
+    group: Optional[str] = None
+    """Weights & Biases group used to organize related runs"""
+
+    project: Optional[str] = None
+    """Weights & Biases project containing the run"""
+
+    run_id: Optional[str] = None
+    """Unique identifier assigned to the run by Weights & Biases"""
+
+    run_name: Optional[str] = None
+    """Human-readable name of the Weights & Biases run"""
+
+    url: Optional[str] = None
+    """HTTPS URL for the Weights & Biases run"""
+
+
+class Metadata(BaseModel):
+    """Auxiliary metadata associated with the training session"""
+
+    wandb: Optional[MetadataWandb] = None
+    """Weights & Biases details associated with the training session"""
 
 
 class TrainingSession(BaseModel):
@@ -29,6 +58,9 @@ class TrainingSession(BaseModel):
 
     inference_checkpoints: List[InferenceCheckpoint]
     """List of saved inference checkpoints for this session"""
+
+    metadata: Metadata
+    """Auxiliary metadata associated with the training session"""
 
     api_model_resources_id: str = FieldInfo(alias="model_resources_id")
     """Model resource this session is attached to.
@@ -47,6 +79,9 @@ class TrainingSession(BaseModel):
 
     updated_at: datetime
     """Timestamp when the training session was last updated"""
+
+    display_name: Optional[str] = None
+    """Display name used to identify the training session"""
 
     error: Optional[TrainingSessionError] = None
     """Structured detail for the training session's current error.
