@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .loss_logprobs_param import LossLogprobs
-from .loss_advantages_param import LossAdvantages
+from .loss_logprobs_param import LossLogprobsParam
+from .loss_advantages_param import LossAdvantagesParam
 
-__all__ = ["ImportanceSamplingLossInputs"]
+__all__ = ["ImportanceSamplingLossInputsParam"]
 
 
-class ImportanceSamplingLossInputs(TypedDict, total=False):
+class ImportanceSamplingLossInputsParam(TypedDict, total=False):
     """Loss inputs for unclipped importance-sampling policy-gradient updates."""
 
-    advantages: Required[LossAdvantages]
+    advantages: Required[LossAdvantagesParam]
     """Per-token advantages for importance sampling"""
 
-    logprobs: Required[LossLogprobs]
+    logprobs: Required[LossLogprobsParam]
     """Log probabilities for importance sampling"""

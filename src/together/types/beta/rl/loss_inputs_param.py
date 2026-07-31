@@ -4,34 +4,34 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .weights_param import Weights
-from .dro_loss_inputs_param import DroLossInputs
-from .ppo_loss_inputs_param import PpoLossInputs
-from .grpo_loss_inputs_param import GrpoLossInputs
-from .cispo_loss_inputs_param import CispoLossInputs
-from .loss_target_tokens_param import LossTargetTokens
-from .importance_sampling_loss_inputs_param import ImportanceSamplingLossInputs
+from .weights_param import WeightsParam
+from .dro_loss_inputs_param import DroLossInputsParam
+from .ppo_loss_inputs_param import PpoLossInputsParam
+from .grpo_loss_inputs_param import GrpoLossInputsParam
+from .cispo_loss_inputs_param import CispoLossInputsParam
+from .loss_target_tokens_param import LossTargetTokensParam
+from .importance_sampling_loss_inputs_param import ImportanceSamplingLossInputsParam
 
-__all__ = ["LossInputs"]
+__all__ = ["LossInputsParam"]
 
 
-class LossInputs(TypedDict, total=False):
+class LossInputsParam(TypedDict, total=False):
     """Token-level inputs used to compute the loss for one training sample."""
 
-    target_tokens: Required[LossTargetTokens]
+    target_tokens: Required[LossTargetTokensParam]
     """Target tokens for loss computation"""
 
-    cispo_inputs: CispoLossInputs
+    cispo_inputs: CispoLossInputsParam
 
-    dro_inputs: DroLossInputs
+    dro_inputs: DroLossInputsParam
 
-    grpo_inputs: GrpoLossInputs
+    grpo_inputs: GrpoLossInputsParam
     """Inputs required when the loss type is GRPO"""
 
-    importance_sampling_inputs: ImportanceSamplingLossInputs
+    importance_sampling_inputs: ImportanceSamplingLossInputsParam
     """Inputs required when the loss type is importance sampling"""
 
-    ppo_inputs: PpoLossInputs
+    ppo_inputs: PpoLossInputsParam
 
-    weights: Weights
+    weights: WeightsParam
     """Per-token weights (1=compute loss, 0=ignore)."""

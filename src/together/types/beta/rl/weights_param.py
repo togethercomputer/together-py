@@ -8,10 +8,10 @@ from typing_extensions import Required, TypedDict
 from .d_type import DType
 from ...._types import SequenceNotStr
 
-__all__ = ["Weights"]
+__all__ = ["WeightsParam"]
 
 
-class Weights(TypedDict, total=False):
+class WeightsParam(TypedDict, total=False):
     data: Required[SequenceNotStr[Union[str, int]]]
     """Per-token weights: 1 to include the token in the loss, 0 to ignore it."""
 

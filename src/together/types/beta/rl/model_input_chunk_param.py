@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .encoded_text_chunk_param import EncodedTextChunk
+from .encoded_text_chunk_param import EncodedTextChunkParam
 
-__all__ = ["ModelInputChunk"]
+__all__ = ["ModelInputChunkParam"]
 
 
-class ModelInputChunk(TypedDict, total=False):
+class ModelInputChunkParam(TypedDict, total=False):
     """A single chunk of model input content."""
 
-    encoded_text: Required[EncodedTextChunk]
+    encoded_text: Required[EncodedTextChunkParam]
     """Pre-tokenized text content for this input chunk."""

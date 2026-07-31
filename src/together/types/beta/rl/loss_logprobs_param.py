@@ -7,10 +7,10 @@ from typing_extensions import Required, TypedDict
 
 from .d_type import DType
 
-__all__ = ["LossLogprobs"]
+__all__ = ["LossLogprobsParam"]
 
 
-class LossLogprobs(TypedDict, total=False):
+class LossLogprobsParam(TypedDict, total=False):
     data: Required[Iterable[float]]
     """Float array of per-token log probabilities"""
 

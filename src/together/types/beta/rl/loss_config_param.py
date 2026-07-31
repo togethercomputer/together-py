@@ -11,10 +11,10 @@ from .grpo_loss_params import GrpoLossParams
 from .cispo_loss_params import CispoLossParams
 from .cross_entropy_loss_params import CrossEntropyLossParams
 
-__all__ = ["LossConfig"]
+__all__ = ["LossConfigParam"]
 
 
-class LossConfig(TypedDict, total=False):
+class LossConfigParam(TypedDict, total=False):
     type: Required[LossType]
     """Type of loss function to use"""
 

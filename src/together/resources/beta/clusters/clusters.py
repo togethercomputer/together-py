@@ -77,10 +77,8 @@ class ClustersResource(SyncAPIResource):
         *,
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
-        cuda_version: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
         num_gpus: int,
-        nvidia_driver_version: str,
         region: str,
         acceptance_tests_params: cluster_create_params.AcceptanceTestsParams | Omit = omit,
         add_ons: Iterable[cluster_create_params.AddOn] | Omit = omit,
@@ -90,11 +88,14 @@ class ClustersResource(SyncAPIResource):
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        cuda_version: str | Omit = omit,
         duration_days: int | Omit = omit,
         install_traefik: bool | Omit = omit,
         num_capacity_pool_gpus: int | Omit = omit,
         num_preemptible_gpus: int | Omit = omit,
         num_reserved_gpus: int | Omit = omit,
+        nvidia_driver_version: str | Omit = omit,
+        nvidia_version_id: str | Omit = omit,
         oidc_config: cluster_create_params.OidcConfig | Omit = omit,
         project_id: str | Omit = omit,
         reservation_end_time: Union[str, datetime] | Omit = omit,
@@ -127,15 +128,10 @@ class ClustersResource(SyncAPIResource):
 
           cluster_name: Name of the GPU cluster.
 
-          cuda_version: CUDA version for this cluster. For example, 12.5
-
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
-
-          nvidia_driver_version: Nvidia driver version for this cluster. For example, 550. Only some combination
-              of cuda_version and nvidia_driver_version are supported.
 
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
@@ -160,6 +156,11 @@ class ClustersResource(SyncAPIResource):
 
           cluster_type: Type of cluster to create.
 
+          cuda_version: Legacy CUDA selector for this cluster. Bare semantic values such as 12.5 select
+              ubuntu-22.04; existing OS-suffixed values remain accepted for compatibility.
+              Must be paired with nvidia_driver_version. Prefer nvidia_version_id for new
+              integrations.
+
           duration_days: Duration in days to keep the cluster running.
 
           install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
@@ -175,6 +176,12 @@ class ClustersResource(SyncAPIResource):
 
           num_reserved_gpus: Number of prepaid (PLG) reserved GPUs for this cluster. When omitted for
               RESERVED billing on create, the server defaults this to num_gpus.
+
+          nvidia_driver_version: Legacy NVIDIA driver selector for this cluster. For example, 550. Must be paired
+              with cuda_version. Prefer nvidia_version_id for new integrations.
+
+          nvidia_version_id: Canonical region-specific NVIDIA version ID. If cuda_version and
+              nvidia_driver_version are also set, they must resolve to the same catalog entry.
 
           project_id: Project ID for the cluster. If not set, the project from the request context is
               used.
@@ -209,10 +216,8 @@ class ClustersResource(SyncAPIResource):
                 {
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
-                    "cuda_version": cuda_version,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
-                    "nvidia_driver_version": nvidia_driver_version,
                     "region": region,
                     "acceptance_tests_params": acceptance_tests_params,
                     "add_ons": add_ons,
@@ -222,11 +227,14 @@ class ClustersResource(SyncAPIResource):
                     "capacity_pool_id": capacity_pool_id,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
+                    "cuda_version": cuda_version,
                     "duration_days": duration_days,
                     "install_traefik": install_traefik,
                     "num_capacity_pool_gpus": num_capacity_pool_gpus,
                     "num_preemptible_gpus": num_preemptible_gpus,
                     "num_reserved_gpus": num_reserved_gpus,
+                    "nvidia_driver_version": nvidia_driver_version,
+                    "nvidia_version_id": nvidia_version_id,
                     "oidc_config": oidc_config,
                     "project_id": project_id,
                     "reservation_end_time": reservation_end_time,
@@ -484,10 +492,8 @@ class AsyncClustersResource(AsyncAPIResource):
         *,
         billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
         cluster_name: str,
-        cuda_version: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
         num_gpus: int,
-        nvidia_driver_version: str,
         region: str,
         acceptance_tests_params: cluster_create_params.AcceptanceTestsParams | Omit = omit,
         add_ons: Iterable[cluster_create_params.AddOn] | Omit = omit,
@@ -497,11 +503,14 @@ class AsyncClustersResource(AsyncAPIResource):
         capacity_pool_id: str | Omit = omit,
         cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        cuda_version: str | Omit = omit,
         duration_days: int | Omit = omit,
         install_traefik: bool | Omit = omit,
         num_capacity_pool_gpus: int | Omit = omit,
         num_preemptible_gpus: int | Omit = omit,
         num_reserved_gpus: int | Omit = omit,
+        nvidia_driver_version: str | Omit = omit,
+        nvidia_version_id: str | Omit = omit,
         oidc_config: cluster_create_params.OidcConfig | Omit = omit,
         project_id: str | Omit = omit,
         reservation_end_time: Union[str, datetime] | Omit = omit,
@@ -534,15 +543,10 @@ class AsyncClustersResource(AsyncAPIResource):
 
           cluster_name: Name of the GPU cluster.
 
-          cuda_version: CUDA version for this cluster. For example, 12.5
-
           gpu_type: Type of GPU to use in the cluster
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
-
-          nvidia_driver_version: Nvidia driver version for this cluster. For example, 550. Only some combination
-              of cuda_version and nvidia_driver_version are supported.
 
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
@@ -567,6 +571,11 @@ class AsyncClustersResource(AsyncAPIResource):
 
           cluster_type: Type of cluster to create.
 
+          cuda_version: Legacy CUDA selector for this cluster. Bare semantic values such as 12.5 select
+              ubuntu-22.04; existing OS-suffixed values remain accepted for compatibility.
+              Must be paired with nvidia_driver_version. Prefer nvidia_version_id for new
+              integrations.
+
           duration_days: Duration in days to keep the cluster running.
 
           install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
@@ -582,6 +591,12 @@ class AsyncClustersResource(AsyncAPIResource):
 
           num_reserved_gpus: Number of prepaid (PLG) reserved GPUs for this cluster. When omitted for
               RESERVED billing on create, the server defaults this to num_gpus.
+
+          nvidia_driver_version: Legacy NVIDIA driver selector for this cluster. For example, 550. Must be paired
+              with cuda_version. Prefer nvidia_version_id for new integrations.
+
+          nvidia_version_id: Canonical region-specific NVIDIA version ID. If cuda_version and
+              nvidia_driver_version are also set, they must resolve to the same catalog entry.
 
           project_id: Project ID for the cluster. If not set, the project from the request context is
               used.
@@ -616,10 +631,8 @@ class AsyncClustersResource(AsyncAPIResource):
                 {
                     "billing_type": billing_type,
                     "cluster_name": cluster_name,
-                    "cuda_version": cuda_version,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
-                    "nvidia_driver_version": nvidia_driver_version,
                     "region": region,
                     "acceptance_tests_params": acceptance_tests_params,
                     "add_ons": add_ons,
@@ -629,11 +642,14 @@ class AsyncClustersResource(AsyncAPIResource):
                     "capacity_pool_id": capacity_pool_id,
                     "cluster_config": cluster_config,
                     "cluster_type": cluster_type,
+                    "cuda_version": cuda_version,
                     "duration_days": duration_days,
                     "install_traefik": install_traefik,
                     "num_capacity_pool_gpus": num_capacity_pool_gpus,
                     "num_preemptible_gpus": num_preemptible_gpus,
                     "num_reserved_gpus": num_reserved_gpus,
+                    "nvidia_driver_version": nvidia_driver_version,
+                    "nvidia_version_id": nvidia_version_id,
                     "oidc_config": oidc_config,
                     "project_id": project_id,
                     "reservation_end_time": reservation_end_time,

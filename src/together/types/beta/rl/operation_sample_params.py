@@ -6,13 +6,13 @@ from typing import Iterable
 from typing_extensions import Required, TypedDict
 
 from .sampling_params import SamplingParams
-from .model_input_param import ModelInput
+from .model_input_param import ModelInputParam
 
 __all__ = ["OperationSampleParams"]
 
 
 class OperationSampleParams(TypedDict, total=False):
-    model_inputs: Required[Iterable[ModelInput]]
+    model_inputs: Required[Iterable[ModelInputParam]]
     """Model inputs to sample from"""
 
     num_samples: int

@@ -4,18 +4,18 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .loss_logprobs_param import LossLogprobs
-from .loss_advantages_param import LossAdvantages
+from .loss_logprobs_param import LossLogprobsParam
+from .loss_advantages_param import LossAdvantagesParam
 
-__all__ = ["GrpoLossInputs"]
+__all__ = ["GrpoLossInputsParam"]
 
 
-class GrpoLossInputs(TypedDict, total=False):
-    advantages: Required[LossAdvantages]
+class GrpoLossInputsParam(TypedDict, total=False):
+    advantages: Required[LossAdvantagesParam]
     """Per-token advantages for GRPO"""
 
-    logprobs: Required[LossLogprobs]
+    logprobs: Required[LossLogprobsParam]
     """Log probabilities for GRPO"""
 
-    reference_logprobs: LossLogprobs
+    reference_logprobs: LossLogprobsParam
     """Reference model log probabilities (required if beta > 0)"""
