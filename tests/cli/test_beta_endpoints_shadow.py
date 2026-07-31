@@ -352,9 +352,7 @@ class TestBetaEndpointShadow:
         respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json=_deployment_body(deployment_id="dep_shadow_2"))
         )
-        create_target_route = respx_mock.post(
-            "/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets"
-        ).mock(
+        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
             return_value=httpx.Response(
                 200,
                 json=_shadow_target_body(
@@ -368,7 +366,7 @@ class TestBetaEndpointShadow:
 
         assert result.exit_code == 0, result.output
         assert list_route.call_count == 2
-        assert list_route.calls[1].request.url.params["after"] == "next-page"
+        assert cast(Call, list_route.calls[1]).request.url.params["after"] == "next-page"
         assert create_target_route.called
 
     @pytest.mark.respx(base_url=base_url)
