@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing_extensions import TypedDict
 
-from .wandb_metadata_param_param import WandbMetadataParam
+from .wandb_metadata_param import WandbMetadataParam
 
 __all__ = ["SessionMetadataParam"]
 
