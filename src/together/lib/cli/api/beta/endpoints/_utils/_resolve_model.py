@@ -44,6 +44,50 @@ class ResolvedModelAndConfig(NamedTuple):
     revision_id: str | None = None
 
 
+class ResolvedModelReference(NamedTuple):
+    reference_model: str | None
+    reference_model_id: str | None
+
+
+async def resolve_model_reference(config: CLIConfigParameter, model_input: str) -> ResolvedModelReference:
+    """Resolve a model ID, resource path, or name for a configs API filter."""
+    path_match = MODEL_PATH_RE.match(model_input)
+    if path_match:
+        project_id, model_id = path_match.group(1), path_match.group(2)
+        return ResolvedModelReference(f"projects/{project_id}/models/{model_id}", None)
+
+    if "/" not in model_input:
+        return ResolvedModelReference(None, model_input)
+
+    me = await config.client.whoami()
+    prefix, _, _name = model_input.partition("/")
+    if prefix == me.project_slug:
+        model = await _find_private_model_by_name(config, model_input)
+        if model.base_model:
+            return ResolvedModelReference(model.base_model, None)
+        if model.base_model_id:
+            return ResolvedModelReference(None, model.base_model_id)
+        return ResolvedModelReference(construct_model_path(model), None)
+
+    supported_models = await config.client.beta.models.list_supported(search=model_input)
+    exact_matches = [model for model in supported_models.data if model.name == model_input]
+    matches = exact_matches or supported_models.data
+    if not matches:
+        raise ValueError(f"Model {model_input} not found.")
+    if len(matches) > 1:
+        raise ValueError(f"""Multiple models found for "{model_input}".
+
+Please specify a more specific model name. To find a matching model, try this:
+- tg beta models public --search {model_input}""")
+
+    model = matches[0]
+    if model.base_model:
+        return ResolvedModelReference(model.base_model, None)
+    if model.base_model_id:
+        return ResolvedModelReference(None, model.base_model_id)
+    raise ValueError(f"Model {model_input} has no usable base model reference.")
+
+
 async def resolve_model(
     config: CLIConfigParameter,
     model_input: str,

@@ -413,6 +413,79 @@ class TestBetaModelsConfigs:
         assert "after=tok" in url
         assert json.loads(result.output)["next_cursor"] == "next"
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_accepts_model_resource_path(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "configs",
+                "projects/together/models/ml_base",
+                "--project",
+                "proj",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["referenceModel"] == "projects/together/models/ml_base"
+        assert "referenceModelId" not in params
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_resolves_private_model_name_to_base_model(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/projects/proj/models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_model_body(baseModel="projects/together/models/ml_base")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "models", "configs", "my-project/my-model", "--project", "proj", "--json"]
+        )
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["referenceModel"] == "projects/together/models/ml_base"
+        assert "referenceModelId" not in params
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_resolves_public_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+        route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "models", "configs", "meta-llama/Llama-3-8B", "--project", "proj", "--json"]
+        )
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["referenceModel"] == "projects/together/models/ml_base"
+        assert "referenceModelId" not in params
+
 
 class TestBetaModelsUpload:
     @pytest.mark.respx(base_url=base_url)
