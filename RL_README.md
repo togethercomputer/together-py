@@ -20,7 +20,7 @@ the full API reference remains in [api.md](api.md).
   then `session.download_checkpoint(...)` to pull the weights locally.
 - To save/resume from the full training state, call `session.create_training_checkpoint()` to get a `checkpoint_id`, stop the session, then create a new session with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) over the same resources.
 - Use `session.retrieve()` to fetch the full session state from the API (status, checkpoints, step).
-- All request data uses typed constructors (`ModelInput`, `Sample`, `LossConfigParam`, etc.) exported from `together.lib.beta.rl`. Plain dicts also work at runtime since these are `TypedDict`s.
+- All request data uses typed constructors exported from `together.lib.beta.rl`. Nested payloads (`ModelInput`, `LossConfig`, `LossInputs`, etc.) are `TypedDict`s. `Sample` is an immutable dataclass, while configuration types (`LoraConfig`, `OptimizerConfig`) are strict Pydantic models that reject unknown fields.
 
 ## Quickstart: SFT-style loop (sync)
 
@@ -30,13 +30,13 @@ from together.lib.beta.rl import (
     ModelResourcesClient,
     AdamParams,
     EncodedTextChunk,
-    LossConfigParam,
-    LossInputsParam,
-    LossTargetTokensParam,
+    LossConfig,
+    LossInputs,
+    LossTargetTokens,
     ModelInput,
     ModelInputChunk,
     Sample,
-    WeightsParam,
+    Weights,
 )
 
 resources = ModelResourcesClient.create(
@@ -60,12 +60,12 @@ chunk = ModelInputChunk(
 samples = [
     Sample(
         model_input=ModelInput(chunks=[chunk]),
-        loss_inputs=LossInputsParam(
-            weights=WeightsParam(
+        loss_inputs=LossInputs(
+            weights=Weights(
                 data=weights,
                 dtype="D_TYPE_INT64",
             ),
-            target_tokens=LossTargetTokensParam(
+            target_tokens=LossTargetTokens(
                 data=target_tokens,
                 dtype="D_TYPE_INT64",
             ),
@@ -74,7 +74,7 @@ samples = [
     )
 ]
 
-loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
+loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
 session.training.forward_backward(samples=samples, loss=loss)
 
 session.training.optim_step(
@@ -92,19 +92,18 @@ from together.lib.beta.rl import (
     ModelResourcesClient,
     AdamParams,
     EncodedTextChunk,
-    GrpoLossInputsParam,
+    GrpoLossInputs,
     GrpoLossParams,
-    LossAdvantagesParam,
-    LossConfigParam,
-    LossInputsParam,
-    LossLogprobsParam,
-    LossTargetTokensParam,
+    LossAdvantages,
+    LossConfig,
+    LossInputs,
+    LossLogprobs,
+    LossTargetTokens,
     ModelInput,
     ModelInputChunk,
-    PolicyVersionSegmentParam,
     Sample,
     SamplingParams,
-    WeightsParam,
+    Weights,
 )
 
 resources = ModelResourcesClient.create(
@@ -129,10 +128,8 @@ sample_result = session.sampling.sample(
     sampling_params=sampling,
 )
 
-policy_segments = [
-    PolicyVersionSegmentParam(version=segment.version, start_token=segment.start_token)
-    for segment in sample_result.policy_segments
-]
+# Carry policy segments over from the sample result as-is.
+policy_segments = sample_result.policy_segments
 samples = []
 for seq in sample_result.sequences:
     response_tokens = [int(t) for t in seq.tokens]
@@ -150,21 +147,21 @@ for seq in sample_result.sequences:
     )
     samples.append(Sample(
         model_input=ModelInput(chunks=[chunk]),
-        loss_inputs=LossInputsParam(
-            weights=WeightsParam(
+        loss_inputs=LossInputs(
+            weights=Weights(
                 data=weights,
                 dtype="D_TYPE_INT64",
             ),
-            target_tokens=LossTargetTokensParam(
+            target_tokens=LossTargetTokens(
                 data=target_tokens,
                 dtype="D_TYPE_INT64",
             ),
-            grpo_inputs=GrpoLossInputsParam(
-                advantages=LossAdvantagesParam(
+            grpo_inputs=GrpoLossInputs(
+                advantages=LossAdvantages(
                     data=advantages,
                     dtype="D_TYPE_FLOAT32",
                 ),
-                logprobs=LossLogprobsParam(
+                logprobs=LossLogprobs(
                     data=logprobs,
                     dtype="D_TYPE_FLOAT32",
                 ),
@@ -173,7 +170,7 @@ for seq in sample_result.sequences:
         policy_segments=policy_segments,
     ))
 
-loss = LossConfigParam(
+loss = LossConfig(
     type="LOSS_TYPE_GRPO",
     grpo_params=GrpoLossParams(
         agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
@@ -197,7 +194,7 @@ on them. Each `SessionClient` has independent training state, checkpoints, and l
 
 ```python
 import os
-from together.lib.beta.rl import ModelResourcesClient, LoraConfigParam
+from together.lib.beta.rl import ModelResourcesClient, LoraConfig
 
 resources = ModelResourcesClient.create(
     base_model="Qwen/Qwen3-0.6B",
@@ -205,8 +202,8 @@ resources = ModelResourcesClient.create(
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
 )
 
-session_a = resources.create_session(lora_config=LoraConfigParam(rank=8, alpha=16))
-session_b = resources.create_session(lora_config=LoraConfigParam(rank=16, alpha=32))
+session_a = resources.create_session(lora_config=LoraConfig(rank=8, alpha=16))
+session_b = resources.create_session(lora_config=LoraConfig(rank=16, alpha=32))
 
 # ... use session.training and session.sampling on each session independently ...
 
@@ -406,7 +403,7 @@ SessionClient.create(
     api_key: str | None = None,
     base_url: str | httpx.URL | None = None,
     resume_from_checkpoint_id: str | None = None,
-    lora_config: LoraConfigParam | None = None,
+    lora_config: LoraConfig | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
 ) -> SessionClient
@@ -421,7 +418,7 @@ Attaches a session to existing model resources. To start from a base model, prov
 | `api_key`                   | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`                  | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `resume_from_checkpoint_id` | `str \| None`   | `None`       | Training checkpoint ID to resume from. |
-| `lora_config`   | `LoraConfigParam \| None`  | `None`       | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
+| `lora_config`   | `LoraConfig \| None`  | `None`       | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
@@ -550,14 +547,14 @@ Runs a forward and backward pass to compute gradients.
 def forward_backward(
     *,
     samples: Iterable[Sample],
-    loss: LossConfigParam,
+    loss: LossConfig,
 ) -> ForwardBackwardResult
 ```
 
 | Parameter | Type                | Default      | Description                                                    |
 | --------- | ------------------- | ------------ | -------------------------------------------------------------- |
 | `samples` | `Iterable[Sample]`  | _(required)_ | Batch of training samples (see [Training sample](#training-sample)). |
-| `loss`    | `LossConfigParam`   | _(required)_ | Loss configuration (see [Loss configs](#loss-configurations)). |
+| `loss`    | `LossConfig`   | _(required)_ | Loss configuration (see [Loss configs](#loss-configurations)). |
 
 **Returns:** `ForwardBackwardResult`. The resolved value has:
 
@@ -706,7 +703,7 @@ ModelResourcesClient.create(
     base_url: str | httpx.URL | None = None,
     lora_enabled: bool = True,
     num_generator_replicas: int = 1,
-    optimizer_config: OptimizerConfigParam | None = None,
+    optimizer_config: OptimizerConfig | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
 ) -> ModelResourcesClient
@@ -719,7 +716,7 @@ ModelResourcesClient.create(
 | `base_url`      | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `lora_enabled`  | `bool`          | `True`       | Enable LoRA adapters on the provisioned resources.              |
 | `num_generator_replicas` | `int`  | `1`          | Number of generator replicas to provision. `0` runs the trainer only, with no generator. |
-| `optimizer_config` | `OptimizerConfigParam \| None` | `None` | Optimizer selection and hyperparameters for sessions on these resources (e.g. Muon). Defaults to AdamW. |
+| `optimizer_config` | `OptimizerConfig \| None` | `None` | Optimizer selection and hyperparameters for sessions on these resources (e.g. Muon). Defaults to AdamW. |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
@@ -753,7 +750,7 @@ Creates a training session on these resources and polls until it reaches `RUNNIN
 def create_session(
     *,
     resume_from_checkpoint_id: str | None = None,
-    lora_config: LoraConfigParam | None = None,
+    lora_config: LoraConfig | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
 ) -> SessionClient
@@ -762,7 +759,7 @@ def create_session(
 | Parameter                   | Type                      | Default  | Description                                                     |
 | --------------------------- | ------------------------- | -------- | --------------------------------------------------------------- |
 | `resume_from_checkpoint_id` | `str \| None`             | `None`   | Training checkpoint ID to resume from.                          |
-| `lora_config`               | `LoraConfigParam \| None` | `None`   | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
+| `lora_config`               | `LoraConfig \| None` | `None`   | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
 | `timeout`                   | `float \| None`           | `3600.0` | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`                  | `float`                   | `10.0`   | Polling interval in seconds.                                    |
 
@@ -795,12 +792,12 @@ chunk = ModelInputChunk(
 )
 Sample(
     model_input=ModelInput(chunks=[chunk]),
-    loss_inputs=LossInputsParam(
-        weights=WeightsParam(
+    loss_inputs=LossInputs(
+        weights=Weights(
             data=[0, 1, 1],
             dtype="D_TYPE_INT64",
         ),
-        target_tokens=LossTargetTokensParam(
+        target_tokens=LossTargetTokens(
             data=[2, 3, 0],
             dtype="D_TYPE_INT64",
         ),
@@ -814,30 +811,30 @@ Sample(
 | Field             | Type                                  | When to use                                                                 |
 | ----------------- | ------------------------------------- | --------------------------------------------------------------------------- |
 | `model_input`     | `ModelInput`                          | Always required. The full token sequence (prompt + response) to train on.   |
-| `loss_inputs`     | `LossInputsParam`                     | Always required. Per-token loss inputs (see below).                         |
-| `policy_segments` | `Iterable[PolicyVersionSegmentParam]` | Always required. Policy versions that generated these tokens; carry them over from `SampleResult.policy_segments`. Pass `[]` for tokens that did not come from sampling (e.g. SFT data). |
+| `loss_inputs`     | `LossInputs`                     | Always required. Per-token loss inputs (see below).                         |
+| `policy_segments` | `Iterable[PolicyVersionSegment]` | Always required. Policy versions that generated these tokens; pass `SampleResult.policy_segments` through as-is. Pass `[]` for tokens that did not come from sampling (e.g. SFT data). |
 
-`LossInputsParam` fields:
+`LossInputs` fields:
 
 | Field                        | Type                                | When to use                                                                 |
 | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
-| `target_tokens`              | `LossTargetTokensParam`             | Always required. Next-token targets (shifted by 1).                         |
-| `weights`                    | `WeightsParam`                      | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. `1` for tokens that contribute to the loss, `0` otherwise. |
-| `grpo_inputs`                | `GrpoLossInputsParam`               | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
-| `ppo_inputs`                 | `PpoLossInputsParam`                | PPO loss only.                                                              |
-| `cispo_inputs`               | `CispoLossInputsParam`              | CISPO loss only.                                                            |
-| `dro_inputs`                 | `DroLossInputsParam`                | DRO loss only.                                                              |
-| `importance_sampling_inputs` | `ImportanceSamplingLossInputsParam` | Importance-sampling loss only.                                              |
+| `target_tokens`              | `LossTargetTokens`             | Always required. Next-token targets (shifted by 1).                         |
+| `weights`                    | `Weights`                      | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. `1` for tokens that contribute to the loss, `0` otherwise. |
+| `grpo_inputs`                | `GrpoLossInputs`               | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
+| `ppo_inputs`                 | `PpoLossInputs`                | PPO loss only.                                                              |
+| `cispo_inputs`               | `CispoLossInputs`              | CISPO loss only.                                                            |
+| `dro_inputs`                 | `DroLossInputs`                | DRO loss only.                                                              |
+| `importance_sampling_inputs` | `ImportanceSamplingLossInputs` | Importance-sampling loss only.                                              |
 
 #### GRPO loss inputs
 
-`GrpoLossInputsParam` contains per-token data for the GRPO loss:
+`GrpoLossInputs` contains per-token data for the GRPO loss:
 
 | Field                  | Type                    | Required      | Description                                                            |
 | ---------------------- | ----------------------- | ------------- | ---------------------------------------------------------------------- |
-| `advantages`           | `LossAdvantagesParam`   | Yes           | Per-token advantage values.                                            |
-| `logprobs`             | `LossLogprobsParam`     | Yes           | Log probabilities from the generator model.                            |
-| `reference_logprobs`   | `LossLogprobsParam`     | If `beta > 0` | Log probabilities from the reference model for KL penalty computation. |
+| `advantages`           | `LossAdvantages`   | Yes           | Per-token advantage values.                                            |
+| `logprobs`             | `LossLogprobs`     | Yes           | Log probabilities from the generator model.                            |
+| `reference_logprobs`   | `LossLogprobs`     | If `beta > 0` | Log probabilities from the reference model for KL penalty computation. |
 
 Each tensor TypedDict has `data` (list of floats) and `dtype` (`"D_TYPE_FLOAT32"`).
 
@@ -862,7 +859,7 @@ SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 
 ### Loss configurations
 
-The `LossConfigParam` TypedDict passed to `forward_backward` controls the loss function.
+The `LossConfig` TypedDict passed to `forward_backward` controls the loss function.
 
 | `type`                          | Params field           | Description                           |
 | ------------------------------- | ---------------------- | ------------------------------------- |
@@ -879,7 +876,7 @@ so loop code written against other RL SDKs works unchanged.
 #### Cross-entropy (SFT)
 
 ```python
-loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
+loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
 ```
 
 Standard next-token prediction loss. Requires `weights` and `target_tokens` in `loss_inputs`.
@@ -887,7 +884,7 @@ Standard next-token prediction loss. Requires `weights` and `target_tokens` in `
 #### GRPO
 
 ```python
-loss = LossConfigParam(
+loss = LossConfig(
     type="LOSS_TYPE_GRPO",
     grpo_params=GrpoLossParams(
         agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
@@ -920,19 +917,21 @@ Requires `target_tokens` and `grpo_inputs` (with `advantages`, `logprobs`, and o
 
 ### LoRA config
 
-When creating a session with a LoRA adapter, pass `LoraConfigParam` to `lora_config`:
+When creating a session with a LoRA adapter, pass `LoraConfig` to `lora_config`:
 
 ```python
-from together.lib.beta.rl import ModelResourcesClient, LoraConfigParam
+from together.lib.beta.rl import ModelResourcesClient, LoraConfig
 
 resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
 session = resources.create_session(
-    lora_config=LoraConfigParam(alpha=16, dropout=0.05, rank=8),
+    lora_config=LoraConfig(alpha=16, dropout=0.05, rank=8),
 )
 ```
 
 | Field     | Type    | Default | Description                                 |
 | --------- | ------- | ------- | ------------------------------------------- |
-| `rank`    | `int`   | `8`     | Rank of the low-rank adapter matrices.      |
-| `alpha`   | `int`   | `16`    | LoRA scaling factor.                        |
-| `dropout` | `float` | `0.05`  | Dropout probability applied to LoRA layers. |
+| `rank`    | `int`   | `32`    | Rank of the low-rank adapter matrices (1–64). |
+| `alpha`   | `int`   | `64`    | LoRA scaling factor (1–128).                |
+| `dropout` | `float` | `0.0`   | Dropout probability applied to LoRA layers (0 ≤ x < 1). |
+
+Defaults mirror the server's; only fields you set explicitly are sent, so the server remains authoritative for the rest.
