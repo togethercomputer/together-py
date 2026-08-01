@@ -51,7 +51,7 @@ __all__ = [
     "TrainingClient",
     "SamplingClient",
     "ModelResourcesStatus",
-    # Request types (top-level)
+    # Request types
     "Sample",
     "LossConfig",
     "SessionMetadata",
@@ -67,17 +67,17 @@ __all__ = [
     "CheckpointVariant",
     "Gradient",
     "WeightSyncType",
-    # Request types (nested — sample model inputs)
+    # Model inputs
     "ModelInput",
     "ModelInputChunk",
     "EncodedTextChunk",
-    # Request types (nested — loss configs)
+    # Loss configs
     "GrpoLossParams",
     "PpoLossParams",
     "CispoLossParams",
     "DroLossParams",
     "CrossEntropyLossParams",
-    # Request types (nested — loss inputs)
+    # Loss inputs
     "LossInputs",
     "Weights",
     "LossTargetTokens",

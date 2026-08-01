@@ -1,13 +1,13 @@
-"""Public RL type surface.
+"""Typed request and response models for the RL API.
 
-Single import point for RL request and response types so that neither
-clients nor users ever touch a ``*Param`` name:
-
-- Request-only schemas use Stainless's suffix-free generated names.
-- Dual-use schemas keep distinct generated request/response types; the
-  request side gets the clean name here, response models remain in
-  ``together.types``.
+Every name here is also re-exported from ``together.lib.beta.rl``.
 """
+
+# Maintainer note: this module is the single import point that keeps *Param
+# names out of the public surface and the clients. Request-only schemas
+# already generate suffix-free names (`no_params_suffix` in
+# openapi.stainless.yml); dual-use schemas generate a response model plus a
+# *Param request type, and the request side is aliased to the clean name here.
 
 from ....types.beta.rl.session import Session
 from ....types.beta.rl.adam_params import AdamParams
@@ -54,7 +54,7 @@ from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 
 __all__ = [
     "ModelResourcesStatus",
-    # Request types (top-level)
+    # Request types
     "Sample",
     "LossConfig",
     "SessionMetadata",
@@ -70,17 +70,17 @@ __all__ = [
     "CheckpointVariant",
     "Gradient",
     "WeightSyncType",
-    # Request types (nested — sample model inputs)
+    # Model inputs
     "ModelInput",
     "ModelInputChunk",
     "EncodedTextChunk",
-    # Request types (nested — loss configs)
+    # Loss configs
     "GrpoLossParams",
     "PpoLossParams",
     "CispoLossParams",
     "DroLossParams",
     "CrossEntropyLossParams",
-    # Request types (nested — loss inputs)
+    # Loss inputs
     "LossInputs",
     "Weights",
     "LossTargetTokens",
