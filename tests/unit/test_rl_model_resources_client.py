@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from together.lib.beta.rl import OptimizerConfig, MuonOptimizerConfig
+from together.lib.beta.rl import WandbMetadata, OptimizerConfig, SessionMetadata, MuonOptimizerConfig
 from together.lib.beta.rl.clients import model_resources as model_resources_client_module
 from together.lib.beta.rl.clients.session import SessionClient
 from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
@@ -168,7 +168,11 @@ async def test_create_session_async_uses_model_resources_id(monkeypatch: pytest.
     client.api_key = "key-1"
     client.base_url = "http://host"
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+    metadata = SessionMetadata(wandb=WandbMetadata(project="project-1", run_id="run-1"))
+
     result = await resources.create_session_async(
+        display_name="session-1",
+        metadata=metadata,
         resume_from_checkpoint_id="ckpt-1",
         lora_config=None,
     )
@@ -177,7 +181,32 @@ async def test_create_session_async_uses_model_resources_id(monkeypatch: pytest.
     assert captured["model_resources_id"] == "res-1"
     assert captured["api_key"] == "key-1"
     assert captured["base_url"] == "http://host"
+    assert captured["display_name"] == "session-1"
+    assert captured["metadata"] is metadata
     assert captured["resume_from_checkpoint_id"] == "ckpt-1"
+
+
+def test_create_session_forwards_session_details(monkeypatch: pytest.MonkeyPatch) -> None:
+    sentinel = object()
+    captured: dict[str, Any] = {}
+
+    def fake_create(**kwargs: Any) -> object:
+        captured.update(kwargs)
+        return sentinel
+
+    monkeypatch.setattr(SessionClient, "create", fake_create)
+
+    client = MagicMock()
+    client.api_key = "key-1"
+    client.base_url = "http://host"
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+    metadata = SessionMetadata(wandb=WandbMetadata(project="project-1"))
+
+    result = resources.create_session(display_name="session-1", metadata=metadata)
+
+    assert result is sentinel
+    assert captured["display_name"] == "session-1"
+    assert captured["metadata"] is metadata
 
 
 async def test_attach_async_binds_existing_resource(monkeypatch: pytest.MonkeyPatch) -> None:

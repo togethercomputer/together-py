@@ -17,6 +17,7 @@ from .. import _operations
 from ..types import (
     Session,
     LoraConfig,
+    SessionMetadata,
     CheckpointVariant,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
@@ -162,6 +163,8 @@ class SessionClient:
         model_resources_id: str,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
+        display_name: str | None = None,
+        metadata: SessionMetadata | None = None,
         resume_from_checkpoint_id: str | None = None,
         lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
@@ -172,6 +175,8 @@ class SessionClient:
                 model_resources_id=model_resources_id,
                 api_key=api_key,
                 base_url=base_url,
+                display_name=display_name,
+                metadata=metadata,
                 resume_from_checkpoint_id=resume_from_checkpoint_id,
                 lora_config=lora_config,
                 timeout=timeout,
@@ -346,6 +351,8 @@ class SessionClient:
         model_resources_id: str,
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
+        display_name: str | None = None,
+        metadata: SessionMetadata | None = None,
         resume_from_checkpoint_id: str | None = None,
         lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
@@ -363,6 +370,8 @@ class SessionClient:
             model_resources = await client.beta.rl.model_resources.retrieve(model_resources_id)
             session = await client.beta.rl.sessions.create(
                 model_resources_id=model_resources_id,
+                display_name=display_name if display_name is not None else omit,
+                metadata=metadata if metadata is not None else omit,
                 resume_from_checkpoint_id=resume_from_checkpoint_id if resume_from_checkpoint_id is not None else omit,
                 lora_config=lora_config if lora_config is not None else omit,
             )

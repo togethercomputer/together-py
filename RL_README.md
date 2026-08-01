@@ -402,6 +402,8 @@ SessionClient.create(
     model_resources_id: str,
     api_key: str | None = None,
     base_url: str | httpx.URL | None = None,
+    display_name: str | None = None,
+    metadata: SessionMetadata | None = None,
     resume_from_checkpoint_id: str | None = None,
     lora_config: LoraConfig | None = None,
     timeout: float | None = 3600.0,
@@ -417,6 +419,8 @@ Attaches a session to existing model resources. To start from a base model, prov
 | `model_resources_id`        | `str`           | _(required)_ | ID of the model resources to attach to (see [ModelResourcesClient](#modelresourcesclientcreate)). The base model and session type are inherited from the resources. |
 | `api_key`                   | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`                  | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
+| `display_name`              | `str \| None`   | `None`       | Human-readable name for the session. |
+| `metadata`                  | `SessionMetadata \| None` | `None` | Auxiliary session metadata, including optional W&B details. |
 | `resume_from_checkpoint_id` | `str \| None`   | `None`       | Training checkpoint ID to resume from. |
 | `lora_config`   | `LoraConfig \| None`  | `None`       | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
@@ -749,6 +753,8 @@ Creates a training session on these resources and polls until it reaches `RUNNIN
 ```python
 def create_session(
     *,
+    display_name: str | None = None,
+    metadata: SessionMetadata | None = None,
     resume_from_checkpoint_id: str | None = None,
     lora_config: LoraConfig | None = None,
     timeout: float | None = 3600.0,
@@ -758,6 +764,8 @@ def create_session(
 
 | Parameter                   | Type                      | Default  | Description                                                     |
 | --------------------------- | ------------------------- | -------- | --------------------------------------------------------------- |
+| `display_name`              | `str \| None`             | `None`   | Human-readable name for the session.                            |
+| `metadata`                  | `SessionMetadata \| None` | `None`   | Auxiliary session metadata, including optional W&B details.     |
 | `resume_from_checkpoint_id` | `str \| None`             | `None`   | Training checkpoint ID to resume from.                          |
 | `lora_config`               | `LoraConfig \| None` | `None`   | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
 | `timeout`                   | `float \| None`           | `3600.0` | Max seconds to wait. `None` waits indefinitely.                 |
