@@ -455,9 +455,7 @@ class TestBetaModelsConfigs:
             return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
         )
 
-        result = cli_runner.invoke(
-            ["beta", "models", "configs", "my-project/my-model", "--project", "proj", "--json"]
-        )
+        result = cli_runner.invoke(["beta", "models", "configs", "my-project/my-model", "--project", "proj", "--json"])
 
         assert result.exit_code == 0, result.output
         params = cast(Call, route.calls[0]).request.url.params
