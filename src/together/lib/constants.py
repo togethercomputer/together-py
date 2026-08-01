@@ -1,0 +1,80 @@
+import enum
+
+# Session constants
+# TIMEOUT_SECS = 600
+# MAX_SESSION_LIFETIME_SECS = 180
+# MAX_CONNECTION_RETRIES = 2
+# MAX_RETRIES = 5
+# INITIAL_RETRY_DELAY = 0.5
+# MAX_RETRY_DELAY = 8.0
+
+# API defaults
+# BASE_URL = "https://api.together.ai/v1"
+
+# Download defaults
+DOWNLOAD_BLOCK_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_DOWNLOAD_RETRIES = 5  # Maximum retries for download failures
+DOWNLOAD_INITIAL_RETRY_DELAY = 1.0  # Initial retry delay in seconds
+DOWNLOAD_MAX_RETRY_DELAY = 30.0  # Maximum retry delay in seconds
+
+# Upload defaults
+MAX_CONCURRENT_PARTS = 4  # Maximum concurrent parts for multipart upload
+
+# Multipart upload constants
+MIN_PART_SIZE_MB = 5  # Minimum part size (S3 requirement)
+TARGET_PART_SIZE_MB = 250  # Target part size for optimal performance
+MAX_MULTIPART_PARTS = 250  # Maximum parts per upload (S3 limit)
+MULTIPART_UPLOAD_TIMEOUT = 300  # Connect/read timeout in seconds for each part
+MULTIPART_UPLOAD_WRITE_TIMEOUT = 3600  # Write timeout in seconds (1h) for large part uploads
+MULTIPART_THRESHOLD_GB = 5.0  # threshold for switching to multipart upload
+
+# Minimum number of samples required for fine-tuning file
+MIN_SAMPLES = 1
+
+# the number of bytes in a gigabyte, used to convert bytes to GB for readable comparison
+NUM_BYTES_IN_GB = 2**30
+
+# maximum number of GB sized files we support finetuning for
+MAX_FILE_SIZE_GB = 50.1
+
+# Multimodal limits
+MAX_IMAGES_PER_EXAMPLE = 10
+MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10MB
+# Max length = Header length + base64 factor (4/3) * image bytes
+MAX_BASE64_IMAGE_LENGTH = len("data:image/jpeg;base64,") + 4 * MAX_IMAGE_BYTES // 3
+
+# expected columns for Parquet files
+PARQUET_EXPECTED_COLUMNS = ["input_ids", "attention_mask", "labels", "position_ids"]
+
+
+class DatasetFormat(enum.Enum):
+    """Dataset format enum."""
+
+    GENERAL = "general"
+    CONVERSATION = "conversation"
+    INSTRUCTION = "instruction"
+    PREFERENCE_OPENAI = "preference_openai"
+
+
+JSONL_REQUIRED_COLUMNS_MAP = {
+    DatasetFormat.GENERAL: ["text"],
+    DatasetFormat.CONVERSATION: ["messages"],
+    DatasetFormat.INSTRUCTION: ["prompt", "completion"],
+    DatasetFormat.PREFERENCE_OPENAI: [
+        "input",
+        "preferred_output",
+        "non_preferred_output",
+    ],
+}
+JSONL_EXTRA_COLUMNS_MAP = {
+    DatasetFormat.GENERAL: [],
+    DatasetFormat.CONVERSATION: ["tools"],
+    DatasetFormat.INSTRUCTION: [],
+    DatasetFormat.PREFERENCE_OPENAI: [],
+}
+REQUIRED_COLUMNS_MESSAGE = ["role"]
+POSSIBLE_ROLES_CONVERSATION = ["system", "user", "assistant", "tool"]
+
+# DO NOT USE THIS
+# Pull this from the environment variable TOGETHER_DISABLE_TQDM so cli can disable tqdm if needed
+DISABLE_TQDM = False
