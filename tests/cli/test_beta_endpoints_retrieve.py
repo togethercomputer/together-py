@@ -213,4 +213,4 @@ class TestBetaEndpointsRetrieve:
         result = cli_runner.invoke(["beta", "endpoints", "get", "control", "--project", "proj", "--json"])
 
         assert result.exit_code != 0
-        assert 'Multiple deployments found for "control"' in result.output
+        assert 'Multiple deployments found for "control"' in json.loads(result.output)["error"]
