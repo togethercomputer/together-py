@@ -52,7 +52,6 @@ from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 
 __all__ = [
     "ModelResourcesStatus",
-    # Request types
     "Sample",
     "LossConfig",
     "SamplingParams",
@@ -66,17 +65,14 @@ __all__ = [
     "CheckpointVariant",
     "Gradient",
     "WeightSyncType",
-    # Model inputs
     "ModelInput",
     "ModelInputChunk",
     "EncodedTextChunk",
-    # Loss configs
     "GrpoLossParams",
     "PpoLossParams",
     "CispoLossParams",
     "DroLossParams",
     "CrossEntropyLossParams",
-    # Loss inputs
     "LossInputs",
     "Weights",
     "LossTargetTokens",
@@ -87,7 +83,6 @@ __all__ = [
     "CispoLossInputs",
     "DroLossInputs",
     "ImportanceSamplingLossInputs",
-    # Response types
     "Session",
     "SampleResult",
     "ForwardResult",
