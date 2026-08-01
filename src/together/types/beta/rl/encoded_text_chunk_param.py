@@ -7,10 +7,10 @@ from typing_extensions import Required, TypedDict
 
 from ...._types import SequenceNotStr
 
-__all__ = ["EncodedTextChunkParam"]
+__all__ = ["EncodedTextChunk"]
 
 
-class EncodedTextChunkParam(TypedDict, total=False):
+class EncodedTextChunk(TypedDict, total=False):
     """Pre-tokenized text content for a model input chunk."""
 
     tokens: Required[SequenceNotStr[Union[str, int]]]

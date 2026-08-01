@@ -19,6 +19,7 @@ from ...._response import (
 from ...._base_client import make_request_options
 from ....types.beta.rl import (
     AdamParams,
+    LossConfig,
     MuonParams,
     SamplingParams,
     WeightSyncType,
@@ -34,8 +35,8 @@ from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.sample_operation import SampleOperation
 from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.forward_operation import ForwardOperation
-from ....types.beta.rl.loss_config_param import LossConfigParam
-from ....types.beta.rl.model_input_param import ModelInputParam
+from ....types.beta.rl.loss_config_param import LossConfig
+from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
 from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from ....types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
@@ -232,7 +233,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        loss: LossConfigParam,
+        loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -643,7 +644,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        model_inputs: Iterable[ModelInputParam],
+        model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
@@ -891,7 +892,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        loss: LossConfigParam,
+        loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -1302,7 +1303,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        model_inputs: Iterable[ModelInputParam],
+        model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,

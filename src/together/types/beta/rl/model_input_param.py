@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import Iterable
 from typing_extensions import Required, TypedDict
 
-from .model_input_chunk_param import ModelInputChunkParam
+from .model_input_chunk_param import ModelInputChunk
 
-__all__ = ["ModelInputParam"]
+__all__ = ["ModelInput"]
 
 
-class ModelInputParam(TypedDict, total=False):
-    chunks: Required[Iterable[ModelInputChunkParam]]
+class ModelInput(TypedDict, total=False):
+    chunks: Required[Iterable[ModelInputChunk]]
     """Input chunks for the model"""
