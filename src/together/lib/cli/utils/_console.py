@@ -37,6 +37,7 @@ class _EncodingSafeStream:
     def __getattr__(self, name: str) -> Any:
         return getattr(self._stream, name)
 
+
 # Dark theme: tuned for dark terminal backgrounds (original Together CLI palette).
 _DARK_STYLES = {
     # Text styles
