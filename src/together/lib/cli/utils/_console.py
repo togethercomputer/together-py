@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Literal, TextIO, cast
+from typing import Any, TextIO, Literal, cast
 
-from rich.console import Console
 from rich.theme import Theme
+from rich.console import Console
 
 CliThemeName = Literal["light", "dark"]
 StreamName = Literal["stdout", "stderr"]
