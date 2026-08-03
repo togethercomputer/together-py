@@ -414,3 +414,9 @@ def test_public_rl_names_have_no_param_suffix(module_name: str) -> None:
     module = importlib.import_module(module_name)
     param_names = [name for name in module.__all__ if name.endswith("Param")]
     assert param_names == []
+
+
+@pytest.mark.parametrize("module_name", ["together.lib.beta.rl", "together.lib.beta.rl.types"])
+def test_public_rl_names_are_importable(module_name: str) -> None:
+    module = importlib.import_module(module_name)
+    assert [name for name in module.__all__ if not hasattr(module, name)] == []
