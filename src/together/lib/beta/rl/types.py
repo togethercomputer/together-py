@@ -17,8 +17,10 @@ from ....types.beta.rl.session import Session
 from ....types.beta.rl.adam_params import AdamParams
 from ....types.beta.rl.muon_params import MuonParams
 from ....types.beta.rl.sample_result import SampleResult
+from ....types.beta.rl.session_error import SessionError
 from ....types.beta.rl.weights_param import Weights
 from ....types.beta.rl.forward_result import Logprob, ForwardResult
+from ....types.beta.rl.session_status import SessionStatus
 from ....types.beta.rl.dro_loss_params import DroLossParams
 from ....types.beta.rl.ppo_loss_params import PpoLossParams
 from ....types.beta.rl.sampling_params import SamplingParams
@@ -31,7 +33,10 @@ from ....types.beta.rl.loss_inputs_param import LossInputs
 from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
+from ....types.beta.rl.session_error_code import SessionErrorCode
 from ....types.beta.rl.loss_logprobs_param import LossLogprobs
+from ....types.beta.rl.training_checkpoint import TrainingCheckpoint
+from ....types.beta.rl.inference_checkpoint import InferenceCheckpoint
 from ....types.beta.rl.wandb_metadata_param import WandbMetadataParam as WandbMetadata
 from ....types.beta.rl.dro_loss_inputs_param import DroLossInputs
 from ....types.beta.rl.loss_advantages_param import LossAdvantages
@@ -93,6 +98,11 @@ __all__ = [
     "DroLossInputs",
     "ImportanceSamplingLossInputs",
     "Session",
+    "SessionStatus",
+    "SessionError",
+    "SessionErrorCode",
+    "TrainingCheckpoint",
+    "InferenceCheckpoint",
     "SampleResult",
     "ForwardResult",
     "ForwardBackwardResult",
