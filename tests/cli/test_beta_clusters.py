@@ -1157,12 +1157,12 @@ class TestBetaClustersDelete:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_delete_confirm_yes(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        c = _cluster_body("c1", "to-delete")
-        respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
+    def test_delete_force_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.delete("/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
-        result = cli_runner.invoke(["beta", "clusters", "delete", "c1"], input="y\n")
-        assert "Deleted" in result.output
+
+        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--force"])
+
+        assert "Deleted cluster (c1)" in result.output
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
