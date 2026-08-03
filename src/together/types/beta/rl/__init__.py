@@ -55,6 +55,7 @@ from .muon_optimizer_config import MuonOptimizerConfig as MuonOptimizerConfig
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy
 from .ppo_loss_inputs_param import PpoLossInputs as PpoLossInputs
 from .session_create_params import SessionCreateParams as SessionCreateParams
+from .adamw_optimizer_config import AdamwOptimizerConfig as AdamwOptimizerConfig
 from .grpo_loss_inputs_param import GrpoLossInputs as GrpoLossInputs
 from .model_resources_status import ModelResourcesStatus as ModelResourcesStatus
 from .optimizer_config_param import OptimizerConfigParam as OptimizerConfigParam
@@ -85,6 +86,7 @@ from .model_resource_create_params import ModelResourceCreateParams as ModelReso
 from .policy_version_segment_param import PolicyVersionSegmentParam as PolicyVersionSegmentParam
 from .model_resources_list_response import ModelResourcesListResponse as ModelResourcesListResponse
 from .training_checkpoint_operation import TrainingCheckpointOperation as TrainingCheckpointOperation
+from .custom_forward_backward_result import CustomForwardBackwardResult as CustomForwardBackwardResult
 from .inference_checkpoint_operation import InferenceCheckpointOperation as InferenceCheckpointOperation
 from .custom_forward_backward_operation import CustomForwardBackwardOperation as CustomForwardBackwardOperation
 from .operation_forward_backward_params import OperationForwardBackwardParams as OperationForwardBackwardParams
