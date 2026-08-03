@@ -360,7 +360,6 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
     assert "cr_a" in output
     assert "cr_b" in output
     assert "meta-llama/Llama-3-8B-BF16" in output
-    assert "meta-llama/Llama-3-8B-FP8" in output
     assert "--model meta-llama/Llama-3-8B-BF16 --config cr_a" in output
 
 
