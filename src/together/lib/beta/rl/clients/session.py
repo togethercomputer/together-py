@@ -14,17 +14,15 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 
 from .. import _operations
-from ..types import (
-    Session,
-    LoraConfig,
-    SessionMetadata,
-    CheckpointVariant,
-    TrainingCheckpointResult,
-    InferenceCheckpointResult,
-)
 from ....._types import omit
 from ....._client import AsyncTogether
 from ....._base_client import DefaultAsyncHttpxClient
+from .....types.beta.rl.session import Session
+from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
+from .....types.beta.rl.checkpoint_variant import CheckpointVariant
+from .....types.beta.rl.session_metadata_param import SessionMetadataParam as SessionMetadata
+from .....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
+from .....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 
 if TYPE_CHECKING:
     from .sampling import SamplingClient

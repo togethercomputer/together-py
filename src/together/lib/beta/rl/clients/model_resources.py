@@ -9,7 +9,6 @@ from collections.abc import Coroutine
 
 import httpx
 
-from ..types import LoraConfig, OptimizerConfig, SessionMetadata
 from .session import (
     DEFAULT_SESSION_CREATION_TIMEOUT,
     DEFAULT_SESSION_CREATION_INTERVAL,
@@ -18,6 +17,9 @@ from .session import (
 from ....._types import omit
 from ....._client import AsyncTogether
 from .....types.beta.rl.model_resources import ModelResources
+from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
+from .....types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
+from .....types.beta.rl.session_metadata_param import SessionMetadataParam as SessionMetadata
 
 _T = TypeVar("_T")
 

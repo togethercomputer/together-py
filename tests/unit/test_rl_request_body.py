@@ -409,14 +409,12 @@ class TestRLRequestBody:
         assert (tmp_path / "b.bin").read_bytes() == b"bb"
 
 
-@pytest.mark.parametrize("module_name", ["together.lib.beta.rl", "together.lib.beta.rl.types"])
-def test_public_rl_names_have_no_param_suffix(module_name: str) -> None:
-    module = importlib.import_module(module_name)
+def test_public_rl_names_have_no_param_suffix() -> None:
+    module = importlib.import_module("together.lib.beta.rl")
     param_names = [name for name in module.__all__ if name.endswith("Param")]
     assert param_names == []
 
 
-@pytest.mark.parametrize("module_name", ["together.lib.beta.rl", "together.lib.beta.rl.types"])
-def test_public_rl_names_are_importable(module_name: str) -> None:
-    module = importlib.import_module(module_name)
+def test_public_rl_names_are_importable() -> None:
+    module = importlib.import_module("together.lib.beta.rl")
     assert [name for name in module.__all__ if not hasattr(module, name)] == []
