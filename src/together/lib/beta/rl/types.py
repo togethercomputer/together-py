@@ -6,8 +6,12 @@ Every name here is also re-exported from ``together.lib.beta.rl``.
 # Maintainer note: this module is the single import point that keeps *Param
 # names out of the public surface and the clients. Request-only schemas
 # already generate suffix-free names (`no_params_suffix` in
-# openapi.stainless.yml); dual-use schemas generate a response model plus a
-# *Param request type, and the request side is aliased to the clean name here.
+# openapi.stainless.yml). Dual-use schemas generate both a response model and
+# a *Param request TypedDict, so only one side can hold the clean name. Bind
+# it to whichever side callers spell out by name, and leave the other
+# unexported: callers construct the config types, so their request TypedDicts
+# win, while `policy_segments` is written as plain dicts and only named when
+# read off a `SampleResult`, so `PolicyVersionSegment` is the response model.
 
 from ....types.beta.rl.session import Session
 from ....types.beta.rl.adam_params import AdamParams
