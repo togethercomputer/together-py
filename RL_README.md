@@ -20,7 +20,7 @@ the full API reference remains in [api.md](api.md).
   then `session.download_checkpoint(...)` to pull the weights locally.
 - To save/resume from the full training state, call `session.create_training_checkpoint()` to get a `checkpoint_id`, stop the session, then create a new session with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) over the same resources.
 - Use `session.retrieve()` to fetch the full session state from the API (status, checkpoints, step).
-- All request data uses typed constructors exported from `together.lib.beta.rl`. Nested payloads (`ModelInput`, `LossConfig`, `LossInputs`, etc.) are `TypedDict`s. `Sample` is an immutable dataclass, while configuration types (`LoraConfig`, `OptimizerConfig`) are strict Pydantic models that reject unknown fields.
+- All request data uses typed constructors exported from `together.lib.beta.rl`. Every one of them (`Sample`, `ModelInput`, `LossConfig`, `LossInputs`, `LoraConfig`, `OptimizerConfig`, etc.) is a `TypedDict`, so plain dicts also work at runtime.
 
 ## Quickstart: SFT-style loop (sync)
 
@@ -128,8 +128,6 @@ sample_result = session.sampling.sample(
     sampling_params=sampling,
 )
 
-# Carry policy segments over from the sample result as-is.
-policy_segments = sample_result.policy_segments
 samples = []
 for seq in sample_result.sequences:
     response_tokens = [int(t) for t in seq.tokens]
@@ -167,7 +165,11 @@ for seq in sample_result.sequences:
                 ),
             ),
         ),
-        policy_segments=policy_segments,
+        # Carry the sample result's policy segments over to the training sample.
+        policy_segments=[
+            {"version": s.version, "start_token": s.start_token}
+            for s in sample_result.policy_segments
+        ],
     ))
 
 loss = LossConfig(
@@ -716,7 +718,7 @@ ModelResourcesClient.create(
 | `base_url`      | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `lora_enabled`  | `bool`          | `True`       | Enable LoRA adapters on the provisioned resources.              |
 | `num_generator_replicas` | `int`  | `1`          | Number of generator replicas to provision. `0` runs the trainer only, with no generator. |
-| `optimizer_config` | `OptimizerConfig \| None` | `None` | Optimizer selection and hyperparameters for sessions on these resources (e.g. Muon). Defaults to AdamW. |
+| `optimizer_config` | `OptimizerConfig \| None` | `None` | Optimizer selection and hyperparameters for sessions on these resources, e.g. `OptimizerConfig(muon=...)`. Defaults to AdamW, which can also be selected explicitly with `OptimizerConfig(adamw={})`. |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
 
@@ -812,7 +814,7 @@ Sample(
 | ----------------- | ------------------------------------- | --------------------------------------------------------------------------- |
 | `model_input`     | `ModelInput`                          | Always required. The full token sequence (prompt + response) to train on.   |
 | `loss_inputs`     | `LossInputs`                     | Always required. Per-token loss inputs (see below).                         |
-| `policy_segments` | `Iterable[PolicyVersionSegment]` | Always required. Policy versions that generated these tokens; pass `SampleResult.policy_segments` through as-is. Pass `[]` for tokens that did not come from sampling (e.g. SFT data). |
+| `policy_segments` | `Iterable[dict]` | Always required. Policy versions that generated these tokens, as `{"version": int, "start_token": int}` dicts; rebuild them from `SampleResult.policy_segments`. Pass `[]` for tokens that did not come from sampling (e.g. SFT data). |
 
 `LossInputs` fields:
 
