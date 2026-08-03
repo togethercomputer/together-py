@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypedDict
 
 __all__ = ["AdamwOptimizerConfigParam"]
 
-AdamwOptimizerConfigParam: TypeAlias = object
+
+class AdamwOptimizerConfigParam(TypedDict, total=False):
+    """AdamW optimizer configuration"""
+
+    pass
