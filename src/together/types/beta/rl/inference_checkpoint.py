@@ -13,7 +13,7 @@ __all__ = ["InferenceCheckpoint", "Registration"]
 class Registration(BaseModel):
     """Model registration details"""
 
-    api_model_name: str = FieldInfo(alias="model_name")
+    registered_model_name: str = FieldInfo(alias="model_name")
     """Registered model name for downloading the checkpoint"""
 
     registered_at: datetime
