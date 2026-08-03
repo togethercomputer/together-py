@@ -34,7 +34,7 @@ class Session(BaseModel):
     metadata: SessionMetadata
     """Auxiliary metadata associated with the training session"""
 
-    api_model_resources_id: str = FieldInfo(alias="model_resources_id")
+    resources_id: str = FieldInfo(alias="model_resources_id")
     """Model resource this session is attached to.
 
     The session runs on that resource's GPU pods.
