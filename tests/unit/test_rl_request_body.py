@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import importlib
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock
@@ -14,21 +15,22 @@ from respx.models import Call
 from together import AsyncTogether
 from together.lib.beta.rl import (
     Sample,
+    Weights,
     AdamParams,
+    LossConfig,
+    LossInputs,
     ModelInput,
     MuonParams,
-    WeightsParam,
+    LossLogprobs,
     SessionClient,
+    GrpoLossInputs,
     GrpoLossParams,
+    LossAdvantages,
     SamplingParams,
-    LossConfigParam,
-    LossInputsParam,
     ModelInputChunk,
     EncodedTextChunk,
-    LossLogprobsParam,
-    GrpoLossInputsParam,
-    LossAdvantagesParam,
-    LossTargetTokensParam,
+    LossTargetTokens,
+    PolicyVersionSegment,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -103,21 +105,21 @@ class TestRLRequestBody:
         samples = [
             Sample(
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
-                loss_inputs=LossInputsParam(
-                    weights=WeightsParam(
+                loss_inputs=LossInputs(
+                    weights=Weights(
                         data=[0, 1, 1],
                         dtype="D_TYPE_INT64",
                     ),
-                    target_tokens=LossTargetTokensParam(
+                    target_tokens=LossTargetTokens(
                         data=[2, 3, 0],
                         dtype="D_TYPE_INT64",
                     ),
-                    grpo_inputs=GrpoLossInputsParam(
-                        advantages=LossAdvantagesParam(
+                    grpo_inputs=GrpoLossInputs(
+                        advantages=LossAdvantages(
                             data=[1.0, 1.0, 1.0],
                             dtype="D_TYPE_FLOAT32",
                         ),
-                        logprobs=LossLogprobsParam(
+                        logprobs=LossLogprobs(
                             data=[-0.1, -0.2, -0.3],
                             dtype="D_TYPE_FLOAT32",
                         ),
@@ -126,7 +128,7 @@ class TestRLRequestBody:
                 policy_segments=[],
             )
         ]
-        loss = LossConfigParam(
+        loss = LossConfig(
             type="LOSS_TYPE_GRPO",
             grpo_params=GrpoLossParams(
                 agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
@@ -143,6 +145,50 @@ class TestRLRequestBody:
             "loss": loss,
             "samples": samples,
         }
+
+    @parametrize
+    @pytest.mark.respx(base_url=base_url)
+    async def test_forward_backward_serializes_policy_segment_models(
+        self, async_client: AsyncTogether, respx_mock: MockRouter
+    ) -> None:
+        """Response ``PolicyVersionSegment`` objects can be passed through as-is."""
+        respx_mock.post("/rl/training-sessions/sess/operations/forward-backward").mock(
+            return_value=httpx.Response(200, json={"id": "op-1"})
+        )
+        respx_mock.get("/rl/training-sessions/sess/operations/forward-backward/op-1").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "op-1",
+                    "status": "TRAINING_OPERATION_STATUS_COMPLETED",
+                    "output": {"loss": 1.0, "metrics": {}},
+                },
+            )
+        )
+
+        trainer = SessionClient("sess", _client=async_client)
+        segment = PolicyVersionSegment(version=1, start_token=0)
+        samples = [
+            Sample(
+                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
+                loss_inputs=LossInputs(
+                    weights=Weights(data=[0, 1], dtype="D_TYPE_INT64"),
+                    target_tokens=LossTargetTokens(data=[2, 0], dtype="D_TYPE_INT64"),
+                ),
+                policy_segments=cast(Any, [segment]),
+            )
+        ]
+        assert samples[0]["policy_segments"] == [segment]
+
+        await trainer.training.forward_backward_async(
+            samples=samples,
+            loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
+        )
+
+        call = cast(Any, respx_mock.calls[0])
+        request = cast(httpx.Request, call.request)
+        body = json.loads(request.content)
+        assert body["samples"][0]["policy_segments"] == [{"version": 1, "start_token": 0}]
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -361,3 +407,10 @@ class TestRLRequestBody:
         assert [path.name for path in paths] == ["a.bin", "b.bin"]
         assert (tmp_path / "a.bin").read_bytes() == b"a"
         assert (tmp_path / "b.bin").read_bytes() == b"bb"
+
+
+@pytest.mark.parametrize("module_name", ["together.lib.beta.rl", "together.lib.beta.rl.types"])
+def test_public_rl_names_have_no_param_suffix(module_name: str) -> None:
+    module = importlib.import_module(module_name)
+    param_names = [name for name in module.__all__ if name.endswith("Param")]
+    assert param_names == []

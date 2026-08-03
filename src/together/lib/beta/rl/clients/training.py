@@ -3,20 +3,25 @@ from __future__ import annotations
 from typing import Any, Iterable, cast, get_args
 from dataclasses import dataclass
 
+from ..types import (
+    Sample,
+    Gradient,
+    AdamParams,
+    LossConfig,
+    MuonParams,
+    ForwardResult,
+    WeightSyncType,
+    OptimStepResult,
+    ForwardBackwardResult,
+    CustomForwardBackwardResult,
+)
 from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .....types.beta.rl.loss_type import LossType
-from .....types.beta.rl.adam_params import AdamParams
-from .....types.beta.rl.muon_params import MuonParams
-from .....types.beta.rl.forward_result import ForwardResult
-from .....types.beta.rl.weight_sync_type import WeightSyncType
-from .....types.beta.rl.loss_config_param import LossConfigParam
-from .....types.beta.rl.optim_step_result import OptimStepResult
-from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from .....types.beta.rl.operation_forward_params import OperationForwardParams
-from .....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
-from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
+from .....types.beta.rl.operation_forward_backward_params import OperationForwardBackwardParams
+from .....types.beta.rl.operation_custom_forward_backward_params import OperationCustomForwardBackwardParams
 
 _PROTO_LOSS_TYPES = frozenset(get_args(LossType))
 _PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {
@@ -24,7 +29,7 @@ _PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {
 }
 
 
-def _resolve_loss_type(loss: LossConfigParam) -> LossConfigParam:
+def _resolve_loss_type(loss: LossConfig) -> LossConfig:
     given = loss["type"]
     if given in _PROTO_LOSS_TYPES:
         return loss
@@ -83,7 +88,7 @@ class TrainingClient:
         self,
         *,
         samples: Iterable[Sample],
-        loss: LossConfigParam,
+        loss: LossConfig,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
@@ -100,7 +105,7 @@ class TrainingClient:
         self,
         *,
         samples: Iterable[Sample],
-        loss: LossConfigParam,
+        loss: LossConfig,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
@@ -134,7 +139,7 @@ class TrainingClient:
         gradients: Iterable[Gradient],
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> Any:
+    ) -> CustomForwardBackwardResult:
         return self._session.run(
             self.custom_forward_backward_async(
                 samples=samples,
@@ -151,7 +156,7 @@ class TrainingClient:
         gradients: Iterable[Gradient],
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> Any:
+    ) -> CustomForwardBackwardResult:
         body, large_payload_id = await prepare_operation_body(
             self._session._client,
             session_id=self._session._session_id,
@@ -171,11 +176,12 @@ class TrainingClient:
             gradients=gradients,
             extra_body=extra_body,
         )
-        return await self._session._submit_and_wait(
+        result = await self._session._submit_and_wait(
             operation,
             timeout=timeout,
             interval=interval,
         )
+        return cast(CustomForwardBackwardResult, result)
 
     def optim_step(
         self,

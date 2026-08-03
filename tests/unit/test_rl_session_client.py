@@ -12,23 +12,24 @@ import pytest
 from together.lib.beta.rl import (
     Sample,
     Logprob,
+    Weights,
     Gradient,
     AdamParams,
+    LoraConfig,
+    LossConfig,
+    LossInputs,
     ModelInput,
     MuonParams,
     SampleResult,
-    WeightsParam,
     ForwardResult,
     SessionClient,
     SamplingClient,
     TrainingClient,
-    LossConfigParam,
-    LossInputsParam,
     ModelInputChunk,
     OptimStepResult,
     EncodedTextChunk,
+    LossTargetTokens,
     ForwardBackwardResult,
-    LossTargetTokensParam,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
     _payloads as rl_payloads_module,
@@ -150,6 +151,10 @@ def _make_session(client: FakeClient | None = None) -> SessionClient:
     return SessionClient("sess", _client=cast(Any, client))
 
 
+def _sample_payload(sample: Sample) -> dict[str, Any]:
+    return dict(sample)
+
+
 def _sampling(session: SessionClient) -> SamplingClient:
     sampling = session.sampling
     assert sampling is not None
@@ -172,6 +177,10 @@ def test_session_exposes_capability_clients() -> None:
     sampling = session.sampling
     assert sampling is not None
     assert sampling.session_id == session.session_id
+
+
+def test_lora_config_has_clean_public_name() -> None:
+    assert LoraConfig(rank=8) == {"rank": 8}
 
 
 def test_trainer_only_session_rejects_sampling_access() -> None:
@@ -292,7 +301,7 @@ def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "forward"
     assert args == ("sess",)
-    assert kwargs["samples"] == samples
+    assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
     assert kwargs.get("extra_body") is None
     trainer.stop()
 
@@ -311,7 +320,7 @@ def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytes
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "custom_forward_backward"
     assert args == ("sess",)
-    assert kwargs["samples"] == samples
+    assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
     assert kwargs["gradients"] == gradients
     assert kwargs.get("extra_body") is None
     trainer.stop()
@@ -325,9 +334,9 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
     samples = [
         Sample(
             model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
-            loss_inputs=LossInputsParam(
-                target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-                weights=WeightsParam(
+            loss_inputs=LossInputs(
+                target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
+                weights=Weights(
                     data=[1, 0, 1],
                     dtype="D_TYPE_INT64",
                 ),
@@ -335,7 +344,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
             policy_segments=[],
         )
     ]
-    loss = LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY")
+    loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
 
     result = trainer.training.forward_backward(samples=samples, loss=loss)
 
@@ -344,7 +353,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "forward_backward"
     assert args == ("sess",)
-    assert kwargs["samples"] == samples
+    assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
     assert kwargs["loss"] == loss
     trainer.stop()
 
@@ -469,6 +478,7 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
         model_resources_id="res-1",
         api_key="api-key",
         base_url="http://127.0.0.1:4010",
+        lora_config=LoraConfig(rank=8, alpha=16, dropout=0.1),
         timeout=0.1,
         interval=0.0,
     )
@@ -481,6 +491,7 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     assert await_args is not None
     create_kwargs = await_args.kwargs
     assert create_kwargs["model_resources_id"] == "res-1"
+    assert create_kwargs["lora_config"] == {"rank": 8, "alpha": 16, "dropout": 0.1}
 
 
 async def test_create_async_closes_client_on_terminal_status(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -664,9 +675,9 @@ def _small_sample() -> Sample:
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
         ),
-        loss_inputs=LossInputsParam(
-            target_tokens=LossTargetTokensParam(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-            weights=WeightsParam(
+        loss_inputs=LossInputs(
+            target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
+            weights=Weights(
                 data=[1, 0, 1],
                 dtype="D_TYPE_INT64",
             ),
@@ -683,7 +694,7 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
 
     result = trainer.training.forward_backward(
         samples=[_small_sample()],
-        loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
+        loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
 
     assert result.loss == 0.5
@@ -692,7 +703,7 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     assert method == "forward_backward"
     assert args == ("sess",)
     assert kwargs.get("extra_body") is None
-    assert kwargs["samples"] == [_small_sample()]
+    assert kwargs["samples"] == [_sample_payload(_small_sample())]
     trainer.stop()
 
 
@@ -743,9 +754,9 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=long_tokens))],
         ),
-        loss_inputs=LossInputsParam(
-            target_tokens=LossTargetTokensParam(data=long_tokens, dtype="D_TYPE_INT64"),
-            weights=WeightsParam(
+        loss_inputs=LossInputs(
+            target_tokens=LossTargetTokens(data=long_tokens, dtype="D_TYPE_INT64"),
+            weights=Weights(
                 data=long_mask,
                 dtype="D_TYPE_INT64",
             ),
@@ -755,7 +766,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
 
     result = await trainer.training.forward_backward_async(
         samples=[sample],
-        loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
+        loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
 
     assert result.loss == 2.0
@@ -790,14 +801,14 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
                     model_input=ModelInput(
                         chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=list(range(50))))],
                     ),
-                    loss_inputs=LossInputsParam(
-                        target_tokens=LossTargetTokensParam(data=list(range(50)), dtype="D_TYPE_INT64"),
-                        weights=WeightsParam(data=[1] * 50, dtype="D_TYPE_INT64"),
+                    loss_inputs=LossInputs(
+                        target_tokens=LossTargetTokens(data=list(range(50)), dtype="D_TYPE_INT64"),
+                        weights=Weights(data=[1] * 50, dtype="D_TYPE_INT64"),
                     ),
                     policy_segments=[],
                 )
             ],
-            loss=LossConfigParam(type="LOSS_TYPE_CROSS_ENTROPY"),
+            loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
         )
 
     assert client.captured_put_body is None

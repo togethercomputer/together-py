@@ -14,14 +14,16 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 
 from .. import _operations
+from ..types import (
+    Session,
+    LoraConfig,
+    CheckpointVariant,
+    TrainingCheckpointResult,
+    InferenceCheckpointResult,
+)
 from ....._types import omit
 from ....._client import AsyncTogether
 from ....._base_client import DefaultAsyncHttpxClient
-from .....types.beta.rl.training_session import TrainingSession
-from .....types.beta.rl.lora_config_param import LoraConfigParam
-from .....types.beta.rl.checkpoint_variant import CheckpointVariant
-from .....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
-from .....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 
 if TYPE_CHECKING:
     from .sampling import SamplingClient
@@ -84,7 +86,7 @@ class SessionClient:
         default=None,
     )
 
-    def retrieve(self) -> TrainingSession:
+    def retrieve(self) -> Session:
         return self.run(self.retrieve_async())
 
     @property
@@ -161,7 +163,7 @@ class SessionClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         resume_from_checkpoint_id: str | None = None,
-        lora_config: LoraConfigParam | None = None,
+        lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
     ) -> SessionClient:
@@ -334,7 +336,7 @@ class SessionClient:
                 raise TimeoutError(msg)
             await asyncio.sleep(interval)
 
-    async def retrieve_async(self) -> TrainingSession:
+    async def retrieve_async(self) -> Session:
         return await self._client.beta.rl.sessions.retrieve(self._session_id)
 
     @classmethod
@@ -345,7 +347,7 @@ class SessionClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         resume_from_checkpoint_id: str | None = None,
-        lora_config: LoraConfigParam | None = None,
+        lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
     ) -> SessionClient:

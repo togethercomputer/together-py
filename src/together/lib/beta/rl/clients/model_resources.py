@@ -9,6 +9,7 @@ from collections.abc import Coroutine
 
 import httpx
 
+from ..types import LoraConfig, OptimizerConfig
 from .session import (
     DEFAULT_SESSION_CREATION_TIMEOUT,
     DEFAULT_SESSION_CREATION_INTERVAL,
@@ -17,8 +18,6 @@ from .session import (
 from ....._types import omit
 from ....._client import AsyncTogether
 from .....types.beta.rl.model_resources import ModelResources
-from .....types.beta.rl.lora_config_param import LoraConfigParam
-from .....types.beta.rl.optimizer_config_param import OptimizerConfigParam
 
 _T = TypeVar("_T")
 
@@ -109,7 +108,7 @@ class ModelResourcesClient:
         base_model: str,
         lora_enabled: bool = True,
         num_generator_replicas: int = 1,
-        optimizer_config: OptimizerConfigParam | None = None,
+        optimizer_config: OptimizerConfig | None = None,
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
@@ -173,7 +172,7 @@ class ModelResourcesClient:
         base_model: str,
         lora_enabled: bool = True,
         num_generator_replicas: int = 1,
-        optimizer_config: OptimizerConfigParam | None = None,
+        optimizer_config: OptimizerConfig | None = None,
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
@@ -230,7 +229,7 @@ class ModelResourcesClient:
         self,
         *,
         resume_from_checkpoint_id: str | None = None,
-        lora_config: LoraConfigParam | None = None,
+        lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
     ) -> SessionClient:
@@ -248,7 +247,7 @@ class ModelResourcesClient:
         self,
         *,
         resume_from_checkpoint_id: str | None = None,
-        lora_config: LoraConfigParam | None = None,
+        lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
     ) -> SessionClient:

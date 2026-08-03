@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from together.lib.beta.rl import OptimizerConfig, MuonOptimizerConfig
 from together.lib.beta.rl.clients import model_resources as model_resources_client_module
 from together.lib.beta.rl.clients.session import SessionClient
 from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
@@ -64,16 +65,16 @@ async def test_create_async_forwards_optimizer_config(monkeypatch: pytest.Monkey
     client = _fake_client()
     _patch_together(monkeypatch, client)
 
-    optimizer_config = {"muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_MATCH_ADAMW"}}
+    optimizer_config = OptimizerConfig(muon=MuonOptimizerConfig(scaling_strategy="MUON_SCALING_STRATEGY_MATCH_ADAMW"))
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
-        optimizer_config=cast(Any, optimizer_config),
+        optimizer_config=optimizer_config,
         timeout=0.1,
         interval=0.0,
     )
 
     create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
-    assert create_kwargs["optimizer_config"] == optimizer_config
+    assert create_kwargs["optimizer_config"] == {"muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_MATCH_ADAMW"}}
 
 
 async def test_create_async_omits_optimizer_config_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -167,7 +168,6 @@ async def test_create_session_async_uses_model_resources_id(monkeypatch: pytest.
     client.api_key = "key-1"
     client.base_url = "http://host"
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
-
     result = await resources.create_session_async(
         resume_from_checkpoint_id="ckpt-1",
         lora_config=None,
@@ -251,3 +251,9 @@ def test_model_resources_client_is_publicly_exported() -> None:
     assert FromRl is ModelResourcesClient
     assert FromBeta is ModelResourcesClient
     assert ModelResourcesStatus is not None
+
+
+def test_rl_public_api_hides_generated_param_suffixes() -> None:
+    import together.lib.beta.rl as rl
+
+    assert not [name for name in rl.__all__ if name.endswith("Param")]
