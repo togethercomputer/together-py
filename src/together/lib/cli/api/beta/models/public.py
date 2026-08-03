@@ -52,8 +52,8 @@ async def public(
         return
 
     table = ListTable("Supported Models", empty_message="No supported models found.")
-    table.add_primary_column("Name")
-    table.add_column("Model", ratio=2)
+    table.add_primary_column("Model", ratio=3)
+    table.add_column("Config")
     table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
@@ -61,7 +61,7 @@ async def public(
     for model in response.data:
         profiles = model.deployment_profiles or []
         if not profiles:
-            table.add_row(model.name or "", "", "", "", "", "")
+            table.add_row(model.name or model.id or "", "", "", "", "")
             continue
 
         for profile in profiles:
@@ -70,9 +70,8 @@ async def public(
                 gpu = f"{profile.gpu_count or '?'}x {profile.gpu_type or '?'}"
             profile_model = _profile_cli_model(profile, model.id)
             table.add_row(
-                model.name or "",
-                f"    [primary]{profile_model}[/primary]\n"
-                f"Config: [primary]{profile.certified_config_revision_id or ''}[/primary]",
+                profile_model,
+                profile.certified_config_revision_id or "",
                 profile.quantization or "",
                 gpu,
                 profile.parallelism or "",

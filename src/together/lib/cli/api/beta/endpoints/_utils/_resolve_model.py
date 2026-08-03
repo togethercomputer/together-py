@@ -262,19 +262,19 @@ def _print_deployment_profiles(profiles: list[SupportedModelDeploymentProfile], 
     from together.lib.cli.components.list import ListTable
 
     table = ListTable(f"Available configs for {model_input}")
-    table.add_primary_column("Quant")
+    table.add_primary_column("Model", ratio=3)
+    table.add_column("Config", ratio=2)
+    table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
-    table.add_column("Model", ratio=2)
-    table.add_column("Config", ratio=2)
 
     for profile in profiles:
         table.add_row(
+            _profile_cli_model(profile),
+            _profile_config_id(profile),
             profile.quantization or "",
             _profile_gpu(profile),
             profile.parallelism or "",
-            _profile_cli_model(profile),
-            _profile_config_id(profile),
         )
     console.print(table)
 
