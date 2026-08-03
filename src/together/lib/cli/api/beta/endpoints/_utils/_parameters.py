@@ -66,9 +66,11 @@ class ModelPromptParameter(PromptParameter):
         self.choices = [("/".join(model.name.split("/")[1:]), model.id) for model in models.data]
         for model in public_models.data:
             if model.deployment_profiles:
-                profile_model = model.deployment_profiles[0].model
+                profile = model.deployment_profiles[0]
+                profile_model = profile.model
                 if profile_model:
-                    self.choices.append((model.name, profile_model))
+                    profile_name = getattr(profile, "api_model_name", None) or model.name
+                    self.choices.append((profile_name, profile_model))
 
         if show_more:
             self.choices.append(("Show more", "show_more"))

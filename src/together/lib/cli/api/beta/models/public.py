@@ -53,7 +53,7 @@ async def public(
 
     table = ListTable("Supported Models", empty_message="No supported models found.")
     table.add_primary_column("Name")
-    table.add_column("ID", ratio=2)
+    table.add_column("Model", ratio=2)
     table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
@@ -68,9 +68,11 @@ async def public(
             gpu = ""
             if profile.gpu_count or profile.gpu_type:
                 gpu = f"{profile.gpu_count or '?'}x {profile.gpu_type or '?'}"
+            profile_model = _profile_cli_model(profile, model.id)
             table.add_row(
                 model.name or "",
-                f"    ID: [primary]{_profile_model_id(profile.model) or model.id or ''}[/primary]\nConfig: [primary]{profile.certified_config_revision_id or ''}[/primary]",
+                f"    [primary]{profile_model}[/primary]\n"
+                f"Config: [primary]{profile.certified_config_revision_id or ''}[/primary]",
                 profile.quantization or "",
                 gpu,
                 profile.parallelism or "",
@@ -80,6 +82,15 @@ async def public(
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
         console.print(f"  [dim]-[/dim] [white]tg beta models public --after {response.next_cursor}[/white]")
+
+
+def _profile_cli_model(profile: object, fallback: str | None = None) -> str:
+    return (
+        getattr(profile, "api_model_name", None)
+        or _profile_model_id(getattr(profile, "model", None))
+        or fallback
+        or ""
+    )
 
 
 def _profile_model_id(profile_model: str | None) -> str:

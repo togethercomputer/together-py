@@ -31,7 +31,8 @@ class PromptBaseModel(PromptParameter):
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:
                     model_id = match.group(2)
-                    self.choices.append((f"{model.name} ({profile.quantization})", model_id))
+                    profile_name = getattr(profile, "api_model_name", None) or model.name
+                    self.choices.append((f"{profile_name} ({profile.quantization})", model_id))
 
 
 async def create(
