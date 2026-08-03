@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from cyclopts import Parameter
 from typing_extensions import Annotated
+
+from cyclopts import Parameter
 
 from together._utils._json import openapi_dumps
 from together.types.beta.clusters import ClusterStorage
