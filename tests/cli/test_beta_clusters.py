@@ -1165,6 +1165,18 @@ class TestBetaClustersDelete:
         assert "Deleted" in result.output
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_delete_non_interactive_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.delete("/compute/clusters/c1").mock(
+            return_value=httpx.Response(200, json={"cluster_id": "c1"})
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--non-interactive"])
+
+        assert route.called
+        assert "Deleted cluster (c1)" in result.output
+        assert result.exit_code == 0
+
 
 class TestBetaClustersGetCredentials:
     @pytest.mark.respx(base_url=base_url)
@@ -1244,6 +1256,22 @@ class TestBetaClustersStorage:
         )
         result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--json"])
         assert json.loads(result.output) == {"success": True}
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_storage_delete_non_interactive_skips_confirmation(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.delete("/compute/clusters/storage/volumes/vol-1").mock(
+            return_value=httpx.Response(200, json={"success": True})
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "clusters", "storage", "delete", "vol-1", "--non-interactive"]
+        )
+
+        assert route.called
+        assert "Deleted. (vol-1)" in result.output
         assert result.exit_code == 0
 
 

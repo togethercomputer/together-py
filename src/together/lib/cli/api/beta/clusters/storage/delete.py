@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from cyclopts import Parameter
+from typing_extensions import Annotated
+
 from together._utils._json import openapi_dumps
 from together.types.beta.clusters import ClusterStorage
 from together.lib.cli.utils.config import CLIConfigParameter
@@ -21,6 +24,7 @@ def _print_storage(storage: ClusterStorage) -> None:
 
 async def delete(
     volume_id: str,
+    force: Annotated[bool, Parameter(negative=(), help="Delete without confirmation")] = False,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -31,16 +35,19 @@ async def delete(
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    storage = await show_loading_status("", config.client.beta.clusters.storage.retrieve(volume_id))
-    _print_storage(storage)
-    resp = (
-        input(f"\nClusters Storage: Are you sure you want to delete storage volume {storage.volume_name}? [y/N] ")
-        .strip()
-        .lower()
-    )
+    if not config.non_interactive and not force:
+        storage = await show_loading_status("", config.client.beta.clusters.storage.retrieve(volume_id))
+        _print_storage(storage)
+        resp = (
+            input(
+                f"\nClusters Storage: Are you sure you want to delete storage volume {storage.volume_name}? [y/N] "
+            )
+            .strip()
+            .lower()
+        )
 
-    if resp != "y" and resp != "yes":
-        return
+        if resp != "y" and resp != "yes":
+            return
 
     await show_loading_status("Deleting cluster volume...", config.client.beta.clusters.storage.delete(volume_id))
     console.print(f"[blue]Deleted. ({volume_id})[/blue]")
