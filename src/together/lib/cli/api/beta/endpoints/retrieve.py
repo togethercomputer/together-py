@@ -184,6 +184,8 @@ def render_header(endpoint: Endpoint, ab_experiments: list[AbExperiment], shadow
     if endpoint.updated_at:
         header_table.add_row("  Updated at", format_datetime(endpoint.updated_at))
     header_table.add_row("  Visibility", _readable_visibility(endpoint.visibility))
+    if endpoint.active_rollout_id:
+        header_table.add_row("  Active rollout", endpoint.active_rollout_id)
     header_table.add_row("  Web URL", f"[link={url}]{url}[/link]")
 
     # A/B Experiments

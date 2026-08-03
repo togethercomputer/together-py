@@ -160,6 +160,19 @@ class TestBetaEndpointsRetrieve:
         assert payload["name"] == "my-project/my-endpoint"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_endpoint_shows_active_rollout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(200, json=_endpoint_body(activeRolloutId="rollout_1"))
+        )
+        _mock_endpoint_get_side_resources(respx_mock)
+
+        result = cli_runner.invoke(["beta", "endpoints", "retrieve", "ep_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Active rollout" in result.output
+        assert "rollout_1" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_deployment_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         # Name lookup as endpoint fails (no matching endpoint), then deployment name resolves.
