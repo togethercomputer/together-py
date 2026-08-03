@@ -366,8 +366,7 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
-[dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants;
-traffic-split weight 0 warm-up deployments are allowed.
+[dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
 
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
