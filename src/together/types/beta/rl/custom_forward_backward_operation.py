@@ -5,6 +5,7 @@ from typing import Optional
 from ...._models import BaseModel
 from .operation_error import OperationError
 from .operation_status import OperationStatus
+from .custom_forward_backward_result import CustomForwardBackwardResult
 
 __all__ = ["CustomForwardBackwardOperation"]
 
@@ -21,5 +22,5 @@ class CustomForwardBackwardOperation(BaseModel):
     error: Optional[OperationError] = None
     """Error details on failure"""
 
-    output: Optional[object] = None
+    output: Optional[CustomForwardBackwardResult] = None
     """Result on success"""
