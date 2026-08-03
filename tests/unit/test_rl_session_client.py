@@ -23,10 +23,12 @@ from together.lib.beta.rl import (
     SampleResult,
     ForwardResult,
     SessionClient,
+    WandbMetadata,
     SamplingClient,
     TrainingClient,
     ModelInputChunk,
     OptimStepResult,
+    SessionMetadata,
     EncodedTextChunk,
     LossTargetTokens,
     ForwardBackwardResult,
@@ -478,6 +480,8 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
         model_resources_id="res-1",
         api_key="api-key",
         base_url="http://127.0.0.1:4010",
+        display_name="my-run",
+        metadata=SessionMetadata(wandb=WandbMetadata(project="proj", run_id="run-1")),
         lora_config=LoraConfig(rank=8, alpha=16, dropout=0.1),
         timeout=0.1,
         interval=0.0,
@@ -491,6 +495,8 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     assert await_args is not None
     create_kwargs = await_args.kwargs
     assert create_kwargs["model_resources_id"] == "res-1"
+    assert create_kwargs["display_name"] == "my-run"
+    assert create_kwargs["metadata"] == {"wandb": {"project": "proj", "run_id": "run-1"}}
     assert create_kwargs["lora_config"] == {"rank": 8, "alpha": 16, "dropout": 0.1}
 
 

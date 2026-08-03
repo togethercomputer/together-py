@@ -404,6 +404,8 @@ SessionClient.create(
     model_resources_id: str,
     api_key: str | None = None,
     base_url: str | httpx.URL | None = None,
+    display_name: str | None = None,
+    metadata: SessionMetadata | None = None,
     resume_from_checkpoint_id: str | None = None,
     lora_config: LoraConfig | None = None,
     timeout: float | None = 3600.0,
@@ -419,6 +421,8 @@ Attaches a session to existing model resources. To start from a base model, prov
 | `model_resources_id`        | `str`           | _(required)_ | ID of the model resources to attach to (see [ModelResourcesClient](#modelresourcesclientcreate)). The base model and session type are inherited from the resources. |
 | `api_key`                   | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`                  | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
+| `display_name`              | `str \| None`   | `None`       | Human-readable name for the session. |
+| `metadata`                  | `SessionMetadata \| None` | `None` | Auxiliary session metadata, including optional W&B details (see [Session metadata](#session-metadata)). |
 | `resume_from_checkpoint_id` | `str \| None`   | `None`       | Training checkpoint ID to resume from. |
 | `lora_config`   | `LoraConfig \| None`  | `None`       | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
@@ -454,7 +458,8 @@ Client and event loop internals are private implementation details.
 
 #### `session.retrieve()`
 
-Fetches the current session state from the API. Use `retrieve_async()` in async workflows.
+Fetches the current session state from the API, as a `Session` (see [Session state](#session-state)). Use
+`retrieve_async()` in async workflows.
 
 #### `session.sampling.sample(...)`
 
@@ -751,6 +756,8 @@ Creates a training session on these resources and polls until it reaches `RUNNIN
 ```python
 def create_session(
     *,
+    display_name: str | None = None,
+    metadata: SessionMetadata | None = None,
     resume_from_checkpoint_id: str | None = None,
     lora_config: LoraConfig | None = None,
     timeout: float | None = 3600.0,
@@ -760,6 +767,8 @@ def create_session(
 
 | Parameter                   | Type                      | Default  | Description                                                     |
 | --------------------------- | ------------------------- | -------- | --------------------------------------------------------------- |
+| `display_name`              | `str \| None`             | `None`   | Human-readable name for the session.                            |
+| `metadata`                  | `SessionMetadata \| None` | `None`   | Auxiliary session metadata, including optional W&B details (see [Session metadata](#session-metadata)). |
 | `resume_from_checkpoint_id` | `str \| None`             | `None`   | Training checkpoint ID to resume from.                          |
 | `lora_config`               | `LoraConfig \| None` | `None`   | Optional LoRA adapter config (see [LoRA config](#lora-config)). |
 | `timeout`                   | `float \| None`           | `3600.0` | Max seconds to wait. `None` waits indefinitely.                 |
@@ -937,3 +946,86 @@ session = resources.create_session(
 | `dropout` | `float` | `0.0`   | Dropout probability applied to LoRA layers (0 ≤ x < 1). |
 
 Defaults mirror the server's; only fields you set explicitly are sent, so the server remains authoritative for the rest.
+
+---
+
+### Session state
+
+`session.retrieve()` returns a `Session`, a Pydantic model whose fields are read as attributes:
+
+```python
+from together.lib.beta.rl import Session, SessionStatus, SessionError, SessionErrorCode
+
+state = session.retrieve()
+if state.status == "TRAINING_SESSION_STATUS_ERROR":
+    print(state.error.code, state.error.message)
+```
+
+| Field                       | Type                          | Description                                                    |
+| --------------------------- | ----------------------------- | -------------------------------------------------------------- |
+| `id`                        | `str`                         | ID of the training session.                                    |
+| `status`                    | `SessionStatus`               | Current status of the session.                                 |
+| `step`                      | `str \| int`                  | Current training step.                                         |
+| `model_resources_id`        | `str`                         | Model resources the session runs on.                           |
+| `metadata`                  | `SessionMetadata`             | Auxiliary metadata (see [Session metadata](#session-metadata)). |
+| `training_checkpoints`      | `list[TrainingCheckpoint]`    | Saved training checkpoints.                                    |
+| `inference_checkpoints`     | `list[InferenceCheckpoint]`   | Saved inference checkpoints.                                   |
+| `display_name`              | `str \| None`                 | Human-readable name for the session.                           |
+| `error`                     | `SessionError \| None`        | Set when the session is in an error state.                     |
+| `lora_config`               | Pydantic model \| `None`      | Present only for LoRA-enabled sessions. Read as attributes (`.rank`) — the public `LoraConfig` name is bound to the request type. |
+| `resume_from_checkpoint_id` | `str \| None`                 | Training checkpoint this session was resumed from.             |
+| `created_at` / `updated_at` | `datetime`                    | Creation and last-update timestamps.                           |
+| `created_by`                | `str`                         | ID of the user who created the session.                        |
+
+`SessionStatus` is a string literal type:
+
+| Value | Meaning |
+| ----- | ------- |
+| `TRAINING_SESSION_STATUS_CREATING` | Provisioning; not yet ready for operations. |
+| `TRAINING_SESSION_STATUS_RUNNING`  | Ready. `SessionClient.create(...)` returns here. |
+| `TRAINING_SESSION_STATUS_STOPPING` | Shutting down. |
+| `TRAINING_SESSION_STATUS_STOPPED`  | Terminal; stopped normally. |
+| `TRAINING_SESSION_STATUS_ERROR`    | Terminal; see `error`. |
+| `TRAINING_SESSION_STATUS_EXPIRED`  | Terminal; the session outlived its lifetime. |
+| `TRAINING_SESSION_STATUS_UNSPECIFIED` | Status not reported. |
+
+`SessionError` carries `code` (`SessionErrorCode`), `message` (user-safe detail), and `occurred_at`
+(`datetime`). `SessionErrorCode` is one of `TRAINING_SESSION_ERROR_CODE_RESOURCE_UNAVAILABLE`,
+`TRAINING_SESSION_ERROR_CODE_RESOURCE_AT_CAPACITY`, `TRAINING_SESSION_ERROR_CODE_TIMED_OUT`, or
+`TRAINING_SESSION_ERROR_CODE_SESSION_FAILED` — branch on `code`, not on `message`.
+
+`TrainingCheckpoint` and `InferenceCheckpoint` both carry `id`, `step`, and `created_at` — pass `id` to
+[`download_checkpoint(...)`](#sessiondownload_checkpoint) or `resume_from_checkpoint_id`.
+`InferenceCheckpoint` additionally carries `registration` (`None` until the checkpoint is registered), whose
+`api_model_name` and `registered_at` are what [dedicated endpoint
+deployment](#deploying-a-checkpoint-as-a-dedicated-endpoint) consumes.
+
+---
+
+### Session metadata
+
+`SessionMetadata` and `WandbMetadata` are `TypedDict`s — plain dicts work, and every field is optional:
+
+```python
+from together.lib.beta.rl import ModelResourcesClient, SessionMetadata, WandbMetadata
+
+resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
+session = resources.create_session(
+    display_name="grpo-run-7",
+    metadata=SessionMetadata(wandb=WandbMetadata(entity="my-team", project="rl", run_id="abc123")),
+)
+```
+
+`SessionMetadata` has a single field, `wandb`, holding a `WandbMetadata`:
+
+| Field      | Type  | Description                                              |
+| ---------- | ----- | -------------------------------------------------------- |
+| `entity`   | `str` | W&B username or team that owns the project.              |
+| `project`  | `str` | W&B project containing the run.                          |
+| `group`    | `str` | W&B group used to organize related runs.                 |
+| `run_id`   | `str` | Unique identifier assigned to the run by W&B.            |
+| `run_name` | `str` | Human-readable name of the run.                          |
+| `url`      | `str` | HTTPS URL for the run.                                   |
+
+The fields associate a session with an existing W&B run for your own bookkeeping. The SDK forwards them to
+the API unchanged and never creates or writes to the run itself.

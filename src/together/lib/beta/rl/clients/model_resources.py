@@ -9,7 +9,7 @@ from collections.abc import Coroutine
 
 import httpx
 
-from ..types import LoraConfig, OptimizerConfig
+from ..types import LoraConfig, OptimizerConfig, SessionMetadata
 from .session import (
     DEFAULT_SESSION_CREATION_TIMEOUT,
     DEFAULT_SESSION_CREATION_INTERVAL,
@@ -228,6 +228,8 @@ class ModelResourcesClient:
     def create_session(
         self,
         *,
+        display_name: str | None = None,
+        metadata: SessionMetadata | None = None,
         resume_from_checkpoint_id: str | None = None,
         lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
@@ -237,6 +239,8 @@ class ModelResourcesClient:
             api_key=self._client.api_key,
             base_url=self._client.base_url,
             model_resources_id=self._model_resources_id,
+            display_name=display_name,
+            metadata=metadata,
             resume_from_checkpoint_id=resume_from_checkpoint_id,
             lora_config=lora_config,
             timeout=timeout,
@@ -246,6 +250,8 @@ class ModelResourcesClient:
     async def create_session_async(
         self,
         *,
+        display_name: str | None = None,
+        metadata: SessionMetadata | None = None,
         resume_from_checkpoint_id: str | None = None,
         lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
@@ -255,6 +261,8 @@ class ModelResourcesClient:
             api_key=self._client.api_key,
             base_url=self._client.base_url,
             model_resources_id=self._model_resources_id,
+            display_name=display_name,
+            metadata=metadata,
             resume_from_checkpoint_id=resume_from_checkpoint_id,
             lora_config=lora_config,
             timeout=timeout,
