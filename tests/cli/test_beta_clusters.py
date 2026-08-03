@@ -1266,9 +1266,7 @@ class TestBetaClustersStorage:
             return_value=httpx.Response(200, json={"success": True})
         )
 
-        result = cli_runner.invoke(
-            ["beta", "clusters", "storage", "delete", "vol-1", "--non-interactive"]
-        )
+        result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--non-interactive"])
 
         assert route.called
         assert "Deleted. (vol-1)" in result.output

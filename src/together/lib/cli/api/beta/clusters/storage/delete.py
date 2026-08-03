@@ -40,9 +40,7 @@ async def delete(
         storage = await show_loading_status("", config.client.beta.clusters.storage.retrieve(volume_id))
         _print_storage(storage)
         resp = (
-            input(
-                f"\nClusters Storage: Are you sure you want to delete storage volume {storage.volume_name}? [y/N] "
-            )
+            input(f"\nClusters Storage: Are you sure you want to delete storage volume {storage.volume_name}? [y/N] ")
             .strip()
             .lower()
         )
