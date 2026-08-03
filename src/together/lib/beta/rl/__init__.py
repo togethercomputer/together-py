@@ -39,6 +39,7 @@ from .types import (
     CrossEntropyLossParams,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
+    CustomForwardBackwardResult,
     ImportanceSamplingLossInputs,
 )
 from .clients import SessionClient, SamplingClient, TrainingClient, ModelResourcesClient
@@ -84,6 +85,7 @@ __all__ = [
     "SampleResult",
     "ForwardResult",
     "ForwardBackwardResult",
+    "CustomForwardBackwardResult",
     "OptimStepResult",
     "TrainingCheckpointResult",
     "InferenceCheckpointResult",

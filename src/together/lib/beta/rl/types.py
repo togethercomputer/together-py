@@ -46,6 +46,7 @@ from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResul
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 from ....types.beta.rl.muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfig
 from ....types.beta.rl.adamw_optimizer_config_param import AdamwOptimizerConfigParam as AdamwOptimizerConfig
+from ....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
 from ....types.beta.rl.operation_forward_backward_params import Sample
 from ....types.beta.rl.importance_sampling_loss_inputs_param import ImportanceSamplingLossInputs
 from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
@@ -87,6 +88,7 @@ __all__ = [
     "SampleResult",
     "ForwardResult",
     "ForwardBackwardResult",
+    "CustomForwardBackwardResult",
     "OptimStepResult",
     "TrainingCheckpointResult",
     "InferenceCheckpointResult",
