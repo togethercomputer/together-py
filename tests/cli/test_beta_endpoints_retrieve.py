@@ -162,7 +162,10 @@ class TestBetaEndpointsRetrieve:
     @pytest.mark.respx(base_url=base_url)
     def test_retrieve_endpoint_shows_active_rollout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body(activeRolloutId="rollout_1"))
+            return_value=httpx.Response(
+                200,
+                json=_endpoint_body(activeRolloutId="rollout_1", trafficSplit=[], deployments=[]),
+            )
         )
         _mock_endpoint_get_side_resources(respx_mock)
 
