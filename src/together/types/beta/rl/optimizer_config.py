@@ -4,6 +4,7 @@ from typing import Optional
 
 from ...._models import BaseModel
 from .muon_optimizer_config import MuonOptimizerConfig
+from .adamw_optimizer_config import AdamwOptimizerConfig
 
 __all__ = ["OptimizerConfig"]
 
@@ -11,7 +12,7 @@ __all__ = ["OptimizerConfig"]
 class OptimizerConfig(BaseModel):
     """Optimizer configuration"""
 
-    adamw: Optional[object] = None
+    adamw: Optional[AdamwOptimizerConfig] = None
     """Use the AdamW optimizer."""
 
     muon: Optional[MuonOptimizerConfig] = None

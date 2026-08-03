@@ -13,6 +13,7 @@ from ..types import (
     WeightSyncType,
     OptimStepResult,
     ForwardBackwardResult,
+    CustomForwardBackwardResult,
 )
 from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
@@ -138,7 +139,7 @@ class TrainingClient:
         gradients: Iterable[Gradient],
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> Any:
+    ) -> CustomForwardBackwardResult:
         return self._session.run(
             self.custom_forward_backward_async(
                 samples=samples,
@@ -155,7 +156,7 @@ class TrainingClient:
         gradients: Iterable[Gradient],
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> Any:
+    ) -> CustomForwardBackwardResult:
         body, large_payload_id = await prepare_operation_body(
             self._session._client,
             session_id=self._session._session_id,
@@ -175,11 +176,12 @@ class TrainingClient:
             gradients=gradients,
             extra_body=extra_body,
         )
-        return await self._session._submit_and_wait(
+        result = await self._session._submit_and_wait(
             operation,
             timeout=timeout,
             interval=interval,
         )
+        return cast(CustomForwardBackwardResult, result)
 
     def optim_step(
         self,
