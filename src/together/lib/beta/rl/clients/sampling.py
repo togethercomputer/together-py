@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import Any, Iterable, cast
 from dataclasses import dataclass
 
-from ..types import ModelInput, SampleResult, SamplingParams
 from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
+from .....types.beta.rl.sample_result import SampleResult
+from .....types.beta.rl.sampling_params import SamplingParams
 from .....types.beta.rl.sample_operation import Output as SampleBatchResult
+from .....types.beta.rl.model_input_param import ModelInput
 from .....types.beta.rl.operation_sample_params import OperationSampleParams
 
 
