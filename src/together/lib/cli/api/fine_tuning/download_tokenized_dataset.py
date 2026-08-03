@@ -10,8 +10,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.files.retrieve_content import safe_download_filename, resolve_download_path
-
+from together.lib.cli.api.files.retrieve_content import resolve_download_path, safe_download_filename
 
 OutputDirParam = Annotated[
     Optional[Path],
