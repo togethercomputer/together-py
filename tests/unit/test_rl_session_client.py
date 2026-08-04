@@ -90,7 +90,7 @@ class FakeSessions:
     async def retrieve(self, _session_id: str) -> Any:
         return SimpleNamespace(
             status=self.status_value,
-            api_model_resources_id="res-1",
+            resources_id="res-1",
         )
 
 
@@ -415,7 +415,7 @@ def test_create_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = trainer.create_inference_checkpoint()
 
-    assert result.api_model_name == "model-1"
+    assert result.registered_model_name == "model-1"
     trainer.stop()
 
 
@@ -582,7 +582,7 @@ async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPat
     fake_client.beta.rl.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(
             status="TRAINING_SESSION_STATUS_RUNNING",
-            api_model_resources_id="res-1",
+            resources_id="res-1",
         )
     )
     fake_client.beta.rl.model_resources.retrieve = AsyncMock(

@@ -11,15 +11,18 @@ from .clients import SessionClient, SamplingClient, TrainingClient, ModelResourc
 from ....types.beta.rl.session import Session
 from ....types.beta.rl.adam_params import AdamParams
 from ....types.beta.rl.muon_params import MuonParams
+from ....types.beta.rl.stop_reason import StopReason
 from ....types.beta.rl.sample_result import SampleResult
 from ....types.beta.rl.session_error import SessionError
 from ....types.beta.rl.weights_param import Weights
 from ....types.beta.rl.forward_result import Logprob, ForwardResult
 from ....types.beta.rl.session_status import SessionStatus
 from ....types.beta.rl.dro_loss_params import DroLossParams
+from ....types.beta.rl.model_resources import ModelResources
 from ....types.beta.rl.ppo_loss_params import PpoLossParams
 from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.grpo_loss_params import GrpoLossParams
+from ....types.beta.rl.sampled_sequence import SampledSequence
 from ....types.beta.rl.weight_sync_type import WeightSyncType
 from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
@@ -52,6 +55,7 @@ from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResul
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 from ....types.beta.rl.muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfig
 from ....types.beta.rl.adamw_optimizer_config_param import AdamwOptimizerConfigParam as AdamwOptimizerConfig
+from ....types.beta.rl.model_resource_create_params import ComputeConfig
 from ....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
 from ....types.beta.rl.operation_forward_backward_params import Sample
 from ....types.beta.rl.importance_sampling_loss_inputs_param import ImportanceSamplingLossInputs
@@ -62,7 +66,9 @@ __all__ = [
     "SessionClient",
     "TrainingClient",
     "SamplingClient",
+    "ModelResources",
     "ModelResourcesStatus",
+    "ComputeConfig",
     "Sample",
     "LossConfig",
     "SessionMetadata",
@@ -103,6 +109,8 @@ __all__ = [
     "TrainingCheckpoint",
     "InferenceCheckpoint",
     "SampleResult",
+    "SampledSequence",
+    "StopReason",
     "ForwardResult",
     "ForwardBackwardResult",
     "CustomForwardBackwardResult",
