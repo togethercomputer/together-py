@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Sequence, cast
+from typing import Any, Sequence, cast
 
 import numpy as np
 
@@ -30,18 +30,33 @@ def _to_model_input(model_input: types.ModelInput) -> WireModelInput:
     return {"chunks": chunks}
 
 
+_WIRE_DTYPE = {"int64": "D_TYPE_INT64", "float32": "D_TYPE_FLOAT32"}
+
+
+def _to_tensor(tensor: Any) -> dict[str, Any]:
+    """One of tinker's ``TensorData`` arrays as a wire tensor.
+
+    ``dtype`` is required: the server rejects an unset one outright, since a tensor whose
+    element type it had to guess could be silently reinterpreted.
+    """
+    if tensor.dtype not in _WIRE_DTYPE:
+        msg = f"Together supports {sorted(_WIRE_DTYPE)} tensors only, got {tensor.dtype!r}"
+        raise ValueError(msg)
+    return {"data": tensor.tolist(), "dtype": _WIRE_DTYPE[tensor.dtype]}
+
+
 def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
-    arrays = {key: value.tolist() for key, value in datum.loss_fn_inputs.items()}
+    arrays = {key: _to_tensor(value) for key, value in datum.loss_fn_inputs.items()}
     # `weights` stays omitted, like tinker's Datum: advantages of 0.0 already mask the
     # prompt positions, so gradients match exactly; only per-token KL/entropy diagnostics
     # count prompt tokens as active and read slightly diluted.
     loss_inputs = cast(
         "LossInputs",
         {
-            "target_tokens": {"data": arrays["target_tokens"]},
+            "target_tokens": arrays["target_tokens"],
             loss_inputs_key: {
-                "logprobs": {"data": arrays["logprobs"]},
-                "advantages": {"data": arrays["advantages"]},
+                "logprobs": arrays["logprobs"],
+                "advantages": arrays["advantages"],
             },
         },
     )

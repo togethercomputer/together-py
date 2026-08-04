@@ -82,6 +82,12 @@ def test_datum_converts_field_for_field() -> None:
     assert sample["policy_segments"] == []
     # weights deliberately omitted: advantages mask the prompt positions already
     assert "weights" not in sample["loss_inputs"]
+    # dtype is not optional — the server rejects a tensor whose element type it would
+    # have to guess ("value must be in list [1]" on target_tokens.dtype).
+    inputs = sample["loss_inputs"]
+    assert inputs["target_tokens"]["dtype"] == "D_TYPE_INT64"
+    assert inputs["importance_sampling_inputs"]["logprobs"]["dtype"] == "D_TYPE_FLOAT32"
+    assert inputs["importance_sampling_inputs"]["advantages"]["dtype"] == "D_TYPE_FLOAT32"
 
 
 def test_model_input_rejects_non_text_chunks() -> None:
@@ -185,6 +191,8 @@ def test_create_lora_training_client_warns_on_reproducibility_kwargs(
         raise RuntimeError("no network in unit tests")
 
     monkeypatch.setattr(_clients.ModelResourcesClient, "create", refuse)
+    # keep the real process-wide SIGTERM handler out of the test suite
+    monkeypatch.setattr(_clients, "_exit_on_sigterm", lambda: None)
 
     with pytest.warns(UserWarning, match="seed"), pytest.raises(RuntimeError):
         tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", seed=7)
@@ -296,22 +304,30 @@ def test_sample_result_resolves_payload_stub(monkeypatch: pytest.MonkeyPatch) ->
     _close(session)
 
 
-def test_stop_on_exit_and_sigterm_translation(monkeypatch: pytest.MonkeyPatch) -> None:
-    """session.stop raising at exit must not leak the GPU reservation (try/finally),
-    and SIGTERM's default disposition skips atexit entirely, so it is translated into
-    SystemExit — chaining any handler the host application already installed."""
+def test_stop_on_exit_and_sigterm_translation(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The exit hook (threading._register_atexit, so it runs before concurrent.futures
+    teardown) must release the GPUs even when session.stop fails, and must not raise:
+    threading._shutdown runs callbacks in a plain loop, so an escaping exception aborts
+    every teardown after it. SIGTERM's default disposition skips those hooks entirely,
+    so it is translated into SystemExit — chaining any handler the host installed."""
     hooks: list[Any] = []
-    monkeypatch.setattr(_clients.atexit, "register", hooks.append)
+    monkeypatch.setattr(_clients.threading, "_register_atexit", hooks.append)
     session = MagicMock()
-    session.stop.side_effect = RuntimeError("stop failed")
+    # KeyboardInterrupt: even a Ctrl-C during a hung session.stop() must not skip
+    # the GPU teardown, so the hook has to catch BaseException, not just Exception.
+    session.stop.side_effect = KeyboardInterrupt()
     model_resources = MagicMock()
+    model_resources.model_resources_id = "mr-123"
+    model_resources.stop.side_effect = RuntimeError("teardown failed")
 
     _clients._stop_on_exit(cast(Any, session), cast(Any, model_resources))
 
     (hook,) = hooks
-    with pytest.raises(RuntimeError, match="stop failed"):
-        hook()
+    hook()
     model_resources.stop.assert_called_once_with()
+    assert "mr-123" in capsys.readouterr().out
 
     monkeypatch.setattr(_clients, "_sigterm_translated", False)
     chained: list[int] = []

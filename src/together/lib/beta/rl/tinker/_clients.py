@@ -23,7 +23,7 @@ from ._converters import (
 )
 from ..clients.session import DEFAULT_OPERATION_INTERVAL, SessionClient
 from ..clients.sampling import submit_sample_batch
-from ..clients.training import _resolve_loss_type, submit_forward_backward
+from ..clients.training import submit_forward_backward
 
 
 async def _wait(session: SessionClient, operation: Any) -> Any:
@@ -73,9 +73,8 @@ class TrainingClient:
 
     def forward_backward(self, data: Sequence[types.Datum], loss_fn: str) -> _Pending[ForwardBackwardResult]:
         session = self._session
-        loss = _resolve_loss_type({"type": loss_fn})  # accepts tinker's short names, e.g. "importance_sampling"
-        samples = [_to_sample(datum, _loss_inputs_key(loss["type"])) for datum in data]
-        operation = session.run(submit_forward_backward(session, samples=samples, loss=loss))
+        samples = [_to_sample(datum, _loss_inputs_key(loss_fn)) for datum in data]
+        operation = session.run(submit_forward_backward(session, samples=samples, loss={"type": loss_fn}))
         return _Pending(session, operation, _wait)
 
     def optim_step(self, adam_params: types.AdamParams) -> _Pending[types.OptimStepResponse]:
@@ -120,7 +119,16 @@ class ServiceClient:
             api_key=self._api_key,
             base_url=self._base_url,
         )
-        session = model_resources.create_session(lora_config={"rank": rank})
+        try:
+            session = model_resources.create_session(lora_config={"rank": rank})
+        except BaseException:
+            # The resources are READY (and billing) but no exit hook is registered yet;
+            # session creation's own cleanup stops only the session, never the resources.
+            try:
+                model_resources.stop()
+            except Exception:
+                _print_release_hint(model_resources)
+            raise
         _stop_on_exit(session, model_resources)
         return TrainingClient(session)
 
@@ -140,7 +148,11 @@ def _exit_on_sigterm() -> None:
     global _sigterm_translated
     if _sigterm_translated:
         return
-    _sigterm_translated = True
+    if threading.current_thread() is not threading.main_thread():
+        # signal.signal only works on the main thread; genuine tinker installs no
+        # handlers either, so match it rather than crash — but say what that costs.
+        warnings.warn("not on the main thread, so SIGTERM will not trigger GPU teardown", stacklevel=3)
+        return
     previous = signal.getsignal(signal.SIGTERM)
     if previous is signal.SIG_IGN:
         return
@@ -151,23 +163,38 @@ def _exit_on_sigterm() -> None:
         sys.exit(128 + signum)
 
     signal.signal(signal.SIGTERM, handler)
+    _sigterm_translated = True
 
 
 def _stop_on_exit(session: SessionClient, model_resources: ModelResourcesClient) -> None:
-    """Release the GPUs at interpreter exit — the tinker loop never stops anything itself."""
+    """Release the GPUs at interpreter exit — the tinker loop never stops anything itself.
+
+    Registered via ``threading._register_atexit``, not ``atexit``: these callbacks run
+    before ``concurrent.futures`` shuts down its executors, so the event loop inside
+    ``stop()`` can still resolve DNS; a plain atexit hook runs after that shutdown and
+    dies with "cannot schedule new futures". ``threading._shutdown`` invokes callbacks
+    in a plain loop, so nothing may escape ``stop()`` — a raise would abort every
+    teardown scheduled to run after it, including that executor shutdown.
+    """
 
     def stop() -> None:
+        # BaseException too: Ctrl-C or a second SIGTERM during a hung session.stop()
+        # must still reach the GPU teardown and print the recovery hint.
         try:
             session.stop()
-        finally:
-            try:
-                model_resources.stop()
-            except Exception:
-                print(  # noqa: T201
-                    f"[model-resources:{model_resources.model_resources_id}] automatic teardown failed;"
-                    " the GPUs are still allocated. Release them with"
-                    f" ModelResourcesClient.attach(model_resources_id='{model_resources.model_resources_id}').stop()"
-                )
-                raise
+        except BaseException as exc:
+            print(f"[session:{session.session_id}] automatic stop failed: {exc!r}")  # noqa: T201
+        try:
+            model_resources.stop()
+        except BaseException:
+            _print_release_hint(model_resources)
 
     threading._register_atexit(stop)
+
+
+def _print_release_hint(model_resources: ModelResourcesClient) -> None:
+    print(  # noqa: T201
+        f"[model-resources:{model_resources.model_resources_id}] automatic teardown failed;"
+        " the GPUs are still allocated. Release them with"
+        f" ModelResourcesClient.attach(model_resources_id='{model_resources.model_resources_id}').stop()"
+    )

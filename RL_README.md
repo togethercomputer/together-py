@@ -393,9 +393,11 @@ so objects built by `tinker_cookbook` — renderer prompts, `Datum`s — pass th
 depend on it.
 
 Scope: the core RL training loop — sampling, `forward_backward`, `optim_step`, and weight publishing via
-`save_weights_and_get_sampling_client`. Tinker-only knobs (`seed`, `train_mlp`, `train_attn`,
-`train_unembed`) are ignored with a warning, token-id stop sequences are not supported, and checkpoint
-save/load is not covered.
+`save_weights_and_get_sampling_client`. `loss_fn` is limited to `grpo`, `importance_sampling`, and `ppo`,
+and `forward_backward` resolves to Together's result model — its `.metrics` mapping is what tinker
+scripts read, but per-datum `loss_fn_outputs` are not available. Tinker-only knobs (`seed`, `train_mlp`,
+`train_attn`, `train_unembed`) are ignored with a warning, token-id stop sequences are dropped with a
+warning (the model's EOS still ends generation), and checkpoint save/load is not covered.
 
 ## Session lifecycle
 
