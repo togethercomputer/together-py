@@ -91,6 +91,7 @@ dev = [
     "pytest-mock>=3.14.0",
     "aiohttp>=3.12.13",
     "websockets>=13,<16",
+    "tinker>=0.22.3 ; python_version >= '3.11'",
 ]
 pydantic-v1 = [
     "pydantic>=1.9.0,<2",
@@ -161,6 +162,9 @@ exclude = [
     ".nox",
     ".git",
     "examples",
+    # requires the tinker package, which needs python >= 3.11 while checks run on 3.10
+    "src/together/lib/beta/rl/tinker",
+    "tests/unit/test_rl_tinker_wrapper.py",
 ]
 
 reportImplicitOverride = true
@@ -179,7 +183,8 @@ show_error_codes = true
 #
 # We also exclude our `tests` as mypy doesn't always infer
 # types correctly and Pyright will still catch any type errors.
-exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*"]
+# lib/beta/rl/tinker requires the tinker package, which needs python >= 3.11 while checks run on 3.10
+exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/beta/rl/tinker/.*"]
 
 strict_equality = true
 implicit_reexport = true

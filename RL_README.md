@@ -366,6 +366,37 @@ asyncio.run(main())
 `ModelResourcesClient` follows the same split: `create_async`, `create_session_async`, `retrieve_async`, and
 `stop_async`, plus `async with` support.
 
+## Tinker-compatible entry point
+
+A training script written against the `tinker` SDK runs on Together by changing only its import line:
+
+```python
+import together.lib.beta.rl.tinker as tinker  # instead of: import tinker
+```
+
+The rest of the loop stays as written:
+
+```python
+service_client = tinker.ServiceClient()
+training_client = service_client.create_lora_training_client(base_model="Qwen/Qwen3-8B", rank=32)
+
+sampling_client = training_client.save_weights_and_get_sampling_client()
+result = sampling_client.sample(prompt, num_samples=8, sampling_params=params).result()
+
+training_client.forward_backward(datums, loss_fn="importance_sampling").result()
+training_client.optim_step(adam_params).result()
+```
+
+Types are the genuine `tinker.types` (`Datum`, `ModelInput`, `SamplingParams`, ...), re-exported unchanged,
+so objects built by `tinker_cookbook` — renderer prompts, `Datum`s — pass through as-is. The genuine
+`tinker` package must therefore be installed (it requires Python >= 3.11); `together` itself does not
+depend on it.
+
+Scope: the core RL training loop — sampling, `forward_backward`, `optim_step`, and weight publishing via
+`save_weights_and_get_sampling_client`. Tinker-only knobs (`seed`, `train_mlp`, `train_attn`,
+`train_unembed`) are ignored with a warning, token-id stop sequences are not supported, and checkpoint
+save/load is not covered.
+
 ## Session lifecycle
 
 1. Provision resources with `ModelResourcesClient.create(...)`, then create a session with `resources.create_session(...)` (or `SessionClient.create(model_resources_id=...)`).
