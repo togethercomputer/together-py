@@ -89,10 +89,11 @@ async def async_wait_for_operation(
         if deadline is not None and time.monotonic() >= deadline:
             raise TimeoutError("Timed out waiting for operation to complete")
 
-        await asyncio.sleep(interval)
-
         current = await async_retrieve_operation(
             client,
             session_id=session_id,
             operation=current,
         )
+        if current.status in (_COMPLETED, _FAILED):
+            continue
+        await asyncio.sleep(interval)
