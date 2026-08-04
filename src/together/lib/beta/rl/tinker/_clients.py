@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import sys
-import atexit
 import signal
 import warnings
+import threading
 from typing import Any, Sequence
 from dataclasses import dataclass
 
@@ -160,6 +160,14 @@ def _stop_on_exit(session: SessionClient, model_resources: ModelResourcesClient)
         try:
             session.stop()
         finally:
-            model_resources.stop()
+            try:
+                model_resources.stop()
+            except Exception:
+                print(  # noqa: T201
+                    f"[model-resources:{model_resources.model_resources_id}] automatic teardown failed;"
+                    " the GPUs are still allocated. Release them with"
+                    f" ModelResourcesClient.attach(model_resources_id='{model_resources.model_resources_id}').stop()"
+                )
+                raise
 
-    atexit.register(stop)
+    threading._register_atexit(stop)
