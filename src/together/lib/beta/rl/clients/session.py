@@ -216,7 +216,7 @@ class SessionClient:
         )
         try:
             session = await client.beta.rl.sessions.retrieve(session_id)
-            model_resources = await client.beta.rl.model_resources.retrieve(session.api_model_resources_id)
+            model_resources = await client.beta.rl.model_resources.retrieve(session.resources_id)
         except BaseException:
             await client.close()
             raise

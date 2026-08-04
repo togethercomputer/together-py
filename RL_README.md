@@ -262,7 +262,7 @@ After training, create an inference checkpoint and download the model weights:
 
 ```python
 ckpt = session.create_inference_checkpoint()
-print(f"Checkpoint registered as: {ckpt.api_model_name}")
+print(f"Checkpoint registered as: {ckpt.registered_model_name}")
 
 # The checkpoint ID is available via session.retrieve()
 checkpoint_id = session.retrieve().inference_checkpoints[-1].id
@@ -296,7 +296,7 @@ client = Together(api_key="...", base_url="...")
 
 # Get the registered model name from the checkpoint
 ckpt = session.retrieve().inference_checkpoints[-1]
-model_name = ckpt.registration.api_model_name
+model_name = ckpt.registration.registered_model_name
 
 # Find available hardware for the model
 hardware_list = client.endpoints.list_hardware(
@@ -621,7 +621,7 @@ Snapshots the current model state into a downloadable inference checkpoint.
 def create_inference_checkpoint() -> InferenceCheckpointResult
 ```
 
-**Returns:** `InferenceCheckpointResult`. The resolved value has `.api_model_name` — the registered model name for the checkpoint.
+**Returns:** `InferenceCheckpointResult`. The resolved value has `.registered_model_name` — the registered model name for the checkpoint.
 
 After the operation completes, the checkpoint appears in the session's `inference_checkpoints` list
 (visible via `session.retrieve()`).
@@ -997,7 +997,7 @@ if state.status == "TRAINING_SESSION_STATUS_ERROR":
 `TrainingCheckpoint` and `InferenceCheckpoint` both carry `id`, `step`, and `created_at` — pass `id` to
 [`download_checkpoint(...)`](#sessiondownload_checkpoint) or `resume_from_checkpoint_id`.
 `InferenceCheckpoint` additionally carries `registration` (`None` until the checkpoint is registered), whose
-`api_model_name` and `registered_at` are what [dedicated endpoint
+`registered_model_name` and `registered_at` are what [dedicated endpoint
 deployment](#deploying-a-checkpoint-as-a-dedicated-endpoint) consumes.
 
 ---

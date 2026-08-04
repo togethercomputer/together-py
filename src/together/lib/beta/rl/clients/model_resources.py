@@ -20,6 +20,7 @@ from .....types.beta.rl.model_resources import ModelResources
 from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
 from .....types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
 from .....types.beta.rl.session_metadata_param import SessionMetadataParam as SessionMetadata
+from .....types.beta.rl.model_resource_create_params import ComputeConfig
 
 _T = TypeVar("_T")
 
@@ -109,7 +110,7 @@ class ModelResourcesClient:
         base_url: str | httpx.URL | None = None,
         base_model: str,
         lora_enabled: bool = True,
-        num_generator_replicas: int = 1,
+        compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
@@ -120,7 +121,7 @@ class ModelResourcesClient:
                 base_url=base_url,
                 base_model=base_model,
                 lora_enabled=lora_enabled,
-                num_generator_replicas=num_generator_replicas,
+                compute_config=compute_config,
                 optimizer_config=optimizer_config,
                 timeout=timeout,
                 interval=interval,
@@ -173,7 +174,7 @@ class ModelResourcesClient:
         base_url: str | httpx.URL | None = None,
         base_model: str,
         lora_enabled: bool = True,
-        num_generator_replicas: int = 1,
+        compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
@@ -184,7 +185,7 @@ class ModelResourcesClient:
             model_resources = await client.beta.rl.model_resources.create(
                 base_model=base_model,
                 lora_enabled=lora_enabled,
-                compute_config={"num_generator_replicas": num_generator_replicas},
+                compute_config=compute_config if compute_config is not None else omit,
                 optimizer_config=optimizer_config if optimizer_config is not None else omit,
             )
             model_resources_id = model_resources.id

@@ -7,7 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from together.lib.beta.rl import WandbMetadata, OptimizerConfig, SessionMetadata, MuonOptimizerConfig
+from together._types import omit
+from together.lib.beta.rl import ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata, MuonOptimizerConfig
 from together.lib.beta.rl.clients import model_resources as model_resources_client_module
 from together.lib.beta.rl.clients.session import SessionClient
 from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
@@ -43,7 +44,7 @@ async def test_create_async_returns_resource(monkeypatch: pytest.MonkeyPatch) ->
 
 
 @pytest.mark.parametrize("num_generator_replicas", [0, 1, 2])
-async def test_create_async_passes_num_generator_replicas(
+async def test_create_async_passes_compute_config(
     monkeypatch: pytest.MonkeyPatch,
     num_generator_replicas: int,
 ) -> None:
@@ -52,13 +53,29 @@ async def test_create_async_passes_num_generator_replicas(
 
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
-        num_generator_replicas=num_generator_replicas,
+        compute_config=ComputeConfig(num_generator_replicas=num_generator_replicas),
         timeout=0.1,
         interval=0.0,
     )
 
     create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
     assert create_kwargs["compute_config"] == {"num_generator_replicas": num_generator_replicas}
+
+
+async def test_create_async_omits_compute_config_so_the_server_decides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _fake_client()
+    _patch_together(monkeypatch, client)
+
+    await ModelResourcesClient.create_async(
+        base_model="Qwen/Qwen3-0.6B",
+        timeout=0.1,
+        interval=0.0,
+    )
+
+    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    assert create_kwargs["compute_config"] is omit
 
 
 async def test_create_async_forwards_optimizer_config(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -274,11 +291,9 @@ def test_context_manager_stops() -> None:
 
 
 def test_model_resources_client_is_publicly_exported() -> None:
-    from together.lib.beta import ModelResourcesClient as FromBeta
     from together.lib.beta.rl import ModelResourcesClient as FromRl, ModelResourcesStatus
 
     assert FromRl is ModelResourcesClient
-    assert FromBeta is ModelResourcesClient
     assert ModelResourcesStatus is not None
 
 
