@@ -774,7 +774,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     trainer = _make_session(client)
 
     long_tokens = list(range(20))
-    long_mask = [1] * 20
+    long_weights = [1.0] * 20
     sample = Sample(
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=long_tokens))],
@@ -782,7 +782,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         loss_inputs=LossInputs(
             target_tokens=LossTargetTokens(data=long_tokens, dtype="D_TYPE_INT64"),
             weights=Weights(
-                data=long_mask,
+                data=long_weights,
                 dtype="D_TYPE_FLOAT32",
             ),
         ),
@@ -807,7 +807,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     assert len(kwargs["samples"]) == 1
     sent = kwargs["samples"][0]
     assert sent["model_input"]["chunks"][0]["encoded_text"]["tokens"] == long_tokens[:8]
-    assert sent["loss_inputs"]["weights"]["data"] == long_mask[:8]
+    assert sent["loss_inputs"]["weights"]["data"] == long_weights[:8]
 
 
 def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPatch) -> None:

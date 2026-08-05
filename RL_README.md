@@ -183,7 +183,7 @@ optim = session.training.optim_step(
 sync = session.training.weights_sync(
     weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
 )
-print("step", optim.step, "weights_version", sync.weights_version)
+print("step", optim.step, "weights_version", int(sync.weights_version))
 ```
 
 ## Multi-LoRA: shared model resources (sync)
@@ -574,9 +574,14 @@ updated parameters available for sampling — call `weights_sync` afterwards whe
 you want subsequent samples to use the updated policy.
 
 **Migration:** `weight_sync_type` is no longer accepted on `optim_step` (passing it
-raises `TypeError`). After each `optim_step` whose result you intend to sample
-from, call `session.training.weights_sync(weight_sync_type=...)`.
-`WEIGHT_SYNC_TYPE_UNSPECIFIED` is also gone — pick an explicit sync mode.
+raises `TypeError`). The old default was `WEIGHT_SYNC_TYPE_UNSPECIFIED` (also
+removed from the enum); bare `optim_step()` calls previously still sent that
+value on the wire. `optim_step` now only applies gradients — it does not publish
+weights for sampling. Every loop that samples after an optim step must add
+`session.training.weights_sync(weight_sync_type=...)` with an explicit mode
+(`SYNCHRONOUS`, `BACKGROUND_PUBLISH`, or `PIPELINE`), even if it never named
+`weight_sync_type` before. Without that call, subsequent samples keep using a
+stale policy with no client-side error.
 
 ```python
 def optim_step(
@@ -635,7 +640,8 @@ Accepted `WeightSyncType` values: `"WEIGHT_SYNC_TYPE_SYNCHRONOUS"`,
 `"WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH"`, `"WEIGHT_SYNC_TYPE_PIPELINE"`.
 
 **Returns:** `WeightsSyncResult`. The policy version now available (or queued) for
-sampling is at `.weights_version`.
+sampling is at `.weights_version` (`str | int` — coerce with `int(...)` before
+comparing to `PolicyVersionSegment.version`, which is always `int`).
 
 #### `session.create_inference_checkpoint()`
 
