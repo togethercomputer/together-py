@@ -210,6 +210,12 @@ class TestBetaEndpointsUpdate:
         assert result.exit_code != 0
         assert "Deployment names are immutable and cannot be updated" in result.output
 
+    def test_update_hides_immutable_name_option(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "update", "--help"])
+
+        assert result.exit_code == 0, result.output
+        assert "--name" not in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_update_ab_percent_counts_as_update_option(
         self,
