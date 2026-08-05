@@ -583,6 +583,11 @@ weights for sampling. Every loop that samples after an optim step must add
 `weight_sync_type` before. Without that call, subsequent samples keep using a
 stale policy with no client-side error.
 
+Also drop `policy_segments` from training `Sample`s (it is no longer a request
+field; `SampleResult.policy_segments` on the response is unchanged). And switch
+`Weights` to float data with `dtype="D_TYPE_FLOAT32"` — the old
+`dtype="D_TYPE_INT64"` int arrays are no longer the documented contract.
+
 ```python
 def optim_step(
     *,

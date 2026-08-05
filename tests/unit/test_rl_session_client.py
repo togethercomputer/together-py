@@ -732,6 +732,35 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     trainer.stop()
 
 
+def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Nested Iterable[float] fields must survive maybe_transform on the small path."""
+    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    sample = Sample(
+        model_input=ModelInput(
+            chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
+        ),
+        loss_inputs=LossInputs(
+            target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
+            weights=Weights(
+                data=(float(x) for x in (1, 0, 1)),
+                dtype="D_TYPE_FLOAT32",
+            ),
+        ),
+    )
+    trainer.training.forward_backward(
+        samples=[sample],
+        loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
+    )
+
+    assert client.beta.rl.operations.last_call is not None
+    _, _, kwargs = client.beta.rl.operations.last_call
+    assert kwargs["samples"][0]["loss_inputs"]["weights"]["data"] == [1.0, 0.0, 1.0]
+    trainer.stop()
+
+
 @pytest.mark.parametrize(
     ("given", "expected"),
     [
