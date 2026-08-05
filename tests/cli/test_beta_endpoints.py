@@ -401,7 +401,7 @@ class TestBetaEndpointsList:
 
 class TestBetaEndpointsListEvents:
     @pytest.mark.respx(base_url=base_url)
-    def test_list_events_sends_sdk_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_events_sends_sdk_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/projects/proj/endpoints/ep_1/events").mock(
             return_value=httpx.Response(
                 200,
@@ -413,7 +413,7 @@ class TestBetaEndpointsListEvents:
             [
                 "beta",
                 "endpoints",
-                "list-events",
+                "events",
                 "ep_1",
                 "--project",
                 "proj",
@@ -426,13 +426,9 @@ class TestBetaEndpointsListEvents:
                 "--deployment-ids",
                 "dep_2",
                 "--min-level",
-                "LEVEL_WARN",
+                "warn",
                 "--since",
                 "2026-01-01T00:00:00Z",
-                "--source-kinds",
-                "SOURCE_KIND_ENDPOINT",
-                "--source-kinds",
-                "SOURCE_KIND_DEPLOYMENT",
                 "--subject-id",
                 "rollout_1",
                 "--types",
@@ -452,7 +448,7 @@ class TestBetaEndpointsListEvents:
         assert query["deploymentIds"] == ["dep_1,dep_2"]
         assert query["minLevel"] == ["LEVEL_WARN"]
         assert query["since"] == ["2026-01-01T00:00:00+00:00"]
-        assert query["sourceKinds"] == ["SOURCE_KIND_ENDPOINT,SOURCE_KIND_DEPLOYMENT"]
+        assert "sourceKinds" not in query
         assert query["subjectId"] == ["rollout_1"]
         assert query["types"] == ["deployment.scaled,condition.set"]
         assert query["until"] == ["2026-01-02T00:00:00+00:00"]
@@ -460,9 +456,11 @@ class TestBetaEndpointsListEvents:
         assert payload["data"][0]["id"] == "evt_1"
         assert payload["next_cursor"] == "next"
 
-    def test_list_events_help_mentions_current_limit(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "endpoints", "list-events", "--help"])
+    def test_events_help_mentions_current_limit(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "events", "--help"])
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "Maximum number of events to return. Max 10000, defaults to 50." in output
+        assert "Minimum severity: debug, info, warn, or error." in output
+        assert "--source-kinds" not in output

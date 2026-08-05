@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, Annotated
+from typing import Literal, Optional, Annotated, cast
 from datetime import datetime
 
 from cyclopts import Parameter
@@ -14,14 +14,19 @@ from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
 
+LevelInput = Literal["debug", "info", "warn", "warning", "error"]
+SDKLevel = Literal["LEVEL_DEBUG", "LEVEL_INFO", "LEVEL_WARN", "LEVEL_ERROR"]
 LevelParameter = Annotated[
-    Optional[Literal["LEVEL_DEBUG", "LEVEL_INFO", "LEVEL_WARN", "LEVEL_ERROR"]],
-    Parameter(help="Minimum severity. Omit to disable severity filtering."),
+    Optional[LevelInput],
+    Parameter(help="Minimum severity: debug, info, warn, or error. Omit to disable severity filtering."),
 ]
-SourceKindsParameter = Annotated[
-    Optional[list[Literal["SOURCE_KIND_ENDPOINT", "SOURCE_KIND_DEPLOYMENT"]]],
-    Parameter(help="Resource kinds whose events should be included. Can be used multiple times."),
-]
+LEVEL_MAP: dict[LevelInput, SDKLevel] = {
+    "debug": "LEVEL_DEBUG",
+    "info": "LEVEL_INFO",
+    "warn": "LEVEL_WARN",
+    "warning": "LEVEL_WARN",
+    "error": "LEVEL_ERROR",
+}
 
 
 async def list_events(
@@ -37,7 +42,6 @@ async def list_events(
     ] = None,
     min_level: LevelParameter = None,
     since: Annotated[Optional[datetime], Parameter(help="Return only events at or after this time.")] = None,
-    source_kinds: SourceKindsParameter = None,
     subject_id: Annotated[
         Optional[str],
         Parameter(help="ID of a subject associated with the event, such as a rollout."),
@@ -58,9 +62,8 @@ async def list_events(
             after=after or omit,
             deployment_ids=deployment_ids or omit,
             limit=limit if limit is not None else omit,
-            min_level=min_level or omit,
+            min_level=cast(SDKLevel, LEVEL_MAP[min_level]) if min_level else omit,
             since=since if since is not None else omit,
-            source_kinds=source_kinds or omit,
             subject_id=subject_id or omit,
             types=types or omit,
             until=until if until is not None else omit,
@@ -93,4 +96,4 @@ async def list_events(
     console.print(table)
     if response.next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta endpoints list-events {endpoint_id} --after {response.next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg beta endpoints events {endpoint_id} --after {response.next_cursor}[/white]")
