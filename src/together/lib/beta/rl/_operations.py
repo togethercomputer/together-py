@@ -9,6 +9,7 @@ from ...._client import AsyncTogether
 from ....types.beta.rl.sample_operation import SampleOperation
 from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
+from ....types.beta.rl.weights_sync_operation import WeightsSyncOperation
 from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from ....types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
 from ....types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
@@ -19,6 +20,7 @@ OperationResponse: TypeAlias = Union[
     ForwardBackwardOperation,
     CustomForwardBackwardOperation,
     OptimStepOperation,
+    WeightsSyncOperation,
     SampleOperation,
     InferenceCheckpointOperation,
     TrainingCheckpointOperation,
@@ -51,6 +53,11 @@ async def async_retrieve_operation(
         )
     if isinstance(operation, OptimStepOperation):
         return await client.beta.rl.operations.retrieve_optim_step(
+            operation_id=operation.id,
+            session_id=session_id,
+        )
+    if isinstance(operation, WeightsSyncOperation):
+        return await client.beta.rl.operations.retrieve_weights_sync(
             operation_id=operation.id,
             session_id=session_id,
         )

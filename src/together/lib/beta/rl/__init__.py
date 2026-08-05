@@ -40,6 +40,7 @@ from ....types.beta.rl.dro_loss_inputs_param import DroLossInputs
 from ....types.beta.rl.loss_advantages_param import LossAdvantages
 from ....types.beta.rl.muon_scaling_strategy import MuonScalingStrategy
 from ....types.beta.rl.ppo_loss_inputs_param import PpoLossInputs
+from ....types.beta.rl.weights_sync_result import WeightsSyncResult
 from ....types.beta.rl.grpo_loss_inputs_param import GrpoLossInputs
 from ....types.beta.rl.model_resources_status import ModelResourcesStatus
 from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
@@ -115,6 +116,7 @@ __all__ = [
     "ForwardBackwardResult",
     "CustomForwardBackwardResult",
     "OptimStepResult",
+    "WeightsSyncResult",
     "TrainingCheckpointResult",
     "InferenceCheckpointResult",
     "Logprob",

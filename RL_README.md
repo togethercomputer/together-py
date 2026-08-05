@@ -63,14 +63,13 @@ samples = [
         loss_inputs=LossInputs(
             weights=Weights(
                 data=weights,
-                dtype="D_TYPE_INT64",
+                dtype="D_TYPE_FLOAT32",
             ),
             target_tokens=LossTargetTokens(
                 data=target_tokens,
                 dtype="D_TYPE_INT64",
             ),
-        ),
-        policy_segments=[],
+        )
     )
 ]
 
@@ -148,7 +147,7 @@ for seq in sample_result.sequences:
         loss_inputs=LossInputs(
             weights=Weights(
                 data=weights,
-                dtype="D_TYPE_INT64",
+                dtype="D_TYPE_FLOAT32",
             ),
             target_tokens=LossTargetTokens(
                 data=target_tokens,
@@ -165,11 +164,6 @@ for seq in sample_result.sequences:
                 ),
             ),
         ),
-        # Carry the sample result's policy segments over to the training sample.
-        policy_segments=[
-            {"version": s.version, "start_token": s.start_token}
-            for s in sample_result.policy_segments
-        ],
     ))
 
 loss = LossConfig(
@@ -186,7 +180,10 @@ optim = session.training.optim_step(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
 )
-print("step", optim.step)
+sync = session.training.weights_sync(
+    weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+)
+print("step", optim.step, "weights_version", sync.weights_version)
 ```
 
 ## Multi-LoRA: shared model resources (sync)
@@ -228,7 +225,7 @@ Training checkpoints persist full training state (adapter, optimizer, step) so y
 
 **Flow:**
 
-1. Run training (`forward_backward`, `optim_step`, etc.) through `session.training`.
+1. Run training (`forward_backward`, `optim_step`, `weights_sync`, etc.) through `session.training`.
 2. Call `session.create_training_checkpoint()` and wait until the operation completes; read `checkpoint_id`.
 3. Stop the session.
 4. Create a new session with `resume_from_checkpoint_id=checkpoint_id` over the same resources (and optional `lora_config` if you used one).
@@ -372,7 +369,7 @@ asyncio.run(main())
 ## Session lifecycle
 
 1. Provision resources with `ModelResourcesClient.create(...)`, then create a session with `resources.create_session(...)` (or `SessionClient.create(model_resources_id=...)`).
-2. Use `session.sampling` for `sample` and `session.training` for `forward_backward` and `optim_step`.
+2. Use `session.sampling` for `sample` and `session.training` for `forward_backward`, `optim_step`, and `weights_sync`.
 3. Optionally call `create_inference_checkpoint()` to snapshot the model and `download_checkpoint(...)` to pull weights locally.
 4. To pause and resume later: `session.create_training_checkpoint()` → save `checkpoint_id`, `session.stop()`, then create a new session with `resume_from_checkpoint_id=...` over the same resources.
 5. Close the session when finished (context manager or `stop()`).
@@ -572,22 +569,22 @@ def forward_backward(
 
 #### `session.training.optim_step(...)`
 
-Applies accumulated gradients and updates model parameters.
+Applies accumulated gradients and updates model parameters. Does not make the
+updated parameters available for sampling — call `weights_sync` afterwards when
+you want subsequent samples to use the updated policy.
 
 ```python
 def optim_step(
     *,
-    weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
     adam_params: AdamParams | None = None,
     muon_params: MuonParams | None = None,
 ) -> OptimStepResult
 ```
 
-| Parameter          | Type                          | Default                            | Description                                                                    |
-| ------------------ | ----------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
-| `weight_sync_type` | `WeightSyncType`              | `"WEIGHT_SYNC_TYPE_UNSPECIFIED"`   | How the trainer's updated weights are propagated to the generator after the step. |
-| `adam_params`      | `AdamParams \| None`          | `None`                             | Per-step Adam optimizer overrides.                                             |
-| `muon_params`      | `MuonParams \| None`          | `None`                             | Per-step Muon optimizer overrides.                                             |
+| Parameter     | Type                 | Default | Description                        |
+| ------------- | -------------------- | ------- | ---------------------------------- |
+| `adam_params` | `AdamParams \| None` | `None`  | Per-step Adam optimizer overrides. |
+| `muon_params` | `MuonParams \| None` | `None`  | Per-step Muon optimizer overrides. |
 
 `adam_params` fields:
 
@@ -612,6 +609,28 @@ def optim_step(
 | `adam`               | `AdamParams`            | Adam overrides for the Adam-tuned parameters in a Muon session.  |
 
 **Returns:** `OptimStepResult`. The step counter is at `.step`.
+
+#### `session.training.weights_sync(...)`
+
+Makes the session's current trained parameters available for sampling. Call after
+`optim_step` when you want subsequent samples to use the updated policy.
+
+```python
+def weights_sync(
+    *,
+    weight_sync_type: WeightSyncType,
+) -> WeightsSyncResult
+```
+
+| Parameter          | Type             | Default      | Description                                                                 |
+| ------------------ | ---------------- | ------------ | --------------------------------------------------------------------------- |
+| `weight_sync_type` | `WeightSyncType` | _(required)_ | How updated parameters are made available for sampling. See values below. |
+
+Accepted `WeightSyncType` values: `"WEIGHT_SYNC_TYPE_SYNCHRONOUS"`,
+`"WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH"`, `"WEIGHT_SYNC_TYPE_PIPELINE"`.
+
+**Returns:** `WeightsSyncResult`. The policy version now available (or queued) for
+sampling is at `.weights_version`.
 
 #### `session.create_inference_checkpoint()`
 
@@ -806,14 +825,13 @@ Sample(
     loss_inputs=LossInputs(
         weights=Weights(
             data=[0, 1, 1],
-            dtype="D_TYPE_INT64",
+            dtype="D_TYPE_FLOAT32",
         ),
         target_tokens=LossTargetTokens(
             data=[2, 3, 0],
             dtype="D_TYPE_INT64",
         ),
-    ),
-    policy_segments=[],
+    )
 )
 ```
 
@@ -821,16 +839,15 @@ Sample(
 
 | Field             | Type                                  | When to use                                                                 |
 | ----------------- | ------------------------------------- | --------------------------------------------------------------------------- |
-| `model_input`     | `ModelInput`                          | Always required. The full token sequence (prompt + response) to train on.   |
-| `loss_inputs`     | `LossInputs`                     | Always required. Per-token loss inputs (see below).                         |
-| `policy_segments` | `Iterable[dict]` | Always required. Policy versions that generated these tokens, as `{"version": int, "start_token": int}` dicts; rebuild them from `SampleResult.policy_segments`. Pass `[]` for tokens that did not come from sampling (e.g. SFT data). |
+| `model_input` | `ModelInput` | Always required. The full token sequence (prompt + response) to train on. |
+| `loss_inputs` | `LossInputs` | Always required. Per-token loss inputs (see below).                       |
 
 `LossInputs` fields:
 
 | Field                        | Type                                | When to use                                                                 |
 | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
 | `target_tokens`              | `LossTargetTokens`             | Always required. Next-token targets (shifted by 1).                         |
-| `weights`                    | `Weights`                      | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. `1` for tokens that contribute to the loss, `0` otherwise. |
+| `weights`                    | `Weights`                      | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. Per-token non-negative floats (`dtype="D_TYPE_FLOAT32"`); cross-entropy honors fractional weights, other losses treat them as a 0/1 mask. |
 | `grpo_inputs`                | `GrpoLossInputs`               | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
 | `ppo_inputs`                 | `PpoLossInputs`                | PPO loss only.                                                              |
 | `cispo_inputs`               | `CispoLossInputs`              | CISPO loss only.                                                            |
@@ -939,11 +956,12 @@ session = resources.create_session(
 )
 ```
 
-| Field     | Type    | Default | Description                                 |
-| --------- | ------- | ------- | ------------------------------------------- |
-| `rank`    | `int`   | `32`    | Rank of the low-rank adapter matrices (1–64). |
-| `alpha`   | `int`   | `64`    | LoRA scaling factor (1–128).                |
-| `dropout` | `float` | `0.0`   | Dropout probability applied to LoRA layers (0 ≤ x < 1). |
+| Field     | Type          | Default | Description                                                                 |
+| --------- | ------------- | ------- | --------------------------------------------------------------------------- |
+| `rank`    | `int`         | `32`    | Rank of the low-rank adapter matrices (1–64).                               |
+| `alpha`   | `int`         | `64`    | LoRA scaling factor (1–128).                                                |
+| `dropout` | `float`       | `0.0`   | Dropout probability applied to LoRA layers (0 ≤ x < 1).                     |
+| `seed`    | `str \| int` | —       | Random seed for initializing LoRA adapter weights. Ignored when LoRA is disabled or the session resumes from a checkpoint. |
 
 Defaults mirror the server's; only fields you set explicitly are sent, so the server remains authoritative for the rest.
 
