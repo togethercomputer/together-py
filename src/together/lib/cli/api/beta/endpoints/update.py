@@ -35,10 +35,6 @@ async def update(
         Parameter(help=("Deployment ID to update.")),
     ],
     *,
-    name: Annotated[
-        Optional[str],
-        Parameter(help="Deprecated; deployment names are immutable", show=False),
-    ] = None,
     min_replicas: Annotated[
         Optional[int],
         Parameter(help="New minimum replicas. To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."),
@@ -118,10 +114,6 @@ async def update(
     config: CLIConfigParameter,
 ) -> None:
     """Update a deployment's parameters on an endpoint."""
-
-    if name is not None:
-        console.print("Error: Deployment names are immutable and cannot be updated. Omit --name.")
-        sys.exit(1)
 
     autoscaling = build_autoscaling(
         min_replicas=min_replicas,
