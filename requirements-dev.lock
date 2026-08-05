@@ -157,6 +157,10 @@ typing-inspection==0.4.2
     # via pydantic
 urllib3==2.6.3
     # via types-requests
+<<<<<<< HEAD
+websockets==15.0.1
+=======
+>>>>>>> 78f1d8c3 (Apply custom code)
 yarl==1.22.0
     # via aiohttp
 zipp==3.23.0
