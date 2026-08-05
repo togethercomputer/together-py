@@ -344,10 +344,10 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
             loss_inputs=LossInputs(
                 target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
                 weights=Weights(
-                    data=[1, 0, 1],
+                    data=[1.0, 0.0, 1.0],
                     dtype="D_TYPE_FLOAT32",
                 ),
-            )
+            ),
         )
     ]
     loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
@@ -704,10 +704,10 @@ def _small_sample() -> Sample:
         loss_inputs=LossInputs(
             target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
             weights=Weights(
-                data=[1, 0, 1],
+                data=[1.0, 0.0, 1.0],
                 dtype="D_TYPE_FLOAT32",
             ),
-        )
+        ),
     )
 
 
@@ -785,7 +785,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
                 data=long_mask,
                 dtype="D_TYPE_FLOAT32",
             ),
-        )
+        ),
     )
 
     result = await trainer.training.forward_backward_async(
@@ -827,8 +827,8 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
                     ),
                     loss_inputs=LossInputs(
                         target_tokens=LossTargetTokens(data=list(range(50)), dtype="D_TYPE_INT64"),
-                        weights=Weights(data=[1] * 50, dtype="D_TYPE_FLOAT32"),
-                    )
+                        weights=Weights(data=[1.0] * 50, dtype="D_TYPE_FLOAT32"),
+                    ),
                 )
             ],
             loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),

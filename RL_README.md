@@ -48,7 +48,7 @@ resources = ModelResourcesClient.create(
 session = resources.create_session()
 
 tokens = [101, 102, 103]  # your tokenizer output
-weights = [0, 1, 1]
+weights = [0.0, 1.0, 1.0]
 target_tokens = [102, 103, 0]
 
 chunk = ModelInputChunk(
@@ -132,7 +132,7 @@ for seq in sample_result.sequences:
     response_tokens = [int(t) for t in seq.tokens]
     response_logprobs = [float(v) for v in (seq.logprobs or [])]
     model_tokens = prompt_tokens + response_tokens
-    weights = [0] * len(prompt_tokens) + [1] * len(response_tokens)
+    weights = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
     target_tokens = model_tokens[1:] + [0]
     advantages = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
     logprobs = [0.0] * len(prompt_tokens) + response_logprobs
@@ -573,6 +573,11 @@ Applies accumulated gradients and updates model parameters. Does not make the
 updated parameters available for sampling — call `weights_sync` afterwards when
 you want subsequent samples to use the updated policy.
 
+**Migration:** `weight_sync_type` is no longer accepted on `optim_step` (passing it
+raises `TypeError`). After each `optim_step` whose result you intend to sample
+from, call `session.training.weights_sync(weight_sync_type=...)`.
+`WEIGHT_SYNC_TYPE_UNSPECIFIED` is also gone — pick an explicit sync mode.
+
 ```python
 def optim_step(
     *,
@@ -824,7 +829,7 @@ Sample(
     model_input=ModelInput(chunks=[chunk]),
     loss_inputs=LossInputs(
         weights=Weights(
-            data=[0, 1, 1],
+            data=[0.0, 1.0, 1.0],
             dtype="D_TYPE_FLOAT32",
         ),
         target_tokens=LossTargetTokens(

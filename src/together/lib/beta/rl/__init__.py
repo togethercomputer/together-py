@@ -34,13 +34,13 @@ from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.session_error_code import SessionErrorCode
 from ....types.beta.rl.loss_logprobs_param import LossLogprobs
 from ....types.beta.rl.training_checkpoint import TrainingCheckpoint
+from ....types.beta.rl.weights_sync_result import WeightsSyncResult
 from ....types.beta.rl.inference_checkpoint import InferenceCheckpoint
 from ....types.beta.rl.wandb_metadata_param import WandbMetadataParam as WandbMetadata
 from ....types.beta.rl.dro_loss_inputs_param import DroLossInputs
 from ....types.beta.rl.loss_advantages_param import LossAdvantages
 from ....types.beta.rl.muon_scaling_strategy import MuonScalingStrategy
 from ....types.beta.rl.ppo_loss_inputs_param import PpoLossInputs
-from ....types.beta.rl.weights_sync_result import WeightsSyncResult
 from ....types.beta.rl.grpo_loss_inputs_param import GrpoLossInputs
 from ....types.beta.rl.model_resources_status import ModelResourcesStatus
 from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig

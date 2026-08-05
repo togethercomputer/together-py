@@ -106,7 +106,7 @@ class TestRLRequestBody:
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
                 loss_inputs=LossInputs(
                     weights=Weights(
-                        data=[0, 1, 1],
+                        data=[0.0, 1.0, 1.0],
                         dtype="D_TYPE_FLOAT32",
                     ),
                     target_tokens=LossTargetTokens(
@@ -123,7 +123,7 @@ class TestRLRequestBody:
                             dtype="D_TYPE_FLOAT32",
                         ),
                     ),
-                )
+                ),
             )
         ]
         loss = LossConfig(
