@@ -745,7 +745,7 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
         loss_inputs=LossInputs(
             target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
             weights=Weights(
-                data=(float(x) for x in (1, 0, 1)),
+                data=(value for value in (1.0, 0.0, 1.0)),
                 dtype="D_TYPE_FLOAT32",
             ),
         ),

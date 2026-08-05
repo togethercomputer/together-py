@@ -9,7 +9,7 @@ from typing_extensions import TypeAlias
 import httpx
 
 from ...._types import Omit
-from ...._utils import maybe_transform
+from ...._utils import transform
 from ...._client import AsyncTogether
 from ...._compat import model_parse
 from ...._models import BaseModel
@@ -65,7 +65,7 @@ async def prepare_operation_body(
         ID. When it is large, the full serialized body is uploaded and the
         returned body contains truncated sequence fields for inline validation.
     """
-    serialized = maybe_transform(body, expected_type=expected_type)
+    serialized = transform(body, expected_type=expected_type)
     payload = json.dumps(serialized, separators=(",", ":")).encode()
     if len(payload) <= _LARGE_PAYLOAD_THRESHOLD:
         return serialized, None

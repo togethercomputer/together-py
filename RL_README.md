@@ -69,7 +69,7 @@ samples = [
                 data=target_tokens,
                 dtype="D_TYPE_INT64",
             ),
-        )
+        ),
     )
 ]
 
