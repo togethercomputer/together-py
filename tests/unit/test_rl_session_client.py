@@ -733,7 +733,7 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
 
 
 def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Nested Iterable[float] fields must survive maybe_transform on the small path."""
+    """Nested Iterable[float] fields must survive transform on the small path."""
     _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
     trainer = _make_session(client)
