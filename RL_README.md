@@ -847,7 +847,7 @@ Sample(
             data=[2, 3, 0],
             dtype="D_TYPE_INT64",
         ),
-    )
+    ),
 )
 ```
 
