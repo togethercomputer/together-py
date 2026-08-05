@@ -35,7 +35,10 @@ async def update(
         Parameter(help=("Deployment ID to update.")),
     ],
     *,
-    name: Annotated[Optional[str], Parameter(help="Updated deployment name")] = None,
+    name: Annotated[
+        Optional[str],
+        Parameter(help="Deprecated; deployment names are immutable", show=False),
+    ] = None,
     min_replicas: Annotated[
         Optional[int],
         Parameter(help="New minimum replicas. To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."),
@@ -116,6 +119,10 @@ async def update(
 ) -> None:
     """Update a deployment's parameters on an endpoint."""
 
+    if name is not None:
+        console.print("Error: Deployment names are immutable and cannot be updated. Omit --name.")
+        sys.exit(1)
+
     autoscaling = build_autoscaling(
         min_replicas=min_replicas,
         max_replicas=max_replicas,
@@ -134,9 +141,6 @@ async def update(
     update_mask: list[str] = []
     kwargs: dict[str, Any] = {}
 
-    if name is not None:
-        kwargs["name"] = name
-        update_mask.append("name")
     if autoscaling is not None:
         kwargs["autoscaling"] = autoscaling
         update_mask.append("autoscaling")
