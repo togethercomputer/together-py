@@ -75,6 +75,9 @@ from .fine_tuning_estimate_price_response import FineTuningEstimatePriceResponse
 from .fine_tuning_list_checkpoints_response import (
     FineTuningListCheckpointsResponse as FineTuningListCheckpointsResponse,
 )
+from .fine_tune_tokenized_dataset_retrieve_response import (
+    FineTuneTokenizedDatasetRetrieveResponse as FineTuneTokenizedDatasetRetrieveResponse,
+)
 
 # Manually added to minimize breaking changes from V1
 from .chat.chat_completion import ChatCompletion

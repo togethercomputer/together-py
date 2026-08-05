@@ -7,7 +7,6 @@ from typing_extensions import Required, TypedDict
 
 from .loss_inputs_param import LossInputs
 from .model_input_param import ModelInput
-from .policy_version_segment_param import PolicyVersionSegmentParam
 
 __all__ = ["OperationForwardParams", "Sample"]
 
@@ -23,6 +22,3 @@ class Sample(TypedDict, total=False):
 
     model_input: Required[ModelInput]
     """Model input"""
-
-    policy_segments: Required[Iterable[PolicyVersionSegmentParam]]
-    """Policy versions associated with this sample's tokens"""

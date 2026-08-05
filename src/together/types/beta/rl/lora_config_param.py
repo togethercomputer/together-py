@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Union
 from typing_extensions import TypedDict
 
 __all__ = ["LoraConfigParam"]
@@ -18,3 +19,9 @@ class LoraConfigParam(TypedDict, total=False):
 
     rank: int
     """Rank of the LoRA adapter"""
+
+    seed: Union[str, int]
+    """Random seed for initializing LoRA adapter weights.
+
+    Ignored when LoRA is disabled or the session resumes from a checkpoint.
+    """

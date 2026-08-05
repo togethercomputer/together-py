@@ -26,6 +26,7 @@ from ....types.beta.rl import (
     operation_sample_params,
     operation_forward_params,
     operation_optim_step_params,
+    operation_weights_sync_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
@@ -38,6 +39,7 @@ from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.loss_config_param import LossConfig
 from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
+from ....types.beta.rl.weights_sync_operation import WeightsSyncOperation
 from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from ....types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
 from ....types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
@@ -282,7 +284,6 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        weight_sync_type: WeightSyncType,
         adam_params: AdamParams | Omit = omit,
         muon_params: MuonParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -294,13 +295,12 @@ class OperationsResource(SyncAPIResource):
     ) -> OptimStepOperation:
         """
         Submits an optimizer step operation that will asynchronously apply accumulated
-        gradients to update model parameters.
+        gradients to update model parameters. Does not make the updated parameters
+        available for sampling; call `weights-sync` afterwards when you want subsequent
+        samples to use the updated policy.
 
         Args:
           session_id: Training session ID
-
-          weight_sync_type: How the trainer's updated weights are propagated to the generator after this
-              optimizer step. See `WeightSyncType` for accepted values.
 
           adam_params: Adam optimizer overrides for this step.
 
@@ -320,7 +320,6 @@ class OperationsResource(SyncAPIResource):
             path_template("/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
             body=maybe_transform(
                 {
-                    "weight_sync_type": weight_sync_type,
                     "adam_params": adam_params,
                     "muon_params": muon_params,
                 },
@@ -640,6 +639,50 @@ class OperationsResource(SyncAPIResource):
             cast_to=TrainingCheckpointOperation,
         )
 
+    def retrieve_weights_sync(
+        self,
+        operation_id: str,
+        *,
+        session_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> WeightsSyncOperation:
+        """
+        Retrieves the current status and result of a weights-sync operation.
+
+        Args:
+          session_id: Training session ID
+
+          operation_id: Operation ID
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        if not operation_id:
+            raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
+        return self._get(
+            path_template(
+                "/rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}",
+                session_id=session_id,
+                operation_id=operation_id,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=WeightsSyncOperation,
+        )
+
     def sample(
         self,
         session_id: str,
@@ -702,6 +745,50 @@ class OperationsResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=SampleOperation,
+        )
+
+    def weights_sync(
+        self,
+        session_id: str,
+        *,
+        weight_sync_type: WeightSyncType,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> WeightsSyncOperation:
+        """
+        Submits a weights-sync operation that makes the session's current trained
+        parameters available for sampling. Call this after `optim-step` when you want
+        subsequent samples to use the updated policy.
+
+        Args:
+          session_id: Training session ID
+
+          weight_sync_type: How updated parameters are made available for sampling. See `WeightSyncType` for
+              accepted values.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        return self._post(
+            path_template("/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
+            body=maybe_transform(
+                {"weight_sync_type": weight_sync_type}, operation_weights_sync_params.OperationWeightsSyncParams
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=WeightsSyncOperation,
         )
 
 
@@ -941,7 +1028,6 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        weight_sync_type: WeightSyncType,
         adam_params: AdamParams | Omit = omit,
         muon_params: MuonParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -953,13 +1039,12 @@ class AsyncOperationsResource(AsyncAPIResource):
     ) -> OptimStepOperation:
         """
         Submits an optimizer step operation that will asynchronously apply accumulated
-        gradients to update model parameters.
+        gradients to update model parameters. Does not make the updated parameters
+        available for sampling; call `weights-sync` afterwards when you want subsequent
+        samples to use the updated policy.
 
         Args:
           session_id: Training session ID
-
-          weight_sync_type: How the trainer's updated weights are propagated to the generator after this
-              optimizer step. See `WeightSyncType` for accepted values.
 
           adam_params: Adam optimizer overrides for this step.
 
@@ -979,7 +1064,6 @@ class AsyncOperationsResource(AsyncAPIResource):
             path_template("/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
             body=await async_maybe_transform(
                 {
-                    "weight_sync_type": weight_sync_type,
                     "adam_params": adam_params,
                     "muon_params": muon_params,
                 },
@@ -1299,6 +1383,50 @@ class AsyncOperationsResource(AsyncAPIResource):
             cast_to=TrainingCheckpointOperation,
         )
 
+    async def retrieve_weights_sync(
+        self,
+        operation_id: str,
+        *,
+        session_id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> WeightsSyncOperation:
+        """
+        Retrieves the current status and result of a weights-sync operation.
+
+        Args:
+          session_id: Training session ID
+
+          operation_id: Operation ID
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        if not operation_id:
+            raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
+        return await self._get(
+            path_template(
+                "/rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}",
+                session_id=session_id,
+                operation_id=operation_id,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=WeightsSyncOperation,
+        )
+
     async def sample(
         self,
         session_id: str,
@@ -1363,6 +1491,50 @@ class AsyncOperationsResource(AsyncAPIResource):
             cast_to=SampleOperation,
         )
 
+    async def weights_sync(
+        self,
+        session_id: str,
+        *,
+        weight_sync_type: WeightSyncType,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> WeightsSyncOperation:
+        """
+        Submits a weights-sync operation that makes the session's current trained
+        parameters available for sampling. Call this after `optim-step` when you want
+        subsequent samples to use the updated policy.
+
+        Args:
+          session_id: Training session ID
+
+          weight_sync_type: How updated parameters are made available for sampling. See `WeightSyncType` for
+              accepted values.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        return await self._post(
+            path_template("/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
+            body=await async_maybe_transform(
+                {"weight_sync_type": weight_sync_type}, operation_weights_sync_params.OperationWeightsSyncParams
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=WeightsSyncOperation,
+        )
+
 
 class OperationsResourceWithRawResponse:
     def __init__(self, operations: OperationsResource) -> None:
@@ -1407,8 +1579,14 @@ class OperationsResourceWithRawResponse:
         self.retrieve_training_checkpoint = to_raw_response_wrapper(
             operations.retrieve_training_checkpoint,
         )
+        self.retrieve_weights_sync = to_raw_response_wrapper(
+            operations.retrieve_weights_sync,
+        )
         self.sample = to_raw_response_wrapper(
             operations.sample,
+        )
+        self.weights_sync = to_raw_response_wrapper(
+            operations.weights_sync,
         )
 
 
@@ -1455,8 +1633,14 @@ class AsyncOperationsResourceWithRawResponse:
         self.retrieve_training_checkpoint = async_to_raw_response_wrapper(
             operations.retrieve_training_checkpoint,
         )
+        self.retrieve_weights_sync = async_to_raw_response_wrapper(
+            operations.retrieve_weights_sync,
+        )
         self.sample = async_to_raw_response_wrapper(
             operations.sample,
+        )
+        self.weights_sync = async_to_raw_response_wrapper(
+            operations.weights_sync,
         )
 
 
@@ -1503,8 +1687,14 @@ class OperationsResourceWithStreamingResponse:
         self.retrieve_training_checkpoint = to_streamed_response_wrapper(
             operations.retrieve_training_checkpoint,
         )
+        self.retrieve_weights_sync = to_streamed_response_wrapper(
+            operations.retrieve_weights_sync,
+        )
         self.sample = to_streamed_response_wrapper(
             operations.sample,
+        )
+        self.weights_sync = to_streamed_response_wrapper(
+            operations.weights_sync,
         )
 
 
@@ -1551,6 +1741,12 @@ class AsyncOperationsResourceWithStreamingResponse:
         self.retrieve_training_checkpoint = async_to_streamed_response_wrapper(
             operations.retrieve_training_checkpoint,
         )
+        self.retrieve_weights_sync = async_to_streamed_response_wrapper(
+            operations.retrieve_weights_sync,
+        )
         self.sample = async_to_streamed_response_wrapper(
             operations.sample,
+        )
+        self.weights_sync = async_to_streamed_response_wrapper(
+            operations.weights_sync,
         )

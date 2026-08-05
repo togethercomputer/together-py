@@ -237,6 +237,14 @@ class FinetuneResponse(BaseModel):
 
     token_count: Optional[int] = None
 
+    tokenized_dataset_path: Optional[str] = None
+    """
+    Storage path for the tokenized dataset archive generated for this fine-tune job.
+    """
+
+    tokenized_dataset_uploaded_at: Optional[datetime] = None
+    """Timestamp when the tokenized dataset archive was uploaded."""
+
     total_price: Optional[int] = None
 
     train_on_inputs: Union[bool, Literal["auto"], None] = None

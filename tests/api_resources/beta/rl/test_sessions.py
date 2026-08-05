@@ -36,6 +36,7 @@ class TestSessions:
                 "alpha": 64,
                 "dropout": 0,
                 "rank": 32,
+                "seed": "59",
             },
             metadata={
                 "wandb": {
@@ -210,6 +211,7 @@ class TestAsyncSessions:
                 "alpha": 64,
                 "dropout": 0,
                 "rank": 32,
+                "seed": "59",
             },
             metadata={
                 "wandb": {

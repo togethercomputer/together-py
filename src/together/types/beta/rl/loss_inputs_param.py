@@ -34,4 +34,8 @@ class LossInputs(TypedDict, total=False):
     ppo_inputs: PpoLossInputs
 
     weights: Weights
-    """Per-token weights (1=compute loss, 0=ignore)."""
+    """Per-token loss weights (>= 0), one weight per target token.
+
+    Required for cross-entropy, which honors fractional weights; other loss types
+    treat weights as a 0/1 mask.
+    """
