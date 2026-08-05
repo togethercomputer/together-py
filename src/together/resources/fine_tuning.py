@@ -48,6 +48,7 @@ from ..types.fine_tuning_list_events_response import FineTuningListEventsRespons
 from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsResponse
 from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
+from ..types.fine_tune_tokenized_dataset_retrieve_response import FineTuneTokenizedDatasetRetrieveResponse
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
@@ -808,6 +809,42 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FineTunePreviewResponse,
         )
 
+    def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse:
+        """
+        Get a presigned URL for the tokenized dataset archive generated for a fine-tune
+        job.
+
+        Args:
+          id: The ID of the fine-tune job whose tokenized dataset should be downloaded.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneTokenizedDatasetRetrieveResponse,
+        )
+
 
 class AsyncFineTuningResource(AsyncAPIResource):
     @cached_property
@@ -1557,6 +1594,42 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FineTunePreviewResponse,
         )
 
+    async def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse:
+        """
+        Get a presigned URL for the tokenized dataset archive generated for a fine-tune
+        job.
+
+        Args:
+          id: The ID of the fine-tune job whose tokenized dataset should be downloaded.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneTokenizedDatasetRetrieveResponse,
+        )
+
 
 class FineTuningResourceWithRawResponse:
     def __init__(self, fine_tuning: FineTuningResource) -> None:
@@ -1595,6 +1668,9 @@ class FineTuningResourceWithRawResponse:
         )
         self.preview = to_raw_response_wrapper(
             fine_tuning.preview,
+        )
+        self.retrieve_tokenized_dataset = to_raw_response_wrapper(
+            fine_tuning.retrieve_tokenized_dataset,
         )
 
 
@@ -1636,6 +1712,9 @@ class AsyncFineTuningResourceWithRawResponse:
         self.preview = async_to_raw_response_wrapper(
             fine_tuning.preview,
         )
+        self.retrieve_tokenized_dataset = async_to_raw_response_wrapper(
+            fine_tuning.retrieve_tokenized_dataset,
+        )
 
 
 class FineTuningResourceWithStreamingResponse:
@@ -1676,6 +1755,9 @@ class FineTuningResourceWithStreamingResponse:
         self.preview = to_streamed_response_wrapper(
             fine_tuning.preview,
         )
+        self.retrieve_tokenized_dataset = to_streamed_response_wrapper(
+            fine_tuning.retrieve_tokenized_dataset,
+        )
 
 
 class AsyncFineTuningResourceWithStreamingResponse:
@@ -1715,4 +1797,7 @@ class AsyncFineTuningResourceWithStreamingResponse:
         )
         self.preview = async_to_streamed_response_wrapper(
             fine_tuning.preview,
+        )
+        self.retrieve_tokenized_dataset = async_to_streamed_response_wrapper(
+            fine_tuning.retrieve_tokenized_dataset,
         )

@@ -308,6 +308,8 @@ from together.types.beta.rl import (
     TrainingCheckpointResult,
     WeightSyncType,
     Weights,
+    WeightsSyncOperation,
+    WeightsSyncResult,
 )
 ```
 
@@ -326,7 +328,9 @@ Methods:
 - <code title="get /rl/training-sessions/{session_id}/operations/optim-step/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_optim_step</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/optim_step_operation.py">OptimStepOperation</a></code>
 - <code title="get /rl/training-sessions/{session_id}/operations/sample/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_sample</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/sample_operation.py">SampleOperation</a></code>
 - <code title="get /rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_training_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_weights_sync</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/weights_sync_operation.py">WeightsSyncOperation</a></code>
 - <code title="post /rl/training-sessions/{session_id}/operations/sample">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">sample</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_sample_params.py">params</a>) -> <a href="./src/together/types/beta/rl/sample_operation.py">SampleOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/weights-sync">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">weights_sync</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_weights_sync_params.py">params</a>) -> <a href="./src/together/types/beta/rl/weights_sync_operation.py">WeightsSyncOperation</a></code>
 
 ### Checkpoints
 
@@ -580,6 +584,7 @@ Types:
 from together.types import (
     FineTunePreviewResponse,
     FineTunePreviewRow,
+    FineTuneTokenizedDatasetRetrieveResponse,
     FinetuneEvent,
     FinetuneEventType,
     FinetuneModelLimits,
@@ -608,6 +613,7 @@ Methods:
 - <code title="get /fine-tunes/{id}/metrics">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_metrics</a>(id, \*\*<a href="src/together/types/fine_tuning_list_metrics_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_list_metrics_response.py">FineTuningListMetricsResponse</a></code>
 - <code title="get /fine-tunes/models/limits">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">model_limits</a>(\*\*<a href="src/together/types/fine_tuning_model_limits_params.py">params</a>) -> <a href="./src/together/types/finetune_model_limits.py">FinetuneModelLimits</a></code>
 - <code title="post /fine-tunes/preview">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">preview</a>(\*\*<a href="src/together/types/fine_tuning_preview_params.py">params</a>) -> <a href="./src/together/types/fine_tune_preview_response.py">FineTunePreviewResponse</a></code>
+- <code title="get /fine-tunes/{id}/download-tokenized-dataset">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve_tokenized_dataset</a>(id) -> <a href="./src/together/types/fine_tune_tokenized_dataset_retrieve_response.py">FineTuneTokenizedDatasetRetrieveResponse</a></code>
 
 # CodeInterpreter
 

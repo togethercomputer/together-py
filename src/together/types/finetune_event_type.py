@@ -31,4 +31,5 @@ FinetuneEventType: TypeAlias = Literal[
     "refund",
     "warning",
     "early_stopped",
+    "tokenized_dataset_upload_complete",
 ]

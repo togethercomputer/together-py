@@ -43,6 +43,7 @@ from .prompt_top_logprobs import PromptTopLogprobs as PromptTopLogprobs
 from .rl_supported_models import RlSupportedModels as RlSupportedModels
 from .session_list_params import SessionListParams as SessionListParams
 from .training_checkpoint import TrainingCheckpoint as TrainingCheckpoint
+from .weights_sync_result import WeightsSyncResult as WeightsSyncResult
 from .grpo_loss_ratio_type import GrpoLossRatioType as GrpoLossRatioType
 from .inference_checkpoint import InferenceCheckpoint as InferenceCheckpoint
 from .operation_error_code import OperationErrorCode as OperationErrorCode
@@ -62,6 +63,7 @@ from .optimizer_config_param import OptimizerConfigParam as OptimizerConfigParam
 from .policy_version_segment import PolicyVersionSegment as PolicyVersionSegment
 from .session_metadata_param import SessionMetadataParam as SessionMetadataParam
 from .sessions_list_response import SessionsListResponse as SessionsListResponse
+from .weights_sync_operation import WeightsSyncOperation as WeightsSyncOperation
 from .cispo_loss_inputs_param import CispoLossInputs as CispoLossInputs
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
 from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
@@ -83,8 +85,8 @@ from .operation_optim_step_params import OperationOptimStepParams as OperationOp
 from .adamw_optimizer_config_param import AdamwOptimizerConfigParam as AdamwOptimizerConfigParam
 from .checkpoint_download_response import CheckpointDownloadResponse as CheckpointDownloadResponse
 from .model_resource_create_params import ModelResourceCreateParams as ModelResourceCreateParams
-from .policy_version_segment_param import PolicyVersionSegmentParam as PolicyVersionSegmentParam
 from .model_resources_list_response import ModelResourcesListResponse as ModelResourcesListResponse
+from .operation_weights_sync_params import OperationWeightsSyncParams as OperationWeightsSyncParams
 from .training_checkpoint_operation import TrainingCheckpointOperation as TrainingCheckpointOperation
 from .custom_forward_backward_result import CustomForwardBackwardResult as CustomForwardBackwardResult
 from .inference_checkpoint_operation import InferenceCheckpointOperation as InferenceCheckpointOperation
