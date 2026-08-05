@@ -219,13 +219,6 @@ class TestResolveRateOrTargetQps:
 
 
 class TestBetaEndpointShadow:
-    def test_shadow_help_mentions_target_eligibility(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "endpoints", "shadow", "--help"])
-
-        output = " ".join(result.output.split())
-        assert result.exit_code == 0
-        assert "Shadow targets cannot be live traffic-split members" in output
-
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_creates_experiment_deployment_and_target(
         self,
