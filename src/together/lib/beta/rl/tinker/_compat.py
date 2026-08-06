@@ -9,10 +9,13 @@ from __future__ import annotations
 try:
     import tinker
     from tinker import types
-except ImportError as exc:  # pragma: no cover - exercised only without tinker installed
-    msg = (
-        "together.lib.beta.rl.tinker re-exports tinker's types; install the 'tinker' package (requires Python >= 3.11)"
-    )
-    raise ImportError(msg) from exc
+except ModuleNotFoundError as exc:  # pragma: no cover - exercised only without tinker installed
+    if exc.name != "tinker":
+        raise
+    raise ModuleNotFoundError(
+        "Together's Tinker compatibility layer requires the optional "
+        "'tinker' package and Python 3.11 or newer. "
+        "Install it with `pip install 'together[tinker]'`."
+    ) from exc
 
 __all__ = ["types", "tinker"]

@@ -59,6 +59,9 @@ pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
 cli = ["PyYAML", "questionary>=2.1.1"]
 # websockets>=13 is the floor for both websockets.sync.client and websockets.asyncio.client
 realtime = ["websockets>=13,<16"]
+# tinker requires Python >= 3.11; marker makes the extra a no-op on 3.10.
+# Floor matches the versions we developed against; upper bound excludes a future 1.0 break.
+tinker = ["tinker>=0.22.3,<1; python_version >= '3.11'"]
 
 [project.scripts]
 together = "together.lib.cli:main"
@@ -91,7 +94,7 @@ dev = [
     "pytest-mock>=3.14.0",
     "aiohttp>=3.12.13",
     "websockets>=13,<16",
-    "tinker>=0.22.3 ; python_version >= '3.11'",
+    "together[tinker]",
 ]
 pydantic-v1 = [
     "pydantic>=1.9.0,<2",
@@ -162,7 +165,7 @@ exclude = [
     ".nox",
     ".git",
     "examples",
-    # requires the tinker package, which needs python >= 3.11 while checks run on 3.10
+    # 3.10-only: tinker needs Python >= 3.11. Covered by the lint-tinker CI job on 3.11+.
     "src/together/lib/beta/rl/tinker",
     "tests/unit/test_rl_tinker_wrapper.py",
 ]
@@ -183,7 +186,7 @@ show_error_codes = true
 #
 # We also exclude our `tests` as mypy doesn't always infer
 # types correctly and Pyright will still catch any type errors.
-# lib/beta/rl/tinker requires the tinker package, which needs python >= 3.11 while checks run on 3.10
+# 3.10-only: tinker needs Python >= 3.11. Covered by the lint-tinker CI job on 3.11+.
 exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/beta/rl/tinker/.*"]
 
 strict_equality = true

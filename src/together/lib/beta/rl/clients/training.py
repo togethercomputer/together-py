@@ -37,7 +37,7 @@ def _resolve_loss_type(loss: LossConfig) -> LossConfig:
     return {**loss, "type": _PROTO_LOSS_TYPE_BY_SHORT_NAME[given]}
 
 
-async def submit_forward_backward(
+async def _submit_forward_backward(
     session: SessionClient,
     *,
     samples: Iterable[Sample],
@@ -130,7 +130,7 @@ class TrainingClient:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
-        operation = await submit_forward_backward(self._session, samples=samples, loss=loss)
+        operation = await _submit_forward_backward(self._session, samples=samples, loss=loss)
         result = await self._session._submit_and_wait(
             operation,
             timeout=timeout,

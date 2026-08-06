@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Sequence, cast
+from typing import Any, Literal, Sequence, cast
 
 import numpy as np
+from tinker.types.topk_prompt_logprobs import TopkPromptLogprobs
 
 from .. import (
     Sample as WireSample,
@@ -13,17 +14,19 @@ from .. import (
     LossInputs,
     SampleResult,
     SamplingParams as WireSamplingParams,
+    ForwardBackwardResult,
 )
 from ._compat import types
 from .....types.beta.rl.model_input_param import ModelInput as WireModelInput
+from .....types.beta.rl.model_input_chunk_param import ModelInputChunk as WireModelInputChunk
 
-_STOP_REASON = {"STOP_REASON_LENGTH": "length", "STOP_REASON_STOP": "stop"}
+_TOPK_MASK_LOGPROB = -99999.0
 
 
 def _to_model_input(model_input: types.ModelInput) -> WireModelInput:
-    chunks = []
+    chunks: list[WireModelInputChunk] = []
     for chunk in model_input.chunks:
-        if getattr(chunk, "type", None) != "encoded_text":
+        if not isinstance(chunk, types.EncodedTextChunk):
             msg = f"Together supports encoded_text chunks only, got {getattr(chunk, 'type', chunk)!r}"
             raise ValueError(msg)
         chunks.append({"encoded_text": {"tokens": list(chunk.tokens)}})
@@ -46,6 +49,10 @@ def _to_tensor(tensor: Any) -> dict[str, Any]:
 
 
 def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
+    required = ("target_tokens", "logprobs", "advantages")
+    missing = [key for key in required if key not in datum.loss_fn_inputs]
+    if missing:
+        raise ValueError(f"Datum.loss_fn_inputs missing {missing}; expected keys {list(required)}")
     arrays = {key: _to_tensor(value) for key, value in datum.loss_fn_inputs.items()}
     # `weights` stays omitted, like tinker's Datum: advantages of 0.0 already mask the
     # prompt positions, so gradients match exactly; only per-token KL/entropy diagnostics
@@ -66,28 +73,39 @@ def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
     )
 
 
-# The losses whose wire inputs are exactly the {logprobs, advantages} pair that
-# _to_sample builds. cross_entropy Datums carry weights instead, and cispo/dro
-# Datums carry extra keys the conversion would silently drop.
-_ADVANTAGE_LOSSES = {"grpo", "importance_sampling", "ppo"}
+# Losses whose Datum.loss_fn_inputs are exactly {target_tokens, logprobs, advantages}.
+# cross_entropy carries weights instead; cispo/dro carry extra keys we would drop.
+# grpo is a Together wire loss, not a tinker LossFnType, so it is not listed here.
+_ADVANTAGE_LOSSES = frozenset({"importance_sampling", "ppo"})
 
 
-def _loss_inputs_key(proto_loss_type: str) -> str:
-    loss = proto_loss_type.removeprefix("LOSS_TYPE_").lower()
+def _loss_inputs_key(loss_fn: str) -> str:
+    loss = loss_fn.removeprefix("LOSS_TYPE_").lower()
     if loss not in _ADVANTAGE_LOSSES:
         msg = f"the tinker wrapper supports loss_fn {sorted(_ADVANTAGE_LOSSES)} only, got {loss!r}"
         raise ValueError(msg)
-    return loss + "_inputs"
+    return f"{loss}_inputs"
+
+
+def _to_forward_backward_output(result: ForwardBackwardResult) -> types.ForwardBackwardOutput:
+    """Map Together's scalar loss + metrics onto tinker's ForwardBackwardOutput.
+
+    Per-datum ``loss_fn_outputs`` are left empty: Together does not return them, and
+    inventing logprobs would silently corrupt scripts that read them. Scripts that only
+    read ``.metrics`` (including tinker's ``loss:sum``) keep working because Together's
+    total ``loss`` is published under that key.
+    """
+    metrics = dict(result.metrics or {})
+    metrics.setdefault("loss:sum", result.loss)
+    return types.ForwardBackwardOutput(
+        loss_fn_output_type="",
+        loss_fn_outputs=[],
+        metrics=metrics,
+    )
 
 
 def _stop_strings(stop: str | Sequence[str] | Sequence[int]) -> list[str]:
-    """Keep the string stops; drop token-id ones, which the wire cannot carry.
-
-    ``tinker_cookbook``'s renderers report their stops as token ids (Qwen3.5 gives
-    ``[248046]``, i.e. ``<|im_end|>``), and those are the model's EOS, which the
-    generator already stops on. Warn rather than raise: refusing them would mean a
-    tinker script cannot pass its renderer's stops through unchanged.
-    """
+    """Keep string stops and warn when dropping token IDs the wire cannot carry."""
     if isinstance(stop, str):
         return [stop]
     strings = [item for item in stop if isinstance(item, str)]
@@ -95,7 +113,8 @@ def _stop_strings(stop: str | Sequence[str] | Sequence[int]) -> list[str]:
     if token_ids:
         warnings.warn(
             f"Together's sampling stop takes strings only; ignoring token-id stops {token_ids}."
-            " Generation still stops at the model's EOS token.",
+            " Generation will rely on the model's own end token, so trajectories can"
+            " differ from Tinker when a dropped token is not that end token.",
             stacklevel=4,  # _stop_strings -> _to_sampling_params -> sample -> caller
         )
     return strings
@@ -128,15 +147,51 @@ def _to_adam_params(params: types.AdamParams) -> WireAdamParams:
     )
 
 
-def _to_sample_response(result: SampleResult) -> types.SampleResponse:
+def _stop_reason(value: str) -> Literal["length", "stop"]:
+    if value == "STOP_REASON_LENGTH":
+        return "length"
+    if value == "STOP_REASON_STOP":
+        return "stop"
+    raise ValueError(f"Unknown stop reason {value!r}")
+
+
+def _prompt_logprobs(result: SampleResult) -> np.ndarray | None:
+    if result.prompt_logprobs is None:
+        return None
+    values = np.asarray(result.prompt_logprobs, dtype=np.float32)
+    if len(values):
+        values[0] = np.nan
+    return values
+
+
+def _topk_prompt_logprobs(result: SampleResult, width: int) -> TopkPromptLogprobs | None:
+    if result.topk_prompt_logprobs is None:
+        return None
+    token_ids = np.zeros((len(result.topk_prompt_logprobs), width), dtype=np.int32)
+    logprobs = np.full((len(result.topk_prompt_logprobs), width), _TOPK_MASK_LOGPROB, dtype=np.float32)
+    for row, alternatives in enumerate(result.topk_prompt_logprobs):
+        row_token_ids = alternatives.token_ids or []
+        row_logprobs = alternatives.logprobs or []
+        if len(row_token_ids) != len(row_logprobs):
+            raise ValueError(f"Prompt top-k token IDs and logprobs differ in length at position {row}")
+        count = min(width, len(row_token_ids))
+        token_ids[row, :count] = row_token_ids[:count]
+        logprobs[row, :count] = row_logprobs[:count]
+    return TopkPromptLogprobs(token_ids=token_ids, logprobs=logprobs)
+
+
+def _to_sample_response(result: SampleResult, topk_prompt_logprobs: int = 0) -> types.SampleResponse:
     return types.SampleResponse(
         sequences=[
             types.SampledSequence(
-                stop_reason=_STOP_REASON[sequence.stop_reason],
+                stop_reason=_stop_reason(sequence.stop_reason),
                 # int64 tokens arrive as strings on the wire
-                tokens_np=np.asarray([int(token) for token in sequence.tokens], dtype=np.int64),
+                tokens_np=np.asarray([int(token) for token in sequence.tokens], dtype=np.int32),
                 logprobs_np=None if sequence.logprobs is None else np.asarray(sequence.logprobs, dtype=np.float32),
             )
             for sequence in result.sequences
-        ]
+        ],
+        prompt_logprobs_np=_prompt_logprobs(result),
+        topk_prompt_logprobs_np=_topk_prompt_logprobs(result, topk_prompt_logprobs),
+        prompt_cache_hit_tokens=result.sequences[0].prompt_cache_hit_tokens if result.sequences else 0,
     )

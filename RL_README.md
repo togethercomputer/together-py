@@ -368,13 +368,21 @@ asyncio.run(main())
 
 ## Tinker-compatible entry point
 
-A training script written against the `tinker` SDK runs on Together by changing only its import line:
+For the RL training-loop subset described below, a script written against the `tinker` SDK runs on
+Together by changing only its import line:
 
 ```python
 import together.lib.beta.rl.tinker as tinker  # instead of: import tinker
 ```
 
-The rest of the loop stays as written:
+Install the optional extra (requires Python >= 3.11); that pulls in `tinker>=0.22.3,<1`:
+
+```bash
+pip install 'together[tinker]'
+```
+
+Types are the genuine `tinker.types` (`Datum`, `ModelInput`, `SamplingParams`, …), re-exported unchanged,
+so objects built by `tinker_cookbook` — renderer prompts, `Datum`s — pass through as-is.
 
 ```python
 service_client = tinker.ServiceClient()
@@ -387,17 +395,99 @@ training_client.forward_backward(datums, loss_fn="importance_sampling").result()
 training_client.optim_step(adam_params).result()
 ```
 
-Types are the genuine `tinker.types` (`Datum`, `ModelInput`, `SamplingParams`, ...), re-exported unchanged,
-so objects built by `tinker_cookbook` — renderer prompts, `Datum`s — pass through as-is. The genuine
-`tinker` package must therefore be installed (it requires Python >= 3.11); `together` itself does not
-depend on it.
+### Client surface
 
-Scope: the core RL training loop — sampling, `forward_backward`, `optim_step`, and weight publishing via
-`save_weights_and_get_sampling_client`. `loss_fn` is limited to `grpo`, `importance_sampling`, and `ppo`,
-and `forward_backward` resolves to Together's result model — its `.metrics` mapping is what tinker
-scripts read, but per-datum `loss_fn_outputs` are not available. Tinker-only knobs (`seed`, `train_mlp`,
-`train_attn`, `train_unembed`) are ignored with a warning, token-id stop sequences are dropped with a
-warning (the model's EOS still ends generation), and checkpoint save/load is not covered.
+`ServiceClient(user_metadata=None, project_id=None, *, base_url=None, api_key=None, model_resources_id=None, **kwargs)`:
+
+- `base_url` / `api_key` select Together's transport.
+- `model_resources_id` is a Together extension: attach existing model resources instead of provisioning
+  new ones. Attached resources are left running on close; provisioned ones are stopped (see
+  [Resource lifecycle](#resource-lifecycle) below).
+- `user_metadata`, `project_id`, and other kwargs are accepted and ignored.
+
+`create_lora_training_client` takes the same seven keyword arguments as tinker:
+
+| Argument | Status |
+| -------- | ------ |
+| `base_model`, `rank` | Honored |
+| `seed` | Honored (forwarded into the session LoRA config) |
+| `train_mlp`, `train_attn`, `train_unembed` | Accepted; non-`True` values warn and are ignored (Together cannot select trainable modules independently) |
+| `user_metadata` | Accepted and ignored |
+
+Training and sampling methods:
+
+- `TrainingClient.forward_backward(data, loss_fn, loss_fn_config=None)` — returns a future of
+  tinker's `ForwardBackwardOutput`. See [Loss functions](#loss-functions) for accepted values.
+- `TrainingClient.optim_step(adam_params)` — Adam fields are forwarded as-is (including `grad_clip_norm`).
+- `TrainingClient.save_weights_and_get_sampling_client(name=None, retry_config=None)` — publishes weights
+  synchronously and returns a `SamplingClient`. `name` and `retry_config` are accepted and ignored.
+- `SamplingClient.sample(prompt, num_samples, sampling_params, include_prompt_logprobs=False, topk_prompt_logprobs=0)` —
+  both prompt-logprob flags are honored; `topk_prompt_logprobs` must be in `0..20` or a `ValueError` is raised.
+- `future.result(timeout=None)` — polls to completion. Pass a float to bound polling; omit or pass `None`
+  to wait indefinitely.
+
+### Loss functions
+
+The converter expects each `Datum.loss_fn_inputs` to carry `target_tokens`, `logprobs`, and `advantages`
+(as `TensorData`) and maps them into Together's `{loss}_inputs` wire shape. Only losses that fit that
+shape are accepted:
+
+| `loss_fn` | Status | Notes |
+| --------- | ------ | ----- |
+| `importance_sampling` | Supported | No `loss_fn_config` keys |
+| `ppo` | Supported | Optional `loss_fn_config`: `clip_low_threshold`, `clip_high_threshold` |
+| `cross_entropy` | Rejected | Datum carries `weights`, not `logprobs` / `advantages` |
+| `cispo`, `dro` | Rejected | Converter only emits the `{logprobs, advantages}` pair and would silently drop any extra Datum keys |
+
+Unknown `loss_fn_config` keys raise `ValueError`.
+
+### Limitations
+
+- **Empty `loss_fn_outputs`.** `forward_backward(...).result()` is a genuine
+  `tinker.ForwardBackwardOutput`. Together's total loss is published as `metrics["loss:sum"]`
+  (plus any Together-native metric keys), so scripts that only read `.metrics` keep working.
+  `loss_fn_outputs` is always `[]` — Together does not return per-datum logprobs, and inventing
+  them would silently corrupt training. Accesses like `result.loss_fn_outputs[i]["logprobs"]`
+  (used in `tinker_cookbook/rl/train.py`, `supervised/train.py`, and several tutorials) therefore
+  fail; those scripts need to skip per-datum logprobs here.
+- **Sampling clients are not weight snapshots.** Together's sampler serves the most recently published
+  weights. After a later `save_weights_and_get_sampling_client()`, sampling on an earlier client raises
+  `RuntimeError` rather than silently using the wrong policy. This breaks DPO-style frozen reference
+  clients held across training steps, and pipelined/off-policy loops that keep sampling from an older
+  client while training advances. Re-create the sampling client after each publish.
+- **Token-id stop sequences are dropped.** Together's wire `stop` field is strings only. Integer stops
+  are ignored with a warning; generation then relies on the model's own end token, so trajectories can
+  differ from tinker when a dropped token is not that end token. Cookbook renderers often emit non-EOS
+  stops (e.g. `GptOssRenderer`'s `<|return|>` / `<|call|>`, `Llama3Renderer`'s `<|eot_id|>`) — pass
+  those as strings if you need them enforced.
+- **No async.** Futures expose `result(timeout=...)` only — not tinker's `result_async` / `__await__`.
+  `*_async` methods and `await future` do not work.
+- **No checkpointing.** `save_state`, `load_state`, `create_training_client_from_state`, and
+  `save_weights_for_sampler` are absent, as is `RestClient`.
+
+### Resource lifecycle
+
+Together-specific; tinker has no equivalent. Prefer an explicit close:
+
+```python
+with service_client.create_lora_training_client(base_model="Qwen/Qwen3-8B", rank=32) as training_client:
+    ...
+# or: training_client.close()
+```
+
+`TrainingClient.close()` (and the context manager) always stops the session this client created. If
+`ServiceClient` provisioned the model resources, they are stopped too; if you passed
+`model_resources_id=...`, they are only detached and left running.
+
+An interpreter-exit fallback also stops owned resources (registered so it runs before the HTTP client's
+executor shuts down). SIGTERM on the main thread is translated to `SystemExit` so that fallback can run.
+If automatic teardown fails, the GPUs stay allocated — release them with:
+
+```python
+from together.lib.beta.rl import ModelResourcesClient
+
+ModelResourcesClient.attach(model_resources_id="...").stop()
+```
 
 ## Session lifecycle
 

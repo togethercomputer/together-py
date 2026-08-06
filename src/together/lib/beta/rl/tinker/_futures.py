@@ -12,14 +12,13 @@ T = TypeVar("T")
 class _Pending(Generic[T]):
     """An operation already submitted to the service; ``result()`` polls it to completion.
 
-    Deliberately minimal — the tinker loop only ever calls ``.result()``. If this needs
-    ``__await__``, result caching, or a poll policy, adopt MOSH-3628's ``OperationFuture``
-    instead of growing it.
+    Together's Tinker layer is synchronous: unlike genuine ``tinker.APIFuture``, this
+    compatibility future deliberately does not expose ``result_async`` or ``__await__``.
     """
 
     _session: SessionClient
     _operation: Any
-    _resolve: Callable[[SessionClient, Any], Coroutine[Any, Any, T]]
+    _resolve: Callable[[SessionClient, Any, float | None], Coroutine[Any, Any, T]]
 
-    def result(self) -> T:
-        return self._session.run(self._resolve(self._session, self._operation))
+    def result(self, timeout: float | None = None) -> T:
+        return self._session.run(self._resolve(self._session, self._operation, timeout))

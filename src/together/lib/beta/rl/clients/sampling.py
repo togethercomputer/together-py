@@ -13,13 +13,14 @@ from .....types.beta.rl.model_input_param import ModelInput
 from .....types.beta.rl.operation_sample_params import OperationSampleParams
 
 
-async def submit_sample_batch(
+async def _submit_sample_batch(
     session: SessionClient,
     *,
     model_inputs: list[ModelInput],
     num_samples: int | None = None,
     sampling_params: SamplingParams | None = None,
     prompt_logprobs: bool | None = None,
+    topk_prompt_logprobs: int | None = None,
 ) -> SampleOperation:
     """POST a sample operation without waiting for it."""
     body: dict[str, Any] = {"model_inputs": model_inputs}
@@ -29,6 +30,8 @@ async def submit_sample_batch(
         body["num_samples"] = num_samples
     if prompt_logprobs is not None:
         body["prompt_logprobs"] = prompt_logprobs
+    if topk_prompt_logprobs is not None:
+        body["topk_prompt_logprobs"] = topk_prompt_logprobs
 
     body, large_payload_id = await prepare_operation_body(
         session._client,
@@ -43,6 +46,7 @@ async def submit_sample_batch(
         num_samples=body.get("num_samples", omit),
         sampling_params=body.get("sampling_params", omit),
         prompt_logprobs=body.get("prompt_logprobs", omit),
+        topk_prompt_logprobs=body.get("topk_prompt_logprobs", omit),
         extra_body=extra_body,
     )
 
@@ -139,7 +143,7 @@ class SamplingClient:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
-        operation = await submit_sample_batch(
+        operation = await _submit_sample_batch(
             self._session,
             model_inputs=list(prompts),
             num_samples=num_samples,

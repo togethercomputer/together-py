@@ -2208,6 +2208,9 @@ pyarrow = [
 realtime = [
     { name = "websockets" },
 ]
+tinker = [
+    { name = "tinker", marker = "python_full_version >= '3.11' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -2224,7 +2227,7 @@ dev = [
     { name = "rich" },
     { name = "ruff" },
     { name = "time-machine" },
-    { name = "tinker", marker = "python_full_version >= '3.11' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
+    { name = "together", extra = ["tinker"] },
     { name = "websockets" },
 ]
 pydantic-v1 = [
@@ -2254,6 +2257,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.7.1" },
     { name = "sniffio" },
     { name = "tabulate", specifier = ">=0.9.0" },
+    { name = "tinker", marker = "python_full_version >= '3.11' and extra == 'tinker'", specifier = ">=0.22.3,<1" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
     { name = "types-aiofiles", marker = "extra == 'aiofiles'" },
@@ -2263,7 +2267,7 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.14,<5" },
     { name = "websockets", marker = "extra == 'realtime'", specifier = ">=13,<16" },
 ]
-provides-extras = ["aiohttp", "aiofiles", "pyarrow", "cli", "realtime"]
+provides-extras = ["aiohttp", "aiofiles", "pyarrow", "cli", "realtime", "tinker"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2280,7 +2284,7 @@ dev = [
     { name = "rich", specifier = ">=13.7.1" },
     { name = "ruff" },
     { name = "time-machine" },
-    { name = "tinker", marker = "python_full_version >= '3.11'", specifier = ">=0.22.3" },
+    { name = "together", extras = ["tinker"] },
     { name = "websockets", specifier = ">=13,<16" },
 ]
 pydantic-v1 = [{ name = "pydantic", specifier = ">=1.9.0,<2" }]
