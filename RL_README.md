@@ -381,7 +381,7 @@ Install the optional extra (requires Python >= 3.11); that pulls in `tinker==0.2
 pip install 'together[tinker]'
 ```
 
-Types are the genuine `tinker.types` (`Datum`, `ModelInput`, `SamplingParams`, …), re-exported unchanged,
+Types are the genuine `tinker.types` (`Datum`, `ModelInput`, `SamplingParams`, …), resolved via `__getattr__`,
 so objects built by `tinker_cookbook` — renderer prompts, `Datum`s — pass through as-is.
 
 ```python

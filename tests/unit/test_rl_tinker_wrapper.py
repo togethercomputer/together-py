@@ -312,13 +312,15 @@ def test_sample_forwards_prompt_logprob_options(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_module_reexports_types_without_genuine_clients() -> None:
-    """The compatibility namespace must not leak clients that bypass Together."""
+    """Types come from tinker.types; Together clients must not leak real tinker ones."""
     assert tinker_compat.types is types
     assert tinker_compat.Datum is types.Datum
     assert tinker_compat.ModelInput is types.ModelInput
     assert tinker_compat.APIFuture is not __import__("tinker").APIFuture
     assert not hasattr(tinker_compat, "RestClient")
     assert not hasattr(tinker_compat, "resources")
+    with pytest.raises(AttributeError, match="RestClient"):
+        _ = tinker_compat.RestClient
 
 
 def test_create_lora_training_client_warns_on_reproducibility_kwargs(
