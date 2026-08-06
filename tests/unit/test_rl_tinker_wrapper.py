@@ -357,6 +357,21 @@ def test_create_lora_training_client_rejects_unknown_kwargs() -> None:
         tinker_compat.ServiceClient().create_lora_training_client("model", rnak=8)  # type: ignore[call-arg]
 
 
+def test_service_client_accepts_known_ignored_kwargs() -> None:
+    """Paste-friendly Tinker HTTP options must not break construction."""
+    client = tinker_compat.ServiceClient(
+        default_headers={"X-Foo": "bar"},
+        timeout=30.0,
+        max_retries=3,
+    )
+    assert client._model_resources_id is None
+
+
+def test_service_client_rejects_unknown_kwargs() -> None:
+    with pytest.raises(TypeError, match="not_a_real_kwarg"):
+        tinker_compat.ServiceClient(not_a_real_kwarg=1)
+
+
 def test_attached_resources_are_detached_but_not_stopped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Closing a borrowed resource must stop our session without deallocating another owner's GPUs."""
     session = MagicMock()

@@ -403,7 +403,9 @@ training_client.optim_step(adam_params).result()
 - `model_resources_id` is a Together extension: attach existing model resources instead of provisioning
   new ones. Attached resources are left running on close; provisioned ones are stopped (see
   [Resource lifecycle](#resource-lifecycle) below).
-- `user_metadata`, `project_id`, and other kwargs are accepted and ignored.
+- `user_metadata` and `project_id` are accepted and ignored.
+- Known Tinker HTTP kwargs (`default_headers`, `default_query`, `http_client`, `max_retries`,
+  `timeout`) are accepted and ignored; any other kwargs raise `TypeError`.
 
 `create_lora_training_client` takes the same seven keyword arguments as tinker:
 

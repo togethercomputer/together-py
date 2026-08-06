@@ -13,16 +13,28 @@ from .....types.beta.rl.lora_config_param import LoraConfigParam
 
 logger = logging.getLogger("together")
 
+# Tinker HTTP-client options that Together's resource client does not honor.
+_KNOWN_IGNORED_KWARGS = frozenset(
+    {
+        "default_headers",
+        "default_query",
+        "http_client",
+        "max_retries",
+        "timeout",
+    }
+)
+
 
 class ServiceClient:
     """Create training sessions, optionally on existing model resources.
 
     ``user_metadata`` and ``project_id`` are accepted for Tinker compatibility but
-    Together does not use them. Other genuine-Tinker HTTP options are accepted but
-    ignored because Together's resource client owns its transport policy. Resources
-    supplied with ``model_resources_id`` are borrowed and left running; resources
-    provisioned by this client are owned and stopped by :meth:`TrainingClient.close`
-    or the interpreter-exit fallback. Sessions created by this client are always stopped.
+    Together does not use them. Known Tinker HTTP options (``default_headers``,
+    ``timeout``, …) are accepted and ignored because Together's resource client owns
+    its transport policy; any other kwargs raise ``TypeError``. Resources supplied
+    with ``model_resources_id`` are borrowed and left running; resources provisioned
+    by this client are owned and stopped by :meth:`TrainingClient.close` or the
+    interpreter-exit fallback. Sessions created by this client are always stopped.
     """
 
     def __init__(
@@ -35,7 +47,10 @@ class ServiceClient:
         model_resources_id: str | None = None,
         **kwargs: Any,
     ) -> None:
-        del user_metadata, project_id, kwargs
+        del user_metadata, project_id
+        unknown = kwargs.keys() - _KNOWN_IGNORED_KWARGS
+        if unknown:
+            raise TypeError(f"Unsupported ServiceClient kwargs: {sorted(unknown)}")
         self._base_url = base_url
         self._api_key = api_key
         self._model_resources_id = model_resources_id
