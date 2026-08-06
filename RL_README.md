@@ -11,13 +11,13 @@ the full API reference remains in [api.md](api.md).
   returning a `SessionClient`. Create more than one session for multi-LoRA. Delete the resources when done.
 - `SessionClient.create(model_resources_id=...)` is the lower-level equivalent of `create_session` when you already
   have a resources ID.
-- `SessionClient` owns lifecycle and checkpoints. Use `session.training` for training operations and
+- `SessionClient` owns session lifecycle and checkpoint creation. Use `session.training` for training operations and
   `session.sampling` for sampling operations. Accessing `session.sampling` on a trainer-only resource raises
   a clear capability error; use `session.has_sampling` when capability discovery is needed.
 - `session.sampling.compute_logprobs(...)` (and `compute_logprobs_batch(...)`) teacher-force scores arbitrary token sequences on the generator, returning per-token logprobs (for sampler↔trainer KL and cross-service logprob comparisons on a fixed token set).
 - Training operations return operation outputs directly.
 - After one or more training steps, call `session.create_inference_checkpoint()` to snapshot the model,
-  then `session.download_checkpoint(...)` to pull the weights locally.
+  then `download_checkpoint(client, ...)` with a configured `Together` client to pull the weights locally.
 - To save/resume from the full training state, call `session.create_training_checkpoint()` to get a `checkpoint_id`, stop the session, then create a new session with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) over the same resources.
 - Use `session.retrieve()` to fetch the full session state from the API (status, checkpoints, step).
 - All request data uses typed constructors exported from `together.lib.beta.rl`. Every one of them (`Sample`, `ModelInput`, `LossConfig`, `LossInputs`, `LoraConfig`, `OptimizerConfig`, etc.) is a `TypedDict`, so plain dicts also work at runtime.
@@ -266,12 +266,16 @@ checkpoint_id = session.retrieve().inference_checkpoints[-1].id
 
 # Download merged weights to a local directory
 from pathlib import Path
+from together import Together
+from together.lib.beta.rl import download_checkpoint
 
-paths = session.download_checkpoint(
-    checkpoint_id,
-    variant="CHECKPOINT_VARIANT_MERGED",
-    output_dir=Path("./my_checkpoint"),
-)
+with Together(api_key="...", base_url="...") as client:
+    paths = download_checkpoint(
+        client,
+        checkpoint_id,
+        variant="CHECKPOINT_VARIANT_MERGED",
+        output_dir=Path("./my_checkpoint"),
+    )
 print(f"Downloaded {len(paths)} file(s)")
 for p in paths:
     print(f"  {p.name}  ({p.stat().st_size:,} bytes)")
@@ -495,7 +499,8 @@ ModelResourcesClient.attach(model_resources_id="...").stop()
 
 1. Provision resources with `ModelResourcesClient.create(...)`, then create a session with `resources.create_session(...)` (or `SessionClient.create(model_resources_id=...)`).
 2. Use `session.sampling` for `sample` and `session.training` for `forward_backward`, `optim_step`, and `weights_sync`.
-3. Optionally call `create_inference_checkpoint()` to snapshot the model and `download_checkpoint(...)` to pull weights locally.
+3. Optionally call `create_inference_checkpoint()` to snapshot the model and
+   `download_checkpoint(client, ...)` to pull weights locally.
 4. To pause and resume later: `session.create_training_checkpoint()` → save `checkpoint_id`, `session.stop()`, then create a new session with `resume_from_checkpoint_id=...` over the same resources.
 5. Close the session when finished (context manager or `stop()`).
 
@@ -565,7 +570,7 @@ Attaches a session to existing model resources. To start from a base model, prov
 from together.lib.beta.rl import SessionClient
 ```
 
-A dataclass that owns a running session's lifecycle and checkpoints. Returned by `SessionClient.create(...)`
+A dataclass that owns a running session's lifecycle and checkpoint creation. Returned by `SessionClient.create(...)`
 and `SessionClient.create_async(...)`.
 
 #### Properties
@@ -799,12 +804,14 @@ def create_training_checkpoint() -> TrainingCheckpointResult
 After the operation completes, the checkpoint appears in the session's `training_checkpoints` list
 (visible via `session.retrieve()`).
 
-#### `session.download_checkpoint(...)`
+### `download_checkpoint(...)`
 
-Downloads all files for a checkpoint to a local directory.
+Downloads all files for a checkpoint to a local directory using an existing root SDK client. The async equivalent is
+`download_checkpoint_async(client: AsyncTogether, ...)`.
 
 ```python
 def download_checkpoint(
+    client: Together,
     checkpoint_id: str,
     *,
     variant: CheckpointVariant = "CHECKPOINT_VARIANT_MERGED",
@@ -814,6 +821,7 @@ def download_checkpoint(
 
 | Parameter       | Type                | Default                       | Description                                                    |
 | --------------- | ------------------- | ----------------------------- | -------------------------------------------------------------- |
+| `client`        | `Together`          | _(required)_                  | Configured root SDK client used for the API and file requests. |
 | `checkpoint_id` | `str`               | _(required)_                  | ID of the inference checkpoint to download.                    |
 | `variant`       | `CheckpointVariant` | `"CHECKPOINT_VARIANT_MERGED"` | Download merged full model or adapter-only weights.            |
 | `output_dir`    | `str \| Path`       | `"."`                         | Local directory to save files into. Created if it doesn't exist. |
@@ -1154,7 +1162,7 @@ if state.status == "TRAINING_SESSION_STATUS_ERROR":
 `TRAINING_SESSION_ERROR_CODE_SESSION_FAILED` — branch on `code`, not on `message`.
 
 `TrainingCheckpoint` and `InferenceCheckpoint` both carry `id`, `step`, and `created_at` — pass `id` to
-[`download_checkpoint(...)`](#sessiondownload_checkpoint) or `resume_from_checkpoint_id`.
+[`download_checkpoint(...)`](#download_checkpoint) or `resume_from_checkpoint_id`.
 `InferenceCheckpoint` additionally carries `registration` (`None` until the checkpoint is registered), whose
 `registered_model_name` and `registered_at` are what [dedicated endpoint
 deployment](#deploying-a-checkpoint-as-a-dedicated-endpoint) consumes.

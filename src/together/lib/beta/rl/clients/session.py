@@ -6,7 +6,6 @@ import asyncio
 import logging
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, TypeVar, cast
-from pathlib import Path
 from dataclasses import field, dataclass
 from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
@@ -19,7 +18,6 @@ from ....._client import AsyncTogether
 from ....._base_client import DefaultAsyncHttpxClient
 from .....types.beta.rl.session import Session
 from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
-from .....types.beta.rl.checkpoint_variant import CheckpointVariant
 from .....types.beta.rl.session_metadata_param import SessionMetadataParam as SessionMetadata
 from .....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from .....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
@@ -252,21 +250,6 @@ class SessionClient:
             )
         )
 
-    def download_checkpoint(
-        self,
-        checkpoint_id: str,
-        *,
-        variant: CheckpointVariant = "CHECKPOINT_VARIANT_MERGED",
-        output_dir: str | Path = ".",
-    ) -> list[Path]:
-        return self.run(
-            self.download_checkpoint_async(
-                checkpoint_id=checkpoint_id,
-                variant=variant,
-                output_dir=output_dir,
-            )
-        )
-
     def stop(self) -> Any:
         output = self.run(self.stop_async())
         if self._event_loop is not None:
@@ -421,51 +404,6 @@ class SessionClient:
             interval=interval,
         )
         return cast(TrainingCheckpointResult, result)
-
-    async def download_checkpoint_async(
-        self,
-        checkpoint_id: str,
-        *,
-        variant: CheckpointVariant = "CHECKPOINT_VARIANT_MERGED",
-        output_dir: str | Path = ".",
-    ) -> list[Path]:
-        """Download checkpoint files to a local directory.
-
-        Args:
-            checkpoint_id: ID of the inference checkpoint to download.
-            variant: Download merged full model or adapter-only weights.
-            output_dir: Local directory to save files into. Created if it doesn't exist.
-
-        Returns:
-            List of paths to the downloaded files.
-        """
-        dest = Path(output_dir)
-        dest.mkdir(parents=True, exist_ok=True)
-
-        response = await self._client.beta.rl.checkpoints.download(
-            id=checkpoint_id,
-            variant=variant,
-        )
-        downloaded: list[Path] = []
-        for file_info in response.data:
-            file_path = dest / file_info.filename
-            logger.info("Downloading %s", file_info.filename)
-            stream = await self._client.get(
-                file_info.url,
-                cast_to=httpx.Response,
-                stream=True,
-                options={"max_retries": _MAX_RETRIES, "headers": {"Authorization": omit}},
-            )
-            try:
-                with file_path.open("wb") as f:
-                    async for chunk in stream.aiter_bytes():
-                        f.write(chunk)
-            finally:
-                await stream.aclose()
-            downloaded.append(file_path)
-            logger.info("Saved %s", file_path)
-
-        return downloaded
 
     async def stop_async(self) -> Any:
         output = await self._client.beta.rl.sessions.stop(self._session_id)
