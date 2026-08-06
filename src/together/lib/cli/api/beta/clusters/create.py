@@ -308,9 +308,7 @@ async def create(
                 input(f"Clusters: Cluster name: [{getpass.getuser()}] ").strip() or getpass.getuser()
             )
         if not gpu_type:
-            params["gpu_type"] = input(
-                f"Clusters: Cluster GPU type ({', '.join(KNOWN_GPU_TYPES)}): "
-            ).strip()
+            params["gpu_type"] = input(f"Clusters: Cluster GPU type ({', '.join(KNOWN_GPU_TYPES)}): ").strip()
         if not region:
             catalog = await config.client.beta.clusters.list_regions()
             params["region"] = (
