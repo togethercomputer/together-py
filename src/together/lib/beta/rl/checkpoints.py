@@ -14,6 +14,13 @@ logger = logging.getLogger("together")
 _MAX_RETRIES = 7
 
 
+def _checkpoint_file_path(destination: Path, filename: str) -> Path:
+    basename = Path(filename).name
+    if not basename or basename != filename:
+        raise ValueError(f"Unsafe checkpoint filename: {filename!r}")
+    return destination / basename
+
+
 def download_checkpoint(
     client: Together,
     checkpoint_id: str,
@@ -35,6 +42,7 @@ def download_checkpoint(
     Raises:
         APIError: If checkpoint metadata or a file download request fails.
         OSError: If the output directory or a checkpoint file cannot be written.
+        ValueError: If the server returns an unsafe checkpoint filename.
     """
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
@@ -45,13 +53,16 @@ def download_checkpoint(
     )
     downloaded: list[Path] = []
     for file_info in response.data:
-        file_path = destination / file_info.filename
+        file_path = _checkpoint_file_path(destination, file_info.filename)
         logger.info("Downloading %s", file_info.filename)
         stream = client.get(
             file_info.url,
             cast_to=httpx.Response,
             stream=True,
-            options={"max_retries": _MAX_RETRIES, "headers": {"Authorization": omit}},
+            options={
+                "max_retries": _MAX_RETRIES,
+                "headers": {"Authorization": omit},
+            },
         )
         try:
             with file_path.open("wb") as file:
@@ -86,6 +97,7 @@ async def download_checkpoint_async(
     Raises:
         APIError: If checkpoint metadata or a file download request fails.
         OSError: If the output directory or a checkpoint file cannot be written.
+        ValueError: If the server returns an unsafe checkpoint filename.
     """
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
@@ -96,13 +108,16 @@ async def download_checkpoint_async(
     )
     downloaded: list[Path] = []
     for file_info in response.data:
-        file_path = destination / file_info.filename
+        file_path = _checkpoint_file_path(destination, file_info.filename)
         logger.info("Downloading %s", file_info.filename)
         stream = await client.get(
             file_info.url,
             cast_to=httpx.Response,
             stream=True,
-            options={"max_retries": _MAX_RETRIES, "headers": {"Authorization": omit}},
+            options={
+                "max_retries": _MAX_RETRIES,
+                "headers": {"Authorization": omit}
+            },
         )
         try:
             with file_path.open("wb") as file:

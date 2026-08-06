@@ -411,6 +411,20 @@ def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockR
     assert all("authorization" not in call.request.headers for call in respx_mock.calls)
 
 
+@pytest.mark.parametrize("filename", ["../escape.bin", "nested/escape.bin", "/escape.bin"])
+def test_download_checkpoint_rejects_unsafe_filename(filename: str, tmp_path: Any) -> None:
+    client = MagicMock()
+    client.beta.rl.checkpoints.download.return_value = SimpleNamespace(
+        data=[SimpleNamespace(url="https://files.test/escape.bin", filename=filename)]
+    )
+    client.get.side_effect = AssertionError("unsafe filename must be rejected before download")
+
+    with pytest.raises(ValueError, match="Unsafe checkpoint filename"):
+        download_checkpoint(cast(Together, client), "ckpt-1", output_dir=tmp_path)
+
+    client.get.assert_not_called()
+
+
 def test_public_rl_names_have_no_param_suffix() -> None:
     module = importlib.import_module("together.lib.beta.rl")
     param_names = [name for name in module.__all__ if name.endswith("Param")]
