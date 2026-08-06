@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import signal
+import warnings
 from types import SimpleNamespace
 from typing import Any, Callable, cast
 from unittest.mock import AsyncMock, MagicMock
@@ -155,16 +156,28 @@ def test_forward_backward_output_does_not_overwrite_existing_loss_sum() -> None:
     assert output.metrics["loss:sum"] == 9.0
 
 
-def test_to_sample_rejects_missing_loss_inputs() -> None:
-    """A cookbook Datum missing advantages must fail with ValueError, not a bare KeyError."""
-    datum = types.Datum(
-        model_input=types.ModelInput.from_ints([1, 2]),
-        loss_fn_inputs={
+@pytest.mark.parametrize(
+    "loss_fn_inputs",
+    [
+        {
             "target_tokens": types.TensorData([1, 2], dtype="int64"),
             "logprobs": types.TensorData([0.0, -0.1], dtype="float32"),
         },
+        {
+            "target_tokens": types.TensorData([1, 2], dtype="int64"),
+            "logprobs": types.TensorData([0.0, -0.1], dtype="float32"),
+            "advantages": types.TensorData([0.0, 1.0], dtype="float32"),
+            "weights": types.TensorData([1.0, 1.0], dtype="float32"),
+        },
+    ],
+)
+def test_to_sample_rejects_wrong_loss_input_keys(loss_fn_inputs: dict[str, Any]) -> None:
+    """Missing or extra Datum fields must fail with ValueError, not a bare KeyError or silent drop."""
+    datum = types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs=loss_fn_inputs,
     )
-    with pytest.raises(ValueError, match="missing \\['advantages'\\]"):
+    with pytest.raises(ValueError, match="!= expected"):
         _converters._to_sample(datum, "importance_sampling_inputs")
 
 
@@ -357,14 +370,29 @@ def test_create_lora_training_client_rejects_unknown_kwargs() -> None:
         tinker_compat.ServiceClient().create_lora_training_client("model", rnak=8)  # type: ignore[call-arg]
 
 
-def test_service_client_accepts_known_ignored_kwargs() -> None:
-    """Paste-friendly Tinker HTTP options must not break construction."""
-    client = tinker_compat.ServiceClient(
-        default_headers={"X-Foo": "bar"},
-        timeout=30.0,
-        max_retries=3,
-    )
-    assert client._model_resources_id is None
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"http_client": object()}, "http_client"),
+        ({"max_retries": 3}, "max_retries"),
+        ({"timeout": 30.0}, "timeout"),
+        (
+            {"default_headers": {"X-Foo": "bar"}, "timeout": 30.0, "max_retries": 3},
+            r"ignores \['max_retries', 'timeout'\]",
+        ),
+    ],
+)
+def test_service_client_warns_on_ops_kwargs(kwargs: dict[str, Any], match: str) -> None:
+    with pytest.warns(UserWarning, match=match):
+        tinker_compat.ServiceClient(**kwargs)
+
+
+def test_service_client_stays_silent_on_header_query_kwargs() -> None:
+    """Headers/query stay quiet; they are paste boilerplate, not tuned ops knobs."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        tinker_compat.ServiceClient(default_headers={"X-Foo": "bar"}, default_query={"q": "1"})
+    assert caught == []
 
 
 def test_service_client_rejects_unknown_kwargs() -> None:
@@ -448,6 +476,35 @@ def test_save_weights_publishes_synchronously(monkeypatch: pytest.MonkeyPatch) -
     weights_sync.assert_awaited_once_with("sess", weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
     assert timeouts == [None]
     assert isinstance(sampling, tinker_compat.SamplingClient)
+    _close(session)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({}, None),
+        ({"name": "ckpt"}, r"ignores \['name'\]"),
+        ({"retry_config": {"max_retries": 3}}, r"ignores \['retry_config'\]"),
+    ],
+)
+def test_save_weights_warns_on_name_and_retry_config(
+    monkeypatch: pytest.MonkeyPatch,
+    kwargs: dict[str, Any],
+    match: str | None,
+) -> None:
+    _patch_submit_and_wait(monkeypatch)
+    session = _session_with_operations(weights_sync=AsyncMock(return_value=_OPERATION))
+    client = tinker_compat.TrainingClient(session)
+
+    if match is None:
+        with warnings.catch_warnings(record=True) as quiet:
+            warnings.simplefilter("always")
+            client.save_weights_and_get_sampling_client(**kwargs)
+        assert quiet == []
+    else:
+        # Match the ignored-arg list, not the body ("named checkpoints" contains "name").
+        with pytest.warns(UserWarning, match=match):
+            client.save_weights_and_get_sampling_client(**kwargs)
     _close(session)
 
 

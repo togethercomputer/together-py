@@ -50,10 +50,12 @@ def _to_tensor(tensor: Any) -> dict[str, Any]:
 
 def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
     required = ("target_tokens", "logprobs", "advantages")
-    missing = [key for key in required if key not in datum.loss_fn_inputs]
-    if missing:
-        raise ValueError(f"Datum.loss_fn_inputs missing {missing}; expected keys {list(required)}")
-    arrays = {key: _to_tensor(value) for key, value in datum.loss_fn_inputs.items()}
+    inputs = datum.loss_fn_inputs
+    if set(inputs) != set(required):
+        raise ValueError(
+            f"Datum.loss_fn_inputs keys {sorted(inputs)} != expected {list(required)}"
+        )
+    arrays = {key: _to_tensor(inputs[key]) for key in required}
     # `weights` stays omitted, like tinker's Datum: advantages of 0.0 already mask the
     # prompt positions, so gradients match exactly; only per-token KL/entropy diagnostics
     # count prompt tokens as active and read slightly diluted.
@@ -74,7 +76,8 @@ def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
 
 
 # Losses whose Datum.loss_fn_inputs are exactly {target_tokens, logprobs, advantages}.
-# cross_entropy carries weights instead; cispo/dro carry extra keys we would drop.
+# cross_entropy carries weights instead; cispo/dro carry extra keys — both fail in
+# _loss_inputs_key / _to_sample rather than silently dropping fields.
 # grpo is a Together wire loss, not a tinker LossFnType, so it is not listed here.
 _ADVANTAGE_LOSSES = frozenset({"importance_sampling", "ppo"})
 
