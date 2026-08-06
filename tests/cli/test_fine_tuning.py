@@ -104,6 +104,16 @@ _FT_PREVIEW_BODY = {
     ],
 }
 
+_FT_TOKENIZED_DATASET_URL = "https://download.example/tokenized-dataset.tar.gz"
+
+_FT_TOKENIZED_DATASET_BODY = {
+    "content_type": "application/gzip",
+    "expires_at": "2024-01-01T01:00:00Z",
+    "filename": "tokenized-dataset.tar.gz",
+    "size": len(b"tokenized-bytes"),
+    "url": _FT_TOKENIZED_DATASET_URL,
+}
+
 _MODEL_LIMITS_BODY = {
     "max_num_epochs": 10,
     "max_learning_rate": 1,
@@ -610,3 +620,70 @@ class TestFineTuningDownload:
             )
 
         assert result.exit_code == 0
+
+
+class TestFineTuningDownloadTokenizedDataset:
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_tokenized_dataset_writes_file_json(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        metadata = respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
+            return_value=httpx.Response(200, json=_FT_TOKENIZED_DATASET_BODY)
+        )
+        download = respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(
+            return_value=httpx.Response(200, content=b"tokenized-bytes")
+        )
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "download-tokenized-dataset",
+                "ft-abcd-12",
+                "--output-dir",
+                str(tmp_path),
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0
+        out_path = tmp_path / "tokenized-dataset.tar.gz"
+        assert out_path.read_bytes() == b"tokenized-bytes"
+        payload = json.loads(result.output)
+        assert payload == {
+            "object": "local",
+            "id": "ft-abcd-12",
+            "filename": str(out_path),
+            "size": len(b"tokenized-bytes"),
+        }
+        assert _FT_TOKENIZED_DATASET_URL not in result.output
+        assert metadata.calls
+        assert download.calls
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_tokenized_dataset_rejects_path_traversal_filename(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        body = {**_FT_TOKENIZED_DATASET_BODY, "filename": "../../outside.tar.gz"}
+        respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
+            return_value=httpx.Response(200, json=body)
+        )
+        respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(return_value=httpx.Response(200, content=b"tokenized-bytes"))
+        out_dir = tmp_path / "downloads"
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "download-tokenized-dataset",
+                "ft-abcd-12",
+                "--output-dir",
+                str(out_dir),
+            ]
+        )
+
+        assert result.exit_code == 0
+        saved = list(out_dir.iterdir())
+        assert len(saved) == 1
+        assert saved[0].is_file()
+        assert saved[0].read_bytes() == b"tokenized-bytes"
+        assert saved[0].resolve().is_relative_to(out_dir.resolve())
+        assert not (tmp_path / "outside.tar.gz").exists()
