@@ -16,6 +16,7 @@ from .....types.beta.rl.optim_step_result import OptimStepResult
 from .....types.beta.rl.weights_sync_result import WeightsSyncResult
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from .....types.beta.rl.operation_forward_params import OperationForwardParams
+from .....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from .....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
 from .....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
 from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
@@ -34,6 +35,29 @@ def _resolve_loss_type(loss: LossConfig) -> LossConfig:
         msg = f"Unknown loss type {given!r}; expected one of {sorted(_PROTO_LOSS_TYPE_BY_SHORT_NAME)}"
         raise ValueError(msg)
     return {**loss, "type": _PROTO_LOSS_TYPE_BY_SHORT_NAME[given]}
+
+
+async def _submit_forward_backward(
+    session: SessionClient,
+    *,
+    samples: Iterable[Sample],
+    loss: LossConfig,
+) -> ForwardBackwardOperation:
+    """POST a forward_backward operation without waiting for it."""
+    proto_loss = _resolve_loss_type(loss)
+    body, large_payload_id = await prepare_operation_body(
+        session._client,
+        session_id=session._session_id,
+        body={"loss": proto_loss, "samples": list(samples)},
+        expected_type=OperationForwardBackwardParams,
+    )
+    extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
+    return await session._client.beta.rl.operations.forward_backward(
+        session._session_id,
+        loss=proto_loss,
+        samples=cast("list[Any]", body["samples"]),
+        extra_body=extra_body,
+    )
 
 
 @dataclass(frozen=True)
@@ -106,22 +130,7 @@ class TrainingClient:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
-        proto_loss = _resolve_loss_type(loss)
-        body, large_payload_id = await prepare_operation_body(
-            self._session._client,
-            session_id=self._session._session_id,
-            body={"loss": proto_loss, "samples": list(samples)},
-            expected_type=OperationForwardBackwardParams,
-        )
-        samples = cast(list[Any], body["samples"])
-
-        extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-        operation = await self._session._client.beta.rl.operations.forward_backward(
-            self._session._session_id,
-            loss=proto_loss,
-            samples=samples,
-            extra_body=extra_body,
-        )
+        operation = await _submit_forward_backward(self._session, samples=samples, loss=loss)
         result = await self._session._submit_and_wait(
             operation,
             timeout=timeout,

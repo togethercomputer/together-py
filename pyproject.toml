@@ -59,6 +59,8 @@ pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
 cli = ["PyYAML", "questionary>=2.1.1"]
 # websockets>=13 is the floor for both websockets.sync.client and websockets.asyncio.client
 realtime = ["websockets>=13,<16"]
+# tinker requires Python >= 3.11; marker makes the extra a no-op on 3.10.
+tinker = ["tinker==0.22.3; python_version >= '3.11'"]
 
 [project.scripts]
 together = "together.lib.cli:main"
@@ -161,6 +163,9 @@ exclude = [
     ".nox",
     ".git",
     "examples",
+    # tinker needs Python >= 3.11; checks run on 3.10
+    "src/together/lib/beta/rl/tinker",
+    "tests/unit/test_rl_tinker_wrapper.py",
 ]
 
 reportImplicitOverride = true
@@ -179,7 +184,8 @@ show_error_codes = true
 #
 # We also exclude our `tests` as mypy doesn't always infer
 # types correctly and Pyright will still catch any type errors.
-exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*"]
+# tinker needs Python >= 3.11; checks run on 3.10
+exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/beta/rl/tinker/.*"]
 
 strict_equality = true
 implicit_reexport = true
