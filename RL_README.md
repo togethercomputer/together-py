@@ -375,7 +375,7 @@ Together by changing only its import line:
 import together.lib.beta.rl.tinker as tinker  # instead of: import tinker
 ```
 
-Install the optional extra (requires Python >= 3.11); that pulls in `tinker>=0.22.3,<1`:
+Install the optional extra (requires Python >= 3.11); that pulls in `tinker==0.22.3`:
 
 ```bash
 pip install 'together[tinker]'

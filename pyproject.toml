@@ -60,8 +60,7 @@ cli = ["PyYAML", "questionary>=2.1.1"]
 # websockets>=13 is the floor for both websockets.sync.client and websockets.asyncio.client
 realtime = ["websockets>=13,<16"]
 # tinker requires Python >= 3.11; marker makes the extra a no-op on 3.10.
-# Floor matches the versions we developed against; upper bound excludes a future 1.0 break.
-tinker = ["tinker>=0.22.3,<1; python_version >= '3.11'"]
+tinker = ["tinker==0.22.3; python_version >= '3.11'"]
 
 [project.scripts]
 together = "together.lib.cli:main"
