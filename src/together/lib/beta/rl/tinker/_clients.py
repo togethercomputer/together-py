@@ -78,24 +78,30 @@ class TrainingClient:
         return _Pending(session, operation, _wait)
 
     def optim_step(self, adam_params: types.AdamParams) -> _Pending[types.OptimStepResponse]:
+        # Gradients only — matching tinker. Publishing is save_weights_and_get_sampling_client.
         session = self._session
         operation = session.run(
             session._client.beta.rl.operations.optim_step(
                 session.session_id,
-                # SYNCHRONOUS publishes the updated weights before the operation completes,
-                # which is what makes save_weights_and_get_sampling_client a pure handle.
-                # BACKGROUND_PUBLISH would silently turn the loop off-policy.
-                weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
                 adam_params=_to_adam_params(adam_params),
             )
         )
         return _Pending(session, operation, _resolve_optim_step)
 
     def save_weights_and_get_sampling_client(self, name: str | None = None) -> SamplingClient:
-        # Weights were already published by optim_step's SYNCHRONOUS sync; tinker's
-        # `name` is deprecated on their side too.
+        # Together's optim_step no longer publishes; this is the publish. SYNCHRONOUS so
+        # the returned SamplingClient sees the updated policy — BACKGROUND_PUBLISH would
+        # silently turn the loop off-policy. tinker's `name` is deprecated on their side too.
         del name
-        return SamplingClient(self._session)
+        session = self._session
+        operation = session.run(
+            session._client.beta.rl.operations.weights_sync(
+                session.session_id,
+                weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            )
+        )
+        session.run(_wait(session, operation))
+        return SamplingClient(session)
 
 
 class ServiceClient:
@@ -106,11 +112,11 @@ class ServiceClient:
         self._api_key = api_key
 
     def create_lora_training_client(self, base_model: str, rank: int = 32, **kwargs: Any) -> TrainingClient:
-        ignored = {"seed", "train_mlp", "train_attn", "train_unembed"} & kwargs.keys()
+        ignored = {"train_mlp", "train_attn", "train_unembed"} & kwargs.keys()
         if ignored:
             warnings.warn(
-                f"Together ignores {sorted(ignored)}: seeding and per-module training selection"
-                " are not configurable, so runs will not reproduce tinker behavior exactly",
+                f"Together ignores {sorted(ignored)}: per-module training selection"
+                " is not configurable, so runs will not reproduce tinker behavior exactly",
                 stacklevel=2,
             )
         _exit_on_sigterm()
@@ -119,8 +125,11 @@ class ServiceClient:
             api_key=self._api_key,
             base_url=self._base_url,
         )
+        lora_config: dict[str, Any] = {"rank": rank}
+        if "seed" in kwargs and kwargs["seed"] is not None:
+            lora_config["seed"] = kwargs["seed"]
         try:
-            session = model_resources.create_session(lora_config={"rank": rank})
+            session = model_resources.create_session(lora_config=lora_config)
         except BaseException:
             # The resources are READY (and billing) but no exit hook is registered yet;
             # session creation's own cleanup stops only the session, never the resources.

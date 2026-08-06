@@ -63,7 +63,6 @@ def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
     return WireSample(
         model_input=_to_model_input(datum.model_input),
         loss_inputs=loss_inputs,
-        policy_segments=[],
     )
 
 

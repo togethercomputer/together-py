@@ -79,7 +79,7 @@ def test_datum_converts_field_for_field() -> None:
 
     chunks = sample["model_input"]["chunks"]
     assert [chunk["encoded_text"]["tokens"] for chunk in chunks] == [[1, 2, 3, 4], [10, 11]]
-    assert sample["policy_segments"] == []
+    assert "policy_segments" not in sample
     # weights deliberately omitted: advantages mask the prompt positions already
     assert "weights" not in sample["loss_inputs"]
     # dtype is not optional — the server rejects a tensor whose element type it would
@@ -194,26 +194,36 @@ def test_create_lora_training_client_warns_on_reproducibility_kwargs(
     # keep the real process-wide SIGTERM handler out of the test suite
     monkeypatch.setattr(_clients, "_exit_on_sigterm", lambda: None)
 
-    with pytest.warns(UserWarning, match="seed"), pytest.raises(RuntimeError):
-        tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", seed=7)
+    with pytest.warns(UserWarning, match="train_mlp"), pytest.raises(RuntimeError):
+        tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", train_mlp=False)
 
 
-def test_optim_step_pins_synchronous_weight_sync(monkeypatch: pytest.MonkeyPatch) -> None:
-    """SYNCHRONOUS publishes weights before the operation completes, which is what makes
-    save_weights_and_get_sampling_client a pure handle; BACKGROUND_PUBLISH would silently
-    turn the loop off-policy."""
-    _patch_submit_and_wait(monkeypatch)
-    optim_step = AsyncMock(return_value=_OPERATION)
-    session = _session_with_operations(optim_step=optim_step)
+def test_create_lora_training_client_forwards_seed(monkeypatch: pytest.MonkeyPatch) -> None:
+    resources = MagicMock()
+    resources.model_resources_id = "mr-1"
+    resources.create_session.side_effect = RuntimeError("stop")
+    monkeypatch.setattr(_clients.ModelResourcesClient, "create", lambda **_: resources)
+    monkeypatch.setattr(_clients, "_exit_on_sigterm", lambda: None)
 
-    result = tinker_compat.TrainingClient(session).optim_step(types.AdamParams(learning_rate=1e-4)).result()
+    with pytest.raises(RuntimeError, match="stop"):
+        tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16, seed=7)
 
-    optim_step.assert_awaited_once_with(
-        "sess",
-        weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
-        adam_params=_converters._to_adam_params(types.AdamParams(learning_rate=1e-4)),
-    )
-    assert isinstance(result, types.OptimStepResponse)
+    resources.create_session.assert_called_once_with(lora_config={"rank": 16, "seed": 7})
+    resources.stop.assert_called_once_with()
+
+
+def test_save_weights_publishes_synchronously(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SYNCHRONOUS so the returned SamplingClient sees the updated policy;
+    BACKGROUND_PUBLISH would silently turn the loop off-policy."""
+    timeouts = _patch_submit_and_wait(monkeypatch)
+    weights_sync = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(weights_sync=weights_sync)
+
+    sampling = tinker_compat.TrainingClient(session).save_weights_and_get_sampling_client()
+
+    weights_sync.assert_awaited_once_with("sess", weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
+    assert timeouts == [None]
+    assert isinstance(sampling, tinker_compat.SamplingClient)
     _close(session)
 
 
