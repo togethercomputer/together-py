@@ -456,10 +456,14 @@ class TestBetaEndpointsListEvents:
     def test_events_help_mentions_current_limit(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "events", "--help"])
 
-        output = " ".join(result.output.split())
+        # Rich help wraps table cells across panel borders and can interleave the
+        # type/description columns; strip borders and assert contiguous fragments
+        # that survive both agent (plain) and human (rich) formatters.
+        output = " ".join(result.output.replace("│", " ").split())
         assert result.exit_code == 0
-        assert "Maximum number of events to return. Max 10000, defaults to 50." in output
-        assert "Minimum severity: debug, info, warn, or error." in output
+        assert "Max 10000, defaults to 50." in output
+        assert "Minimum severity" in output
+        assert "Omit to disable severity filtering." in output
         assert "--source-kinds" not in output
 
     @pytest.mark.respx(base_url=base_url)
