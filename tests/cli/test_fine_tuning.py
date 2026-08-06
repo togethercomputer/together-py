@@ -667,9 +667,7 @@ class TestFineTuningDownloadTokenizedDataset:
         respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
             return_value=httpx.Response(200, json=body)
         )
-        respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(
-            return_value=httpx.Response(200, content=b"tokenized-bytes")
-        )
+        respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(return_value=httpx.Response(200, content=b"tokenized-bytes"))
         out_dir = tmp_path / "downloads"
 
         result = cli_runner.invoke(

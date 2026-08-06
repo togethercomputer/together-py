@@ -54,7 +54,9 @@ async def download_tokenized_dataset(
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = resolve_download_path(output_dir, filename)
 
-    bytes_written = await show_loading_status("Downloading tokenized dataset...", _download_url(metadata.url, output_path))
+    bytes_written = await show_loading_status(
+        "Downloading tokenized dataset...", _download_url(metadata.url, output_path)
+    )
 
     if metadata.size and bytes_written != metadata.size:
         raise ValueError(
