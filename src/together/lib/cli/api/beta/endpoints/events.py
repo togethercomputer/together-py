@@ -101,12 +101,12 @@ async def events(
         config.client.beta.endpoints.list_events(
             endpoint.id,
             after=after or omit,
-            deployment_ids=",".split(deployment_ids) if deployment_ids else omit,
+            deployment_ids=deployment_ids.split(",") if deployment_ids else omit,
             limit=limit if limit is not None else omit,
             min_level=LEVEL_MAP[min_level] if min_level else omit,
             since=since if since is not None else omit,
             subject_id=subject_id or omit,
-            types=",".split(types) if types else omit,
+            types=types.split(",") if types else omit,
             until=until if until is not None else omit,
         ),
     )
@@ -116,11 +116,9 @@ async def events(
         return
 
     deployment_names: dict[str, str] = {}
-    endpoint_name = ""
-    if not isinstance(endpoint, BaseException):
-        endpoint_name = _short_name(endpoint.name)
-        for deployment in endpoint.deployments or []:
-            deployment_names[deployment.id] = _short_name(deployment.name)
+    endpoint_name = _short_name(endpoint.name)
+    for deployment in endpoint.deployments or []:
+        deployment_names[deployment.id] = _short_name(deployment.name)
 
     events = response.data or []
     for event in events:

@@ -402,6 +402,7 @@ class TestBetaEndpointsList:
 class TestBetaEndpointsListEvents:
     @pytest.mark.respx(base_url=base_url)
     def test_events_sends_sdk_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         route = respx_mock.get("/projects/proj/endpoints/ep_1/events").mock(
             return_value=httpx.Response(
                 200,
@@ -422,21 +423,17 @@ class TestBetaEndpointsListEvents:
                 "--after",
                 "tok",
                 "--deployment-ids",
-                "dep_1",
-                "--deployment-ids",
-                "dep_2",
+                "dep_1,dep_2",
                 "--min-level",
                 "warn",
                 "--since",
-                "2026-01-01T00:00:00Z",
+                "2026-01-01T00:00:00+00:00",
                 "--subject-id",
                 "rollout_1",
                 "--types",
-                "deployment.scaled",
-                "--types",
-                "condition.set",
+                "deployment.scaled,condition.set",
                 "--until",
-                "2026-01-02T00:00:00Z",
+                "2026-01-02T00:00:00+00:00",
                 "--json",
             ]
         )
