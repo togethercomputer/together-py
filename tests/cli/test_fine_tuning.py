@@ -104,12 +104,14 @@ _FT_PREVIEW_BODY = {
     ],
 }
 
+_FT_TOKENIZED_DATASET_URL = "https://download.example/tokenized-dataset.tar.gz"
+
 _FT_TOKENIZED_DATASET_BODY = {
     "content_type": "application/gzip",
     "expires_at": "2024-01-01T01:00:00Z",
     "filename": "tokenized-dataset.tar.gz",
     "size": len(b"tokenized-bytes"),
-    "url": "https://download.example/tokenized-dataset.tar.gz",
+    "url": _FT_TOKENIZED_DATASET_URL,
 }
 
 _MODEL_LIMITS_BODY = {
@@ -628,7 +630,7 @@ class TestFineTuningDownloadTokenizedDataset:
         metadata = respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
             return_value=httpx.Response(200, json=_FT_TOKENIZED_DATASET_BODY)
         )
-        download = respx_mock.get(_FT_TOKENIZED_DATASET_BODY["url"]).mock(
+        download = respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(
             return_value=httpx.Response(200, content=b"tokenized-bytes")
         )
 
@@ -653,7 +655,7 @@ class TestFineTuningDownloadTokenizedDataset:
             "filename": str(out_path),
             "size": len(b"tokenized-bytes"),
         }
-        assert _FT_TOKENIZED_DATASET_BODY["url"] not in result.output
+        assert _FT_TOKENIZED_DATASET_URL not in result.output
         assert metadata.calls
         assert download.calls
 
@@ -665,7 +667,7 @@ class TestFineTuningDownloadTokenizedDataset:
         respx_mock.get("/fine-tunes/ft-abcd-12/download-tokenized-dataset").mock(
             return_value=httpx.Response(200, json=body)
         )
-        respx_mock.get(_FT_TOKENIZED_DATASET_BODY["url"]).mock(
+        respx_mock.get(_FT_TOKENIZED_DATASET_URL).mock(
             return_value=httpx.Response(200, content=b"tokenized-bytes")
         )
         out_dir = tmp_path / "downloads"
