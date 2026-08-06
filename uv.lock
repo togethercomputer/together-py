@@ -2227,7 +2227,6 @@ dev = [
     { name = "rich" },
     { name = "ruff" },
     { name = "time-machine" },
-    { name = "together", extra = ["tinker"] },
     { name = "websockets" },
 ]
 pydantic-v1 = [
@@ -2284,7 +2283,6 @@ dev = [
     { name = "rich", specifier = ">=13.7.1" },
     { name = "ruff" },
     { name = "time-machine" },
-    { name = "together", extras = ["tinker"] },
     { name = "websockets", specifier = ">=13,<16" },
 ]
 pydantic-v1 = [{ name = "pydantic", specifier = ">=1.9.0,<2" }]

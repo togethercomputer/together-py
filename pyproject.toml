@@ -93,7 +93,6 @@ dev = [
     "pytest-mock>=3.14.0",
     "aiohttp>=3.12.13",
     "websockets>=13,<16",
-    "together[tinker]",
 ]
 pydantic-v1 = [
     "pydantic>=1.9.0,<2",
