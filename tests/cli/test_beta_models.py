@@ -155,7 +155,7 @@ class TestBetaModelsCreate:
         }
         assert json.loads(result.output)["id"] == "ml_1"
         # Model ids are passed through — no supported-models lookup.
-        assert not any(call.request.url.path == "/supported-models" for call in respx_mock.calls)
+        assert not any(call.request.url.path == "/supported-models" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_resolves_base_model_name_via_supported_models(

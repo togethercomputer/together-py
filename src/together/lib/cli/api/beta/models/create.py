@@ -32,8 +32,8 @@ class PromptBaseModel(PromptParameter):
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:
                     model_id = match.group(2)
-                    profile_name = profile.api_model_name or model.name
-                    self.choices.append((f"{profile_name} ({profile.quantization})", model_id))
+                    profile_name = profile.api_model_name or f"{model.name} ({profile.quantization})"
+                    self.choices.append((profile_name, model_id))
 
 
 async def create(
@@ -45,9 +45,7 @@ async def create(
     *,
     base_model: Annotated[
         str,
-        Parameter(
-            help="Supported base model ID (ml_...) or deploy model name; run `tg beta models public` to find it"
-        ),
+        Parameter(help="Supported base model ID (ml_...) or deploy model name; run `tg beta models public` to find it"),
         PromptBaseModel(),
     ],
     type: Annotated[
