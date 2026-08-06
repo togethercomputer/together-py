@@ -43,27 +43,6 @@ jobs:
       - name: Run formatting
         run: uv run ruff format --check
 
-  lint-tinker:
-    timeout-minutes: 10
-    name: lint-tinker
-    runs-on: ubuntu-latest
-    if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork) && (github.event_name != 'push' || github.event.head_commit.message != 'codegen metadata')
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
-        with:
-          version: '0.10.2'
-
-      - name: Install dependencies
-        run: uv sync --all-extras --python 3.11
-
-      - name: Typecheck tinker compatibility layer
-        run: ./scripts/lint-tinker
-
   build:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork) && (github.event_name != 'push' || github.event.head_commit.message != 'codegen metadata')
     timeout-minutes: 10

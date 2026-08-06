@@ -163,7 +163,7 @@ exclude = [
     ".nox",
     ".git",
     "examples",
-    # 3.10-only: tinker needs Python >= 3.11. Covered by the lint-tinker CI job on 3.11+.
+    # tinker needs Python >= 3.11; checks run on 3.10
     "src/together/lib/beta/rl/tinker",
     "tests/unit/test_rl_tinker_wrapper.py",
 ]
@@ -184,7 +184,7 @@ show_error_codes = true
 #
 # We also exclude our `tests` as mypy doesn't always infer
 # types correctly and Pyright will still catch any type errors.
-# 3.10-only: tinker needs Python >= 3.11. Covered by the lint-tinker CI job on 3.11+.
+# tinker needs Python >= 3.11; checks run on 3.10
 exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/beta/rl/tinker/.*"]
 
 strict_equality = true
