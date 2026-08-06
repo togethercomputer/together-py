@@ -65,12 +65,12 @@ class ModelPromptParameter(PromptParameter):
         show_more = models.next_cursor is not None
         self.choices = [("/".join(model.name.split("/")[1:]), model.id) for model in models.data]
         for model in public_models.data:
-            if model.deployment_profiles:
-                profile = model.deployment_profiles[0]
+            for profile in model.deployment_profiles or []:
                 profile_model = profile.model
-                if profile_model:
-                    profile_name = getattr(profile, "api_model_name", None) or model.name
-                    self.choices.append((profile_name, profile_model))
+                if not profile_model:
+                    continue
+                profile_name = getattr(profile, "api_model_name", None) or model.name
+                self.choices.append((profile_name, profile_model))
 
         if show_more:
             self.choices.append(("Show more", "show_more"))
