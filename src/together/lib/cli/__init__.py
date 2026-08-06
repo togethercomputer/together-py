@@ -689,8 +689,7 @@ beta_endpoints_app.command(
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
 )
 beta_endpoints_app.command(
-    (f"{_CLI}.beta.endpoints.list_events:list_events"),
-    name="events",
+    (f"{_CLI}.beta.endpoints.events:events"),
     help="List endpoint audit and lifecycle events",
     sort_key=6,
 )

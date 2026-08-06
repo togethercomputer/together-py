@@ -464,3 +464,76 @@ class TestBetaEndpointsListEvents:
         assert "Maximum number of events to return. Max 10000, defaults to 50." in output
         assert "Minimum severity: debug, info, warn, or error." in output
         assert "--source-kinds" not in output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_events_table_colors_message_and_shows_deployment_name(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1/events").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _event_body(
+                            id="evt_warn",
+                            level="LEVEL_WARN",
+                            type="deployment.status_updated",
+                            sourceKind="SOURCE_KIND_DEPLOYMENT",
+                            deploymentId="dep_1",
+                            message="replica unhealthy",
+                            subjectId="dep_1",
+                        ),
+                        _event_body(
+                            id="evt_err",
+                            level="LEVEL_ERROR",
+                            type="pod.log",
+                            sourceKind="SOURCE_KIND_DEPLOYMENT",
+                            deploymentId="dep_1",
+                            message="oom killed",
+                        ),
+                        _event_body(
+                            id="evt_ep",
+                            level="LEVEL_INFO",
+                            type="endpoint.updated",
+                            sourceKind="SOURCE_KIND_ENDPOINT",
+                            message="Endpoint updated",
+                        ),
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_endpoint_body(
+                    deployments=[
+                        {
+                            "id": "dep_1",
+                            "name": "my-project/my-endpoint/canary",
+                            "model": "projects/proj/models/ml_1/revisions/latest",
+                            "modelId": "ml_1",
+                            "hardware": "1x-h100",
+                            "state": "DEPLOYMENT_STATE_READY",
+                            "readyReplicas": 1,
+                            "desiredReplicas": 1,
+                            "estimatedEffectiveTrafficShare": 1.0,
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+                        }
+                    ],
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "events", "ep_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "canary" in result.output
+        assert "my-end" in result.output  # endpoint short name; may truncate in narrow tables
+        assert "replica unhealthy" in result.output
+        assert "oom killed" in result.output
+        assert "SOURCE_KIND_DEPLOYMENT" not in result.output
+        assert "LEVEL_" not in result.output
+        assert "Subject" not in result.output
