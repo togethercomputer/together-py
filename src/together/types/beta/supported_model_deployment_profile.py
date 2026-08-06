@@ -39,6 +39,12 @@ class SupportedModelDeploymentProfile(BaseModel):
     the profile does not pin model weights.
     """
 
+    api_model_name: str = FieldInfo(alias="modelName")
+    """
+    Fully-qualified deploy model name in the form `{projectSlug}/{modelName}`, such
+    as `Qwen/Qwen3.5-9B-FP8`; empty when no public model is linked.
+    """
+
     parallelism: str
     """
     Free-form parallelism spec for the profile, such as TP8, TP4, EP, or PD;

@@ -31,6 +31,7 @@ from together.lib.beta.rl import (
     SessionMetadata,
     EncodedTextChunk,
     LossTargetTokens,
+    WeightsSyncResult,
     ForwardBackwardResult,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
@@ -68,6 +69,10 @@ class FakeOperations:
     async def optim_step(self, session_id: str, **payload: Any) -> dict[str, Any]:
         self.last_call = ("optim_step", (session_id,), payload)
         return {"id": "opt-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
+
+    async def weights_sync(self, session_id: str, **payload: Any) -> dict[str, Any]:
+        self.last_call = ("weights_sync", (session_id,), payload)
+        return {"id": "ws-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
 
     async def create_training_checkpoint(self, session_id: str, **payload: Any) -> dict[str, Any]:
         self.last_call = ("create_training_checkpoint", (session_id,), payload)
@@ -339,11 +344,10 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
             loss_inputs=LossInputs(
                 target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
                 weights=Weights(
-                    data=[1, 0, 1],
-                    dtype="D_TYPE_INT64",
+                    data=[1.0, 0.0, 1.0],
+                    dtype="D_TYPE_FLOAT32",
                 ),
             ),
-            policy_segments=[],
         )
     ]
     loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
@@ -390,6 +394,22 @@ def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> Non
     method, _, kwargs = client.beta.rl.operations.last_call
     assert method == "optim_step"
     assert kwargs["muon_params"] == {"learning_rate": 0.02, "momentum": 0.95}
+    trainer.stop()
+
+
+def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_submit_and_wait(monkeypatch, WeightsSyncResult(weights_version=2))
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    result = trainer.training.weights_sync(weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
+
+    assert result.weights_version == 2
+    assert client.beta.rl.operations.last_call is not None
+    method, args, kwargs = client.beta.rl.operations.last_call
+    assert method == "weights_sync"
+    assert args == ("sess",)
+    assert kwargs["weight_sync_type"] == "WEIGHT_SYNC_TYPE_SYNCHRONOUS"
     trainer.stop()
 
 
@@ -684,11 +704,10 @@ def _small_sample() -> Sample:
         loss_inputs=LossInputs(
             target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
             weights=Weights(
-                data=[1, 0, 1],
-                dtype="D_TYPE_INT64",
+                data=[1.0, 0.0, 1.0],
+                dtype="D_TYPE_FLOAT32",
             ),
         ),
-        policy_segments=[],
     )
 
 
@@ -710,6 +729,35 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     assert args == ("sess",)
     assert kwargs.get("extra_body") is None
     assert kwargs["samples"] == [_sample_payload(_small_sample())]
+    trainer.stop()
+
+
+def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Nested Iterable[float] fields must survive transform on the small path."""
+    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    sample = Sample(
+        model_input=ModelInput(
+            chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
+        ),
+        loss_inputs=LossInputs(
+            target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
+            weights=Weights(
+                data=(value for value in (1.0, 0.0, 1.0)),
+                dtype="D_TYPE_FLOAT32",
+            ),
+        ),
+    )
+    trainer.training.forward_backward(
+        samples=[sample],
+        loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
+    )
+
+    assert client.beta.rl.operations.last_call is not None
+    _, _, kwargs = client.beta.rl.operations.last_call
+    assert kwargs["samples"][0]["loss_inputs"]["weights"]["data"] == [1.0, 0.0, 1.0]
     trainer.stop()
 
 
@@ -755,7 +803,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     trainer = _make_session(client)
 
     long_tokens = list(range(20))
-    long_mask = [1] * 20
+    long_weights = [1.0] * 20
     sample = Sample(
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=long_tokens))],
@@ -763,11 +811,10 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         loss_inputs=LossInputs(
             target_tokens=LossTargetTokens(data=long_tokens, dtype="D_TYPE_INT64"),
             weights=Weights(
-                data=long_mask,
-                dtype="D_TYPE_INT64",
+                data=long_weights,
+                dtype="D_TYPE_FLOAT32",
             ),
         ),
-        policy_segments=[],
     )
 
     result = await trainer.training.forward_backward_async(
@@ -789,7 +836,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     assert len(kwargs["samples"]) == 1
     sent = kwargs["samples"][0]
     assert sent["model_input"]["chunks"][0]["encoded_text"]["tokens"] == long_tokens[:8]
-    assert sent["loss_inputs"]["weights"]["data"] == long_mask[:8]
+    assert sent["loss_inputs"]["weights"]["data"] == long_weights[:8]
 
 
 def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -809,9 +856,8 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
                     ),
                     loss_inputs=LossInputs(
                         target_tokens=LossTargetTokens(data=list(range(50)), dtype="D_TYPE_INT64"),
-                        weights=Weights(data=[1] * 50, dtype="D_TYPE_INT64"),
+                        weights=Weights(data=[1.0] * 50, dtype="D_TYPE_FLOAT32"),
                     ),
-                    policy_segments=[],
                 )
             ],
             loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),

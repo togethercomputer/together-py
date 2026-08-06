@@ -1,6 +1,6 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Optional
+from typing import Union, Optional
 
 from ...._models import BaseModel
 
@@ -18,3 +18,9 @@ class LoraConfig(BaseModel):
 
     rank: Optional[int] = None
     """Rank of the LoRA adapter"""
+
+    seed: Union[str, int, None] = None
+    """Random seed for initializing LoRA adapter weights.
+
+    Ignored when LoRA is disabled or the session resumes from a checkpoint.
+    """

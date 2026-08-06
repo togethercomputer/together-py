@@ -70,4 +70,4 @@ class Endpoint(BaseModel):
     """
 
     active_rollout_id: Optional[str] = FieldInfo(alias="activeRolloutId", default=None)
-    """ID of the currently active rollout, or empty if none."""
+    """ID of the currently active rollout in an in-flight state, including paused."""

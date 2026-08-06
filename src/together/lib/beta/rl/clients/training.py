@@ -13,6 +13,7 @@ from .....types.beta.rl.forward_result import ForwardResult
 from .....types.beta.rl.weight_sync_type import WeightSyncType
 from .....types.beta.rl.loss_config_param import LossConfig
 from .....types.beta.rl.optim_step_result import OptimStepResult
+from .....types.beta.rl.weights_sync_result import WeightsSyncResult
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from .....types.beta.rl.operation_forward_params import OperationForwardParams
 from .....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
@@ -182,7 +183,6 @@ class TrainingClient:
     def optim_step(
         self,
         *,
-        weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
         adam_params: AdamParams | None = None,
         muon_params: MuonParams | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
@@ -190,7 +190,6 @@ class TrainingClient:
     ) -> OptimStepResult:
         return self._session.run(
             self.optim_step_async(
-                weight_sync_type=weight_sync_type,
                 adam_params=adam_params,
                 muon_params=muon_params,
                 timeout=timeout,
@@ -201,7 +200,6 @@ class TrainingClient:
     async def optim_step_async(
         self,
         *,
-        weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_UNSPECIFIED",
         adam_params: AdamParams | None = None,
         muon_params: MuonParams | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
@@ -209,7 +207,6 @@ class TrainingClient:
     ) -> OptimStepResult:
         operation = await self._session._client.beta.rl.operations.optim_step(
             self._session._session_id,
-            weight_sync_type=weight_sync_type,
             adam_params=adam_params if adam_params is not None else omit,
             muon_params=muon_params if muon_params is not None else omit,
         )
@@ -219,3 +216,36 @@ class TrainingClient:
             interval=interval,
         )
         return cast(OptimStepResult, result)
+
+    def weights_sync(
+        self,
+        *,
+        weight_sync_type: WeightSyncType,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> WeightsSyncResult:
+        return self._session.run(
+            self.weights_sync_async(
+                weight_sync_type=weight_sync_type,
+                timeout=timeout,
+                interval=interval,
+            )
+        )
+
+    async def weights_sync_async(
+        self,
+        *,
+        weight_sync_type: WeightSyncType,
+        timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
+        interval: float = DEFAULT_OPERATION_INTERVAL,
+    ) -> WeightsSyncResult:
+        operation = await self._session._client.beta.rl.operations.weights_sync(
+            self._session._session_id,
+            weight_sync_type=weight_sync_type,
+        )
+        result = await self._session._submit_and_wait(
+            operation,
+            timeout=timeout,
+            interval=interval,
+        )
+        return cast(WeightsSyncResult, result)

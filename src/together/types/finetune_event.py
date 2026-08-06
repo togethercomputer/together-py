@@ -46,6 +46,9 @@ class FinetuneEvent(BaseModel):
 
     token_count: Optional[int] = None
 
+    tokenized_dataset_path: Optional[str] = None
+    """Storage path for the tokenized dataset archive associated with this event."""
+
     total_steps: Optional[int] = None
 
     wandb_url: Optional[str] = None

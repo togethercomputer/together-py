@@ -30,7 +30,6 @@ from together.lib.beta.rl import (
     ModelInputChunk,
     EncodedTextChunk,
     LossTargetTokens,
-    PolicyVersionSegment,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -107,8 +106,8 @@ class TestRLRequestBody:
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
                 loss_inputs=LossInputs(
                     weights=Weights(
-                        data=[0, 1, 1],
-                        dtype="D_TYPE_INT64",
+                        data=[0.0, 1.0, 1.0],
+                        dtype="D_TYPE_FLOAT32",
                     ),
                     target_tokens=LossTargetTokens(
                         data=[2, 3, 0],
@@ -125,7 +124,6 @@ class TestRLRequestBody:
                         ),
                     ),
                 ),
-                policy_segments=[],
             )
         ]
         loss = LossConfig(
@@ -145,50 +143,6 @@ class TestRLRequestBody:
             "loss": loss,
             "samples": samples,
         }
-
-    @parametrize
-    @pytest.mark.respx(base_url=base_url)
-    async def test_forward_backward_serializes_policy_segment_models(
-        self, async_client: AsyncTogether, respx_mock: MockRouter
-    ) -> None:
-        """Response ``PolicyVersionSegment`` objects can be passed through as-is."""
-        respx_mock.post("/rl/training-sessions/sess/operations/forward-backward").mock(
-            return_value=httpx.Response(200, json={"id": "op-1"})
-        )
-        respx_mock.get("/rl/training-sessions/sess/operations/forward-backward/op-1").mock(
-            return_value=httpx.Response(
-                200,
-                json={
-                    "id": "op-1",
-                    "status": "TRAINING_OPERATION_STATUS_COMPLETED",
-                    "output": {"loss": 1.0, "metrics": {}},
-                },
-            )
-        )
-
-        trainer = SessionClient("sess", _client=async_client)
-        segment = PolicyVersionSegment(version=1, start_token=0)
-        samples = [
-            Sample(
-                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
-                loss_inputs=LossInputs(
-                    weights=Weights(data=[0, 1], dtype="D_TYPE_INT64"),
-                    target_tokens=LossTargetTokens(data=[2, 0], dtype="D_TYPE_INT64"),
-                ),
-                policy_segments=cast(Any, [segment]),
-            )
-        ]
-        assert samples[0]["policy_segments"] == [segment]
-
-        await trainer.training.forward_backward_async(
-            samples=samples,
-            loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
-        )
-
-        call = cast(Any, respx_mock.calls[0])
-        request = cast(httpx.Request, call.request)
-        body = json.loads(request.content)
-        assert body["samples"][0]["policy_segments"] == [{"version": 1, "start_token": 0}]
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -223,7 +177,6 @@ class TestRLRequestBody:
         request = cast(httpx.Request, call.request)
         body = json.loads(request.content)
         assert body == {
-            "weight_sync_type": "WEIGHT_SYNC_TYPE_UNSPECIFIED",
             "adam_params": adam,
         }
 
@@ -261,9 +214,36 @@ class TestRLRequestBody:
         request = cast(httpx.Request, call.request)
         body = json.loads(request.content)
         assert body == {
-            "weight_sync_type": "WEIGHT_SYNC_TYPE_UNSPECIFIED",
             "muon_params": muon,
         }
+
+    @parametrize
+    @pytest.mark.respx(base_url=base_url)
+    async def test_weights_sync_request_body(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+        respx_mock.post("/rl/training-sessions/sess/operations/weights-sync").mock(
+            return_value=httpx.Response(200, json={"id": "op-1"})
+        )
+        respx_mock.get("/rl/training-sessions/sess/operations/weights-sync/op-1").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "op-1",
+                    "status": "TRAINING_OPERATION_STATUS_COMPLETED",
+                    "output": {"weights_version": 1},
+                },
+            )
+        )
+
+        trainer = SessionClient("sess", _client=async_client)
+        result = await trainer.training.weights_sync_async(
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        )
+
+        assert result.weights_version == 1
+        call = cast(Any, respx_mock.calls[0])
+        request = cast(httpx.Request, call.request)
+        body = json.loads(request.content)
+        assert body == {"weight_sync_type": "WEIGHT_SYNC_TYPE_SYNCHRONOUS"}
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)

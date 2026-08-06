@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Iterable
 from typing_extensions import Required, TypedDict
 
 from .d_type import DType
-from ...._types import SequenceNotStr
 
 __all__ = ["Weights"]
 
 
 class Weights(TypedDict, total=False):
-    data: Required[SequenceNotStr[Union[str, int]]]
-    """Per-token weights: 1 to include the token in the loss, 0 to ignore it."""
+    data: Required[Iterable[float]]
+    """Per-token loss weights, one non-negative weight per target token.
+
+    A weight of 0 excludes the token from loss; fractional weights are honored only
+    by cross-entropy.
+    """
 
     dtype: DType
-    """Data type of the integer array (must be D_TYPE_INT64)"""
+    """Data type of the weights array (must be D_TYPE_FLOAT32)."""

@@ -9,7 +9,7 @@ from typing_extensions import TypeAlias
 import httpx
 
 from ...._types import Omit
-from ...._utils import maybe_transform
+from ...._utils import transform
 from ...._client import AsyncTogether
 from ...._compat import model_parse
 from ...._models import BaseModel
@@ -60,15 +60,15 @@ async def prepare_operation_body(
             measuring payload size.
 
     Returns:
-        A tuple containing the inline validation body and an optional payload ID.
-        When the payload is small, the original body is returned with no payload
+        A tuple containing the transformed request body and an optional payload ID.
+        When the payload is small, the serialized body is returned with no payload
         ID. When it is large, the full serialized body is uploaded and the
         returned body contains truncated sequence fields for inline validation.
     """
-    serialized = maybe_transform(body, expected_type=expected_type)
+    serialized = transform(body, expected_type=expected_type)
     payload = json.dumps(serialized, separators=(",", ":")).encode()
     if len(payload) <= _LARGE_PAYLOAD_THRESHOLD:
-        return body, None
+        return serialized, None
 
     if len(payload) > _MAX_PAYLOAD_SIZE:
         raise ValueError(
@@ -78,7 +78,7 @@ async def prepare_operation_body(
         )
 
     payload_id = await _upload_payload(client, session_id=session_id, payload=payload)
-    return _build_validation_body(body), payload_id
+    return _build_validation_body(serialized), payload_id
 
 
 async def _upload_payload(

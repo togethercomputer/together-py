@@ -13,6 +13,7 @@ from together.types.beta.rl import (
     SampleOperation,
     ForwardOperation,
     OptimStepOperation,
+    WeightsSyncOperation,
     ForwardBackwardOperation,
     TrainingCheckpointOperation,
     InferenceCheckpointOperation,
@@ -110,12 +111,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -130,12 +125,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -154,12 +143,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         ) as response:
@@ -181,12 +164,6 @@ class TestOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                        "policy_segments": [
-                            {
-                                "start_token": 0,
-                                "version": 5,
-                            }
-                        ],
                     }
                 ],
             )
@@ -199,12 +176,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -218,12 +189,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -241,12 +206,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         ) as response:
@@ -267,12 +226,6 @@ class TestOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                        "policy_segments": [
-                            {
-                                "start_token": 0,
-                                "version": 5,
-                            }
-                        ],
                     }
                 ],
             )
@@ -286,12 +239,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -383,17 +330,11 @@ class TestOperations:
                             },
                         },
                         "weights": {
-                            "data": [0, 0, 1],
-                            "dtype": "D_TYPE_INT64",
+                            "data": [0, 0, 0.5, 1],
+                            "dtype": "D_TYPE_FLOAT32",
                         },
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -408,12 +349,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -432,12 +367,6 @@ class TestOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         ) as response:
@@ -459,12 +388,6 @@ class TestOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                        "policy_segments": [
-                            {
-                                "start_token": 0,
-                                "version": 5,
-                            }
-                        ],
                     }
                 ],
             )
@@ -473,7 +396,6 @@ class TestOperations:
     def test_method_optim_step(self, client: Together) -> None:
         operation = client.beta.rl.operations.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
         )
         assert_matches_type(OptimStepOperation, operation, path=["response"])
 
@@ -481,7 +403,6 @@ class TestOperations:
     def test_method_optim_step_with_all_params(self, client: Together) -> None:
         operation = client.beta.rl.operations.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
             adam_params={
                 "beta1": 0.9,
                 "beta2": 0.95,
@@ -512,7 +433,6 @@ class TestOperations:
     def test_raw_response_optim_step(self, client: Together) -> None:
         response = client.beta.rl.operations.with_raw_response.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
         )
 
         assert response.is_closed is True
@@ -524,7 +444,6 @@ class TestOperations:
     def test_streaming_response_optim_step(self, client: Together) -> None:
         with client.beta.rl.operations.with_streaming_response.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -539,7 +458,6 @@ class TestOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             client.beta.rl.operations.with_raw_response.optim_step(
                 session_id="",
-                weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
             )
 
     @parametrize
@@ -879,6 +797,54 @@ class TestOperations:
             )
 
     @parametrize
+    def test_method_retrieve_weights_sync(self, client: Together) -> None:
+        operation = client.beta.rl.operations.retrieve_weights_sync(
+            operation_id="operation_id",
+            session_id="session_id",
+        )
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    def test_raw_response_retrieve_weights_sync(self, client: Together) -> None:
+        response = client.beta.rl.operations.with_raw_response.retrieve_weights_sync(
+            operation_id="operation_id",
+            session_id="session_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        operation = response.parse()
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    def test_streaming_response_retrieve_weights_sync(self, client: Together) -> None:
+        with client.beta.rl.operations.with_streaming_response.retrieve_weights_sync(
+            operation_id="operation_id",
+            session_id="session_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            operation = response.parse()
+            assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_retrieve_weights_sync(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
+            client.beta.rl.operations.with_raw_response.retrieve_weights_sync(
+                operation_id="operation_id",
+                session_id="",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `operation_id` but received ''"):
+            client.beta.rl.operations.with_raw_response.retrieve_weights_sync(
+                operation_id="",
+                session_id="session_id",
+            )
+
+    @parametrize
     def test_method_sample(self, client: Together) -> None:
         operation = client.beta.rl.operations.sample(
             session_id="session_id",
@@ -937,6 +903,48 @@ class TestOperations:
             client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
                 model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            )
+
+    @parametrize
+    def test_method_weights_sync(self, client: Together) -> None:
+        operation = client.beta.rl.operations.weights_sync(
+            session_id="session_id",
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        )
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    def test_raw_response_weights_sync(self, client: Together) -> None:
+        response = client.beta.rl.operations.with_raw_response.weights_sync(
+            session_id="session_id",
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        operation = response.parse()
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    def test_streaming_response_weights_sync(self, client: Together) -> None:
+        with client.beta.rl.operations.with_streaming_response.weights_sync(
+            session_id="session_id",
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            operation = response.parse()
+            assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_weights_sync(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
+            client.beta.rl.operations.with_raw_response.weights_sync(
+                session_id="",
+                weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
             )
 
 
@@ -1030,12 +1038,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1050,12 +1052,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1074,12 +1070,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         ) as response:
@@ -1101,12 +1091,6 @@ class TestAsyncOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                        "policy_segments": [
-                            {
-                                "start_token": 0,
-                                "version": 5,
-                            }
-                        ],
                     }
                 ],
             )
@@ -1119,12 +1103,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1138,12 +1116,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1161,12 +1133,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         ) as response:
@@ -1187,12 +1153,6 @@ class TestAsyncOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                        "policy_segments": [
-                            {
-                                "start_token": 0,
-                                "version": 5,
-                            }
-                        ],
                     }
                 ],
             )
@@ -1206,12 +1166,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1303,17 +1257,11 @@ class TestAsyncOperations:
                             },
                         },
                         "weights": {
-                            "data": [0, 0, 1],
-                            "dtype": "D_TYPE_INT64",
+                            "data": [0, 0, 0.5, 1],
+                            "dtype": "D_TYPE_FLOAT32",
                         },
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1328,12 +1276,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         )
@@ -1352,12 +1294,6 @@ class TestAsyncOperations:
                 {
                     "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "policy_segments": [
-                        {
-                            "start_token": 0,
-                            "version": 5,
-                        }
-                    ],
                 }
             ],
         ) as response:
@@ -1379,12 +1315,6 @@ class TestAsyncOperations:
                     {
                         "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                        "policy_segments": [
-                            {
-                                "start_token": 0,
-                                "version": 5,
-                            }
-                        ],
                     }
                 ],
             )
@@ -1393,7 +1323,6 @@ class TestAsyncOperations:
     async def test_method_optim_step(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
         )
         assert_matches_type(OptimStepOperation, operation, path=["response"])
 
@@ -1401,7 +1330,6 @@ class TestAsyncOperations:
     async def test_method_optim_step_with_all_params(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
             adam_params={
                 "beta1": 0.9,
                 "beta2": 0.95,
@@ -1432,7 +1360,6 @@ class TestAsyncOperations:
     async def test_raw_response_optim_step(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.operations.with_raw_response.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
         )
 
         assert response.is_closed is True
@@ -1444,7 +1371,6 @@ class TestAsyncOperations:
     async def test_streaming_response_optim_step(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.operations.with_streaming_response.optim_step(
             session_id="session_id",
-            weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1459,7 +1385,6 @@ class TestAsyncOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.optim_step(
                 session_id="",
-                weight_sync_type="WEIGHT_SYNC_TYPE_UNSPECIFIED",
             )
 
     @parametrize
@@ -1799,6 +1724,54 @@ class TestAsyncOperations:
             )
 
     @parametrize
+    async def test_method_retrieve_weights_sync(self, async_client: AsyncTogether) -> None:
+        operation = await async_client.beta.rl.operations.retrieve_weights_sync(
+            operation_id="operation_id",
+            session_id="session_id",
+        )
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    async def test_raw_response_retrieve_weights_sync(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.rl.operations.with_raw_response.retrieve_weights_sync(
+            operation_id="operation_id",
+            session_id="session_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        operation = await response.parse()
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_retrieve_weights_sync(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.rl.operations.with_streaming_response.retrieve_weights_sync(
+            operation_id="operation_id",
+            session_id="session_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            operation = await response.parse()
+            assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_retrieve_weights_sync(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
+            await async_client.beta.rl.operations.with_raw_response.retrieve_weights_sync(
+                operation_id="operation_id",
+                session_id="",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `operation_id` but received ''"):
+            await async_client.beta.rl.operations.with_raw_response.retrieve_weights_sync(
+                operation_id="",
+                session_id="session_id",
+            )
+
+    @parametrize
     async def test_method_sample(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.sample(
             session_id="session_id",
@@ -1857,4 +1830,46 @@ class TestAsyncOperations:
             await async_client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
                 model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            )
+
+    @parametrize
+    async def test_method_weights_sync(self, async_client: AsyncTogether) -> None:
+        operation = await async_client.beta.rl.operations.weights_sync(
+            session_id="session_id",
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        )
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    async def test_raw_response_weights_sync(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.rl.operations.with_raw_response.weights_sync(
+            session_id="session_id",
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        operation = await response.parse()
+        assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_weights_sync(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.rl.operations.with_streaming_response.weights_sync(
+            session_id="session_id",
+            weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            operation = await response.parse()
+            assert_matches_type(WeightsSyncOperation, operation, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_weights_sync(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
+            await async_client.beta.rl.operations.with_raw_response.weights_sync(
+                session_id="",
+                weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
             )

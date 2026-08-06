@@ -34,6 +34,7 @@ from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.session_error_code import SessionErrorCode
 from ....types.beta.rl.loss_logprobs_param import LossLogprobs
 from ....types.beta.rl.training_checkpoint import TrainingCheckpoint
+from ....types.beta.rl.weights_sync_result import WeightsSyncResult
 from ....types.beta.rl.inference_checkpoint import InferenceCheckpoint
 from ....types.beta.rl.wandb_metadata_param import WandbMetadataParam as WandbMetadata
 from ....types.beta.rl.dro_loss_inputs_param import DroLossInputs
@@ -115,6 +116,7 @@ __all__ = [
     "ForwardBackwardResult",
     "CustomForwardBackwardResult",
     "OptimStepResult",
+    "WeightsSyncResult",
     "TrainingCheckpointResult",
     "InferenceCheckpointResult",
     "Logprob",
