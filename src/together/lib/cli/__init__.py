@@ -564,6 +564,10 @@ clusters_app.command(
     help_epilogue=BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
 )
 clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), alias="-d", help="Delete a cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.recreate:recreate"),
+    help="Recreate a cluster, preserving its reservation",
+)
 clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
 clusters_app.command(
     (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
