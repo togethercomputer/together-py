@@ -22,6 +22,9 @@ class Session(BaseModel):
     id: str
     """ID of the training session"""
 
+    base_model: str
+    """Base model the session trains, taken from the model resource it is attached to"""
+
     created_at: datetime
     """Timestamp when the training session was created"""
 

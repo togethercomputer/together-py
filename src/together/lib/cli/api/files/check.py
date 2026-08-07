@@ -29,7 +29,7 @@ async def check(
     if config.json:
         console.print_json(openapi_dumps(report).decode("utf-8"))
     else:
-        icon = "✅" if report["is_check_passed"] else "❌"
-        console.print(f"{icon} {escape_rich_markup(str(report['message']))}")
+        status = "[green]OK[/green]" if report["is_check_passed"] else "[red]X[/red]"
+        console.print(f"{status} {escape_rich_markup(str(report['message']))}")
         if report["is_check_passed"] is False:
             sys.exit(1)

@@ -15,6 +15,7 @@ import asyncio
 import logging
 import contextlib
 from typing import Any, Dict, List, Callable, Optional
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -258,8 +259,16 @@ class TestHappyPath:
             assert len(server.connections[0].audio) == len(seconds(0.5))
 
 
+def query_of(conn: ConnectionLog) -> Dict[str, List[str]]:
+    """Query params the server saw on this connection's handshake URL."""
+    return parse_qs(urlsplit(conn.path).query)
+
+
 class TestSessionParams:
     async def test_session_level_params_sent_on_connect(self) -> None:
+        # language rides on the connection URL — the server ignores it in
+        # transcription_session.updated and only honors the query param
+        # (together-py#505); the other params still go via session update
         async with FakeRealtimeServer() as server:
             session = make_session(
                 server,
@@ -272,14 +281,45 @@ class TestSessionParams:
             async with session:
                 await session.append(seconds(0.1))
                 await asyncio.sleep(0.1)
+            assert query_of(server.connections[0])["language"] == ["en"]
             updates = [e for e in server.connections[0].events if e["type"] == "transcription_session.updated"]
             assert updates, "expected a transcription_session.updated event"
             sent = updates[0]["session"]
-            assert sent["language"] == "en"
+            assert "language" not in sent
             assert sent["prompt"] == "medical terms"
             assert sent["rolling_prompt"] is True
             assert sent["energy_gate_rms"] == 0.02
             assert sent["custom_engine_knob"] == "x"
+
+    async def test_language_auto_verbatim_and_no_session_update_when_only_language(self) -> None:
+        # "auto" passes through verbatim; with no session-level params left
+        # there is nothing to send in a session update at all
+        async with FakeRealtimeServer() as server:
+            session = make_session(server, language="auto")
+            async with session:
+                await session.append(seconds(0.1))
+                await asyncio.sleep(0.1)
+            assert query_of(server.connections[0])["language"] == ["auto"]
+            updates = [e for e in server.connections[0].events if e["type"] == "transcription_session.updated"]
+            assert not updates
+
+    async def test_extra_query_language_wins_without_duplicate(self) -> None:
+        async with FakeRealtimeServer() as server:
+            session = make_session(server, language="en", extra_query={"language": "fr"})
+            async with session:
+                await session.append(seconds(0.1))
+                await asyncio.sleep(0.1)
+            assert query_of(server.connections[0])["language"] == ["fr"]
+
+    async def test_reconnect_preserves_language_in_url(self) -> None:
+        async with FakeRealtimeServer(drop_after_bytes=BPS) as server:
+            session = make_session(server, language="es")
+            async with session:
+                await session.append(seconds(1.0))  # server drops at 1s
+                await collect_until(session, lambda evs: any(isinstance(e, Reconnected) for e in evs), timeout=10.0)
+                assert len(server.connections) == 2
+                for conn in server.connections:
+                    assert query_of(conn)["language"] == ["es"]
 
 
 class TestReconnect:

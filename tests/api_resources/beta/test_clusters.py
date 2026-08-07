@@ -30,6 +30,7 @@ class TestClusters:
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
@@ -129,6 +130,7 @@ class TestClusters:
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         )
 
@@ -144,6 +146,7 @@ class TestClusters:
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         ) as response:
             assert not response.is_closed
@@ -382,6 +385,7 @@ class TestAsyncClusters:
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
@@ -481,6 +485,7 @@ class TestAsyncClusters:
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         )
 
@@ -496,6 +501,7 @@ class TestAsyncClusters:
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         ) as response:
             assert not response.is_closed

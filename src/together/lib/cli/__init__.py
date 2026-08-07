@@ -85,6 +85,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
+    FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
@@ -463,6 +464,11 @@ fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.download:download"),
     help="Download a fine-tuned model's weights",
     help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
+)
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.download_tokenized_dataset:download_tokenized_dataset"),
+    help="Download a fine-tuning job's tokenized dataset archive",
+    help_epilogue=FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
 )
 fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
 fine_tuning_app.command(
