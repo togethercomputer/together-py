@@ -329,6 +329,10 @@ class TestOperations:
                                 "dtype": "D_TYPE_FLOAT32",
                             },
                         },
+                        "routed_experts": {
+                            "data": "U3RhaW5sZXNzIHJvY2tz",
+                            "shape": ["512", "64", "8"],
+                        },
                         "weights": {
                             "data": [0, 0, 0.5, 1],
                             "dtype": "D_TYPE_FLOAT32",
@@ -859,6 +863,7 @@ class TestOperations:
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
             prompt_logprobs=False,
+            return_routed_experts=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
@@ -1255,6 +1260,10 @@ class TestAsyncOperations:
                                 "data": [-1.2, -0.8],
                                 "dtype": "D_TYPE_FLOAT32",
                             },
+                        },
+                        "routed_experts": {
+                            "data": "U3RhaW5sZXNzIHJvY2tz",
+                            "shape": ["512", "64", "8"],
                         },
                         "weights": {
                             "data": [0, 0, 0.5, 1],
@@ -1786,6 +1795,7 @@ class TestAsyncOperations:
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
             num_samples=1,
             prompt_logprobs=False,
+            return_routed_experts=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",

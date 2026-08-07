@@ -299,6 +299,7 @@ from together.types.beta.rl import (
     PpoLossInputs,
     PpoLossParams,
     PromptTopLogprobs,
+    RoutedExperts,
     SampleOperation,
     SampleResult,
     SampledSequence,
