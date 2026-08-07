@@ -8,6 +8,7 @@
 # `together.types.beta.rl`.
 
 from .clients import SessionClient, SamplingClient, TrainingClient, ModelResourcesClient
+from .checkpoints import download_checkpoint, download_checkpoint_async
 from ....types.beta.rl.session import Session
 from ....types.beta.rl.adam_params import AdamParams
 from ....types.beta.rl.muon_params import MuonParams
@@ -67,6 +68,8 @@ __all__ = [
     "SessionClient",
     "TrainingClient",
     "SamplingClient",
+    "download_checkpoint",
+    "download_checkpoint_async",
     "ModelResources",
     "ModelResourcesStatus",
     "ComputeConfig",

@@ -5,14 +5,14 @@ import json
 import importlib
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
 from respx import MockRouter
 from respx.models import Call
 
-from together import AsyncTogether
+from together import Together, AsyncTogether
 from together.lib.beta.rl import (
     Sample,
     Weights,
@@ -30,6 +30,8 @@ from together.lib.beta.rl import (
     ModelInputChunk,
     EncodedTextChunk,
     LossTargetTokens,
+    download_checkpoint,
+    download_checkpoint_async,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -358,9 +360,8 @@ class TestRLRequestBody:
                 )
             )
         )
-        trainer = SessionClient("sess", _client=cast(Any, fake_client))
 
-        paths = await trainer.download_checkpoint_async("ckpt-1", output_dir=tmp_path)
+        paths = await download_checkpoint_async(cast(Any, fake_client), "ckpt-1", output_dir=tmp_path)
 
         assert paths == []
 
@@ -380,13 +381,48 @@ class TestRLRequestBody:
                 ]
             )
         )
-        trainer = SessionClient("sess", _client=async_client)
-
-        paths = await trainer.download_checkpoint_async("ckpt-1", output_dir=tmp_path)
+        paths = await download_checkpoint_async(async_client, "ckpt-1", output_dir=tmp_path)
 
         assert [path.name for path in paths] == ["a.bin", "b.bin"]
         assert (tmp_path / "a.bin").read_bytes() == b"a"
         assert (tmp_path / "b.bin").read_bytes() == b"bb"
+        assert all("authorization" not in call.request.headers for call in respx_mock.calls)
+
+
+@pytest.mark.respx(base_url=base_url)
+def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockRouter, tmp_path: Any) -> None:
+    respx_mock.get("https://files.test/a.bin").mock(return_value=httpx.Response(200, content=b"a"))
+    respx_mock.get("https://files.test/b.bin").mock(return_value=httpx.Response(200, content=b"bb"))
+
+    client.beta.rl.checkpoints.download = MagicMock(  # type: ignore[method-assign]
+        return_value=SimpleNamespace(
+            data=[
+                SimpleNamespace(url="https://files.test/a.bin", filename="a.bin"),
+                SimpleNamespace(url="https://files.test/b.bin", filename="b.bin"),
+            ]
+        )
+    )
+
+    paths = download_checkpoint(client, "ckpt-1", output_dir=tmp_path)
+
+    assert [path.name for path in paths] == ["a.bin", "b.bin"]
+    assert (tmp_path / "a.bin").read_bytes() == b"a"
+    assert (tmp_path / "b.bin").read_bytes() == b"bb"
+    assert all("authorization" not in call.request.headers for call in respx_mock.calls)
+
+
+@pytest.mark.parametrize("filename", ["../escape.bin", "nested/escape.bin", "/escape.bin"])
+def test_download_checkpoint_rejects_unsafe_filename(filename: str, tmp_path: Any) -> None:
+    client = MagicMock()
+    client.beta.rl.checkpoints.download.return_value = SimpleNamespace(
+        data=[SimpleNamespace(url="https://files.test/escape.bin", filename=filename)]
+    )
+    client.get.side_effect = AssertionError("unsafe filename must be rejected before download")
+
+    with pytest.raises(ValueError, match="Unsafe checkpoint filename"):
+        download_checkpoint(cast(Together, client), "ckpt-1", output_dir=tmp_path)
+
+    client.get.assert_not_called()
 
 
 def test_public_rl_names_have_no_param_suffix() -> None:
