@@ -56,9 +56,7 @@ async def recreate(
 
     cluster = await show_loading_status("", config.client.beta.clusters.retrieve(cluster_id=cluster_id))
     print_clusters([cluster])
-    resp = (
-        input(f"Clusters: Are you sure you want to recreate cluster {cluster.cluster_name}? [y/N] ").strip().lower()
-    )
+    resp = input(f"Clusters: Are you sure you want to recreate cluster {cluster.cluster_name}? [y/N] ").strip().lower()
     if resp != "y" and resp != "yes":
         return
     response = await show_loading_status(
