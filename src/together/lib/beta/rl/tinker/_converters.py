@@ -52,9 +52,7 @@ def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
     required = ("target_tokens", "logprobs", "advantages")
     inputs = datum.loss_fn_inputs
     if set(inputs) != set(required):
-        raise ValueError(
-            f"Datum.loss_fn_inputs keys {sorted(inputs)} != expected {list(required)}"
-        )
+        raise ValueError(f"Datum.loss_fn_inputs keys {sorted(inputs)} != expected {list(required)}")
     arrays = {key: _to_tensor(inputs[key]) for key in required}
     # `weights` stays omitted, like tinker's Datum: advantages of 0.0 already mask the
     # prompt positions, so gradients match exactly; only per-token KL/entropy diagnostics
