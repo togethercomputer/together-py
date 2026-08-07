@@ -35,7 +35,7 @@ async def upload(
             if config.json:
                 console.print_json(openapi_dumps(report).decode("utf-8"))
             else:
-                console.print(f"[red]❌ {escape_rich_markup(str(report['message']))}[/red]")
+                console.print(f"[red]X {escape_rich_markup(str(report['message']))}[/red]")
 
             # Make sure to exit
             sys.exit(1)
