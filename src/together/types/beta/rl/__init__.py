@@ -13,6 +13,7 @@ from .sample_result import SampleResult as SampleResult
 from .session_error import SessionError as SessionError
 from .weights_param import Weights as Weights
 from .forward_result import ForwardResult as ForwardResult
+from .routed_experts import RoutedExperts as RoutedExperts
 from .session_status import SessionStatus as SessionStatus
 from .wandb_metadata import WandbMetadata as WandbMetadata
 from .checkpoint_file import CheckpointFile as CheckpointFile
@@ -78,6 +79,7 @@ from .grpo_loss_aggregation_type import GrpoLossAggregationType as GrpoLossAggre
 from .model_resource_list_params import ModelResourceListParams as ModelResourceListParams
 from .model_resource_stop_params import ModelResourceStopParams as ModelResourceStopParams
 from .model_resources_error_code import ModelResourcesErrorCode as ModelResourcesErrorCode
+from .routed_experts_param_param import RoutedExpertsParam as RoutedExpertsParam
 from .training_checkpoint_result import TrainingCheckpointResult as TrainingCheckpointResult
 from .inference_checkpoint_result import InferenceCheckpointResult as InferenceCheckpointResult
 from .muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfigParam

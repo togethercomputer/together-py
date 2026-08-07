@@ -24,6 +24,15 @@ class OperationSampleParams(TypedDict, total=False):
     tokens and return them in `SampleResult.prompt_logprobs`.
     """
 
+    return_routed_experts: bool
+    """
+    When true, capture the mixture-of-experts routing decisions made while
+    generating and return them in `SampledSequence.routed_experts`, so training can
+    reuse the same expert selection. Only available on mixture-of-experts models;
+    ignored otherwise. The captured buffer scales with sequence length, so leave it
+    off unless you replay routing during training.
+    """
+
     sampling_params: SamplingParams
     """Optional sampling parameters"""
 

@@ -690,6 +690,7 @@ class OperationsResource(SyncAPIResource):
         model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
+        return_routed_experts: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
         topk_prompt_logprobs: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -712,6 +713,12 @@ class OperationsResource(SyncAPIResource):
 
           prompt_logprobs: When true, also compute teacher-forced log-probabilities for the model input
               tokens and return them in `SampleResult.prompt_logprobs`.
+
+          return_routed_experts: When true, capture the mixture-of-experts routing decisions made while
+              generating and return them in `SampledSequence.routed_experts`, so training can
+              reuse the same expert selection. Only available on mixture-of-experts models;
+              ignored otherwise. The captured buffer scales with sequence length, so leave it
+              off unless you replay routing during training.
 
           sampling_params: Optional sampling parameters
 
@@ -736,6 +743,7 @@ class OperationsResource(SyncAPIResource):
                     "model_inputs": model_inputs,
                     "num_samples": num_samples,
                     "prompt_logprobs": prompt_logprobs,
+                    "return_routed_experts": return_routed_experts,
                     "sampling_params": sampling_params,
                     "topk_prompt_logprobs": topk_prompt_logprobs,
                 },
@@ -1434,6 +1442,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         model_inputs: Iterable[ModelInput],
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
+        return_routed_experts: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
         topk_prompt_logprobs: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -1456,6 +1465,12 @@ class AsyncOperationsResource(AsyncAPIResource):
 
           prompt_logprobs: When true, also compute teacher-forced log-probabilities for the model input
               tokens and return them in `SampleResult.prompt_logprobs`.
+
+          return_routed_experts: When true, capture the mixture-of-experts routing decisions made while
+              generating and return them in `SampledSequence.routed_experts`, so training can
+              reuse the same expert selection. Only available on mixture-of-experts models;
+              ignored otherwise. The captured buffer scales with sequence length, so leave it
+              off unless you replay routing during training.
 
           sampling_params: Optional sampling parameters
 
@@ -1480,6 +1495,7 @@ class AsyncOperationsResource(AsyncAPIResource):
                     "model_inputs": model_inputs,
                     "num_samples": num_samples,
                     "prompt_logprobs": prompt_logprobs,
+                    "return_routed_experts": return_routed_experts,
                     "sampling_params": sampling_params,
                     "topk_prompt_logprobs": topk_prompt_logprobs,
                 },

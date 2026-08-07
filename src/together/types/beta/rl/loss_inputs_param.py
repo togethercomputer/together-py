@@ -10,6 +10,7 @@ from .ppo_loss_inputs_param import PpoLossInputs
 from .grpo_loss_inputs_param import GrpoLossInputs
 from .cispo_loss_inputs_param import CispoLossInputs
 from .loss_target_tokens_param import LossTargetTokens
+from .routed_experts_param_param import RoutedExpertsParam
 from .importance_sampling_loss_inputs_param import ImportanceSamplingLossInputs
 
 __all__ = ["LossInputs"]
@@ -32,6 +33,13 @@ class LossInputs(TypedDict, total=False):
     """Inputs required when the loss type is importance sampling"""
 
     ppo_inputs: PpoLossInputs
+
+    routed_experts: RoutedExpertsParam
+    """Optional MoE per-token routing captured at sample time.
+
+    Replayed on every training operation, so expert selection matches the one used
+    at sample time. Must cover the whole sample, or all but its last token.
+    """
 
     weights: Weights
     """Per-token loss weights (>= 0), one weight per target token.
