@@ -644,7 +644,7 @@ class TestBetaClustersListRegions:
         assert "ID:" in result.output
         assert "nvidia-595-22" in result.output
         assert "NVIDIA Driver:" in result.output
-        assert "CUDA Version:" in result.output
+        assert "13.2" in result.output
         assert "OS:" in result.output
         assert "ubuntu-22.04" in result.output
         assert "None" not in result.output
