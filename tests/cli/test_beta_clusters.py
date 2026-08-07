@@ -861,6 +861,12 @@ class TestBetaClustersRetrieve:
 
 
 class TestBetaClustersCreate:
+    def test_create_help_mentions_b300_gpu_type(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
+
+        assert "B300_SXM" in result.output
+        assert result.exit_code == 0
+
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
             [
@@ -1023,7 +1029,7 @@ class TestBetaClustersCreate:
                 "--cluster-type",
                 "SLURM",
                 "--gpu-type",
-                "H100_SXM",
+                "B300_SXM",
                 "--nvidia-driver-version",
                 "565",
                 "--cuda-version",
@@ -1066,6 +1072,7 @@ class TestBetaClustersCreate:
         assert result.exit_code == 0, result.output
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
+        assert body["gpu_type"] == "B300_SXM"
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"

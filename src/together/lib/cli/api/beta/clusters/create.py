@@ -15,6 +15,16 @@ from together.types.beta.cluster_list_regions_response import (
     ClusterListRegionsResponse,
 )
 
+KNOWN_GPU_TYPES = (
+    "H100_SXM",
+    "H200_SXM",
+    "RTX_6000_PCI",
+    "L40_PCIE",
+    "B200_SXM",
+    "H100_SXM_INF",
+    "B300_SXM",
+)
+
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
 RegionParameter = Annotated[Optional[str], Parameter(help="Region to create the cluster in")]
@@ -33,7 +43,10 @@ DurationDaysParameter = Annotated[
 ]
 GpuTypeParameter = Annotated[
     Optional[str],
-    Parameter(help="GPU type to use for the cluster (run `list-regions` to see available types per region)"),
+    Parameter(
+        help="GPU type to use for the cluster (run `list-regions` to see available types per region). "
+        f"Known values include: {', '.join(KNOWN_GPU_TYPES)}"
+    ),
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
@@ -295,9 +308,7 @@ async def create(
                 input(f"Clusters: Cluster name: [{getpass.getuser()}] ").strip() or getpass.getuser()
             )
         if not gpu_type:
-            params["gpu_type"] = input(
-                "Clusters: Cluster GPU type (H100_SXM, H200_SXM, RTX_6000_PCI, L40_PCIE, B200_SXM, H100_SXM_INF): "
-            ).strip()
+            params["gpu_type"] = input(f"Clusters: Cluster GPU type ({', '.join(KNOWN_GPU_TYPES)}): ").strip()
         if not region:
             catalog = await config.client.beta.clusters.list_regions()
             params["region"] = (
