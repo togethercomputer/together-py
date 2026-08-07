@@ -132,7 +132,9 @@ async def create(
     lora: Annotated[Optional[bool], Parameter(help="Whether to use LoRA adapters for fine-tuning")] = None,
     lora_r: Annotated[int, Parameter(help="Rank of the LoRA adapter matrices")] = DEFAULT_LORA_R,
     lora_dropout: Annotated[float, Parameter(help="Dropout probability applied to LoRA adapter inputs")] = 0,
-    lora_alpha: Annotated[float, Parameter(help="Scaling factor applied to the LoRA adapter weights")] = DEFAULT_LORA_ALPHA,
+    lora_alpha: Annotated[
+        float, Parameter(help="Scaling factor applied to the LoRA adapter weights")
+    ] = DEFAULT_LORA_ALPHA,
     lora_trainable_modules: Annotated[
         str,
         Parameter(
