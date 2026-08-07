@@ -23,15 +23,13 @@ async def list_regions(
     table.add_primary_column("Driver Versions")
     for region in response.regions:
         driver_versions: list[str] = []
-        for driver_version in region.driver_versions or []:
+        for driver_version in region.driver_versions:
             details = [
+                f"[dim]ID:[/dim] [blue]{driver_version.id}[/blue]",
                 f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue]",
                 f"[dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]",
+                f"[dim]OS:[/dim] [blue]{driver_version.os}[/blue]",
             ]
-            if driver_version.os:
-                details.append(f"[dim]OS:[/dim] [blue]{driver_version.os}[/blue]")
-            if driver_version.id:
-                details.append(f"[dim]ID:[/dim] [blue]{driver_version.id}[/blue]")
 
             driver_versions.append(" ".join(details))
 
