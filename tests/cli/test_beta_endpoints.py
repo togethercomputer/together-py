@@ -428,6 +428,8 @@ class TestBetaEndpointsListEvents:
                 "warn",
                 "--since",
                 "2026-01-01T00:00:00+00:00",
+                "--source-kinds",
+                "endpoint,deployment",
                 "--subject-id",
                 "rollout_1",
                 "--types",
@@ -445,7 +447,7 @@ class TestBetaEndpointsListEvents:
         assert query["deploymentIds"] == ["dep_1,dep_2"]
         assert query["minLevel"] == ["LEVEL_WARN"]
         assert query["since"] == ["2026-01-01T00:00:00+00:00"]
-        assert "sourceKinds" not in query
+        assert query["sourceKinds"] == ["SOURCE_KIND_ENDPOINT,SOURCE_KIND_DEPLOYMENT"]
         assert query["subjectId"] == ["rollout_1"]
         assert query["types"] == ["deployment.scaled,condition.set"]
         assert query["until"] == ["2026-01-02T00:00:00+00:00"]
@@ -464,7 +466,8 @@ class TestBetaEndpointsListEvents:
         assert "Max 10000, defaults to 50." in output
         assert "Minimum severity" in output
         assert "Omit to disable severity filtering." in output
-        assert "--source-kinds" not in output
+        assert "--source-kinds" in output
+        assert "Resource kinds whose events should be included" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_events_table_colors_message_and_shows_deployment_name(

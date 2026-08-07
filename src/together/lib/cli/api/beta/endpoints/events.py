@@ -18,6 +18,7 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_en
 
 LevelInput = Literal["debug", "info", "warn", "warning", "error"]
 SDKLevel = Literal["LEVEL_DEBUG", "LEVEL_INFO", "LEVEL_WARN", "LEVEL_ERROR"]
+SDKSourceKind = Literal["SOURCE_KIND_ENDPOINT", "SOURCE_KIND_DEPLOYMENT"]
 LevelParameter = Annotated[
     Optional[LevelInput],
     Parameter(help="Minimum severity: debug, info, warn, or error. Omit to disable severity filtering."),
@@ -29,6 +30,28 @@ LEVEL_MAP: dict[LevelInput, SDKLevel] = {
     "warning": "LEVEL_WARN",
     "error": "LEVEL_ERROR",
 }
+SOURCE_KIND_MAP: dict[str, SDKSourceKind] = {
+    "endpoint": "SOURCE_KIND_ENDPOINT",
+    "deployment": "SOURCE_KIND_DEPLOYMENT",
+    "source_kind_endpoint": "SOURCE_KIND_ENDPOINT",
+    "source_kind_deployment": "SOURCE_KIND_DEPLOYMENT",
+}
+
+
+def _parse_source_kinds(value: str | None) -> list[SDKSourceKind] | None:
+    if value is None:
+        return None
+
+    source_kinds: list[SDKSourceKind] = []
+    for raw_kind in value.split(","):
+        kind = raw_kind.strip()
+        if not kind:
+            continue
+        try:
+            source_kinds.append(SOURCE_KIND_MAP[kind.lower()])
+        except KeyError as exc:
+            raise ValueError(f"Invalid source kind {kind!r}. Expected endpoint or deployment.") from exc
+    return source_kinds or None
 
 
 def _short_name(fully_qualified_name: str) -> str:
@@ -84,6 +107,10 @@ async def events(
         Optional[str],
         Parameter(help="ID of a subject associated with the event, such as a rollout."),
     ] = None,
+    source_kinds: Annotated[
+        Optional[str],
+        Parameter(help="Resource kinds whose events should be included: endpoint, deployment. Comma-separated list."),
+    ] = None,
     since: Annotated[Optional[datetime], Parameter(help="Return only events at or after this time.")] = None,
     until: Annotated[Optional[datetime], Parameter(help="Return only events strictly before this time.")] = None,
     limit: Annotated[
@@ -105,6 +132,7 @@ async def events(
             limit=limit if limit is not None else omit,
             min_level=LEVEL_MAP[min_level] if min_level else omit,
             since=since if since is not None else omit,
+            source_kinds=_parse_source_kinds(source_kinds) or omit,
             subject_id=subject_id or omit,
             types=types.split(",") if types else omit,
             until=until if until is not None else omit,
