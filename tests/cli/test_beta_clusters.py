@@ -1189,6 +1189,15 @@ class TestBetaClustersRecreate:
         sent = json.loads(route.calls.last.request.content)
         assert sent == {"new_spec": {"cluster_type": "SLURM", "num_gpus": 16}}
 
+    @pytest.mark.respx(base_url="https://api.qa.together.ai/v1")
+    def test_recreate_env_flag_targets_qa(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/compute/clusters/c-qa:recreate").mock(
+            return_value=httpx.Response(200, json={"id": "intent-3", "cluster_id": "c-qa", "status": "pending"})
+        )
+        result = cli_runner.invoke(["--env", "qa", "beta", "clusters", "recreate", "c-qa", "--json"])
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == "intent-3"
+
     @pytest.mark.respx(base_url=base_url)
     def test_recreate_confirm_no(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         # No POST route is mocked: an unexpected recreate call would fail loudly.
