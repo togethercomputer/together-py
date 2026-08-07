@@ -67,6 +67,17 @@ class JigError(Exception):
     """Actionable runtime error"""
 
 
+class _JigCliExit(SystemExit):
+    """Exit with a diagnostic that command-failure telemetry can retain."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(1)
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
+
+
 # == Configuration ==
 
 
@@ -1090,9 +1101,9 @@ def _print_cli_result(result: Any) -> None:
         console.print(str(result))
 
 
-def _jig_fail(msg: str) -> None:
+def _jig_fail(msg: str) -> typing.NoReturn:
     console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
-    sys.exit(1)
+    raise _JigCliExit(msg)
 
 
 def _asyncio_run_upload(coro: typing.Coroutine[typing.Any, typing.Any, None]) -> None:
