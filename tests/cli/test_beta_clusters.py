@@ -633,29 +633,20 @@ class TestBetaClustersListRegions:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_regions_omits_missing_id_and_os(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        legacy_body = {
-            "regions": [
-                {
-                    "name": "us-central-8",
-                    "driver_versions": [
-                        {
-                            "cuda_version": "12.6 Ubuntu 22.04",
-                            "nvidia_driver_version": "565",
-                        }
-                    ],
-                    "supported_instance_types": ["H100_SXM"],
-                }
-            ]
-        }
-        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=legacy_body))
+    def test_list_regions_includes_required_nvidia_id_and_os(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
 
         result = cli_runner.invoke(["beta", "clusters", "list-regions"])
 
         assert result.exit_code == 0
+        assert "ID:" in result.output
+        assert "nvidia-595-22" in result.output
         assert "NVIDIA Driver:" in result.output
-        assert "ID:" not in result.output
-        assert "OS:" not in result.output
+        assert "CUDA Version:" in result.output
+        assert "OS:" in result.output
+        assert "ubuntu-22.04" in result.output
         assert "None" not in result.output
 
 
@@ -727,28 +718,8 @@ class TestBetaClustersNvidiaVersionSelection:
         assert selected.os == "ubuntu-24.04"
 
     @pytest.mark.asyncio
-    async def test_prompt_falls_back_to_legacy_pair_when_catalog_has_no_id(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        catalog = ClusterListRegionsResponse(
-            **cast(
-                Any,
-                {
-                    "regions": [
-                        {
-                            "name": "us-central-8",
-                            "driver_versions": [
-                                {
-                                    "cuda_version": "12.6 Ubuntu 22.04",
-                                    "nvidia_driver_version": "565",
-                                }
-                            ],
-                            "supported_instance_types": ["H100_SXM"],
-                        }
-                    ]
-                },
-            )
-        )
+    async def test_prompted_selection_posts_required_nvidia_version_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        catalog = ClusterListRegionsResponse(**_REGIONS_BODY)
 
         def select_first_version(_prompt: str) -> str:
             return "1"
@@ -767,9 +738,9 @@ class TestBetaClustersNvidiaVersionSelection:
             os_name=None,
         )
 
-        assert params["nvidia_driver_version"] == "565"
-        assert params["cuda_version"] == "12.6 Ubuntu 22.04"
-        assert "nvidia_version_id" not in params
+        assert params["nvidia_version_id"] == "nvidia-595-22"
+        assert "nvidia_driver_version" not in params
+        assert "cuda_version" not in params
 
     def test_semantic_selection_uses_os_to_disambiguate_duplicate_cuda_rows(self) -> None:
         selected = create_cli._resolve_nvidia_version(

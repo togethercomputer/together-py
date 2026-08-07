@@ -61,13 +61,7 @@ _DEFAULT_NVIDIA_VERSION_CHOICE = 1
 
 
 def _format_nvidia_version(version: RegionDriverVersion) -> str:
-    details = f"driver {version.nvidia_driver_version}, CUDA {version.cuda_version}"
-    if version.os:
-        details += f", OS {version.os}"
-    if version.id:
-        details += f" ({version.id})"
-
-    return details
+    return f"driver {version.nvidia_driver_version}, CUDA {version.cuda_version}, OS {version.os} ({version.id})"
 
 
 def _region_nvidia_versions(
@@ -190,13 +184,9 @@ async def _set_nvidia_version_params(
     else:
         selected = _prompt_nvidia_version(_region_nvidia_versions(catalog, region))
 
-    if selected.id:
-        params["nvidia_version_id"] = selected.id
-        params.pop("nvidia_driver_version", None)
-        params.pop("cuda_version", None)
-    else:
-        params["nvidia_driver_version"] = selected.nvidia_driver_version
-        params["cuda_version"] = selected.cuda_version
+    params["nvidia_version_id"] = selected.id
+    params.pop("nvidia_driver_version", None)
+    params.pop("cuda_version", None)
 
 
 async def create(
