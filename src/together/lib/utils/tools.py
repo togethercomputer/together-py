@@ -97,6 +97,9 @@ def format_datetime(datetime_obj: datetime) -> str:
         datetime_obj: A datetime object
 
     Returns:
-        str: Formatted timestamp string (MM/DD/YYYY, HH:MM AM/PM)
+        str: Formatted timestamp string (MM/DD/YYYY, HH:MM AM/PM) in the
+        local timezone when ``datetime_obj`` is timezone-aware.
     """
+    if datetime_obj.tzinfo is not None:
+        datetime_obj = datetime_obj.astimezone()
     return datetime_obj.strftime("%m/%d/%Y, %I:%M %p")
