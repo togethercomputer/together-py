@@ -59,8 +59,7 @@ class ServiceClient:
         ignored = sorted(kwargs.keys() & _WARNED_IGNORED_KWARGS)
         if ignored:
             warnings.warn(
-                f"Together ignores {ignored}: the resource client owns its transport "
-                "policy, so these Tinker HTTP options have no effect",
+                f"Together's Tinker-compatible client ignores these options: {', '.join(ignored)}",
                 stacklevel=2,
             )
         self._base_url = base_url
