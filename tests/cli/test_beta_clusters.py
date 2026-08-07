@@ -1178,6 +1178,18 @@ class TestBetaClustersRecreate:
         assert sent == {"reason": "maintenance"}
 
     @pytest.mark.respx(base_url=base_url)
+    def test_recreate_with_new_spec(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/compute/clusters/c1:recreate").mock(
+            return_value=httpx.Response(200, json={"id": "intent-2", "cluster_id": "c1", "status": "pending"})
+        )
+        result = cli_runner.invoke(
+            ["beta", "clusters", "recreate", "c1", "--cluster-type", "SLURM", "--num-gpus", "16", "--json"]
+        )
+        assert result.exit_code == 0
+        sent = json.loads(route.calls.last.request.content)
+        assert sent == {"new_spec": {"cluster_type": "SLURM", "num_gpus": 16}}
+
+    @pytest.mark.respx(base_url=base_url)
     def test_recreate_confirm_no(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         # No POST route is mocked: an unexpected recreate call would fail loudly.
         c = _cluster_body("c1", "keep-me")
