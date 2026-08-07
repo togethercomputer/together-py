@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from types import TracebackType
 from typing import Any
 from dataclasses import field, dataclass
@@ -125,7 +126,17 @@ class TrainingClient:
         name: str | None = None,
         retry_config: Any = None,
     ) -> SamplingClient:
-        del name, retry_config
+        ignored: list[str] = []
+        if name is not None:
+            ignored.append("name")
+        if retry_config is not None:
+            ignored.append("retry_config")
+        if ignored:
+            warnings.warn(
+                f"Together ignores {ignored}: weight publish is a synchronous sync with "
+                "no named checkpoints or caller-controlled retries",
+                stacklevel=2,
+            )
         session = self._session
         operation = session.run(
             session._client.beta.rl.operations.weights_sync(

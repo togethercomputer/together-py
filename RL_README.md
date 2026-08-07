@@ -407,9 +407,12 @@ training_client.optim_step(adam_params).result()
 - `model_resources_id` is a Together extension: attach existing model resources instead of provisioning
   new ones. Attached resources are left running on close; provisioned ones are stopped (see
   [Resource lifecycle](#resource-lifecycle) below).
-- `user_metadata` and `project_id` are accepted and ignored.
+- `user_metadata` and `project_id` are accepted and ignored (no warning — tagging/org
+  fields that Together does not surface).
 - Known Tinker HTTP kwargs (`default_headers`, `default_query`, `http_client`, `max_retries`,
-  `timeout`) are accepted and ignored; any other kwargs raise `TypeError`.
+  `timeout`) are accepted and ignored; `http_client` / `max_retries` / `timeout` warn when
+  passed (ops knobs a migrator likely tuned), while `default_headers` / `default_query`
+  stay silent. Any other kwargs raise `TypeError`.
 
 `create_lora_training_client` takes the same seven keyword arguments as tinker:
 
@@ -426,7 +429,8 @@ Training and sampling methods:
   tinker's `ForwardBackwardOutput`. See [Loss functions](#loss-functions) for accepted values.
 - `TrainingClient.optim_step(adam_params)` — Adam fields are forwarded as-is (including `grad_clip_norm`).
 - `TrainingClient.save_weights_and_get_sampling_client(name=None, retry_config=None)` — publishes weights
-  synchronously and returns a `SamplingClient`. `name` and `retry_config` are accepted and ignored.
+  synchronously and returns a `SamplingClient`. Non-`None` `name` / `retry_config` warn and are
+  ignored (no named checkpoints or caller-controlled retries).
 - `SamplingClient.sample(prompt, num_samples, sampling_params, include_prompt_logprobs=False, topk_prompt_logprobs=0)` —
   both prompt-logprob flags are honored; `topk_prompt_logprobs` must be in `0..20` or a `ValueError` is raised.
 - `future.result(timeout=None)` — polls to completion. Pass a float to bound polling; omit or pass `None`
@@ -434,16 +438,16 @@ Training and sampling methods:
 
 ### Loss functions
 
-The converter expects each `Datum.loss_fn_inputs` to carry `target_tokens`, `logprobs`, and `advantages`
-(as `TensorData`) and maps them into Together's `{loss}_inputs` wire shape. Only losses that fit that
-shape are accepted:
+The converter expects each `Datum.loss_fn_inputs` to carry exactly `target_tokens`, `logprobs`, and
+`advantages` (as `TensorData`) and maps them into Together's `{loss}_inputs` wire shape. Missing or
+unexpected keys raise `ValueError`. Only losses that fit that shape are accepted:
 
 | `loss_fn` | Status | Notes |
 | --------- | ------ | ----- |
 | `importance_sampling` | Supported | No `loss_fn_config` keys |
 | `ppo` | Supported | Optional `loss_fn_config`: `clip_low_threshold`, `clip_high_threshold` |
 | `cross_entropy` | Rejected | Datum carries `weights`, not `logprobs` / `advantages` |
-| `cispo`, `dro` | Rejected | Converter only emits the `{logprobs, advantages}` pair and would silently drop any extra Datum keys |
+| `cispo`, `dro` | Rejected | Datum carries keys beyond `{target_tokens, logprobs, advantages}` |
 
 Unknown `loss_fn_config` keys raise `ValueError`.
 

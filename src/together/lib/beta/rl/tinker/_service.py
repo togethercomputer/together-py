@@ -23,6 +23,9 @@ _KNOWN_IGNORED_KWARGS = frozenset(
         "timeout",
     }
 )
+# Ops/transport knobs a migrator likely tuned on purpose; warn so "work or warn" holds.
+# Headers/query stay silent — boilerplate plumbing nobody verifies after the import swap.
+_WARNED_IGNORED_KWARGS = frozenset({"http_client", "max_retries", "timeout"})
 
 
 class ServiceClient:
@@ -31,10 +34,12 @@ class ServiceClient:
     ``user_metadata`` and ``project_id`` are accepted for Tinker compatibility but
     Together does not use them. Known Tinker HTTP options (``default_headers``,
     ``timeout``, …) are accepted and ignored because Together's resource client owns
-    its transport policy; any other kwargs raise ``TypeError``. Resources supplied
-    with ``model_resources_id`` are borrowed and left running; resources provisioned
-    by this client are owned and stopped by :meth:`TrainingClient.close` or the
-    interpreter-exit fallback. Sessions created by this client are always stopped.
+    its transport policy; ``http_client`` / ``max_retries`` / ``timeout`` warn when
+    passed, while ``default_headers`` / ``default_query`` stay silent. Any other
+    kwargs raise ``TypeError``. Resources supplied with ``model_resources_id`` are
+    borrowed and left running; resources provisioned by this client are owned and
+    stopped by :meth:`TrainingClient.close` or the interpreter-exit fallback.
+    Sessions created by this client are always stopped.
     """
 
     def __init__(
@@ -51,6 +56,12 @@ class ServiceClient:
         unknown = kwargs.keys() - _KNOWN_IGNORED_KWARGS
         if unknown:
             raise TypeError(f"Unsupported ServiceClient kwargs: {sorted(unknown)}")
+        ignored = sorted(kwargs.keys() & _WARNED_IGNORED_KWARGS)
+        if ignored:
+            warnings.warn(
+                f"Together's Tinker-compatible client ignores these options: {', '.join(ignored)}",
+                stacklevel=2,
+            )
         self._base_url = base_url
         self._api_key = api_key
         self._model_resources_id = model_resources_id
