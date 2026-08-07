@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import json
 import importlib
 from typing import cast
@@ -13,6 +14,16 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _normalize_cli_help(output: str) -> str:
+    # Rich help wraps table cells across panel borders and can interleave the
+    # type/description columns with ANSI padding; normalize for both agent
+    # (plain) and human (rich) formatters.
+    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
+
 
 _ft_download_mod = importlib.import_module("together.lib.cli.api.fine_tuning.download")
 
@@ -130,6 +141,17 @@ _FT_CREATE_BODY = {
 
 
 class TestFineTuningCreate:
+    def test_create_help_describes_lora_options(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["fine-tuning", "create", "--help"])
+        output = _normalize_cli_help(result.output)
+
+        assert result.exit_code == 0
+        assert "Rank of the LoRA adapter matrices" in output
+        assert "Dropout probability applied to LoRA adapter inputs" in output
+        assert "Scaling factor applied to the LoRA adapter weights" in output
+        assert "MoE expert modules" in output
+        assert "adapter-only output" in output
+
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/models/limits").mock(
