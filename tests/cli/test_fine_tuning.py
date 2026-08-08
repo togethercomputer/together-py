@@ -406,10 +406,12 @@ class TestFineTuningCancel:
 
 
 class TestFineTuningDelete:
-    def test_delete_json_requires_non_interactive(self, cli_runner: CliRunner) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    def test_delete_json_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.delete("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
         result = cli_runner.invoke(["fine-tuning", "delete", "ft-1", "--json"])
-        assert result.exit_code != 0
-        assert "non-interactive" in result.output.lower()
+        assert result.exit_code == 0
+        assert json.loads(result.output) == {"message": "deleted"}
 
     @pytest.mark.respx(base_url=base_url)
     def test_delete_force(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
