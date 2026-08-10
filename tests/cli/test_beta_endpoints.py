@@ -266,15 +266,16 @@ class TestBetaEndpointsDeploy:
 
         # Non-interactive mode without an explicit project aborts at confirm —
         # after the deploy preview has already shown GPU + estimated price.
+        # Collapse Rich line-wrap whitespace so phrase checks stay stable.
+        output = " ".join(result.output.split())
         assert result.exit_code != 0
-        assert "Deploy" in result.output
-        assert "preview" in result.output
-        assert "GPU" in result.output
-        assert "1x H100" in result.output
-        assert "Estimated price" in result.output
-        assert "$24.00/hr - $48.00/hr" in result.output
-        assert "Project argument is required" in result.output
-        assert not any(call.request.method == "POST" for call in respx_mock.calls)
+        assert "Deploy" in output
+        assert "preview" in output
+        assert "This deployment will utilize 1x H100" in output
+        assert "estimated to cost approximately" in output
+        assert "$24.00/hr - $48.00/hr" in output
+        assert "Project argument is required" in output
+        assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_onto_existing_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

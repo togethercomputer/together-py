@@ -61,10 +61,7 @@ def test_prettify_hardware() -> None:
 
 def test_format_gpu_label() -> None:
     assert format_gpu_label(_instance()) == "1x H100 80GB"
-    assert (
-        format_gpu_label(_instance(name="", gpuType="NVIDIA-H100-80GB-HBM3", gpuCount=2))
-        == "2x H100 80GB HBM3"
-    )
+    assert format_gpu_label(_instance(name="", gpuType="NVIDIA-H100-80GB-HBM3", gpuCount=2)) == "2x H100 80GB HBM3"
 
 
 def test_format_estimated_price_single_and_range() -> None:

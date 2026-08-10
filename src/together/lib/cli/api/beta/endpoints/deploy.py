@@ -370,10 +370,6 @@ def _print_deployment_preview(
     add_row("--model", f"{model.name} ({model_path})")
     add_row("--config", config_value.id)  # type: ignore
 
-    if hardware_pricing is not None:
-        add_row("GPU", hardware_pricing.gpu_label)
-        add_row("Estimated price", hardware_pricing.estimated_price_label)
-
     table.add_row("\n".join(args))
 
     console.print(
@@ -383,6 +379,12 @@ def _print_deployment_preview(
             title_align="left",
         )
     )
+
+    if hardware_pricing is not None:
+        console.print(
+            f"[dim][/dim][yellow]This deployment will utilize {hardware_pricing.gpu_label}, "
+            f"which is estimated to cost approximately {hardware_pricing.estimated_price_label}.[/yellow]\n"
+        )
 
 
 # Helper method to enable the users to use this command to either create a new endpoint+deployment
