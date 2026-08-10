@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import time
 import importlib
 from typing import cast
 from pathlib import Path
@@ -373,6 +374,32 @@ class TestFineTuningRetrieve:
         assert result.exit_code == 0
         body = json.loads(result.output)
         assert body["id"] == "ft-1"
+
+    @pytest.mark.skipif(not hasattr(time, "tzset"), reason="requires POSIX timezone support")
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_handles_boundary_datetime(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        body = {
+            **_FT_RETRIEVE_BODY,
+            "status": "queued",
+            "started_at": "0001-01-01T00:00:00Z",
+        }
+        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
+        previous_tz = os.environ.get("TZ")
+        os.environ["TZ"] = "America/Los_Angeles"
+        time.tzset()
+
+        try:
+            result = cli_runner.invoke(["fine-tuning", "retrieve", "ft-1", "--no-plots"])
+        finally:
+            if previous_tz is None:
+                os.environ.pop("TZ")
+            else:
+                os.environ["TZ"] = previous_tz
+            time.tzset()
+
+        assert result.exit_code == 0
+        assert "ft-1" in result.output
+        assert "Progress: unavailable" in result.output
 
 
 class TestFineTuningCancel:
