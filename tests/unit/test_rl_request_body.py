@@ -386,7 +386,8 @@ class TestRLRequestBody:
         assert [path.name for path in paths] == ["a.bin", "b.bin"]
         assert (tmp_path / "a.bin").read_bytes() == b"a"
         assert (tmp_path / "b.bin").read_bytes() == b"bb"
-        assert all("authorization" not in call.request.headers for call in respx_mock.calls)
+        calls = cast("list[Call]", list(respx_mock.calls))
+        assert all("authorization" not in call.request.headers for call in calls)
 
 
 @pytest.mark.respx(base_url=base_url)
@@ -408,7 +409,8 @@ def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockR
     assert [path.name for path in paths] == ["a.bin", "b.bin"]
     assert (tmp_path / "a.bin").read_bytes() == b"a"
     assert (tmp_path / "b.bin").read_bytes() == b"bb"
-    assert all("authorization" not in call.request.headers for call in respx_mock.calls)
+    calls = cast("list[Call]", list(respx_mock.calls))
+    assert all("authorization" not in call.request.headers for call in calls)
 
 
 @pytest.mark.parametrize("filename", ["../escape.bin", "nested/escape.bin", "/escape.bin"])
