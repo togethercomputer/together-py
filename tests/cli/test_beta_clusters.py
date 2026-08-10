@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import ssl
 import json
 import base64
@@ -24,6 +25,12 @@ from together.types.beta import ClusterListRegionsResponse
 from together.lib.cli.api.beta.clusters import ssh as ssh_cli, create as create_cli
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _normalize_cli_output(output: str) -> str:
+    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
 
 
 def _cluster_body(cluster_id: str = "cluster-1", name: str = "my-cluster", **overrides: Any) -> dict[str, Any]:
@@ -633,30 +640,23 @@ class TestBetaClustersListRegions:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_regions_omits_missing_id_and_os(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        legacy_body = {
-            "regions": [
-                {
-                    "name": "us-central-8",
-                    "driver_versions": [
-                        {
-                            "cuda_version": "12.6 Ubuntu 22.04",
-                            "nvidia_driver_version": "565",
-                        }
-                    ],
-                    "supported_instance_types": ["H100_SXM"],
-                }
-            ]
-        }
-        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=legacy_body))
+    def test_list_regions_includes_required_nvidia_id_and_os(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
 
         result = cli_runner.invoke(["beta", "clusters", "list-regions"])
+        # Table cells wrap across borders under narrow terminals; normalize first.
+        output = _normalize_cli_output(result.output)
 
         assert result.exit_code == 0
-        assert "NVIDIA Driver:" in result.output
-        assert "ID:" not in result.output
-        assert "OS:" not in result.output
-        assert "None" not in result.output
+        assert "ID:" in output
+        assert "nvidia-595-22" in output
+        assert "NVIDIA Driver:" in output
+        assert "CUDA Version:" in output
+        assert "OS:" in output
+        assert "ubuntu-22.04" in output
+        assert "None" not in output
 
 
 class TestBetaClustersNvidiaVersionSelection:
@@ -727,25 +727,8 @@ class TestBetaClustersNvidiaVersionSelection:
         assert selected.os == "ubuntu-24.04"
 
     @pytest.mark.asyncio
-    async def test_prompt_falls_back_to_legacy_pair_when_catalog_has_no_id(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        # Mirror API construct parsing: legacy catalogs may omit id/os even though
-        # the generated model marks those fields as required for validation.
-        catalog = ClusterListRegionsResponse.construct(
-            regions=[
-                {
-                    "name": "us-central-8",
-                    "driver_versions": [
-                        {
-                            "cuda_version": "12.6 Ubuntu 22.04",
-                            "nvidia_driver_version": "565",
-                        }
-                    ],
-                    "supported_instance_types": ["H100_SXM"],
-                }
-            ]
-        )
+    async def test_prompted_selection_posts_required_nvidia_version_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        catalog = ClusterListRegionsResponse(**_REGIONS_BODY)
 
         def select_first_version(_prompt: str) -> str:
             return "1"
@@ -764,9 +747,9 @@ class TestBetaClustersNvidiaVersionSelection:
             os_name=None,
         )
 
-        assert params["nvidia_driver_version"] == "565"
-        assert params["cuda_version"] == "12.6 Ubuntu 22.04"
-        assert "nvidia_version_id" not in params
+        assert params["nvidia_version_id"] == "nvidia-595-22"
+        assert "nvidia_driver_version" not in params
+        assert "cuda_version" not in params
 
     def test_semantic_selection_uses_os_to_disambiguate_duplicate_cuda_rows(self) -> None:
         selected = create_cli._resolve_nvidia_version(
@@ -858,6 +841,12 @@ class TestBetaClustersRetrieve:
 
 
 class TestBetaClustersCreate:
+    def test_create_help_mentions_b300_gpu_type(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
+
+        assert "B300_SXM" in result.output
+        assert result.exit_code == 0
+
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
             [
@@ -1020,7 +1009,7 @@ class TestBetaClustersCreate:
                 "--cluster-type",
                 "SLURM",
                 "--gpu-type",
-                "H100_SXM",
+                "B300_SXM",
                 "--nvidia-driver-version",
                 "565",
                 "--cuda-version",
@@ -1063,6 +1052,7 @@ class TestBetaClustersCreate:
         assert result.exit_code == 0, result.output
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
+        assert body["gpu_type"] == "B300_SXM"
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"

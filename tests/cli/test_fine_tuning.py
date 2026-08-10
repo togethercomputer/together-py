@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import re
 import json
+import time
 import importlib
 from typing import cast
 from pathlib import Path
@@ -13,6 +15,16 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _normalize_cli_help(output: str) -> str:
+    # Rich help wraps table cells across panel borders and can interleave the
+    # type/description columns with ANSI padding; normalize for both agent
+    # (plain) and human (rich) formatters.
+    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
+
 
 _ft_download_mod = importlib.import_module("together.lib.cli.api.fine_tuning.download")
 
@@ -130,6 +142,17 @@ _FT_CREATE_BODY = {
 
 
 class TestFineTuningCreate:
+    def test_create_help_describes_lora_options(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["fine-tuning", "create", "--help"])
+        output = _normalize_cli_help(result.output)
+
+        assert result.exit_code == 0
+        assert "Rank of the LoRA adapter matrices" in output
+        assert "Dropout probability applied to LoRA adapter inputs" in output
+        assert "Scaling factor applied to the LoRA adapter weights" in output
+        assert "MoE expert modules" in output
+        assert "adapter-only output" in output
+
     @pytest.mark.respx(base_url=base_url)
     def test_create_handles_unavailable_price_estimation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/fine-tunes/models/limits").mock(
@@ -352,6 +375,32 @@ class TestFineTuningRetrieve:
         body = json.loads(result.output)
         assert body["id"] == "ft-1"
 
+    @pytest.mark.skipif(not hasattr(time, "tzset"), reason="requires POSIX timezone support")
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_handles_boundary_datetime(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        body = {
+            **_FT_RETRIEVE_BODY,
+            "status": "queued",
+            "started_at": "0001-01-01T00:00:00Z",
+        }
+        respx_mock.get("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json=body))
+        previous_tz = os.environ.get("TZ")
+        os.environ["TZ"] = "America/Los_Angeles"
+        time.tzset()
+
+        try:
+            result = cli_runner.invoke(["fine-tuning", "retrieve", "ft-1", "--no-plots"])
+        finally:
+            if previous_tz is None:
+                os.environ.pop("TZ")
+            else:
+                os.environ["TZ"] = previous_tz
+            time.tzset()
+
+        assert result.exit_code == 0
+        assert "ft-1" in result.output
+        assert "Progress: unavailable" in result.output
+
 
 class TestFineTuningCancel:
     @pytest.mark.respx(base_url=base_url)
@@ -384,10 +433,12 @@ class TestFineTuningCancel:
 
 
 class TestFineTuningDelete:
-    def test_delete_json_requires_non_interactive(self, cli_runner: CliRunner) -> None:
+    @pytest.mark.respx(base_url=base_url)
+    def test_delete_json_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.delete("/fine-tunes/ft-1").mock(return_value=httpx.Response(200, json={"message": "deleted"}))
         result = cli_runner.invoke(["fine-tuning", "delete", "ft-1", "--json"])
-        assert result.exit_code != 0
-        assert "non-interactive" in result.output.lower()
+        assert result.exit_code == 0
+        assert json.loads(result.output) == {"message": "deleted"}
 
     @pytest.mark.respx(base_url=base_url)
     def test_delete_force(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
