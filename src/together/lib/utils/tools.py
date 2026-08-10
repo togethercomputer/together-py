@@ -100,6 +100,18 @@ def format_datetime(datetime_obj: datetime) -> str:
         str: Formatted timestamp string (MM/DD/YYYY, HH:MM AM/PM) in the
         local timezone when ``datetime_obj`` is timezone-aware.
     """
-    if datetime_obj.tzinfo is not None:
-        datetime_obj = datetime_obj.astimezone()
+    datetime_obj = localize_datetime(datetime_obj)
     return datetime_obj.strftime("%m/%d/%Y, %I:%M %p")
+
+
+def localize_datetime(datetime_obj: datetime) -> datetime:
+    """Convert a timezone-aware datetime to local time when representable."""
+    if datetime_obj.tzinfo is None:
+        return datetime_obj
+
+    try:
+        return datetime_obj.astimezone()
+    except (OverflowError, OSError, ValueError):
+        # APIs can use datetime.min/max as sentinels. Applying a local UTC
+        # offset can push those values outside Python's supported date range.
+        return datetime_obj
