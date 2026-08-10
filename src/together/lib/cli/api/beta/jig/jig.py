@@ -25,6 +25,7 @@ from datetime import datetime as dt
 from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
+from typing_extensions import override
 
 import httpx
 from cyclopts import Parameter
@@ -74,6 +75,7 @@ class _JigCliExit(SystemExit):
         super().__init__(1)
         self.message = message
 
+    @override
     def __str__(self) -> str:
         return self.message
 

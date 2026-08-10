@@ -730,24 +730,21 @@ class TestBetaClustersNvidiaVersionSelection:
     async def test_prompt_falls_back_to_legacy_pair_when_catalog_has_no_id(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        catalog = ClusterListRegionsResponse(
-            **cast(
-                Any,
+        # Mirror API construct parsing: legacy catalogs may omit id/os even though
+        # the generated model marks those fields as required for validation.
+        catalog = ClusterListRegionsResponse.construct(
+            regions=[
                 {
-                    "regions": [
+                    "name": "us-central-8",
+                    "driver_versions": [
                         {
-                            "name": "us-central-8",
-                            "driver_versions": [
-                                {
-                                    "cuda_version": "12.6 Ubuntu 22.04",
-                                    "nvidia_driver_version": "565",
-                                }
-                            ],
-                            "supported_instance_types": ["H100_SXM"],
+                            "cuda_version": "12.6 Ubuntu 22.04",
+                            "nvidia_driver_version": "565",
                         }
-                    ]
-                },
-            )
+                    ],
+                    "supported_instance_types": ["H100_SXM"],
+                }
+            ]
         )
 
         def select_first_version(_prompt: str) -> str:
