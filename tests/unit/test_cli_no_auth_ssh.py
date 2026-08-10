@@ -63,6 +63,7 @@ def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.Monk
     # missing key) and the project-resolution whoami() is skipped entirely.
     assert require_flags == [False], "ssh must build the client with require_api_key=False"
     assert resolve_calls == 0, "ssh must not run the project-resolution whoami()"
+    assert "clusters ssh" in cli._NO_AUTH_BETA_COMMANDS
 
 
 def test_non_ssh_command_still_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
