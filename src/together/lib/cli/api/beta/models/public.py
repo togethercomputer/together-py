@@ -53,8 +53,6 @@ async def public(
 
     table = ListTable("Supported Models", empty_message="No supported models found.")
     table.add_primary_column("Model", ratio=3)
-    table.add_column("Config")
-    table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
 
@@ -67,12 +65,12 @@ async def public(
         for profile in profiles:
             gpu = ""
             if profile.gpu_count or profile.gpu_type:
-                gpu = f"{profile.gpu_count or '?'}x {profile.gpu_type or '?'}"
+                gpu_type = profile.gpu_type or "?"
+                gpu_type = " ".join([part.capitalize() for part in gpu_type.split("-") if part.strip()])
+                gpu = f"{profile.gpu_count or '?'}x {gpu_type}"
             profile_model = _profile_cli_model(profile, model.id)
             table.add_row(
                 profile_model,
-                profile.certified_config_revision_id or "",
-                profile.quantization or "",
                 gpu,
                 profile.parallelism or "",
             )
@@ -85,10 +83,7 @@ async def public(
 
 def _profile_cli_model(profile: object, fallback: str | None = None) -> str:
     return (
-        getattr(profile, "api_model_name", None)
-        or _profile_model_id(getattr(profile, "model", None))
-        or fallback
-        or ""
+        getattr(profile, "api_model_name", None) or _profile_model_id(getattr(profile, "model", None)) or fallback or ""
     )
 
 

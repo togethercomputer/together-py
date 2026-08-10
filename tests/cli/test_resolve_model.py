@@ -293,8 +293,7 @@ async def test_public_profile_model_name_selects_matching_profile_without_config
     assert resolved.config.id == "cr_b"
     assert resolved.model.name == "meta-llama/Llama-3-8B-FP8"
     assert (
-        construct_model_path(resolved.model, resolved.revision_id)
-        == "projects/proj_public/models/ml_b/revisions/rv_2"
+        construct_model_path(resolved.model, resolved.revision_id) == "projects/proj_public/models/ml_b/revisions/rv_2"
     )
 
 
