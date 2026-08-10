@@ -274,7 +274,9 @@ class TestBetaModelsPublic:
 
         assert result.exit_code == 0, result.output
         assert "meta-llama/Llama-3-8B-FP16" in result.output
-        assert "cr_1" in result.output
+        assert "1x H100" in result.output
+        assert "TP1" in result.output
+        assert "cr_1" not in result.output
 
 
 class TestBetaModelsOrg:
