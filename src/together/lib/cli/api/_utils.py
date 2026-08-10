@@ -7,8 +7,8 @@ from datetime import datetime
 
 from cyclopts import Parameter
 
-from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.lib.utils.tools import localize_datetime
+from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
 from together.types.fine_tuning_list_response import Data
 
