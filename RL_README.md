@@ -11,10 +11,10 @@ the full API reference remains in [api.md](api.md).
   returning a `SessionClient`. Create more than one session for multi-LoRA. Delete the resources when done.
 - `SessionClient.create(model_resources_id=...)` is the lower-level equivalent of `create_session` when you already
   have a resources ID.
-- `SessionClient` owns session lifecycle and checkpoint creation. Use `session.training` for training operations and
-  `session.sampling` for sampling operations. Accessing `session.sampling` on a trainer-only resource raises
-  a clear capability error; use `session.has_sampling` when capability discovery is needed.
-- `session.sampling.compute_logprobs(...)` (and `compute_logprobs_batch(...)`) teacher-force scores arbitrary token sequences on the generator, returning per-token logprobs (for sampler↔trainer KL and cross-service logprob comparisons on a fixed token set).
+- `SessionClient` owns session lifecycle and checkpoint creation. Use `session.trainer` for training operations and
+  `session.generator` for sampling operations. Accessing `session.generator` on a trainer-only resource raises
+  a clear capability error; use `session.has_generator` when capability discovery is needed.
+- `session.generator.compute_logprobs(...)` (and `compute_logprobs_batch(...)`) teacher-force scores arbitrary token sequences on the generator, returning per-token logprobs (for sampler↔trainer KL and cross-service logprob comparisons on a fixed token set).
 - Training operations return operation outputs directly.
 - After one or more training steps, call `session.create_inference_checkpoint()` to snapshot the model,
   then `download_checkpoint(client, ...)` with a configured `Together` client to pull the weights locally.
@@ -74,9 +74,9 @@ samples = [
 ]
 
 loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
-session.training.forward_backward(samples=samples, loss=loss)
+session.trainer.forward_backward(samples=samples, loss=loss)
 
-session.training.optim_step(
+session.trainer.optim_step(
     adam_params=AdamParams(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
@@ -121,7 +121,7 @@ prompt_chunk = ModelInputChunk(
 prompt = ModelInput(chunks=[prompt_chunk])
 
 sampling = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
-sample_result = session.sampling.sample(
+sample_result = session.generator.sample(
     prompt,
     num_samples=4,
     sampling_params=sampling,
@@ -173,14 +173,14 @@ loss = LossConfig(
         beta=0.0,
     ),
 )
-session.training.forward_backward(samples=samples, loss=loss)
+session.trainer.forward_backward(samples=samples, loss=loss)
 
-optim = session.training.optim_step(
+optim = session.trainer.optim_step(
     adam_params=AdamParams(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
 )
-sync = session.training.weights_sync(
+sync = session.trainer.weights_sync(
     weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
 )
 print("step", optim.step, "weights_version", int(sync.weights_version))
@@ -204,7 +204,7 @@ resources = ModelResourcesClient.create(
 session_a = resources.create_session(lora_config=LoraConfig(rank=8, alpha=16))
 session_b = resources.create_session(lora_config=LoraConfig(rank=16, alpha=32))
 
-# ... use session.training and session.sampling on each session independently ...
+# ... use session.trainer and session.generator on each session independently ...
 
 session_a.stop()
 session_b.stop()
@@ -225,7 +225,7 @@ Training checkpoints persist full training state (adapter, optimizer, step) so y
 
 **Flow:**
 
-1. Run training (`forward_backward`, `optim_step`, `weights_sync`, etc.) through `session.training`.
+1. Run training (`forward_backward`, `optim_step`, `weights_sync`, etc.) through `session.trainer`.
 2. Call `session.create_training_checkpoint()` and wait until the operation completes; read `checkpoint_id`.
 3. Stop the session.
 4. Create a new session with `resume_from_checkpoint_id=checkpoint_id` over the same resources (and optional `lora_config` if you used one).
@@ -361,7 +361,7 @@ async def main() -> None:
         ),
     )
     prompt = ModelInput(chunks=[prompt_chunk])
-    await session.sampling.sample_async(prompt)
+    await session.generator.sample_async(prompt)
 
 
 asyncio.run(main())
@@ -502,7 +502,7 @@ ModelResourcesClient.attach(model_resources_id="...").stop()
 ## Session lifecycle
 
 1. Provision resources with `ModelResourcesClient.create(...)`, then create a session with `resources.create_session(...)` (or `SessionClient.create(model_resources_id=...)`).
-2. Use `session.sampling` for `sample` and `session.training` for `forward_backward`, `optim_step`, and `weights_sync`.
+2. Use `session.generator` for `sample` and `session.trainer` for `forward_backward`, `optim_step`, and `weights_sync`.
 3. Optionally call `create_inference_checkpoint()` to snapshot the model and
    `download_checkpoint(client, ...)` to pull weights locally.
 4. To pause and resume later: `session.create_training_checkpoint()` → save `checkpoint_id`, `session.stop()`, then create a new session with `resume_from_checkpoint_id=...` over the same resources.
@@ -581,9 +581,9 @@ and `SessionClient.create_async(...)`.
 
 | Property  | Type              | Description                                                            |
 | --------- | ----------------- | ---------------------------------------------------------------------- |
-| `training` | `TrainingClient` | Session-scoped forward, backward, and optimizer operations.            |
-| `has_sampling` | `bool` | Whether the session's MR has a generator. |
-| `sampling` | `SamplingClient` | Session-scoped sampling operations. Raises `RuntimeError` when the MR has no generator. |
+| `trainer` | `Trainer` | Session-scoped forward, backward, and optimizer operations.            |
+| `has_generator` | `bool` | Whether the session's MR has a generator. |
+| `generator` | `Generator` | Session-scoped sampling operations. Raises `RuntimeError` when the MR has no generator. |
 
 Client and event loop internals are private implementation details.
 
@@ -592,7 +592,7 @@ Client and event loop internals are private implementation details.
 Fetches the current session state from the API, as a `Session` (see [Session state](#session-state)). Use
 `retrieve_async()` in async workflows.
 
-#### `session.sampling.sample(...)`
+#### `session.generator.sample(...)`
 
 Generates text completions with logprobs from the current model.
 
@@ -641,7 +641,7 @@ ModelInput(chunks=[prompt_chunk])
 | ----------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
 | `sequences`       | `list[SampledSequence]`   | One entry per requested completion (see below).                                              |
 | `policy_segments` | `list[PolicyVersionSegment]` | Policy versions that produced these completions. Usually one segment `(version, start_token=0)`; longer generations may span several when the policy was updated mid-generation. |
-| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens, one per prompt token (entry 0 is always `0`); present only when `prompt_logprobs=True` was requested (see `session.sampling.compute_logprobs`). |
+| `prompt_logprobs` | `list[float] \| None`     | Teacher-forced logprobs for the prompt tokens, one per prompt token (entry 0 is always `0`); present only when `prompt_logprobs=True` was requested (see `session.generator.compute_logprobs`). |
 
 Each `SampledSequence` has:
 
@@ -651,10 +651,10 @@ Each `SampledSequence` has:
 | `logprobs`    | `list[float] \| None`   | Log probability for each generated token.                            |
 | `stop_reason` | `StopReason`            | `"STOP_REASON_LENGTH"` or `"STOP_REASON_STOP"`.                      |
 
-#### `session.sampling.compute_logprobs(...)`
+#### `session.generator.compute_logprobs(...)`
 
 Teacher-force scores an existing token sequence on the generator, returning the log-probability
-of each prompt token under the current policy. Unlike `session.sampling.sample`, which reports logprobs
+of each prompt token under the current policy. Unlike `session.generator.sample`, which reports logprobs
 only for the tokens the generator *itself drew*, this scores arbitrary/frozen tokens on the
 generator — the same measurement path the sampler uses at rollout time. Useful for
 sampler↔trainer KL and cross-service logprob comparisons on a fixed token set.
@@ -673,11 +673,11 @@ def compute_logprobs(
 per input token. Entry 0 is always `0`, since the first token has no conditioning context.
 Like `sample`, it requires a session with a generator replica.
 
-Use `session.sampling.compute_logprobs_batch(prompts: Iterable[ModelInput]) -> list[list[float]]` to score
+Use `session.generator.compute_logprobs_batch(prompts: Iterable[ModelInput]) -> list[list[float]]` to score
 several sequences in one call (mirroring `sample` / `sample_batch`); it returns one list of
 per-token logprobs per input prompt.
 
-#### `session.training.forward_backward(...)`
+#### `session.trainer.forward_backward(...)`
 
 Runs a forward and backward pass to compute gradients.
 
@@ -701,7 +701,7 @@ def forward_backward(
 | `loss`    | `float`            | Scalar loss value for the batch.                                                     |
 | `metrics` | `dict[str, float]` | Loss-specific metrics (e.g. `loss/clip/high_fraction`, `loss/kl_ref/mean` for GRPO). |
 
-#### `session.training.optim_step(...)`
+#### `session.trainer.optim_step(...)`
 
 Applies accumulated gradients and updates model parameters. Does not make the
 updated parameters available for sampling — call `weights_sync` afterwards when
@@ -712,7 +712,7 @@ raises `TypeError`). The old default was `WEIGHT_SYNC_TYPE_UNSPECIFIED` (also
 removed from the enum); bare `optim_step()` calls previously still sent that
 value on the wire. `optim_step` now only applies gradients — it does not publish
 weights for sampling. Every loop that samples after an optim step must add
-`session.training.weights_sync(weight_sync_type=...)` with an explicit mode
+`session.trainer.weights_sync(weight_sync_type=...)` with an explicit mode
 (`SYNCHRONOUS`, `BACKGROUND_PUBLISH`, or `PIPELINE`), even if it never named
 `weight_sync_type` before. Without that call, subsequent samples keep using a
 stale policy with no client-side error.
@@ -759,7 +759,7 @@ def optim_step(
 
 **Returns:** `OptimStepResult`. The step counter is at `.step`.
 
-#### `session.training.weights_sync(...)`
+#### `session.trainer.weights_sync(...)`
 
 Makes the session's current trained parameters available for sampling. Call after
 `optim_step` when you want subsequent samples to use the updated policy.
@@ -860,7 +860,7 @@ with ModelResourcesClient.create(
             ),
         )
         prompt = ModelInput(chunks=[prompt_chunk])
-        session.sampling.sample(prompt)
+        session.generator.sample(prompt)
 ```
 
 ---
@@ -1021,7 +1021,7 @@ Each tensor TypedDict has `data` (list of floats) and `dtype` (`"D_TYPE_FLOAT32"
 
 ### Sampling params
 
-Sampling parameters are passed as `SamplingParams` to `session.sampling.sample(...)`:
+Sampling parameters are passed as `SamplingParams` to `session.generator.sample(...)`:
 
 ```python
 SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)

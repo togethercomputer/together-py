@@ -58,7 +58,7 @@ class TestRLRequestBody:
         )
 
         trainer = SessionClient("sess", _client=async_client)
-        sampling_client = trainer.sampling
+        generator = trainer.generator
         model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
         sampling = SamplingParams(
             max_tokens=16,
@@ -69,7 +69,7 @@ class TestRLRequestBody:
             seed="123",
         )
 
-        result = await sampling_client.sample_batch_async(
+        result = await generator.sample_batch_async(
             prompts=[model_input],
             num_samples=2,
             sampling_params=sampling,
@@ -136,7 +136,7 @@ class TestRLRequestBody:
             ),
         )
 
-        await trainer.training.forward_backward_async(samples=samples, loss=loss)
+        await trainer.trainer.forward_backward_async(samples=samples, loss=loss)
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
@@ -173,7 +173,7 @@ class TestRLRequestBody:
             learning_rate=1e-4,
             weight_decay=0.1,
         )
-        await trainer.training.optim_step_async(adam_params=adam)
+        await trainer.trainer.optim_step_async(adam_params=adam)
 
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
@@ -208,7 +208,7 @@ class TestRLRequestBody:
             grad_clip_norm=1.0,
             adam=AdamParams(beta1=0.9, learning_rate=1e-4),
         )
-        await trainer.training.optim_step_async(
+        await trainer.trainer.optim_step_async(
             muon_params=muon,
         )
 
@@ -237,7 +237,7 @@ class TestRLRequestBody:
         )
 
         trainer = SessionClient("sess", _client=async_client)
-        result = await trainer.training.weights_sync_async(
+        result = await trainer.trainer.weights_sync_async(
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
         )
 
