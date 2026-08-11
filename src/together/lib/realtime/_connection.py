@@ -60,12 +60,17 @@ def build_realtime_url(
     model: str,
     input_audio_format: str = DEFAULT_AUDIO_FORMAT,
     turn_detection: Optional[TurnDetectionParam] = None,
+    language: Optional[str] = None,
     extra_query: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """Derive the wss:// realtime URL from the client's HTTP base_url.
 
     The model MUST be in the query string before any audio is appended —
     without it the server queues appends and never starts the session.
+
+    `language` is passed at the beginning of the session as a query param.
+    It is passed through verbatim (including "auto"); an explicit
+    `extra_query["language"]` takes precedence.
     """
     scheme = {"https": "wss", "http": "ws"}.get(base_url.scheme, base_url.scheme)
     path = base_url.path.rstrip("/") + "/realtime"
@@ -76,6 +81,8 @@ def build_realtime_url(
         if detection_type is not None:
             params["turn_detection"] = detection_type
         params.update(detection)
+    if language is not None:
+        params["language"] = language
     if extra_query:
         params.update(dict(extra_query))
     url = base_url.copy_with(scheme=scheme, path=path, params=params)
@@ -95,16 +102,17 @@ def build_realtime_headers(
 
 def _session_config(
     *,
-    language: Optional[str],
     prompt: Optional[str],
     rolling_prompt: Optional[bool],
     energy_gate_rms: Optional[float],
     session_params: Optional[Mapping[str, Any]],
 ) -> Dict[str, Any]:
-    """Session-level params delivered via `transcription_session.updated`."""
+    """Session-level params delivered via `transcription_session.updated`.
+
+    `language` is not here: it is set at the beginning of the session via
+    the connection URL query param — see `build_realtime_url`.
+    """
     config: Dict[str, Any] = {}
-    if language is not None:
-        config["language"] = language
     if prompt is not None:
         config["prompt"] = prompt
     if rolling_prompt is not None:
@@ -255,8 +263,10 @@ class RealtimeConnectionManager:
         self._model = model
         self._input_audio_format = input_audio_format
         self._turn_detection = turn_detection
+        # language is set at the beginning of the session via the
+        # connection URL query param (see build_realtime_url)
+        self._language = language
         self._session_config = _session_config(
-            language=language,
             prompt=prompt,
             rolling_prompt=rolling_prompt,
             energy_gate_rms=energy_gate_rms,
@@ -276,6 +286,7 @@ class RealtimeConnectionManager:
             model=self._model,
             input_audio_format=self._input_audio_format,
             turn_detection=self._turn_detection,
+            language=self._language,
             extra_query=self._extra_query,
         )
         headers = build_realtime_headers(self._client.auth_headers, extra_headers=self._extra_headers)
@@ -317,8 +328,10 @@ class AsyncRealtimeConnectionManager:
         self._model = model
         self._input_audio_format = input_audio_format
         self._turn_detection = turn_detection
+        # language is set at the beginning of the session via the
+        # connection URL query param (see build_realtime_url)
+        self._language = language
         self._session_config = _session_config(
-            language=language,
             prompt=prompt,
             rolling_prompt=rolling_prompt,
             energy_gate_rms=energy_gate_rms,
@@ -338,6 +351,7 @@ class AsyncRealtimeConnectionManager:
             model=self._model,
             input_audio_format=self._input_audio_format,
             turn_detection=self._turn_detection,
+            language=self._language,
             extra_query=self._extra_query,
         )
         headers = build_realtime_headers(self._client.auth_headers, extra_headers=self._extra_headers)

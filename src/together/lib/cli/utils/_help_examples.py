@@ -86,6 +86,9 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download a fine-tuned model's weights:
   [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
 
+[dim]-[/dim] Download the generated tokenized dataset archive:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized[/primary]
+
 [dim]-[/dim] List checkpoints for a fine-tuning job:
   [primary]tg ft list-checkpoints <ft-job-id>[/primary]
 
@@ -147,6 +150,14 @@ FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Download a fine-tuned model's weights from a specific checkpoint:
   [primary]tg ft download <ft-job-id> --checkpoint-step 1 --output-dir ./my-model[/primary]
+"""
+
+FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Download the tokenized dataset archive generated for a fine-tuning job:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized[/primary]
+
+[dim]-[/dim] Save download metadata as JSON:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized --json[/primary]
 """
 
 ## Endpoints API commands
@@ -334,9 +345,6 @@ BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
   [primary]tg beta endpoints update <variant-deployment-id> --ab-percent 20[/primary]
-
-[dim]-[/dim] Rename a deployment:
-  [primary]tg beta endpoints update <deployment-id> --name my-deployment-v2[/primary]
 """
 
 BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -365,6 +373,8 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Shadow a private model with an explicit config:
   [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
+
+[dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
 
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -523,7 +533,7 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta clusters create --non-interactive \\
     --name my-cluster --cluster-type KUBERNETES --gpu-type H100_SXM \\
     --region us-central-8 --num-gpus 8 --billing-type ON_DEMAND \\
-    --nvidia-driver-version 565 --cuda-version 12.6 --volume <volume-id>[/primary]
+    --nvidia-version-id <nvidia-version-id> --volume <volume-id>[/primary]
 
 [dim]-[/dim] Update or delete a cluster:
   [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
@@ -549,8 +559,7 @@ BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --region us-central-8 \\
     --num-gpus 8 \\
     --billing-type ON_DEMAND \\
-    --nvidia-driver-version 565 \\
-    --cuda-version 12.6 \\
+    --nvidia-version-id <nvidia-version-id> \\
     --volume <volume-id>[/primary]
 """
 

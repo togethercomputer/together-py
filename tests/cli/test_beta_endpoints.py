@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 from typing import Any, cast
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
@@ -75,11 +76,39 @@ def _config_body(**overrides: Any) -> dict[str, Any]:
         "projectId": "proj",
         "referenceModel": "projects/proj/models/ml_1",
         "referenceModelId": "ml_1",
-        "selectors": [{"key": "gpu", "value": "H100"}],
+        "selectors": [
+            {"key": "accelerator_count", "value": "1"},
+            {"key": "accelerator_type", "value": "nvidia-h100-80gb"},
+        ],
         "certifications": [],
     }
     body.update(overrides)
     return body
+
+
+def _hardware_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": "it_h100",
+        "name": "1xnvidia-h100-80gb",
+        "description": "1x NVIDIA H100 80GB",
+        "gpuCount": 1,
+        "gpuMemoryGib": 80,
+        "gpuType": "NVIDIA-H100-80GB-HBM3",
+        "priceCentsPerHour": 2400,
+        "regions": [],
+    }
+    body.update(overrides)
+    return body
+
+
+def _mock_hardware_catalog(respx_mock: MockRouter) -> None:
+    # Tests override TOGETHER_BASE_URL, so the SDK hits the relative public path.
+    respx_mock.get("/public/inference-instance-types").mock(
+        return_value=httpx.Response(
+            200,
+            json={"object": "list", "data": [_hardware_body()], "next_cursor": None},
+        )
+    )
 
 
 def _whoami_body(**overrides: Any) -> dict[str, Any]:
@@ -91,6 +120,21 @@ def _whoami_body(**overrides: Any) -> dict[str, Any]:
         "project_name": "My Project",
         "project_slug": "my-project",
         "user_id": "user-1",
+    }
+    body.update(overrides)
+    return body
+
+
+def _event_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": "evt_1",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "endpointId": "ep_1",
+        "level": "LEVEL_INFO",
+        "source": "endpoint-controller",
+        "sourceKind": "SOURCE_KIND_ENDPOINT",
+        "type": "endpoint.updated",
+        "message": "Endpoint updated",
     }
     body.update(overrides)
     return body
@@ -202,6 +246,52 @@ class TestBetaEndpointsDeploy:
         assert deployment_body["autoscaling"] == {"minReplicas": 1, "maxReplicas": 1}
         update_body = json.loads(cast(Call, update_endpoint_route.calls[0]).request.content.decode())
         assert update_body["trafficSplit"] == [{"deploymentId": "dep_1", "weight": 1.0}]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_preview_shows_gpu_and_estimated_price_before_project_confirm(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        # Interactive project confirm only runs when --project / env are omitted.
+        cli_runner.env.pop("TOGETHER_PROJECT_ID", None)
+        _mock_model_and_config(respx_mock)
+        _mock_hardware_catalog(respx_mock)
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--endpoint",
+                "fresh-endpoint",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--min-replicas",
+                "1",
+                "--max-replicas",
+                "2",
+                "--non-interactive",
+            ]
+        )
+
+        # Non-interactive mode without an explicit project aborts at confirm —
+        # after the deploy preview has already shown GPU + estimated price.
+        # Collapse Rich line-wrap whitespace so phrase checks stay stable.
+        output = " ".join(result.output.split())
+        assert result.exit_code != 0
+        assert "Deploy" in output
+        assert "preview" in output
+        assert "This deployment will utilize 1x H100" in output
+        assert "estimated to cost approximately" in output
+        assert "$24.00/hr - $48.00/hr" in output
+        assert "Project argument is required" in output
+        assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_onto_existing_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -381,3 +471,144 @@ class TestBetaEndpointsList:
         assert result.exit_code == 0, result.output
         assert route.call_count == 1
         assert json.loads(result.output)["data"][0]["id"] == "ep_1"
+
+
+class TestBetaEndpointsListEvents:
+    @pytest.mark.respx(base_url=base_url)
+    def test_events_sends_sdk_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        route = respx_mock.get("/projects/proj/endpoints/ep_1/events").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_event_body()], "next_cursor": "next"},
+            )
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "events",
+                "ep_1",
+                "--project",
+                "proj",
+                "--limit",
+                "10000",
+                "--after",
+                "tok",
+                "--deployment-ids",
+                "dep_1,dep_2",
+                "--min-level",
+                "warn",
+                "--since",
+                "2026-01-01T00:00:00+00:00",
+                "--subject-id",
+                "rollout_1",
+                "--types",
+                "deployment.scaled,condition.set",
+                "--until",
+                "2026-01-02T00:00:00+00:00",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        query = parse_qs(urlparse(str(cast(Call, route.calls[0]).request.url)).query)
+        assert query["limit"] == ["10000"]
+        assert query["after"] == ["tok"]
+        assert query["deploymentIds"] == ["dep_1,dep_2"]
+        assert query["minLevel"] == ["LEVEL_WARN"]
+        assert query["since"] == ["2026-01-01T00:00:00+00:00"]
+        assert "sourceKinds" not in query
+        assert query["subjectId"] == ["rollout_1"]
+        assert query["types"] == ["deployment.scaled,condition.set"]
+        assert query["until"] == ["2026-01-02T00:00:00+00:00"]
+        payload = json.loads(result.output)
+        assert payload["data"][0]["id"] == "evt_1"
+        assert payload["next_cursor"] == "next"
+
+    def test_events_help_mentions_current_limit(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "events", "--help"])
+
+        # Rich help wraps table cells across panel borders and can interleave the
+        # type/description columns; strip borders and assert contiguous fragments
+        # that survive both agent (plain) and human (rich) formatters.
+        output = " ".join(result.output.replace("│", " ").split())
+        assert result.exit_code == 0
+        assert "Max 10000, defaults to 50." in output
+        assert "Minimum severity" in output
+        assert "Omit to disable severity filtering." in output
+        assert "--source-kinds" not in output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_events_table_colors_message_and_shows_deployment_name(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1/events").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _event_body(
+                            id="evt_warn",
+                            level="LEVEL_WARN",
+                            type="deployment.status_updated",
+                            sourceKind="SOURCE_KIND_DEPLOYMENT",
+                            deploymentId="dep_1",
+                            message="replica unhealthy",
+                            subjectId="dep_1",
+                        ),
+                        _event_body(
+                            id="evt_err",
+                            level="LEVEL_ERROR",
+                            type="pod.log",
+                            sourceKind="SOURCE_KIND_DEPLOYMENT",
+                            deploymentId="dep_1",
+                            message="oom killed",
+                        ),
+                        _event_body(
+                            id="evt_ep",
+                            level="LEVEL_INFO",
+                            type="endpoint.updated",
+                            sourceKind="SOURCE_KIND_ENDPOINT",
+                            message="Endpoint updated",
+                        ),
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_endpoint_body(
+                    deployments=[
+                        {
+                            "id": "dep_1",
+                            "name": "my-project/my-endpoint/canary",
+                            "model": "projects/proj/models/ml_1/revisions/latest",
+                            "modelId": "ml_1",
+                            "hardware": "1x-h100",
+                            "state": "DEPLOYMENT_STATE_READY",
+                            "readyReplicas": 1,
+                            "desiredReplicas": 1,
+                            "estimatedEffectiveTrafficShare": 1.0,
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+                        }
+                    ],
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "events", "ep_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "canary" in result.output
+        assert "my-end" in result.output  # endpoint short name; may truncate in narrow tables
+        assert "replica unhealthy" in result.output
+        assert "oom killed" in result.output
+        assert "SOURCE_KIND_DEPLOYMENT" not in result.output
+        assert "LEVEL_" not in result.output
+        assert "Subject" not in result.output

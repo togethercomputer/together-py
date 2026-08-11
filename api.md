@@ -427,6 +427,7 @@ Types:
 from together.types import (
     FineTunePreviewResponse,
     FineTunePreviewRow,
+    FineTuneTokenizedDatasetRetrieveResponse,
     FinetuneEvent,
     FinetuneEventType,
     FinetuneModelLimits,
@@ -455,6 +456,7 @@ Methods:
 - <code title="get /fine-tunes/{id}/metrics">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">list_metrics</a>(id, \*\*<a href="src/together/types/fine_tuning_list_metrics_params.py">params</a>) -> <a href="./src/together/types/fine_tuning_list_metrics_response.py">FineTuningListMetricsResponse</a></code>
 - <code title="get /fine-tunes/models/limits">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">model_limits</a>(\*\*<a href="src/together/types/fine_tuning_model_limits_params.py">params</a>) -> <a href="./src/together/types/finetune_model_limits.py">FinetuneModelLimits</a></code>
 - <code title="post /fine-tunes/preview">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">preview</a>(\*\*<a href="src/together/types/fine_tuning_preview_params.py">params</a>) -> <a href="./src/together/types/fine_tune_preview_response.py">FineTunePreviewResponse</a></code>
+- <code title="get /fine-tunes/{id}/download-tokenized-dataset">client.fine_tuning.<a href="./src/together/resources/fine_tuning.py">retrieve_tokenized_dataset</a>(id) -> <a href="./src/together/types/fine_tune_tokenized_dataset_retrieve_response.py">FineTuneTokenizedDatasetRetrieveResponse</a></code>
 
 # CodeInterpreter
 

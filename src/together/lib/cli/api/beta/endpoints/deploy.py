@@ -39,6 +39,10 @@ from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_tra
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
+from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import (
+    HardwarePricing,
+    resolve_hardware_pricing,
+)
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     ScalingMetricName,
     ScalingPercentile,
@@ -229,6 +233,17 @@ async def deploy(
     model_path = construct_model_path(resolved_model, resolved_revision)
 
     if not config.json:
+        min_replicas_value = int(autoscaling.get("min_replicas") or 1)
+        max_replicas_value = int(autoscaling.get("max_replicas") or min_replicas_value)
+        hardware_pricing = await show_loading_status(
+            "Looking up GPU pricing...",
+            resolve_hardware_pricing(
+                config,
+                config_value,
+                min_replicas=min_replicas_value,
+                max_replicas=max_replicas_value,
+            ),
+        )
         _print_deployment_preview(
             endpoint=endpoint_name_or_id,
             deployment_name=deployment_name,
@@ -239,6 +254,7 @@ async def deploy(
             placement=placement_value,
             enable_lora=enable_lora,
             traffic_weight=traffic_weight,
+            hardware_pricing=hardware_pricing,
         )
     await assert_explicit_project_id(config)
 
@@ -302,6 +318,7 @@ def _print_deployment_preview(
     placement: Placement | None,
     enable_lora: bool | None,
     traffic_weight: float | None,
+    hardware_pricing: HardwarePricing | None = None,
 ) -> None:
     table = Table(expand=True, show_header=False, show_edge=False, show_lines=False, box=None, pad_edge=False)
     table.add_column("Arg", justify="left", no_wrap=True, ratio=1)
@@ -362,6 +379,12 @@ def _print_deployment_preview(
             title_align="left",
         )
     )
+
+    if hardware_pricing is not None:
+        console.print(
+            f"[dim][/dim][yellow]This deployment will utilize {hardware_pricing.gpu_label}, "
+            f"which is estimated to cost approximately {hardware_pricing.estimated_price_label}.[/yellow]\n"
+        )
 
 
 # Helper method to enable the users to use this command to either create a new endpoint+deployment

@@ -15,6 +15,16 @@ from together.types.beta.cluster_list_regions_response import (
     ClusterListRegionsResponse,
 )
 
+KNOWN_GPU_TYPES = (
+    "H100_SXM",
+    "H200_SXM",
+    "RTX_6000_PCI",
+    "L40_PCIE",
+    "B200_SXM",
+    "H100_SXM_INF",
+    "B300_SXM",
+)
+
 NameParameter = Annotated[Optional[str], Parameter(help="Name of the cluster")]
 NumGpusParameter = Annotated[Optional[int], Parameter(help="Number of GPUs to allocate in the cluster")]
 RegionParameter = Annotated[Optional[str], Parameter(help="Region to create the cluster in")]
@@ -33,7 +43,10 @@ DurationDaysParameter = Annotated[
 ]
 GpuTypeParameter = Annotated[
     Optional[str],
-    Parameter(help="GPU type to use for the cluster (run `list-regions` to see available types per region)"),
+    Parameter(
+        help="GPU type to use for the cluster (run `list-regions` to see available types per region). "
+        f"Known values include: {', '.join(KNOWN_GPU_TYPES)}"
+    ),
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
@@ -61,13 +74,7 @@ _DEFAULT_NVIDIA_VERSION_CHOICE = 1
 
 
 def _format_nvidia_version(version: RegionDriverVersion) -> str:
-    details = f"driver {version.nvidia_driver_version}, CUDA {version.cuda_version}"
-    if version.os:
-        details += f", OS {version.os}"
-    if version.id:
-        details += f" ({version.id})"
-
-    return details
+    return f"driver {version.nvidia_driver_version}, CUDA {version.cuda_version}, OS {version.os} ({version.id})"
 
 
 def _region_nvidia_versions(
@@ -190,13 +197,9 @@ async def _set_nvidia_version_params(
     else:
         selected = _prompt_nvidia_version(_region_nvidia_versions(catalog, region))
 
-    if selected.id:
-        params["nvidia_version_id"] = selected.id
-        params.pop("nvidia_driver_version", None)
-        params.pop("cuda_version", None)
-    else:
-        params["nvidia_driver_version"] = selected.nvidia_driver_version
-        params["cuda_version"] = selected.cuda_version
+    params["nvidia_version_id"] = selected.id
+    params.pop("nvidia_driver_version", None)
+    params.pop("cuda_version", None)
 
 
 async def create(
@@ -295,9 +298,7 @@ async def create(
                 input(f"Clusters: Cluster name: [{getpass.getuser()}] ").strip() or getpass.getuser()
             )
         if not gpu_type:
-            params["gpu_type"] = input(
-                "Clusters: Cluster GPU type (H100_SXM, H200_SXM, RTX_6000_PCI, L40_PCIE, B200_SXM, H100_SXM_INF): "
-            ).strip()
+            params["gpu_type"] = input(f"Clusters: Cluster GPU type ({', '.join(KNOWN_GPU_TYPES)}): ").strip()
         if not region:
             catalog = await config.client.beta.clusters.list_regions()
             params["region"] = (

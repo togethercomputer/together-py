@@ -13,6 +13,7 @@ from together.types.beta.endpoints.deployment_create_params import (
     Placement,
     PlacementInline,
 )
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
 class PlacementModel:
@@ -60,18 +61,20 @@ class ModelPromptParameter(PromptParameter):
 
     @override
     async def preprompt(self, config: CLIConfig) -> None:
-        models = await config.client.beta.models.list()
-        public_models = await config.client.beta.models.list_supported()
-        show_more = models.next_cursor is not None
-        self.choices = [("/".join(model.name.split("/")[1:]), model.id) for model in models.data]
-        for model in public_models.data:
-            if model.deployment_profiles:
-                profile_model = model.deployment_profiles[0].model
-                if profile_model:
-                    self.choices.append((model.name, profile_model))
+        self.choices = []
 
-        if show_more:
-            self.choices.append(("Show more", "show_more"))
+        list_supported_request = config.client.beta.models.list_supported()
+
+        async for project_model in config.client.beta.models.list():
+            self.choices.append(("/".join(project_model.name.split("/")[1:]), project_model.id))
+
+        async for supported_model in list_supported_request:
+            for profile in supported_model.deployment_profiles or []:
+                match = MODEL_PATH_RE.match(profile.model)
+                if match:
+                    model_id = match.group(2)
+                    profile_name = getattr(profile, "api_model_name", None) or supported_model.name
+                    self.choices.append((profile_name, model_id))
 
 
 ModelParameter = Annotated[

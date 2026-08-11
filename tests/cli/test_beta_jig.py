@@ -73,6 +73,17 @@ def _write_jig_project(path: Path) -> None:
     path.joinpath("pyproject.toml").write_text(_PYPROJECT, encoding="utf-8")
 
 
+def test_jig_failure_exit_preserves_diagnostic(capsys: pytest.CaptureFixture[str]) -> None:
+    message = "Volume example not found"
+
+    with pytest.raises(SystemExit) as exc_info:
+        _jig_mod._jig_fail(message)
+
+    assert exc_info.value.code == 1
+    assert str(exc_info.value) == message
+    assert f"Jig: Failed {message}" in capsys.readouterr().out
+
+
 def _secret_api_body(name: str) -> dict[str, object]:
     return {
         "id": "sec-1",

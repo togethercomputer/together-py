@@ -22,12 +22,9 @@ class PromptBaseModel(PromptParameter):
 
     @override
     async def preprompt(self, config: CLIConfig) -> None:
-        # TODO: support pagination
-        supported_models = await config.client.beta.models.list_supported()
-
         self.choices = []
 
-        for model in supported_models.data:
+        async for model in config.client.beta.models.list_supported():
             for profile in model.deployment_profiles:
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:

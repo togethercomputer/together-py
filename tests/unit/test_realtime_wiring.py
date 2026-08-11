@@ -60,6 +60,39 @@ def test_url_and_header_derivation() -> None:
     assert headers["OpenAI-Beta"] == "realtime=v1"
 
 
+def test_url_language_query_param() -> None:
+    """language is a connection-time query param: the server ignores it in
+    transcription_session.updated and only honors it on the URL (#505)."""
+    from urllib.parse import parse_qs, urlsplit
+
+    import httpx
+
+    from together.lib.realtime._connection import build_realtime_url
+
+    base = httpx.URL("https://api.together.ai/v1/")
+
+    url = build_realtime_url(base, model="openai/whisper-large-v3", language="es")
+    assert parse_qs(urlsplit(url).query)["language"] == ["es"]
+
+    # "auto" passes through verbatim, not translated or dropped
+    url = build_realtime_url(base, model="openai/whisper-large-v3", language="auto")
+    assert parse_qs(urlsplit(url).query)["language"] == ["auto"]
+
+    # omitted -> no language param at all
+    url = build_realtime_url(base, model="openai/whisper-large-v3")
+    assert "language" not in parse_qs(urlsplit(url).query)
+
+    # an explicit extra_query overrides the language argument — one value, no
+    # duplicate query param
+    url = build_realtime_url(
+        base,
+        model="openai/whisper-large-v3",
+        language="en",
+        extra_query={"language": "fr"},
+    )
+    assert parse_qs(urlsplit(url).query)["language"] == ["fr"]
+
+
 def test_sync_async_resource_signatures_stay_in_sync() -> None:
     """The sync/async resource surfaces are intentionally duplicated for IDE
     ergonomics; this guard catches parameter drift between them."""

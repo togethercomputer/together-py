@@ -25,6 +25,7 @@ from datetime import datetime as dt
 from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
+from typing_extensions import override
 
 import httpx
 from cyclopts import Parameter
@@ -67,6 +68,18 @@ class JigError(Exception):
     """Actionable runtime error"""
 
 
+class _JigCliExit(SystemExit):
+    """Exit with a diagnostic that command-failure telemetry can retain."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(1)
+        self.message = message
+
+    @override
+    def __str__(self) -> str:
+        return self.message
+
+
 # == Configuration ==
 
 
@@ -95,7 +108,7 @@ class VolumeMount:
 
     name: str
     mount_path: str
-    version: int = 0
+    version: Optional[int] = None  # None means not set in config; deploy still mounts version 0
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> VolumeMount:
@@ -622,6 +635,22 @@ class Jig:
             del self.state.secrets[name]
             self.state.save()
 
+    def validate_volumes(self) -> None:
+        """Warn when a mounted volume has multiple versions but no version is set in the config."""
+        for vm in self.config.deploy.volume_mounts:
+            if vm.version is not None:
+                continue
+            try:
+                volume = self.api.volumes.retrieve(vm.name)
+            except APIError:
+                continue  # missing/inaccessible volumes are surfaced by the deployment call itself
+            versions = {int(v) for v in volume.version_history or {}} | {volume.current_version or 0}
+            if len(versions) > 1:
+                console.print(
+                    f"\N{WARNING SIGN} No version set for volume '{vm.name}', using version 0. "
+                    f"The following versions are available: {', '.join(str(v) for v in sorted(versions))}"
+                )
+
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
@@ -787,6 +816,8 @@ class Jig:
             console.print("\N{CHECK MARK} Build complete (--build-only)")
             return
 
+        self.validate_volumes()
+
         deploy_data: dict[str, Any] = {
             "name": self.name,
             "description": self.config.deploy.description,
@@ -801,7 +832,7 @@ class Jig:
             "storage": self.config.deploy.storage,
             "autoscaling": self.config.deploy.autoscaling,
             "termination_grace_period_seconds": self.config.deploy.termination_grace_period_seconds,
-            "volumes": [asdict(vm) for vm in self.config.deploy.volume_mounts],
+            "volumes": [{**asdict(vm), "version": vm.version or 0} for vm in self.config.deploy.volume_mounts],
         }
 
         if self.config.deploy.health_check_path:
@@ -1090,9 +1121,9 @@ def _print_cli_result(result: Any) -> None:
         console.print(str(result))
 
 
-def _jig_fail(msg: str) -> None:
+def _jig_fail(msg: str) -> typing.NoReturn:
     console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
-    sys.exit(1)
+    raise _JigCliExit(msg)
 
 
 def _asyncio_run_upload(coro: typing.Coroutine[typing.Any, typing.Any, None]) -> None:
