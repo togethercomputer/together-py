@@ -240,6 +240,14 @@ def _profile_model_id(profile: SupportedModelDeploymentProfile) -> str:
     return profile.model or ""
 
 
+def _profile_cli_model(profile: SupportedModelDeploymentProfile) -> str:
+    return getattr(profile, "api_model_name", None) or _profile_model_id(profile)
+
+
+def _profile_matches_model_name(profile: SupportedModelDeploymentProfile, model_input: str) -> bool:
+    return getattr(profile, "api_model_name", None) == model_input
+
+
 def _profile_config_id(profile: SupportedModelDeploymentProfile) -> str:
     return profile.certified_config_revision_id or profile.profile_id or ""
 
@@ -254,24 +262,24 @@ def _print_deployment_profiles(profiles: list[SupportedModelDeploymentProfile], 
     from together.lib.cli.components.list import ListTable
 
     table = ListTable(f"Available configs for {model_input}")
-    table.add_primary_column("Quant")
+    table.add_primary_column("Model", ratio=3)
+    table.add_column("Config", ratio=2)
+    table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
-    table.add_column("Model ID", ratio=2)
-    table.add_column("Config", ratio=2)
 
     for profile in profiles:
         table.add_row(
+            _profile_cli_model(profile),
+            _profile_config_id(profile),
             profile.quantization or "",
             _profile_gpu(profile),
             profile.parallelism or "",
-            _profile_model_id(profile),
-            _profile_config_id(profile),
         )
     console.print(table)
 
     example = profiles[0]
-    example_model = _profile_model_id(example)
+    example_model = _profile_cli_model(example)
     example_config = _profile_config_id(example)
     console.print("\n[blue dim]Pick one and rerun with both flags, for example:[/blue dim]")
     console.print(
@@ -332,7 +340,12 @@ Please specify a more specific model ID. To find a more specific model variant t
     if not profiles:
         raise ValueError(f"Model {model_input} has no deployment profiles.")
 
-    profile = _select_deployment_profile(profiles, model_input=model_input, config_id=config_id)
+    matching_profile_names = [profile for profile in profiles if _profile_matches_model_name(profile, model_input)]
+    profile = _select_deployment_profile(
+        matching_profile_names or profiles,
+        model_input=model_input,
+        config_id=config_id,
+    )
     match = MODEL_PATH_RE.match(profile.model or "")
     if not match:
         raise ValueError(f"Invalid model path: {profile.model}")
@@ -343,7 +356,11 @@ Please specify a more specific model ID. To find a more specific model variant t
         config_id,
         model=model_input,
     )
-    model = Model.construct(id=model_id, projectId=project_id, name=public_model.name or model_id)
+    model = Model.construct(
+        id=model_id,
+        projectId=project_id,
+        name=_profile_cli_model(profile) or public_model.name or model_id,
+    )
     return ResolvedModelAndConfig(model=model, config=selected_config, revision_id=revision_id)
 
 

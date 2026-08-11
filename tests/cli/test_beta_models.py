@@ -113,6 +113,7 @@ def _supported_model_body(**overrides: Any) -> dict[str, Any]:
                 "certifiedModelRevisionId": "rev-1",
                 "config": "projects/together/configs/cr_1",
                 "model": "projects/together/models/ml_base",
+                "modelName": "meta-llama/Llama-3-8B-FP16",
                 "gpuCount": 1,
                 "gpuType": "H100",
                 "parallelism": "TP1",
@@ -259,6 +260,23 @@ class TestBetaModelsPublic:
         assert "modality=MODALITY_TEXT" in url
         assert "product=PRODUCT_DEDICATED" in url
         assert json.loads(result.output)["next_cursor"] == "c1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_public_table_shows_profile_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "public", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "meta-llama/Llama-3-8B-FP16" in result.output
+        assert "1x H100" in result.output
+        assert "TP1" in result.output
+        assert "cr_1" not in result.output
 
 
 class TestBetaModelsOrg:
