@@ -23,8 +23,8 @@ from .....types.beta.rl.training_checkpoint_result import TrainingCheckpointResu
 from .....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 
 if TYPE_CHECKING:
-    from .sampling import SamplingClient
-    from .training import TrainingClient
+    from .trainer import Trainer
+    from .generator import Generator
 
 logger = logging.getLogger("together")
 T = TypeVar("T")
@@ -68,17 +68,17 @@ def _new_event_loop() -> asyncio.AbstractEventLoop:
 class SessionClient:
     _session_id: str
     _client: AsyncTogether
-    _has_sampling: bool = True
+    _has_generator: bool = True
 
     _event_loop: asyncio.AbstractEventLoop | None = field(
         init=False,
         default=None,
     )
-    _training: TrainingClient | None = field(
+    _trainer: Trainer | None = field(
         init=False,
         default=None,
     )
-    _sampling: SamplingClient | None = field(
+    _generator: Generator | None = field(
         init=False,
         default=None,
     )
@@ -91,29 +91,29 @@ class SessionClient:
         return self._session_id
 
     @property
-    def training(self) -> TrainingClient:
-        if self._training is None:
-            from .training import TrainingClient
+    def trainer(self) -> Trainer:
+        if self._trainer is None:
+            from .trainer import Trainer
 
-            self._training = TrainingClient(self)
+            self._trainer = Trainer(self)
 
-        return self._training
-
-    @property
-    def has_sampling(self) -> bool:
-        return self._has_sampling
+        return self._trainer
 
     @property
-    def sampling(self) -> SamplingClient:
-        if not self._has_sampling:
-            raise RuntimeError(f"Session {self._session_id} does not have sampling capability")
+    def has_generator(self) -> bool:
+        return self._has_generator
 
-        if self._sampling is None:
-            from .sampling import SamplingClient
+    @property
+    def generator(self) -> Generator:
+        if not self._has_generator:
+            raise RuntimeError(f"Session {self._session_id} does not have generator capability")
 
-            self._sampling = SamplingClient(self)
+        if self._generator is None:
+            from .generator import Generator
 
-        return self._sampling
+            self._generator = Generator(self)
+
+        return self._generator
 
     def __enter__(self) -> SessionClient:
         return self
@@ -221,7 +221,7 @@ class SessionClient:
         return cls(
             session_id,
             client,
-            _has_sampling=model_resources.compute_config.num_generator_replicas > 0,
+            _has_generator=model_resources.compute_config.num_generator_replicas > 0,
         )
 
     def create_inference_checkpoint(
@@ -362,7 +362,7 @@ class SessionClient:
             output = cls(
                 session_id,
                 client,
-                _has_sampling=model_resources.compute_config.num_generator_replicas > 0,
+                _has_generator=model_resources.compute_config.num_generator_replicas > 0,
             )
             await output._wait_for_creation_async(timeout=timeout, interval=interval)
             return output

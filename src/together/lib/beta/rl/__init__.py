@@ -7,7 +7,7 @@
 # TypedDicts win; the response models keep their clean names in
 # `together.types.beta.rl`.
 
-from .clients import SessionClient, SamplingClient, TrainingClient, ModelResourcesClient
+from .clients import Trainer, Generator, SessionClient, ModelResourcesClient
 from .checkpoints import download_checkpoint, download_checkpoint_async
 from ....types.beta.rl.session import Session
 from ....types.beta.rl.adam_params import AdamParams
@@ -66,8 +66,8 @@ from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 __all__ = [
     "ModelResourcesClient",
     "SessionClient",
-    "TrainingClient",
-    "SamplingClient",
+    "Trainer",
+    "Generator",
     "download_checkpoint",
     "download_checkpoint_async",
     "ModelResources",

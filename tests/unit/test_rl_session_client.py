@@ -12,8 +12,10 @@ import pytest
 from together.lib.beta.rl import (
     Sample,
     Logprob,
+    Trainer,
     Weights,
     Gradient,
+    Generator,
     AdamParams,
     LoraConfig,
     LossConfig,
@@ -24,8 +26,6 @@ from together.lib.beta.rl import (
     ForwardResult,
     SessionClient,
     WandbMetadata,
-    SamplingClient,
-    TrainingClient,
     ModelInputChunk,
     OptimStepResult,
     SessionMetadata,
@@ -40,8 +40,8 @@ from together.lib.beta.rl import (
 )
 from together.lib.beta.rl.clients import (
     session as session_client_module,
-    sampling as sampling_client_module,
-    training as training_client_module,
+    trainer as trainer_module,
+    generator as generator_module,
 )
 from together.types.beta.rl.sample_operation import SampleOperation
 
@@ -162,10 +162,10 @@ def _sample_payload(sample: Sample) -> dict[str, Any]:
     return dict(sample)
 
 
-def _sampling(session: SessionClient) -> SamplingClient:
-    sampling = session.sampling
-    assert sampling is not None
-    return sampling
+def _generator(session: SessionClient) -> Generator:
+    generator = session.generator
+    assert generator is not None
+    return generator
 
 
 def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any) -> None:
@@ -178,24 +178,24 @@ def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any) -> None
 def test_session_exposes_capability_clients() -> None:
     session = _make_session()
 
-    assert isinstance(session.training, TrainingClient)
-    assert isinstance(session.sampling, SamplingClient)
-    assert session.training.session_id == session.session_id
-    sampling = session.sampling
-    assert sampling is not None
-    assert sampling.session_id == session.session_id
+    assert isinstance(session.trainer, Trainer)
+    assert isinstance(session.generator, Generator)
+    assert session.trainer.session_id == session.session_id
+    generator = session.generator
+    assert generator is not None
+    assert generator.session_id == session.session_id
 
 
 def test_lora_config_has_clean_public_name() -> None:
     assert LoraConfig(rank=8) == {"rank": 8}
 
 
-def test_trainer_only_session_rejects_sampling_access() -> None:
-    session = SessionClient("sess", _client=cast(Any, FakeClient()), _has_sampling=False)
+def test_trainer_only_session_rejects_generator_access() -> None:
+    session = SessionClient("sess", _client=cast(Any, FakeClient()), _has_generator=False)
 
-    assert session.has_sampling is False
-    with pytest.raises(RuntimeError, match="does not have sampling capability"):
-        _ = session.sampling
+    assert session.has_generator is False
+    with pytest.raises(RuntimeError, match="does not have generator capability"):
+        _ = session.generator
 
 
 def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -205,7 +205,7 @@ def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
     trainer = _make_session(client)
 
     model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
-    result = _sampling(trainer).sample(prompt=model_input, num_samples=3)
+    result = _generator(trainer).sample(prompt=model_input, num_samples=3)
 
     assert result is expected
     assert client.beta.rl.operations.last_call is not None
@@ -229,7 +229,7 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[3, 4]))]),
     ]
-    result = _sampling(trainer).sample_batch(prompts=model_inputs)
+    result = _generator(trainer).sample_batch(prompts=model_inputs)
 
     assert result == expected
     assert client.beta.rl.operations.last_call is not None
@@ -245,7 +245,7 @@ def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPat
     trainer = _make_session(client)
 
     model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))])
-    logprobs = _sampling(trainer).compute_logprobs(model_input)
+    logprobs = _generator(trainer).compute_logprobs(model_input)
 
     assert logprobs == [0.0, -1.5]
     assert client.beta.rl.operations.last_call is not None
@@ -272,7 +272,7 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))]),
         ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[3, 4]))]),
     ]
-    logprobs = _sampling(trainer).compute_logprobs_batch(model_inputs)
+    logprobs = _generator(trainer).compute_logprobs_batch(model_inputs)
 
     assert logprobs == [[0.0, -1.5], [0.0, -0.2]]
     assert client.beta.rl.operations.last_call is not None
@@ -289,7 +289,7 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
 def test_prompt_logprobs_from_results_raises_when_missing() -> None:
     result = SampleResult(policy_segments=[], sequences=[])
     with pytest.raises(RuntimeError, match="prompt logprobs"):
-        sampling_client_module._prompt_logprobs_from_results([result])
+        generator_module._prompt_logprobs_from_results([result])
 
 
 def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -301,7 +301,7 @@ def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
     trainer = _make_session(client)
 
     samples = [_small_sample()]
-    result = trainer.training.forward(samples=samples)
+    result = trainer.trainer.forward(samples=samples)
 
     assert result.logprobs[0].data == [-1.0, -2.0, -3.0]
     assert client.beta.rl.operations.last_call is not None
@@ -320,7 +320,7 @@ def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytes
 
     samples = [_small_sample()]
     gradients = [Gradient(data=[0.1, -0.2, 0.3], dtype="D_TYPE_FLOAT32")]
-    result = trainer.training.custom_forward_backward(samples=samples, gradients=gradients)
+    result = trainer.trainer.custom_forward_backward(samples=samples, gradients=gradients)
 
     assert result == {"metrics": {"grad_norm": 0.5}}
     assert client.beta.rl.operations.last_call is not None
@@ -352,7 +352,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
     ]
     loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
 
-    result = trainer.training.forward_backward(samples=samples, loss=loss)
+    result = trainer.trainer.forward_backward(samples=samples, loss=loss)
 
     assert result.loss == 1.0
     assert client.beta.rl.operations.last_call is not None
@@ -369,7 +369,7 @@ def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
     client = FakeClient()
     trainer = _make_session(client)
 
-    result = trainer.training.optim_step(
+    result = trainer.trainer.optim_step(
         adam_params=AdamParams(beta1=0.9, learning_rate=1e-4, grad_clip_norm=1.0),
     )
 
@@ -386,7 +386,7 @@ def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> Non
     client = FakeClient()
     trainer = _make_session(client)
 
-    trainer.training.optim_step(
+    trainer.trainer.optim_step(
         muon_params=MuonParams(learning_rate=0.02, momentum=0.95),
     )
 
@@ -402,7 +402,7 @@ def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
     client = FakeClient()
     trainer = _make_session(client)
 
-    result = trainer.training.weights_sync(weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
+    result = trainer.trainer.weights_sync(weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
 
     assert result.weights_version == 2
     assert client.beta.rl.operations.last_call is not None
@@ -508,7 +508,7 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     )
 
     assert trainer._session_id == "sess-1"
-    assert isinstance(trainer.sampling, SamplingClient)
+    assert isinstance(trainer.generator, Generator)
     assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
     await_args = fake_client.beta.rl.sessions.create.await_args
@@ -617,7 +617,7 @@ async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPat
     trainer = await SessionClient.attach_async(session_id="sess-1")
 
     assert trainer._session_id == "sess-1"
-    assert isinstance(trainer.sampling, SamplingClient)
+    assert isinstance(trainer.generator, Generator)
     assert create_client.call_args.kwargs["max_retries"] == 7
     fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
     fake_client.beta.rl.sessions.create.assert_not_awaited()
@@ -635,9 +635,9 @@ async def test_attach_async_hides_sampling_for_trainer_only_resources(monkeypatc
 
     session = await SessionClient.attach_async(session_id="sess-1")
 
-    assert session.has_sampling is False
-    with pytest.raises(RuntimeError, match="does not have sampling capability"):
-        _ = session.sampling
+    assert session.has_generator is False
+    with pytest.raises(RuntimeError, match="does not have generator capability"):
+        _ = session.generator
 
 
 async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -717,7 +717,7 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     client = FakeClient()
     trainer = _make_session(client)
 
-    result = trainer.training.forward_backward(
+    result = trainer.trainer.forward_backward(
         samples=[_small_sample()],
         loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
@@ -750,7 +750,7 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
             ),
         ),
     )
-    trainer.training.forward_backward(
+    trainer.trainer.forward_backward(
         samples=[sample],
         loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
@@ -772,13 +772,13 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
 def test_resolve_loss_type(given: str, expected: str) -> None:
     loss = cast(Any, {"type": given, "grpo_params": {"beta": 0.1}})
 
-    assert training_client_module._resolve_loss_type(loss) == {"type": expected, "grpo_params": {"beta": 0.1}}
+    assert trainer_module._resolve_loss_type(loss) == {"type": expected, "grpo_params": {"beta": 0.1}}
     assert loss["type"] == given, "input config must not be mutated"
 
 
 def test_resolve_loss_type_rejects_unknown_name() -> None:
     with pytest.raises(ValueError, match="Unknown loss type"):
-        training_client_module._resolve_loss_type(cast(Any, {"type": "gspo"}))
+        trainer_module._resolve_loss_type(cast(Any, {"type": "gspo"}))
 
 
 def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -787,7 +787,7 @@ def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch)
     client = FakeClient()
     trainer = _make_session(client)
 
-    trainer.training.forward_backward(samples=[_small_sample()], loss=cast(Any, {"type": "ppo"}))
+    trainer.trainer.forward_backward(samples=[_small_sample()], loss=cast(Any, {"type": "ppo"}))
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
@@ -817,7 +817,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         ),
     )
 
-    result = await trainer.training.forward_backward_async(
+    result = await trainer.trainer.forward_backward_async(
         samples=[sample],
         loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
@@ -848,7 +848,7 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
     trainer = _make_session(client)
 
     with pytest.raises(ValueError, match="exceeds"):
-        trainer.training.forward_backward(
+        trainer.trainer.forward_backward(
             samples=[
                 Sample(
                     model_input=ModelInput(

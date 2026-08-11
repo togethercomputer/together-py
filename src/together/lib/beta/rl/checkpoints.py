@@ -116,7 +116,7 @@ async def download_checkpoint_async(
             stream=True,
             options={
                 "max_retries": _MAX_RETRIES,
-                "headers": {"Authorization": omit}
+                "headers": {"Authorization": omit},
             },
         )
         try:

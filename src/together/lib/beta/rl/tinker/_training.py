@@ -18,7 +18,7 @@ from ._converters import (
     _to_forward_backward_output,
 )
 from ..clients.session import DEFAULT_OPERATION_INTERVAL, SessionClient
-from ..clients.training import _submit_forward_backward
+from ..clients.trainer import _submit_forward_backward
 from .....types.beta.rl.loss_type import LossType
 from .....types.beta.rl.ppo_loss_params import PpoLossParams
 from .....types.beta.rl.loss_config_param import LossConfig

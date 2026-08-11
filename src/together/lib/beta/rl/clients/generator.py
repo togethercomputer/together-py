@@ -64,7 +64,7 @@ def _prompt_logprobs_from_results(results: Iterable[SampleResult]) -> list[list[
 
 
 @dataclass(frozen=True)
-class SamplingClient:
+class Generator:
     _session: SessionClient
 
     @property

@@ -61,7 +61,7 @@ async def _submit_forward_backward(
 
 
 @dataclass(frozen=True)
-class TrainingClient:
+class Trainer:
     _session: SessionClient
 
     @property

@@ -11,7 +11,7 @@ from ._futures import _Pending
 from .._payloads import resolve_result_payload
 from ._converters import _to_model_input, _to_sample_response, _to_sampling_params
 from ..clients.session import DEFAULT_OPERATION_INTERVAL, SessionClient
-from ..clients.sampling import _submit_sample_batch
+from ..clients.generator import _submit_sample_batch
 
 
 @dataclass
