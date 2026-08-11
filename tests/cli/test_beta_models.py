@@ -154,6 +154,111 @@ class TestBetaModelsCreate:
             "type": "model",
         }
         assert json.loads(result.output)["id"] == "ml_1"
+        # Model ids are passed through — no supported-models lookup.
+        assert not any(call.request.url.path == "/supported-models" for call in cast(list[Call], respx_mock.calls))
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_resolves_base_model_name_via_supported_models(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        supported_route = respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/projects/proj/models").mock(
+            return_value=httpx.Response(200, json=_model_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "create",
+                "my-model",
+                "--project",
+                "proj",
+                "--base-model",
+                "meta-llama/Llama-3-8B-FP16",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "search=meta-llama%2FLlama-3-8B-FP16" in str(cast(Call, supported_route.calls[0]).request.url)
+        assert json.loads(cast(Call, create_route.calls[0]).request.content.decode()) == {
+            "name": "my-model",
+            "baseModelId": "ml_base",
+            "type": "model",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_rejects_unmatched_base_model_name_with_candidates(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _supported_model_body(
+                            deploymentProfiles=[
+                                {
+                                    "profileId": "cr_1",
+                                    "certifiedConfigRevisionId": "cr_1",
+                                    "certifiedModelRevisionId": "rev-1",
+                                    "config": "projects/together/configs/cr_1",
+                                    "model": "projects/together/models/ml_base",
+                                    "modelName": "meta-llama/Llama-3-8B-FP16",
+                                    "gpuCount": 1,
+                                    "gpuType": "H100",
+                                    "parallelism": "TP1",
+                                    "quantization": "fp16",
+                                    "performanceBenchmarks": {},
+                                },
+                                {
+                                    "profileId": "cr_2",
+                                    "certifiedConfigRevisionId": "cr_2",
+                                    "certifiedModelRevisionId": "rev-2",
+                                    "config": "projects/together/configs/cr_2",
+                                    "model": "projects/together/models/ml_base_fp8",
+                                    "modelName": "meta-llama/Llama-3-8B-FP8",
+                                    "gpuCount": 1,
+                                    "gpuType": "H100",
+                                    "parallelism": "TP1",
+                                    "quantization": "fp8",
+                                    "performanceBenchmarks": {},
+                                },
+                            ]
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "create",
+                "my-model",
+                "--project",
+                "proj",
+                "--base-model",
+                "meta-llama/Llama-3-8B",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "No exact match for base model" in result.output
+        assert "meta-llama/Llama-3-8B-FP16" in result.output
+        assert "ml_base" in result.output
+        assert "meta-llama/Llama-3-8B-FP8" in result.output
+        assert "ml_base_fp8" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_requires_explicit_project_in_json_mode(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
