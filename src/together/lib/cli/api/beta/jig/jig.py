@@ -647,7 +647,7 @@ class Jig:
             versions = {int(v) for v in volume.version_history or {}} | {volume.current_version or 0}
             if len(versions) > 1:
                 console.print(
-                    f"\N{WARNING SIGN} No version set for volume {vm.name}, using version 0. "
+                    f"\N{WARNING SIGN} No version set for volume '{vm.name}', using version 0. "
                     f"The following versions are available: {', '.join(str(v) for v in sorted(versions))}"
                 )
 
