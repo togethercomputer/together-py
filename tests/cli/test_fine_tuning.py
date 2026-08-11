@@ -98,6 +98,8 @@ _FT_METRICS_BODY = {
     ]
 }
 
+_MODEL_LIMITS_LORA_MAX_RANK = 64
+
 _FT_PREVIEW_BODY = {
     "dataset_format": "conversation",
     "max_seq_length": 4096,
@@ -127,12 +129,33 @@ _FT_TOKENIZED_DATASET_BODY = {
 }
 
 _MODEL_LIMITS_BODY = {
+    "model_name": "meta-llama/Llama-3-8b",
+    "default_gradient_accumulation_steps": 1,
     "max_num_epochs": 10,
+    "max_num_checkpoints": 10,
+    "max_num_evals": 10,
     "max_learning_rate": 1,
     "min_learning_rate": 0,
     "min_max_seq_length": 1,
     "max_seq_length_sft": 4096,
     "max_seq_length_dpo": 4096,
+    "merge_output_lora": True,
+    "supports_full_training": True,
+    "supports_reasoning": False,
+    "supports_tools": False,
+    "supports_vision": False,
+    "lora_training": {
+        "max_batch_size": 128,
+        "max_batch_size_dpo": 64,
+        "max_rank": _MODEL_LIMITS_LORA_MAX_RANK,
+        "min_batch_size": 8,
+        "target_modules": ["q", "k", "v", "o", "mlp"],
+    },
+    "full_training": {
+        "max_batch_size": 96,
+        "max_batch_size_dpo": 48,
+        "min_batch_size": 8,
+    },
 }
 
 _FT_CREATE_BODY = {
@@ -294,6 +317,35 @@ class TestFineTuningCreate:
         assert body["early_stopping_patience"] == 3
         assert body["early_stopping_warmup_evals"] == 2
         assert body["early_stopping_min_delta"] == 0.01
+
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    def test_create_lora_uses_model_limits_defaults(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--lora",
+            ],
+            input="y\n",
+        )
+
+        assert result.exit_code == 0
+        assert create.calls
+        body = json.loads(create.calls.last.request.content)
+        assert body["learning_rate"] == 1e-3
+        assert body["training_type"]["type"] == "Lora"
+        assert body["training_type"]["lora_r"] == _MODEL_LIMITS_LORA_MAX_RANK
+        assert body["training_type"]["lora_alpha"] == _MODEL_LIMITS_LORA_MAX_RANK * 2
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_early_stopping_invalid_fails_before_create(
