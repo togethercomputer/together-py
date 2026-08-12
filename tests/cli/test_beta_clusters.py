@@ -890,7 +890,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--nvidia-driver-version",
+                "--driver",
                 "595",
                 "--region",
                 "us-central-8",
@@ -905,7 +905,7 @@ class TestBetaClustersCreate:
 
         assert result.exit_code == 1
         assert json.loads(result.output) == {
-            "error": "--nvidia-driver-version and --cuda-version must be provided together; --os requires both."
+            "error": "--driver and --cuda-version must be provided together; --os requires both."
         }
 
     @pytest.mark.respx(base_url=base_url)
@@ -955,7 +955,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--nvidia-driver-version",
+                "--driver",
                 "565",
                 "--cuda-version",
                 "12.6",
@@ -1034,7 +1034,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--nvidia-driver-version",
+                "--driver",
                 "595",
                 "--cuda-version",
                 "13.2",
@@ -1071,7 +1071,7 @@ class TestBetaClustersCreate:
                 "SLURM",
                 "--gpu-type",
                 "H100_SXM",
-                "--nvidia-driver-version",
+                "--driver",
                 "565",
                 "--cuda-version",
                 "12.6",

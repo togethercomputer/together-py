@@ -140,7 +140,7 @@ class TestJSONMode:
         beta_clusters = JSONValidator(("beta", "clusters"))
         beta_clusters.run_and_assert(
             "create --non-interactive --cluster-type KUBERNETES --gpu-type H100_SXM "
-            "--nvidia-driver-version 565 --cuda-version 12.6 --region us-central-8 --num-gpus 8 "
+            "--driver 565 --cuda-version 12.6 --region us-central-8 --num-gpus 8 "
             "--billing-type ON_DEMAND --name together-py-testing-suite --volume 123"
         )
         beta_clusters.run_and_assert("delete cluster-123")

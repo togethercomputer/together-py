@@ -22,10 +22,8 @@ BillingTypeParameter = Annotated[
     Optional[Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"]],
     Parameter(help="Billing type to use for the cluster"),
 ]
-NvidiaDriverVersionParameter = Annotated[
-    Optional[str], Parameter(help="Legacy NVIDIA driver selector; pair with --cuda-version")
-]
-CudaVersionParameter = Annotated[Optional[str], Parameter(help="Legacy CUDA selector; pair with --nvidia-driver-version")]
+DriverParameter = Annotated[Optional[str], Parameter(help="Legacy NVIDIA driver selector; pair with --cuda-version")]
+CudaVersionParameter = Annotated[Optional[str], Parameter(help="Legacy CUDA selector; pair with --driver")]
 OSParameter = Annotated[Optional[str], Parameter(help="Operating system for NVIDIA version selection")]
 NvidiaVersionIDParameter = Annotated[
     Optional[str], Parameter(help="Canonical NVIDIA version catalog ID to use for the cluster")
@@ -156,7 +154,7 @@ async def _set_nvidia_version_params(
     has_driver = nvidia_driver_version is not None
     has_cuda = cuda_version is not None
     if has_driver != has_cuda or (os_name is not None and not has_driver):
-        raise TogetherError("--nvidia-driver-version and --cuda-version must be provided together; --os requires both.")
+        raise TogetherError("--driver and --cuda-version must be provided together; --os requires both.")
 
     if nvidia_version_id:
         params["nvidia_version_id"] = nvidia_version_id
@@ -184,7 +182,7 @@ async def _set_nvidia_version_params(
         if selected.id and selected.id != nvidia_version_id:
             raise TogetherError(
                 f"--nvidia-version-id {nvidia_version_id!r} does not match "
-                f"--nvidia-driver-version/--cuda-version/--os selection {selected.id!r}."
+                f"--driver/--cuda-version/--os selection {selected.id!r}."
             )
         return
 
@@ -228,7 +226,7 @@ async def create(
     num_gpus: NumGpusParameter = None,
     region: RegionParameter = None,
     billing_type: BillingTypeParameter = None,
-    nvidia_driver_version: NvidiaDriverVersionParameter = None,
+    driver: DriverParameter = None,
     cuda_version: CudaVersionParameter = None,
     os: OSParameter = None,
     nvidia_version_id: NvidiaVersionIDParameter = None,
@@ -258,7 +256,7 @@ async def create(
         num_gpus=num_gpus,
         region=region,
         billing_type=billing_type,
-        nvidia_driver_version=nvidia_driver_version,
+        nvidia_driver_version=driver,
         cuda_version=cuda_version,
         duration_days=duration_days,
         gpu_type=gpu_type,
@@ -342,7 +340,7 @@ async def create(
         catalog=catalog,
         interactive=interactive,
         nvidia_version_id=nvidia_version_id,
-        nvidia_driver_version=nvidia_driver_version,
+        nvidia_driver_version=driver,
         cuda_version=cuda_version,
         os_name=os,
     )
