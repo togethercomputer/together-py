@@ -12,14 +12,14 @@ from together.lib.cli.components.model_dump import print_model_dump
 
 
 async def model_limits(
-    model_name: Annotated[str, Parameter(help="The model name to get fine-tuning limits for")],
+    model: Annotated[str, Parameter(alias="-M", help="The model name to get fine-tuning limits for")],
     *,
     config: CLIConfigParameter,
 ) -> None:
     """Get fine-tuning limits for a model."""
     response = await show_loading_status(
         "Fetching model limits...",
-        config.client.fine_tuning.model_limits(model_name=model_name),
+        config.client.fine_tuning.model_limits(model_name=model),
     )
 
     if config.json:
