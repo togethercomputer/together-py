@@ -83,7 +83,7 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     assert response.purpose == "fine-tune"
 
 
-def test_file_upload_reports_progress_without_tqdm(mocker: MockerFixture, tmp_path: Path):
+def test_file_upload_reports_progress_callback(mocker: MockerFixture, tmp_path: Path):
     content_str = json.dumps({"text": "Hello, world!"}) + "\n"
     responses = _mock_upload_responses(mocker, content_str=content_str)
 
@@ -97,7 +97,6 @@ def test_file_upload_reports_progress_without_tqdm(mocker: MockerFixture, tmp_pa
 
     client = Together(api_key="fake_api_key")
     mocker.patch.object(client._client, "send", side_effect=send_and_consume)
-    tqdm_spy = mocker.patch("together.lib.resources.files.tqdm")
 
     file = tmp_path / "valid.jsonl"
     file.write_text(content_str)
@@ -113,4 +112,3 @@ def test_file_upload_reports_progress_without_tqdm(mocker: MockerFixture, tmp_pa
     assert events
     assert events[0] == FileUploadProgress(uploaded_bytes=0, total_bytes=len(content_str.encode()))
     assert events[-1].uploaded_bytes == events[-1].total_bytes == len(content_str.encode())
-    tqdm_spy.assert_not_called()

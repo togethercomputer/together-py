@@ -1,10 +1,12 @@
 from .files import (
     UploadManager,
     DownloadManager,
-    FileUploadProgress,
     AsyncUploadManager,
+    FileUploadProgress,
     AsyncDownloadManager,
+    FileDownloadProgress,
     UploadProgressCallback,
+    DownloadProgressCallback,
 )
 
 __all__ = [
@@ -13,5 +15,7 @@ __all__ = [
     "UploadManager",
     "AsyncUploadManager",
     "FileUploadProgress",
+    "FileDownloadProgress",
     "UploadProgressCallback",
+    "DownloadProgressCallback",
 ]

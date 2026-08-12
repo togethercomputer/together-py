@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from typing import Annotated
 from pathlib import Path
@@ -20,9 +19,6 @@ async def check(
     config: CLIConfigParameter,
 ) -> None:
     """Check file for issues"""
-
-    if config.json:
-        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
 
     report = check_file(file)
 

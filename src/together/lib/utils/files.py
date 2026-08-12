@@ -7,8 +7,6 @@ from typing import Any, Dict
 from pathlib import Path
 from traceback import format_exc
 
-from tqdm import tqdm
-
 from together.types import FilePurpose
 from together.lib.constants import (
     MIN_SAMPLES,
@@ -206,18 +204,11 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
     if not report_dict["utf8"]:
         return report_dict
 
-    DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
-
     if purpose == "eval":
         with file.open() as f:
             idx = -1
             try:
-                for idx, line in tqdm(
-                    enumerate(f),
-                    desc="Validating file",
-                    unit=" lines",
-                    disable=bool(DISABLE_TQDM),
-                ):
+                for idx, line in enumerate(f):
                     json_line = json.loads(line)
 
                     if not isinstance(json_line, dict):
@@ -255,12 +246,7 @@ def _check_jsonl(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
             line_index = -1
             sample_count = 0
             try:
-                for line_index, raw_line in tqdm(
-                    enumerate(f),
-                    desc="Validating file",
-                    unit=" lines",
-                    disable=bool(DISABLE_TQDM),
-                ):
+                for line_index, raw_line in enumerate(f):
                     line = raw_line.strip()
                     if not line:
                         continue

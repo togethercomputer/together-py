@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 import httpx
-from tqdm import tqdm
 from filelock import FileLock
 
 from together._utils._logs import logger
@@ -56,7 +55,16 @@ class FileUploadProgress:
     total_bytes: int
 
 
+@dataclass(frozen=True)
+class FileDownloadProgress:
+    """Byte-level download progress reported by file download managers."""
+
+    downloaded_bytes: int
+    total_bytes: int
+
+
 UploadProgressCallback = Callable[[FileUploadProgress], None]
+DownloadProgressCallback = Callable[[FileDownloadProgress], None]
 
 
 def _notify_upload_progress(
@@ -66,6 +74,15 @@ def _notify_upload_progress(
 ) -> None:
     if progress_callback is not None:
         progress_callback(FileUploadProgress(uploaded_bytes=uploaded_bytes, total_bytes=total_bytes))
+
+
+def _notify_download_progress(
+    progress_callback: DownloadProgressCallback | None,
+    downloaded_bytes: int,
+    total_bytes: int,
+) -> None:
+    if progress_callback is not None:
+        progress_callback(FileDownloadProgress(downloaded_bytes=downloaded_bytes, total_bytes=total_bytes))
 
 
 def _iter_file_upload_chunks(
@@ -219,6 +236,8 @@ class DownloadManager(SyncAPIResource):
         output: Path | None = None,
         remote_name: str | None = None,
         fetch_metadata: bool = False,
+        *,
+        progress_callback: DownloadProgressCallback | None = None,
     ) -> Tuple[str, int]:
         # pre-fetch remote file name and file size
         file_path, file_size = self.get_file_metadata(url, output, remote_name, fetch_metadata)
@@ -253,66 +272,58 @@ class DownloadManager(SyncAPIResource):
                 bytes_downloaded = 0
                 retry_count = 0
                 retry_delay = DOWNLOAD_INITIAL_RETRY_DELAY
+                _notify_download_progress(progress_callback, bytes_downloaded, file_size)
 
-                DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
+                while bytes_downloaded < file_size:
+                    try:
+                        # If this is a retry, close the previous response and create a new one with Range header
+                        if bytes_downloaded > 0:
+                            response.close()
 
-                with tqdm(
-                    total=file_size,
-                    unit="B",
-                    unit_scale=True,
-                    desc=f"Downloading file {file_path.name}",
-                    disable=bool(DISABLE_TQDM),
-                ) as pbar:
-                    while bytes_downloaded < file_size:
-                        try:
-                            # If this is a retry, close the previous response and create a new one with Range header
-                            if bytes_downloaded > 0:
-                                response.close()
-
-                                log.info(f"Resuming download from byte {bytes_downloaded}")
-                                response = self._client.get(
-                                    path=url,
-                                    cast_to=httpx.Response,
-                                    stream=True,
-                                    options=RequestOptions(
-                                        headers={"Range": f"bytes={bytes_downloaded}-"},
-                                    ),
-                                )
-
-                            # Download chunks
-                            for chunk in response.iter_bytes(DOWNLOAD_BLOCK_SIZE):
-                                temp_file.write(chunk)  # type: ignore
-                                bytes_downloaded += len(chunk)
-                                pbar.update(len(chunk))
-
-                            # Successfully completed download
-                            break
-
-                        except (httpx.RequestError, httpx.StreamError, APIConnectionError) as e:
-                            if retry_count >= MAX_DOWNLOAD_RETRIES:
-                                log.error(f"Download failed after {retry_count} retries")
-                                raise DownloadError(
-                                    f"Download failed after {retry_count} retries. Last error: {str(e)}"
-                                ) from e
-
-                            retry_count += 1
-                            log.warning(
-                                f"Download interrupted at {bytes_downloaded}/{file_size} bytes. "
-                                f"Retry {retry_count}/{MAX_DOWNLOAD_RETRIES} in {retry_delay}s..."
+                            log.info(f"Resuming download from byte {bytes_downloaded}")
+                            response = self._client.get(
+                                path=url,
+                                cast_to=httpx.Response,
+                                stream=True,
+                                options=RequestOptions(
+                                    headers={"Range": f"bytes={bytes_downloaded}-"},
+                                ),
                             )
-                            time.sleep(retry_delay)
 
-                            # Exponential backoff with max delay cap
-                            retry_delay = min(retry_delay * 2, DOWNLOAD_MAX_RETRY_DELAY)
+                        # Download chunks
+                        for chunk in response.iter_bytes(DOWNLOAD_BLOCK_SIZE):
+                            temp_file.write(chunk)  # type: ignore
+                            bytes_downloaded += len(chunk)
+                            _notify_download_progress(progress_callback, bytes_downloaded, file_size)
 
-                        except APIStatusError as e:
-                            # For API errors, don't retry
-                            log.error(f"API error during download: {e}")
-                            raise APIStatusError(
-                                "Error downloading file",
-                                response=e.response,
-                                body=e.body,
+                        # Successfully completed download
+                        break
+
+                    except (httpx.RequestError, httpx.StreamError, APIConnectionError) as e:
+                        if retry_count >= MAX_DOWNLOAD_RETRIES:
+                            log.error(f"Download failed after {retry_count} retries")
+                            raise DownloadError(
+                                f"Download failed after {retry_count} retries. Last error: {str(e)}"
                             ) from e
+
+                        retry_count += 1
+                        log.warning(
+                            f"Download interrupted at {bytes_downloaded}/{file_size} bytes. "
+                            f"Retry {retry_count}/{MAX_DOWNLOAD_RETRIES} in {retry_delay}s..."
+                        )
+                        time.sleep(retry_delay)
+
+                        # Exponential backoff with max delay cap
+                        retry_delay = min(retry_delay * 2, DOWNLOAD_MAX_RETRY_DELAY)
+
+                    except APIStatusError as e:
+                        # For API errors, don't retry
+                        log.error(f"API error during download: {e}")
+                        raise APIStatusError(
+                            "Error downloading file",
+                            response=e.response,
+                            body=e.body,
+                        ) from e
 
                 # Close the response
                 response.close()
@@ -388,6 +399,8 @@ class AsyncDownloadManager(AsyncAPIResource):
         output: Path | None = None,
         remote_name: str | None = None,
         fetch_metadata: bool = False,
+        *,
+        progress_callback: DownloadProgressCallback | None = None,
     ) -> Tuple[str, int]:
         # pre-fetch remote file name and file size
         file_path, file_size = await self.get_file_metadata(url, output, remote_name, fetch_metadata)
@@ -422,66 +435,58 @@ class AsyncDownloadManager(AsyncAPIResource):
                 bytes_downloaded = 0
                 retry_count = 0
                 retry_delay = DOWNLOAD_INITIAL_RETRY_DELAY
+                _notify_download_progress(progress_callback, bytes_downloaded, file_size)
 
-                DISABLE_TQDM = os.environ.get("TOGETHER_DISABLE_TQDM", "false").lower() == "true"
+                while bytes_downloaded < file_size:
+                    try:
+                        # If this is a retry, close the previous response and create a new one with Range header
+                        if bytes_downloaded > 0:
+                            await response.aclose()
 
-                with tqdm(
-                    total=file_size,
-                    unit="B",
-                    unit_scale=True,
-                    desc=f"Downloading file {file_path.name}",
-                    disable=bool(DISABLE_TQDM),
-                ) as pbar:
-                    while bytes_downloaded < file_size:
-                        try:
-                            # If this is a retry, close the previous response and create a new one with Range header
-                            if bytes_downloaded > 0:
-                                await response.aclose()
-
-                                log.info(f"Resuming download from byte {bytes_downloaded}")
-                                response = await self._client.get(
-                                    path=url,
-                                    cast_to=httpx.Response,
-                                    stream=True,
-                                    options=RequestOptions(
-                                        headers={"Range": f"bytes={bytes_downloaded}-"},
-                                    ),
-                                )
-
-                            # Download chunks
-                            async for chunk in response.aiter_bytes(DOWNLOAD_BLOCK_SIZE):
-                                temp_file.write(chunk)  # type: ignore
-                                bytes_downloaded += len(chunk)
-                                pbar.update(len(chunk))
-
-                            # Successfully completed download
-                            break
-
-                        except (httpx.RequestError, httpx.StreamError, APIConnectionError) as e:
-                            if retry_count >= MAX_DOWNLOAD_RETRIES:
-                                log.error(f"Download failed after {retry_count} retries")
-                                raise DownloadError(
-                                    f"Download failed after {retry_count} retries. Last error: {str(e)}"
-                                ) from e
-
-                            retry_count += 1
-                            log.warning(
-                                f"Download interrupted at {bytes_downloaded}/{file_size} bytes. "
-                                f"Retry {retry_count}/{MAX_DOWNLOAD_RETRIES} in {retry_delay}s..."
+                            log.info(f"Resuming download from byte {bytes_downloaded}")
+                            response = await self._client.get(
+                                path=url,
+                                cast_to=httpx.Response,
+                                stream=True,
+                                options=RequestOptions(
+                                    headers={"Range": f"bytes={bytes_downloaded}-"},
+                                ),
                             )
-                            await self._sleep(retry_delay)
 
-                            # Exponential backoff with max delay cap
-                            retry_delay = min(retry_delay * 2, DOWNLOAD_MAX_RETRY_DELAY)
+                        # Download chunks
+                        async for chunk in response.aiter_bytes(DOWNLOAD_BLOCK_SIZE):
+                            temp_file.write(chunk)  # type: ignore
+                            bytes_downloaded += len(chunk)
+                            _notify_download_progress(progress_callback, bytes_downloaded, file_size)
 
-                        except APIStatusError as e:
-                            # For API errors, don't retry
-                            log.error(f"API error during download: {e}")
-                            raise APIStatusError(
-                                "Error downloading file",
-                                response=e.response,
-                                body=e.body,
+                        # Successfully completed download
+                        break
+
+                    except (httpx.RequestError, httpx.StreamError, APIConnectionError) as e:
+                        if retry_count >= MAX_DOWNLOAD_RETRIES:
+                            log.error(f"Download failed after {retry_count} retries")
+                            raise DownloadError(
+                                f"Download failed after {retry_count} retries. Last error: {str(e)}"
                             ) from e
+
+                        retry_count += 1
+                        log.warning(
+                            f"Download interrupted at {bytes_downloaded}/{file_size} bytes. "
+                            f"Retry {retry_count}/{MAX_DOWNLOAD_RETRIES} in {retry_delay}s..."
+                        )
+                        await self._sleep(retry_delay)
+
+                        # Exponential backoff with max delay cap
+                        retry_delay = min(retry_delay * 2, DOWNLOAD_MAX_RETRY_DELAY)
+
+                    except APIStatusError as e:
+                        # For API errors, don't retry
+                        log.error(f"API error during download: {e}")
+                        raise APIStatusError(
+                            "Error downloading file",
+                            response=e.response,
+                            body=e.body,
+                        ) from e
 
                 # Close the response
                 await response.aclose()
