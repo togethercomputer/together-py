@@ -113,6 +113,7 @@ def _supported_model_body(**overrides: Any) -> dict[str, Any]:
                 "certifiedModelRevisionId": "rev-1",
                 "config": "projects/together/configs/cr_1",
                 "model": "projects/together/models/ml_base",
+                "modelName": "meta-llama/Llama-3-8B-FP16",
                 "gpuCount": 1,
                 "gpuType": "H100",
                 "parallelism": "TP1",
@@ -153,6 +154,111 @@ class TestBetaModelsCreate:
             "type": "model",
         }
         assert json.loads(result.output)["id"] == "ml_1"
+        # Model ids are passed through — no supported-models lookup.
+        assert not any(call.request.url.path == "/supported-models" for call in cast(list[Call], respx_mock.calls))
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_resolves_base_model_name_via_supported_models(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        supported_route = respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/projects/proj/models").mock(
+            return_value=httpx.Response(200, json=_model_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "create",
+                "my-model",
+                "--project",
+                "proj",
+                "--base-model",
+                "meta-llama/Llama-3-8B-FP16",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "search=meta-llama%2FLlama-3-8B-FP16" in str(cast(Call, supported_route.calls[0]).request.url)
+        assert json.loads(cast(Call, create_route.calls[0]).request.content.decode()) == {
+            "name": "my-model",
+            "baseModelId": "ml_base",
+            "type": "model",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_rejects_unmatched_base_model_name_with_candidates(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _supported_model_body(
+                            deploymentProfiles=[
+                                {
+                                    "profileId": "cr_1",
+                                    "certifiedConfigRevisionId": "cr_1",
+                                    "certifiedModelRevisionId": "rev-1",
+                                    "config": "projects/together/configs/cr_1",
+                                    "model": "projects/together/models/ml_base",
+                                    "modelName": "meta-llama/Llama-3-8B-FP16",
+                                    "gpuCount": 1,
+                                    "gpuType": "H100",
+                                    "parallelism": "TP1",
+                                    "quantization": "fp16",
+                                    "performanceBenchmarks": {},
+                                },
+                                {
+                                    "profileId": "cr_2",
+                                    "certifiedConfigRevisionId": "cr_2",
+                                    "certifiedModelRevisionId": "rev-2",
+                                    "config": "projects/together/configs/cr_2",
+                                    "model": "projects/together/models/ml_base_fp8",
+                                    "modelName": "meta-llama/Llama-3-8B-FP8",
+                                    "gpuCount": 1,
+                                    "gpuType": "H100",
+                                    "parallelism": "TP1",
+                                    "quantization": "fp8",
+                                    "performanceBenchmarks": {},
+                                },
+                            ]
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "create",
+                "my-model",
+                "--project",
+                "proj",
+                "--base-model",
+                "meta-llama/Llama-3-8B",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "No exact match for base model" in result.output
+        assert "meta-llama/Llama-3-8B-FP16" in result.output
+        assert "ml_base" in result.output
+        assert "meta-llama/Llama-3-8B-FP8" in result.output
+        assert "ml_base_fp8" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_requires_explicit_project_in_json_mode(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -259,6 +365,23 @@ class TestBetaModelsPublic:
         assert "modality=MODALITY_TEXT" in url
         assert "product=PRODUCT_DEDICATED" in url
         assert json.loads(result.output)["next_cursor"] == "c1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_public_table_shows_profile_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "public", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "meta-llama/Llama-3-8B-FP16" in result.output
+        assert "1x H100" in result.output
+        assert "TP1" in result.output
+        assert "cr_1" not in result.output
 
 
 class TestBetaModelsOrg:
@@ -412,6 +535,77 @@ class TestBetaModelsConfigs:
         assert "limit=5" in url
         assert "after=tok" in url
         assert json.loads(result.output)["next_cursor"] == "next"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_accepts_model_resource_path(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "configs",
+                "projects/together/models/ml_base",
+                "--project",
+                "proj",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["referenceModel"] == "projects/together/models/ml_base"
+        assert "referenceModelId" not in params
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_resolves_private_model_name_to_base_model(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/projects/proj/models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_model_body(baseModel="projects/together/models/ml_base")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(["beta", "models", "configs", "my-project/my-model", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["referenceModel"] == "projects/together/models/ml_base"
+        assert "referenceModelId" not in params
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_configs_resolves_public_model_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_supported_model_body()], "next_cursor": None},
+            )
+        )
+        route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_config_body()], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "models", "configs", "meta-llama/Llama-3-8B", "--project", "proj", "--json"]
+        )
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["referenceModel"] == "projects/together/models/ml_base"
+        assert "referenceModelId" not in params
 
 
 class TestBetaModelsUpload:

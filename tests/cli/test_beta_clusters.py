@@ -633,29 +633,38 @@ class TestBetaClustersListRegions:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_regions_omits_missing_id_and_os(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        legacy_body = {
-            "regions": [
-                {
-                    "name": "us-central-8",
-                    "driver_versions": [
-                        {
-                            "cuda_version": "12.6 Ubuntu 22.04",
-                            "nvidia_driver_version": "565",
-                        }
-                    ],
-                    "supported_instance_types": ["H100_SXM"],
-                }
-            ]
-        }
-        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=legacy_body))
+    def test_list_regions_includes_required_nvidia_id_and_os(
+        self, respx_mock: MockRouter, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from rich.console import Console
+
+        import together.lib.cli.api.beta.clusters.list_regions as list_regions_cli
+        from together.lib.cli.utils._console import build_theme
+
+        monkeypatch.setattr(
+            list_regions_cli,
+            "console",
+            Console(theme=build_theme(), highlight=False, width=160, height=40, force_terminal=True),
+        )
+        respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
 
         result = cli_runner.invoke(["beta", "clusters", "list-regions"])
 
         assert result.exit_code == 0
-        assert "NVIDIA Driver:" in result.output
+        assert "ID" in result.output
+        assert "Region" in result.output
+        assert "NVIDIA Driver" in result.output
+        assert "CUDA Version" in result.output
+        assert "OS" in result.output
         assert "ID:" not in result.output
+        assert "NVIDIA Driver:" not in result.output
+        assert "CUDA Version:" not in result.output
         assert "OS:" not in result.output
+        assert "us-central-8" in result.output
+        assert "nvidia-595-22" in result.output
+        assert "595" in result.output
+        assert "13.2" in result.output
+        assert "ubuntu-22.04" in result.output
         assert "None" not in result.output
 
 
@@ -745,28 +754,8 @@ class TestBetaClustersNvidiaVersionSelection:
         assert selected.os == "ubuntu-24.04"
 
     @pytest.mark.asyncio
-    async def test_prompt_falls_back_to_legacy_pair_when_catalog_has_no_id(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        catalog = ClusterListRegionsResponse(
-            **cast(
-                Any,
-                {
-                    "regions": [
-                        {
-                            "name": "us-central-8",
-                            "driver_versions": [
-                                {
-                                    "cuda_version": "12.6 Ubuntu 22.04",
-                                    "nvidia_driver_version": "565",
-                                }
-                            ],
-                            "supported_instance_types": ["H100_SXM"],
-                        }
-                    ]
-                },
-            )
-        )
+    async def test_prompted_selection_posts_required_nvidia_version_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        catalog = ClusterListRegionsResponse(**_REGIONS_BODY)
 
         def select_first_version(_prompt: str) -> str:
             return "1"
@@ -785,9 +774,9 @@ class TestBetaClustersNvidiaVersionSelection:
             os_name=None,
         )
 
-        assert params["nvidia_driver_version"] == "565"
-        assert params["cuda_version"] == "12.6 Ubuntu 22.04"
-        assert "nvidia_version_id" not in params
+        assert params["nvidia_version_id"] == "nvidia-595-22"
+        assert "nvidia_driver_version" not in params
+        assert "cuda_version" not in params
 
     def test_semantic_selection_uses_os_to_disambiguate_duplicate_cuda_rows(self) -> None:
         selected = create_cli._resolve_nvidia_version(
@@ -879,6 +868,12 @@ class TestBetaClustersRetrieve:
 
 
 class TestBetaClustersCreate:
+    def test_create_help_mentions_b300_gpu_type(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
+
+        assert "B300_SXM" in result.output
+        assert result.exit_code == 0
+
     def test_incomplete_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
             [
@@ -1070,7 +1065,7 @@ class TestBetaClustersCreate:
                 "--cluster-type",
                 "SLURM",
                 "--gpu-type",
-                "H100_SXM",
+                "B300_SXM",
                 "--nvidia-driver-version",
                 "565",
                 "--cuda-version",
@@ -1115,6 +1110,7 @@ class TestBetaClustersCreate:
         assert result.exit_code == 0, result.output
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
+        assert body["gpu_type"] == "B300_SXM"
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"
@@ -1209,12 +1205,24 @@ class TestBetaClustersDelete:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_delete_confirm_yes(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        c = _cluster_body("c1", "to-delete")
-        respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
+    def test_delete_force_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.delete("/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
-        result = cli_runner.invoke(["beta", "clusters", "delete", "c1"], input="y\n")
-        assert "Deleted" in result.output
+
+        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--force"])
+
+        assert "Deleted cluster (c1)" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_delete_non_interactive_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.delete("/compute/clusters/c1").mock(
+            return_value=httpx.Response(200, json={"cluster_id": "c1"})
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--non-interactive"])
+
+        assert route.called
+        assert "Deleted cluster (c1)" in result.output
         assert result.exit_code == 0
 
 
@@ -1296,6 +1304,20 @@ class TestBetaClustersStorage:
         )
         result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--json"])
         assert json.loads(result.output) == {"success": True}
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_storage_delete_non_interactive_skips_confirmation(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.delete("/compute/clusters/storage/volumes/vol-1").mock(
+            return_value=httpx.Response(200, json={"success": True})
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--non-interactive"])
+
+        assert route.called
+        assert "Deleted. (vol-1)" in result.output
         assert result.exit_code == 0
 
 

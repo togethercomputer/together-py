@@ -86,6 +86,9 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download a fine-tuned model's weights:
   [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
 
+[dim]-[/dim] Download the generated tokenized dataset archive:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized[/primary]
+
 [dim]-[/dim] List checkpoints for a fine-tuning job:
   [primary]tg ft list-checkpoints <ft-job-id>[/primary]
 
@@ -94,6 +97,9 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Preview how a training file will be tokenized:
   [primary]tg ft preview --model Qwen/Qwen2-1.5B --training-file <file-id>[/primary]
+
+[dim]-[/dim] Get fine-tuning limits for a model:
+  [primary]tg ft model-limits Qwen/Qwen2-1.5B[/primary]
 """
 
 FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -141,12 +147,25 @@ FINE_TUNING_PREVIEW_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg ft preview -M Qwen/Qwen2-1.5B -t <file-id> --json > preview.json[/primary]
 """
 
+FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Get fine-tuning limits for a model:
+  [primary]tg ft model-limits Qwen/Qwen2-1.5B[/primary]
+"""
+
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Download a fine-tuned model's weights:
   [primary]tg ft download <ft-job-id> --output-dir ./my-model[/primary]
 
 [dim]-[/dim] Download a fine-tuned model's weights from a specific checkpoint:
   [primary]tg ft download <ft-job-id> --checkpoint-step 1 --output-dir ./my-model[/primary]
+"""
+
+FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Download the tokenized dataset archive generated for a fine-tuning job:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized[/primary]
+
+[dim]-[/dim] Save download metadata as JSON:
+  [primary]tg ft download-tokenized-dataset <ft-job-id> --output-dir ./tokenized --json[/primary]
 """
 
 ## Endpoints API commands
@@ -334,9 +353,6 @@ BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
   [primary]tg beta endpoints update <variant-deployment-id> --ab-percent 20[/primary]
-
-[dim]-[/dim] Rename a deployment:
-  [primary]tg beta endpoints update <deployment-id> --name my-deployment-v2[/primary]
 """
 
 BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -365,6 +381,8 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Shadow a private model with an explicit config:
   [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
+
+[dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
 
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -429,8 +447,11 @@ BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 BETA_MODELS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Register a full model (find base IDs with [primary]tg beta models public[/primary]):
+[dim]-[/dim] Register a full model (find names/IDs with [primary]tg beta models public[/primary]):
   [primary]tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
+
+[dim]-[/dim] Or pass a deploy model name instead of an id:
+  [primary]tg beta models create --name my-model --base-model Qwen/Qwen3.5-9B-FP8[/primary]
 
 [dim]-[/dim] Register a LoRA adapter record:
   [primary]tg beta models create --name my-adapter --base-model ml_xxxxxxxxxxxx --type adapter[/primary]

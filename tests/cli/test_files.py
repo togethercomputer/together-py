@@ -67,6 +67,8 @@ class TestFilesCheck:
         sample.write_text('{"text": "hello"}\n', encoding="utf-8")
         result = cli_runner.invoke(["files", "check", str(sample)])
         assert result.exit_code == 0
+        assert result.output.startswith("OK ")
+        result.output.encode("cp1252")
 
     def test_check_missing_file(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         missing = tmp_path / "nope.jsonl"
@@ -82,6 +84,8 @@ class TestFilesCheck:
         assert result.exit_code == 1
         assert "Checks passed" not in result.output
         assert "Unknown extension" in result.output
+        assert result.output.startswith("X ")
+        result.output.encode("cp1252")
 
 
 class TestFilesDelete:
@@ -246,6 +250,8 @@ class TestFilesUpload:
             check_mock.return_value = {"is_check_passed": False, "message": "failed validation"}
             result = cli_runner.invoke(["files", "upload", str(f)])
         assert result.exit_code == 1
+        assert "X failed validation" in result.output
+        result.output.encode("cp1252")
         check_mock.assert_called_once()
         upload_mock.assert_not_called()
 

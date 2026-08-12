@@ -402,11 +402,15 @@ class AsyncRealtimeTranscriptionSession:
         return self._model
 
     def _manager(self) -> AsyncRealtimeConnectionManager:
+        # language goes to the manager (it lands on the connection URL, the
+        # only place the server honors it — together-py#505); the manager is
+        # rebuilt per _open_connection() call, so reconnects keep it too
         return AsyncRealtimeConnectionManager(
             client=self._client,
             model=self.model,
             input_audio_format=self._format,
             turn_detection=self._turn_detection,
+            language=self._language,
             extra_query=self._extra_query,
             extra_headers=self._extra_headers,
         )
@@ -440,9 +444,10 @@ class AsyncRealtimeTranscriptionSession:
 
     async def _configure_session(self, connection: AsyncRealtimeConnection) -> None:
         # single source of truth for the session-param field mapping lives in
-        # _connection._session_config; only the reprime tail is layered on here
+        # _connection._session_config; only the reprime tail is layered on here.
+        # language is set at the beginning of the session on the connection
+        # URL (see _manager / build_realtime_url)
         session = _session_config(
-            language=self._language,
             prompt=self._effective_prompt(),
             rolling_prompt=self._rolling_prompt,
             energy_gate_rms=self._energy_gate_rms,

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import io
+import sys
+
+import pytest
 from rich.console import Console
 
 from together.lib.cli.utils._console import (
     _DARK_STYLES,
     _LIGHT_STYLES,
     build_theme,
+    create_console,
     resolve_cli_theme,
 )
 
@@ -110,3 +115,15 @@ class TestBuildThemeContrast:
             hex_color = style.split()[-1]  # allow "bold #rrggbb"
             ratio = contrast_on_white(hex_color)
             assert ratio >= 7.0, f"{key}={style} contrast {ratio:.2f} < 7"
+
+
+def test_console_replaces_characters_unsupported_by_stream_encoding(monkeypatch: pytest.MonkeyPatch) -> None:
+    raw_output = io.BytesIO()
+    cp1252_output = io.TextIOWrapper(raw_output, encoding="cp1252", errors="strict")
+    monkeypatch.setattr(sys, "stdout", cp1252_output)
+
+    console = create_console()
+    console.print("√ │ café")
+    cp1252_output.flush()
+
+    assert raw_output.getvalue().decode("cp1252") == "? ? café\n"

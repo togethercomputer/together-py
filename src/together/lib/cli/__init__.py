@@ -78,6 +78,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
+    FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
@@ -85,6 +86,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
+    FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
 )
 from together.lib.cli.utils._version_check import VersionCheck
 from together.lib.cli.utils._help_formatter import help_formatter
@@ -464,6 +466,11 @@ fine_tuning_app.command(
     help="Download a fine-tuned model's weights",
     help_epilogue=FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
 )
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.download_tokenized_dataset:download_tokenized_dataset"),
+    help="Download a fine-tuning job's tokenized dataset archive",
+    help_epilogue=FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
+)
 fine_tuning_app.command((f"{_CLI}.fine_tuning.delete:delete"), alias="-d", help="Delete a fine-tuning job")
 fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.list_metrics:list_metrics"),
@@ -474,6 +481,11 @@ fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.preview:preview"),
     help="Preview how a fine-tuning training file will be tokenized",
     help_epilogue=FINE_TUNING_PREVIEW_HELP_EXAMPLES,
+)
+fine_tuning_app.command(
+    (f"{_CLI}.fine_tuning.model_limits:model_limits"),
+    help="Get fine-tuning limits for a model",
+    help_epilogue=FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
 )
 
 ## Models API commands
@@ -687,6 +699,11 @@ beta_endpoints_app.command(
     sort_key=5,
     help="Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID",
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.events:events"),
+    help="List endpoint audit and lifecycle events",
+    sort_key=6,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.shadow:shadow"),

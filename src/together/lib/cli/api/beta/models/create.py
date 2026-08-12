@@ -12,6 +12,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.models._utils import print_model_detail
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
+from together.lib.cli.api.beta.models._resolve_base_model import resolve_base_model_id
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
 
 
@@ -21,17 +22,15 @@ class PromptBaseModel(PromptParameter):
 
     @override
     async def preprompt(self, config: CLIConfig) -> None:
-        # TODO: support pagination
-        supported_models = await config.client.beta.models.list_supported()
-
         self.choices = []
 
-        for model in supported_models.data:
+        async for model in config.client.beta.models.list_supported():
             for profile in model.deployment_profiles:
                 match = MODEL_PATH_RE.match(profile.model)
                 if match:
                     model_id = match.group(2)
-                    self.choices.append((f"{model.name} ({profile.quantization})", model_id))
+                    profile_name = profile.api_model_name or f"{model.name} ({profile.quantization})"
+                    self.choices.append((profile_name, model_id))
 
 
 async def create(
@@ -43,7 +42,7 @@ async def create(
     *,
     base_model: Annotated[
         str,
-        Parameter(help="Supported base model ID (ml_...); run `tg beta models public` to find it"),
+        Parameter(help="Supported base model ID (ml_...) or deploy model name; run `tg beta models public` to find it"),
         PromptBaseModel(),
     ],
     type: Annotated[
@@ -56,9 +55,11 @@ async def create(
 
     await assert_explicit_project_id(config)
 
+    base_model_id = await resolve_base_model_id(config, base_model)
+
     response = await show_loading_status(
         "Creating beta model...",
-        config.client.beta.models.create(name=name, base_model_id=base_model, type=type),
+        config.client.beta.models.create(name=name, base_model_id=base_model_id, type=type),
     )
 
     if config.json:

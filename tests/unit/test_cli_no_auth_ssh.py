@@ -77,6 +77,8 @@ def test_non_ssh_command_still_requires_api_key(monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(cli, "_create_client", spy_create)
 
-    _run(["endpoints", "list"])
+    # Pass --project so launcher skips whoami(); otherwise the missing-key request
+    # hook fires mid-connect and leaves an unclosed socket (filterwarnings=error).
+    _run(["endpoints", "list", "--project", "proj"])
 
     assert require_flags and all(require_flags), "API-backed commands must still gate on the API key"
