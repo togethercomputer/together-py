@@ -18,21 +18,22 @@ async def list_regions(
         return
 
     table = ListTable()
-    table.add_primary_column("Region")
-    table.add_primary_column("GPU Options")
-    table.add_primary_column("Driver Versions")
+    table.add_primary_column("ID")
+    table.add_column("Region")
+    table.add_column("GPU Options")
+    table.add_column("NVIDIA Driver")
+    table.add_column("CUDA Version")
+    table.add_column("OS")
     for region in response.regions:
-        driver_versions: list[str] = []
+        gpu_options = "\n".join(region.supported_instance_types or [])
         for driver_version in region.driver_versions:
-            details = [
-                f"[dim]ID:[/dim] [blue]{driver_version.id}[/blue]",
-                f"[dim]NVIDIA Driver:[/dim] [blue]{driver_version.nvidia_driver_version}[/blue]",
-                f"[dim]CUDA Version:[/dim] [blue]{driver_version.cuda_version}[/blue]",
-                f"[dim]OS:[/dim] [blue]{driver_version.os}[/blue]",
-            ]
-
-            driver_versions.append(" ".join(details))
-
-        table.add_row(region.name, "\n".join(region.supported_instance_types or []), "\n".join(driver_versions))
+            table.add_row(
+                f"[blue]{driver_version.id}[/blue]",
+                region.name,
+                gpu_options,
+                driver_version.nvidia_driver_version,
+                driver_version.cuda_version,
+                driver_version.os,
+            )
 
     console.print(table)
