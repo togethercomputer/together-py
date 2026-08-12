@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 
 from httpx import (
+    Request,
     Response,
+    SyncByteStream,
 )
 from pytest_mock import MockerFixture
 
@@ -87,12 +89,13 @@ def test_file_upload_reports_progress_callback(mocker: MockerFixture, tmp_path: 
     content_str = json.dumps({"text": "Hello, world!"}) + "\n"
     responses = _mock_upload_responses(mocker, content_str=content_str)
 
-    def send_and_consume(request, *args, **kwargs):  # noqa: ARG001
+    def send_and_consume(request: Request, *args: object, **kwargs: object) -> Response:  # noqa: ARG001
         # Consume streamed upload bodies so progress callbacks fire under the mock.
-        if request.stream is not None:
-            for _ in request.stream:
+        stream = request.stream
+        if isinstance(stream, SyncByteStream):
+            for _chunk in stream:
                 pass
-            request.stream.close()
+            stream.close()
         return responses.pop(0)
 
     client = Together(api_key="fake_api_key")
