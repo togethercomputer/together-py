@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import ssl
 import json
 import base64
@@ -25,12 +24,6 @@ from together.types.beta import ClusterListRegionsResponse
 from together.lib.cli.api.beta.clusters import ssh as ssh_cli, create as create_cli
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
-
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def _normalize_cli_output(output: str) -> str:
-    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
 
 
 def _cluster_body(cluster_id: str = "cluster-1", name: str = "my-cluster", **overrides: Any) -> dict[str, Any]:
