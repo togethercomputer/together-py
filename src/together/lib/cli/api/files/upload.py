@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from typing import Optional, Annotated, cast, get_args
 from pathlib import Path
@@ -14,7 +13,7 @@ from together._utils._json import openapi_dumps
 from together.lib.resources.files import FileAlreadyExistsError
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
 async def upload(
@@ -25,9 +24,6 @@ async def upload(
     config: CLIConfigParameter,
 ) -> None:
     """Upload file."""
-    if config.json:
-        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
-
     # Manually handle check here so we can exit and provide the user good error messages
     if not no_check:
         report = check_file(file)
@@ -47,11 +43,13 @@ async def upload(
         sys.exit(1)
 
     try:
-        response = await show_loading_status(
-            "Uploading file",
-            config.client.files.upload(
-                file=file, purpose=purpose, check=False, raise_if_already_exists=not config.json
-            ),
+        response = await upload_file_with_progress(
+            config.client.files.upload,
+            file,
+            enabled=not config.json,
+            purpose=purpose,
+            check=False,
+            raise_if_already_exists=not config.json,
         )
     except FileAlreadyExistsError as e:
         console.print(
