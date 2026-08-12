@@ -70,7 +70,7 @@ async def resolve_model_reference(config: CLIConfigParameter, model_input: str) 
         return ResolvedModelReference(construct_model_path(model), None)
 
     supported_models = await config.client.beta.models.list_supported(search=model_input)
-    exact_matches = [model for model in supported_models.data if model.name == model_input]
+    exact_matches = [m for m in supported_models.data if m.name == model_input]
     matches = exact_matches or supported_models.data
     if not matches:
         raise ValueError(f"Model {model_input} not found.")
@@ -80,11 +80,11 @@ async def resolve_model_reference(config: CLIConfigParameter, model_input: str) 
 Please specify a more specific model name. To find a matching model, try this:
 - tg beta models public --search {model_input}""")
 
-    model = matches[0]
-    if model.base_model:
-        return ResolvedModelReference(model.base_model, None)
-    if model.base_model_id:
-        return ResolvedModelReference(None, model.base_model_id)
+    supported_model = matches[0]
+    if supported_model.base_model:
+        return ResolvedModelReference(supported_model.base_model, None)
+    if supported_model.base_model_id:
+        return ResolvedModelReference(None, supported_model.base_model_id)
     raise ValueError(f"Model {model_input} has no usable base model reference.")
 
 
