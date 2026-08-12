@@ -707,7 +707,7 @@ beta_endpoints_app.command(
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.shadow:shadow"),
-    help="Mirror sampled live traffic to a new deployment without serving its responses",
+    help="Mirror sampled live traffic to a new or existing deployment without serving its responses",
     help_epilogue=BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     sort_key=9999,
 )

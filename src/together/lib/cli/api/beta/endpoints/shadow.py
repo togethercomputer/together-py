@@ -24,7 +24,7 @@ from together.types.beta.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
-from together.lib.cli.api.beta.endpoints._utils._parameters import ModelParameter, EndpointPromptParameter
+from together.lib.cli.api.beta.endpoints._utils._parameters import ModelPromptParameter, EndpointPromptParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
     construct_model_path,
@@ -34,6 +34,7 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_autoscaling
+from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
 
 async def shadow(
@@ -45,20 +46,37 @@ async def shadow(
         ),
         EndpointPromptParameter(),
     ],
-    model: ModelParameter,
+    model: Annotated[
+        Optional[str],
+        Parameter(
+            help="""Model to deploy as the shadow target. Required unless --target-deployment-id is set. Accepted forms:
+
+- Public model name (for example, zai-org/GLM-5.2).
+- Private model name, with or without the project slug.
+- Private model ID (ml_...).
+- Fully qualified model resource path returned by the API."""
+        ),
+        ModelPromptParameter(instructions="What model would you like to shadow traffic to?", message="Model"),
+    ] = None,
     config_id: Annotated[
         Optional[str],
         Parameter(
             help=(
                 "Config revision ID (cr_...) for the shadow deployment. Automatically selected only when one "
-                "compatible config exists."
+                "compatible config exists. Ignored with --target-deployment-id."
             ),
             name="config",
         ),
     ] = None,
     name: Annotated[
         Optional[str],
-        Parameter(help="Shadow deployment name; defaults to the model name with a short suffix"),
+        Parameter(
+            help=(
+                "Shadow deployment name when creating a new deployment (defaults to the model name with a short "
+                "suffix); with --target-deployment-id, names the shadow target (defaults to "
+                "<deployment-name>-target)"
+            )
+        ),
     ] = None,
     rate: Annotated[
         Optional[float],
@@ -85,17 +103,81 @@ async def shadow(
         bool,
         Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment"),
     ] = False,
+    target_deployment_id: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Existing deployment ID (dep_...) or name under the source endpoint to receive mirrored traffic; "
+                "skips creating a new deployment"
+            ),
+        ),
+    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
-    """Create a shadow deployment and mirror sampled live traffic without serving its responses.
+    """Mirror sampled live traffic to a shadow deployment without serving its responses.
 
-    The target deployment stays out of live traffic and active rollouts; weight-0
+    Pass MODEL to create a fresh shadow deployment, or --target-deployment-id to attach an
+    existing deployment. The target stays out of live traffic and active rollouts; weight-0
     traffic-split warm-up deployments are valid shadow targets.
     """
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
+    model = await resolve_model_or_target_deployment(
+        model,
+        target_deployment_id,
+        config_id=config_id,
+        enable_lora=enable_lora,
+        config=config,
+    )
 
     endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
+
+    sampling = build_sampling(rate=rate, key=key, target_qps=target_qps, window=window)
+    source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
+    shadow_name = build_shadow_name(rate, key, target_qps, window)
+
+    if target_deployment_id is not None:
+        deployment_endpoint, resolved_deployment_id = await resolve_deployment_id(config.client, target_deployment_id)
+        if deployment_endpoint.id != endpoint_id:
+            raise ValueError(
+                f"Deployment {resolved_deployment_id} belongs to endpoint {deployment_endpoint.id}, not {endpoint_id}."
+            )
+
+        # If the shadow experiment already exists, we then just want to add the target to the existing experiment
+        # This logic is turned on if the create fails with an error about the experiment already existing
+        experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
+        assert experiment.id is not None
+
+        deployment = await show_loading_status(
+            "Loading shadow deployment...",
+            config.client.beta.endpoints.deployments.retrieve(
+                id=resolved_deployment_id,
+                endpoint_id=endpoint_id,
+            ),
+        )
+        assert deployment.id is not None
+        target_name = name if name is not None else f"{deployment.name}-target"
+
+        await show_loading_status(
+            "Adding shadow experiment to deployment...",
+            config.client.beta.endpoints.shadow_experiments.targets.create(
+                endpoint_id=endpoint_id,
+                experiment_id=experiment.id,
+                name=target_name,
+                target_deployment_id=deployment.id,
+            ),
+        )
+
+        if config.json:
+            payload: dict[str, Any] = {"deployment": deployment, "shadow_experiment": experiment}
+            console.print_json(openapi_dumps(payload).decode("utf-8"))
+            return
+
+        console.print("[green]√[/green] Existing deployment added as shadow target; traffic mirroring started.")
+        await retrieve(endpoint_id, config=config)
+        return
+
+    assert model is not None
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
 
@@ -113,13 +195,10 @@ async def shadow(
         short_uuid = str(uuid.uuid4())[:8]
         name = f"{resolved_model.name}-{short_uuid}".replace("/", "-")
 
-    sampling = build_sampling(rate=rate, key=key, target_qps=target_qps, window=window)
-    source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
-    shadow_name = build_shadow_name(rate, key, target_qps, window)
-
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing
     experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
+    assert experiment.id is not None
 
     deployment = await show_loading_status(
         "Creating shadow deployment...",
@@ -134,7 +213,6 @@ async def shadow(
     )
 
     assert deployment.id is not None
-    assert experiment.id is not None
 
     await show_loading_status(
         "Adding shadow experiment to deployment...",
@@ -147,12 +225,48 @@ async def shadow(
     )
 
     if config.json:
-        payload: dict[str, Any] = {"deployment": deployment, "shadow_experiment": experiment}
+        payload = {"deployment": deployment, "shadow_experiment": experiment}
         console.print_json(openapi_dumps(payload).decode("utf-8"))
         return
 
     console.print("[green]√[/green] Shadow deployment created and traffic mirroring started.")
     await retrieve(endpoint_id, config=config)
+
+
+async def resolve_model_or_target_deployment(
+    model: str | None,
+    target_deployment_id: str | None,
+    *,
+    config_id: str | None,
+    enable_lora: bool,
+    config: CLIConfig,
+) -> str | None:
+    if target_deployment_id is not None:
+        if model is not None:
+            raise ValueError("Do not pass MODEL with --target-deployment-id.")
+        if config_id is not None:
+            raise ValueError("Do not pass --config with --target-deployment-id.")
+        if enable_lora:
+            raise ValueError("Do not pass --enable-lora with --target-deployment-id.")
+        return None
+
+    if model is not None:
+        return model
+
+    if config.non_interactive:
+        raise ValueError("Either MODEL or --target-deployment-id must be provided.")
+
+    try:
+        prompt = ModelPromptParameter(
+            instructions="What model would you like to shadow traffic to?",
+            message="Model",
+        )
+        await prompt.preprompt(config)
+        value = await prompt.prompt("model")
+        console.print("")
+        return cast(str, value)
+    except Exception as e:
+        raise ValueError("Either MODEL or --target-deployment-id must be provided.") from e
 
 
 async def resolve_rate_or_target_qps(
