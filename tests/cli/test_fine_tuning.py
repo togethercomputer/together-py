@@ -641,7 +641,6 @@ class TestFineTuningModelLimits:
         assert "Max Rank" in result.output
 
 
-
 class TestFineTuningDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_invokes_download_manager(
