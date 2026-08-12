@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from httpx import (
     Request,
     Response,
@@ -13,7 +14,11 @@ from together import Together, AsyncTogether
 from together.types import (
     FileResponse,
 )
-from together.lib.resources.files import FileUploadProgress
+from together.lib.resources.files import (
+    FileUploadProgress,
+    _validate_upload_file_id,
+    _validate_upload_redirect_url,
+)
 
 
 def _mock_upload_responses(mocker: MockerFixture, *, content_str: str, filename: str = "valid.jsonl"):
@@ -84,6 +89,33 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     assert response.object == "file"
     assert response.processed == True
     assert response.purpose == "fine-tune"
+
+
+@pytest.mark.parametrize(
+    ("url", "should_pass"),
+    [
+        ("https://bucket.s3.us-west-2.amazonaws.com/key", True),
+        ("https://mock-presigned-url.com/upload", True),
+        ("http://bucket.s3.amazonaws.com/key", False),
+        ("https://127.0.0.1/upload", False),
+        ("https://localhost/upload", False),
+        ("https://10.0.0.5/upload", False),
+    ],
+)
+def test_validate_upload_redirect_url(url: str, should_pass: bool):
+    if should_pass:
+        assert _validate_upload_redirect_url(url) == url
+    else:
+        with pytest.raises(ValueError):
+            _validate_upload_redirect_url(url)
+
+
+def test_validate_upload_file_id():
+    assert _validate_upload_file_id("file-30b2f515-c146-4780-80e6-d8a84f4caaaa").startswith("file-")
+    with pytest.raises(ValueError):
+        _validate_upload_file_id("../evil")
+    with pytest.raises(ValueError):
+        _validate_upload_file_id("file?x=1")
 
 
 def test_file_upload_reports_progress_callback(mocker: MockerFixture, tmp_path: Path):

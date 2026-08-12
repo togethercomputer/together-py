@@ -13,7 +13,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.components.upload_progress import file_download_progress
+from together.lib.cli.components.download_progress import DownloadProgressTracker
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 
@@ -83,16 +83,16 @@ async def download(
     output: Path | None = output_dir
 
     try:
-        with file_download_progress(
+        with DownloadProgressTracker.for_single_file(
             enabled=not config.json,
             description=f"Downloading {remote_name}",
-        ) as progress_callback:
+        ) as tracker:
             file_path, file_size = await AsyncDownloadManager(config.client).download(
                 url=url,
                 output=output,
                 remote_name=ft_job.x_model_output_name,
                 fetch_metadata=True,
-                progress_callback=progress_callback,
+                progress_callback=tracker.as_callback(),
             )
 
         if config.json:

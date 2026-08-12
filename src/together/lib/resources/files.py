@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import math
 import stat
 import time
@@ -10,10 +11,12 @@ import asyncio
 import hashlib
 import logging
 import tempfile
+import ipaddress
 from typing import IO, Any, Dict, List, Tuple, Callable, Iterator, AsyncIterator, cast
 from pathlib import Path
 from functools import partial
 from dataclasses import dataclass
+from urllib.parse import urlparse
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 import httpx
@@ -45,6 +48,39 @@ from ..._exceptions import APIStatusError, APIConnectionError, AuthenticationErr
 log: logging.Logger = logging.getLogger(__name__)
 
 UPLOAD_PROGRESS_CHUNK_SIZE = 1024 * 1024
+_SAFE_FILE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+
+
+def _validate_upload_redirect_url(redirect_url: str) -> str:
+    """Reject unsafe upload redirect targets before issuing the PUT."""
+
+    parsed = urlparse(redirect_url)
+    if parsed.scheme != "https":
+        raise ValueError(f"Refusing non-HTTPS upload redirect URL: {redirect_url!r}")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError(f"Upload redirect URL is missing a hostname: {redirect_url!r}")
+
+    lowered = hostname.lower()
+    if lowered in {"localhost", "metadata.google.internal"} or lowered.endswith(".localhost"):
+        raise ValueError(f"Refusing upload redirect to local host: {redirect_url!r}")
+
+    try:
+        ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        ip = None
+
+    if ip is not None and not ip.is_global:
+        raise ValueError(f"Refusing upload redirect to non-public address: {redirect_url!r}")
+
+    return redirect_url
+
+
+def _validate_upload_file_id(file_id: str) -> str:
+    if not _SAFE_FILE_ID_RE.fullmatch(file_id):
+        raise ValueError(f"Invalid upload file id returned by server: {file_id!r}")
+    return file_id
 
 
 @dataclass(frozen=True)
@@ -579,7 +615,14 @@ class UploadManager(SyncAPIResource):
                 body=response.content.decode() if hasattr(response, "content") else "",
             )
 
-        return redirect_url, file_id
+        try:
+            return _validate_upload_redirect_url(redirect_url), _validate_upload_file_id(file_id)
+        except ValueError as e:
+            raise APIStatusError(
+                str(e),
+                response=response,
+                body=response.content.decode() if hasattr(response, "content") else "",
+            ) from e
 
     def callback(self, url: str) -> FileResponse:
         response = self._client.post(
@@ -859,6 +902,7 @@ class MultipartUploadManager(SyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
+        upload_url = _validate_upload_redirect_url(str(upload_url))
 
         part_headers = part_info.get("Headers", {})
 
@@ -997,7 +1041,14 @@ class AsyncUploadManager(AsyncAPIResource):
                     body=response.content.decode() if hasattr(response, "content") else "",
                 )
 
-        return redirect_url, file_id
+        try:
+            return _validate_upload_redirect_url(redirect_url), _validate_upload_file_id(file_id)
+        except ValueError as e:
+            raise APIStatusError(
+                str(e),
+                response=response,
+                body=response.content.decode() if hasattr(response, "content") else "",
+            ) from e
 
     async def callback(self, url: str) -> FileResponse:
         response = self._client.post(
@@ -1277,6 +1328,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
+        upload_url = _validate_upload_redirect_url(str(upload_url))
 
         part_headers = part_info.get("Headers", {})
 
