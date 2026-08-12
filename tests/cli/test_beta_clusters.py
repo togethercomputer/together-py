@@ -801,7 +801,7 @@ class TestBetaClustersNvidiaVersionSelection:
         assert selected.id == "nvidia-595-22"
 
     def test_semantic_selection_requires_disambiguation_for_duplicate_cuda_rows(self) -> None:
-        with pytest.raises(TogetherError, match="Add --os or use --nvidia-version-id"):
+        with pytest.raises(TogetherError, match="Add --os or use --driver"):
             create_cli._resolve_nvidia_version(
                 ClusterListRegionsResponse(**_REGIONS_BODY),
                 region="us-central-8",
@@ -839,7 +839,7 @@ class TestBetaClustersNvidiaVersionSelection:
             )
         )
 
-        with pytest.raises(TogetherError, match=r"Use --nvidia-version-id\. Matches"):
+        with pytest.raises(TogetherError, match=r"Use --driver\. Matches"):
             create_cli._resolve_nvidia_version(
                 catalog,
                 region="us-central-8",
@@ -890,7 +890,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--driver",
+                "--nvidia-driver-version",
                 "595",
                 "--region",
                 "us-central-8",
@@ -905,7 +905,7 @@ class TestBetaClustersCreate:
 
         assert result.exit_code == 1
         assert json.loads(result.output) == {
-            "error": "--driver and --cuda-version must be provided together; --os requires both."
+            "error": "--nvidia-driver-version and --cuda-version must be provided together; --os requires both."
         }
 
     @pytest.mark.respx(base_url=base_url)
@@ -955,7 +955,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--driver",
+                "--nvidia-driver-version",
                 "565",
                 "--cuda-version",
                 "12.6",
@@ -997,7 +997,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--nvidia-version-id",
+                "--driver",
                 "nvidia-595-24",
                 "--region",
                 "us-central-8",
@@ -1034,7 +1034,7 @@ class TestBetaClustersCreate:
                 "KUBERNETES",
                 "--gpu-type",
                 "H100_SXM",
-                "--driver",
+                "--nvidia-driver-version",
                 "595",
                 "--cuda-version",
                 "13.2",
@@ -1071,11 +1071,11 @@ class TestBetaClustersCreate:
                 "SLURM",
                 "--gpu-type",
                 "H100_SXM",
-                "--driver",
+                "--nvidia-driver-version",
                 "565",
                 "--cuda-version",
                 "12.6",
-                "--nvidia-version-id",
+                "--driver",
                 "nvidia-565-22",
                 "--region",
                 "us-central-8",
