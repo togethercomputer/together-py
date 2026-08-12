@@ -97,6 +97,9 @@ FINE_TUNING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Preview how a training file will be tokenized:
   [primary]tg ft preview --model Qwen/Qwen2-1.5B --training-file <file-id>[/primary]
+
+[dim]-[/dim] Get fine-tuning limits for a model:
+  [primary]tg ft model-limits Qwen/Qwen2-1.5B[/primary]
 """
 
 FINE_TUNING_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -142,6 +145,11 @@ FINE_TUNING_PREVIEW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Save the raw preview response:
   [primary]tg ft preview -M Qwen/Qwen2-1.5B -t <file-id> --json > preview.json[/primary]
+"""
+
+FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Get fine-tuning limits for a model:
+  [primary]tg ft model-limits Qwen/Qwen2-1.5B[/primary]
 """
 
 FINE_TUNING_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
