@@ -443,23 +443,20 @@ BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror 10% of live requests to a shadow deployment:
-  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> \\
-    --rate 0.1[/primary]
+  [primary]tg beta endpoints shadow my-endpoint Qwen/Qwen2.5-7B --rate 0.1[/primary]
 
 [dim]-[/dim] Adaptive sampling to a target QPS:
-  [primary]tg beta endpoints shadow zai-org/GLM-5.1 --endpoint <endpoint-name-or-id> \\
-    --target-qps 5[/primary]
+  [primary]tg beta endpoints shadow ep_xxxxxxxxxxxx Qwen/Qwen2.5-7B --target-qps 5[/primary]
 
 [dim]-[/dim] Sticky key-based sampling on a request field:
-  [primary]tg beta endpoints shadow deepseek-ai/DeepSeek-V4-Flash --endpoint <endpoint-name-or-id> \\
-    --rate 0.2 --key user_id[/primary]
+  [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx --rate 0.2 --key user_id[/primary]
 
 [dim]-[/dim] Shadow a private model with an explicit config:
-  [primary]tg beta endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
+  [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
 [dim]-[/dim] Mirror traffic to an existing deployment:
-  [primary]tg beta endpoints shadow --endpoint <endpoint-name-or-id> --target-deployment-id dep_xxxxxxxxxxxx --rate 0.1[/primary]
+  [primary]tg beta endpoints shadow dep_xxxxxxxxxxxx --rate 0.1[/primary]
 
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
