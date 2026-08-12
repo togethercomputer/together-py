@@ -458,6 +458,9 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
+[dim]-[/dim] Mirror traffic to an existing deployment:
+  [primary]tg beta endpoints shadow --endpoint <endpoint-name-or-id> --target-deployment-id dep_xxxxxxxxxxxx --rate 0.1[/primary]
+
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
 """
 
