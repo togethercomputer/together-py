@@ -5,29 +5,27 @@
 
 ### Features
 
-* **CLI Models:** Support model names for base model parameter in `tg beta models create` ([#506](https://github.com/togethercomputer/together-py/issues/506)) ([64a2c2c](https://github.com/togethercomputer/together-py/commit/64a2c2c608c6ac5ce7b5cd1dfaeb6217d4b696f3))
-* **cli:** Display supported model profile names in prompt flows ([#503](https://github.com/togethercomputer/together-py/issues/503)) ([7555e64](https://github.com/togethercomputer/together-py/commit/7555e64a1272c951b5eb8d9f6027fe6c0bb17c0a))
-* **cli:** warn about implicit volume version when there are multiple versions - ENG-91965 ([#521](https://github.com/togethercomputer/together-py/issues/521)) ([7db3db4](https://github.com/togethercomputer/together-py/commit/7db3db48db06d9ddec8848bf8ce1c1228ef25d73))
-* **Clusters CLI:** Display  configuration ID in `tg beta clusters list-regions` output ([#513](https://github.com/togethercomputer/together-py/issues/513)) ([4a52eed](https://github.com/togethercomputer/together-py/commit/4a52eedbe9cf8e5c195ef3ea82eba666710efa6d))
+* **Models CLI:** Support model names for base model parameter in `tg beta models create` ([#506](https://github.com/togethercomputer/together-py/issues/506)) ([64a2c2c](https://github.com/togethercomputer/together-py/commit/64a2c2c608c6ac5ce7b5cd1dfaeb6217d4b696f3))
+* **Models CLI:** Display supported model profile names in prompt flows ([#503](https://github.com/togethercomputer/together-py/issues/503)) ([7555e64](https://github.com/togethercomputer/together-py/commit/7555e64a1272c951b5eb8d9f6027fe6c0bb17c0a))
+* **Jig CLI:** Warn about implicit volume version when there are multiple versions ([#521](https://github.com/togethercomputer/together-py/issues/521)) ([7db3db4](https://github.com/togethercomputer/together-py/commit/7db3db48db06d9ddec8848bf8ce1c1228ef25d73))
+* **Clusters CLI:** Display configuration ID in `tg beta clusters list-regions` output ([#513](https://github.com/togethercomputer/together-py/issues/513)) ([4a52eed](https://github.com/togethercomputer/together-py/commit/4a52eedbe9cf8e5c195ef3ea82eba666710efa6d))
 * **Endpoints CLI:** Display GPU and estimated price when deploying a new model ([#512](https://github.com/togethercomputer/together-py/issues/512)) ([4e17fa6](https://github.com/togethercomputer/together-py/commit/4e17fa6f7316b8a735109ab5ab3f08920975bc75))
 * **Fine Tuning CLI:** add `tg ft model-limits` command ([#439](https://github.com/togethercomputer/together-py/issues/439)) ([4cf18b2](https://github.com/togethercomputer/together-py/commit/4cf18b2c1a182fc4e5abcec2b4ab1367cf1c982d))
-* **rollout:** add PreviewRolloutDefaults endpoint ([8513b45](https://github.com/togethercomputer/together-py/commit/8513b450927b8d2abe96efd4a2c889fa3aba9e10))
 
 
 ### Bug Fixes
 
-* **cli:** handle boundary fine-tune timestamps ([#519](https://github.com/togethercomputer/together-py/issues/519)) ([f3152aa](https://github.com/togethercomputer/together-py/commit/f3152aadf8d92a5c7ece7b7f3eb4bed10522598e))
-* **cli:** honor non-interactive fine-tune deletion ([#518](https://github.com/togethercomputer/together-py/issues/518)) ([4992d76](https://github.com/togethercomputer/together-py/commit/4992d76785ac2883f5f6a05ec139e077946fdd25))
-* **cli:** preserve Jig failure diagnostics in telemetry ([#514](https://github.com/togethercomputer/together-py/issues/514)) ([c6423c0](https://github.com/togethercomputer/together-py/commit/c6423c0d8e1194884086b2907c91618983b23246))
-* **cli:** support model names for `tg beta models configs --model` list filtering ([#500](https://github.com/togethercomputer/together-py/issues/500)) ([01d0105](https://github.com/togethercomputer/together-py/commit/01d01054dec583c03e9bd2b4ab8235a5a5f0b652))
-* **cli:** tolerate unsupported terminal characters ([#501](https://github.com/togethercomputer/together-py/issues/501)) ([65eb647](https://github.com/togethercomputer/together-py/commit/65eb647739bd567c9f8f607350e4b347fac0d8af))
-* **Clusters CLI:** skip cluster delete prompts when non-interactive mode is set ([#502](https://github.com/togethercomputer/together-py/issues/502)) ([86fbe97](https://github.com/togethercomputer/together-py/commit/86fbe97678407d757cf4d8a94d2649445348e6c2))
-* **openapi:** add request examples for CreateRollout so generated samples are valid ([3b74034](https://github.com/togethercomputer/together-py/commit/3b7403486a9b87a3596f559f58df8a1ab51f1819))
+* **Fine Tuning CLI:** avoid crashing on timestamp boundaries ([#519](https://github.com/togethercomputer/together-py/issues/519)) ([f3152aa](https://github.com/togethercomputer/together-py/commit/f3152aadf8d92a5c7ece7b7f3eb4bed10522598e))
+* **Fine Tuning CLI:** honor `--non-interactive` mode in delete command ([#518](https://github.com/togethercomputer/together-py/issues/518)) ([4992d76](https://github.com/togethercomputer/together-py/commit/4992d76785ac2883f5f6a05ec139e077946fdd25))
+* **Jig CLI:** preserve Jig failure diagnostics in telemetry ([#514](https://github.com/togethercomputer/together-py/issues/514)) ([c6423c0](https://github.com/togethercomputer/together-py/commit/c6423c0d8e1194884086b2907c91618983b23246))
+* **Models CLI:** support model names for `tg beta models configs --model` list filtering ([#500](https://github.com/togethercomputer/together-py/issues/500)) ([01d0105](https://github.com/togethercomputer/together-py/commit/01d01054dec583c03e9bd2b4ab8235a5a5f0b652))
+* **CLI:** Tolerate unsupported terminal characters (notably for Windows OS) ([#501](https://github.com/togethercomputer/together-py/issues/501)) ([65eb647](https://github.com/togethercomputer/together-py/commit/65eb647739bd567c9f8f607350e4b347fac0d8af))
+* **Clusters CLI:** skip cluster delete prompts when `--non-interactive` mode is set ([#502](https://github.com/togethercomputer/together-py/issues/502)) ([86fbe97](https://github.com/togethercomputer/together-py/commit/86fbe97678407d757cf4d8a94d2649445348e6c2))
 
 
 ### Chores
 
-* bump detect-agent to 0.6.0 ([#522](https://github.com/togethercomputer/together-py/issues/522)) ([abb6f5d](https://github.com/togethercomputer/together-py/commit/abb6f5dfdbafe5d5d63fe179d0f9e3553839d6ab))
+* bump detect-agent to 0.6.0 and remove unused dependencies ([#522](https://github.com/togethercomputer/together-py/issues/522)) ([abb6f5d](https://github.com/togethercomputer/together-py/commit/abb6f5dfdbafe5d5d63fe179d0f9e3553839d6ab))
 
 
 ### Documentation
