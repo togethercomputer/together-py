@@ -28,6 +28,8 @@ class ChoiceMessage(BaseModel):
 
     reasoning: Optional[str] = None
 
+    reasoning_content: Optional[str] = None
+
     tool_calls: Optional[List[ToolChoice]] = None
 
 
