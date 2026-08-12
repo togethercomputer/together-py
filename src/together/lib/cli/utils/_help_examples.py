@@ -345,9 +345,6 @@ BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Set an A/B variant percent (takes from or returns to control):
   [primary]tg beta endpoints update <variant-deployment-id> --ab-percent 20[/primary]
-
-[dim]-[/dim] Rename a deployment:
-  [primary]tg beta endpoints update <deployment-id> --name my-deployment-v2[/primary]
 """
 
 BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -442,8 +439,11 @@ BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 BETA_MODELS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Register a full model (find base IDs with [primary]tg beta models public[/primary]):
+[dim]-[/dim] Register a full model (find names/IDs with [primary]tg beta models public[/primary]):
   [primary]tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
+
+[dim]-[/dim] Or pass a deploy model name instead of an id:
+  [primary]tg beta models create --name my-model --base-model Qwen/Qwen3.5-9B-FP8[/primary]
 
 [dim]-[/dim] Register a LoRA adapter record:
   [primary]tg beta models create --name my-adapter --base-model ml_xxxxxxxxxxxx --type adapter[/primary]

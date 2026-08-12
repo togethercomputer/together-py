@@ -695,6 +695,11 @@ beta_endpoints_app.command(
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
 )
 beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.events:events"),
+    help="List endpoint audit and lifecycle events",
+    sort_key=6,
+)
+beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.shadow:shadow"),
     help="Mirror sampled live traffic to a new deployment without serving its responses",
     help_epilogue=BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,

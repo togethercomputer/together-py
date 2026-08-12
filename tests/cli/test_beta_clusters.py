@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import ssl
 import json
 import base64
@@ -24,6 +25,12 @@ from together.types.beta import ClusterListRegionsResponse
 from together.lib.cli.api.beta.clusters import ssh as ssh_cli, create as create_cli
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _normalize_cli_output(output: str) -> str:
+    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
 
 
 def _cluster_body(cluster_id: str = "cluster-1", name: str = "my-cluster", **overrides: Any) -> dict[str, Any]:
@@ -850,6 +857,12 @@ class TestBetaClustersRetrieve:
 
 
 class TestBetaClustersCreate:
+    def test_create_help_mentions_b300_gpu_type(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
+
+        assert "B300_SXM" in result.output
+        assert result.exit_code == 0
+
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
             [
@@ -1012,7 +1025,7 @@ class TestBetaClustersCreate:
                 "--cluster-type",
                 "SLURM",
                 "--gpu-type",
-                "H100_SXM",
+                "B300_SXM",
                 "--nvidia-driver-version",
                 "565",
                 "--cuda-version",
@@ -1055,6 +1068,7 @@ class TestBetaClustersCreate:
         assert result.exit_code == 0, result.output
         body = json.loads(cast(Call, route.calls[0]).request.content.decode())
         assert body["billing_type"] == "SCHEDULED_CAPACITY"
+        assert body["gpu_type"] == "B300_SXM"
         assert body["auto_scale"] is True
         assert body["auto_scale_max_gpus"] == 16
         assert body["capacity_pool_id"] == "pool-1"
@@ -1146,12 +1160,24 @@ class TestBetaClustersDelete:
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
-    def test_delete_confirm_yes(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        c = _cluster_body("c1", "to-delete")
-        respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
+    def test_delete_force_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.delete("/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
-        result = cli_runner.invoke(["beta", "clusters", "delete", "c1"], input="y\n")
-        assert "Deleted" in result.output
+
+        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--force"])
+
+        assert "Deleted cluster (c1)" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_delete_non_interactive_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.delete("/compute/clusters/c1").mock(
+            return_value=httpx.Response(200, json={"cluster_id": "c1"})
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--non-interactive"])
+
+        assert route.called
+        assert "Deleted cluster (c1)" in result.output
         assert result.exit_code == 0
 
 
@@ -1233,6 +1259,20 @@ class TestBetaClustersStorage:
         )
         result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--json"])
         assert json.loads(result.output) == {"success": True}
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_storage_delete_non_interactive_skips_confirmation(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.delete("/compute/clusters/storage/volumes/vol-1").mock(
+            return_value=httpx.Response(200, json={"success": True})
+        )
+
+        result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--non-interactive"])
+
+        assert route.called
+        assert "Deleted. (vol-1)" in result.output
         assert result.exit_code == 0
 
 

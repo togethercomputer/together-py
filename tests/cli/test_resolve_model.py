@@ -53,6 +53,7 @@ def _profile(**overrides: Any) -> SupportedModelDeploymentProfile:
         "gpuCount": 1,
         "gpuType": "H100",
         "model": "projects/proj_public/models/ml_pub",
+        "modelName": "meta-llama/Llama-3-8B-FP16",
         "parallelism": "TP1",
         "performanceBenchmarks": {},
         "profileId": "cr_pub",
@@ -247,7 +248,7 @@ async def test_public_named_model_uses_deployment_profile() -> None:
     client.beta.models.list_supported.assert_awaited_once_with(search="meta-llama/Llama-3-8b")
     assert construct_model_path(resolved.model, resolved.revision_id) == "projects/proj_public/models/ml_pub"
     assert construct_config_path(resolved.config) == "projects/proj_public/configs/cr_pub"
-    assert resolved.model.name == "meta-llama/Llama-3-8b"
+    assert resolved.model.name == "meta-llama/Llama-3-8B-FP16"
 
 
 @pytest.mark.asyncio
@@ -263,6 +264,40 @@ async def test_public_model_requires_exactly_one_supported_match() -> None:
 
 
 @pytest.mark.asyncio
+async def test_public_profile_model_name_selects_matching_profile_without_config() -> None:
+    profiles = [
+        _profile(
+            certifiedConfigRevisionId="cr_a",
+            config="projects/proj_public/configs/cr_a",
+            model="projects/proj_public/models/ml_a/revisions/rv_1",
+            modelName="meta-llama/Llama-3-8B-BF16",
+            profileId="cr_a",
+        ),
+        _profile(
+            certifiedConfigRevisionId="cr_b",
+            config="projects/proj_public/configs/cr_b",
+            model="projects/proj_public/models/ml_b/revisions/rv_2",
+            modelName="meta-llama/Llama-3-8B-FP8",
+            profileId="cr_b",
+        ),
+    ]
+    client = MagicMock()
+    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.beta.models.list_supported = AsyncMock(
+        return_value=MagicMock(data=[_supported_model(deploymentProfiles=profiles)]),
+    )
+
+    resolved = await resolve_model_and_config(_cli_config(client), "meta-llama/Llama-3-8B-FP8")
+
+    client.beta.models.list_supported.assert_awaited_once_with(search="meta-llama/Llama-3-8B-FP8")
+    assert resolved.config.id == "cr_b"
+    assert resolved.model.name == "meta-llama/Llama-3-8B-FP8"
+    assert (
+        construct_model_path(resolved.model, resolved.revision_id) == "projects/proj_public/models/ml_b/revisions/rv_2"
+    )
+
+
+@pytest.mark.asyncio
 async def test_public_model_selects_profile_by_config_id() -> None:
     profiles = [
         _profile(certifiedConfigRevisionId="cr_a", config="projects/proj_public/configs/cr_a", profileId="cr_a"),
@@ -271,6 +306,7 @@ async def test_public_model_selects_profile_by_config_id() -> None:
             config="projects/proj_public/configs/cr_b",
             profileId="cr_b",
             model="projects/proj_public/models/ml_pub_b",
+            modelName="meta-llama/Llama-3-8B-FP8",
         ),
     ]
     client = MagicMock()
@@ -298,6 +334,7 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
             profileId="cr_a",
             quantization="BF16",
             model="projects/proj_public/models/ml_a/revisions/rv_1",
+            modelName="meta-llama/Llama-3-8B-BF16",
         ),
         _profile(
             certifiedConfigRevisionId="cr_b",
@@ -305,6 +342,7 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
             profileId="cr_b",
             quantization="FP8",
             model="projects/proj_public/models/ml_b/revisions/rv_2",
+            modelName="meta-llama/Llama-3-8B-FP8",
         ),
     ]
     client = MagicMock()
@@ -320,9 +358,8 @@ async def test_public_model_multiple_profiles_requires_flags(capsys: pytest.Capt
     assert "Available configs for meta-llama/Llama-3-8b" in output
     assert "cr_a" in output
     assert "cr_b" in output
-    assert "ml_a" in output
-    assert "ml_b" in output
-    assert "--model ml_a --config cr_a" in output
+    assert "meta-llama/Llama-3-8B-BF16" in output
+    assert "--model meta-llama/Llama-3-8B-BF16 --config cr_a" in output
 
 
 @pytest.mark.asyncio
