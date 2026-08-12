@@ -10,7 +10,7 @@ import asyncio
 import hashlib
 import logging
 import tempfile
-from typing import IO, Any, Dict, List, Tuple, Callable, Iterator, cast
+from typing import IO, Any, Dict, List, Tuple, Callable, Iterator, AsyncIterator, cast
 from pathlib import Path
 from functools import partial
 from dataclasses import dataclass
@@ -105,6 +105,28 @@ def _iter_file_upload_chunks(
             uploaded_bytes += len(chunk)
             _notify_upload_progress(progress_callback, uploaded_bytes, total_bytes)
             yield chunk
+
+
+async def _aiter_file_upload_chunks(
+    file: Path,
+    *,
+    total_bytes: int,
+    progress_callback: UploadProgressCallback | None = None,
+    chunk_size: int = UPLOAD_PROGRESS_CHUNK_SIZE,
+) -> AsyncIterator[bytes]:
+    """Async chunk iterator for ``httpx.AsyncClient``.
+
+    Sync iterators are wrapped as ``SyncByteStream``, which AsyncClient rejects with
+    ``Attempted to send an sync request with an AsyncClient instance.``
+    """
+
+    for chunk in _iter_file_upload_chunks(
+        file,
+        total_bytes=total_bytes,
+        progress_callback=progress_callback,
+        chunk_size=chunk_size,
+    ):
+        yield chunk
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -1037,7 +1059,7 @@ class AsyncUploadManager(AsyncAPIResource):
         assert redirect_url is not None
         callback_response = await self._client._client.put(
             url=redirect_url,
-            content=_iter_file_upload_chunks(
+            content=_aiter_file_upload_chunks(
                 file,
                 total_bytes=file_size,
                 progress_callback=progress_callback,

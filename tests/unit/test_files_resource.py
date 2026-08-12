@@ -5,10 +5,11 @@ from httpx import (
     Request,
     Response,
     SyncByteStream,
+    AsyncByteStream,
 )
 from pytest_mock import MockerFixture
 
-from together import Together
+from together import Together, AsyncTogether
 from together.types import (
     FileResponse,
 )
@@ -106,6 +107,41 @@ def test_file_upload_reports_progress_callback(mocker: MockerFixture, tmp_path: 
 
     events: list[FileUploadProgress] = []
     response = client.files.upload(
+        file,
+        purpose="fine-tune",
+        progress_callback=events.append,
+    )
+
+    assert isinstance(response, FileResponse)
+    assert events
+    assert events[0] == FileUploadProgress(uploaded_bytes=0, total_bytes=len(content_str.encode()))
+    assert events[-1].uploaded_bytes == events[-1].total_bytes == len(content_str.encode())
+
+
+async def test_async_file_upload_reports_progress_callback(mocker: MockerFixture, tmp_path: Path):
+    content_str = json.dumps({"text": "Hello, world!"}) + "\n"
+    responses = _mock_upload_responses(mocker, content_str=content_str)
+
+    async def send_and_consume(request: Request, *args: object, **kwargs: object) -> Response:  # noqa: ARG001
+        # Consume streamed upload bodies so progress callbacks fire under the mock.
+        # Also asserts AsyncClient gets an AsyncByteStream (sync iterators raise RuntimeError).
+        stream = request.stream
+        if isinstance(stream, AsyncByteStream):
+            async for _chunk in stream:
+                pass
+            await stream.aclose()
+        else:
+            raise AssertionError(f"Expected AsyncByteStream, got {type(stream)!r}")
+        return responses.pop(0)
+
+    client = AsyncTogether(api_key="fake_api_key")
+    mocker.patch.object(client._client, "send", side_effect=send_and_consume)
+
+    file = tmp_path / "valid.jsonl"
+    file.write_text(content_str)
+
+    events: list[FileUploadProgress] = []
+    response = await client.files.upload(
         file,
         purpose="fine-tune",
         progress_callback=events.append,
