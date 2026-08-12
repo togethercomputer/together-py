@@ -1440,7 +1440,7 @@ wheels = [
 
 [[package]]
 name = "together"
-version = "2.30.0"
+version = "2.31.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
