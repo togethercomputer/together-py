@@ -25,6 +25,7 @@ _SESSION_ID = int(str(uuid.uuid4().int)[0:13])
 
 _ENV_TELEMETRY_OFF = frozenset({"1", "true", "yes"})
 _ERROR_MESSAGE_MAX_LEN = 500
+_ERROR_MESSAGE_TRUNCATION_MARKER = "\n…\n"
 _CONFIG_DIR_NAME = "together"
 _CONFIG_FILE_NAME = "cli.json"
 
@@ -220,7 +221,10 @@ def sanitize_cli_error_message(msg: str) -> str:
     """Sanitize the error messages caught for telemetry to remove sensitive information."""
     s = _redact_secrets_in_error_text(msg.strip())
     if len(s) > _ERROR_MESSAGE_MAX_LEN:
-        s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
+        remaining_len = _ERROR_MESSAGE_MAX_LEN - len(_ERROR_MESSAGE_TRUNCATION_MARKER)
+        prefix_len = remaining_len // 2
+        suffix_len = remaining_len - prefix_len
+        s = f"{s[:prefix_len]}{_ERROR_MESSAGE_TRUNCATION_MARKER}{s[-suffix_len:]}"
     return s
 
 

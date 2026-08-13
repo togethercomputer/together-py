@@ -25,10 +25,22 @@ def _xdg_config_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  
 
 
 def test_sanitize_cli_error_message_truncates() -> None:
-    long = "a" * 600
+    long = "a" * 300 + "b" * 300
     out = sanitize_cli_error_message(long)
-    assert len(out) < len(long)
-    assert out.endswith("…")
+    assert len(out) == 500
+    assert out.startswith("a")
+    assert "\n…\n" in out
+    assert out.endswith("b")
+
+
+def test_sanitize_cli_error_message_preserves_diagnostic_tail() -> None:
+    long_signature = "Function signature: " + "parameter: type, " * 40
+    diagnostic = 'Invalid value for "--modality": "speech"'
+
+    out = sanitize_cli_error_message(f"CoercionError\n{long_signature}\n{diagnostic}")
+
+    assert out.startswith("CoercionError")
+    assert diagnostic in out
 
 
 def test_sanitize_cli_error_message_redacts_bearer() -> None:
