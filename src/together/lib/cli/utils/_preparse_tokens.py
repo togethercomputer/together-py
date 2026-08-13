@@ -22,6 +22,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "beta clusters storage": _UUID_RE,
     "beta clusters remediations": _UUID_RE,
     "beta jig volumes": _UUID_RE,
+    "batches": _UUID_RE,
 }
 
 # Help/version flags registered on every App — not user subcommands.

@@ -42,6 +42,37 @@ async def get_filename(client: AsyncTogether, id: str) -> str:
     return safe_download_filename(r.filename or "", fallback=id)
 
 
+async def download_file_content(
+    client: AsyncTogether,
+    id: str,
+    *,
+    output: Path | None = None,
+    stdout: bool = False,
+    loading_message: str = "Retrieving file contents...",
+) -> Path | bytes:
+    """Download file content to *output*, or return raw bytes when *stdout* is True."""
+    if stdout is False and output is None:
+        raise ValueError("Either output or stdout must be specified")
+    if stdout is True and output is not None:
+        raise ValueError("--stdout and --output cannot be used together")
+
+    response = await show_loading_status(loading_message, client.files.content(id=id))
+
+    if stdout:
+        return await response.read()
+
+    assert output is not None
+    if output.is_dir() or output.suffix == "":
+        output.mkdir(parents=True, exist_ok=True)
+        out_path = resolve_download_path(output, await get_filename(client, id))
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        out_path = output
+
+    await response.write_to_file(out_path)
+    return out_path
+
+
 async def retrieve_content(
     id: str,
     output: Annotated[
@@ -63,31 +94,20 @@ async def retrieve_content(
         console.print(f"[red]Invalid usage: --stdout and --output cannot be used together[/red]")
         sys.exit(1)
 
-    response = await show_loading_status("Retrieving file contents...", config.client.files.content(id=id))
+    result = await download_file_content(config.client, id, output=output, stdout=bool(stdout))
 
-    if stdout:
-        raw = await response.read()
+    if isinstance(result, bytes):
         if config.json:
             try:
-                payload = {"id": id, "content": raw.decode("utf-8")}
+                payload = {"id": id, "content": result.decode("utf-8")}
             except UnicodeDecodeError:
-                payload = {"id": id, "content_base64": base64.b64encode(raw).decode("ascii")}
+                payload = {"id": id, "content_base64": base64.b64encode(result).decode("ascii")}
             console.print_json(openapi_dumps(payload).decode("utf-8"))
         else:
-            console.print(raw.decode("utf-8"))
+            console.print(result.decode("utf-8"))
         return
 
-    if output is not None:
-        if output.is_dir() or output.suffix == "":
-            output.mkdir(parents=True, exist_ok=True)
-            out_path = resolve_download_path(output, await get_filename(config.client, id))
-        else:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            out_path = output
-
-        await response.write_to_file(out_path)
-
-        if config.json:
-            console.print_json(openapi_dumps({"id": id, "path": str(out_path)}).decode("utf-8"))
-        else:
-            console.print(f"File saved to [blue]{out_path}[/blue]")
+    if config.json:
+        console.print_json(openapi_dumps({"id": id, "path": str(result)}).decode("utf-8"))
+    else:
+        console.print(f"File saved to [blue]{result}[/blue]")

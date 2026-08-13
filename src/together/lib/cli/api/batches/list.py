@@ -8,17 +8,8 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.batches._utils import format_endpoint
+from together.lib.cli.api.batches._utils import STATUS_COLORS, format_endpoint
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
-
-status_colors = {
-    "VALIDATING": "yellow",
-    "IN_PROGRESS": "yellow",
-    "COMPLETED": "green",
-    "FAILED": "red",
-    "EXPIRED": "red",
-    "CANCELLED": "red",
-}
 
 
 async def list(
@@ -50,7 +41,7 @@ async def list(
 
     for job in jobs_to_display:
         status = str(job.status) if job.status is not None else ""
-        status_color = status_colors.get(status, "white")
+        status_color = STATUS_COLORS.get(status, "white")
         if job.status == "IN_PROGRESS" and job.progress is not None:
             status = f"{status}: {job.progress:g}%"
 

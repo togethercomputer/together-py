@@ -233,7 +233,10 @@ BATCHES_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg batches ls[/primary]
 
 [dim]-[/dim] Get details of a batch job:
-  [primary]tg batches get <batch-id>[/primary]
+  [primary]tg batches <batch-id>[/primary]
+
+[dim]-[/dim] Print batch results to stdout:
+  [primary]tg batches download <batch-id>[/primary]
 
 [dim]-[/dim] Cancel a batch job:
   [primary]tg batches cancel <batch-id>[/primary]
@@ -248,6 +251,14 @@ BATCHES_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Submit an audio transcription batch:
   [primary]tg batches submit ./audio.jsonl --api audio.transcriptions --model openai/whisper-large-v3[/primary]
+"""
+
+BATCHES_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Print batch output to stdout:
+  [primary]tg batches download <batch-id>[/primary]
+
+[dim]-[/dim] Download batch output to a file:
+  [primary]tg batches download <batch-id> --output ./results.jsonl[/primary]
 """
 
 ## Evals API commands

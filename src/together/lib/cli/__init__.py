@@ -52,6 +52,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
+    BATCHES_DOWNLOAD_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     BETA_ENDPOINTS_AB_HELP_EXAMPLES,
@@ -548,9 +549,15 @@ batches_app.command(
     (f"{_CLI}.batches.submit:submit"),
     help="Submit a new batch job",
     help_epilogue=BATCHES_SUBMIT_HELP_EXAMPLES,
+    sort_key=1,
 )
 batches_app.command((f"{_CLI}.batches.list:list"), alias="ls", help="List batch jobs")
 batches_app.command((f"{_CLI}.batches.retrieve:retrieve"), alias="get", help="Get batch job details")
+batches_app.command(
+    (f"{_CLI}.batches.download:download"),
+    help="Download batch job output (and error) files",
+    help_epilogue=BATCHES_DOWNLOAD_HELP_EXAMPLES,
+)
 batches_app.command((f"{_CLI}.batches.cancel:cancel"), help="Cancel a batch job")
 
 ## Telemetry API commands

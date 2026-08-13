@@ -8,7 +8,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.components.model_dump import print_model_dump
+from together.lib.cli.api.batches._utils import print_batch_detail
 
 
 async def retrieve(
@@ -22,4 +22,4 @@ async def retrieve(
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    print_model_dump(response, show_nulls=False)
+    print_batch_detail(response)
