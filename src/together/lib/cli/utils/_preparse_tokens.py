@@ -12,6 +12,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "fine-tuning": re.compile(r"^ft-"),
     "files": re.compile(r"^file-"),
     "evals": re.compile(r"^eval-"),
+    "batches": re.compile(r"^batch"),
     "endpoints": re.compile(r"^endpoint-"),
     "beta models configs": re.compile(r"^ep_"),
     # `beta endpoints` uses App.default(retrieve) instead of token rewriting.

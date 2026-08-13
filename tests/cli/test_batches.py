@@ -1,0 +1,218 @@
+from __future__ import annotations
+
+import os
+import json
+from typing import Any, cast
+from pathlib import Path
+from unittest.mock import AsyncMock, patch
+
+import httpx
+import pytest
+from respx import MockRouter
+from respx.models import Call
+
+from tests.cli.utils import CliRunner
+from together.types.file_response import FileResponse
+
+base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+_BATCH_JOB = {
+    "id": "batch_job_newer",
+    "status": "COMPLETED",
+    "endpoint": "/v1/chat/completions",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "input_file_id": "file-abc123",
+    "output_file_id": "file-out",
+    "progress": 100.0,
+    "file_size_bytes": 2048,
+    "created_at": "2024-06-02T12:00:00Z",
+    "completed_at": "2024-06-02T13:00:00Z",
+}
+
+_BATCH_JOB_OLDER = {
+    "id": "batch_job_older",
+    "status": "IN_PROGRESS",
+    "endpoint": "/v1/audio/transcriptions",
+    "model_id": "openai/whisper-large-v3",
+    "input_file_id": "file-xyz",
+    "progress": 42.5,
+    "file_size_bytes": 512,
+    "created_at": "2024-01-01T12:00:00Z",
+}
+
+_BATCH_CREATE = {
+    "job": {
+        "id": "batch_job_created",
+        "status": "VALIDATING",
+        "endpoint": "/v1/chat/completions",
+        "model_id": "Qwen/Qwen3.5-9B",
+        "input_file_id": "file-abc123",
+        "progress": 0.0,
+        "created_at": "2024-06-02T12:00:00Z",
+    },
+    "warning": None,
+}
+
+
+def _file_response(**kwargs: Any) -> FileResponse:
+    defaults: dict[str, Any] = {
+        "id": "file-up",
+        "bytes": 10,
+        "created_at": 1,
+        "filename": "x.jsonl",
+        "FileType": "jsonl",
+        "object": "file",
+        "Processed": True,
+        "purpose": "batch-api",
+    }
+    defaults.update(kwargs)
+    if hasattr(FileResponse, "model_validate"):
+        return FileResponse.model_validate(defaults)
+    return FileResponse.parse_obj(defaults)  # pyright: ignore[reportDeprecated]
+
+
+class TestBatchesSubmit:
+    def test_submit_help_describes_api_and_model_flags(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["batches", "submit", "--help"])
+        assert result.exit_code == 0
+        assert "--api" in result.output
+        assert "--model" in result.output
+        assert "-M" in result.output
+        assert "chat.completions" in result.output
+        assert "audio.transcriptions" in result.output
+        assert "audio.translations" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_positional_args(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B"])
+        assert result.exit_code == 0
+        assert "batch_job_created" in result.output
+        payload = json.loads(cast(Call, route.calls[0]).request.content)
+        assert payload["endpoint"] == "/v1/chat/completions"
+        assert payload["input_file_id"] == "file-abc123"
+        assert payload["model_id"] == "Qwen/Qwen3.5-9B"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_flag_args(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        result = cli_runner.invoke(
+            [
+                "batches",
+                "submit",
+                "file-abc123",
+                "--api",
+                "audio.transcriptions",
+                "-M",
+                "openai/whisper-large-v3",
+            ]
+        )
+        assert result.exit_code == 0
+        payload = json.loads(cast(Call, route.calls[0]).request.content)
+        assert payload["endpoint"] == "/v1/audio/transcriptions"
+        assert payload["model_id"] == "openai/whisper-large-v3"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        result = cli_runner.invoke(
+            ["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B", "--json"]
+        )
+        assert result.exit_code == 0
+        body = json.loads(result.output)
+        assert body["job"]["id"] == "batch_job_created"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_uploads_local_file(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        sample = tmp_path / "requests.jsonl"
+        sample.write_text('{"custom_id": "1"}\n', encoding="utf-8")
+        create = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            upload_mock.return_value = _file_response(id="file-uploaded")
+            result = cli_runner.invoke(["batches", "submit", str(sample), "chat.completions", "Qwen/Qwen3.5-9B"])
+        assert result.exit_code == 0
+        upload_mock.assert_called_once()
+        assert upload_mock.call_args.kwargs["purpose"] == "batch-api"
+        assert upload_mock.call_args.kwargs["check"] is False
+        payload = json.loads(cast(Call, create.calls[0]).request.content)
+        assert payload["input_file_id"] == "file-uploaded"
+
+    def test_submit_rejects_directory(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["batches", "submit", str(tmp_path), "chat.completions", "Qwen/Qwen3.5-9B"])
+        assert result.exit_code == 1
+        assert "directory" in result.output.lower()
+
+    def test_submit_rejects_invalid_api(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "not.an.api", "Qwen/Qwen3.5-9B"])
+        assert result.exit_code == 1
+
+
+class TestBatchesList:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches").mock(return_value=httpx.Response(200, json=[_BATCH_JOB_OLDER, _BATCH_JOB]))
+        result = cli_runner.invoke(["batches", "list"])
+        assert result.exit_code == 0
+        assert "batch_job_newer" in result.output
+        assert "batch_job_older" in result.output
+        assert result.output.index("batch_job_newer") < result.output.index("batch_job_older")
+        assert "42.5%" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches").mock(return_value=httpx.Response(200, json=[_BATCH_JOB_OLDER, _BATCH_JOB]))
+        result = cli_runner.invoke(["batches", "list", "--json"])
+        assert result.exit_code == 0
+        parsed = json.loads(result.output)
+        assert [row["id"] for row in parsed] == ["batch_job_newer", "batch_job_older"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ls_alias(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches").mock(return_value=httpx.Response(200, json=[]))
+        result = cli_runner.invoke(["batches", "ls"])
+        assert result.exit_code == 0
+        assert "tg batches submit" in result.output
+
+
+class TestBatchesRetrieve:
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        result = cli_runner.invoke(["batches", "retrieve", "batch_job_newer", "--json"])
+        assert result.exit_code == 0
+        body = json.loads(result.output)
+        assert body["id"] == "batch_job_newer"
+        assert body["status"] == "COMPLETED"
+        assert body["model_id"] == "Qwen/Qwen3.5-9B"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_get_alias(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        result = cli_runner.invoke(["batches", "get", "batch_job_newer", "--json"])
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == "batch_job_newer"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_implicit_retrieve_bare_job_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        result = cli_runner.invoke(["batches", "batch_job_newer", "--json"])
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == "batch_job_newer"
+
+
+class TestBatchesCancel:
+    @pytest.mark.respx(base_url=base_url)
+    def test_cancel(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        cancelled = {**_BATCH_JOB, "status": "CANCELLED"}
+        respx_mock.post("/batches/batch_job_newer/cancel").mock(return_value=httpx.Response(200, json=cancelled))
+        result = cli_runner.invoke(["batches", "cancel", "batch_job_newer"])
+        assert result.exit_code == 0
+        assert "Cancelled" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_cancel_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        cancelled = {**_BATCH_JOB, "status": "CANCELLED"}
+        respx_mock.post("/batches/batch_job_newer/cancel").mock(return_value=httpx.Response(200, json=cancelled))
+        result = cli_runner.invoke(["batches", "cancel", "batch_job_newer", "--json"])
+        assert result.exit_code == 0
+        assert json.loads(result.output)["status"] == "CANCELLED"

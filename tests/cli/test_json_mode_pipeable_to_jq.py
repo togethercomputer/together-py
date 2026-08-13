@@ -91,6 +91,13 @@ class TestJSONMode:
         evals.skip.run_and_assert("retrieve eval-123")
         evals.skip.run_and_assert("status eval-123")
 
+    def test_batches_json_mode(self) -> None:
+        batches = JSONValidator("batches")
+        batches.run_and_assert("submit file-abc123def456ghi789 chat.completions Qwen/Qwen3.5-9B")
+        batches.run_and_assert("list")
+        batches.run_and_assert("retrieve batch_job_abc123def456")
+        batches.run_and_assert("cancel batch_job_abc123def456")
+
     # All files commands (subprocess against mock server; no respx — child process never sees patches).
     def test_files_json_mode(self) -> None:
         files = JSONValidator("files")
