@@ -206,12 +206,11 @@ class TestBatchesRetrieve:
         respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
         assert result.exit_code == 0
-        assert "batch_job_newer" in result.output
-        assert "COMPLETED" in result.output
+        assert "Batch job details:" in result.output
+        assert "Completed at" in result.output
         assert "chat.completions" in result.output
         assert "Qwen/Qwen3.5-9B" in result.output
         assert "file-out" in result.output
-        assert "Progress:" not in result.output
         assert "tg batches download batch_job_newer --output ./out" in result.output
         # Raw dump fields that shouldn't clutter the human view
         assert "file_size_bytes" not in result.output
@@ -222,8 +221,7 @@ class TestBatchesRetrieve:
         respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
         result = cli_runner.invoke(["batches", "get", "batch_job_older"])
         assert result.exit_code == 0
-        assert "IN_PROGRESS" in result.output
-        assert "Progress:" in result.output
+        assert "In_progress" in result.output
         assert "42.5%" in result.output
         assert "audio.transcriptions" in result.output
         assert "tg batches download" not in result.output

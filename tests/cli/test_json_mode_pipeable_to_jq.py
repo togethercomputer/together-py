@@ -97,6 +97,7 @@ class TestJSONMode:
         batches.run_and_assert("list")
         batches.run_and_assert("retrieve batch_job_abc123def456")
         batches.run_and_assert("cancel batch_job_abc123def456")
+        batches.skip.run_and_assert("download batch_job_abc123def456")
 
     # All files commands (subprocess against mock server; no respx — child process never sees patches).
     def test_files_json_mode(self) -> None:
