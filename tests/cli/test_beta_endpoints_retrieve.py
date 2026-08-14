@@ -141,6 +141,24 @@ class TestBetaEndpointsRetrieve:
         assert payload["name"] == "my-project/my-endpoint"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_endpoint_ignores_forbidden_related_resources(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(200, json=_endpoint_body())
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(return_value=httpx.Response(403))
+        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(return_value=httpx.Response(403))
+
+        result = cli_runner.invoke(["beta", "endpoints", "retrieve", "ep_1", "--project", "proj", "--json"])
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["id"] == "ep_1"
+        assert payload["ab"] == []
+        assert payload["shadows"] == []
+
+    @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/endpoints").mock(

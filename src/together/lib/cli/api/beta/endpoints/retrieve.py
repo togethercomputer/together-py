@@ -10,6 +10,7 @@ from rich.table import Table
 from rich.columns import Columns
 from rich.padding import Padding
 
+from together import PermissionDeniedError
 from together.types.beta import Endpoint, EndpointDeployment
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_datetime
@@ -76,8 +77,8 @@ async def _retrieve_endpoint(id: str, *, config: CLIConfigParameter) -> None:
         "Loading endpoint and related resources...",
         asyncio.gather(
             config.client.beta.endpoints.retrieve(id),
-            config.client.beta.endpoints.ab_experiments.list(id),
-            config.client.beta.endpoints.shadow_experiments.list(id, include_targets=True),
+            _list_ab_experiments(id, config=config),
+            _list_shadow_experiments(id, config=config),
         ),
     )
 
@@ -86,14 +87,14 @@ async def _retrieve_endpoint(id: str, *, config: CLIConfigParameter) -> None:
             openapi_dumps(
                 {
                     **endpoint.to_dict(use_api_names=True),
-                    "shadows": shadows.data,
-                    "ab": ab_experiments.data,
+                    "shadows": shadows,
+                    "ab": ab_experiments,
                 }
             ).decode("utf-8")
         )
         return
 
-    render_header(endpoint, ab_experiments.data, shadows.data)
+    render_header(endpoint, ab_experiments, shadows)
 
     traffic_split = endpoint.traffic_split or []
     deployments = endpoint.deployments or []
@@ -145,6 +146,20 @@ async def _retrieve_endpoint(id: str, *, config: CLIConfigParameter) -> None:
         if i < len(deployments) - 1:
             deployments_table.add_row()
     console.print(Padding(deployments_table, (0, 0)))
+
+
+async def _list_ab_experiments(id: str, *, config: CLIConfigParameter) -> list[AbExperiment]:
+    try:
+        return (await config.client.beta.endpoints.ab_experiments.list(id)).data
+    except PermissionDeniedError:
+        return []
+
+
+async def _list_shadow_experiments(id: str, *, config: CLIConfigParameter) -> list[ShadowExperiment]:
+    try:
+        return (await config.client.beta.endpoints.shadow_experiments.list(id, include_targets=True)).data
+    except PermissionDeniedError:
+        return []
 
 
 traffic_split_colors = [
