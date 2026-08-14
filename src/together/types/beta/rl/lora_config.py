@@ -24,3 +24,6 @@ class LoraConfig(BaseModel):
 
     Ignored when LoRA is disabled or the session resumes from a checkpoint.
     """
+
+    train_unembed: Optional[bool] = None
+    """Whether to also train a LoRA adapter on the output head. Defaults to true."""
