@@ -144,9 +144,7 @@ class TestBetaEndpointsRetrieve:
     def test_retrieve_endpoint_ignores_forbidden_related_resources(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
-        respx_mock.get("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body())
-        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(return_value=httpx.Response(403))
         respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(return_value=httpx.Response(403))
 
