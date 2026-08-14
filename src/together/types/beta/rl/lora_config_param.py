@@ -25,3 +25,6 @@ class LoraConfigParam(TypedDict, total=False):
 
     Ignored when LoRA is disabled or the session resumes from a checkpoint.
     """
+
+    train_unembed: bool
+    """Whether to also train a LoRA adapter on the output head. Defaults to true."""

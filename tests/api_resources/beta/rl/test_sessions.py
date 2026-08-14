@@ -37,6 +37,7 @@ class TestSessions:
                 "dropout": 0,
                 "rank": 32,
                 "seed": "59",
+                "train_unembed": True,
             },
             metadata={
                 "wandb": {
@@ -212,6 +213,7 @@ class TestAsyncSessions:
                 "dropout": 0,
                 "rank": 32,
                 "seed": "59",
+                "train_unembed": True,
             },
             metadata={
                 "wandb": {
