@@ -364,6 +364,26 @@ def test_create_lora_training_client_forwards_seed(monkeypatch: pytest.MonkeyPat
     resources.stop.assert_called_once_with()
 
 
+def test_create_lora_training_client_forwards_train_unembed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    resources = MagicMock()
+    resources.model_resources_id = "mr-1"
+    resources.create_session.side_effect = RuntimeError("stop")
+    monkeypatch.setattr(_service.ModelResourcesClient, "create", _return_resources(resources))
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+
+    with pytest.raises(RuntimeError, match="stop"):
+        tinker_compat.ServiceClient().create_lora_training_client(
+            "Qwen/Qwen3.5-4B", rank=16, train_unembed=False
+        )
+
+    resources.create_session.assert_called_once_with(
+        lora_config={"rank": 16, "train_unembed": False}
+    )
+    resources.stop.assert_called_once_with()
+
+
 def test_create_lora_training_client_rejects_unknown_kwargs() -> None:
     """A misspelled rank must fail instead of silently provisioning rank 32."""
     with pytest.raises(TypeError, match="rnak"):

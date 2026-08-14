@@ -420,7 +420,8 @@ training_client.optim_step(adam_params).result()
 | -------- | ------ |
 | `base_model`, `rank` | Honored |
 | `seed` | Honored (forwarded into the session LoRA config) |
-| `train_mlp`, `train_attn`, `train_unembed` | Accepted; non-`True` values warn and are ignored (Together cannot select trainable modules independently) |
+| `train_unembed` | Honored (forwarded into the session LoRA config; defaults to `True`) |
+| `train_mlp`, `train_attn` | Accepted; non-`True` values warn and are ignored (Together cannot select those modules independently) |
 | `user_metadata` | Accepted and ignored |
 
 Training and sampling methods:

@@ -78,8 +78,9 @@ class ServiceClient:
     ) -> TrainingClient:
         """Create a LoRA session.
 
-        Per-session ``user_metadata`` is accepted and ignored. Together cannot select
-        trainable LoRA modules independently, so non-default ``train_*`` values warn.
+        Per-session ``user_metadata`` is accepted and ignored. ``train_unembed`` is
+        forwarded into the session LoRA config. ``train_mlp`` / ``train_attn`` cannot
+        be selected independently, so non-default values warn and are ignored.
         """
         del user_metadata
         unsupported = [
@@ -87,14 +88,13 @@ class ServiceClient:
             for name, enabled in (
                 ("train_mlp", train_mlp),
                 ("train_attn", train_attn),
-                ("train_unembed", train_unembed),
             )
             if enabled is not True
         ]
         if unsupported:
             warnings.warn(
                 f"Together ignores {unsupported}: per-module training selection is not "
-                "configurable, so runs will not reproduce Tinker behavior exactly",
+                "configurable for mlp/attn, so runs will not reproduce Tinker behavior exactly",
                 stacklevel=2,
             )
 
@@ -126,6 +126,8 @@ class ServiceClient:
         lora_config = LoraConfigParam(rank=rank)
         if seed is not None:
             lora_config["seed"] = seed
+        if not train_unembed:
+            lora_config["train_unembed"] = False
         try:
             session = model_resources.create_session(lora_config=lora_config)
         except BaseException:
