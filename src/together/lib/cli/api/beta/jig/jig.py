@@ -930,7 +930,9 @@ Note: Additional replicas may still be scaling up.""")
                             console.print(f"Deployment '{self.name}' may still be in progress.")
                             console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
                             console.print(self.logs(rid))
-                            raise _JigCliExit("Deployment container was running but did not become ready before timeout")
+                            raise _JigCliExit(
+                                "Deployment container was running but did not become ready before timeout"
+                            )
 
                 time.sleep(_TRACK_POLL_INTERVAL)
 
@@ -1354,7 +1356,7 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        raise _JigCliExit("Volume upload failed after the volume was created")
+        raise _JigCliExit("Volume upload failed after the volume was created") from None
 
 
 def volumes_update(jig: Jig, name: str, source: Path) -> None:

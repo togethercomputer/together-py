@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 import json
+from types import SimpleNamespace
 from typing import Any, cast
 from pathlib import Path
-from types import SimpleNamespace
 from contextlib import contextmanager
 from unittest.mock import patch
 
