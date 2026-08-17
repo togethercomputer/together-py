@@ -49,6 +49,9 @@ log: logging.Logger = logging.getLogger(__name__)
 
 UPLOAD_PROGRESS_CHUNK_SIZE = 1024 * 1024
 _SAFE_FILE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+# 307/308 preserve method + body. S3 uses 307 for cross-region/new buckets; GCS resumable too.
+_UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({307, 308})
+_MAX_UPLOAD_REDIRECTS = 20
 
 
 def _validate_upload_redirect_url(redirect_url: str) -> str:
@@ -163,6 +166,111 @@ async def _aiter_file_upload_chunks(
         chunk_size=chunk_size,
     ):
         yield chunk
+
+
+def _response_body_text(response: httpx.Response) -> str:
+    try:
+        return response.content.decode()
+    except Exception:
+        return ""
+
+
+def _upload_redirect_url(response: httpx.Response, current_url: str) -> str:
+    location = response.headers.get("Location")
+    if not location:
+        raise APIStatusError(
+            f"Error during file upload: redirect {response.status_code} missing Location, headers: {response.headers}",
+            response=response,
+            body=_response_body_text(response),
+        )
+
+    next_url = str(httpx.URL(current_url).join(location))
+    try:
+        return _validate_upload_redirect_url(next_url)
+    except ValueError as e:
+        raise APIStatusError(
+            str(e),
+            response=response,
+            body=_response_body_text(response),
+        ) from e
+
+
+def _put_file_content(
+    http_client: httpx.Client,
+    url: str,
+    file: Path,
+    *,
+    file_size: int,
+    progress_callback: UploadProgressCallback | None = None,
+) -> httpx.Response:
+    """PUT a streaming file body without httpx replaying a consumed generator.
+
+    ``self._client._client`` is built with ``follow_redirects=True``. A one-shot
+    iterator cannot be replayed, so a 307/308 (or any retry after the first byte)
+    would raise ``StreamConsumed``. Disable auto-follow and re-PUT with a fresh
+    iterator after validating ``Location``.
+    """
+
+    hops = 0
+    while True:
+        response = http_client.put(
+            url=url,
+            content=_iter_file_upload_chunks(
+                file,
+                total_bytes=file_size,
+                progress_callback=progress_callback,
+            ),
+            headers={"Content-Length": str(file_size)},
+            follow_redirects=False,
+        )
+        if response.status_code not in _UPLOAD_REPLAY_REDIRECT_STATUSES:
+            return response
+        hops += 1
+        if hops > _MAX_UPLOAD_REDIRECTS:
+            raise APIStatusError(
+                f"Error during file upload: exceeded {_MAX_UPLOAD_REDIRECTS} redirects, headers: {response.headers}",
+                response=response,
+                body=_response_body_text(response),
+            )
+        url = _upload_redirect_url(response, url)
+        log.debug("Upload redirected to %s", url)
+        response.close()
+
+
+async def _aput_file_content(
+    http_client: httpx.AsyncClient,
+    url: str,
+    file: Path,
+    *,
+    file_size: int,
+    progress_callback: UploadProgressCallback | None = None,
+) -> httpx.Response:
+    """Async counterpart of ``_put_file_content``."""
+
+    hops = 0
+    while True:
+        response = await http_client.put(
+            url=url,
+            content=_aiter_file_upload_chunks(
+                file,
+                total_bytes=file_size,
+                progress_callback=progress_callback,
+            ),
+            headers={"Content-Length": str(file_size)},
+            follow_redirects=False,
+        )
+        if response.status_code not in _UPLOAD_REPLAY_REDIRECT_STATUSES:
+            return response
+        hops += 1
+        if hops > _MAX_UPLOAD_REDIRECTS:
+            raise APIStatusError(
+                f"Error during file upload: exceeded {_MAX_UPLOAD_REDIRECTS} redirects, headers: {response.headers}",
+                response=response,
+                body=_response_body_text(response),
+            )
+        url = _upload_redirect_url(response, url)
+        log.debug("Upload redirected to %s", url)
+        await response.aclose()
 
 
 def chmod_and_replace(src: Path, dst: Path) -> None:
@@ -681,14 +789,12 @@ class UploadManager(SyncAPIResource):
         file_size = os.stat(file.as_posix()).st_size
 
         assert redirect_url is not None
-        callback_response = self._client._client.put(
-            url=redirect_url,
-            content=_iter_file_upload_chunks(
-                file,
-                total_bytes=file_size,
-                progress_callback=progress_callback,
-            ),
-            headers={"Content-Length": str(file_size)},
+        callback_response = _put_file_content(
+            self._client._client,
+            redirect_url,
+            file,
+            file_size=file_size,
+            progress_callback=progress_callback,
         )
         log.debug(
             'HTTP Response: %s %s "%i %s" %s',
@@ -1108,14 +1214,12 @@ class AsyncUploadManager(AsyncAPIResource):
         file_size = os.stat(file.as_posix()).st_size
 
         assert redirect_url is not None
-        callback_response = await self._client._client.put(
-            url=redirect_url,
-            content=_aiter_file_upload_chunks(
-                file,
-                total_bytes=file_size,
-                progress_callback=progress_callback,
-            ),
-            headers={"Content-Length": str(file_size)},
+        callback_response = await _aput_file_content(
+            self._client._client,
+            redirect_url,
+            file,
+            file_size=file_size,
+            progress_callback=progress_callback,
         )
         log.debug(
             'HTTP Response: %s %s "%i %s" %s',
