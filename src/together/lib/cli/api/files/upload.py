@@ -13,6 +13,7 @@ from together._utils._json import openapi_dumps
 from together.lib.resources.files import FileAlreadyExistsError
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.components.check_progress import CheckProgressTracker, should_show_check_progress
 from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
@@ -26,7 +27,12 @@ async def upload(
     """Upload file."""
     # Manually handle check here so we can exit and provide the user good error messages
     if not no_check:
-        report = check_file(file)
+        with CheckProgressTracker(file, enabled=should_show_check_progress(file, json_mode=config.json)) as tracker:
+            report = check_file(
+                file,
+                purpose=purpose or "fine-tune",
+                progress_callback=tracker.as_callback(),
+            )
         if report["is_check_passed"] is False:
             if config.json:
                 console.print_json(openapi_dumps(report).decode("utf-8"))

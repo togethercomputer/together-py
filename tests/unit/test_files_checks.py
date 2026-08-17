@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from together.lib.utils.files import check_file
+from together.lib.utils.files import FileCheckProgress, check_file
 
 
 def test_check_jsonl_valid_general(tmp_path: Path):
@@ -489,3 +489,50 @@ def test_check_file_unknown_extension(tmp_path: Path) -> None:
     assert not report["is_check_passed"]
     assert "Unknown extension" in report["message"]
     assert report["message"] == report["filetype"]
+
+
+def test_check_file_reports_progress_callback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("together.lib.utils.files.CHECK_PROGRESS_STEP_BYTES", 8)
+    file = tmp_path / "valid.jsonl"
+    content = [{"text": "Hello, world!"}, {"text": "How are you?"}]
+    file.write_text("\n".join(json.dumps(item) for item in content) + "\n")
+
+    events: list[FileCheckProgress] = []
+    report = check_file(file, progress_callback=events.append)
+
+    assert report["is_check_passed"]
+    assert events
+    assert {event.phase for event in events} == {"utf8", "jsonl"}
+    for phase in ("utf8", "jsonl"):
+        phase_events = [event for event in events if event.phase == phase]
+        assert phase_events[0].processed_bytes == 0
+        assert phase_events[-1].processed_bytes == phase_events[-1].total_bytes == file.stat().st_size
+
+
+def test_should_show_check_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.components import check_progress as check_progress_mod
+    from together.lib.cli.components.check_progress import should_show_check_progress
+
+    class _Console:
+        is_terminal = True
+
+    monkeypatch.setattr(check_progress_mod, "console", _Console())
+    monkeypatch.setattr(check_progress_mod, "CHECK_PROGRESS_MIN_BYTES", 10)
+
+    missing = tmp_path / "missing.jsonl"
+    assert should_show_check_progress(missing, json_mode=False) is False
+
+    tiny = tmp_path / "tiny.jsonl"
+    tiny.write_text("{}\n")
+    assert should_show_check_progress(tiny, json_mode=False) is False
+
+    large = tmp_path / "large.jsonl"
+    large.write_bytes(b"x" * 10)
+    assert should_show_check_progress(large, json_mode=False) is True
+    assert should_show_check_progress(large, json_mode=True) is False
+
+    class _NonTerminalConsole:
+        is_terminal = False
+
+    monkeypatch.setattr(check_progress_mod, "console", _NonTerminalConsole())
+    assert should_show_check_progress(large, json_mode=False) is False
