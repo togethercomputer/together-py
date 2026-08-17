@@ -119,12 +119,33 @@ def test_validate_upload_redirect_url(url: str, should_pass: bool):
             _validate_upload_redirect_url(url)
 
 
-def test_validate_upload_file_id():
-    assert _validate_upload_file_id("file-30b2f515-c146-4780-80e6-d8a84f4caaaa").startswith("file-")
-    with pytest.raises(ValueError):
-        _validate_upload_file_id("../evil")
-    with pytest.raises(ValueError):
-        _validate_upload_file_id("file?x=1")
+@pytest.mark.parametrize(
+    "file_id",
+    [
+        "file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
+        "file-abc123def456ghi789",
+    ],
+)
+def test_validate_upload_file_id_accepts_together_ids(file_id: str):
+    assert _validate_upload_file_id(file_id) == file_id
+
+
+@pytest.mark.parametrize(
+    "file_id",
+    [
+        "..",
+        ".",
+        "../evil",
+        "file-../evil",
+        "file?x=1",
+        "file-foo/bar",
+        "file-foo.bar",
+        "preprocess",
+    ],
+)
+def test_validate_upload_file_id_rejects_traversal(file_id: str):
+    with pytest.raises(ValueError, match="Invalid upload file id"):
+        _validate_upload_file_id(file_id)
 
 
 def test_file_upload_reports_progress_callback(mocker: MockerFixture, tmp_path: Path):

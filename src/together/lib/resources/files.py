@@ -48,7 +48,7 @@ from ..._exceptions import APIStatusError, APIConnectionError, AuthenticationErr
 log: logging.Logger = logging.getLogger(__name__)
 
 UPLOAD_PROGRESS_CHUNK_SIZE = 1024 * 1024
-_SAFE_FILE_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+_SAFE_FILE_ID_RE = re.compile(r"^file-[A-Za-z0-9-]+$")
 # 307/308 preserve method + body. S3 uses 307 for cross-region/new buckets; GCS resumable too.
 _UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({307, 308})
 _MAX_UPLOAD_REDIRECTS = 20
