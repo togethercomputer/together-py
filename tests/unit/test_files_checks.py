@@ -576,6 +576,30 @@ def test_check_progress_tracker_does_not_reset_across_phases(tmp_path: Path) -> 
         assert task.total == 200
 
 
+def test_encoded_line_size_counts_crlf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.utils.files import _encoded_line_size
+
+    file = tmp_path / "crlf.jsonl"
+    line1 = b'{"text": "hello"}\r\n'
+    line2 = b'{"text": "world"}\r\n'
+    file.write_bytes(line1 + line2)
+
+    with file.open(encoding="utf-8") as handle:
+        first = handle.readline()
+        assert first.endswith("\n") and not first.endswith("\r\n")
+        assert _encoded_line_size(handle, first) == len(line1)
+
+    monkeypatch.setattr("together.lib.utils.files.CHECK_PROGRESS_STEP_BYTES", 1)
+    events: list[FileCheckProgress] = []
+    report = check_file(file, progress_callback=events.append)
+    assert report["is_check_passed"]
+    jsonl_events = [event for event in events if event.phase == "jsonl"]
+    mid = [event for event in jsonl_events if 0 < event.processed_bytes < event.total_bytes]
+    assert mid
+    assert mid[0].processed_bytes == len(line1)
+    assert jsonl_events[-1].processed_bytes == jsonl_events[-1].total_bytes == file.stat().st_size
+
+
 def test_should_show_check_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from together.lib.cli.components import check_progress as check_progress_mod
     from together.lib.cli.components.check_progress import should_show_check_progress

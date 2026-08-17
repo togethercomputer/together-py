@@ -71,3 +71,33 @@ async def test_upload_file_with_progress_failed_check_does_not_upload(
     with pytest.raises(FileTypeError, match="nope"):
         await upload_file_with_progress(fake_upload, file, enabled=False)
     assert uploaded is False
+
+
+def test_upload_progress_tracker_skips_render_when_not_terminal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from together.lib.cli.components import upload_progress as upload_progress_mod
+    from together.lib.cli.components.upload_progress import UploadProgressTracker
+
+    class _NonTerminalConsole:
+        is_terminal = False
+
+    monkeypatch.setattr(upload_progress_mod, "console", _NonTerminalConsole())
+    file = tmp_path / "data.jsonl"
+    file.write_text("{}\n")
+    with UploadProgressTracker.for_single_file(file, enabled=True) as tracker:
+        assert tracker._progress is None
+        assert tracker.as_callback() is not None
+
+
+def test_download_progress_tracker_skips_render_when_not_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.components import download_progress as download_progress_mod
+    from together.lib.cli.components.download_progress import DownloadProgressTracker
+
+    class _NonTerminalConsole:
+        is_terminal = False
+
+    monkeypatch.setattr(download_progress_mod, "console", _NonTerminalConsole())
+    with DownloadProgressTracker.for_single_file(enabled=True, total_bytes=10) as tracker:
+        assert tracker._progress is None
+        assert tracker.as_callback() is not None

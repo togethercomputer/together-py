@@ -113,7 +113,7 @@ class UploadProgressTracker:
         )
 
     def __enter__(self) -> UploadProgressTracker:
-        if not self.enabled:
+        if not self.enabled or not console.is_terminal:
             return self
         self._progress = Progress(
             SpinnerColumn(style="bar.pulse"),
@@ -125,6 +125,7 @@ class UploadProgressTracker:
             TransferSpeedColumn(),
             TimeRemainingColumn(),
             console=console,
+            transient=True,
         )
         self._progress.start()
         self._bytes_task = self._progress.add_task(self.description, total=max(self.total_bytes, 1))

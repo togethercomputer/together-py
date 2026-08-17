@@ -48,7 +48,8 @@ from ..._exceptions import APIStatusError, APIConnectionError, AuthenticationErr
 log: logging.Logger = logging.getLogger(__name__)
 
 UPLOAD_PROGRESS_CHUNK_SIZE = 1024 * 1024
-_SAFE_FILE_ID_RE = re.compile(r"^file-[A-Za-z0-9-]+$")
+# Path-segment safe. Prefix and punctuation are server-controlled (not always ``file-``).
+_SAFE_FILE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # Replay PUT+body. 307/308 are spec-correct (S3/GCS); 301/302/303 match prior httpx auto-follow.
 _UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 _MAX_UPLOAD_REDIRECTS = 20
@@ -60,10 +61,70 @@ def _env_flag_enabled(name: str) -> bool:
 
 
 def _allow_http_upload_redirects(client: Any) -> bool:
+    """Whether PUT *redirect hops* may use http / non-public literals.
+
+    API-issued URLs (presigned ``Location``, multipart part URLs) are validated
+    separately via ``_validate_upload_server_url`` and already allow those.
+    Set ``TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS=1`` to also permit them on
+    subsequent 3xx ``Location`` hops, or use an ``http`` client ``base_url``.
+    """
+
     if _env_flag_enabled(_INSECURE_UPLOAD_REDIRECTS_ENV):
         return True
     base_url = getattr(client, "base_url", None)
     return getattr(base_url, "scheme", None) == "http"
+
+
+def _parse_ipv4_component(part: str) -> int | None:
+    """Parse one inet_aton IPv4 component (decimal, octal, or hex)."""
+
+    if not part:
+        return None
+    try:
+        if part.startswith("0x"):
+            return int(part, 16) if len(part) > 2 else None
+        if len(part) > 1 and part[0] == "0" and all(c in "01234567" for c in part):
+            return int(part, 8)
+        if part.isdecimal():
+            return int(part, 10)
+    except ValueError:
+        return None
+    return None
+
+
+def _parse_posix_ipv4(hostname: str) -> ipaddress.IPv4Address | None:
+    """Parse IPv4 the way POSIX ``inet_aton`` / getaddrinfo do.
+
+    ``ipaddress.ip_address`` rejects abbreviated (``127.1``), octal
+    (``0177.0.0.1``), hex-dotted, and dword forms that still resolve to
+    127.0.0.1.
+    """
+
+    parts = hostname.split(".")
+    if not parts or len(parts) > 4:
+        return None
+    nums: list[int] = []
+    for part in parts:
+        value = _parse_ipv4_component(part)
+        if value is None:
+            return None
+        nums.append(value)
+    try:
+        if len(nums) == 1:
+            return ipaddress.IPv4Address(nums[0])
+        if len(nums) == 2:
+            if nums[0] > 0xFF or nums[1] > 0xFFFFFF:
+                return None
+            return ipaddress.IPv4Address((nums[0] << 24) | nums[1])
+        if len(nums) == 3:
+            if nums[0] > 0xFF or nums[1] > 0xFF or nums[2] > 0xFFFF:
+                return None
+            return ipaddress.IPv4Address((nums[0] << 24) | (nums[1] << 16) | nums[2])
+        if any(n > 0xFF for n in nums):
+            return None
+        return ipaddress.IPv4Address((nums[0] << 24) | (nums[1] << 16) | (nums[2] << 8) | nums[3])
+    except (ValueError, ipaddress.AddressValueError):
+        return None
 
 
 def _parse_hostname_ip(hostname: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
@@ -71,16 +132,7 @@ def _parse_hostname_ip(hostname: str) -> ipaddress.IPv4Address | ipaddress.IPv6A
         return ipaddress.ip_address(hostname)
     except ValueError:
         pass
-
-    # POSIX resolvers accept dword IPv4 forms that ``ipaddress.ip_address(str)`` rejects.
-    try:
-        if hostname.startswith(("0x", "0X")):
-            return ipaddress.IPv4Address(int(hostname, 16))
-        if hostname.isdecimal():
-            return ipaddress.IPv4Address(int(hostname, 10))
-    except ValueError:
-        return None
-    return None
+    return _parse_posix_ipv4(hostname.lower())
 
 
 def _ip_is_non_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
@@ -89,19 +141,27 @@ def _ip_is_non_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool
     return not candidate.is_global
 
 
-def _validate_upload_redirect_url(redirect_url: str, *, allow_http: bool = False) -> str:
+def _validate_upload_redirect_url(
+    redirect_url: str,
+    *,
+    allow_http: bool = False,
+    allow_non_public: bool = False,
+) -> str:
     """Best-effort URL-layer filter for upload PUT targets.
 
     This is not a complete SSRF defense: we do not resolve DNS, so a name like
     ``127.0.0.1.nip.io`` still passes. We do reject non-public dotted-quad / IPv6
-    literals, IPv4-mapped loopback (``::ffff:127.0.0.1``), and dword decimal/hex
-    IPv4 (``2130706433``, ``0x7f000001``) that getaddrinfo will treat as 127.0.0.1.
+    literals, IPv4-mapped loopback (``::ffff:127.0.0.1``), dword decimal/hex
+    IPv4 (``2130706433``, ``0x7f000001``), abbreviated (``127.1``), and octal
+    (``0177.0.0.1``) forms that getaddrinfo will treat as 127.0.0.1.
 
-    HTTPS is required unless ``allow_http`` is set — either the client's
-    ``base_url`` is ``http`` (local/on-prem stacks) or
-    ``TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS`` is enabled. When ``allow_http``
-    is set, localhost and non-public literals are also allowed so MinIO /
-    LocalStack endpoints like ``http://127.0.0.1:9000/...`` work.
+    HTTPS is required unless ``allow_http`` is set. Non-public / localhost
+    literals are rejected unless ``allow_http`` or ``allow_non_public`` is set.
+
+    For *redirect hops*, ``allow_http`` is True when the client's ``base_url``
+    is ``http`` or ``TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS`` is enabled.
+    API-issued URLs use ``_validate_upload_server_url`` instead, which allows
+    private http(s) storage (MinIO, internal S3) without that env var.
     """
 
     parsed = urlparse(redirect_url)
@@ -118,7 +178,7 @@ def _validate_upload_redirect_url(redirect_url: str, *, allow_http: bool = False
     if lowered == "metadata.google.internal":
         raise ValueError(f"Refusing upload redirect to local host: {redirect_url!r}")
 
-    if not allow_http:
+    if not allow_http and not allow_non_public:
         if lowered == "localhost" or lowered.endswith(".localhost"):
             raise ValueError(f"Refusing upload redirect to local host: {redirect_url!r}")
 
@@ -127,6 +187,16 @@ def _validate_upload_redirect_url(redirect_url: str, *, allow_http: bool = False
             raise ValueError(f"Refusing upload redirect to non-public address: {redirect_url!r}")
 
     return redirect_url
+
+
+def _validate_upload_server_url(url: str) -> str:
+    """Validate an API-issued upload URL (presigned Location or multipart part URL).
+
+    Trusts the Together API: private/loopback literals and plain http are
+    allowed so on-prem MinIO / internal S3 work. Redirect hops stay strict.
+    """
+
+    return _validate_upload_redirect_url(url, allow_http=True, allow_non_public=True)
 
 
 def _validate_upload_file_id(file_id: str) -> str:
@@ -193,43 +263,43 @@ def _notify_download_progress(
         progress_callback(FileDownloadProgress(downloaded_bytes=downloaded_bytes, total_bytes=total_bytes))
 
 
-def _iter_file_upload_chunks(
-    file: Path,
+def _iter_open_file_upload_chunks(
+    file_handle: IO[bytes],
     *,
     total_bytes: int,
     progress_callback: UploadProgressCallback | None = None,
     chunk_size: int = UPLOAD_PROGRESS_CHUNK_SIZE,
 ) -> Iterator[bytes]:
-    """Yield file chunks while reporting upload progress to the caller."""
+    """Yield at most ``total_bytes`` from an already-open handle (matches Content-Length)."""
 
     uploaded_bytes = 0
+    remaining = total_bytes
     _notify_upload_progress(progress_callback, uploaded_bytes, total_bytes)
+    while remaining > 0:
+        chunk = file_handle.read(min(chunk_size, remaining))
+        if not chunk:
+            raise OSError("File was truncated during upload")
+        remaining -= len(chunk)
+        yield chunk
+        uploaded_bytes += len(chunk)
+        _notify_upload_progress(progress_callback, uploaded_bytes, total_bytes)
 
-    with file.open("rb") as file_handle:
-        while True:
-            chunk = file_handle.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk
-            uploaded_bytes += len(chunk)
-            _notify_upload_progress(progress_callback, uploaded_bytes, total_bytes)
 
-
-async def _aiter_file_upload_chunks(
-    file: Path,
+async def _aiter_open_file_upload_chunks(
+    file_handle: IO[bytes],
     *,
     total_bytes: int,
     progress_callback: UploadProgressCallback | None = None,
     chunk_size: int = UPLOAD_PROGRESS_CHUNK_SIZE,
 ) -> AsyncIterator[bytes]:
-    """Async chunk iterator for ``httpx.AsyncClient``.
+    """Async counterpart of ``_iter_open_file_upload_chunks``.
 
     Sync iterators are wrapped as ``SyncByteStream``, which AsyncClient rejects with
     ``Attempted to send an sync request with an AsyncClient instance.``
     """
 
-    for chunk in _iter_file_upload_chunks(
-        file,
+    for chunk in _iter_open_file_upload_chunks(
+        file_handle,
         total_bytes=total_bytes,
         progress_callback=progress_callback,
         chunk_size=chunk_size,
@@ -283,17 +353,22 @@ def _put_file_content(
 
     hops = 0
     progress_callback = _monotonic_upload_progress(progress_callback)
+    _ = file_size  # each hop fstats the fd; caller size can be stale
     while True:
-        response = http_client.put(
-            url=url,
-            content=_iter_file_upload_chunks(
-                file,
-                total_bytes=file_size,
-                progress_callback=progress_callback,
-            ),
-            headers={"Content-Length": str(file_size)},
-            follow_redirects=False,
-        )
+        # Open + fstat the same fd so Content-Length matches the streamed body even
+        # if the file is appended/truncated between hops (or vs. the caller's stat).
+        with file.open("rb") as file_handle:
+            put_size = os.fstat(file_handle.fileno()).st_size
+            response = http_client.put(
+                url=url,
+                content=_iter_open_file_upload_chunks(
+                    file_handle,
+                    total_bytes=put_size,
+                    progress_callback=progress_callback,
+                ),
+                headers={"Content-Length": str(put_size)},
+                follow_redirects=False,
+            )
         if response.status_code not in _UPLOAD_REPLAY_REDIRECT_STATUSES:
             return response
         hops += 1
@@ -321,17 +396,20 @@ async def _aput_file_content(
 
     hops = 0
     progress_callback = _monotonic_upload_progress(progress_callback)
+    _ = file_size  # each hop fstats the fd; caller size can be stale
     while True:
-        response = await http_client.put(
-            url=url,
-            content=_aiter_file_upload_chunks(
-                file,
-                total_bytes=file_size,
-                progress_callback=progress_callback,
-            ),
-            headers={"Content-Length": str(file_size)},
-            follow_redirects=False,
-        )
+        with file.open("rb") as file_handle:
+            put_size = os.fstat(file_handle.fileno()).st_size
+            response = await http_client.put(
+                url=url,
+                content=_aiter_open_file_upload_chunks(
+                    file_handle,
+                    total_bytes=put_size,
+                    progress_callback=progress_callback,
+                ),
+                headers={"Content-Length": str(put_size)},
+                follow_redirects=False,
+            )
         if response.status_code not in _UPLOAD_REPLAY_REDIRECT_STATUSES:
             return response
         hops += 1
@@ -798,7 +876,7 @@ class UploadManager(SyncAPIResource):
 
         try:
             return (
-                _validate_upload_redirect_url(redirect_url, allow_http=_allow_http_upload_redirects(self._client)),
+                _validate_upload_server_url(redirect_url),
                 _validate_upload_file_id(file_id),
             )
         except ValueError as e:
@@ -930,6 +1008,12 @@ class MultipartUploadManager(SyncAPIResource):
 
         try:
             upload_info = self._initiate_upload(url, file, checksum, file_size, num_parts, purpose, file_type)
+            upload_id = upload_info.get("upload_id")
+            file_id = upload_info.get("file_id")
+            if not upload_id or not file_id:
+                raise ValueError("Missing upload_id or file_id from initiate response")
+            file_id = _validate_upload_file_id(str(file_id))
+            upload_info["file_id"] = file_id
 
             completed_parts = self._upload_parts_concurrent(
                 file,
@@ -937,11 +1021,6 @@ class MultipartUploadManager(SyncAPIResource):
                 part_size,
                 progress_callback=progress_callback,
             )
-
-            upload_id = upload_info.get("upload_id")
-            file_id = upload_info.get("file_id")
-            if not upload_id or not file_id:
-                raise ValueError("Missing upload_id or file_id from initiate response")
 
             return self._complete_upload(url, upload_id, file_id, completed_parts)
 
@@ -1085,9 +1164,7 @@ class MultipartUploadManager(SyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
-        upload_url = _validate_upload_redirect_url(
-            str(upload_url), allow_http=_allow_http_upload_redirects(self._client)
-        )
+        upload_url = _validate_upload_server_url(str(upload_url))
 
         part_headers = part_info.get("Headers", {})
 
@@ -1228,7 +1305,7 @@ class AsyncUploadManager(AsyncAPIResource):
 
         try:
             return (
-                _validate_upload_redirect_url(redirect_url, allow_http=_allow_http_upload_redirects(self._client)),
+                _validate_upload_server_url(redirect_url),
                 _validate_upload_file_id(file_id),
             )
         except ValueError as e:
@@ -1361,6 +1438,12 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
 
         try:
             upload_info = await self._initiate_upload(url, file, checksum, file_size, num_parts, purpose, file_type)
+            upload_id = upload_info.get("upload_id")
+            file_id = upload_info.get("file_id")
+            if not upload_id or not file_id:
+                raise ValueError("Missing upload_id or file_id from initiate response")
+            file_id = _validate_upload_file_id(str(file_id))
+            upload_info["file_id"] = file_id
 
             completed_parts = await self._upload_parts_concurrent(
                 file,
@@ -1368,11 +1451,6 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
                 part_size,
                 progress_callback=progress_callback,
             )
-
-            upload_id = upload_info.get("upload_id")
-            file_id = upload_info.get("file_id")
-            if not upload_id or not file_id:
-                raise ValueError("Missing upload_id or file_id from initiate response")
 
             return await self._complete_upload(url, upload_id, file_id, completed_parts)
 
@@ -1515,9 +1593,7 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
-        upload_url = _validate_upload_redirect_url(
-            str(upload_url), allow_http=_allow_http_upload_redirects(self._client)
-        )
+        upload_url = _validate_upload_server_url(str(upload_url))
 
         part_headers = part_info.get("Headers", {})
 

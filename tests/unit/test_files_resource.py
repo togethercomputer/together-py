@@ -26,6 +26,7 @@ from together.lib.resources.files import (
     _put_file_content,
     _aput_file_content,
     _validate_upload_file_id,
+    _validate_upload_server_url,
     _allow_http_upload_redirects,
     _validate_upload_redirect_url,
 )
@@ -112,6 +113,10 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
         ("https://10.0.0.5/upload", False),
         ("https://2130706433/x", False),
         ("https://0x7f000001/x", False),
+        ("https://127.1/steal", False),
+        ("https://127.0.1/steal", False),
+        ("https://0177.0.0.1/steal", False),
+        ("https://0x7f.0.0.1/steal", False),
         ("https://[::ffff:127.0.0.1]/x", False),
         ("https://[::1]/upload", False),
     ],
@@ -137,6 +142,17 @@ def test_validate_upload_redirect_url_allows_http_when_requested():
         _validate_upload_redirect_url("http://metadata.google.internal/upload", allow_http=True)
 
 
+def test_validate_upload_server_url_allows_private_http_storage():
+    assert _validate_upload_server_url("https://10.0.0.5:9000/upload") == "https://10.0.0.5:9000/upload"
+    assert _validate_upload_server_url("http://127.0.0.1:9000/upload") == "http://127.0.0.1:9000/upload"
+    assert _validate_upload_server_url("http://localhost:9000/upload") == "http://localhost:9000/upload"
+    assert _validate_upload_server_url("https://127.1/upload") == "https://127.1/upload"
+    with pytest.raises(ValueError, match="local host"):
+        _validate_upload_server_url("http://metadata.google.internal/upload")
+    with pytest.raises(ValueError, match="non-HTTPS"):
+        _validate_upload_redirect_url("http://10.0.0.5/upload", allow_non_public=True)
+
+
 def test_allow_http_upload_redirects_from_client_and_env(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS", raising=False)
 
@@ -155,6 +171,10 @@ def test_allow_http_upload_redirects_from_client_and_env(monkeypatch: pytest.Mon
     [
         "file-30b2f515-c146-4780-80e6-d8a84f4caaaa",
         "file-abc123def456ghi789",
+        "file_abc123def456",
+        "file-foo.bar",
+        "preprocess",
+        "ft-abc_123.def",
     ],
 )
 def test_validate_upload_file_id_accepts_together_ids(file_id: str):
@@ -170,8 +190,8 @@ def test_validate_upload_file_id_accepts_together_ids(file_id: str):
         "file-../evil",
         "file?x=1",
         "file-foo/bar",
-        "file-foo.bar",
-        "preprocess",
+        "file-foo\\bar",
+        ".",
     ],
 )
 def test_validate_upload_file_id_rejects_traversal(file_id: str):
@@ -510,3 +530,54 @@ async def test_async_file_upload_follows_storage_307(mocker: MockerFixture, tmp_
         "https://s3.us-west-2.amazonaws.com/upload",
     ]
     assert put_bodies == [content_bytes, content_bytes]
+
+
+@pytest.mark.respx
+def test_put_file_content_rejects_abbreviated_loopback_redirect(respx_mock: MockRouter, tmp_path: Path) -> None:
+    file = tmp_path / "valid.jsonl"
+    payload = b'{"text": "hello"}\n'
+    file.write_bytes(payload)
+
+    respx_mock.put("https://s3.amazonaws.com/upload").mock(
+        return_value=httpx.Response(307, headers={"Location": "https://127.1/steal"})
+    )
+
+    with httpx.Client(follow_redirects=True) as client:
+        with pytest.raises(APIStatusError, match="non-public address"):
+            _put_file_content(
+                client,
+                "https://s3.amazonaws.com/upload",
+                file,
+                file_size=len(payload),
+            )
+
+
+@pytest.mark.respx
+def test_put_file_content_survives_file_growth_between_redirects(respx_mock: MockRouter, tmp_path: Path) -> None:
+    file = tmp_path / "valid.jsonl"
+    payload = b'{"text": "hello"}\n'
+    extra = b'{"text": "more"}\n'
+    file.write_bytes(payload)
+
+    def grow_then_redirect(_request: httpx.Request) -> httpx.Response:
+        file.write_bytes(payload + extra)
+        return httpx.Response(307, headers={"Location": "https://s3.us-west-2.amazonaws.com/upload"})
+
+    first = respx_mock.put("https://s3.amazonaws.com/upload").mock(side_effect=grow_then_redirect)
+    second = respx_mock.put("https://s3.us-west-2.amazonaws.com/upload").mock(return_value=httpx.Response(200))
+
+    with httpx.Client(follow_redirects=True) as client:
+        response = _put_file_content(
+            client,
+            "https://s3.amazonaws.com/upload",
+            file,
+            file_size=len(payload),
+        )
+
+    assert response.status_code == 200
+    first_request = cast(Call, first.calls[0]).request
+    second_request = cast(Call, second.calls[0]).request
+    assert first_request.content == payload
+    assert first_request.headers["Content-Length"] == str(len(payload))
+    assert second_request.content == payload + extra
+    assert second_request.headers["Content-Length"] == str(len(payload) + len(extra))

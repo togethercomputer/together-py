@@ -60,7 +60,7 @@ class DownloadProgressTracker:
         )
 
     def __enter__(self) -> DownloadProgressTracker:
-        if not self.enabled:
+        if not self.enabled or not console.is_terminal:
             return self
         self._progress = Progress(
             SpinnerColumn(style="bar.pulse"),
@@ -72,6 +72,7 @@ class DownloadProgressTracker:
             TransferSpeedColumn(),
             TimeRemainingColumn(),
             console=console,
+            transient=True,
         )
         self._progress.start()
         self._bytes_task = self._progress.add_task(self.description, total=max(self.total_bytes, 1))

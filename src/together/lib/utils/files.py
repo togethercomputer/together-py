@@ -61,14 +61,26 @@ def _encoded_line_size(file_handle: IO[str], line: str) -> int:
 
     ``TextIOWrapper.tell()`` raises ``OSError: telling position disabled by next() call``
     while the file is being iterated, and text-mode ``tell()`` is an opaque cookie anyway.
+
+    Default text mode (``newline=None``) translates ``\\r\\n`` → ``\\n``, so a naive
+    re-encode undercounts CRLF files by one byte per line. Restore the stripped CR
+    when the stream has observed CRLF and this line was translated to a bare ``\\n``.
     """
 
     encoding = getattr(file_handle, "encoding", None) or "utf-8"
     errors = getattr(file_handle, "errors", None) or "strict"
     try:
-        return len(line.encode(encoding, errors))
+        size = len(line.encode(encoding, errors))
     except (LookupError, UnicodeError):
-        return len(line.encode("utf-8", "replace"))
+        size = len(line.encode("utf-8", "replace"))
+
+    if line.endswith("\n") and not line.endswith("\r\n"):
+        observed = getattr(file_handle, "newlines", None)
+        if observed == "\r\n" or observed == ("\r\n",):
+            size += 1
+        elif isinstance(observed, tuple) and "\r\n" in observed and "\n" not in observed:
+            size += 1
+    return size
 
 
 def _iter_lines_with_progress(
@@ -207,7 +219,7 @@ def _check_utf8(
     report_dict: Dict[str, Any] = {}
     try:
         # Dry-run UTF-8 decode by iterating through the file to avoid loading it entirely into memory
-        with file.open(encoding="utf-8") as f:
+        with file.open(encoding="utf-8", newline="") as f:
             for _ in _enumerate_lines(f, total_bytes=total_bytes, progress_callback=progress_callback, phase="utf8"):
                 pass
         report_dict["utf8"] = True
@@ -261,7 +273,7 @@ def _check_csv(
     if not report_dict["utf8"]:
         return report_dict
 
-    with file.open() as f:
+    with file.open(encoding="utf-8", newline="") as f:
         source: IO[str] | Iterator[str]
         if progress_callback is None:
             source = f
@@ -320,7 +332,7 @@ def _check_jsonl(
         return report_dict
 
     if purpose == "eval":
-        with file.open() as f:
+        with file.open(encoding="utf-8", newline="") as f:
             idx = -1
             try:
                 for idx, line in _enumerate_lines(
@@ -359,7 +371,7 @@ def _check_jsonl(
     else:
         # Fine-tuning (and non-eval): UTF-8, JSON-parse each non-empty line, require a JSON object per line.
         # Semantic validation runs on the server after upload.
-        with file.open() as f:
+        with file.open(encoding="utf-8", newline="") as f:
             line_index = -1
             sample_count = 0
             try:
