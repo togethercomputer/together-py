@@ -56,6 +56,45 @@ def _notify_check_progress(
         progress_callback(FileCheckProgress(processed_bytes=processed_bytes, total_bytes=total_bytes, phase=phase))
 
 
+def _encoded_line_size(file_handle: IO[str], line: str) -> int:
+    """Byte length of a text line without calling ``tell()``.
+
+    ``TextIOWrapper.tell()`` raises ``OSError: telling position disabled by next() call``
+    while the file is being iterated, and text-mode ``tell()`` is an opaque cookie anyway.
+    """
+
+    encoding = getattr(file_handle, "encoding", None) or "utf-8"
+    errors = getattr(file_handle, "errors", None) or "strict"
+    try:
+        return len(line.encode(encoding, errors))
+    except (LookupError, UnicodeError):
+        return len(line.encode("utf-8", "replace"))
+
+
+def _iter_lines_with_progress(
+    file_handle: IO[str],
+    *,
+    total_bytes: int,
+    progress_callback: CheckProgressCallback,
+    phase: str,
+) -> Iterator[str]:
+    """Yield lines while reporting processed bytes from encoded line lengths."""
+
+    last_reported = 0
+    pos = 0
+    _notify_check_progress(progress_callback, 0, total_bytes, phase)
+    while True:
+        line = file_handle.readline()
+        if not line:
+            break
+        pos += _encoded_line_size(file_handle, line)
+        yield line
+        if pos - last_reported >= CHECK_PROGRESS_STEP_BYTES:
+            _notify_check_progress(progress_callback, min(pos, total_bytes), total_bytes, phase)
+            last_reported = pos
+    _notify_check_progress(progress_callback, total_bytes, total_bytes, phase)
+
+
 def _enumerate_lines(
     file_handle: IO[str],
     *,
@@ -65,25 +104,21 @@ def _enumerate_lines(
 ) -> Iterator[tuple[int, str]]:
     """Yield ``(index, line)`` and optionally report scan progress.
 
-    When ``progress_callback`` is None this is just ``enumerate`` — no ``tell()``.
+    When ``progress_callback`` is None this is just ``enumerate``.
     """
 
     if progress_callback is None:
         yield from enumerate(file_handle)
         return
 
-    last_reported = 0
-    _notify_check_progress(progress_callback, 0, total_bytes, phase)
-    for idx, line in enumerate(file_handle):
-        yield idx, line
-        try:
-            pos = file_handle.tell()
-        except OSError:
-            pos = last_reported
-        if pos - last_reported >= CHECK_PROGRESS_STEP_BYTES:
-            _notify_check_progress(progress_callback, min(pos, total_bytes), total_bytes, phase)
-            last_reported = pos
-    _notify_check_progress(progress_callback, total_bytes, total_bytes, phase)
+    yield from enumerate(
+        _iter_lines_with_progress(
+            file_handle,
+            total_bytes=total_bytes,
+            progress_callback=progress_callback,
+            phase=phase,
+        )
+    )
 
 
 def check_file(
@@ -139,7 +174,7 @@ def check_file(
         data_report_dict = _check_jsonl(file, purpose, progress_callback=progress_callback, total_bytes=file_size)
     elif file.suffix == ".parquet":
         report_dict["filetype"] = "parquet"
-        data_report_dict = _check_parquet(file, purpose)
+        data_report_dict = _check_parquet(file, purpose, progress_callback=progress_callback, total_bytes=file_size)
     elif file.suffix == ".csv":
         report_dict["filetype"] = "csv"
         data_report_dict = _check_csv(file, purpose, progress_callback=progress_callback, total_bytes=file_size)
@@ -227,7 +262,14 @@ def _check_csv(
         return report_dict
 
     with file.open() as f:
-        reader = csv.DictReader(f)
+        source: IO[str] | Iterator[str]
+        if progress_callback is None:
+            source = f
+        else:
+            source = _iter_lines_with_progress(
+                f, total_bytes=total_bytes, progress_callback=progress_callback, phase="csv"
+            )
+        reader = csv.DictReader(source)
         if not reader.fieldnames:
             report_dict["message"] = "CSV file is empty or has no header."
             report_dict["is_check_passed"] = False
@@ -235,8 +277,6 @@ def _check_csv(
         idx = -1
 
         try:
-            last_reported = 0
-            _notify_check_progress(progress_callback, 0, total_bytes, "csv")
             for idx, item in enumerate(reader):
                 if None in item.keys() or None in item.values():
                     raise InvalidFileFormatError(
@@ -244,15 +284,6 @@ def _check_csv(
                         line_number=idx + 1,
                         error_source="format",
                     )
-                if progress_callback is not None:
-                    try:
-                        pos = f.tell()
-                    except OSError:
-                        pos = last_reported
-                    if pos - last_reported >= CHECK_PROGRESS_STEP_BYTES:
-                        _notify_check_progress(progress_callback, min(pos, total_bytes), total_bytes, "csv")
-                        last_reported = pos
-            _notify_check_progress(progress_callback, total_bytes, total_bytes, "csv")
 
             report_dict.update(_check_samples_count(file, report_dict, idx))
             report_dict["load_csv"] = True
@@ -381,7 +412,13 @@ def _check_jsonl(
     return report_dict
 
 
-def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
+def _check_parquet(
+    file: Path,
+    purpose: FilePurpose | str,
+    *,
+    progress_callback: CheckProgressCallback | None = None,
+    total_bytes: int = 0,
+) -> Dict[str, Any]:
     try:
         # Pyarrow is optional as it's large (~80MB) and isn't compatible with older systems.
         from pyarrow import ArrowInvalid, parquet
@@ -399,7 +436,9 @@ def _check_parquet(file: Path, purpose: FilePurpose | str) -> Dict[str, Any]:
         return report_dict
 
     try:
+        _notify_check_progress(progress_callback, 0, total_bytes, "parquet")
         table = parquet.read_table(str(file), memory_map=True)  # type: ignore[reportUnknownMemberType]
+        _notify_check_progress(progress_callback, total_bytes, total_bytes, "parquet")
     except ArrowInvalid:
         report_dict["load_parquet"] = (
             f"An exception has occurred when loading the Parquet file {file}. Please check the file for corruption. "

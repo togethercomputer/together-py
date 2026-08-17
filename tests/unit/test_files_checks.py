@@ -507,6 +507,73 @@ def test_check_file_reports_progress_callback(tmp_path: Path, monkeypatch: pytes
         phase_events = [event for event in events if event.phase == phase]
         assert phase_events[0].processed_bytes == 0
         assert phase_events[-1].processed_bytes == phase_events[-1].total_bytes == file.stat().st_size
+        assert any(0 < event.processed_bytes < event.total_bytes for event in phase_events)
+
+
+def test_check_csv_reports_progress_callback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("together.lib.utils.files.CHECK_PROGRESS_STEP_BYTES", 8)
+    file = tmp_path / "valid.csv"
+    with file.open("w") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["text"])
+        writer.writeheader()
+        for index in range(20):
+            writer.writerow({"text": f"row-{index}-{'x' * 16}"})
+
+    events: list[FileCheckProgress] = []
+    report = check_file(file, purpose="eval", progress_callback=events.append)
+
+    assert report["is_check_passed"]
+    assert {event.phase for event in events} == {"utf8", "csv"}
+    csv_events = [event for event in events if event.phase == "csv"]
+    assert csv_events[0].processed_bytes == 0
+    assert csv_events[-1].processed_bytes == csv_events[-1].total_bytes == file.stat().st_size
+    assert any(0 < event.processed_bytes < event.total_bytes for event in csv_events)
+
+
+def test_check_parquet_reports_progress_callback(tmp_path: Path) -> None:
+    pyarrow = pytest.importorskip("pyarrow")
+    parquet = pytest.importorskip("pyarrow.parquet")
+
+    file = tmp_path / "valid.parquet"
+    table = pyarrow.table(
+        {
+            "input_ids": [[1, 2], [3, 4]],
+            "attention_mask": [[1, 1], [1, 1]],
+            "labels": [[1, 2], [3, 4]],
+            "position_ids": [[0, 1], [0, 1]],
+        }
+    )
+    parquet.write_table(table, file)
+
+    events: list[FileCheckProgress] = []
+    report = check_file(file, progress_callback=events.append)
+
+    assert report["is_check_passed"]
+    parquet_events = [event for event in events if event.phase == "parquet"]
+    assert parquet_events
+    assert parquet_events[0].processed_bytes == 0
+    assert parquet_events[-1].processed_bytes == parquet_events[-1].total_bytes == file.stat().st_size
+
+
+def test_check_progress_tracker_does_not_reset_across_phases(tmp_path: Path) -> None:
+    from together.lib.cli.components.check_progress import CheckProgressTracker
+
+    file = tmp_path / "valid.jsonl"
+    file.write_bytes(b"x" * 100)
+    with CheckProgressTracker(file, enabled=True) as tracker:
+        callback = tracker.as_callback()
+        assert callback is not None
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="utf8"))
+        callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="utf8"))
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="jsonl"))
+        assert tracker._progress is not None and tracker._task is not None
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 100
+        assert task.total == 200
+        callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="jsonl"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 200
+        assert task.total == 200
 
 
 def test_should_show_check_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

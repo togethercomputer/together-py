@@ -19,6 +19,7 @@ _PHASE_DESCRIPTIONS = {
     "utf8": "Checking encoding",
     "jsonl": "Validating JSONL",
     "csv": "Validating CSV",
+    "parquet": "Validating Parquet",
 }
 # Tiny files finish instantly; don't pay for a live display (or pollute CLI tests).
 CHECK_PROGRESS_MIN_BYTES = 1024 * 1024
@@ -41,6 +42,9 @@ class CheckProgressTracker:
         self.enabled = enabled
         self._progress: Progress | None = None
         self._task: TaskID | None = None
+        self._phase: str | None = None
+        self._completed_phase_bytes = 0
+        self._current_phase_total = 0
 
     def __enter__(self) -> CheckProgressTracker:
         if not self.enabled:
@@ -71,12 +75,19 @@ class CheckProgressTracker:
         def on_progress(event: FileCheckProgress) -> None:
             if self._progress is None or self._task is None:
                 return
+            if event.phase != self._phase:
+                if self._phase is not None:
+                    self._completed_phase_bytes += self._current_phase_total
+                self._phase = event.phase
+                self._current_phase_total = event.total_bytes
             phase_label = _PHASE_DESCRIPTIONS.get(event.phase, "Checking")
+            completed = self._completed_phase_bytes + event.processed_bytes
+            total = self._completed_phase_bytes + event.total_bytes
             self._progress.update(
                 self._task,
                 description=f"{phase_label} {self.file.name}",
-                completed=min(event.processed_bytes, max(event.total_bytes, 1)),
-                total=max(event.total_bytes, 1),
+                completed=min(completed, max(total, 1)),
+                total=max(total, 1),
             )
 
         return on_progress

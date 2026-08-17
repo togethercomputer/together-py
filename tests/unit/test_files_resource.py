@@ -127,8 +127,14 @@ def test_validate_upload_redirect_url(url: str, should_pass: bool):
 def test_validate_upload_redirect_url_allows_http_when_requested():
     http_url = "http://bucket.s3.us-west-2.amazonaws.com/key"
     assert _validate_upload_redirect_url(http_url, allow_http=True) == http_url
-    with pytest.raises(ValueError, match="non-public address"):
-        _validate_upload_redirect_url("http://127.0.0.1/upload", allow_http=True)
+    assert (
+        _validate_upload_redirect_url("http://127.0.0.1:9000/upload", allow_http=True) == "http://127.0.0.1:9000/upload"
+    )
+    assert (
+        _validate_upload_redirect_url("http://localhost:9000/upload", allow_http=True) == "http://localhost:9000/upload"
+    )
+    with pytest.raises(ValueError, match="local host"):
+        _validate_upload_redirect_url("http://metadata.google.internal/upload", allow_http=True)
 
 
 def test_allow_http_upload_redirects_from_client_and_env(monkeypatch: pytest.MonkeyPatch):
@@ -254,14 +260,15 @@ def _finalize_json(content_str: str, filename: str = "valid.jsonl") -> dict[str,
 
 
 @pytest.mark.respx
-def test_put_file_content_replays_body_on_307(respx_mock: MockRouter, tmp_path: Path) -> None:
+@pytest.mark.parametrize("status", [301, 302, 303, 307, 308])
+def test_put_file_content_replays_body_on_redirect(status: int, respx_mock: MockRouter, tmp_path: Path) -> None:
     file = tmp_path / "valid.jsonl"
     payload = b'{"text": "hello"}\n'
     file.write_bytes(payload)
 
     first = respx_mock.put("https://s3.amazonaws.com/upload").mock(
         return_value=httpx.Response(
-            307,
+            status,
             headers={"Location": "https://s3.us-west-2.amazonaws.com/upload"},
         )
     )
@@ -287,14 +294,15 @@ def test_put_file_content_replays_body_on_307(respx_mock: MockRouter, tmp_path: 
 
 
 @pytest.mark.respx
-async def test_aput_file_content_replays_body_on_307(respx_mock: MockRouter, tmp_path: Path) -> None:
+@pytest.mark.parametrize("status", [301, 302, 303, 307, 308])
+async def test_aput_file_content_replays_body_on_redirect(status: int, respx_mock: MockRouter, tmp_path: Path) -> None:
     file = tmp_path / "valid.jsonl"
     payload = b'{"text": "hello"}\n'
     file.write_bytes(payload)
 
     first = respx_mock.put("https://s3.amazonaws.com/upload").mock(
         return_value=httpx.Response(
-            307,
+            status,
             headers={"Location": "https://s3.us-west-2.amazonaws.com/upload"},
         )
     )
@@ -333,6 +341,63 @@ def test_put_file_content_rejects_unsafe_redirect(respx_mock: MockRouter, tmp_pa
                 file,
                 file_size=len(payload),
             )
+
+
+@pytest.mark.respx
+def test_put_file_content_allows_local_redirect_when_requested(respx_mock: MockRouter, tmp_path: Path) -> None:
+    file = tmp_path / "valid.jsonl"
+    payload = b'{"text": "hello"}\n'
+    file.write_bytes(payload)
+
+    respx_mock.put("http://127.0.0.1:9000/upload").mock(
+        return_value=httpx.Response(
+            302,
+            headers={"Location": "http://127.0.0.1:9000/data"},
+        )
+    )
+    respx_mock.put("http://127.0.0.1:9000/data").mock(return_value=httpx.Response(200))
+
+    with httpx.Client(follow_redirects=True) as client:
+        response = _put_file_content(
+            client,
+            "http://127.0.0.1:9000/upload",
+            file,
+            file_size=len(payload),
+            allow_http=True,
+        )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.respx
+def test_put_file_content_progress_does_not_rewind_on_redirect(respx_mock: MockRouter, tmp_path: Path) -> None:
+    file = tmp_path / "valid.jsonl"
+    payload = b'{"text": "hello"}\n' * 8
+    file.write_bytes(payload)
+
+    respx_mock.put("https://s3.amazonaws.com/upload").mock(
+        return_value=httpx.Response(
+            307,
+            headers={"Location": "https://s3.us-west-2.amazonaws.com/upload"},
+        )
+    )
+    respx_mock.put("https://s3.us-west-2.amazonaws.com/upload").mock(return_value=httpx.Response(200))
+
+    events: list[FileUploadProgress] = []
+    with httpx.Client(follow_redirects=True) as client:
+        response = _put_file_content(
+            client,
+            "https://s3.amazonaws.com/upload",
+            file,
+            file_size=len(payload),
+            progress_callback=events.append,
+        )
+
+    assert response.status_code == 200
+    uploaded = [event.uploaded_bytes for event in events]
+    assert uploaded == sorted(uploaded)
+    assert events[0].uploaded_bytes == 0
+    assert events[-1].uploaded_bytes == events[-1].total_bytes == len(payload)
 
 
 def test_file_upload_follows_storage_307(mocker: MockerFixture, tmp_path: Path) -> None:

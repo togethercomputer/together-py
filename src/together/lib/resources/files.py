@@ -49,8 +49,8 @@ log: logging.Logger = logging.getLogger(__name__)
 
 UPLOAD_PROGRESS_CHUNK_SIZE = 1024 * 1024
 _SAFE_FILE_ID_RE = re.compile(r"^file-[A-Za-z0-9-]+$")
-# 307/308 preserve method + body. S3 uses 307 for cross-region/new buckets; GCS resumable too.
-_UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({307, 308})
+# Replay PUT+body. 307/308 are spec-correct (S3/GCS); 301/302/303 match prior httpx auto-follow.
+_UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 _MAX_UPLOAD_REDIRECTS = 20
 _INSECURE_UPLOAD_REDIRECTS_ENV = "TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS"
 
@@ -99,7 +99,9 @@ def _validate_upload_redirect_url(redirect_url: str, *, allow_http: bool = False
 
     HTTPS is required unless ``allow_http`` is set — either the client's
     ``base_url`` is ``http`` (local/on-prem stacks) or
-    ``TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS`` is enabled.
+    ``TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS`` is enabled. When ``allow_http``
+    is set, localhost and non-public literals are also allowed so MinIO /
+    LocalStack endpoints like ``http://127.0.0.1:9000/...`` work.
     """
 
     parsed = urlparse(redirect_url)
@@ -113,12 +115,16 @@ def _validate_upload_redirect_url(redirect_url: str, *, allow_http: bool = False
         raise ValueError(f"Upload redirect URL is missing a hostname: {redirect_url!r}")
 
     lowered = hostname.lower()
-    if lowered in {"localhost", "metadata.google.internal"} or lowered.endswith(".localhost"):
+    if lowered == "metadata.google.internal":
         raise ValueError(f"Refusing upload redirect to local host: {redirect_url!r}")
 
-    ip = _parse_hostname_ip(hostname)
-    if ip is not None and _ip_is_non_public(ip):
-        raise ValueError(f"Refusing upload redirect to non-public address: {redirect_url!r}")
+    if not allow_http:
+        if lowered == "localhost" or lowered.endswith(".localhost"):
+            raise ValueError(f"Refusing upload redirect to local host: {redirect_url!r}")
+
+        ip = _parse_hostname_ip(hostname)
+        if ip is not None and _ip_is_non_public(ip):
+            raise ValueError(f"Refusing upload redirect to non-public address: {redirect_url!r}")
 
     return redirect_url
 
@@ -158,6 +164,26 @@ def _notify_upload_progress(
         progress_callback(FileUploadProgress(uploaded_bytes=uploaded_bytes, total_bytes=total_bytes))
 
 
+def _monotonic_upload_progress(
+    progress_callback: UploadProgressCallback | None,
+) -> UploadProgressCallback | None:
+    """Ignore progress that rewinds, e.g. a fresh iterator after a redirect replay."""
+
+    if progress_callback is None:
+        return None
+
+    last_uploaded = 0
+
+    def on_progress(event: FileUploadProgress) -> None:
+        nonlocal last_uploaded
+        if event.uploaded_bytes < last_uploaded:
+            return
+        last_uploaded = event.uploaded_bytes
+        progress_callback(event)
+
+    return on_progress
+
+
 def _notify_download_progress(
     progress_callback: DownloadProgressCallback | None,
     downloaded_bytes: int,
@@ -184,9 +210,9 @@ def _iter_file_upload_chunks(
             chunk = file_handle.read(chunk_size)
             if not chunk:
                 break
+            yield chunk
             uploaded_bytes += len(chunk)
             _notify_upload_progress(progress_callback, uploaded_bytes, total_bytes)
-            yield chunk
 
 
 async def _aiter_file_upload_chunks(
@@ -250,12 +276,13 @@ def _put_file_content(
     """PUT a streaming file body without httpx replaying a consumed generator.
 
     ``self._client._client`` is built with ``follow_redirects=True``. A one-shot
-    iterator cannot be replayed, so a 307/308 (or any retry after the first byte)
+    iterator cannot be replayed, so a redirect (or any retry after the first byte)
     would raise ``StreamConsumed``. Disable auto-follow and re-PUT with a fresh
     iterator after validating ``Location``.
     """
 
     hops = 0
+    progress_callback = _monotonic_upload_progress(progress_callback)
     while True:
         response = http_client.put(
             url=url,
@@ -293,6 +320,7 @@ async def _aput_file_content(
     """Async counterpart of ``_put_file_content``."""
 
     hops = 0
+    progress_callback = _monotonic_upload_progress(progress_callback)
     while True:
         response = await http_client.put(
             url=url,
