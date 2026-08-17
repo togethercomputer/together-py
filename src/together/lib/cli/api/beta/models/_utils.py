@@ -103,7 +103,7 @@ async def print_model_detail(
     files: ModelListFilesResponse | None = None,
 ) -> None:
     _print_detail_header("Model Details", _short_name(model.name))
-    _print_detail_line("Inference Name", model.name)
+    _print_detail_line("Endpoint string", model.name)
     if model.id:
         _print_detail_line("ID", model.id)
     if model.base_model_id:
