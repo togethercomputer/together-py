@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from pprint import pformat
 from typing import Any, TypeVar, Callable, Awaitable
 from pathlib import Path
 from collections.abc import Sequence
@@ -17,8 +18,10 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
+from together.lib import FileTypeError, check_file
 from together.lib.resources.files import FileUploadProgress, UploadProgressCallback
 from together.lib.cli.utils._console import console
+from together.lib.cli.components.check_progress import CheckProgressTracker, should_show_check_progress
 
 T = TypeVar("T")
 
@@ -206,9 +209,33 @@ async def upload_file_with_progress(
     *,
     enabled: bool = True,
     description: str | None = None,
+    check: bool = True,
+    purpose: str = "fine-tune",
     **upload_kwargs: object,
 ) -> T:
-    """Run an async file upload while optionally rendering shared Rich progress."""
+    """Run an async file upload while optionally rendering shared Rich progress.
+
+    Validation runs *before* the upload bar starts so a multi-GB ``check_file``
+    pass isn't shown as a stuck 0% upload.
+    """
+
+    if check:
+        with CheckProgressTracker(
+            file, enabled=should_show_check_progress(file, json_mode=not enabled)
+        ) as check_tracker:
+            report = check_file(
+                file,
+                purpose=purpose,
+                progress_callback=check_tracker.as_callback(),
+            )
+        if report["is_check_passed"] is False:
+            raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report)}")
 
     with UploadProgressTracker.for_single_file(file, enabled=enabled, description=description) as tracker:
-        return await upload(file=file, progress_callback=tracker.as_callback(), **upload_kwargs)
+        return await upload(
+            file=file,
+            progress_callback=tracker.as_callback(),
+            check=False,
+            purpose=purpose,
+            **upload_kwargs,
+        )
