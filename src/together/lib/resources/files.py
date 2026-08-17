@@ -52,13 +52,60 @@ _SAFE_FILE_ID_RE = re.compile(r"^file-[A-Za-z0-9-]+$")
 # 307/308 preserve method + body. S3 uses 307 for cross-region/new buckets; GCS resumable too.
 _UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({307, 308})
 _MAX_UPLOAD_REDIRECTS = 20
+_INSECURE_UPLOAD_REDIRECTS_ENV = "TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS"
 
 
-def _validate_upload_redirect_url(redirect_url: str) -> str:
-    """Reject unsafe upload redirect targets before issuing the PUT."""
+def _env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
+
+
+def _allow_http_upload_redirects(client: Any) -> bool:
+    if _env_flag_enabled(_INSECURE_UPLOAD_REDIRECTS_ENV):
+        return True
+    base_url = getattr(client, "base_url", None)
+    return getattr(base_url, "scheme", None) == "http"
+
+
+def _parse_hostname_ip(hostname: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    try:
+        return ipaddress.ip_address(hostname)
+    except ValueError:
+        pass
+
+    # POSIX resolvers accept dword IPv4 forms that ``ipaddress.ip_address(str)`` rejects.
+    try:
+        if hostname.startswith(("0x", "0X")):
+            return ipaddress.IPv4Address(int(hostname, 16))
+        if hostname.isdecimal():
+            return ipaddress.IPv4Address(int(hostname, 10))
+    except ValueError:
+        return None
+    return None
+
+
+def _ip_is_non_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    mapped = ip.ipv4_mapped if isinstance(ip, ipaddress.IPv6Address) else None
+    candidate: ipaddress.IPv4Address | ipaddress.IPv6Address = mapped if mapped is not None else ip
+    return not candidate.is_global
+
+
+def _validate_upload_redirect_url(redirect_url: str, *, allow_http: bool = False) -> str:
+    """Best-effort URL-layer filter for upload PUT targets.
+
+    This is not a complete SSRF defense: we do not resolve DNS, so a name like
+    ``127.0.0.1.nip.io`` still passes. We do reject non-public dotted-quad / IPv6
+    literals, IPv4-mapped loopback (``::ffff:127.0.0.1``), and dword decimal/hex
+    IPv4 (``2130706433``, ``0x7f000001``) that getaddrinfo will treat as 127.0.0.1.
+
+    HTTPS is required unless ``allow_http`` is set — either the client's
+    ``base_url`` is ``http`` (local/on-prem stacks) or
+    ``TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS`` is enabled.
+    """
 
     parsed = urlparse(redirect_url)
-    if parsed.scheme != "https":
+    if parsed.scheme == "https" or (parsed.scheme == "http" and allow_http):
+        pass
+    else:
         raise ValueError(f"Refusing non-HTTPS upload redirect URL: {redirect_url!r}")
 
     hostname = parsed.hostname
@@ -69,12 +116,8 @@ def _validate_upload_redirect_url(redirect_url: str) -> str:
     if lowered in {"localhost", "metadata.google.internal"} or lowered.endswith(".localhost"):
         raise ValueError(f"Refusing upload redirect to local host: {redirect_url!r}")
 
-    try:
-        ip = ipaddress.ip_address(hostname)
-    except ValueError:
-        ip = None
-
-    if ip is not None and not ip.is_global:
+    ip = _parse_hostname_ip(hostname)
+    if ip is not None and _ip_is_non_public(ip):
         raise ValueError(f"Refusing upload redirect to non-public address: {redirect_url!r}")
 
     return redirect_url
@@ -175,7 +218,7 @@ def _response_body_text(response: httpx.Response) -> str:
         return ""
 
 
-def _upload_redirect_url(response: httpx.Response, current_url: str) -> str:
+def _upload_redirect_url(response: httpx.Response, current_url: str, *, allow_http: bool = False) -> str:
     location = response.headers.get("Location")
     if not location:
         raise APIStatusError(
@@ -186,7 +229,7 @@ def _upload_redirect_url(response: httpx.Response, current_url: str) -> str:
 
     next_url = str(httpx.URL(current_url).join(location))
     try:
-        return _validate_upload_redirect_url(next_url)
+        return _validate_upload_redirect_url(next_url, allow_http=allow_http)
     except ValueError as e:
         raise APIStatusError(
             str(e),
@@ -202,6 +245,7 @@ def _put_file_content(
     *,
     file_size: int,
     progress_callback: UploadProgressCallback | None = None,
+    allow_http: bool = False,
 ) -> httpx.Response:
     """PUT a streaming file body without httpx replaying a consumed generator.
 
@@ -232,7 +276,7 @@ def _put_file_content(
                 response=response,
                 body=_response_body_text(response),
             )
-        url = _upload_redirect_url(response, url)
+        url = _upload_redirect_url(response, url, allow_http=allow_http)
         log.debug("Upload redirected to %s", url)
         response.close()
 
@@ -244,6 +288,7 @@ async def _aput_file_content(
     *,
     file_size: int,
     progress_callback: UploadProgressCallback | None = None,
+    allow_http: bool = False,
 ) -> httpx.Response:
     """Async counterpart of ``_put_file_content``."""
 
@@ -268,7 +313,7 @@ async def _aput_file_content(
                 response=response,
                 body=_response_body_text(response),
             )
-        url = _upload_redirect_url(response, url)
+        url = _upload_redirect_url(response, url, allow_http=allow_http)
         log.debug("Upload redirected to %s", url)
         await response.aclose()
 
@@ -724,7 +769,10 @@ class UploadManager(SyncAPIResource):
             )
 
         try:
-            return _validate_upload_redirect_url(redirect_url), _validate_upload_file_id(file_id)
+            return (
+                _validate_upload_redirect_url(redirect_url, allow_http=_allow_http_upload_redirects(self._client)),
+                _validate_upload_file_id(file_id),
+            )
         except ValueError as e:
             raise APIStatusError(
                 str(e),
@@ -795,6 +843,7 @@ class UploadManager(SyncAPIResource):
             file,
             file_size=file_size,
             progress_callback=progress_callback,
+            allow_http=_allow_http_upload_redirects(self._client),
         )
         log.debug(
             'HTTP Response: %s %s "%i %s" %s',
@@ -1008,7 +1057,9 @@ class MultipartUploadManager(SyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
-        upload_url = _validate_upload_redirect_url(str(upload_url))
+        upload_url = _validate_upload_redirect_url(
+            str(upload_url), allow_http=_allow_http_upload_redirects(self._client)
+        )
 
         part_headers = part_info.get("Headers", {})
 
@@ -1148,7 +1199,10 @@ class AsyncUploadManager(AsyncAPIResource):
                 )
 
         try:
-            return _validate_upload_redirect_url(redirect_url), _validate_upload_file_id(file_id)
+            return (
+                _validate_upload_redirect_url(redirect_url, allow_http=_allow_http_upload_redirects(self._client)),
+                _validate_upload_file_id(file_id),
+            )
         except ValueError as e:
             raise APIStatusError(
                 str(e),
@@ -1220,6 +1274,7 @@ class AsyncUploadManager(AsyncAPIResource):
             file,
             file_size=file_size,
             progress_callback=progress_callback,
+            allow_http=_allow_http_upload_redirects(self._client),
         )
         log.debug(
             'HTTP Response: %s %s "%i %s" %s',
@@ -1432,7 +1487,9 @@ class AsyncMultipartUploadManager(AsyncAPIResource):
         upload_url = part_info.get("URL", part_info.get("UploadURL"))
         if not upload_url:
             raise ValueError("Missing upload URL in part info")
-        upload_url = _validate_upload_redirect_url(str(upload_url))
+        upload_url = _validate_upload_redirect_url(
+            str(upload_url), allow_http=_allow_http_upload_redirects(self._client)
+        )
 
         part_headers = part_info.get("Headers", {})
 

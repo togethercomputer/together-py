@@ -26,6 +26,7 @@ from together.lib.resources.files import (
     _put_file_content,
     _aput_file_content,
     _validate_upload_file_id,
+    _allow_http_upload_redirects,
     _validate_upload_redirect_url,
 )
 
@@ -109,6 +110,10 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
         ("https://127.0.0.1/upload", False),
         ("https://localhost/upload", False),
         ("https://10.0.0.5/upload", False),
+        ("https://2130706433/x", False),
+        ("https://0x7f000001/x", False),
+        ("https://[::ffff:127.0.0.1]/x", False),
+        ("https://[::1]/upload", False),
     ],
 )
 def test_validate_upload_redirect_url(url: str, should_pass: bool):
@@ -117,6 +122,26 @@ def test_validate_upload_redirect_url(url: str, should_pass: bool):
     else:
         with pytest.raises(ValueError):
             _validate_upload_redirect_url(url)
+
+
+def test_validate_upload_redirect_url_allows_http_when_requested():
+    http_url = "http://bucket.s3.us-west-2.amazonaws.com/key"
+    assert _validate_upload_redirect_url(http_url, allow_http=True) == http_url
+    with pytest.raises(ValueError, match="non-public address"):
+        _validate_upload_redirect_url("http://127.0.0.1/upload", allow_http=True)
+
+
+def test_allow_http_upload_redirects_from_client_and_env(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS", raising=False)
+
+    https_client = Together(api_key="fake_api_key")
+    assert _allow_http_upload_redirects(https_client) is False
+
+    http_client = Together(api_key="fake_api_key", base_url="http://127.0.0.1:4010")
+    assert _allow_http_upload_redirects(http_client) is True
+
+    monkeypatch.setenv("TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS", "1")
+    assert _allow_http_upload_redirects(https_client) is True
 
 
 @pytest.mark.parametrize(
