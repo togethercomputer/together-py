@@ -22,7 +22,7 @@ _VALIDATION_STATUS = {
 def format_validation_status(status: str | None) -> str:
     if not status:
         return ""
-    return _VALIDATION_STATUS.get(status, status)
+    return _VALIDATION_STATUS.get(status, str(status))
 
 
 async def list_revisions(
@@ -43,7 +43,7 @@ async def list_revisions(
     table.add_column("Created At")
     for revision in response.data or []:
         table.add_row(
-            revision.revision_id or "",
+            str(revision.revision_id) if revision.revision_id else "",
             format_validation_status(revision.validation_status),
             format_datetime(revision.last_validated_at) if revision.last_validated_at else "",
             format_datetime(revision.created_at) if revision.created_at else "",
