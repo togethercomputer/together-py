@@ -573,19 +573,51 @@ def test_check_progress_tracker_does_not_reset_across_phases(tmp_path: Path) -> 
     file = tmp_path / "valid.jsonl"
     file.write_bytes(b"x" * 100)
     with CheckProgressTracker(file, enabled=True) as tracker:
+        assert tracker._progress is not None and tracker._task is not None
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 0
+        assert task.total == 200
+
         callback = tracker.as_callback()
         assert callback is not None
         callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="utf8"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 0
+        assert task.total == 200
+
         callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="utf8"))
-        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="jsonl"))
-        assert tracker._progress is not None and tracker._task is not None
         task = tracker._progress.tasks[tracker._task]
         assert task.completed == 100
         assert task.total == 200
+
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="jsonl"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 100
+        assert task.total == 200
+
         callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="jsonl"))
         task = tracker._progress.tasks[tracker._task]
         assert task.completed == 200
         assert task.total == 200
+
+
+def test_check_progress_tracker_parquet_is_single_pass(tmp_path: Path) -> None:
+    from together.lib.cli.components.check_progress import CheckProgressTracker
+
+    file = tmp_path / "valid.parquet"
+    file.write_bytes(b"x" * 100)
+    with CheckProgressTracker(file, enabled=True) as tracker:
+        assert tracker._progress is not None and tracker._task is not None
+        callback = tracker.as_callback()
+        assert callback is not None
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="parquet"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 0
+        assert task.total == 100
+        callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="parquet"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 100
+        assert task.total == 100
 
 
 def test_encoded_line_size_counts_crlf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

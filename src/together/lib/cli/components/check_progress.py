@@ -23,6 +23,15 @@ _PHASE_DESCRIPTIONS = {
 }
 # Tiny files finish instantly; don't pay for a live display (or pollute CLI tests).
 CHECK_PROGRESS_MIN_BYTES = 1024 * 1024
+_TWO_PASS_SUFFIXES = {".jsonl", ".csv"}
+
+
+def _expected_check_work_bytes(file: Path) -> int:
+    """Total progress units for a check: two full scans for JSONL/CSV, one for everything else."""
+    size = max(file.stat().st_size, 1)
+    if file.suffix in _TWO_PASS_SUFFIXES:
+        return size * 2
+    return size
 
 
 def should_show_check_progress(file: Path, *, json_mode: bool) -> bool:
@@ -45,11 +54,13 @@ class CheckProgressTracker:
         self._phase: str | None = None
         self._completed_phase_bytes = 0
         self._current_phase_total = 0
+        self._total = 1
 
     def __enter__(self) -> CheckProgressTracker:
         if not self.enabled:
             return self
-        total = max(self.file.stat().st_size, 1)
+        total = _expected_check_work_bytes(self.file)
+        self._total = total
         self._progress = Progress(
             SpinnerColumn(style="bar.pulse"),
             TextColumn("[progress.description]{task.description}"),
@@ -82,12 +93,10 @@ class CheckProgressTracker:
                 self._current_phase_total = event.total_bytes
             phase_label = _PHASE_DESCRIPTIONS.get(event.phase, "Checking")
             completed = self._completed_phase_bytes + event.processed_bytes
-            total = self._completed_phase_bytes + event.total_bytes
             self._progress.update(
                 self._task,
                 description=f"{phase_label} {self.file.name}",
-                completed=min(completed, max(total, 1)),
-                total=max(total, 1),
+                completed=min(completed, self._total),
             )
 
         return on_progress
