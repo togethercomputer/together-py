@@ -56,6 +56,8 @@ from ..types.fine_tune_tokenized_dataset_retrieve_response import FineTuneTokeni
 
 if TYPE_CHECKING:
     from datasets import DatasetDict  # type: ignore[import-untyped]  # pyright: ignore[reportMissingTypeStubs]
+else:
+    DatasetDict = Any
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
@@ -816,6 +818,25 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FineTunePreviewResponse,
         )
 
+    def _retrieve_tokenized_dataset_metadata(
+        self,
+        id: str,
+        *,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse:
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneTokenizedDatasetRetrieveResponse,
+        )
+
     @overload
     def retrieve_tokenized_dataset(
         self,
@@ -872,7 +893,8 @@ class FineTuningResource(SyncAPIResource):
           id: The ID of the fine-tune job whose tokenized dataset should be downloaded.
 
           return_dataset: Download and load the archive as a Hugging Face `DatasetDict`. This
-              requires the `datasets` extra.
+              requires the `datasets` extra. Extraction is limited to 10,000 members,
+              512 MiB per member, and 1 GiB total.
 
           extra_headers: Send extra headers
 
@@ -882,17 +904,20 @@ class FineTuningResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not id:
-            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        metadata = self._get(
-            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=FineTuneTokenizedDatasetRetrieveResponse,
+        metadata = self._retrieve_tokenized_dataset_metadata(
+            id,
+            extra_headers=extra_headers,
+            extra_query=extra_query,
+            extra_body=extra_body,
+            timeout=timeout,
         )
         if return_dataset:
-            return _retrieve_tokenized_dataset(metadata.url)
+            download_timeout = self._client.timeout if isinstance(timeout, NotGiven) else timeout
+            return _retrieve_tokenized_dataset(
+                metadata.url,
+                expected_size=metadata.size,
+                timeout=download_timeout,
+            )
         return metadata
 
 
@@ -1644,6 +1669,25 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FineTunePreviewResponse,
         )
 
+    async def _retrieve_tokenized_dataset_metadata(
+        self,
+        id: str,
+        *,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse:
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=FineTuneTokenizedDatasetRetrieveResponse,
+        )
+
     @overload
     async def retrieve_tokenized_dataset(
         self,
@@ -1700,7 +1744,8 @@ class AsyncFineTuningResource(AsyncAPIResource):
           id: The ID of the fine-tune job whose tokenized dataset should be downloaded.
 
           return_dataset: Download and load the archive as a Hugging Face `DatasetDict`. This
-              requires the `datasets` extra.
+              requires the `datasets` extra. Extraction is limited to 10,000 members,
+              512 MiB per member, and 1 GiB total.
 
           extra_headers: Send extra headers
 
@@ -1710,17 +1755,20 @@ class AsyncFineTuningResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
-        if not id:
-            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        metadata = await self._get(
-            path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=FineTuneTokenizedDatasetRetrieveResponse,
+        metadata = await self._retrieve_tokenized_dataset_metadata(
+            id,
+            extra_headers=extra_headers,
+            extra_query=extra_query,
+            extra_body=extra_body,
+            timeout=timeout,
         )
         if return_dataset:
-            return await _async_retrieve_tokenized_dataset(metadata.url)
+            download_timeout = self._client.timeout if isinstance(timeout, NotGiven) else timeout
+            return await _async_retrieve_tokenized_dataset(
+                metadata.url,
+                expected_size=metadata.size,
+                timeout=download_timeout,
+            )
         return metadata
 
 
@@ -1763,7 +1811,7 @@ class FineTuningResourceWithRawResponse:
             fine_tuning.preview,
         )
         self.retrieve_tokenized_dataset = to_raw_response_wrapper(
-            fine_tuning.retrieve_tokenized_dataset,
+            fine_tuning._retrieve_tokenized_dataset_metadata,
         )
 
 
@@ -1806,7 +1854,7 @@ class AsyncFineTuningResourceWithRawResponse:
             fine_tuning.preview,
         )
         self.retrieve_tokenized_dataset = async_to_raw_response_wrapper(
-            fine_tuning.retrieve_tokenized_dataset,
+            fine_tuning._retrieve_tokenized_dataset_metadata,
         )
 
 
@@ -1849,7 +1897,7 @@ class FineTuningResourceWithStreamingResponse:
             fine_tuning.preview,
         )
         self.retrieve_tokenized_dataset = to_streamed_response_wrapper(
-            fine_tuning.retrieve_tokenized_dataset,
+            fine_tuning._retrieve_tokenized_dataset_metadata,
         )
 
 
@@ -1892,5 +1940,5 @@ class AsyncFineTuningResourceWithStreamingResponse:
             fine_tuning.preview,
         )
         self.retrieve_tokenized_dataset = async_to_streamed_response_wrapper(
-            fine_tuning.retrieve_tokenized_dataset,
+            fine_tuning._retrieve_tokenized_dataset_metadata,
         )
