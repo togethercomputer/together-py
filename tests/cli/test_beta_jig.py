@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+from types import SimpleNamespace
 from typing import Any, cast
 from pathlib import Path
 from contextlib import contextmanager
@@ -82,6 +83,33 @@ def test_jig_failure_exit_preserves_diagnostic(capsys: pytest.CaptureFixture[str
     assert exc_info.value.code == 1
     assert str(exc_info.value) == message
     assert f"Jig: Failed {message}" in capsys.readouterr().out
+
+
+def test_volume_upload_failure_exit_preserves_diagnostic(tmp_path: Path) -> None:
+    deleted: list[str] = []
+
+    class _Volumes:
+        def create(self, **_kwargs: object) -> object:
+            return SimpleNamespace(id="vol-id-1")
+
+        def delete(self, name: str) -> None:
+            deleted.append(name)
+
+    class _FailingUploader:
+        def __init__(self, _client: object) -> None:
+            pass
+
+        async def upload_files(self, _source: Path, _prefix: str) -> None:
+            raise RuntimeError("local upload detail")
+
+    jig = SimpleNamespace(api=SimpleNamespace(volumes=_Volumes()), together=object())
+    with patch.object(_jig_mod, "Uploader", _FailingUploader):
+        with pytest.raises(SystemExit) as exc_info:
+            _jig_mod.volumes_create(cast(Any, jig), "example", tmp_path)
+
+    assert deleted == ["example"]
+    assert exc_info.value.code == 1
+    assert str(exc_info.value) == "Volume upload failed after the volume was created"
 
 
 def _secret_api_body(name: str) -> dict[str, object]:
