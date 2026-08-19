@@ -502,6 +502,38 @@ class TestBetaModelsListRevisions:
         assert "Failed" in result.output
         assert "Validation" in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_ls_revisions_table_renders_legacy_numeric_fields(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/models/19/revisions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        {
+                            "revisionId": 123,
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "validationStatus": "REVISION_VALIDATION_STATUS_SUCCESS",
+                        },
+                        {
+                            "revisionId": "rev-2",
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "validationStatus": 314159,
+                        },
+                    ],
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "ls-revisions", "19", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "123" in result.output
+        assert "rev-2" in result.output
+        assert "314159" in result.output
+
 
 class TestBetaModelsConfigs:
     @pytest.mark.respx(base_url=base_url)
