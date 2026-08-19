@@ -934,9 +934,11 @@ class UploadManager(SyncAPIResource):
             filetype = "jsonl"
         elif file.suffix == ".parquet":
             filetype = "parquet"
+        elif file.suffix == ".csv":
+            filetype = "csv"
         else:
             raise FileTypeError(
-                f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
+                f"Unknown extension of file {file}. Only files with extensions .jsonl, .parquet, and .csv are supported."
             )
         redirect_url, file_id = self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore
 
@@ -1363,9 +1365,11 @@ class AsyncUploadManager(AsyncAPIResource):
             filetype = "jsonl"
         elif file.suffix == ".parquet":
             filetype = "parquet"
+        elif file.suffix == ".csv":
+            filetype = "csv"
         else:
             raise FileTypeError(
-                f"Unknown extension of file {file}. Only files with extensions .jsonl and .parquet are supported."
+                f"Unknown extension of file {file}. Only files with extensions .jsonl, .parquet, and .csv are supported."
             )
 
         redirect_url, file_id = await self.get_upload_url(url, file, checksum, purpose, filetype)  # type: ignore

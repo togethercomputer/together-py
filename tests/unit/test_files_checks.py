@@ -197,6 +197,18 @@ def test_check_jsonl_valid_conversational_multimodal_single_turn(tmp_path: Path)
     assert report["has_min_samples"]
 
 
+@pytest.mark.parametrize("purpose", ["fine-tune", "eval"])
+def test_check_jsonl_allows_trailing_blank_line(tmp_path: Path, purpose: str):
+    file = tmp_path / "trailing_blank.jsonl"
+    file.write_text('{"text": "hello"}\n{"text": "world"}\n\n')
+
+    report = check_file(file, purpose=purpose)
+
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 2
+    assert report["load_json"] is True
+
+
 def test_check_jsonl_empty_file(tmp_path: Path):
     # Create an empty JSONL file
     file = tmp_path / "empty.jsonl"

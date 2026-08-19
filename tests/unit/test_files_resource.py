@@ -102,6 +102,43 @@ def test_file_upload(mocker: MockerFixture, tmp_path: Path):
     assert response.purpose == "fine-tune"
 
 
+def test_file_upload_eval_jsonl_allows_trailing_blank(mocker: MockerFixture, tmp_path: Path):
+    content = [{"text": "Hello, world!"}, {"text": "How are you?"}]
+    content_str = "\n".join(json.dumps(item) for item in content) + "\n\n"
+    content_bytes = content_str.encode()
+
+    mock_send_requestor = mocker.MagicMock()
+    mock_send_requestor.side_effect = _mock_upload_responses(mocker, content_str=content_str)
+
+    client = Together(api_key="fake_api_key")
+    mocker.patch.object(client._client, "send", mock_send_requestor)
+
+    file = tmp_path / "valid.jsonl"
+    file.write_bytes(content_bytes)
+
+    response = client.files.upload(file, purpose="eval")
+
+    assert isinstance(response, FileResponse)
+    assert response.filename == "valid.jsonl"
+
+
+def test_file_upload_eval_csv(mocker: MockerFixture, tmp_path: Path):
+    content_str = "text\nhello\nworld\n"
+    mock_send_requestor = mocker.MagicMock()
+    mock_send_requestor.side_effect = _mock_upload_responses(mocker, content_str=content_str, filename="data.csv")
+
+    client = Together(api_key="fake_api_key")
+    mocker.patch.object(client._client, "send", mock_send_requestor)
+
+    file = tmp_path / "data.csv"
+    file.write_text(content_str)
+
+    response = client.files.upload(file, purpose="eval")
+
+    assert isinstance(response, FileResponse)
+    assert response.filename == "data.csv"
+
+
 @pytest.mark.parametrize(
     ("url", "should_pass"),
     [

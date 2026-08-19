@@ -157,11 +157,6 @@ class FilesResource(SyncAPIResource):
         raise_if_already_exists: bool = False,
         progress_callback: UploadProgressCallback | None = None,
     ) -> FileResponse:
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
-
         if isinstance(file, str):
             file = Path(file)
 
@@ -169,6 +164,11 @@ class FilesResource(SyncAPIResource):
             raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
 
         purpose = cast(FilePurpose, purpose)
+
+        if check:
+            report_dict = check_file(file, purpose=purpose)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
 
         try:
             upload_manager = UploadManager(self._client)
@@ -344,11 +344,6 @@ class AsyncFilesResource(AsyncAPIResource):
         raise_if_already_exists: bool = False,
         progress_callback: UploadProgressCallback | None = None,
     ) -> FileResponse:
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
-
         if isinstance(file, str):
             file = Path(file)
 
@@ -356,6 +351,11 @@ class AsyncFilesResource(AsyncAPIResource):
             raise ValueError(f"Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}")
 
         purpose = cast(FilePurpose, purpose)
+
+        if check:
+            report_dict = check_file(file, purpose=purpose)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
 
         try:
             upload_manager = AsyncUploadManager(self._client)

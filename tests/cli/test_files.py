@@ -255,6 +255,17 @@ class TestFilesUpload:
         check_mock.assert_called_once()
         upload_mock.assert_not_called()
 
+    def test_upload_eval_jsonl_trailing_blank_passes_check(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / "data.jsonl"
+        f.write_text('{"text": "hello"}\n{"text": "world"}\n\n')
+        uploaded = _file_response(id="uploaded-id", purpose="eval")
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            upload_mock.return_value = uploaded
+            result = cli_runner.invoke(["files", "upload", str(f), "--purpose", "eval"])
+        assert result.exit_code == 0
+        upload_mock.assert_called_once()
+        assert "uploaded-id" in result.output
+
     def test_upload_does_not_check_if_disabled(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         f = tmp_path / "data.jsonl"
         f.write_text("{}\n")

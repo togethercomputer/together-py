@@ -326,94 +326,57 @@ def _check_jsonl(
     progress_callback: CheckProgressCallback | None = None,
     total_bytes: int = 0,
 ) -> Dict[str, Any]:
+    # JSONL rules are the same for eval and fine-tune: skip blank lines, require a
+    # JSON object per non-empty line. Semantic checks run on the server after upload.
+    _ = purpose
     report_dict: Dict[str, Any] = {}
     report_dict.update(_check_utf8(file, progress_callback=progress_callback, total_bytes=total_bytes))
     if not report_dict["utf8"]:
         return report_dict
 
-    if purpose == "eval":
-        with file.open(encoding="utf-8", newline="") as f:
-            idx = -1
-            try:
-                for idx, line in _enumerate_lines(
-                    f, total_bytes=total_bytes, progress_callback=progress_callback, phase="jsonl"
-                ):
-                    json_line = json.loads(line)
+    with file.open(encoding="utf-8", newline="") as f:
+        line_index = -1
+        sample_count = 0
+        try:
+            for line_index, raw_line in _enumerate_lines(
+                f, total_bytes=total_bytes, progress_callback=progress_callback, phase="jsonl"
+            ):
+                line = raw_line.strip()
+                if not line:
+                    continue
+                json_line = json.loads(line)
 
-                    if not isinstance(json_line, dict):
-                        raise InvalidFileFormatError(
-                            message=(
-                                f"Error parsing file. Invalid format on line {idx + 1} of the input file. "
-                                "Datasets must follow text, conversational, or instruction format. For more "
-                                "information, see https://docs.together.ai/docs/fine-tuning-data-preparation"
-                            ),
-                            line_number=idx + 1,
-                            error_source="line_type",
-                        )
-                report_dict.update(_check_samples_count(file, report_dict, idx))
-                report_dict["load_json"] = True
+                if not isinstance(json_line, dict):
+                    raise InvalidFileFormatError(
+                        message=(
+                            f"Error parsing file. Invalid format on line {line_index + 1} of the input file. "
+                            "Each line must be a JSON object. Dataset requirements are described at "
+                            "https://docs.together.ai/docs/fine-tuning-data-preparation. "
+                            "Full validation runs on the server after upload."
+                        ),
+                        line_number=line_index + 1,
+                        error_source="line_type",
+                    )
+                sample_count += 1
 
-            except InvalidFileFormatError as e:
-                report_dict["load_json"] = False
-                report_dict["is_check_passed"] = False
-                report_dict["message"] = e.message
-                if e.line_number is not None:
-                    report_dict["line_number"] = e.line_number
-                if e.error_source is not None:
-                    report_dict[e.error_source] = False
-            except ValueError:
-                report_dict["load_json"] = False
-                if idx < 0:
-                    report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
-                else:
-                    report_dict["message"] = f"Error parsing json payload. Unexpected format on line {idx + 1}."
-                report_dict["is_check_passed"] = False
-    else:
-        # Fine-tuning (and non-eval): UTF-8, JSON-parse each non-empty line, require a JSON object per line.
-        # Semantic validation runs on the server after upload.
-        with file.open(encoding="utf-8", newline="") as f:
-            line_index = -1
-            sample_count = 0
-            try:
-                for line_index, raw_line in _enumerate_lines(
-                    f, total_bytes=total_bytes, progress_callback=progress_callback, phase="jsonl"
-                ):
-                    line = raw_line.strip()
-                    if not line:
-                        continue
-                    json_line = json.loads(line)
+            report_dict.update(_check_samples_count(file, report_dict, sample_count - 1 if sample_count else -1))
+            report_dict["load_json"] = True
 
-                    if not isinstance(json_line, dict):
-                        raise InvalidFileFormatError(
-                            message=(
-                                f"Error parsing file. Invalid format on line {line_index + 1} of the input file. "
-                                "Each line must be a JSON object. Dataset requirements are described at "
-                                "https://docs.together.ai/docs/fine-tuning-data-preparation. "
-                                "Full validation runs on the server after upload."
-                            ),
-                            line_number=line_index + 1,
-                            error_source="line_type",
-                        )
-                    sample_count += 1
-
-                report_dict.update(_check_samples_count(file, report_dict, sample_count - 1 if sample_count else -1))
-                report_dict["load_json"] = True
-
-            except InvalidFileFormatError as e:
-                report_dict["load_json"] = False
-                report_dict["is_check_passed"] = False
-                report_dict["message"] = e.message
-                if e.line_number is not None:
-                    report_dict["line_number"] = e.line_number
-                if e.error_source is not None:
-                    report_dict[e.error_source] = False
-            except ValueError:
-                report_dict["load_json"] = False
-                if line_index < 0:
-                    report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
-                else:
-                    report_dict["message"] = f"Error parsing json payload. Unexpected format on line {line_index + 1}."
-                report_dict["is_check_passed"] = False
+        except InvalidFileFormatError as e:
+            report_dict["load_json"] = False
+            report_dict["is_check_passed"] = False
+            report_dict["message"] = e.message
+            if e.line_number is not None:
+                report_dict["line_number"] = e.line_number
+            if e.error_source is not None:
+                report_dict[e.error_source] = False
+        except ValueError:
+            report_dict["load_json"] = False
+            if line_index < 0:
+                report_dict["message"] = "Unable to decode file. File may be empty or in an unsupported format. "
+            else:
+                report_dict["message"] = f"Error parsing json payload. Unexpected format on line {line_index + 1}."
+            report_dict["is_check_passed"] = False
 
     if "text_field" not in report_dict:
         report_dict["text_field"] = True
