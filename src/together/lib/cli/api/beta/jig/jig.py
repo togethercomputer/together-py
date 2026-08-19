@@ -484,17 +484,13 @@ def _build_warm_image(base_image: str) -> None:
     console.print(f"Running: {' '.join(cmd)}")
     if (code := subprocess.run(cmd).returncode) != 0:
         console.print(f"\N{FIRE EXTINGUISHER} Warmup failed with code {code}")
-        sys.exit(1)
-        # TODO:
-        # raise Exit(1)
+        raise _JigCliExit(f"Warmup failed with code {code}")
 
     # check cache was generated
     cache_files = list(cache_dir.rglob("*"))
     if not cache_files:
         console.print("\N{FIRE EXTINGUISHER} Warmup completed but no cache files were generated")
-        sys.exit(1)
-        # TODO:
-        # raise Exit(1)
+        raise _JigCliExit("Warmup completed but no cache files were generated")
 
     console.print(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
@@ -911,8 +907,7 @@ Note: Additional replicas may still be scaling up.""")
                     if event.replica_status_reason == "CrashLoopBackOff":
                         console.print(f"\N{CROSS MARK} [{rid}] Container is crash looping")
                         console.print(self.logs(rid))
-                        sys.exit(1)
-                        # raise Exit(1) from None
+                        raise _JigCliExit("Deployment container is crash looping")
 
                     if event.volume_preload_status:
                         if not event.volume_preload_completed_at:
@@ -935,16 +930,16 @@ Note: Additional replicas may still be scaling up.""")
                             console.print(f"Deployment '{self.name}' may still be in progress.")
                             console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
                             console.print(self.logs(rid))
-                            sys.exit(1)
-                            # raise Exit(1) from None
+                            raise _JigCliExit(
+                                "Deployment container was running but did not become ready before timeout"
+                            )
 
                 time.sleep(_TRACK_POLL_INTERVAL)
 
             console.print(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
-            sys.exit(1)
-            # raise Exit(1) from None
+            raise _JigCliExit("Deployment tracking timed out")
         except KeyboardInterrupt:
             console.print(f"""
 \N{WARNING SIGN} Deployment tracking interrupted
@@ -1020,8 +1015,7 @@ Run 'jig status' to check current state.""")
                 if response.status in ("done", "finished"):
                     return
                 if response.status in ("failed", "error", "canceled"):
-                    sys.exit(1)
-                    # raise Exit(1) from None
+                    raise _JigCliExit(f"Submitted job ended with status {response.status}")
                 time.sleep(1)
             except KeyboardInterrupt:
                 console.print(f"\nStopped watching {request_id}")
@@ -1362,8 +1356,7 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        sys.exit(1)
-        # raise Exit(1) from None
+        raise _JigCliExit("Volume upload failed after the volume was created") from None
 
 
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
