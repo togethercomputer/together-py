@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# pyright: reportMissingTypeStubs=false, reportUnknownMemberType=false
 import io
 import tarfile
 import importlib
@@ -7,9 +8,8 @@ from pathlib import Path
 
 import pytest
 import zstandard
-from datasets import Dataset, DatasetDict
 from respx import MockRouter
-from pytest_mock import MockerFixture
+from datasets import Dataset, DatasetDict
 
 from together import Together, AsyncTogether
 from together.lib import tokenized_dataset
@@ -46,6 +46,18 @@ def _write_member_archive(tmp_path: Path, member_name: str) -> Path:
     return archive_path
 
 
+def _mock_metadata(respx_mock: MockRouter, url: str) -> None:
+    respx_mock.get("https://api.example/fine-tunes/ft-test/download-tokenized-dataset").respond(
+        json={
+            "content_type": "application/zstd",
+            "expires_at": "2026-08-19T10:00:00Z",
+            "filename": "tokenized-datasets.tar.zst",
+            "size": 100,
+            "url": url,
+        }
+    )
+
+
 @pytest.mark.parametrize("include_validation", [False, True])
 def test_load_archive(tmp_path: Path, include_validation: bool) -> None:
     splits = {"train_dataset": Dataset.from_dict({"input_ids": [[1, 2], [3, 4]]})}
@@ -62,7 +74,10 @@ def test_load_archive(tmp_path: Path, include_validation: bool) -> None:
         assert "validation" not in result
 
 
-@pytest.mark.parametrize("member_name", ["../outside", "other_dataset/state.json"])
+@pytest.mark.parametrize(
+    "member_name",
+    ["../outside", r"train_dataset\..\outside", "other_dataset/state.json"],
+)
 def test_load_archive_rejects_unexpected_members(tmp_path: Path, member_name: str) -> None:
     with pytest.raises(ValueError, match="Unexpected tokenized dataset archive member"):
         tokenized_dataset._load_archive(_write_member_archive(tmp_path, member_name))
@@ -94,53 +109,51 @@ def test_missing_datasets_extra_raises_runtime_error(monkeypatch: pytest.MonkeyP
 
 def test_retrieve_tokenized_dataset_returns_dataset(
     respx_mock: MockRouter,
-    mocker: MockerFixture,
+    tmp_path: Path,
 ) -> None:
     url = "https://download.example/tokenized-datasets.tar.zst"
-    respx_mock.get("https://api.example/fine-tunes/ft-test/download-tokenized-dataset").respond(
-        json={
-            "content_type": "application/zstd",
-            "expires_at": "2026-08-19T10:00:00Z",
-            "filename": "tokenized-datasets.tar.zst",
-            "size": 100,
-            "url": url,
-        }
+    _mock_metadata(respx_mock, url)
+    archive_path = _write_archive(
+        tmp_path,
+        {"train_dataset": Dataset.from_dict({"input_ids": [[1, 2]]})},
     )
-    expected = DatasetDict({"train": Dataset.from_dict({"input_ids": [[1, 2]]})})
-    retrieve = mocker.patch(
-        "together.resources.fine_tuning._retrieve_tokenized_dataset",
-        return_value=expected,
-    )
+    download = respx_mock.get(url).respond(content=archive_path.read_bytes())
 
     with Together(api_key="test", base_url="https://api.example") as client:
         result = client.fine_tuning.retrieve_tokenized_dataset("ft-test", return_dataset=True)
 
-    assert result is expected
-    retrieve.assert_called_once_with(url)
+    assert result["train"]["input_ids"] == [[1, 2]]
+    assert download.called
+    assert "authorization" not in download.calls.last.request.headers
 
 
 async def test_async_retrieve_tokenized_dataset_returns_dataset(
     respx_mock: MockRouter,
-    mocker: MockerFixture,
+    tmp_path: Path,
 ) -> None:
     url = "https://download.example/tokenized-datasets.tar.zst"
-    respx_mock.get("https://api.example/fine-tunes/ft-test/download-tokenized-dataset").respond(
-        json={
-            "content_type": "application/zstd",
-            "expires_at": "2026-08-19T10:00:00Z",
-            "filename": "tokenized-datasets.tar.zst",
-            "size": 100,
-            "url": url,
-        }
+    _mock_metadata(respx_mock, url)
+    archive_path = _write_archive(
+        tmp_path,
+        {"train_dataset": Dataset.from_dict({"input_ids": [[1, 2]]})},
     )
-    expected = DatasetDict({"train": Dataset.from_dict({"input_ids": [[1, 2]]})})
-    retrieve = mocker.patch(
-        "together.resources.fine_tuning._async_retrieve_tokenized_dataset",
-        return_value=expected,
-    )
+    download = respx_mock.get(url).respond(content=archive_path.read_bytes())
 
     async with AsyncTogether(api_key="test", base_url="https://api.example") as client:
         result = await client.fine_tuning.retrieve_tokenized_dataset("ft-test", return_dataset=True)
 
-    assert result is expected
-    retrieve.assert_awaited_once_with(url)
+    assert result["train"]["input_ids"] == [[1, 2]]
+    assert download.called
+    assert "authorization" not in download.calls.last.request.headers
+
+
+def test_retrieve_tokenized_dataset_returns_metadata_by_default(respx_mock: MockRouter) -> None:
+    url = "https://download.example/tokenized-datasets.tar.zst"
+    _mock_metadata(respx_mock, url)
+    download = respx_mock.get(url).respond(content=b"not requested")
+
+    with Together(api_key="test", base_url="https://api.example") as client:
+        result = client.fine_tuning.retrieve_tokenized_dataset("ft-test")
+
+    assert result.url == url
+    assert not download.called

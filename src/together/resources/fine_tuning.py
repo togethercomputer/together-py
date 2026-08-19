@@ -36,10 +36,13 @@ from .._response import (
     async_to_custom_streamed_response_wrapper,
 )
 from .._base_client import make_request_options
+from ..lib.tokenized_dataset import (
+    retrieve_dataset as _retrieve_tokenized_dataset,
+    async_retrieve_dataset as _async_retrieve_tokenized_dataset,
+)
 from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib
 from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import create_finetune_request
-from ..lib.tokenized_dataset import _retrieve_tokenized_dataset, _async_retrieve_tokenized_dataset
 from ..types.finetune_model_limits import FinetuneModelLimits
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tune_preview_response import FineTunePreviewResponse
@@ -52,7 +55,7 @@ from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpoi
 from ..types.fine_tune_tokenized_dataset_retrieve_response import FineTuneTokenizedDatasetRetrieveResponse
 
 if TYPE_CHECKING:
-    from datasets import DatasetDict
+    from datasets import DatasetDict  # type: ignore[import-untyped]  # pyright: ignore[reportMissingTypeStubs]
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
