@@ -56,6 +56,10 @@ pyarrow = ["pyarrow>=16.1.0", "pyarrow-stubs>=10.0.1.7"]
 cli = ["PyYAML", "questionary>=2.1.1"]
 # websockets>=13 is the floor for both websockets.sync.client and websockets.asyncio.client
 realtime = ["websockets>=13,<16"]
+datasets = [
+    "datasets>=5.0.1",
+    "zstandard>=0.25.0",
+]
 
 [project.scripts]
 together = "together.lib.cli:main"

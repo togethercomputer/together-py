@@ -242,6 +242,29 @@ What to know before integrating:
 See [`examples/realtime_transcription.py`](examples/realtime_transcription.py)
 for a runnable end-to-end example.
 
+## Loading tokenized dataset previews
+
+Install the optional Hugging Face datasets support:
+
+```sh
+pip install "together[datasets]"
+```
+
+Then retrieve the tokenized preview from a fine-tuning job as a `DatasetDict`:
+
+```python
+tokenized = client.fine_tuning.retrieve_tokenized_dataset(
+    "ft-...",
+    return_dataset=True,
+)
+print(tokenized["train"])
+```
+
+The result contains a `train` split and, when the job has evaluation data, a
+`validation` split. Without `return_dataset=True`, the method continues to
+return the presigned download metadata. Preview archives are limited to 10,000
+members, 512 MiB per member, and 1 GiB total after extraction.
+
 ## Using types
 
 Nested request parameters are [TypedDicts](https://docs.python.org/3/library/typing.html#typing.TypedDict). Responses are [Pydantic models](https://docs.pydantic.dev) which also provide helper methods for things like:
