@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union, Optional, cast
+from typing import TYPE_CHECKING, Any, Union, Optional, cast, overload
 from datetime import datetime
 from typing_extensions import Literal
 
@@ -39,6 +39,7 @@ from .._base_client import make_request_options
 from ..lib.types.fine_tuning import FinetuneResponse as FinetuneResponseLib
 from ..types.finetune_response import FinetuneResponse
 from ..lib.resources.fine_tuning import create_finetune_request
+from ..lib.tokenized_dataset import _retrieve_tokenized_dataset, _async_retrieve_tokenized_dataset
 from ..types.finetune_model_limits import FinetuneModelLimits
 from ..types.fine_tuning_list_response import FineTuningListResponse
 from ..types.fine_tune_preview_response import FineTunePreviewResponse
@@ -49,6 +50,9 @@ from ..types.fine_tuning_list_metrics_response import FineTuningListMetricsRespo
 from ..types.fine_tuning_estimate_price_response import AvailableEstimate, FineTuningEstimatePriceResponse
 from ..types.fine_tuning_list_checkpoints_response import FineTuningListCheckpointsResponse
 from ..types.fine_tune_tokenized_dataset_retrieve_response import FineTuneTokenizedDatasetRetrieveResponse
+
+if TYPE_CHECKING:
+    from datasets import DatasetDict
 
 __all__ = ["FineTuningResource", "AsyncFineTuningResource"]
 
@@ -809,23 +813,63 @@ class FineTuningResource(SyncAPIResource):
             cast_to=FineTunePreviewResponse,
         )
 
+    @overload
     def retrieve_tokenized_dataset(
         self,
         id: str,
         *,
+        return_dataset: Literal[False] = False,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse: ...
+
+    @overload
+    def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        return_dataset: Literal[True],
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> DatasetDict: ...
+
+    @overload
+    def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        return_dataset: bool,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse | DatasetDict: ...
+
+    def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        return_dataset: bool = False,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneTokenizedDatasetRetrieveResponse:
+    ) -> FineTuneTokenizedDatasetRetrieveResponse | DatasetDict:
         """
         Get a presigned URL for the tokenized dataset archive generated for a fine-tune
         job.
 
         Args:
           id: The ID of the fine-tune job whose tokenized dataset should be downloaded.
+
+          return_dataset: Download and load the archive as a Hugging Face `DatasetDict`. This
+              requires the `datasets` extra.
 
           extra_headers: Send extra headers
 
@@ -837,13 +881,16 @@ class FineTuningResource(SyncAPIResource):
         """
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        return self._get(
+        metadata = self._get(
             path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=FineTuneTokenizedDatasetRetrieveResponse,
         )
+        if return_dataset:
+            return _retrieve_tokenized_dataset(metadata.url)
+        return metadata
 
 
 class AsyncFineTuningResource(AsyncAPIResource):
@@ -1594,23 +1641,63 @@ class AsyncFineTuningResource(AsyncAPIResource):
             cast_to=FineTunePreviewResponse,
         )
 
+    @overload
     async def retrieve_tokenized_dataset(
         self,
         id: str,
         *,
+        return_dataset: Literal[False] = False,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse: ...
+
+    @overload
+    async def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        return_dataset: Literal[True],
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> DatasetDict: ...
+
+    @overload
+    async def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        return_dataset: bool,
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> FineTuneTokenizedDatasetRetrieveResponse | DatasetDict: ...
+
+    async def retrieve_tokenized_dataset(
+        self,
+        id: str,
+        *,
+        return_dataset: bool = False,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> FineTuneTokenizedDatasetRetrieveResponse:
+    ) -> FineTuneTokenizedDatasetRetrieveResponse | DatasetDict:
         """
         Get a presigned URL for the tokenized dataset archive generated for a fine-tune
         job.
 
         Args:
           id: The ID of the fine-tune job whose tokenized dataset should be downloaded.
+
+          return_dataset: Download and load the archive as a Hugging Face `DatasetDict`. This
+              requires the `datasets` extra.
 
           extra_headers: Send extra headers
 
@@ -1622,13 +1709,16 @@ class AsyncFineTuningResource(AsyncAPIResource):
         """
         if not id:
             raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
-        return await self._get(
+        metadata = await self._get(
             path_template("/fine-tunes/{id}/download-tokenized-dataset", id=id),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=FineTuneTokenizedDatasetRetrieveResponse,
         )
+        if return_dataset:
+            return await _async_retrieve_tokenized_dataset(metadata.url)
+        return metadata
 
 
 class FineTuningResourceWithRawResponse:
