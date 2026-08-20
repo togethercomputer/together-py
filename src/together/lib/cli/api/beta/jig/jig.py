@@ -25,7 +25,6 @@ from datetime import datetime as dt
 from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
-from typing_extensions import override
 
 import httpx
 from cyclopts import Parameter
@@ -37,6 +36,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.api.beta.jig._uploader import Uploader
@@ -66,18 +66,6 @@ _TRACK_READY_TIMEOUT = 120
 
 class JigError(Exception):
     """Actionable runtime error"""
-
-
-class _JigCliExit(SystemExit):
-    """Exit with a diagnostic that command-failure telemetry can retain."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(1)
-        self.message = message
-
-    @override
-    def __str__(self) -> str:
-        return self.message
 
 
 # == Configuration ==
@@ -484,13 +472,13 @@ def _build_warm_image(base_image: str) -> None:
     console.print(f"Running: {' '.join(cmd)}")
     if (code := subprocess.run(cmd).returncode) != 0:
         console.print(f"\N{FIRE EXTINGUISHER} Warmup failed with code {code}")
-        raise _JigCliExit(f"Warmup failed with code {code}")
+        raise CliDiagnosticExit(f"Warmup failed with code {code}")
 
     # check cache was generated
     cache_files = list(cache_dir.rglob("*"))
     if not cache_files:
         console.print("\N{FIRE EXTINGUISHER} Warmup completed but no cache files were generated")
-        raise _JigCliExit("Warmup completed but no cache files were generated")
+        raise CliDiagnosticExit("Warmup completed but no cache files were generated")
 
     console.print(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
@@ -907,7 +895,7 @@ Note: Additional replicas may still be scaling up.""")
                     if event.replica_status_reason == "CrashLoopBackOff":
                         console.print(f"\N{CROSS MARK} [{rid}] Container is crash looping")
                         console.print(self.logs(rid))
-                        raise _JigCliExit("Deployment container is crash looping")
+                        raise CliDiagnosticExit("Deployment container is crash looping")
 
                     if event.volume_preload_status:
                         if not event.volume_preload_completed_at:
@@ -930,7 +918,7 @@ Note: Additional replicas may still be scaling up.""")
                             console.print(f"Deployment '{self.name}' may still be in progress.")
                             console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
                             console.print(self.logs(rid))
-                            raise _JigCliExit(
+                            raise CliDiagnosticExit(
                                 "Deployment container was running but did not become ready before timeout"
                             )
 
@@ -939,7 +927,7 @@ Note: Additional replicas may still be scaling up.""")
             console.print(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
-            raise _JigCliExit("Deployment tracking timed out")
+            raise CliDiagnosticExit("Deployment tracking timed out")
         except KeyboardInterrupt:
             console.print(f"""
 \N{WARNING SIGN} Deployment tracking interrupted
@@ -1015,7 +1003,7 @@ Run 'jig status' to check current state.""")
                 if response.status in ("done", "finished"):
                     return
                 if response.status in ("failed", "error", "canceled"):
-                    raise _JigCliExit(f"Submitted job ended with status {response.status}")
+                    raise CliDiagnosticExit(f"Submitted job ended with status {response.status}")
                 time.sleep(1)
             except KeyboardInterrupt:
                 console.print(f"\nStopped watching {request_id}")
@@ -1117,7 +1105,7 @@ def _print_cli_result(result: Any) -> None:
 
 def _jig_fail(msg: str) -> typing.NoReturn:
     console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
-    raise _JigCliExit(msg)
+    raise CliDiagnosticExit(msg)
 
 
 def _asyncio_run_upload(coro: typing.Coroutine[typing.Any, typing.Any, None]) -> None:
@@ -1356,7 +1344,7 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        raise _JigCliExit("Volume upload failed after the volume was created") from None
+        raise CliDiagnosticExit("Volume upload failed after the volume was created") from None
 
 
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
