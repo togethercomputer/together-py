@@ -33,6 +33,13 @@ class OperationSampleParams(TypedDict, total=False):
     off unless you replay routing during training.
     """
 
+    return_routed_experts_object_uri: bool
+    """
+    When true together with `return_routed_experts`, return each routing capture as
+    a backend-owned `object_uri` plus shape instead of inline base64 data. Clients
+    that do not opt in keep the legacy inline response.
+    """
+
     sampling_params: SamplingParams
     """Optional sampling parameters"""
 

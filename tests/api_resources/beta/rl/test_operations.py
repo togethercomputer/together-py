@@ -330,8 +330,9 @@ class TestOperations:
                             },
                         },
                         "routed_experts": {
-                            "data": "U3RhaW5sZXNzIHJvY2tz",
                             "shape": ["512", "64", "8"],
+                            "data": "U3RhaW5sZXNzIHJvY2tz",
+                            "object_uri": "https://example.com",
                         },
                         "weights": {
                             "data": [0, 0, 0.5, 1],
@@ -864,6 +865,7 @@ class TestOperations:
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
+            return_routed_experts_object_uri=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
@@ -1262,8 +1264,9 @@ class TestAsyncOperations:
                             },
                         },
                         "routed_experts": {
-                            "data": "U3RhaW5sZXNzIHJvY2tz",
                             "shape": ["512", "64", "8"],
+                            "data": "U3RhaW5sZXNzIHJvY2tz",
+                            "object_uri": "https://example.com",
                         },
                         "weights": {
                             "data": [0, 0, 0.5, 1],
@@ -1796,6 +1799,7 @@ class TestAsyncOperations:
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
+            return_routed_experts_object_uri=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
