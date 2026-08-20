@@ -21,6 +21,8 @@ async def _submit_sample_batch(
     sampling_params: SamplingParams | None = None,
     prompt_logprobs: bool | None = None,
     topk_prompt_logprobs: int | None = None,
+    return_routed_experts: bool | None = None,
+    return_routed_experts_object_uri: bool | None = None,
 ) -> SampleOperation:
     """POST a sample operation without waiting for it."""
     body: dict[str, Any] = {"model_inputs": model_inputs}
@@ -32,6 +34,10 @@ async def _submit_sample_batch(
         body["prompt_logprobs"] = prompt_logprobs
     if topk_prompt_logprobs is not None:
         body["topk_prompt_logprobs"] = topk_prompt_logprobs
+    if return_routed_experts is not None:
+        body["return_routed_experts"] = return_routed_experts
+    if return_routed_experts_object_uri is not None:
+        body["return_routed_experts_object_uri"] = return_routed_experts_object_uri
 
     body, large_payload_id = await prepare_operation_body(
         session._client,
@@ -47,6 +53,8 @@ async def _submit_sample_batch(
         sampling_params=body.get("sampling_params", omit),
         prompt_logprobs=body.get("prompt_logprobs", omit),
         topk_prompt_logprobs=body.get("topk_prompt_logprobs", omit),
+        return_routed_experts=body.get("return_routed_experts", omit),
+        return_routed_experts_object_uri=body.get("return_routed_experts_object_uri", omit),
         extra_body=extra_body,
     )
 
@@ -78,6 +86,8 @@ class Generator:
         sampling_params: SamplingParams | None = None,
         *,
         prompt_logprobs: bool | None = None,
+        return_routed_experts: bool | None = None,
+        return_routed_experts_object_uri: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
@@ -87,6 +97,8 @@ class Generator:
                 num_samples=num_samples,
                 sampling_params=sampling_params,
                 prompt_logprobs=prompt_logprobs,
+                return_routed_experts=return_routed_experts,
+                return_routed_experts_object_uri=return_routed_experts_object_uri,
                 timeout=timeout,
                 interval=interval,
             )
@@ -99,6 +111,8 @@ class Generator:
         sampling_params: SamplingParams | None = None,
         *,
         prompt_logprobs: bool | None = None,
+        return_routed_experts: bool | None = None,
+        return_routed_experts_object_uri: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> SampleResult:
@@ -107,6 +121,8 @@ class Generator:
             num_samples=num_samples,
             sampling_params=sampling_params,
             prompt_logprobs=prompt_logprobs,
+            return_routed_experts=return_routed_experts,
+            return_routed_experts_object_uri=return_routed_experts_object_uri,
             timeout=timeout,
             interval=interval,
         )
@@ -119,6 +135,8 @@ class Generator:
         sampling_params: SamplingParams | None = None,
         *,
         prompt_logprobs: bool | None = None,
+        return_routed_experts: bool | None = None,
+        return_routed_experts_object_uri: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
@@ -128,6 +146,8 @@ class Generator:
                 num_samples=num_samples,
                 sampling_params=sampling_params,
                 prompt_logprobs=prompt_logprobs,
+                return_routed_experts=return_routed_experts,
+                return_routed_experts_object_uri=return_routed_experts_object_uri,
                 timeout=timeout,
                 interval=interval,
             )
@@ -140,6 +160,8 @@ class Generator:
         sampling_params: SamplingParams | None = None,
         *,
         prompt_logprobs: bool | None = None,
+        return_routed_experts: bool | None = None,
+        return_routed_experts_object_uri: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> list[SampleResult]:
@@ -149,6 +171,8 @@ class Generator:
             num_samples=num_samples,
             sampling_params=sampling_params,
             prompt_logprobs=prompt_logprobs,
+            return_routed_experts=return_routed_experts,
+            return_routed_experts_object_uri=return_routed_experts_object_uri,
         )
         result = await self._session._submit_and_wait(
             operation,

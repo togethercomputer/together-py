@@ -864,6 +864,7 @@ class TestOperations:
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
+            return_routed_experts_object_uri=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
@@ -1796,6 +1797,7 @@ class TestAsyncOperations:
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
+            return_routed_experts_object_uri=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
