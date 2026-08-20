@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 import inspect
 from typing import Optional, Annotated, get_args, get_origin
@@ -14,12 +13,18 @@ from together._version import __version__
 from together.lib.utils import log_debug
 from together._exceptions import APIError
 from together._utils._json import openapi_dumps
-from together._utils._logs import setup_logging
 from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
     flush_pending_events,
     format_cli_error_for_telemetry,
+)
+from together.lib.cli.utils._debug import (
+    log_debug_note,
+    log_debug_session,
+    teardown_cli_debug,
+    setup_cli_debug_logging,
+    install_http_debug_hooks,
 )
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
@@ -141,6 +146,7 @@ def _create_client(
     max_retries: Optional[int],
     project_id: Optional[str],
     require_api_key: bool = True,
+    debug: bool = False,
 ) -> AsyncTogether:
     try:
         client = AsyncTogether(
@@ -182,6 +188,8 @@ def _create_client(
             log_debug("Error tracking api request", error=e)
 
     client._client.event_hooks["request"].append(track_request)
+    if debug:
+        install_http_debug_hooks(client._client)
 
     # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
     # calls, so a missing key is not fatal for them. The block hook installed
@@ -208,7 +216,14 @@ async def launcher(
     base_url: Annotated[Optional[str], Parameter(show=False)] = None,
     timeout: Annotated[Optional[int], Parameter(show=False)] = None,
     max_retries: Annotated[Optional[int], Parameter(show=False)] = None,
-    debug: Annotated[Optional[bool], Parameter(show=False)] = False,
+    debug: Annotated[
+        Optional[bool],
+        Parameter(
+            group=global_options,
+            negative=(),
+            help="Print HTTP request/response details to stderr",
+        ),
+    ] = False,
     non_interactive: Annotated[
         Optional[bool], Parameter(group=global_options, negative=(), help="Disable interactive prompts")
     ] = False,
@@ -231,9 +246,37 @@ async def launcher(
     ] = False,
 ) -> None:
     if debug:
-        os.environ.setdefault("TOGETHER_LOG", "debug")
-        setup_logging()
+        setup_cli_debug_logging()
 
+    try:
+        await _run_launcher(
+            tokens,
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            debug=debug,
+            non_interactive=non_interactive,
+            project_id=project_id,
+            output_json=output_json,
+        )
+    finally:
+        if debug:
+            teardown_cli_debug()
+
+
+async def _run_launcher(
+    tokens: tuple[str, ...],
+    *,
+    api_key: Optional[str],
+    base_url: Optional[str],
+    timeout: Optional[int],
+    max_retries: Optional[int],
+    debug: Optional[bool],
+    non_interactive: Optional[bool],
+    project_id: Optional[str],
+    output_json: Optional[bool],
+) -> None:
     (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
@@ -245,13 +288,34 @@ async def launcher(
     # they stay keyless.
     no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
 
-    client = _create_client(api_key, base_url, timeout, max_retries, project_id, require_api_key=not no_auth_command)
+    client = _create_client(
+        api_key,
+        base_url,
+        timeout,
+        max_retries,
+        project_id,
+        require_api_key=not no_auth_command,
+        debug=bool(debug),
+    )
+
+    if debug:
+        log_debug_session(
+            command=parsed_command,
+            is_beta_command=is_beta_command,
+            base_url=str(client.base_url),
+            project_id=client.project_id,
+            api_key=client.api_key or None,
+            timeout=client.timeout,
+            max_retries=client.max_retries,
+        )
 
     # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
     # Together API call and would reintroduce the API-key dependency for keyless
     # commands like `beta clusters ssh`.
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
+        if debug and client.project_id:
+            log_debug_note(f"resolved project {client.project_id}")
 
     is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
     non_interactive_mode = non_interactive or output_json or not is_interactive
