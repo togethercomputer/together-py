@@ -76,5 +76,5 @@ REQUIRED_COLUMNS_MESSAGE = ["role"]
 POSSIBLE_ROLES_CONVERSATION = ["system", "user", "assistant", "tool"]
 
 # DO NOT USE THIS
-# Pull this from the environment variable TOGETHER_DISABLE_TQDM so cli can disable tqdm if needed
+# Deprecated compatibility export. Progress presentation is handled by CLI callers.
 DISABLE_TQDM = False
