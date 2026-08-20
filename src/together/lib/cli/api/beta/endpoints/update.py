@@ -35,7 +35,6 @@ async def update(
         Parameter(help=("Deployment ID to update.")),
     ],
     *,
-    name: Annotated[Optional[str], Parameter(help="Updated deployment name")] = None,
     min_replicas: Annotated[
         Optional[int],
         Parameter(help="New minimum replicas. To stop a deployment, pass both --min-replicas 0 and --max-replicas 0."),
@@ -134,9 +133,6 @@ async def update(
     update_mask: list[str] = []
     kwargs: dict[str, Any] = {}
 
-    if name is not None:
-        kwargs["name"] = name
-        update_mask.append("name")
     if autoscaling is not None:
         kwargs["autoscaling"] = autoscaling
         update_mask.append("autoscaling")

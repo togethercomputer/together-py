@@ -19,6 +19,24 @@ class Registration(BaseModel):
     registered_at: datetime
     """Timestamp when the model was registered"""
 
+    adapter_object_id: Optional[str] = None
+    """Together model registry object ID for the adapter checkpoint (e.g.
+
+    `ml_...`), set on LoRA training sessions
+    """
+
+    adapter_object_revision_id: Optional[str] = None
+    """Together model registry revision ID for the adapter checkpoint (e.g. `rv_...`)"""
+
+    api_model_object_id: Optional[str] = FieldInfo(alias="model_object_id", default=None)
+    """Together model registry object ID for the model checkpoint (e.g.
+
+    `ml_...`), set on full-weight training sessions
+    """
+
+    api_model_object_revision_id: Optional[str] = FieldInfo(alias="model_object_revision_id", default=None)
+    """Together model registry revision ID for the model checkpoint (e.g. `rv_...`)"""
+
 
 class InferenceCheckpoint(BaseModel):
     """Saved inference checkpoint"""

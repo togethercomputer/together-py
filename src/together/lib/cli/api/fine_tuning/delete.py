@@ -19,7 +19,7 @@ async def delete(
     config: CLIConfigParameter,
 ) -> None:
     """Delete fine-tuning job."""
-    skip_confirmation = force or quiet
+    skip_confirmation = force or quiet or config.non_interactive
 
     if not skip_confirmation:
         if config.json:

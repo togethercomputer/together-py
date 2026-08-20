@@ -32,6 +32,7 @@ class TestSessions:
         session = client.beta.rl.sessions.create(
             model_resources_id="123e4567-e89b-12d3-a456-426614174000",
             display_name="gsm8k-experiment-2",
+            load_optimizer=True,
             lora_config={
                 "alpha": 64,
                 "dropout": 0,
@@ -208,6 +209,7 @@ class TestAsyncSessions:
         session = await async_client.beta.rl.sessions.create(
             model_resources_id="123e4567-e89b-12d3-a456-426614174000",
             display_name="gsm8k-experiment-2",
+            load_optimizer=True,
             lora_config={
                 "alpha": 64,
                 "dropout": 0,

@@ -1,12 +1,42 @@
 from __future__ import annotations
 
 import os
-from typing import Literal
+import sys
+from typing import Any, TextIO, Literal, cast
 
 from rich.theme import Theme
 from rich.console import Console
 
 CliThemeName = Literal["light", "dark"]
+StreamName = Literal["stdout", "stderr"]
+
+
+class _EncodingSafeStream:
+    """Proxy writes through the current stdio stream without encoding crashes."""
+
+    def __init__(self, stream_name: StreamName) -> None:
+        self._stream_name = stream_name
+
+    @property
+    def _stream(self) -> TextIO:
+        return cast(TextIO, getattr(sys, self._stream_name))
+
+    def write(self, text: str) -> int:
+        stream = self._stream
+        encoding = getattr(stream, "encoding", None)
+        if encoding:
+            try:
+                text.encode(encoding)
+            except UnicodeEncodeError:
+                text = text.encode(encoding, errors="replace").decode(encoding)
+        return stream.write(text)
+
+    def flush(self) -> None:
+        self._stream.flush()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
 
 # Dark theme: tuned for dark terminal backgrounds (original Together CLI palette).
 _DARK_STYLES = {
@@ -108,11 +138,12 @@ def build_theme(theme_name: CliThemeName | None = None) -> Theme:
     return Theme(styles)
 
 
-def create_console(theme_name: CliThemeName | None = None) -> Console:
-    return Console(theme=build_theme(theme_name), highlight=False)
+def create_console(theme_name: CliThemeName | None = None, *, stderr: bool = False) -> Console:
+    stream_name: StreamName = "stderr" if stderr else "stdout"
+    stream = cast(TextIO, _EncodingSafeStream(stream_name))
+    return Console(theme=build_theme(theme_name), highlight=False, file=stream, stderr=stderr)
 
 
 cli_theme_name: CliThemeName = resolve_cli_theme()
-custom_theme = build_theme(cli_theme_name)
 console = create_console(cli_theme_name)
-error_console = Console(theme=custom_theme, highlight=False, stderr=True)
+error_console = create_console(cli_theme_name, stderr=True)
