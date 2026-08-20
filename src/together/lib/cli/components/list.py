@@ -50,8 +50,9 @@ class ListTable:
         ratio: int | None = 1,
         justify: Literal["left", "center", "right"] = "left",
         width: int | None = None,
+        no_wrap: bool = False,
     ) -> None:
-        self.table.add_column(name, ratio=ratio, justify=justify, style="muted", width=width)
+        self.table.add_column(name, ratio=ratio, justify=justify, style="muted", width=width, no_wrap=no_wrap)
 
     def add_row(self, *values: Any) -> None:
         self.table.add_row(*values)

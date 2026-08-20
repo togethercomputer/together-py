@@ -52,6 +52,7 @@ class SessionsResource(SyncAPIResource):
         *,
         model_resources_id: str,
         display_name: str | Omit = omit,
+        load_optimizer: bool | Omit = omit,
         lora_config: LoraConfigParam | Omit = omit,
         metadata: SessionMetadataParam | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
@@ -71,6 +72,11 @@ class SessionsResource(SyncAPIResource):
               pods.
 
           display_name: Optional display name used to identify the training session
+
+          load_optimizer: Whether to restore optimizer state and step from a training checkpoint. Omitted
+              or true restores them; false loads weights only with a fresh optimizer and
+              step 0. Not valid for inference or HuggingFace checkpoints, which have no
+              optimizer state.
 
           lora_config: LoRA adapter configuration for the session
 
@@ -96,6 +102,7 @@ class SessionsResource(SyncAPIResource):
                 {
                     "model_resources_id": model_resources_id,
                     "display_name": display_name,
+                    "load_optimizer": load_optimizer,
                     "lora_config": lora_config,
                     "metadata": metadata,
                     "resume_from_checkpoint_id": resume_from_checkpoint_id,
@@ -274,6 +281,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         *,
         model_resources_id: str,
         display_name: str | Omit = omit,
+        load_optimizer: bool | Omit = omit,
         lora_config: LoraConfigParam | Omit = omit,
         metadata: SessionMetadataParam | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
@@ -293,6 +301,11 @@ class AsyncSessionsResource(AsyncAPIResource):
               pods.
 
           display_name: Optional display name used to identify the training session
+
+          load_optimizer: Whether to restore optimizer state and step from a training checkpoint. Omitted
+              or true restores them; false loads weights only with a fresh optimizer and
+              step 0. Not valid for inference or HuggingFace checkpoints, which have no
+              optimizer state.
 
           lora_config: LoRA adapter configuration for the session
 
@@ -318,6 +331,7 @@ class AsyncSessionsResource(AsyncAPIResource):
                 {
                     "model_resources_id": model_resources_id,
                     "display_name": display_name,
+                    "load_optimizer": load_optimizer,
                     "lora_config": lora_config,
                     "metadata": metadata,
                     "resume_from_checkpoint_id": resume_from_checkpoint_id,

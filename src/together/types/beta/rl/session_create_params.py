@@ -20,6 +20,14 @@ class SessionCreateParams(TypedDict, total=False):
     display_name: str
     """Optional display name used to identify the training session"""
 
+    load_optimizer: bool
+    """Whether to restore optimizer state and step from a training checkpoint.
+
+    Omitted or true restores them; false loads weights only with a fresh optimizer
+    and step 0. Not valid for inference or HuggingFace checkpoints, which have no
+    optimizer state.
+    """
+
     lora_config: LoraConfigParam
     """LoRA adapter configuration for the session"""
 

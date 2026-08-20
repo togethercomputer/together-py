@@ -245,21 +245,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Loop guard 1: skip pushes by the workflow app (back-sync FF, stlc regenerate).
-          # App-token pushes re-trigger workflows; commit author/message alone miss back-sync
-          # tips authored by release-please/humans.
-          if [ "$ACTOR" = "stlc-workflow-app[bot]" ]; then
-            echo "Push actor is stlc-workflow-app[bot] — skipping re-seal dispatch."
-            exit 0
-          fi
-
-          # Loop guard 2: skip the stlc "Build SDK" squash commit (Stainless-Generated-From trailer).
+          # Loop guard 1: skip the stlc "Build SDK" squash commit (Stainless-Generated-From trailer).
           if printf '%s' "$HEAD_MSG" | grep -q 'Stainless-Generated-From'; then
             echo "Head commit is an stlc build — skipping re-seal dispatch."
             exit 0
           fi
 
-          # Loop guard 3: skip stlc-workflow-app[bot] commits (e.g. a regeneration commit).
+          # Loop guard 2: skip stlc-workflow-app[bot] commits (e.g. a regeneration commit).
           if [ "$HEAD_AUTHOR_NAME" = "stlc-workflow-app[bot]" ]; then
             echo "Head commit authored by stlc-workflow-app[bot] — skipping re-seal dispatch."
             exit 0
