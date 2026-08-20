@@ -135,6 +135,16 @@ def _rm_args(resource_id: str, *extra: str) -> list[str]:
     return ["beta", "endpoints", "rm", "--project", "proj", resource_id, "--json", *extra]
 
 
+def _capture_cli_events(monkeypatch: pytest.MonkeyPatch) -> list[tuple[CliTrackingEvents, dict[str, Any]]]:
+    events: list[tuple[CliTrackingEvents, dict[str, Any]]] = []
+
+    def capture(event: CliTrackingEvents, payload: dict[str, Any]) -> None:
+        events.append((event, payload))
+
+    monkeypatch.setattr("together.lib.cli.track_cli", capture)
+    return events
+
+
 class TestMembersWithoutDeployment:
     def test_returns_percent_to_control(self) -> None:
         members = [
@@ -176,8 +186,7 @@ class TestBetaEndpointsRm:
         cli_runner: CliRunner,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        events: list[tuple[CliTrackingEvents, dict[str, Any]]] = []
-        monkeypatch.setattr("together.lib.cli.track_cli", lambda event, payload: events.append((event, payload)))
+        events = _capture_cli_events(monkeypatch)
         respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 400,
@@ -448,8 +457,7 @@ class TestBetaEndpointsRm:
         cli_runner: CliRunner,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        events: list[tuple[CliTrackingEvents, dict[str, Any]]] = []
-        monkeypatch.setattr("together.lib.cli.track_cli", lambda event, payload: events.append((event, payload)))
+        events = _capture_cli_events(monkeypatch)
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
