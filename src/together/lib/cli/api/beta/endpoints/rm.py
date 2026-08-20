@@ -9,10 +9,10 @@ from rich.markup import escape as escape_rich_markup
 from together import APIError, AsyncClient, omit
 from together.types.beta import AbMember, AbMemberParam, DeploymentAutoscalingParam, EndpointTrafficSplitEntryParam
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
@@ -80,7 +80,7 @@ async def _delete_endpoint(endpoint_id: str, *, force: bool, config: CLIConfigPa
             )
         else:
             await _print_endpoint_delete_blocked(endpoint_id, error=e, config=config)
-            raise CliDiagnosticExit("Endpoint deletion blocked by child deployments")
+            raise CliDiagnosticExit("Endpoint deletion blocked by child deployments") from None
 
     return {"message": f"Deleted endpoint {endpoint_id}", "id": endpoint_id, "type": "endpoint"}
 
@@ -196,7 +196,7 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
         )
     except APIError as e:
         await _scale_down_and_ask_retry(deployment_id, endpoint_id=endpoint.id, error=e, config=config)
-        raise CliDiagnosticExit("Deployment deletion deferred while the deployment scales down")
+        raise CliDiagnosticExit("Deployment deletion deferred while the deployment scales down") from None
 
     message = f"Deleted deployment {deployment_id}"
     if actions:

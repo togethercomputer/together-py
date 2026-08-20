@@ -33,10 +33,10 @@ from together import Together
 from together._types import Omit, omit
 from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
 from together.lib.cli.utils._console import console
-from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.api.beta.jig._uploader import Uploader
