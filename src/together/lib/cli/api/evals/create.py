@@ -9,7 +9,6 @@ from together import TogetherError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.upload_progress import upload_file_with_progress
 from together.types.eval_create_params import (
     ParametersEvaluationScoreParameters,
     ParametersEvaluationCompareParameters,
@@ -22,6 +21,7 @@ from together.types.eval_create_params import (
     ParametersEvaluationCompareParametersModelAEvaluationModelRequest,
     ParametersEvaluationCompareParametersModelBEvaluationModelRequest,
 )
+from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
 async def create(
