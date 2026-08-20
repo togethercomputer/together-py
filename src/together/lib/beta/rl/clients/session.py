@@ -162,6 +162,7 @@ class SessionClient:
         display_name: str | None = None,
         metadata: SessionMetadata | None = None,
         resume_from_checkpoint_id: str | None = None,
+        load_optimizer: bool | None = None,
         lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
@@ -174,6 +175,7 @@ class SessionClient:
                 display_name=display_name,
                 metadata=metadata,
                 resume_from_checkpoint_id=resume_from_checkpoint_id,
+                load_optimizer=load_optimizer,
                 lora_config=lora_config,
                 timeout=timeout,
                 interval=interval,
@@ -335,6 +337,7 @@ class SessionClient:
         display_name: str | None = None,
         metadata: SessionMetadata | None = None,
         resume_from_checkpoint_id: str | None = None,
+        load_optimizer: bool | None = None,
         lora_config: LoraConfig | None = None,
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
@@ -354,6 +357,7 @@ class SessionClient:
                 display_name=display_name if display_name is not None else omit,
                 metadata=metadata if metadata is not None else omit,
                 resume_from_checkpoint_id=resume_from_checkpoint_id if resume_from_checkpoint_id is not None else omit,
+                load_optimizer=load_optimizer if load_optimizer is not None else omit,
                 lora_config=lora_config if lora_config is not None else omit,
             )
             session_id = session.id
