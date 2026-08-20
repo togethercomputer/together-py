@@ -169,6 +169,7 @@ class Together(SyncAPIClient):
             _strict_response_validation=_strict_response_validation,
         )
 
+        self._idempotency_header = "Idempotency-Key"
         self._default_stream_cls = Stream
 
     @cached_property
@@ -489,6 +490,7 @@ class AsyncTogether(AsyncAPIClient):
             _strict_response_validation=_strict_response_validation,
         )
 
+        self._idempotency_header = "Idempotency-Key"
         self._default_stream_cls = AsyncStream
 
     @cached_property
