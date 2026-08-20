@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 from typing import Literal, Optional, Annotated
 from pathlib import Path
@@ -14,6 +13,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.finetune_response import TrainingTypeFullTrainingType, TrainingTypeLoRaTrainingType
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.download_progress import DownloadProgressTracker
 
 _FT_JOB_WITH_STEP_REGEX = r"^ft-[\dabcdef-]+:\d+$"
 
@@ -82,17 +82,18 @@ async def download(
         url = f"{url}&checkpoint_step={checkpoint_step}"
     output: Path | None = output_dir
 
-    # Disable tqdm for json mode
-    if config.json:
-        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
-
     try:
-        file_path, file_size = await AsyncDownloadManager(config.client).download(
-            url=url,
-            output=output,
-            remote_name=ft_job.x_model_output_name,
-            fetch_metadata=True,
-        )
+        with DownloadProgressTracker.for_single_file(
+            enabled=not config.json,
+            description=f"Downloading {remote_name}",
+        ) as tracker:
+            file_path, file_size = await AsyncDownloadManager(config.client).download(
+                url=url,
+                output=output,
+                remote_name=ft_job.x_model_output_name,
+                fetch_metadata=True,
+                progress_callback=tracker.as_callback(),
+            )
 
         if config.json:
             console.print_json(

@@ -9,7 +9,7 @@ from pathlib import Path
 import httpx
 
 from together.types import FilePurpose
-from together.lib.resources.files import FileAlreadyExistsError
+from together.lib.resources.files import FileAlreadyExistsError, UploadProgressCallback
 
 from ..lib import FileTypeError, UploadManager, AsyncUploadManager, check_file
 from ..types import FilePurpose
@@ -155,12 +155,8 @@ class FilesResource(SyncAPIResource):
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
         raise_if_already_exists: bool = False,
+        progress_callback: UploadProgressCallback | None = None,
     ) -> FileResponse:
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
-
         if isinstance(file, str):
             file = Path(file)
 
@@ -169,9 +165,14 @@ class FilesResource(SyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
+        if check:
+            report_dict = check_file(file, purpose=purpose)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
         try:
             upload_manager = UploadManager(self._client)
-            result = upload_manager.upload("/files", file, purpose)
+            result = upload_manager.upload("/files", file, purpose, progress_callback=progress_callback)
 
             return FileResponse(
                 id=result.id,
@@ -341,12 +342,8 @@ class AsyncFilesResource(AsyncAPIResource):
         purpose: FilePurpose | str = "fine-tune",
         check: bool = True,
         raise_if_already_exists: bool = False,
+        progress_callback: UploadProgressCallback | None = None,
     ) -> FileResponse:
-        if check:
-            report_dict = check_file(file)
-            if not report_dict["is_check_passed"]:
-                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
-
         if isinstance(file, str):
             file = Path(file)
 
@@ -355,9 +352,14 @@ class AsyncFilesResource(AsyncAPIResource):
 
         purpose = cast(FilePurpose, purpose)
 
+        if check:
+            report_dict = check_file(file, purpose=purpose)
+            if not report_dict["is_check_passed"]:
+                raise FileTypeError(f"Invalid file supplied, failed to upload. Report:\n{pformat(report_dict)}")
+
         try:
             upload_manager = AsyncUploadManager(self._client)
-            result = await upload_manager.upload("/files", file, purpose)
+            result = await upload_manager.upload("/files", file, purpose, progress_callback=progress_callback)
 
             return FileResponse(
                 id=result.id,
