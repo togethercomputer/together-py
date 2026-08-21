@@ -37,16 +37,16 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                     console.print(f"{prefix}: Endpoint {endpoint_display} not found.")
                     console.print(f"{prefix}: The endpoint may have been deleted or the ID may be incorrect.")
                     console.print(f"{prefix}: Use 'together endpoints list' to see your endpoints.")
-                    raise CliDiagnosticExit(f"{prefix}: endpoint not found")
+                    raise CliDiagnosticExit(f"{prefix}: endpoint not found") from None
                 if "permission" in error_lower or "forbidden" in error_lower or "unauthorized" in error_lower:
                     console.print(f"{prefix}: Failed")
                     console.print(f"{prefix}: You don't have permission to access this resource.")
                     console.print(f"{prefix}: This may belong to another user or organization.")
-                    raise CliDiagnosticExit(f"{prefix}: permission denied")
+                    raise CliDiagnosticExit(f"{prefix}: permission denied") from None
                 if "credentials" in error_lower or "authentication" in error_lower:
                     console.print(f"{prefix}: Failed")
                     console.print(f"{prefix}: Invalid API key or authentication failed.")
-                    raise CliDiagnosticExit(f"{prefix}: authentication failed")
+                    raise CliDiagnosticExit(f"{prefix}: authentication failed") from None
                 raise e
 
         return wrapper  # type: ignore
