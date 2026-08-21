@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import re
-import json
 import time
 import logging
 import platform
@@ -20,34 +19,6 @@ from together.lib.cli.utils._console import error_console
 
 _START_EXTENSION = "together_cli_debug_start"
 
-MAX_BODY_READ = 64 * 1024
-MAX_BODY_DISPLAY = 8 * 1024
-
-_SECRET_HEADER_NAMES = {
-    "authorization",
-    "proxy-authorization",
-    "cookie",
-    "set-cookie",
-    "x-api-key",
-    "api-key",
-    "x-auth-token",
-}
-
-_SECRET_QUERY_KEYS = {
-    "access_token",
-    "id_token",
-    "refresh_token",
-    "api_key",
-    "apikey",
-    "password",
-    "passwd",
-    "client_secret",
-    "token",
-    "secret",
-    "credentials",
-    "key",
-}
-
 _REQUEST_ID_HEADERS = (
     "x-request-id",
     "x-together-request-id",
@@ -57,48 +28,6 @@ _REQUEST_ID_HEADERS = (
     "traceparent",
     "x-cloud-trace-context",
 )
-
-_SKIP_REQUEST_HEADERS = {
-    "accept",
-    "accept-encoding",
-    "connection",
-    "content-length",
-    "host",
-}
-
-_SKIP_RESPONSE_HEADERS = {
-    "accept-ranges",
-    "age",
-    "alt-svc",
-    "cache-control",
-    "cf-cache-status",
-    "connection",
-    "content-encoding",
-    "content-security-policy",
-    "date",
-    "expires",
-    "keep-alive",
-    "nel",
-    "pragma",
-    "priority",
-    "referrer-policy",
-    "report-to",
-    "server",
-    "set-cookie",
-    "strict-transport-security",
-    "transfer-encoding",
-    "vary",
-    "via",
-    "x-content-type-options",
-    "x-frame-options",
-    "x-xss-protection",
-}
-
-_STREAM_CONTENT_TYPES = {
-    "text/event-stream",
-    "application/octet-stream",
-    "application/grpc",
-}
 
 _NOISY_LOG_PATTERNS = (
     re.compile(r"^Request options:"),
@@ -140,29 +69,6 @@ def mask_secret(value: str, *, visible: int = 4) -> str:
     return f"…{value[-visible:]}"
 
 
-def is_secret_header(name: str) -> bool:
-    lowered = name.lower()
-    if lowered in _SECRET_HEADER_NAMES:
-        return True
-    if "api-key" in lowered or "api_key" in lowered:
-        return True
-    if "secret" in lowered or "password" in lowered:
-        return True
-    if lowered.endswith("token") or lowered.endswith("-token"):
-        return True
-    return False
-
-
-def redact_header_value(name: str, value: str) -> str:
-    if not is_secret_header(name):
-        return value
-    if name.lower() == "authorization":
-        kind, _, rest = value.partition(" ")
-        if rest and kind.lower() in {"bearer", "basic", "token"}:
-            return f"{kind} {mask_secret(rest)}"
-    return "<redacted>"
-
-
 def extract_request_id(headers: Mapping[str, str] | httpx.Headers) -> str | None:
     lowered = {str(key).lower(): str(value) for key, value in headers.items()}
     for name in _REQUEST_ID_HEADERS:
@@ -180,92 +86,9 @@ def is_noisy_log_message(message: str) -> bool:
     return any(pattern.search(text) for pattern in _NOISY_LOG_PATTERNS)
 
 
-def _content_type(headers: Mapping[str, str] | httpx.Headers) -> str:
-    raw = headers.get("content-type") if hasattr(headers, "get") else None
-    if not raw:
-        return ""
-    return str(raw).split(";", 1)[0].strip().lower()
-
-
-def _should_skip_body(content_type: str) -> bool:
-    if content_type in _STREAM_CONTENT_TYPES:
-        return True
-    return content_type.startswith(("image/", "audio/", "video/"))
-
-
-def preview_body(content: bytes, content_type: str, *, max_display: int = MAX_BODY_DISPLAY) -> str | None:
-    if not content:
-        return None
-    if content_type.startswith("multipart/"):
-        return f"<multipart {len(content)} bytes>"
-    if _should_skip_body(content_type):
-        return f"<{content_type or 'binary'} {len(content)} bytes>"
-
-    text: str
-    try:
-        text = content.decode("utf-8")
-    except UnicodeDecodeError:
-        return f"<binary {len(content)} bytes>"
-
-    stripped = text.strip()
-    if content_type in {"application/json", "application/problem+json"} or stripped[:1] in "{[":
-        try:
-            parsed: object = json.loads(stripped)
-        except ValueError:
-            parsed = None
-        if parsed is not None:
-            text = json.dumps(parsed, indent=2, ensure_ascii=False, default=str)
-
-    text = _redact_secrets_in_error_text(text)
-    if len(text) > max_display:
-        return f"{text[:max_display]}\n… truncated ({len(content)} bytes total)"
-    return text
-
-
-def _skip_header(name: str, *, kind: str, request_id: str | None) -> bool:
-    lowered = name.lower()
-    if lowered.startswith("x-stainless-"):
-        return True
-    if kind == "request" and lowered in _SKIP_REQUEST_HEADERS:
-        return True
-    if kind == "response" and lowered in _SKIP_RESPONSE_HEADERS:
-        return True
-    if request_id is not None and lowered in _REQUEST_ID_HEADERS:
-        return True
-    if request_id is not None and ("request-id" in lowered or lowered.endswith("-trace-id")):
-        return True
-    return False
-
-
-def interesting_headers(
-    headers: Mapping[str, str] | httpx.Headers,
-    *,
-    kind: str,
-    request_id: str | None = None,
-) -> list[tuple[str, str]]:
-    items: list[tuple[str, str]] = []
-    for name, value in headers.items():
-        if _skip_header(str(name), kind=kind, request_id=request_id):
-            continue
-        items.append((str(name), redact_header_value(str(name), str(value))))
-    items.sort(key=lambda item: item[0].lower())
-    return items
-
-
 def _safe_url(url: httpx.URL, *, base_url: str = "") -> str:
-    query_items = list(url.params.multi_items()) if url.query else []
-    if query_items:
-        redacted = [
-            (
-                key,
-                "<redacted>"
-                if key.lower() in _SECRET_QUERY_KEYS or "token" in key.lower() or "secret" in key.lower()
-                else value,
-            )
-            for key, value in query_items
-        ]
-        url = url.copy_with(params=redacted)
-
+    if url.query:
+        url = url.copy_with(query=None)
     rendered = str(url)
     base = base_url.rstrip("/")
     if base and rendered.startswith(base):
@@ -302,37 +125,6 @@ def _status_style(status_code: int) -> str:
     if status_code < 500:
         return "warning"
     return "error"
-
-
-def _read_request_body(request: httpx.Request) -> bytes | None:
-    try:
-        return request.content
-    except httpx.RequestNotRead:
-        return None
-    except Exception:
-        return None
-
-
-def _content_length_ok_for_peek(response: httpx.Response) -> bool:
-    if _should_skip_body(_content_type(response.headers)):
-        return False
-    accept = response.request.headers.get("accept", "")
-    if accept.startswith("text/event-stream"):
-        return False
-    length_header = response.headers.get("content-length")
-    if length_header is None:
-        return False
-    try:
-        length = int(length_header)
-    except ValueError:
-        return False
-    return 0 < length <= MAX_BODY_READ
-
-
-def _peek_response_body(response: httpx.Response) -> bytes | None:
-    if hasattr(response, "_content"):
-        return bytes(response.content)
-    return None
 
 
 def render_session_lines(
@@ -377,15 +169,7 @@ def render_request_lines(request: httpx.Request, *, base_url: str = "") -> list[
     if retry and retry != "0":
         retry_bit = f"  [warning]retry {escape_rich_markup(retry)}[/warning]"
 
-    lines = [f"[info]→ {escape_rich_markup(method)}[/info] [bold]{escape_rich_markup(url)}[/bold]{retry_bit}"]
-    for name, value in interesting_headers(request.headers, kind="request"):
-        lines.append(f"  [dim]{escape_rich_markup(name.lower())}:[/dim] {escape_rich_markup(value)}")
-
-    body = preview_body(_read_request_body(request) or b"", _content_type(request.headers))
-    if body:
-        for line in body.splitlines():
-            lines.append(f"  {escape_rich_markup(line)}")
-    return lines
+    return [f"[info]→ {escape_rich_markup(method)}[/info] [bold]{escape_rich_markup(url)}[/bold]{retry_bit}"]
 
 
 def render_response_lines(response: httpx.Response, *, elapsed: float | None = None) -> list[str]:
@@ -399,23 +183,7 @@ def render_response_lines(response: httpx.Response, *, elapsed: float | None = N
         extras.append(f"[muted]{escape_rich_markup(request_id)}[/muted]")
 
     suffix = ("  " + "  ".join(extras)) if extras else ""
-    lines = [f"[{style}]← {escape_rich_markup(status)}[/{style}]{suffix}"]
-
-    for name, value in interesting_headers(response.headers, kind="response", request_id=request_id):
-        lines.append(f"  [dim]{escape_rich_markup(name.lower())}:[/dim] {escape_rich_markup(value)}")
-
-    raw = _peek_response_body(response)
-    if raw is not None:
-        body = preview_body(raw, _content_type(response.headers))
-        if body:
-            for line in body.splitlines():
-                lines.append(f"  {escape_rich_markup(line)}")
-    elif _should_skip_body(_content_type(response.headers)):
-        content_type = _content_type(response.headers) or "stream"
-        length = response.headers.get("content-length")
-        size = f"{length} bytes" if length else "stream"
-        lines.append(f"  [dim]<{escape_rich_markup(content_type)} {escape_rich_markup(size)}>[/dim]")
-    return lines
+    return [f"[{style}]← {escape_rich_markup(status)}[/{style}]{suffix}"]
 
 
 def _print_lines(lines: Sequence[str]) -> None:
@@ -462,11 +230,6 @@ async def _on_request(request: httpx.Request) -> None:
 async def _on_response(response: httpx.Response) -> None:
     if not _enabled:
         return
-    if not hasattr(response, "_content") and _content_length_ok_for_peek(response):
-        try:
-            await response.aread()
-        except Exception:
-            pass
     start = response.request.extensions.get(_START_EXTENSION)
     elapsed: float | None
     if isinstance(start, (int, float)):

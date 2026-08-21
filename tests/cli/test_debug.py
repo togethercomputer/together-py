@@ -54,7 +54,8 @@ class TestCliDebug:
         assert "GET" in err
         assert "200" in err
         assert "req_test_123" in err
-        assert "project_id" in err
+        assert "api_key_id" not in err
+        assert "organization_id" not in err
         assert API_KEY not in err
         assert "Request options:" not in err
         assert "Sending HTTP Request:" not in err
@@ -76,7 +77,9 @@ class TestCliDebug:
         assert "debug" in result.err_out
 
     @pytest.mark.respx(base_url=base_url)
-    def test_debug_shows_error_response_body(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_debug_error_keeps_status_without_response_body(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
         respx_mock.get("/whoami").mock(
             return_value=httpx.Response(
                 401,
@@ -91,8 +94,9 @@ class TestCliDebug:
         err = captured.err
         assert "401" in err
         assert "req_err_1" in err
-        assert "Invalid API key" in err
+        assert "invalid_request_error" not in err
         assert API_KEY not in err
+        assert "Invalid API key" in captured.out
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         result = cli_runner.invoke(["whoami"])
