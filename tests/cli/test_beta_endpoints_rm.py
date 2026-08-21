@@ -131,8 +131,8 @@ def _shadow_experiment_body(
     return body
 
 
-def _rm_args(resource_id: str, *extra: str) -> list[str]:
-    return ["beta", "endpoints", "rm", "--project", "proj", resource_id, "--json", *extra]
+def _rm_args(resource_id: str, *extra: str, command: str = "rm") -> list[str]:
+    return ["beta", "endpoints", command, "--project", "proj", resource_id, "--json", *extra]
 
 
 def _capture_cli_events(monkeypatch: pytest.MonkeyPatch) -> list[tuple[CliTrackingEvents, dict[str, Any]]]:
@@ -165,13 +165,31 @@ class TestMembersWithoutDeployment:
 
 
 class TestBetaEndpointsRm:
+    def test_delete_alias_is_hidden_from_help(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "--help"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0
+        help_text = "Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID"
+        # Agent formatter: "rm, -d: …"; human/Rich formatter may omit the colon.
+        assert help_text in output
+        assert (
+            f"rm, -d: {help_text}" in output
+            or f"rm: {help_text}" in output
+            or f"rm, -d {help_text}" in output
+            or f"rm {help_text}" in output
+        )
+        assert f"delete: {help_text}" not in output
+        assert f"delete {help_text}" not in output
+
+    @pytest.mark.parametrize("command", ["rm", "delete"])
     @pytest.mark.respx(base_url=base_url)
-    def test_rm_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_rm_endpoint(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(200, json={"id": "ep_1"})
         )
 
-        result = cli_runner.invoke(_rm_args("ep_1"))
+        result = cli_runner.invoke(_rm_args("ep_1", command=command))
 
         assert result.exit_code == 0, result.output
         assert delete_route.called
