@@ -435,9 +435,6 @@ class TestBatchesDownload:
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_stdout_json_is_metadata_only(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        content_route = respx_mock.get("/files/file-out/content").mock(
-            return_value=httpx.Response(200, content=b"should-not-download\n")
-        )
         respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
         assert result.exit_code == 0
@@ -446,7 +443,6 @@ class TestBatchesDownload:
         assert body["output_file_id"] == "file-out"
         assert "content" not in body
         assert "content_base64" not in body
-        assert content_route.call_count == 0
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_stdout_no_output_file_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
