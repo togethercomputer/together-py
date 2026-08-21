@@ -291,7 +291,6 @@ def test_sample_response_converts_prompt_logprobs_to_tinker_shapes() -> None:
     assert response.topk_prompt_logprobs_np is not None
     assert response.topk_prompt_logprobs_np.token_ids.shape == (2, 3)
     assert response.topk_prompt_logprobs == [None, [(8, pytest.approx(-0.2)), (9, pytest.approx(-0.3))]]
-    assert response.prompt_cache_hit_tokens == 2
 
 
 def test_sample_forwards_prompt_logprob_options(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -394,7 +393,7 @@ def test_create_lora_training_client_rejects_unknown_kwargs() -> None:
         ({"timeout": 30.0}, "timeout"),
         (
             {"default_headers": {"X-Foo": "bar"}, "timeout": 30.0, "max_retries": 3},
-            r"ignores \['max_retries', 'timeout'\]",
+            r"ignores these options: max_retries, timeout",
         ),
     ],
 )

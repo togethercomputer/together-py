@@ -194,5 +194,4 @@ def _to_sample_response(result: SampleResult, topk_prompt_logprobs: int = 0) -> 
         ],
         prompt_logprobs_np=_prompt_logprobs(result),
         topk_prompt_logprobs_np=_topk_prompt_logprobs(result, topk_prompt_logprobs),
-        prompt_cache_hit_tokens=result.sequences[0].prompt_cache_hit_tokens if result.sequences else 0,
     )
