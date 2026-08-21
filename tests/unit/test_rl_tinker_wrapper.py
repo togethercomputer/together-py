@@ -374,13 +374,9 @@ def test_create_lora_training_client_forwards_train_unembed(
     monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
 
     with pytest.raises(RuntimeError, match="stop"):
-        tinker_compat.ServiceClient().create_lora_training_client(
-            "Qwen/Qwen3.5-4B", rank=16, train_unembed=False
-        )
+        tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16, train_unembed=False)
 
-    resources.create_session.assert_called_once_with(
-        lora_config={"rank": 16, "train_unembed": False}
-    )
+    resources.create_session.assert_called_once_with(lora_config={"rank": 16, "train_unembed": False})
     resources.stop.assert_called_once_with()
 
 

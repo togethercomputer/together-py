@@ -435,7 +435,7 @@ def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = trainer.trainer.weights_sync(weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
 
-    assert result.weights_version == 2
+    assert int(result.weights_version) == 2
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "weights_sync"
