@@ -7,6 +7,7 @@ from datetime import datetime
 
 from cyclopts import Parameter
 
+from together.lib.utils.tools import localize_datetime
 from together.lib.types.fine_tuning import COMPLETED_STATUSES, FinetuneResponse
 from together.types.finetune_response import FinetuneResponse as _FinetuneResponse
 from together.types.fine_tuning_list_response import Data
@@ -97,7 +98,7 @@ def generate_progress_text(
     """
     time_text = ""
     if getattr(finetune_job, "started_at", None) is not None and isinstance(finetune_job.started_at, datetime):
-        started_at = finetune_job.started_at.astimezone()
+        started_at = localize_datetime(finetune_job.started_at)
 
         if finetune_job.progress is not None:
             if current_time < started_at:
@@ -132,7 +133,7 @@ def generate_progress_bar(
     if finetune_job.status in COMPLETED_STATUSES:
         progress = "Progress: [bold green]completed[/bold green]"
     elif getattr(finetune_job, "started_at", None) is not None and isinstance(finetune_job.started_at, datetime):
-        started_at = finetune_job.started_at.astimezone()
+        started_at = localize_datetime(finetune_job.started_at)
 
         if finetune_job.progress is not None:
             if current_time < started_at:

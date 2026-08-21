@@ -204,6 +204,14 @@ class TestBetaEndpointsUpdate:
         assert result.exit_code != 0
         assert "At least one update option must be specified" in result.output
 
+    def test_update_does_not_accept_name_option(self, cli_runner: CliRunner) -> None:
+        help_result = cli_runner.invoke(["beta", "endpoints", "update", "--help"])
+        assert help_result.exit_code == 0, help_result.output
+        assert "--name" not in help_result.output
+
+        result = cli_runner.invoke(_update_args("dep_control", "--name", "renamed"))
+        assert result.exit_code != 0
+
     @pytest.mark.respx(base_url=base_url)
     def test_update_ab_percent_counts_as_update_option(
         self,
@@ -512,7 +520,17 @@ class TestBetaEndpointsUpdateAbPercent:
         )
 
         result = cli_runner.invoke(
-            _update_args("dep_variant", "--name", "renamed", "--ab-percent", "20", "--etag", "user-etag")
+            _update_args(
+                "dep_variant",
+                "--min-replicas",
+                "1",
+                "--max-replicas",
+                "2",
+                "--ab-percent",
+                "20",
+                "--etag",
+                "user-etag",
+            )
         )
 
         assert result.exit_code == 0, result.output
@@ -556,7 +574,17 @@ class TestBetaEndpointsUpdateAbPercent:
         # Intentionally not mocking the deployment PATCH: if validation ran after
         # mutations, that call would be an unmocked request and fail the test.
 
-        result = cli_runner.invoke(_update_args("dep_variant", "--name", "renamed", "--ab-percent", "20"))
+        result = cli_runner.invoke(
+            _update_args(
+                "dep_variant",
+                "--min-replicas",
+                "1",
+                "--max-replicas",
+                "2",
+                "--ab-percent",
+                "20",
+            )
+        )
 
         assert result.exit_code != 0
         assert "Deployment dep_variant is not part of an A/B experiment" in result.output
@@ -643,7 +671,17 @@ class TestBetaEndpointsUpdateAbPercent:
             )
         )
 
-        result = cli_runner.invoke(_update_args("dep_variant", "--name", "renamed", "--ab-percent", "20"))
+        result = cli_runner.invoke(
+            _update_args(
+                "dep_variant",
+                "--min-replicas",
+                "1",
+                "--max-replicas",
+                "2",
+                "--ab-percent",
+                "20",
+            )
+        )
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)
@@ -652,7 +690,7 @@ class TestBetaEndpointsUpdateAbPercent:
         assert payload["ab_experiment"]["id"] == "abx_1"
 
     @pytest.mark.respx(base_url=base_url)
-    def test_update_name_and_traffic_weight_json_keeps_unwrapped_deployment(
+    def test_update_autoscaling_and_traffic_weight_json_keeps_unwrapped_deployment(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
@@ -673,7 +711,17 @@ class TestBetaEndpointsUpdateAbPercent:
             )
         )
 
-        result = cli_runner.invoke(_update_args("dep_variant", "--name", "renamed", "--traffic-weight", "2"))
+        result = cli_runner.invoke(
+            _update_args(
+                "dep_variant",
+                "--min-replicas",
+                "1",
+                "--max-replicas",
+                "2",
+                "--traffic-weight",
+                "2",
+            )
+        )
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)

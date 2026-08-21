@@ -12,12 +12,13 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.models._utils import print_configs_table
 from together.lib.cli.utils._mock_pagination import AfterParameter
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model_reference
 
 
 async def list(
     model: Annotated[
         str,
-        Parameter(help="Model ID to filter configs for", required=True),
+        Parameter(help="Model ID, resource path, or name to filter configs for", required=True),
     ],
     *,
     limit: Annotated[Optional[int], Parameter(help="Maximum configs to return")] = None,
@@ -25,10 +26,12 @@ async def list(
     config: CLIConfigParameter,
 ) -> None:
     """List beta model configs usable by endpoint deployments."""
+    reference = await resolve_model_reference(config, model)
     response = await show_loading_status(
         "Loading model configs...",
         config.client.beta.models.configs.list(
-            reference_model_id=model,
+            reference_model=reference.reference_model or omit,
+            reference_model_id=reference.reference_model_id or omit,
             limit=limit if limit is not None else omit,
             after=after or omit,
         ),

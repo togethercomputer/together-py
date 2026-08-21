@@ -330,8 +330,9 @@ class TestOperations:
                             },
                         },
                         "routed_experts": {
-                            "data": "U3RhaW5sZXNzIHJvY2tz",
                             "shape": ["512", "64", "8"],
+                            "data": "U3RhaW5sZXNzIHJvY2tz",
+                            "object_uri": "https://example.com",
                         },
                         "weights": {
                             "data": [0, 0, 0.5, 1],
@@ -1263,8 +1264,9 @@ class TestAsyncOperations:
                             },
                         },
                         "routed_experts": {
-                            "data": "U3RhaW5sZXNzIHJvY2tz",
                             "shape": ["512", "64", "8"],
+                            "data": "U3RhaW5sZXNzIHJvY2tz",
+                            "object_uri": "https://example.com",
                         },
                         "weights": {
                             "data": [0, 0, 0.5, 1],

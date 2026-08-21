@@ -44,6 +44,50 @@ class ResolvedModelAndConfig(NamedTuple):
     revision_id: str | None = None
 
 
+class ResolvedModelReference(NamedTuple):
+    reference_model: str | None
+    reference_model_id: str | None
+
+
+async def resolve_model_reference(config: CLIConfigParameter, model_input: str) -> ResolvedModelReference:
+    """Resolve a model ID, resource path, or name for a configs API filter."""
+    path_match = MODEL_PATH_RE.match(model_input)
+    if path_match:
+        project_id, model_id = path_match.group(1), path_match.group(2)
+        return ResolvedModelReference(f"projects/{project_id}/models/{model_id}", None)
+
+    if "/" not in model_input:
+        return ResolvedModelReference(None, model_input)
+
+    me = await config.client.whoami()
+    prefix, _, _name = model_input.partition("/")
+    if prefix == me.project_slug:
+        model = await _find_private_model_by_name(config, model_input)
+        if model.base_model:
+            return ResolvedModelReference(model.base_model, None)
+        if model.base_model_id:
+            return ResolvedModelReference(None, model.base_model_id)
+        return ResolvedModelReference(construct_model_path(model), None)
+
+    supported_models = await config.client.beta.models.list_supported(search=model_input)
+    exact_matches = [m for m in supported_models.data if m.name == model_input]
+    matches = exact_matches or supported_models.data
+    if not matches:
+        raise ValueError(f"Model {model_input} not found.")
+    if len(matches) > 1:
+        raise ValueError(f"""Multiple models found for "{model_input}".
+
+Please specify a more specific model name. To find a matching model, try this:
+- tg beta models public --search {model_input}""")
+
+    supported_model = matches[0]
+    if supported_model.base_model:
+        return ResolvedModelReference(supported_model.base_model, None)
+    if supported_model.base_model_id:
+        return ResolvedModelReference(None, supported_model.base_model_id)
+    raise ValueError(f"Model {model_input} has no usable base model reference.")
+
+
 async def resolve_model(
     config: CLIConfigParameter,
     model_input: str,
@@ -240,6 +284,14 @@ def _profile_model_id(profile: SupportedModelDeploymentProfile) -> str:
     return profile.model or ""
 
 
+def _profile_cli_model(profile: SupportedModelDeploymentProfile) -> str:
+    return getattr(profile, "api_model_name", None) or _profile_model_id(profile)
+
+
+def _profile_matches_model_name(profile: SupportedModelDeploymentProfile, model_input: str) -> bool:
+    return getattr(profile, "api_model_name", None) == model_input
+
+
 def _profile_config_id(profile: SupportedModelDeploymentProfile) -> str:
     return profile.certified_config_revision_id or profile.profile_id or ""
 
@@ -254,24 +306,24 @@ def _print_deployment_profiles(profiles: list[SupportedModelDeploymentProfile], 
     from together.lib.cli.components.list import ListTable
 
     table = ListTable(f"Available configs for {model_input}")
-    table.add_primary_column("Quant")
+    table.add_primary_column("Model", ratio=3)
+    table.add_column("Config", ratio=2)
+    table.add_column("Quant")
     table.add_column("GPUs")
     table.add_column("Parallelism")
-    table.add_column("Model ID", ratio=2)
-    table.add_column("Config", ratio=2)
 
     for profile in profiles:
         table.add_row(
+            _profile_cli_model(profile),
+            _profile_config_id(profile),
             profile.quantization or "",
             _profile_gpu(profile),
             profile.parallelism or "",
-            _profile_model_id(profile),
-            _profile_config_id(profile),
         )
     console.print(table)
 
     example = profiles[0]
-    example_model = _profile_model_id(example)
+    example_model = _profile_cli_model(example)
     example_config = _profile_config_id(example)
     console.print("\n[blue dim]Pick one and rerun with both flags, for example:[/blue dim]")
     console.print(
@@ -332,7 +384,12 @@ Please specify a more specific model ID. To find a more specific model variant t
     if not profiles:
         raise ValueError(f"Model {model_input} has no deployment profiles.")
 
-    profile = _select_deployment_profile(profiles, model_input=model_input, config_id=config_id)
+    matching_profile_names = [profile for profile in profiles if _profile_matches_model_name(profile, model_input)]
+    profile = _select_deployment_profile(
+        matching_profile_names or profiles,
+        model_input=model_input,
+        config_id=config_id,
+    )
     match = MODEL_PATH_RE.match(profile.model or "")
     if not match:
         raise ValueError(f"Invalid model path: {profile.model}")
@@ -343,7 +400,11 @@ Please specify a more specific model ID. To find a more specific model variant t
         config_id,
         model=model_input,
     )
-    model = Model.construct(id=model_id, projectId=project_id, name=public_model.name or model_id)
+    model = Model.construct(
+        id=model_id,
+        projectId=project_id,
+        name=_profile_cli_model(profile) or public_model.name or model_id,
+    )
     return ResolvedModelAndConfig(model=model, config=selected_config, revision_id=revision_id)
 
 
