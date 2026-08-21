@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import json
 from typing import Any, cast
 
@@ -15,6 +16,14 @@ from together.lib.cli._track_cli import CliTrackingEvents
 from together.lib.cli.api.beta.endpoints.rm import _members_without_deployment
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _normalize_cli_help(output: str) -> str:
+    # Rich help wraps table cells across panel borders; normalize for both
+    # agent (plain) and human (rich) formatters. See tests/cli/test_fine_tuning.py.
+    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
 
 
 def _endpoint_body(**overrides: Any) -> dict[str, Any]:
@@ -165,18 +174,28 @@ class TestMembersWithoutDeployment:
 
 
 class TestBetaEndpointsRm:
-    def test_delete_alias_is_hidden_from_help(self, cli_runner: CliRunner) -> None:
+    @pytest.mark.parametrize("formatter_name", ["agent", "human"])
+    def test_delete_alias_is_hidden_from_help(
+        self, formatter_name: str, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from together.lib.cli import app
+        from together.lib.cli.utils._help_formatter import agent_formatter, human_formatter
+
+        monkeypatch.setattr(app, "help_formatter", agent_formatter if formatter_name == "agent" else human_formatter)
+
         result = cli_runner.invoke(["beta", "endpoints", "--help"])
 
-        output = " ".join(result.output.split())
+        output = _normalize_cli_help(result.output)
         assert result.exit_code == 0
         help_text = "Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID"
-        # Agent formatter: "rm, -d: …"; human/Rich formatter may omit the colon.
+        # Agent: "rm, -d: …"; Rich names renderer: "-d, rm …" (shorts first, no colon).
         assert help_text in output
         assert (
             f"rm, -d: {help_text}" in output
-            or f"rm: {help_text}" in output
+            or f"-d, rm: {help_text}" in output
             or f"rm, -d {help_text}" in output
+            or f"-d, rm {help_text}" in output
+            or f"rm: {help_text}" in output
             or f"rm {help_text}" in output
         )
         assert f"delete: {help_text}" not in output
