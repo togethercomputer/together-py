@@ -93,11 +93,12 @@ class TestJSONMode:
 
     def test_batches_json_mode(self) -> None:
         batches = JSONValidator("batches")
-        batches.run_and_assert("submit file-abc123def456ghi789 chat.completions Qwen/Qwen3.5-9B")
+        # Prism's create example has no job; submit correctly exits 1 when job is null.
+        batches.run_and_assert("submit file-abc123def456ghi789 chat.completions Qwen/Qwen3.5-9B", allow_nonzero=True)
         batches.run_and_assert("list")
         batches.run_and_assert("retrieve batch_job_abc123def456")
         batches.run_and_assert("cancel batch_job_abc123def456")
-        # Prism job may not be terminal; stdout must still be jq-parseable JSON.
+        # Prism job has no status; download errors as JSON and must still be jq-parseable.
         batches.run_and_assert("download batch_job_abc123def456", allow_nonzero=True)
 
     # All files commands (subprocess against mock server; no respx — child process never sees patches).
