@@ -3,16 +3,15 @@ from __future__ import annotations
 import os
 import time
 import asyncio
-import logging
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from dataclasses import field, dataclass
 from collections.abc import Coroutine
-from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 
 from .. import _operations
+from .._loop import LoopGate, run_untracked, on_client_loop, run_untracked_async
 from ....._types import omit
 from ....._client import AsyncTogether
 from ....._base_client import DefaultAsyncHttpxClient
@@ -26,8 +25,7 @@ if TYPE_CHECKING:
     from .trainer import Trainer
     from .generator import Generator
 
-logger = logging.getLogger("together")
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
 _RUNNING_STATUS = "TRAINING_SESSION_STATUS_RUNNING"
@@ -50,19 +48,6 @@ _RL_MAX_CONNECTIONS = int(os.environ.get("TOGETHER_RL_MAX_CONNECTIONS", "256"))
 _CLIENT_TIMEOUT = httpx.Timeout(timeout=300, connect=300)
 _CLIENT_LIMITS = httpx.Limits(max_connections=_RL_MAX_CONNECTIONS, max_keepalive_connections=_RL_MAX_CONNECTIONS)
 
-# Multi-turn RL rollouts bridge synchronous, network-blocking env steps onto this
-# loop via asyncio.to_thread, which dispatches to the loop's default executor.
-_THREAD_POOL_SIZE_ENV = "TOGETHER_RL_THREAD_POOL_SIZE"
-
-
-def _new_event_loop() -> asyncio.AbstractEventLoop:
-    loop = asyncio.new_event_loop()
-    pool_size = os.environ.get(_THREAD_POOL_SIZE_ENV)
-    if pool_size:
-        loop.set_default_executor(ThreadPoolExecutor(max_workers=int(pool_size), thread_name_prefix="together-rl-env"))
-        logger.info("RL rollout thread pool widened to %s workers", pool_size)
-    return loop
-
 
 @dataclass
 class SessionClient:
@@ -70,10 +55,7 @@ class SessionClient:
     _client: AsyncTogether
     _has_generator: bool = True
 
-    _event_loop: asyncio.AbstractEventLoop | None = field(
-        init=False,
-        default=None,
-    )
+    _loop: LoopGate = field(init=False, default_factory=LoopGate, repr=False)
     _trainer: Trainer | None = field(
         init=False,
         default=None,
@@ -124,33 +106,13 @@ class SessionClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        self.stop()
+        # A handle released with detach() is already torn down; stopping it here would report
+        # a stranded remote for a stop the caller never asked for.
+        if not self._loop.closed:
+            self.stop()
 
-    def run(self, coro: Coroutine[Any, Any, T]) -> T:
-        if self._event_loop is None:
-            self._event_loop = _new_event_loop()
-        return self._event_loop.run_until_complete(coro)
-
-    @classmethod
-    def _run_blocking(cls, coro: Coroutine[Any, Any, SessionClient]) -> SessionClient:
-        """Drive an async constructor to completion on a fresh loop, then adopt that
-        loop so subsequent blocking calls on the session reuse it."""
-        event_loop = _new_event_loop()
-        task = event_loop.create_task(coro)
-        try:
-            output = event_loop.run_until_complete(task)
-        except BaseException:
-            task.cancel()
-            try:
-                event_loop.run_until_complete(task)
-            except (asyncio.CancelledError, Exception):
-                pass
-            event_loop.close()
-            raise
-
-        assert output._event_loop is None
-        output._event_loop = event_loop
-        return output
+    def run(self, coro: Coroutine[Any, Any, _T]) -> _T:
+        return self._loop.run(coro)
 
     @classmethod
     def create(
@@ -167,7 +129,7 @@ class SessionClient:
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
     ) -> SessionClient:
-        return cls._run_blocking(
+        return run_untracked(
             cls.create_async(
                 model_resources_id=model_resources_id,
                 api_key=api_key,
@@ -191,7 +153,7 @@ class SessionClient:
         base_url: str | httpx.URL | None = None,
     ) -> SessionClient:
         """Bind a fully-capable handle to an existing training session."""
-        return cls._run_blocking(
+        return run_untracked(
             cls.attach_async(
                 session_id=session_id,
                 api_key=api_key,
@@ -207,24 +169,27 @@ class SessionClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
     ) -> SessionClient:
-        client = AsyncTogether(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=_CLIENT_TIMEOUT,
-            max_retries=_MAX_RETRIES,
-            http_client=DefaultAsyncHttpxClient(limits=_CLIENT_LIMITS),
-        )
-        try:
-            session = await client.beta.rl.sessions.retrieve(session_id)
-            model_resources = await client.beta.rl.model_resources.retrieve(session.resources_id)
-        except BaseException:
-            await client.close()
-            raise
-        return cls(
-            session_id,
-            client,
-            _has_generator=model_resources.compute_config.num_generator_replicas > 0,
-        )
+        async def attach_on_process_loop() -> SessionClient:
+            client = AsyncTogether(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=_CLIENT_TIMEOUT,
+                max_retries=_MAX_RETRIES,
+                http_client=DefaultAsyncHttpxClient(limits=_CLIENT_LIMITS),
+            )
+            try:
+                session = await client.beta.rl.sessions.retrieve(session_id)
+                model_resources = await client.beta.rl.model_resources.retrieve(session.resources_id)
+            except BaseException:
+                await client.close()
+                raise
+            return cls(
+                session_id,
+                client,
+                _has_generator=model_resources.compute_config.num_generator_replicas > 0,
+            )
+
+        return await run_untracked_async(attach_on_process_loop())
 
     def create_inference_checkpoint(
         self,
@@ -252,25 +217,17 @@ class SessionClient:
             )
         )
 
-    def stop(self) -> Any:
-        output = self.run(self.stop_async())
-        if self._event_loop is not None:
-            self._event_loop.close()
-            self._event_loop = None
-        return output
+    def stop(self) -> Session | None:
+        """Stop the remote session. None when this handle was already torn down."""
+        return self._loop.run_teardown(self._stop_remote())
 
     def detach(self) -> None:
-        """Release the handle's client and event loop without stopping the remote session."""
-        self.run(self.detach_async())
-        if self._event_loop is not None:
-            self._event_loop.close()
-            self._event_loop = None
+        """Release the handle's client without stopping the remote session."""
+        self._loop.run_teardown(self._client.close(), stops_remote=False)
 
     async def detach_async(self) -> None:
-        if self._event_loop is not None and not self._event_loop.is_running():
-            self._event_loop.close()
-            self._event_loop = None
-        await self._client.close()
+        """Release the handle's client without stopping the remote session."""
+        await self._loop.run_teardown_async(self._client.close(), stops_remote=False)
 
     async def __aenter__(self) -> SessionClient:
         return self
@@ -281,7 +238,8 @@ class SessionClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        await self.stop_async()
+        if not self._loop.closed:
+            await self.stop_async()
 
     async def _submit_and_wait(
         self,
@@ -324,6 +282,7 @@ class SessionClient:
                 raise TimeoutError(msg)
             await asyncio.sleep(interval)
 
+    @on_client_loop
     async def retrieve_async(self) -> Session:
         return await self._client.beta.rl.sessions.retrieve(self._session_id)
 
@@ -342,45 +301,54 @@ class SessionClient:
         timeout: float | None = DEFAULT_SESSION_CREATION_TIMEOUT,
         interval: float = DEFAULT_SESSION_CREATION_INTERVAL,
     ) -> SessionClient:
-        client = AsyncTogether(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=_CLIENT_TIMEOUT,
-            max_retries=_MAX_RETRIES,
-            http_client=DefaultAsyncHttpxClient(limits=_CLIENT_LIMITS),
-        )
-        session_id: str | None = None
-        try:
-            model_resources = await client.beta.rl.model_resources.retrieve(model_resources_id)
-            session = await client.beta.rl.sessions.create(
-                model_resources_id=model_resources_id,
-                display_name=display_name if display_name is not None else omit,
-                metadata=metadata if metadata is not None else omit,
-                resume_from_checkpoint_id=resume_from_checkpoint_id if resume_from_checkpoint_id is not None else omit,
-                load_optimizer=load_optimizer if load_optimizer is not None else omit,
-                lora_config=lora_config if lora_config is not None else omit,
+        async def create_on_process_loop() -> SessionClient:
+            client = AsyncTogether(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=_CLIENT_TIMEOUT,
+                max_retries=_MAX_RETRIES,
+                http_client=DefaultAsyncHttpxClient(limits=_CLIENT_LIMITS),
             )
-            session_id = session.id
-            print(f"[session:{session_id}] created, waiting for RUNNING status...")  # noqa: T201
+            session_id: str | None = None
+            try:
+                model_resources = await client.beta.rl.model_resources.retrieve(model_resources_id)
+                session = await client.beta.rl.sessions.create(
+                    model_resources_id=model_resources_id,
+                    display_name=display_name if display_name is not None else omit,
+                    metadata=metadata if metadata is not None else omit,
+                    resume_from_checkpoint_id=resume_from_checkpoint_id
+                    if resume_from_checkpoint_id is not None
+                    else omit,
+                    load_optimizer=load_optimizer if load_optimizer is not None else omit,
+                    lora_config=lora_config if lora_config is not None else omit,
+                )
+                session_id = session.id
+                print(f"[session:{session_id}] created, waiting for RUNNING status...")  # noqa: T201
 
-            output = cls(
-                session_id,
-                client,
-                _has_generator=model_resources.compute_config.num_generator_replicas > 0,
-            )
-            await output._wait_for_creation_async(timeout=timeout, interval=interval)
-            return output
-        except BaseException as exc:
-            if session_id is not None:
-                print(f"[session:{session_id}] stopping session due to {type(exc).__name__}...")  # noqa: T201
-                try:
-                    await client.beta.rl.sessions.stop(session_id)
-                    print(f"[session:{session_id}] stopped")  # noqa: T201
-                except Exception:
-                    print(f"[session:{session_id}] failed to stop session during cleanup")  # noqa: T201
-            await client.close()
-            raise
+                output = cls(
+                    session_id,
+                    client,
+                    _has_generator=model_resources.compute_config.num_generator_replicas > 0,
+                )
+                await output._wait_for_creation_async(timeout=timeout, interval=interval)
+                return output
+            except BaseException as exc:
+                if session_id is not None:
+                    print(f"[session:{session_id}] stopping session due to {type(exc).__name__}...")  # noqa: T201
+                    try:
+                        await client.beta.rl.sessions.stop(session_id)
+                        print(f"[session:{session_id}] stopped")  # noqa: T201
+                    except Exception as cleanup_exc:
+                        # Swallowed so it cannot mask exc, the failure that triggered cleanup.
+                        print(  # noqa: T201
+                            f"[session:{session_id}] failed to stop session during cleanup: {cleanup_exc!r}"
+                        )
+                await client.close()
+                raise
 
+        return await run_untracked_async(create_on_process_loop())
+
+    @on_client_loop
     async def create_inference_checkpoint_async(
         self,
         *,
@@ -395,6 +363,7 @@ class SessionClient:
         )
         return cast(InferenceCheckpointResult, result)
 
+    @on_client_loop
     async def create_training_checkpoint_async(
         self,
         *,
@@ -409,10 +378,11 @@ class SessionClient:
         )
         return cast(TrainingCheckpointResult, result)
 
-    async def stop_async(self) -> Any:
+    async def stop_async(self) -> Session | None:
+        """Stop the remote session. None when this handle was already torn down."""
+        return await self._loop.run_teardown_async(self._stop_remote())
+
+    async def _stop_remote(self) -> Session:
         output = await self._client.beta.rl.sessions.stop(self._session_id)
-        if self._event_loop is not None and not self._event_loop.is_running():
-            self._event_loop.close()
-            self._event_loop = None
         await self._client.close()
         return output

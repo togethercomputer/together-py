@@ -45,11 +45,6 @@ def _session_with_operations(**operations: Any) -> SessionClient:
     return SessionClient("sess", _client=cast(Any, client))
 
 
-def _close(session: SessionClient) -> None:
-    if session._event_loop is not None:
-        session._event_loop.close()
-
-
 def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any = None) -> list[float | None]:
     """Stub out polling; returns the list of timeouts it was called with."""
     timeouts: list[float | None] = []
@@ -321,7 +316,6 @@ def test_sample_forwards_prompt_logprob_options(monkeypatch: pytest.MonkeyPatch)
             types.SamplingParams(max_tokens=1),
             topk_prompt_logprobs=21,
         )
-    _close(session)
 
 
 def test_module_reexports_types_without_genuine_clients() -> None:
@@ -374,13 +368,9 @@ def test_create_lora_training_client_forwards_train_unembed(
     monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
 
     with pytest.raises(RuntimeError, match="stop"):
-        tinker_compat.ServiceClient().create_lora_training_client(
-            "Qwen/Qwen3.5-4B", rank=16, train_unembed=False
-        )
+        tinker_compat.ServiceClient().create_lora_training_client("Qwen/Qwen3.5-4B", rank=16, train_unembed=False)
 
-    resources.create_session.assert_called_once_with(
-        lora_config={"rank": 16, "train_unembed": False}
-    )
+    resources.create_session.assert_called_once_with(lora_config={"rank": 16, "train_unembed": False})
     resources.stop.assert_called_once_with()
 
 
@@ -398,7 +388,7 @@ def test_create_lora_training_client_rejects_unknown_kwargs() -> None:
         ({"timeout": 30.0}, "timeout"),
         (
             {"default_headers": {"X-Foo": "bar"}, "timeout": 30.0, "max_retries": 3},
-            r"ignores \['max_retries', 'timeout'\]",
+            r"ignores these options: max_retries, timeout",
         ),
     ],
 )
@@ -496,7 +486,6 @@ def test_save_weights_publishes_synchronously(monkeypatch: pytest.MonkeyPatch) -
     weights_sync.assert_awaited_once_with("sess", weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
     assert timeouts == [None]
     assert isinstance(sampling, tinker_compat.SamplingClient)
-    _close(session)
 
 
 @pytest.mark.parametrize(
@@ -525,7 +514,6 @@ def test_save_weights_warns_on_name_and_retry_config(
         # Match the ignored-arg list, not the body ("named checkpoints" contains "name").
         with pytest.warns(UserWarning, match=match):
             client.save_weights_and_get_sampling_client(**kwargs)
-    _close(session)
 
 
 def test_sampling_client_is_valid_until_the_next_publish(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -555,7 +543,6 @@ def test_sampling_client_is_valid_until_the_next_publish(monkeypatch: pytest.Mon
             1,
             types.SamplingParams(max_tokens=1),
         )
-    _close(session)
 
 
 def test_pending_result_waits_without_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -568,7 +555,6 @@ def test_pending_result_waits_without_timeout(monkeypatch: pytest.MonkeyPatch) -
     tinker_compat.TrainingClient(session).optim_step(types.AdamParams(learning_rate=1e-4)).result()
 
     assert timeouts == [None]
-    _close(session)
 
 
 def test_pending_result_forwards_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -579,7 +565,6 @@ def test_pending_result_forwards_timeout(monkeypatch: pytest.MonkeyPatch) -> Non
     tinker_compat.TrainingClient(session).optim_step(types.AdamParams(learning_rate=1e-4)).result(timeout=2.5)
 
     assert timeouts == [2.5]
-    _close(session)
 
 
 def test_forward_backward_result_is_tinker_shaped(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -593,7 +578,6 @@ def test_forward_backward_result_is_tinker_shaped(monkeypatch: pytest.MonkeyPatc
     assert output.metrics["loss:sum"] == 0.5
     assert output.metrics["loss/kl_ref/mean"] == 0.01
     assert output.loss_fn_outputs == []
-    _close(session)
 
 
 def test_operations_post_eagerly_at_call_time() -> None:
@@ -626,7 +610,6 @@ def test_operations_post_eagerly_at_call_time() -> None:
         sampling_params=types.SamplingParams(max_tokens=4),
     )
     assert submitted == ["forward_backward", "optim_step", "sample"]
-    _close(session)
 
 
 def test_sample_result_resolves_payload_stub(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -667,7 +650,6 @@ def test_sample_result_resolves_payload_stub(monkeypatch: pytest.MonkeyPatch) ->
     assert resolved_with == [output]
     assert isinstance(response, types.SampleResponse)
     assert response.sequences[0].tokens == [7, 8]
-    _close(session)
 
 
 def test_stop_on_exit_and_sigterm_translation(

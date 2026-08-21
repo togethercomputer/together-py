@@ -370,6 +370,46 @@ asyncio.run(main())
 `ModelResourcesClient` follows the same split: `create_async`, `create_session_async`, `retrieve_async`, and
 `stop_async`, plus `async with` support.
 
+## Concurrency and event loops
+
+Every RL handle submits work to one process-wide background event loop on a daemon thread named
+`together-rl`. The loop starts on first use and is not torn down when a handle stops — `stop()` /
+`detach()` only cancel that handle's in-flight work and close its HTTP client. Sync- and async-created
+handles share the same loop, so you do not pick a construction color to get a usable concurrency story.
+
+That makes one handle safe to share:
+
+- **Many threads, one session.** Blocking calls from several threads run concurrently on the shared loop
+  instead of queueing behind whichever caller holds it.
+- **`*_async` from anywhere.** Public `*_async` methods (and `create_async` / `attach_async`) run on the
+  process loop, so `asyncio.run(session.generator.sample_async(...))` works after either `create()` or
+  `await create_async(...)`. When the caller is already on that loop the hop is a no-op, so
+  `asyncio.gather` still overlaps.
+- **Your own async work, on the same loop.** `session.run(coro)` drives a caller-owned coroutine — a
+  multi-turn rollout, say — on the process loop, tracked so `stop()` cancels it. Work awaited in place
+  because the caller was already on that loop is the caller's own coroutine and is not cancelled by
+  `stop()`.
+- **Blocking calls need a thread of their own.** `sample()`, `forward_backward()`, `stop()` and friends block
+  the calling thread and raise if called from inside a running event loop (outside notebooks), where the
+  `*_async` variant is the one you want.
+- **Notebooks are the exception.** A Jupyter, Colab or qtconsole cell runs under a kernel event loop, and
+  blocking calls work there: the cell blocks while the work runs on the process loop. Prefer the `*_async`
+  variants for long waits, so the kernel stays responsive.
+- **Do not share a handle across `fork`.** Sockets do not survive it; give each worker its own
+  `SessionClient` / `ModelResourcesClient`. A `fork` child does not inherit the thread driving the
+  background loop, so the loop is rebuilt on first use in the child — new handles work there, inherited
+  ones do not.
+
+`TOGETHER_RL_MAX_CONNECTIONS` and `TOGETHER_RL_THREAD_POOL_SIZE` (see
+[Configuration notes](#configuration-notes)) are the knobs for how wide that concurrency goes.
+
+Polling is bounded by the connection pool, not by a poll scheduler: every waiting operation polls on its own
+fixed `interval` (default 0.5s, no backoff), and once a session's client has `TOGETHER_RL_MAX_CONNECTIONS`
+requests in flight the rest queue there instead of reaching the service. On that client a `429` is retried up
+to 7 times, honouring `Retry-After` and backing off exponentially otherwise. With many operations waiting at
+once, raise `interval` rather than the connection cap. (`ModelResourcesClient` polls only for provisioning and
+keeps the SDK defaults, so the connection cap and its retries do not apply to it.)
+
 ## Tinker-compatible entry point
 
 For the RL training-loop subset described below, a script written against the `tinker` SDK runs on
@@ -516,7 +556,7 @@ sessions.
 
 - Use `TOGETHER_RL_BASE_URL` or `base_url=...` to point to the RL service.
 - `TOGETHER_RL_MAX_CONNECTIONS` (default `256`) caps the underlying httpx connection pool (both `max_connections` and `max_keepalive_connections`). Raise it when many operations run concurrently and you see requests queueing on the client.
-- `TOGETHER_RL_THREAD_POOL_SIZE` widens the event loop's default thread pool used by multi-turn rollouts, which bridge synchronous, network-blocking env steps onto the loop via `asyncio.to_thread`. Set it to roughly your peak concurrent env steps when the default pool becomes the bottleneck; if unset, the asyncio default is used.
+- `TOGETHER_RL_THREAD_POOL_SIZE` widens the event loop's default thread pool used by multi-turn rollouts, which bridge synchronous, network-blocking env steps onto the loop via `asyncio.to_thread`. Set it to roughly your peak concurrent env steps when the default pool becomes the bottleneck; if unset, the asyncio default is used. It is read once, when the first handle in the process starts the background loop, and every handle then shares that one pool — set it before creating any handle, and size it for the whole process rather than per session.
 
 ---
 

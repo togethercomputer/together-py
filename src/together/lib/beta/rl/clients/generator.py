@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Iterable, cast
 from dataclasses import dataclass
 
+from .._loop import LoopGate, on_client_loop
 from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
@@ -71,6 +72,10 @@ class Generator:
     def session_id(self) -> str:
         return self._session.session_id
 
+    @property
+    def _loop(self) -> LoopGate:
+        return self._session._loop
+
     def sample(
         self,
         prompt: ModelInput,
@@ -92,6 +97,7 @@ class Generator:
             )
         )
 
+    @on_client_loop
     async def sample_async(
         self,
         prompt: ModelInput,
@@ -133,6 +139,7 @@ class Generator:
             )
         )
 
+    @on_client_loop
     async def sample_batch_async(
         self,
         prompts: Iterable[ModelInput],
@@ -171,6 +178,7 @@ class Generator:
     ) -> list[float]:
         return self._session.run(self.compute_logprobs_async(prompt, timeout=timeout, interval=interval))
 
+    @on_client_loop
     async def compute_logprobs_async(
         self,
         prompt: ModelInput,
@@ -194,6 +202,7 @@ class Generator:
     ) -> list[list[float]]:
         return self._session.run(self.compute_logprobs_batch_async(prompts, timeout=timeout, interval=interval))
 
+    @on_client_loop
     async def compute_logprobs_batch_async(
         self,
         prompts: Iterable[ModelInput],

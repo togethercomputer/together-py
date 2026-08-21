@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
-import asyncio
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
 import pytest
 
+from tests.unit._rl_fakes import FakeClient
 from together.lib.beta.rl import (
     Sample,
     Logprob,
@@ -44,112 +43,6 @@ from together.lib.beta.rl.clients import (
     generator as generator_module,
 )
 from together.types.beta.rl.sample_operation import SampleOperation
-
-
-class FakeOperations:
-    def __init__(self) -> None:
-        self.last_call: tuple[str, tuple[Any, ...], dict[str, Any]] | None = None
-
-    async def sample(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("sample", (session_id,), payload)
-        return {"id": "sample-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def forward(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("forward", (session_id,), payload)
-        return {"id": "fwd-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def forward_backward(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("forward_backward", (session_id,), payload)
-        return {"id": "fb-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def custom_forward_backward(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("custom_forward_backward", (session_id,), payload)
-        return {"id": "cfb-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def optim_step(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("optim_step", (session_id,), payload)
-        return {"id": "opt-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def weights_sync(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("weights_sync", (session_id,), payload)
-        return {"id": "ws-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def create_training_checkpoint(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("create_training_checkpoint", (session_id,), payload)
-        return {"id": "train-ckpt-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-    async def create_inference_checkpoint(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("create_inference_checkpoint", (session_id,), payload)
-        return {"id": "infer-ckpt-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
-
-class FakeSessions:
-    def __init__(self) -> None:
-        self.last_stop: str | None = None
-        self.status_value: str | None = "TRAINING_SESSION_STATUS_RUNNING"
-
-    async def stop(self, session_id: str) -> dict[str, Any]:
-        self.last_stop = session_id
-        return {"id": "stop-op"}
-
-    async def retrieve(self, _session_id: str) -> Any:
-        return SimpleNamespace(
-            status=self.status_value,
-            resources_id="res-1",
-        )
-
-
-class FakeModelResources:
-    def __init__(self, num_generator_replicas: int = 1) -> None:
-        self.num_generator_replicas = num_generator_replicas
-
-    async def retrieve(self, _model_resources_id: str) -> Any:
-        return SimpleNamespace(
-            compute_config=SimpleNamespace(
-                num_generator_replicas=self.num_generator_replicas,
-            )
-        )
-
-
-class FakeRL:
-    def __init__(self) -> None:
-        self.operations = FakeOperations()
-        self.sessions = FakeSessions()
-        self.model_resources = FakeModelResources()
-
-
-class FakeBeta:
-    def __init__(self) -> None:
-        self.rl = FakeRL()
-
-
-class FakeClient:
-    def __init__(
-        self,
-        *,
-        upload_response: dict[str, Any] | None = None,
-        upload_put_status: int = 200,
-    ) -> None:
-        self.beta = FakeBeta()
-        self.closed = False
-        self.base_url = httpx.URL("https://api.together.xyz/v1/")
-        self.api_key = "test-api-key"
-        self._upload_response: dict[str, Any] = upload_response or {
-            "upload_url": "https://r2.example.com/upload",
-            "payload_id": "pid-123",
-        }
-        self._upload_put_status = upload_put_status
-        self.captured_put_body: bytes | None = None
-
-    async def close(self) -> None:
-        self.closed = True
-
-    async def post(self, _url: str, **_kwargs: Any) -> dict[str, Any]:
-        return self._upload_response
-
-    async def put(self, url: str, **kwargs: Any) -> httpx.Response:
-        self.captured_put_body = kwargs.get("content")
-        return httpx.Response(self._upload_put_status, request=httpx.Request("PUT", url))
 
 
 def _make_session(client: FakeClient | None = None) -> SessionClient:
@@ -404,7 +297,7 @@ def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = trainer.trainer.weights_sync(weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
 
-    assert result.weights_version == 2
+    assert int(result.weights_version) == 2
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
     assert method == "weights_sync"
@@ -474,6 +367,17 @@ def test_context_manager_stops() -> None:
     trainer = _make_session(client)
 
     with trainer:
+        assert trainer._session_id == "sess"
+
+    assert client.beta.rl.sessions.last_stop == "sess"
+    assert client.closed is True
+
+
+async def test_async_context_manager_stops() -> None:
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    async with trainer:
         assert trainer._session_id == "sess"
 
     assert client.beta.rl.sessions.last_stop == "sess"
@@ -579,21 +483,28 @@ async def test_wait_for_creation_times_out() -> None:
         await trainer._wait_for_creation_async(timeout=0.0, interval=0.0)
 
 
-async def test_stop_async_closes_client_and_event_loop() -> None:
+async def test_stop_async_closes_client() -> None:
     client = MagicMock()
     client.beta.rl.sessions.stop = AsyncMock(return_value={"id": "stop-op"})
     client.close = AsyncMock()
-    event_loop = asyncio.new_event_loop()
     trainer = SessionClient("sess", _client=cast(Any, client))
-    trainer._event_loop = event_loop
 
     result = await trainer.stop_async()
 
     assert result == {"id": "stop-op"}
-    assert event_loop.is_closed()
-    assert trainer._event_loop is None
+    assert trainer._loop.closed
     client.beta.rl.sessions.stop.assert_awaited_once_with("sess")
     client.close.assert_awaited_once()
+
+
+def test_stop_marks_the_handle_closed() -> None:
+    client = MagicMock()
+    client.beta.rl.sessions.stop = AsyncMock(return_value={"id": "stop-op"})
+    client.close = AsyncMock()
+    trainer = SessionClient("sess", _client=cast(Any, client))
+    trainer.stop()
+
+    assert trainer._loop.closed
 
 
 async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -668,18 +579,14 @@ async def test_detach_async_closes_client_without_stopping() -> None:
     client.beta.rl.sessions.stop.assert_not_awaited()
 
 
-def test_detach_closes_event_loop_without_stopping() -> None:
+def test_detach_marks_the_handle_closed_without_stopping() -> None:
     client = MagicMock()
     client.beta.rl.sessions.stop = AsyncMock()
     client.close = AsyncMock()
-    event_loop = asyncio.new_event_loop()
     trainer = SessionClient("sess", _client=cast(Any, client))
-    trainer._event_loop = event_loop
-
     trainer.detach()
 
-    assert event_loop.is_closed()
-    assert trainer._event_loop is None
+    assert trainer._loop.closed
     client.close.assert_awaited_once()
     client.beta.rl.sessions.stop.assert_not_awaited()
 

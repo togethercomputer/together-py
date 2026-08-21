@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
@@ -126,20 +125,17 @@ async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPa
     client.close.assert_awaited_once()
 
 
-async def test_stop_async_closes_client_and_event_loop() -> None:
+async def test_stop_async_closes_client() -> None:
     client = MagicMock()
     client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
     client.close = AsyncMock()
-    event_loop = asyncio.new_event_loop()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
-    resources._event_loop = event_loop
 
     result = await resources.stop_async()
 
     assert result == {"id": "res-1"}
-    assert event_loop.is_closed()
-    assert resources._event_loop is None
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1")
+    assert resources._loop.closed
+    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
     client.close.assert_awaited_once()
 
 
@@ -261,18 +257,14 @@ async def test_detach_async_closes_client_without_stopping() -> None:
     client.beta.rl.model_resources.stop.assert_not_awaited()
 
 
-def test_detach_closes_event_loop_without_stopping() -> None:
+def test_detach_marks_the_handle_closed_without_stopping() -> None:
     client = MagicMock()
     client.beta.rl.model_resources.stop = AsyncMock()
     client.close = AsyncMock()
-    event_loop = asyncio.new_event_loop()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
-    resources._event_loop = event_loop
-
     resources.detach()
 
-    assert event_loop.is_closed()
-    assert resources._event_loop is None
+    assert resources._loop.closed
     client.close.assert_awaited_once()
     client.beta.rl.model_resources.stop.assert_not_awaited()
 
@@ -286,8 +278,32 @@ def test_context_manager_stops() -> None:
     with resources:
         assert resources.model_resources_id == "res-1"
 
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1")
+    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
     client.close.assert_awaited_once()
+
+
+async def test_async_context_manager_stops() -> None:
+    client = MagicMock()
+    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    async with resources:
+        assert resources.model_resources_id == "res-1"
+
+    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.close.assert_awaited_once()
+
+
+async def test_stop_forwards_force_to_the_api() -> None:
+    client = MagicMock()
+    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    await resources.stop_async(force=True)
+
+    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=True)
 
 
 def test_model_resources_client_is_publicly_exported() -> None:

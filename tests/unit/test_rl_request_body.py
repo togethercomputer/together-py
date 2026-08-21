@@ -241,7 +241,7 @@ class TestRLRequestBody:
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
         )
 
-        assert result.weights_version == 1
+        assert int(result.weights_version) == 1
         call = cast(Any, respx_mock.calls[0])
         request = cast(httpx.Request, call.request)
         body = json.loads(request.content)

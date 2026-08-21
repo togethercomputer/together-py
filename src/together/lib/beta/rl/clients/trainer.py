@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Iterable, cast, get_args
 from dataclasses import dataclass
 
+from .._loop import LoopGate, on_client_loop
 from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
@@ -68,6 +69,10 @@ class Trainer:
     def session_id(self) -> str:
         return self._session.session_id
 
+    @property
+    def _loop(self) -> LoopGate:
+        return self._session._loop
+
     def forward(
         self,
         *,
@@ -77,6 +82,7 @@ class Trainer:
     ) -> ForwardResult:
         return self._session.run(self.forward_async(samples=samples, timeout=timeout, interval=interval))
 
+    @on_client_loop
     async def forward_async(
         self,
         *,
@@ -122,6 +128,7 @@ class Trainer:
             )
         )
 
+    @on_client_loop
     async def forward_backward_async(
         self,
         *,
@@ -155,6 +162,7 @@ class Trainer:
             )
         )
 
+    @on_client_loop
     async def custom_forward_backward_async(
         self,
         *,
@@ -206,6 +214,7 @@ class Trainer:
             )
         )
 
+    @on_client_loop
     async def optim_step_async(
         self,
         *,
@@ -241,6 +250,7 @@ class Trainer:
             )
         )
 
+    @on_client_loop
     async def weights_sync_async(
         self,
         *,

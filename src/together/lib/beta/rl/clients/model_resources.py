@@ -9,6 +9,7 @@ from collections.abc import Coroutine
 
 import httpx
 
+from .._loop import LoopGate, run_untracked, on_client_loop, run_untracked_async
 from .session import (
     DEFAULT_SESSION_CREATION_TIMEOUT,
     DEFAULT_SESSION_CREATION_INTERVAL,
@@ -40,10 +41,7 @@ class ModelResourcesClient:
     _model_resources_id: str
     _client: AsyncTogether
 
-    _event_loop: asyncio.AbstractEventLoop | None = field(
-        init=False,
-        default=None,
-    )
+    _loop: LoopGate = field(init=False, default_factory=LoopGate, repr=False)
 
     @property
     def model_resources_id(self) -> str:
@@ -58,7 +56,10 @@ class ModelResourcesClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        self.stop()
+        # A handle released with detach() is already torn down; stopping it here would report
+        # a stranded remote for a stop the caller never asked for.
+        if not self._loop.closed:
+            self.stop()
 
     async def __aenter__(self) -> ModelResourcesClient:
         return self
@@ -69,38 +70,11 @@ class ModelResourcesClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        await self.stop_async()
+        if not self._loop.closed:
+            await self.stop_async()
 
     def run(self, coro: Coroutine[Any, Any, _T]) -> _T:
-        if self._event_loop is None:
-            self._event_loop = asyncio.new_event_loop()
-        return self._event_loop.run_until_complete(coro)
-
-    def _close_event_loop(self) -> None:
-        if self._event_loop is not None and not self._event_loop.is_running():
-            self._event_loop.close()
-            self._event_loop = None
-
-    @classmethod
-    def _run_blocking(cls, coro: Coroutine[Any, Any, ModelResourcesClient]) -> ModelResourcesClient:
-        """Drive an async constructor to completion on a fresh loop, then adopt that
-        loop so subsequent blocking calls on the handle reuse it."""
-        event_loop = asyncio.new_event_loop()
-        task = event_loop.create_task(coro)
-        try:
-            output = event_loop.run_until_complete(task)
-        except BaseException:
-            task.cancel()
-            try:
-                event_loop.run_until_complete(task)
-            except (asyncio.CancelledError, Exception):
-                pass
-            event_loop.close()
-            raise
-
-        assert output._event_loop is None
-        output._event_loop = event_loop
-        return output
+        return self._loop.run(coro)
 
     @classmethod
     def create(
@@ -115,7 +89,7 @@ class ModelResourcesClient:
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
-        return cls._run_blocking(
+        return run_untracked(
             cls.create_async(
                 api_key=api_key,
                 base_url=base_url,
@@ -142,7 +116,7 @@ class ModelResourcesClient:
         READY — it only confirms the resource exists. Releasing the handle with
         :meth:`detach` leaves the remote resource running.
         """
-        return cls._run_blocking(
+        return run_untracked(
             cls.attach_async(
                 model_resources_id=model_resources_id,
                 api_key=api_key,
@@ -158,13 +132,16 @@ class ModelResourcesClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
     ) -> ModelResourcesClient:
-        client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
-        try:
-            await client.beta.rl.model_resources.retrieve(model_resources_id)
-        except BaseException:
-            await client.close()
-            raise
-        return cls(model_resources_id, client)
+        async def attach_on_process_loop() -> ModelResourcesClient:
+            client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
+            try:
+                await client.beta.rl.model_resources.retrieve(model_resources_id)
+            except BaseException:
+                await client.close()
+                raise
+            return cls(model_resources_id, client)
+
+        return await run_untracked_async(attach_on_process_loop())
 
     @classmethod
     async def create_async(
@@ -179,40 +156,46 @@ class ModelResourcesClient:
         timeout: float | None = DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT,
         interval: float = DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL,
     ) -> ModelResourcesClient:
-        client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
-        model_resources_id: str | None = None
-        try:
-            model_resources = await client.beta.rl.model_resources.create(
-                base_model=base_model,
-                lora_enabled=lora_enabled,
-                compute_config=compute_config if compute_config is not None else omit,
-                optimizer_config=optimizer_config if optimizer_config is not None else omit,
-            )
-            model_resources_id = model_resources.id
-            print(f"[model-resources:{model_resources_id}] created, waiting for READY status...")  # noqa: T201
+        async def create_on_process_loop() -> ModelResourcesClient:
+            client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
+            model_resources_id: str | None = None
+            try:
+                model_resources = await client.beta.rl.model_resources.create(
+                    base_model=base_model,
+                    lora_enabled=lora_enabled,
+                    compute_config=compute_config if compute_config is not None else omit,
+                    optimizer_config=optimizer_config if optimizer_config is not None else omit,
+                )
+                model_resources_id = model_resources.id
+                print(f"[model-resources:{model_resources_id}] created, waiting for READY status...")  # noqa: T201
 
-            output = cls(model_resources_id, client)
-            await output._wait_for_ready_async(timeout=timeout, interval=interval)
-            return output
-        except BaseException as exc:
-            if model_resources_id is not None:
-                print(f"[model-resources:{model_resources_id}] stopping model resources due to {type(exc).__name__}...")  # noqa: T201
-                try:
-                    await client.beta.rl.model_resources.stop(model_resources_id)
-                    print(f"[model-resources:{model_resources_id}] stopped")  # noqa: T201
-                except Exception:
-                    print(f"[model-resources:{model_resources_id}] failed to stop model resources during cleanup")  # noqa: T201
-            await client.close()
-            raise
+                output = cls(model_resources_id, client)
+                await output._wait_for_ready_async(timeout=timeout, interval=interval)
+                return output
+            except BaseException as exc:
+                if model_resources_id is not None:
+                    tag = f"[model-resources:{model_resources_id}]"
+                    print(f"{tag} stopping model resources due to {type(exc).__name__}...")  # noqa: T201
+                    try:
+                        await client.beta.rl.model_resources.stop(model_resources_id)
+                        print(f"{tag} stopped")  # noqa: T201
+                    except Exception as cleanup_exc:
+                        # Swallowed so it cannot mask exc, the failure that triggered cleanup.
+                        print(f"{tag} failed to stop model resources during cleanup: {cleanup_exc!r}")  # noqa: T201
+                await client.close()
+                raise
+
+        return await run_untracked_async(create_on_process_loop())
 
     async def _wait_for_ready_async(self, *, timeout: float | None, interval: float) -> None:
         start = time.monotonic()
         while True:
             current = await self._client.beta.rl.model_resources.retrieve(self._model_resources_id)
             elapsed = time.monotonic() - start
-            print(f"[model-resources:{self._model_resources_id}] status={current.status} elapsed={elapsed:.1f}s")  # noqa: T201
+            tag = f"[model-resources:{self._model_resources_id}]"
+            print(f"{tag} status={current.status} elapsed={elapsed:.1f}s")  # noqa: T201
             if current.status == _READY_STATUS:
-                print(f"[model-resources:{self._model_resources_id}] ready in {elapsed:.1f}s")  # noqa: T201
+                print(f"{tag} ready in {elapsed:.1f}s")  # noqa: T201
                 return
             if current.status in _TERMINAL_STATUSES:
                 msg = f"Model resources {self._model_resources_id} entered terminal status {current.status}"
@@ -225,6 +208,7 @@ class ModelResourcesClient:
     def retrieve(self) -> ModelResources:
         return self.run(self.retrieve_async())
 
+    @on_client_loop
     async def retrieve_async(self) -> ModelResources:
         return await self._client.beta.rl.model_resources.retrieve(self._model_resources_id)
 
@@ -276,24 +260,33 @@ class ModelResourcesClient:
             interval=interval,
         )
 
-    def stop(self) -> Any:
-        output = self.run(self.stop_async())
-        self._close_event_loop()
-        return output
+    def stop(self, *, force: bool = False) -> ModelResources | None:
+        """Stop the remote resource. None when this handle was already torn down.
 
-    async def stop_async(self) -> Any:
-        output = await self._client.beta.rl.model_resources.stop(self._model_resources_id)
-        self._close_event_loop()
+        force also stops every session attached to the resource, including sessions this
+        process does not own. Without it the API refuses while any session is still active.
+        """
+        return self._loop.run_teardown(self._stop_remote(force=force))
+
+    async def stop_async(self, *, force: bool = False) -> ModelResources | None:
+        """Stop the remote resource. None when this handle was already torn down.
+
+        force also stops every session attached to the resource, including sessions this
+        process does not own. Without it the API refuses while any session is still active.
+        """
+        return await self._loop.run_teardown_async(self._stop_remote(force=force))
+
+    async def _stop_remote(self, *, force: bool) -> ModelResources:
+        output = await self._client.beta.rl.model_resources.stop(
+            self._model_resources_id, force=force if force else omit
+        )
         await self._client.close()
         return output
 
     def detach(self) -> None:
-        """Release the handle's client and event loop without stopping the remote
-        resource — the tenant counterpart to :meth:`stop`, so borrowed GPUs keep
-        running after we let go of the handle."""
-        self.run(self.detach_async())
-        self._close_event_loop()
+        """Release the handle without stopping the remote resource (borrowed GPUs keep running)."""
+        self._loop.run_teardown(self._client.close(), stops_remote=False)
 
     async def detach_async(self) -> None:
-        self._close_event_loop()
-        await self._client.close()
+        """Release the handle without stopping the remote resource (borrowed GPUs keep running)."""
+        await self._loop.run_teardown_async(self._client.close(), stops_remote=False)
