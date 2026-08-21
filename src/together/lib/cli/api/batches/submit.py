@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import sys
 from typing import Optional, Annotated
 from pathlib import Path
 
 from cyclopts import Parameter
+from rich.markup import escape as escape_rich_markup
 
 from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.batches._utils import API_TO_ENDPOINT, BatchApiType
-from together.lib.cli.components.model_dump import print_model_dump
+from together.lib.cli.api.batches._utils import API_TO_ENDPOINT, BatchApiType, print_batch_detail
 
 
 def _check_path_exists(path_string: str) -> bool:
@@ -69,20 +70,25 @@ async def submit(
         ),
     )
 
+    job = response.job
+    created = job is not None and bool(job.id)
+
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
+        if not created:
+            sys.exit(1)
         return
 
-    job = response.job
-    if job is None or not job.id:
+    if not created:
         console.print("[red]x[/red] Batch job was not created")
         if response.warning:
-            console.print(response.warning)
-        return
+            console.print(escape_rich_markup(response.warning))
+        sys.exit(1)
 
+    assert job is not None
     console.print(f"[green]√ Batch job submitted.[/green] [dim]({job.id})[/dim]")
     if response.warning:
-        console.print(f"[yellow]{response.warning}[/yellow]")
-    print_model_dump(job, show_nulls=False)
+        console.print(f"[yellow]{escape_rich_markup(response.warning)}[/yellow]")
+    print_batch_detail(job)
     console.print("\n  You can track the job's progress with:")
     console.print(f"  [dim]-[/dim] [primary]tg batches get {job.id}[/primary]")

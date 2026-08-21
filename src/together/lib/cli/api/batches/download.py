@@ -1,29 +1,36 @@
 from __future__ import annotations
 
 import sys
-import base64
-from typing import Any, Optional, Annotated
+from typing import NoReturn, Optional, Annotated
 from pathlib import Path
 
 from cyclopts import Parameter, validators
 
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._console import console, error_console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.files.retrieve_content import download_file_content
+from together.lib.cli.api.files.retrieve_content import (
+    is_directory_output,
+    download_file_content,
+    stream_file_content_to_stdout,
+)
 
 _TERMINAL_STATUSES = frozenset({"COMPLETED", "FAILED", "EXPIRED", "CANCELLED"})
-
-
-def _is_directory_output(path: Path) -> bool:
-    return path.is_dir() or path.suffix == ""
 
 
 def _error_output_path(output: Path) -> Path:
     """Where to write the error file when *output* is a concrete file path."""
     suffix = output.suffix or ".jsonl"
     return output.with_name(f"{output.stem}.errors{suffix}")
+
+
+def _fail(*, json_mode: bool, error: str, rich_message: str) -> NoReturn:
+    if json_mode:
+        console.print_json(openapi_dumps({"error": error}).decode("utf-8"))
+    else:
+        console.print(rich_message)
+    sys.exit(1)
 
 
 async def download(
@@ -44,20 +51,29 @@ async def download(
     status = job.status or ""
 
     if status not in _TERMINAL_STATUSES:
-        console.print(
-            f"[red]Batch job is not ready to download yet[/red] "
-            f"(status: {status or 'unknown'}). "
-            f"Check progress with [primary]tg batches get {id}[/primary]."
+        _fail(
+            json_mode=config.json,
+            error=(
+                f"Batch job is not ready to download yet (status: {status or 'unknown'}). "
+                f"Check progress with tg batches get {id}."
+            ),
+            rich_message=(
+                f"[red]Batch job is not ready to download yet[/red] "
+                f"(status: {status or 'unknown'}). "
+                f"Check progress with [primary]tg batches get {id}[/primary]."
+            ),
         )
-        sys.exit(1)
 
     if not job.output_file_id and not job.error_file_id:
-        console.print(f"[red]Batch job has no output or error files to download[/red] (status: {status}).")
-        sys.exit(1)
+        _fail(
+            json_mode=config.json,
+            error=f"Batch job has no output or error files to download (status: {status}).",
+            rich_message=f"[red]Batch job has no output or error files to download[/red] (status: {status}).",
+        )
 
     if output is not None:
         saved: list[dict[str, str]] = []
-        directory_output = _is_directory_output(output)
+        directory_output = is_directory_output(output)
         error_file_id = job.error_file_id
 
         if job.output_file_id:
@@ -101,39 +117,29 @@ async def download(
             console.print(f"[green]√[/green] {label} saved to [blue]{item['path']}[/blue]")
         return
 
-    if not job.output_file_id:
-        console.print(
-            "[red]Batch job has no output file[/red]. "
-            "Use [primary]--output[/primary] to download the error file instead."
+    output_file_id = job.output_file_id
+    if not output_file_id:
+        _fail(
+            json_mode=config.json,
+            error="Batch job has no output file. Use --output to download the error file instead.",
+            rich_message=(
+                "[red]Batch job has no output file[/red]. "
+                "Use [primary]--output[/primary] to download the error file instead."
+            ),
         )
-        sys.exit(1)
-
-    raw = await download_file_content(
-        config.client,
-        job.output_file_id,
-        stdout=True,
-        loading_message="Downloading batch output...",
-    )
-    assert isinstance(raw, bytes)
 
     if config.json:
-        try:
-            payload: dict[str, Any] = {
-                "batch_id": id,
-                "output_file_id": job.output_file_id,
-                "content": raw.decode("utf-8"),
-            }
-        except UnicodeDecodeError:
-            payload = {
-                "batch_id": id,
-                "output_file_id": job.output_file_id,
-                "content_base64": base64.b64encode(raw).decode("ascii"),
-            }
+        payload: dict[str, str] = {
+            "batch_id": id,
+            "output_file_id": output_file_id,
+        }
         if job.error_file_id:
             payload["error_file_id"] = job.error_file_id
         console.print_json(openapi_dumps(payload).decode("utf-8"))
         return
 
-    console.print(raw.decode("utf-8"))
+    await stream_file_content_to_stdout(config.client, output_file_id)
     if job.error_file_id:
-        console.print(f"\n[dim]Error file also available: tg batches download {id} --output ./out[/dim]")
+        error_console.print(
+            f"[dim]Error file also available: tg batches download {id} --output ./out[/dim]",
+        )

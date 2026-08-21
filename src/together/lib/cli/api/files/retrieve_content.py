@@ -42,6 +42,27 @@ async def get_filename(client: AsyncTogether, id: str) -> str:
     return safe_download_filename(r.filename or "", fallback=id)
 
 
+def is_directory_output(path: Path) -> bool:
+    """True when *path* should be treated as a destination directory.
+
+    Existing files (including suffix-less names like ``./results``) are files.
+    Missing suffix-less paths are directories to create.
+    """
+    if path.is_dir():
+        return True
+    if path.exists():
+        return False
+    return path.suffix == ""
+
+
+async def stream_file_content_to_stdout(client: AsyncTogether, id: str) -> None:
+    """Stream file bytes to stdout without buffering the whole body."""
+    async with client.files.with_streaming_response.content(id=id) as response:
+        async for chunk in response.iter_bytes():
+            sys.stdout.buffer.write(chunk)
+        sys.stdout.buffer.flush()
+
+
 async def download_file_content(
     client: AsyncTogether,
     id: str,
@@ -56,21 +77,20 @@ async def download_file_content(
     if stdout is True and output is not None:
         raise ValueError("--stdout and --output cannot be used together")
 
-    response = await show_loading_status(loading_message, client.files.content(id=id))
+    async with client.files.with_streaming_response.content(id=id) as response:
+        if stdout:
+            return await response.read()
 
-    if stdout:
-        return await response.read()
+        assert output is not None
+        if is_directory_output(output):
+            output.mkdir(parents=True, exist_ok=True)
+            out_path = resolve_download_path(output, await get_filename(client, id))
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            out_path = output
 
-    assert output is not None
-    if output.is_dir() or output.suffix == "":
-        output.mkdir(parents=True, exist_ok=True)
-        out_path = resolve_download_path(output, await get_filename(client, id))
-    else:
-        output.parent.mkdir(parents=True, exist_ok=True)
-        out_path = output
-
-    await response.write_to_file(out_path)
-    return out_path
+        await show_loading_status(loading_message, response.stream_to_file(out_path))
+        return out_path
 
 
 async def retrieve_content(

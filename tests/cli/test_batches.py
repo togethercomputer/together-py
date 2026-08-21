@@ -146,6 +146,36 @@ class TestBatchesSubmit:
         result = cli_runner.invoke(["batches", "submit", "file-abc123", "not.an.api", "Qwen/Qwen3.5-9B"])
         assert result.exit_code == 1
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_null_job_exits_nonzero(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/batches").mock(
+            return_value=httpx.Response(200, json={"job": None, "warning": "validation failed: missing [/close] tag"})
+        )
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B"])
+        assert result.exit_code == 1
+        assert "was not created" in result.output
+        assert "MarkupError" not in result.output
+        assert "[/close]" in result.output or "close" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_null_job_json_exits_nonzero(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/batches").mock(return_value=httpx.Response(200, json={"job": None, "warning": "nope"}))
+        result = cli_runner.invoke(
+            ["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B", "--json"]
+        )
+        assert result.exit_code == 1
+        body = json.loads(result.output)
+        assert body["job"] is None
+        assert body["warning"] == "nope"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_does_not_print_x_model_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B"])
+        assert result.exit_code == 0
+        assert "X Model Id" not in result.output
+        assert "Qwen/Qwen3.5-9B" in result.output
+
 
 class TestBatchesList:
     @pytest.mark.respx(base_url=base_url)
@@ -226,6 +256,30 @@ class TestBatchesRetrieve:
         assert "audio.transcriptions" in result.output
         assert "tg batches download" not in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_error_header_printed_once(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        job = {
+            **_BATCH_JOB,
+            "status": "FAILED",
+            "error": "boom",
+            "error_file_id": "file-err",
+        }
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
+        assert result.exit_code == 0
+        assert result.output.count("An error occurred") == 1
+        assert "file-err" in result.output
+        assert "boom" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_escapes_error_markup(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        job = {**_BATCH_JOB, "status": "FAILED", "error": "validation failed: missing [/close] tag"}
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
+        assert result.exit_code == 0
+        assert "MarkupError" not in result.output
+        assert "close" in result.output
+
 
 class TestBatchesCancel:
     @pytest.mark.respx(base_url=base_url)
@@ -235,6 +289,8 @@ class TestBatchesCancel:
         result = cli_runner.invoke(["batches", "cancel", "batch_job_newer"])
         assert result.exit_code == 0
         assert "Cancelled" in result.output
+        assert "X Model Id" not in result.output
+        assert "Qwen/Qwen3.5-9B" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_cancel_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -346,3 +402,57 @@ class TestBatchesDownload:
         assert body["files"][0]["kind"] == "output"
         assert body["files"][0]["id"] == "file-out"
         assert Path(body["files"][0]["path"]).read_bytes() == b"line\n"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_existing_suffixless_file(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        out = tmp_path / "results"
+        out.write_bytes(b"stale")
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
+        result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--output", str(out)])
+        assert result.exit_code == 0
+        assert out.is_file()
+        assert out.read_bytes() == b'{"ok":true}\n'
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_not_ready_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
+        result = cli_runner.invoke(["batches", "download", "batch_job_older", "--json"])
+        assert result.exit_code == 1
+        body = json.loads(result.output)
+        assert "not ready" in body["error"].lower()
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_no_files_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        job = {**_BATCH_JOB, "output_file_id": None, "error_file_id": None}
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
+        assert result.exit_code == 1
+        body = json.loads(result.output)
+        assert "no output or error files" in body["error"].lower()
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_stdout_json_is_metadata_only(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        content_route = respx_mock.get("/files/file-out/content").mock(
+            return_value=httpx.Response(200, content=b"should-not-download\n")
+        )
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=_BATCH_JOB))
+        result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
+        assert result.exit_code == 0
+        body = json.loads(result.output)
+        assert body["batch_id"] == "batch_job_newer"
+        assert body["output_file_id"] == "file-out"
+        assert "content" not in body
+        assert "content_base64" not in body
+        assert content_route.call_count == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_stdout_no_output_file_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        job = {**_BATCH_JOB, "output_file_id": None, "error_file_id": "file-err"}
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--json"])
+        assert result.exit_code == 1
+        body = json.loads(result.output)
+        assert "no output file" in body["error"].lower()

@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Literal
 from typing_extensions import TypeAlias
 
+from rich.markup import escape as escape_rich_markup
+
 from together.lib.utils.tools import format_datetime
 from together.types.batch_job import BatchJob
 from together.lib.cli.utils._console import console
@@ -70,13 +72,12 @@ def print_batch_detail(job: BatchJob) -> None:
     if job.output_file_id:
         console.print(f" - Output file ID {job.output_file_id}")
 
-    if job.error_file_id:
-        console.print(f" - [red]An error occurred[/red]")
-        console.print(f" - Error file ID {job.error_file_id}")
-
-    if job.error:
-        console.print(f" - [red]An error occurred[/red]")
-        console.print(job.error)
+    if job.error_file_id or job.error:
+        console.print(" - [red]An error occurred[/red]")
+        if job.error_file_id:
+            console.print(f" - Error file ID {job.error_file_id}")
+        if job.error:
+            console.print(f"   {escape_rich_markup(job.error)}")
 
     if job.status in _INCOMPLETE_STATUSES and job.progress is not None:
         console.print(f"{format_progress(job.progress)} {format_status(job.status)}")
