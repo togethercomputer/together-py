@@ -10,7 +10,8 @@ from ._compat import types
 from ._futures import _Pending
 from .._payloads import resolve_result_payload
 from ._converters import _to_model_input, _to_sample_response, _to_sampling_params
-from ..clients.session import DEFAULT_OPERATION_INTERVAL, SessionClient
+from .._operations import DEFAULT_OPERATION_INTERVAL
+from ..clients.session import SessionClient
 from ..clients.generator import _submit_sample_batch
 
 

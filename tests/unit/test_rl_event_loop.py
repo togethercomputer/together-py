@@ -403,7 +403,8 @@ def test_every_public_async_method_is_hopped_or_deliberately_excluded() -> None:
     """Catch a new public *_async that forgets @on_client_loop (breaks sync-built handles only).
 
     Marker, not __wrapped__: any functools.wraps decorator would satisfy the latter.
-    Constructors hop via run_untracked_async; teardown closes the handle gate.
+    Constructors hop via run_untracked_async; teardown closes the handle gate; run_async is
+    the hop itself.
     """
     excluded = {
         "create_async",
@@ -411,6 +412,7 @@ def test_every_public_async_method_is_hopped_or_deliberately_excluded() -> None:
         "create_session_async",
         "stop_async",
         "detach_async",
+        "run_async",
     }
 
     missing: list[str] = []

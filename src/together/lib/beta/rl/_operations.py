@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import time
 import asyncio
-from typing import Union
+from typing import Union, TypeVar
+from collections.abc import Callable, Awaitable
 from typing_extensions import TypeAlias
 
 from ...._client import AsyncTogether
@@ -28,6 +29,26 @@ OperationResponse: TypeAlias = Union[
 
 _COMPLETED = "TRAINING_OPERATION_STATUS_COMPLETED"
 _FAILED = "TRAINING_OPERATION_STATUS_FAILED"
+
+DEFAULT_OPERATION_TIMEOUT: float | None = 300.0
+DEFAULT_OPERATION_INTERVAL: float = 0.5
+
+_T = TypeVar("_T")
+
+
+class OperationFailedError(RuntimeError):
+    """The server reported the operation as failed — a terminal, non-retryable verdict."""
+
+
+def require_output(output: _T | None, *, operation: OperationResponse) -> _T:
+    """Raise when a completed operation that is expected to carry a payload has empty output.
+
+    Skip for ops whose resolve tolerates a missing payload (optim_step,
+    custom_forward_backward).
+    """
+    if output is None:
+        raise RuntimeError(f"Operation completed with empty output: {operation}")
+    return output
 
 
 async def async_retrieve_operation(
@@ -84,13 +105,14 @@ async def async_wait_for_operation(
     operation: OperationResponse,
     timeout: float | None,
     interval: float,
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
 ) -> OperationResponse:
     deadline = None if timeout is None else time.monotonic() + timeout
     current = operation
 
     while True:
         if current.status == _FAILED:
-            raise RuntimeError(f"Operation ({current.id}) failed: {current.error}")
+            raise OperationFailedError(f"Operation ({current.id}) failed: {current.error}")
         if current.status == _COMPLETED:
             return current
         if deadline is not None and time.monotonic() >= deadline:
@@ -103,4 +125,4 @@ async def async_wait_for_operation(
         )
         if current.status in (_COMPLETED, _FAILED):
             continue
-        await asyncio.sleep(interval)
+        await sleep(interval)

@@ -4,14 +4,16 @@ from typing import Any, Iterable, cast, get_args
 from dataclasses import dataclass
 
 from .._loop import LoopGate, on_client_loop
-from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
+from .session import SessionClient
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
+from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
 from .....types.beta.rl.loss_type import LossType
 from .....types.beta.rl.adam_params import AdamParams
 from .....types.beta.rl.muon_params import MuonParams
 from .....types.beta.rl.forward_result import ForwardResult
 from .....types.beta.rl.weight_sync_type import WeightSyncType
+from .....types.beta.rl.forward_operation import ForwardOperation
 from .....types.beta.rl.loss_config_param import LossConfig
 from .....types.beta.rl.optim_step_result import OptimStepResult
 from .....types.beta.rl.weights_sync_result import WeightsSyncResult
@@ -19,6 +21,7 @@ from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from .....types.beta.rl.operation_forward_params import OperationForwardParams
 from .....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from .....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
+from .....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
 from .....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
 from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
 
@@ -61,6 +64,48 @@ async def _submit_forward_backward(
     )
 
 
+async def _submit_forward(
+    session: SessionClient,
+    *,
+    samples: Iterable[Sample],
+) -> ForwardOperation:
+    """POST a forward operation without waiting for it."""
+    body, large_payload_id = await prepare_operation_body(
+        session._client,
+        session_id=session._session_id,
+        body={"samples": list(samples)},
+        expected_type=OperationForwardParams,
+    )
+    extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
+    return await session._client.beta.rl.operations.forward(
+        session._session_id,
+        samples=cast("list[Any]", body["samples"]),
+        extra_body=extra_body,
+    )
+
+
+async def _submit_custom_forward_backward(
+    session: SessionClient,
+    *,
+    samples: Iterable[Sample],
+    gradients: Iterable[Gradient],
+) -> CustomForwardBackwardOperation:
+    """POST a custom_forward_backward operation without waiting for it."""
+    body, large_payload_id = await prepare_operation_body(
+        session._client,
+        session_id=session._session_id,
+        body={"samples": list(samples), "gradients": list(gradients)},
+        expected_type=OperationCustomForwardBackwardParams,
+    )
+    extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
+    return await session._client.beta.rl.operations.custom_forward_backward(
+        session._session_id,
+        samples=cast("list[Any]", body["samples"]),
+        gradients=cast("list[Any]", body["gradients"]),
+        extra_body=extra_body,
+    )
+
+
 @dataclass(frozen=True)
 class Trainer:
     _session: SessionClient
@@ -90,20 +135,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardResult:
-        body, large_payload_id = await prepare_operation_body(
-            self._session._client,
-            session_id=self._session._session_id,
-            body={"samples": list(samples)},
-            expected_type=OperationForwardParams,
-        )
-        samples = cast(list[Any], body["samples"])
-
-        extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-        operation = await self._session._client.beta.rl.operations.forward(
-            self._session._session_id,
-            samples=samples,
-            extra_body=extra_body,
-        )
+        operation = await _submit_forward(self._session, samples=samples)
         result = await self._session._submit_and_wait(operation, timeout=timeout, interval=interval)
         return await resolve_result_payload(
             self._session._client,
@@ -171,25 +203,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> CustomForwardBackwardResult:
-        body, large_payload_id = await prepare_operation_body(
-            self._session._client,
-            session_id=self._session._session_id,
-            body={
-                "samples": list(samples),
-                "gradients": list(gradients),
-            },
-            expected_type=OperationCustomForwardBackwardParams,
-        )
-        samples = cast(list[Any], body["samples"])
-        gradients = cast(list[Any], body["gradients"])
-
-        extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-        operation = await self._session._client.beta.rl.operations.custom_forward_backward(
-            self._session._session_id,
-            samples=samples,
-            gradients=gradients,
-            extra_body=extra_body,
-        )
+        operation = await _submit_custom_forward_backward(self._session, samples=samples, gradients=gradients)
         result = await self._session._submit_and_wait(
             operation,
             timeout=timeout,

@@ -14,6 +14,7 @@ from .. import _operations
 from .._loop import LoopGate, run_untracked, on_client_loop, run_untracked_async
 from ....._types import omit
 from ....._client import AsyncTogether
+from .._operations import require_output
 from ....._base_client import DefaultAsyncHttpxClient
 from .....types.beta.rl.session import Session
 from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
@@ -37,9 +38,9 @@ _TERMINAL_STATUSES = {
 }
 DEFAULT_SESSION_CREATION_TIMEOUT: float | None = 3600.0
 DEFAULT_SESSION_CREATION_INTERVAL: float = 10.0
-DEFAULT_OPERATION_TIMEOUT: float | None = 300.0
 DEFAULT_CHECKPOINT_TIMEOUT: float | None = 7200.0  # 2 h — large models (e.g. 400B) can take well over 5 min
-DEFAULT_OPERATION_INTERVAL: float = 0.5
+DEFAULT_OPERATION_TIMEOUT: float | None = _operations.DEFAULT_OPERATION_TIMEOUT
+DEFAULT_OPERATION_INTERVAL: float = _operations.DEFAULT_OPERATION_INTERVAL
 _MAX_RETRIES = 7
 
 # RL operations are long-lived and chatty; bump httpx defaults so polling and
@@ -113,6 +114,9 @@ class SessionClient:
 
     def run(self, coro: Coroutine[Any, Any, _T]) -> _T:
         return self._loop.run(coro)
+
+    async def run_async(self, coro: Coroutine[Any, Any, _T]) -> _T:
+        return await self._loop.run_async(coro)
 
     @classmethod
     def create(
@@ -248,17 +252,14 @@ class SessionClient:
         timeout: float | None,
         interval: float,
     ) -> Any:
-        result = await _operations.async_wait_for_operation(
+        completed = await _operations.async_wait_for_operation(
             client=self._client,
             session_id=self._session_id,
             operation=operation,
             timeout=timeout,
             interval=interval,
         )
-        if result.output is None:
-            msg = f"Operation completed with empty output: {operation}"
-            raise RuntimeError(msg)
-        return result.output
+        return require_output(completed.output, operation=completed)
 
     async def _wait_for_creation_async(
         self,

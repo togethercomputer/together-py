@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from tests.unit.rl_wait import patch_wait
 from tests.unit._rl_fakes import FakeClient
 from together.lib.beta.rl import (
     Sample,
@@ -61,13 +62,6 @@ def _generator(session: SessionClient) -> Generator:
     return generator
 
 
-def _patch_submit_and_wait(monkeypatch: pytest.MonkeyPatch, result: Any) -> None:
-    async def fake(_self: Any, _operation: Any, *, timeout: float | None, interval: float) -> Any:  # noqa: ARG001
-        return result
-
-    monkeypatch.setattr(SessionClient, "_submit_and_wait", fake)
-
-
 def test_session_exposes_capability_clients() -> None:
     session = _make_session()
 
@@ -93,7 +87,7 @@ def test_trainer_only_session_rejects_generator_access() -> None:
 
 def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = SampleResult(policy_segments=[], sequences=[])
-    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[expected]))
+    patch_wait(monkeypatch, SimpleNamespace(results=[expected]))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -114,7 +108,7 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
         SampleResult(policy_segments=[], sequences=[]),
         SampleResult(policy_segments=[], sequences=[]),
     ]
-    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=expected))
+    patch_wait(monkeypatch, SimpleNamespace(results=expected))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -133,7 +127,7 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
 
 def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
     result = SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[0.0, -1.5])
-    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[result]))
+    patch_wait(monkeypatch, SimpleNamespace(results=[result]))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -157,7 +151,7 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
         SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[0.0, -1.5]),
         SampleResult(policy_segments=[], sequences=[], prompt_logprobs=[0.0, -0.2]),
     ]
-    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=results))
+    patch_wait(monkeypatch, SimpleNamespace(results=results))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -186,7 +180,7 @@ def test_prompt_logprobs_from_results_raises_when_missing() -> None:
 
 
 def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(
+    patch_wait(
         monkeypatch,
         ForwardResult(logprobs=[Logprob(data=[-1.0, -2.0, -3.0])]),
     )
@@ -207,7 +201,7 @@ def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, {"metrics": {"grad_norm": 0.5}})
+    patch_wait(monkeypatch, {"metrics": {"grad_norm": 0.5}})
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -227,7 +221,7 @@ def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytes
 
 
 def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -258,7 +252,7 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
 
 
 def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, OptimStepResult(step="1"))
+    patch_wait(monkeypatch, OptimStepResult(step="1"))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -275,7 +269,7 @@ def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, OptimStepResult(step="1"))
+    patch_wait(monkeypatch, OptimStepResult(step="1"))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -291,7 +285,7 @@ def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, WeightsSyncResult(weights_version=2))
+    patch_wait(monkeypatch, WeightsSyncResult(weights_version=2))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -307,7 +301,7 @@ def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, TrainingCheckpointResult(checkpoint_id="ckpt-1"))
+    patch_wait(monkeypatch, TrainingCheckpointResult(checkpoint_id="ckpt-1"))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -322,7 +316,7 @@ def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_create_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_submit_and_wait(monkeypatch, InferenceCheckpointResult(model_name="model-1"))
+    patch_wait(monkeypatch, InferenceCheckpointResult(model_name="model-1"))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -620,7 +614,7 @@ def _small_sample() -> Sample:
 
 def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
     """Small payloads are sent inline without triggering upload."""
-    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -641,7 +635,7 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
 
 def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.MonkeyPatch) -> None:
     """Nested Iterable[float] fields must survive transform on the small path."""
-    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -690,7 +684,7 @@ def test_resolve_loss_type_rejects_unknown_name() -> None:
 
 def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch) -> None:
     """Short loss names reach the API in their proto spelling."""
-    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
     trainer = _make_session(client)
 
@@ -704,7 +698,7 @@ def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch)
 
 async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     """Payloads exceeding the threshold are uploaded; inline samples have truncated sequences."""
-    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=2.0, metrics={}))
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=2.0, metrics={}))
     monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 10)
     client = FakeClient()
     trainer = _make_session(client)
@@ -748,7 +742,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
 
 def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPatch) -> None:
     """Payloads exceeding R2's single-PUT limit raise before any upload is attempted."""
-    _patch_submit_and_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 10)
     monkeypatch.setattr(rl_payloads_module, "_MAX_PAYLOAD_SIZE", 20)
     client = FakeClient()

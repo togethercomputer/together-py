@@ -4,9 +4,10 @@ from typing import Any, Iterable, cast
 from dataclasses import dataclass
 
 from .._loop import LoopGate, on_client_loop
-from .session import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL, SessionClient
+from .session import SessionClient
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
+from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
 from .....types.beta.rl.sample_result import SampleResult
 from .....types.beta.rl.sampling_params import SamplingParams
 from .....types.beta.rl.sample_operation import Output as SampleBatchResult, SampleOperation
