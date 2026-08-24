@@ -669,6 +669,7 @@ beta_endpoints_app.command(
     help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
     sort_key=2,
 )
+# Hidden `list` alias for `tg beta endpoints list …` (visible command is `ls`).
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.list:list"),
     name="list",
@@ -699,6 +700,12 @@ beta_endpoints_app.command(
     sort_key=5,
     help="Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID",
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
+)
+# Hidden `delete` alias for `tg beta endpoints delete …` (visible command is `rm`).
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.rm:rm"),
+    name="delete",
+    show=False,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.events:events"),
