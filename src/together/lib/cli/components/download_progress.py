@@ -60,7 +60,9 @@ class DownloadProgressTracker:
         )
 
     def __enter__(self) -> DownloadProgressTracker:
-        if not self.enabled or not console.is_terminal:
+        from together.lib.cli.utils._debug import is_enabled
+
+        if not self.enabled or not console.is_terminal or is_enabled():
             return self
         self._progress = Progress(
             SpinnerColumn(style="bar.pulse"),

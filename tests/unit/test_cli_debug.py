@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
 
 import httpx
+import pytest
 
 from together.lib.cli.utils._debug import (
     CliDebugLogFilter,
@@ -129,3 +131,43 @@ def test_session_banner_masks_api_key() -> None:
     assert "…mnop" in blob
     assert "proj" in blob
     assert "retries=0" in blob
+
+
+async def test_show_loading_status_skips_spinner_when_debug(monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.utils import _debug
+    from together.lib.cli.utils._console import console
+    from together.lib.cli.components.loader import show_loading_status
+
+    monkeypatch.setattr(_debug, "_enabled", True)
+
+    def fail_status(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("spinner should be skipped in debug mode")
+
+    monkeypatch.setattr(console, "status", fail_status)
+
+    async def done() -> str:
+        return "ok"
+
+    assert await show_loading_status("Loading widgets...", done()) == "ok"
+
+
+async def test_show_loading_status_uses_spinner_when_not_debug(monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.utils import _debug
+    from together.lib.cli.utils._console import console
+    from together.lib.cli.components.loader import show_loading_status
+
+    monkeypatch.setattr(_debug, "_enabled", False)
+    used = {"status": False}
+
+    @contextmanager
+    def fake_status(*_args: object, **_kwargs: object):
+        used["status"] = True
+        yield
+
+    monkeypatch.setattr(console, "status", fake_status)
+
+    async def done() -> int:
+        return 1
+
+    assert await show_loading_status("Loading...", done()) == 1
+    assert used["status"] is True

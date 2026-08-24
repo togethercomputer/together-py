@@ -188,7 +188,7 @@ def render_response_lines(response: httpx.Response, *, elapsed: float | None = N
 
 def _print_lines(lines: Sequence[str]) -> None:
     for line in lines:
-        error_console.print(line)
+        error_console.print(f"[muted]debug[/muted] {line}")
 
 
 def log_debug_session(
