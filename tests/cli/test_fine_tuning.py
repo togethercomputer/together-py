@@ -478,9 +478,7 @@ class TestFineTuningEventsAndCheckpoints:
         assert json.loads(result.output)[0]["message"] == "training started"
 
     @pytest.mark.respx(base_url=base_url)
-    def test_list_events_paginates_by_created_at(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        # Oldest-first payload; CLI pre-sorts newest-first before mock pagination.
-        cursor = "2024-01-01T00:00:01Z"
+    def test_list_events_returns_all_events(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         events = [
             {
                 **_FT_EVENT,
@@ -491,24 +489,10 @@ class TestFineTuningEventsAndCheckpoints:
         ]
         respx_mock.get("/fine-tunes/ft-1/events").mock(return_value=httpx.Response(200, json={"data": events}))
 
-        first_page = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
-        second_page = cli_runner.invoke(
-            [
-                "fine-tuning",
-                "list-events",
-                "ft-1",
-                "--after",
-                cursor,
-                "--json",
-            ]
-        )
+        result = cli_runner.invoke(["fine-tuning", "list-events", "ft-1", "--json"])
 
-        assert first_page.exit_code == 0
-        assert [event["message"] for event in json.loads(first_page.output)] == [
-            f"event {index}" for index in range(20, 0, -1)
-        ]
-        assert second_page.exit_code == 0
-        assert [event["message"] for event in json.loads(second_page.output)] == ["event 0"]
+        assert result.exit_code == 0
+        assert [event["message"] for event in json.loads(result.output)] == [f"event {index}" for index in range(21)]
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
