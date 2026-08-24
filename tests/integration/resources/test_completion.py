@@ -97,8 +97,8 @@ class TestTogetherCompletion:
 
         assert isinstance(response.id, str)
         assert isinstance(response.created, int)
-        # Together-native models return `text.completion`; OpenAI-compatible
-        # models such as gpt-oss return `text_completion`.
+        # Together-native models return `text.completion`; some serverless
+        # models return OpenAI's `text_completion`.
         assert response.object in ("text.completion", "text_completion")
         assert isinstance(response.choices, list)
         assert isinstance(response.choices[0], Choice)
@@ -231,7 +231,6 @@ class TestTogetherCompletion:
         "model,prompt",
         product(completion_test_model_list, completion_prompt_list),
     )
-    @pytest.mark.skip(reason="openai/gpt-oss-20b does not support echo+logprobs on completions")
     def test_echo(
         self,
         model: str,
@@ -276,7 +275,6 @@ class TestTogetherCompletion:
             completion_prompt_list,
         ),
     )
-    @pytest.mark.skip(reason="openai/gpt-oss-20b does not reject n > 128")
     def test_high_n(
         self,
         model: str,
@@ -303,7 +301,6 @@ class TestTogetherCompletion:
             completion_prompt_list,
         ),
     )
-    @pytest.mark.skip(reason="openai/gpt-oss-20b does not reject n > 128")
     def test_n_with_no_sample(
         self,
         model: str,
@@ -402,7 +399,6 @@ class TestTogetherCompletion:
             completion_prompt_list,
         ),
     )
-    @pytest.mark.skip(reason="openai/gpt-oss-20b does not reject presence_penalty > 2")
     def test_high_presence_penalty(
         self,
         model: str,
@@ -449,7 +445,6 @@ class TestTogetherCompletion:
             completion_prompt_list,
         ),
     )
-    @pytest.mark.skip(reason="openai/gpt-oss-20b does not reject frequency_penalty > 2")
     def test_high_frequency_penalty(
         self,
         model: str,
@@ -496,7 +491,6 @@ class TestTogetherCompletion:
             completion_prompt_list,
         ),
     )
-    @pytest.mark.skip(reason="openai/gpt-oss-20b does not reject min_p > 1")
     def test_high_min_p(
         self,
         model: str,
@@ -557,6 +551,5 @@ class TestTogetherCompletion:
         )
 
         assert isinstance(response, Completion)
-        # gpt-oss does not echo the request seed on choices
         if response.choices[0].seed is not None:
             assert response.choices[0].seed == 4242

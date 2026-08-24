@@ -1,6 +1,6 @@
 from typing import List
 
-completion_test_model_list: List[str] = ["openai/gpt-oss-20b"]
+completion_test_model_list: List[str] = ["zai-org/GLM-5.2"]
 chat_test_model_list: List[str] = []
 embedding_test_model_list: List[str] = []
 image_test_model_list: List[str] = []
