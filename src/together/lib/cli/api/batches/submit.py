@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import sys
-from typing import Optional, Annotated
+from typing import Annotated
 from pathlib import Path
 
 from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
-from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -33,18 +32,6 @@ async def submit(
         BatchApiType,
         Parameter(help="API to dispatch each line of the input file against"),
     ],
-    model: Annotated[
-        str,
-        Parameter(alias="-M", help="Model to use for processing batch requests"),
-    ],
-    completion_window: Annotated[
-        Optional[str],
-        Parameter(help="Time window for batch completion"),
-    ] = None,
-    priority: Annotated[
-        Optional[int],
-        Parameter(help="Priority for batch processing"),
-    ] = None,
     *,
     config: CLIConfigParameter,
 ) -> None:
@@ -55,8 +42,6 @@ async def submit(
             "Uploading file...",
             config.client.files.upload(Path(file), purpose="batch-api", check=False),
         )
-        if not file_upload.id:
-            raise ValueError("File upload did not return a file ID")
         input_file_id = file_upload.id
 
     response = await show_loading_status(
@@ -64,9 +49,6 @@ async def submit(
         config.client.batches.create(
             endpoint=API_TO_ENDPOINT[api],
             input_file_id=input_file_id,
-            model_id=model,
-            completion_window=completion_window or omit,
-            priority=priority if priority is not None else omit,
         ),
     )
 

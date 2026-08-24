@@ -227,7 +227,7 @@ ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 BATCHES_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Submit a chat completions batch from a local file:
-  [primary]tg batches submit ./requests.jsonl chat.completions Qwen/Qwen3.5-9B[/primary]
+  [primary]tg batches submit ./requests.jsonl chat.completions[/primary]
 
 [dim]-[/dim] List batch jobs:
   [primary]tg batches ls[/primary]
@@ -244,13 +244,13 @@ BATCHES_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 BATCHES_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Submit a chat completions batch from a local JSONL file:
-  [primary]tg batches submit ./requests.jsonl chat.completions Qwen/Qwen3.5-9B[/primary]
+  [primary]tg batches submit ./requests.jsonl chat.completions[/primary]
 
 [dim]-[/dim] Submit using a previously uploaded file ID:
-  [primary]tg batches submit file-abc123 --api chat.completions -M Qwen/Qwen3.5-9B[/primary]
+  [primary]tg batches submit file-abc123 --api chat.completions[/primary]
 
 [dim]-[/dim] Submit an audio transcription batch:
-  [primary]tg batches submit ./audio.jsonl --api audio.transcriptions --model openai/whisper-large-v3[/primary]
+  [primary]tg batches submit ./audio.jsonl --api audio.transcriptions[/primary]
 """
 
 BATCHES_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
