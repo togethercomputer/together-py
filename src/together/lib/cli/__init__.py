@@ -142,7 +142,7 @@ def _propagate_global_param_group(target_app: App) -> None:
 # Stainless requires a non-empty key to construct a client. When the user has
 # none, we substitute this placeholder and block real requests. Do not treat the
 # placeholder as a real key in --debug session output.
-_PLACEHOLDER_API_KEY = "0000000000000000000000000000000000000000"
+_PLACEHOLDER_API_KEY = "0" * 40
 
 
 def _create_client(
