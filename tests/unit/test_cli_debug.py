@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import logging
 from contextlib import contextmanager
 
@@ -10,10 +11,13 @@ from together.lib.cli.utils._debug import (
     CliDebugLogFilter,
     mask_secret,
     extract_request_id,
+    teardown_cli_debug,
     is_noisy_log_message,
     render_request_lines,
     render_session_lines,
     render_response_lines,
+    setup_cli_debug_logging,
+    sanitize_debug_log_message,
     format_duration_for_display,
 )
 
@@ -172,3 +176,43 @@ async def test_show_loading_status_uses_spinner_when_not_debug(monkeypatch: pyte
 
     assert await show_loading_status("Loading...", done()) == 1
     assert used["status"] is True
+
+
+def test_sanitize_debug_log_strips_presigned_query() -> None:
+    url = (
+        "https://s3.amazonaws.com/bucket/key?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+        "&X-Amz-Credential=AKIAEXAMPLE%2F20260101%2Fus-east-1%2Fs3%2Faws4_request"
+        "&X-Amz-Signature=deadbeefcafebabe"
+    )
+    out = sanitize_debug_log_message(f"Upload redirected to {url}")
+    assert out.startswith("Upload redirected to https://s3.amazonaws.com/bucket/key")
+    assert "X-Amz-" not in out
+    assert "AKIAEXAMPLE" not in out
+    assert "deadbeef" not in out
+    assert "?" not in out
+
+
+def test_teardown_restores_together_log_env_and_logger_level(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("TOGETHER_LOG", raising=False)
+    together_logger = logging.getLogger("together")
+    previous_level = together_logger.level
+    together_logger.setLevel(logging.WARNING)
+    try:
+        setup_cli_debug_logging()
+        assert os.environ.get("TOGETHER_LOG") == "debug"
+        assert together_logger.level == logging.DEBUG
+        teardown_cli_debug()
+        assert "TOGETHER_LOG" not in os.environ
+        assert together_logger.level == logging.WARNING
+
+        from together.lib.utils._log import log_debug
+
+        log_debug("Analytics event sending", body="should-not-print")
+        captured = capsys.readouterr()
+        assert "Analytics event sending" not in captured.err
+        assert "should-not-print" not in captured.err
+    finally:
+        teardown_cli_debug()
+        together_logger.setLevel(previous_level)
