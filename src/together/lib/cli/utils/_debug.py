@@ -149,11 +149,11 @@ def render_session_lines(
     runtime = f"python {platform.python_version()}  {platform.system().lower()}"
 
     return [
-        f"[muted]debug[/muted]  [primary]tg {escape_rich_markup(__version__)}[/primary]  [dim]{escape_rich_markup(runtime)}[/dim]",
-        f"[muted]debug[/muted]  [bold]{escape_rich_markup(invocation)}[/bold]",
-        f"[muted]debug[/muted]  [dim]{escape_rich_markup(base_url)}[/dim]",
+        f"[primary]tg {escape_rich_markup(__version__)}[/primary]  [dim]{escape_rich_markup(runtime)}[/dim]",
+        f"[bold]{escape_rich_markup(invocation)}[/bold]",
+        f"[dim]{escape_rich_markup(base_url)}[/dim]",
         (
-            f"[muted]debug[/muted]  project={escape_rich_markup(project_display)}  "
+            f"project={escape_rich_markup(project_display)}  "
             f"key={escape_rich_markup(key_display)}  "
             f"timeout={escape_rich_markup(_format_timeout(timeout))}  "
             f"retries={max_retries}"
@@ -217,7 +217,7 @@ def log_debug_session(
 
 
 def log_debug_note(message: str) -> None:
-    error_console.print(f"[muted]debug[/muted]  {escape_rich_markup(message)}")
+    error_console.print(f"[muted]debug[/muted] {escape_rich_markup(message)}")
 
 
 async def _on_request(request: httpx.Request) -> None:
