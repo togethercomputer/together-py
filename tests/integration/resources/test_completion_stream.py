@@ -5,6 +5,7 @@ import pytest
 from together import Together
 from together.types.completion_chunk import Choice, ChoiceDelta, CompletionChunk, ChatCompletionUsage
 
+from ..constants import completion_test_model_list
 from .generate_hyperparameters import (
     random_top_k,  # noqa: F401 # pyright: ignore[reportUnusedImport]
     random_top_p,  # noqa: F401 # pyright: ignore[reportUnusedImport]
@@ -23,9 +24,11 @@ class TestTogetherCompletionStream:
         TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
         return Together(api_key=TOGETHER_API_KEY)
 
+    @pytest.mark.parametrize("model", completion_test_model_list)
     def test_create(
         self,
         sync_together_client: Together,
+        model: str,
         random_max_tokens: int,
         random_temperature: float,
         random_top_p: float,
@@ -33,7 +36,6 @@ class TestTogetherCompletionStream:
         random_repetition_penalty: float,
     ) -> None:
         prompt = "The space robots have"
-        model = "Qwen/Qwen2.5-7B-Instruct-Turbo"
         stop = ["</s>"]
 
         # max_tokens should be a reasonable number for this test
