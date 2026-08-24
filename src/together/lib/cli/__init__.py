@@ -139,6 +139,12 @@ def _propagate_global_param_group(target_app: App) -> None:
         _propagate_global_param_group(sub)
 
 
+# Stainless requires a non-empty key to construct a client. When the user has
+# none, we substitute this placeholder and block real requests. Do not treat the
+# placeholder as a real key in --debug session output.
+_PLACEHOLDER_API_KEY = "0000000000000000000000000000000000000000"
+
+
 def _create_client(
     api_key: Optional[str],
     base_url: Optional[str],
@@ -147,7 +153,8 @@ def _create_client(
     project_id: Optional[str],
     require_api_key: bool = True,
     debug: bool = False,
-) -> AsyncTogether:
+) -> tuple[AsyncTogether, bool]:
+    missing_api_key = False
     try:
         client = AsyncTogether(
             api_key=api_key,
@@ -158,22 +165,14 @@ def _create_client(
         )
     except Exception as e:
         if "api_key" in str(e):
+            missing_api_key = True
             client = AsyncTogether(
-                api_key="0000000000000000000000000000000000000000",
+                api_key=_PLACEHOLDER_API_KEY,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries if max_retries is not None else 0,
                 project_id=project_id,
             )
-
-            def block_requests_for_api_key(_: httpx.Request) -> None:
-                console.print(
-                    "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-                )
-                console.print("You can find your api key at https://api.together.ai/settings/api-keys")
-                sys.exit(1)
-
-            client._client.event_hooks["request"].append(block_requests_for_api_key)
         else:
             raise e
 
@@ -191,6 +190,17 @@ def _create_client(
     if debug:
         install_http_debug_hooks(client._client)
 
+    if missing_api_key:
+        # After debug hooks so `--debug` still emits `→ GET` before we exit.
+        async def block_requests_for_api_key(_: httpx.Request) -> None:
+            console.print(
+                "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
+            )
+            console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+            sys.exit(1)
+
+        client._client.event_hooks["request"].append(block_requests_for_api_key)
+
     # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
     # calls, so a missing key is not fatal for them. The block hook installed
     # above still errors clearly if such a command ever does hit the API.
@@ -201,7 +211,7 @@ def _create_client(
         console.print("You can find your api key at https://api.together.ai/settings/api-keys")
         sys.exit(1)
 
-    return client
+    return client, missing_api_key
 
 
 global_options = Group(
@@ -288,7 +298,7 @@ async def _run_launcher(
     # they stay keyless.
     no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
 
-    client = _create_client(
+    client, missing_api_key = _create_client(
         api_key,
         base_url,
         timeout,
@@ -304,7 +314,7 @@ async def _run_launcher(
             is_beta_command=is_beta_command,
             base_url=str(client.base_url),
             project_id=client.project_id,
-            api_key=client.api_key or None,
+            api_key=None if missing_api_key else (client.api_key or None),
             timeout=client.timeout,
             max_retries=client.max_retries,
         )

@@ -118,6 +118,22 @@ def test_response_render_is_status_line_only() -> None:
     assert "cf-ray" not in blob.lower()
 
 
+def test_session_banner_missing_key() -> None:
+    blob = "\n".join(
+        render_session_lines(
+            command="whoami",
+            is_beta_command=False,
+            base_url="https://api.together.ai/v1/",
+            project_id=None,
+            api_key=None,
+            timeout=None,
+            max_retries=0,
+        )
+    )
+    assert "key=<missing>" in blob
+    assert "project=<unresolved>" in blob
+
+
 def test_session_banner_masks_api_key() -> None:
     blob = "\n".join(
         render_session_lines(
@@ -216,3 +232,38 @@ def test_teardown_restores_together_log_env_and_logger_level(
     finally:
         teardown_cli_debug()
         together_logger.setLevel(previous_level)
+
+
+def test_log_warn_not_duplicated_under_cli_debug(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("TOGETHER_LOG", raising=False)
+    setup_cli_debug_logging()
+    try:
+        from together.lib.utils._log import log_warn, log_warn_once
+
+        log_warn("validation loops disabled")
+        log_warn_once("cli-debug-warn-once-unique")
+        err = capsys.readouterr().err
+        assert err.count("validation loops disabled") == 1
+        assert err.count("cli-debug-warn-once-unique") == 1
+        assert "message=" in err
+    finally:
+        teardown_cli_debug()
+
+
+def test_cli_debug_handler_prints_traceback(capsys: pytest.CaptureFixture[str]) -> None:
+    setup_cli_debug_logging()
+    try:
+        logger = logging.getLogger("together._base_client")
+        try:
+            raise TimeoutError("connect timed out")
+        except TimeoutError:
+            logger.debug("Encountered httpx.TimeoutException", exc_info=True)
+        err = capsys.readouterr().err
+        assert "Encountered httpx.TimeoutException" in err
+        assert "TimeoutError" in err
+        assert "connect timed out" in err
+        assert "Traceback" in err
+    finally:
+        teardown_cli_debug()

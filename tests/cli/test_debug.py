@@ -98,6 +98,9 @@ class TestCliDebug:
         assert "invalid_request_error" not in err
         assert API_KEY not in err
         assert "Invalid API key" in captured.out
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_debug_off_does_not_print_http_trace(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
 
         result = cli_runner.invoke(["whoami"])
@@ -105,6 +108,21 @@ class TestCliDebug:
         assert result.exit_code == 0, result.output
         assert "→" not in result.err_out
         assert "tg whoami" not in result.err_out
+
+    def test_debug_missing_api_key_shows_missing_and_request(
+        self, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
+        cli_runner.env.pop("TOGETHER_API_KEY", None)
+
+        result = cli_runner.invoke(["whoami", "--debug"])
+
+        assert result.exit_code == 1
+        err = result.err_out
+        assert "key=<missing>" in err
+        assert "…0000" not in err
+        assert "GET" in err
+        assert "api key missing" in result.out_out.lower()
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_does_not_leave_logger_hooked(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

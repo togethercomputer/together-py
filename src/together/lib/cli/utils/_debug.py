@@ -5,6 +5,7 @@ import re
 import time
 import logging
 import platform
+import traceback
 from typing import Union, Mapping
 from collections.abc import Sequence
 from typing_extensions import override
@@ -261,6 +262,13 @@ class CliDebugLogFilter(logging.Filter):
             return True
 
 
+def _traceback_text(record: logging.LogRecord) -> str | None:
+    exc_info = record.exc_info
+    if not exc_info or exc_info[0] is None:
+        return None
+    return "".join(traceback.format_exception(*exc_info)).rstrip()
+
+
 class CliDebugLogHandler(logging.Handler):
     @override
     def emit(self, record: logging.LogRecord) -> None:
@@ -281,6 +289,11 @@ class CliDebugLogHandler(logging.Handler):
                 f"[muted]log[/muted]  [{style}]{escape_rich_markup(level)}[/{style}] "
                 f"[dim]{escape_rich_markup(name)}[/dim] {escape_rich_markup(message)}"
             )
+            tb = _traceback_text(record)
+            if tb:
+                error_console.print(
+                    f"[muted]log[/muted]  [dim]{escape_rich_markup(sanitize_debug_log_message(tb))}[/dim]"
+                )
         except Exception:
             self.handleError(record)
 
