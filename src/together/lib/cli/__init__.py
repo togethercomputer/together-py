@@ -186,12 +186,12 @@ def _create_client(
         except Exception as e:
             log_debug("Error tracking api request", error=e)
 
-    client._client.event_hooks["request"].append(track_request)
     if debug:
         install_http_debug_hooks(client._client)
 
     if missing_api_key:
-        # After debug hooks so `--debug` still emits `→ GET` before we exit.
+        # After debug hooks so `--debug` still emits `→ GET` before we exit,
+        # but before analytics so a request that is never sent is not tracked.
         async def block_requests_for_api_key(_: httpx.Request) -> None:
             console.print(
                 "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
@@ -200,6 +200,8 @@ def _create_client(
             sys.exit(1)
 
         client._client.event_hooks["request"].append(block_requests_for_api_key)
+
+    client._client.event_hooks["request"].append(track_request)
 
     # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
     # calls, so a missing key is not fatal for them. The block hook installed

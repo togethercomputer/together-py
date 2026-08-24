@@ -10,6 +10,7 @@ import pytest
 from together.lib.cli.utils._debug import (
     CliDebugLogFilter,
     mask_secret,
+    log_debug_note,
     extract_request_id,
     teardown_cli_debug,
     is_noisy_log_message,
@@ -266,4 +267,31 @@ def test_cli_debug_handler_prints_traceback(capsys: pytest.CaptureFixture[str]) 
         assert "connect timed out" in err
         assert "Traceback" in err
     finally:
+        teardown_cli_debug()
+
+
+def test_debug_output_does_not_hard_wrap_at_80_columns(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from together.lib.cli.utils._console import error_console
+
+    monkeypatch.delenv("COLUMNS", raising=False)
+    previous_width = error_console.width
+    error_console.width = 80
+    long_path = "/home/runner/work/together-py/.venv/lib/python3.10/site-packages/httpx/_transports/default.py"
+    assert len(long_path) > 80
+    setup_cli_debug_logging()
+    try:
+        log_debug_note(f'File "{long_path}", line 89')
+        logger = logging.getLogger("together._base_client")
+        try:
+            raise TimeoutError(long_path)
+        except TimeoutError:
+            logger.debug("Encountered httpx.TimeoutException", exc_info=True)
+        err = capsys.readouterr().err
+        assert long_path in err
+        assert "_trans\n" not in err
+        assert "_trans\r" not in err
+    finally:
+        error_console.width = previous_width
         teardown_cli_debug()

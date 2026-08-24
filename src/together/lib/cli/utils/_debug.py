@@ -199,9 +199,15 @@ def render_response_lines(response: httpx.Response, *, elapsed: float | None = N
     return [f"[{style}]← {escape_rich_markup(status)}[/{style}]{suffix}"]
 
 
+def _debug_print(markup: str = "") -> None:
+    # stderr-to-file is not a TTY, so Rich would otherwise wrap at 80 columns
+    # and split paths / traceback lines mid-token.
+    error_console.print(markup, soft_wrap=True)
+
+
 def _print_lines(lines: Sequence[str]) -> None:
     for line in lines:
-        error_console.print(f"[muted]debug[/muted] {line}")
+        _debug_print(f"[muted]debug[/muted] {line}")
 
 
 def log_debug_session(
@@ -230,7 +236,7 @@ def log_debug_session(
 
 
 def log_debug_note(message: str) -> None:
-    error_console.print(f"[muted]debug[/muted] {escape_rich_markup(message)}")
+    _debug_print(f"[muted]debug[/muted] {escape_rich_markup(message)}")
 
 
 async def _on_request(request: httpx.Request) -> None:
@@ -250,7 +256,7 @@ async def _on_response(response: httpx.Response) -> None:
     else:
         elapsed = None
     _print_lines(render_response_lines(response, elapsed=elapsed))
-    error_console.print("")
+    _debug_print()
 
 
 class CliDebugLogFilter(logging.Filter):
@@ -285,15 +291,13 @@ class CliDebugLogHandler(logging.Handler):
                 "critical": "error",
             }.get(level, "muted")
             name = record.name.removeprefix("together.").removeprefix("together")
-            error_console.print(
+            _debug_print(
                 f"[muted]log[/muted]  [{style}]{escape_rich_markup(level)}[/{style}] "
                 f"[dim]{escape_rich_markup(name)}[/dim] {escape_rich_markup(message)}"
             )
             tb = _traceback_text(record)
             if tb:
-                error_console.print(
-                    f"[muted]log[/muted]  [dim]{escape_rich_markup(sanitize_debug_log_message(tb))}[/dim]"
-                )
+                _debug_print(f"[muted]log[/muted]  [dim]{escape_rich_markup(sanitize_debug_log_message(tb))}[/dim]")
         except Exception:
             self.handleError(record)
 
