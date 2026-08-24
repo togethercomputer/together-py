@@ -179,13 +179,21 @@ def test_format_unknown_option_error_strips_inline_value() -> None:
 
 
 def test_format_cyclopts_error_omits_install_path() -> None:
-    from cyclopts.exceptions import CycloptsError
+    from cyclopts.exceptions import UnknownCommandError
 
-    err = CycloptsError(target=_long_signature_command)
-    assert "Function defined in file" in str(err)
+    # UnknownCommandError appends its diagnostic to the verbose preamble, unlike a bare
+    # CycloptsError which stringifies to "" once verbose=False.
+    err = UnknownCommandError(unused_tokens=["bogus-cmd"], target=_long_signature_command)
+    raw = str(err)
+    assert "Function defined in file" in raw
+    assert _long_signature_command.__code__.co_filename in raw
+    assert 'Unknown command "bogus-cmd"' in raw
+
     out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown command "bogus-cmd".'
     assert "Function defined in file" not in out
     assert _long_signature_command.__code__.co_filename not in out
+    assert err.verbose is True
 
 
 def test_telemetry_env_opt_out_only_explicit_values(monkeypatch: pytest.MonkeyPatch) -> None:
