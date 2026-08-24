@@ -229,18 +229,23 @@ def sanitize_cli_error_message(msg: str) -> str:
     return s
 
 
+def _option_name_without_inline_value(name: str) -> str:
+    """Keep ``--flag`` from ``--flag=value`` so telemetry doesn't embed secrets/paths."""
+    return name.split("=", 1)[0]
+
+
 def _unknown_option_name(exc: BaseException) -> str | None:
     token = getattr(exc, "token", None)
     if isinstance(token, str):
-        return token or None
+        return _option_name_without_inline_value(token) if token else None
     if token is None:
         return None
     keyword = getattr(token, "keyword", None)
     if isinstance(keyword, str) and keyword:
-        return keyword
+        return _option_name_without_inline_value(keyword)
     value = getattr(token, "value", None)
     if isinstance(value, str) and value:
-        return value
+        return _option_name_without_inline_value(value)
     return None
 
 

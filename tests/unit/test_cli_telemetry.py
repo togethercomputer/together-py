@@ -135,8 +135,9 @@ def test_format_unknown_option_error_is_option_and_command() -> None:
     from cyclopts.argument import ArgumentCollection
     from cyclopts.exceptions import UnknownOptionError
 
+    # Parser shape: keyword=None, raw CLI token in value.
     err = UnknownOptionError(
-        token=Token(keyword="--bogus-flag", value="--bogus-flag", source="cli"),
+        token=Token(keyword=None, value="--bogus-flag", source="cli"),
         argument_collection=ArgumentCollection(),
         target=_long_signature_command,
     )
@@ -157,10 +158,24 @@ def test_format_unknown_option_error_without_command() -> None:
     from cyclopts.exceptions import UnknownOptionError
 
     err = UnknownOptionError(
-        token=Token(keyword="--bogus-flag", value="--bogus-flag", source="cli"),
+        token=Token(keyword=None, value="--bogus-flag", source="cli"),
         argument_collection=ArgumentCollection(),
     )
     assert format_cli_error_for_telemetry(err) == 'Unknown option: "--bogus-flag"'
+
+
+def test_format_unknown_option_error_strips_inline_value() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--auth-token=hunter2secret", source="cli"),
+        argument_collection=ArgumentCollection(),
+    )
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown option: "--auth-token" for command "clusters create"'
+    assert "hunter2secret" not in out
 
 
 def test_format_cyclopts_error_omits_install_path() -> None:

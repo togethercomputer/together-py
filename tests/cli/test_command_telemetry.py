@@ -149,6 +149,19 @@ def test_unknown_option_error_telemetry_is_option_and_command(
 
 
 @pytest.mark.usefixtures("isolated_cli_config")
+def test_unknown_option_equals_value_telemetry_strips_value(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+) -> None:
+    r = cli_runner.invoke(["beta", "clusters", "create", "--auth-token=hunter2secret"])
+    assert r.exit_code == 1
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "clusters create"
+    assert failed["error"] == 'Unknown option: "--auth-token" for command "clusters create"'
+    assert "hunter2secret" not in failed["error"]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
 def test_command_keyboard_interrupt_emits_started_then_user_aborted(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,
