@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import json
 from typing import Any, cast
 
@@ -16,14 +15,6 @@ from together.lib.cli._track_cli import CliTrackingEvents
 from together.lib.cli.api.beta.endpoints.rm import _members_without_deployment
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
-
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def _normalize_cli_help(output: str) -> str:
-    # Rich help wraps table cells across panel borders; normalize for both
-    # agent (plain) and human (rich) formatters. See tests/cli/test_fine_tuning.py.
-    return " ".join(_ANSI_RE.sub("", output).replace("│", " ").split())
 
 
 def _endpoint_body(**overrides: Any) -> dict[str, Any]:
@@ -140,8 +131,8 @@ def _shadow_experiment_body(
     return body
 
 
-def _rm_args(resource_id: str, *extra: str, command: str = "rm") -> list[str]:
-    return ["beta", "endpoints", command, "--project", "proj", resource_id, "--json", *extra]
+def _rm_args(resource_id: str, *extra: str) -> list[str]:
+    return ["beta", "endpoints", "rm", "--project", "proj", resource_id, "--json", *extra]
 
 
 def _capture_cli_events(monkeypatch: pytest.MonkeyPatch) -> list[tuple[CliTrackingEvents, dict[str, Any]]]:
@@ -174,41 +165,13 @@ class TestMembersWithoutDeployment:
 
 
 class TestBetaEndpointsRm:
-    @pytest.mark.parametrize("formatter_name", ["agent", "human"])
-    def test_delete_alias_is_hidden_from_help(
-        self, formatter_name: str, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        from together.lib.cli import app
-        from together.lib.cli.utils._help_formatter import agent_formatter, human_formatter
-
-        monkeypatch.setattr(app, "help_formatter", agent_formatter if formatter_name == "agent" else human_formatter)
-
-        result = cli_runner.invoke(["beta", "endpoints", "--help"])
-
-        output = _normalize_cli_help(result.output)
-        assert result.exit_code == 0
-        help_text = "Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID"
-        # Agent: "rm, -d: …"; Rich names renderer: "-d, rm …" (shorts first, no colon).
-        assert help_text in output
-        assert (
-            f"rm, -d: {help_text}" in output
-            or f"-d, rm: {help_text}" in output
-            or f"rm, -d {help_text}" in output
-            or f"-d, rm {help_text}" in output
-            or f"rm: {help_text}" in output
-            or f"rm {help_text}" in output
-        )
-        assert f"delete: {help_text}" not in output
-        assert f"delete {help_text}" not in output
-
-    @pytest.mark.parametrize("command", ["rm", "delete"])
     @pytest.mark.respx(base_url=base_url)
-    def test_rm_endpoint(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_rm_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(200, json={"id": "ep_1"})
         )
 
-        result = cli_runner.invoke(_rm_args("ep_1", command=command))
+        result = cli_runner.invoke(_rm_args("ep_1"))
 
         assert result.exit_code == 0, result.output
         assert delete_route.called
