@@ -131,6 +131,7 @@ def test_session_banner_masks_api_key() -> None:
     assert "…mnop" in blob
     assert "proj" in blob
     assert "retries=0" in blob
+    assert "[muted]debug[/muted]" not in blob
 
 
 async def test_show_loading_status_skips_spinner_when_debug(monkeypatch: pytest.MonkeyPatch) -> None:

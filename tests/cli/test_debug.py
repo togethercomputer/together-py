@@ -49,6 +49,7 @@ class TestCliDebug:
         assert "My Project" in result.out_out
         err = result.err_out
         assert "debug" in err
+        assert "debug debug" not in err
         assert __version__ in err
         assert "tg whoami" in err
         assert "GET" in err
