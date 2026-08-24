@@ -114,6 +114,12 @@ class TestCliDebug:
     ) -> None:
         monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
         cli_runner.env.pop("TOGETHER_API_KEY", None)
+        tracked: list[object] = []
+
+        def _spy(event: object, _args: object) -> None:
+            tracked.append(event)
+
+        monkeypatch.setattr("together.lib.cli.track_cli", _spy)
 
         result = cli_runner.invoke(["whoami", "--debug"])
 
@@ -123,6 +129,9 @@ class TestCliDebug:
         assert "…0000" not in err
         assert "GET" in err
         assert "api key missing" in result.out_out.lower()
+        from together.lib.cli._track_cli import CliTrackingEvents
+
+        assert CliTrackingEvents.ApiRequest not in tracked
 
     @pytest.mark.respx(base_url=base_url)
     def test_debug_does_not_leave_logger_hooked(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
