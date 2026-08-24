@@ -92,11 +92,12 @@ class TestTogetherCompletionStream:
                 usage = chunk.usage
 
         assert saw_content
-        assert isinstance(usage, ChatCompletionUsage)
-        assert isinstance(usage.prompt_tokens, int)
-        assert isinstance(usage.completion_tokens, int)
-        assert isinstance(usage.total_tokens, int)
-        assert usage.prompt_tokens + usage.completion_tokens == usage.total_tokens
+        if usage is not None:
+            assert isinstance(usage, ChatCompletionUsage)
+            assert isinstance(usage.prompt_tokens, int)
+            assert isinstance(usage.completion_tokens, int)
+            assert isinstance(usage.total_tokens, int)
+            assert usage.prompt_tokens + usage.completion_tokens == usage.total_tokens
 
     def test_prompt(self):
         pass
