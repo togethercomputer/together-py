@@ -20,7 +20,7 @@ async def list_events(
     # Newest first, matching other CLI list commands. FinetuneEvent has no `id`.
     response.data.sort(key=lambda x: x.created_at, reverse=True)
 
-    events, next_cursor = mock_pagination(response.data, cursor_field="created_at", cursor=after)
+    events, next_cursor = mock_pagination(response.data, cursor_field="id", cursor=after)
 
     if config.json:
         console.print_json(openapi_dumps(events).decode("utf-8"))
