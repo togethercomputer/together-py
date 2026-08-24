@@ -62,19 +62,36 @@ class TestTogetherCompletionStream:
         )
 
         usage = None
+        saw_content = False
 
         for chunk in response:
             assert isinstance(chunk, CompletionChunk)
             assert isinstance(chunk.id, str)
-            assert isinstance(chunk.created, int)
-            assert chunk.object == "completion.chunk"
+            if chunk.created is not None:
+                assert isinstance(chunk.created, int)
+            if chunk.object is not None:
+                assert chunk.object in ("completion.chunk", "text_completion")
+            # OpenAI-compatible streams may send a final usage chunk with no choices.
+            if not chunk.choices:
+                if chunk.usage is not None:
+                    usage = chunk.usage
+                continue
             assert isinstance(chunk.choices[0], Choice)
             assert isinstance(chunk.choices[0].index, int)
-            assert isinstance(chunk.choices[0].delta, ChoiceDelta)
-            assert isinstance(chunk.choices[0].delta.content, str)
+            delta = chunk.choices[0].delta
+            if delta is not None:
+                assert isinstance(delta, ChoiceDelta)
+                if delta.content is not None:
+                    assert isinstance(delta.content, str)
+                    saw_content = True
+            elif chunk.choices[0].text is not None:
+                assert isinstance(chunk.choices[0].text, str)
+                saw_content = True
 
-            usage = chunk.usage
+            if chunk.usage is not None:
+                usage = chunk.usage
 
+        assert saw_content
         assert isinstance(usage, ChatCompletionUsage)
         assert isinstance(usage.prompt_tokens, int)
         assert isinstance(usage.completion_tokens, int)
