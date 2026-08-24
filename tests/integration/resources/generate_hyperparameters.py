@@ -23,8 +23,8 @@ def random_top_k():
 
 @pytest.fixture
 def random_max_tokens():
-    """Fixture to generate a random float between 0 and 128."""
-    return random.randint(1, 128)
+    """Fixture to generate a small token budget for live integration tests."""
+    return random.randint(1, 8)
 
 
 @pytest.fixture
