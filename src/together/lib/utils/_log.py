@@ -63,13 +63,15 @@ def log_info(message: str | Any, **params: Any) -> None:
 
 def log_warn(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
-    print(msg, file=sys.stderr)  # noqa
+    if not _cli_debug_console_redirect:
+        print(msg, file=sys.stderr)  # noqa
     logger.warning(msg)
 
 
 def log_warn_once(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
     if msg not in WARNING_MESSAGES_ONCE:
-        print(msg, file=sys.stderr)  # noqa
+        if not _cli_debug_console_redirect:
+            print(msg, file=sys.stderr)  # noqa
         logger.warning(msg)
         WARNING_MESSAGES_ONCE.add(msg)

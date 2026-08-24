@@ -5,6 +5,7 @@ import re
 import time
 import logging
 import platform
+import traceback
 from typing import Union, Mapping
 from collections.abc import Sequence
 from typing_extensions import override
@@ -54,7 +55,10 @@ _NOISY_LOG_PATTERNS = (
 _enabled = False
 _base_url = ""
 _saved_httpx_level: int | None = None
+_saved_together_level: int | None = None
 _saved_together_propagate: bool | None = None
+# (was_set, value) for TOGETHER_LOG before setup; None means setup did not snapshot yet.
+_saved_together_log_env: tuple[bool, str] | None = None
 
 
 def is_enabled() -> bool:
@@ -84,6 +88,15 @@ def extract_request_id(headers: Mapping[str, str] | httpx.Headers) -> str | None
 def is_noisy_log_message(message: str) -> bool:
     text = message.strip()
     return any(pattern.search(text) for pattern in _NOISY_LOG_PATTERNS)
+
+
+_URL_WITH_QUERY_RE = re.compile(r"(https?://[^\s?#]+)(\?[^\s]*)", re.IGNORECASE)
+
+
+def sanitize_debug_log_message(message: str) -> str:
+    """Redact secrets and drop URL query strings (presigned S3, SigV4, tokens)."""
+    stripped = _URL_WITH_QUERY_RE.sub(r"\1", message)
+    return _redact_secrets_in_error_text(stripped)
 
 
 def _safe_url(url: httpx.URL, *, base_url: str = "") -> str:
@@ -249,13 +262,20 @@ class CliDebugLogFilter(logging.Filter):
             return True
 
 
+def _traceback_text(record: logging.LogRecord) -> str | None:
+    exc_info = record.exc_info
+    if not exc_info or exc_info[0] is None:
+        return None
+    return "".join(traceback.format_exception(*exc_info)).rstrip()
+
+
 class CliDebugLogHandler(logging.Handler):
     @override
     def emit(self, record: logging.LogRecord) -> None:
         if not _enabled:
             return
         try:
-            message = _redact_secrets_in_error_text(record.getMessage())
+            message = sanitize_debug_log_message(record.getMessage())
             level = record.levelname.lower()
             style = {
                 "debug": "muted",
@@ -269,11 +289,16 @@ class CliDebugLogHandler(logging.Handler):
                 f"[muted]log[/muted]  [{style}]{escape_rich_markup(level)}[/{style}] "
                 f"[dim]{escape_rich_markup(name)}[/dim] {escape_rich_markup(message)}"
             )
+            tb = _traceback_text(record)
+            if tb:
+                error_console.print(
+                    f"[muted]log[/muted]  [dim]{escape_rich_markup(sanitize_debug_log_message(tb))}[/dim]"
+                )
         except Exception:
             self.handleError(record)
 
 
-def install_http_debug_hooks(http_client: httpx.AsyncClient | httpx.Client) -> None:
+def install_http_debug_hooks(http_client: httpx.AsyncClient) -> None:
     hooks = http_client.event_hooks
     request_hooks = hooks.setdefault("request", [])
     response_hooks = hooks.setdefault("response", [])
@@ -284,7 +309,10 @@ def install_http_debug_hooks(http_client: httpx.AsyncClient | httpx.Client) -> N
 
 
 def setup_cli_debug_logging() -> None:
-    global _enabled, _saved_httpx_level, _saved_together_propagate
+    global _enabled, _saved_httpx_level, _saved_together_level, _saved_together_propagate, _saved_together_log_env
+    if _saved_together_log_env is None:
+        env_value = os.environ.get("TOGETHER_LOG")
+        _saved_together_log_env = ("TOGETHER_LOG" in os.environ, env_value or "")
     os.environ.setdefault("TOGETHER_LOG", "debug")
     _enabled = True
     set_cli_debug_console_redirect(True)
@@ -292,6 +320,7 @@ def setup_cli_debug_logging() -> None:
     httpx_logger = logging.getLogger("httpx")
     together_logger = logging.getLogger("together")
     _saved_httpx_level = httpx_logger.level
+    _saved_together_level = together_logger.level
     _saved_together_propagate = together_logger.propagate
 
     httpx_logger.setLevel(logging.WARNING)
@@ -306,7 +335,13 @@ def setup_cli_debug_logging() -> None:
 
 
 def teardown_cli_debug() -> None:
-    global _enabled, _base_url, _saved_httpx_level, _saved_together_propagate
+    global \
+        _enabled, \
+        _base_url, \
+        _saved_httpx_level, \
+        _saved_together_level, \
+        _saved_together_propagate, \
+        _saved_together_log_env
     _enabled = False
     _base_url = ""
     set_cli_debug_console_redirect(False)
@@ -318,10 +353,21 @@ def teardown_cli_debug() -> None:
     if _saved_together_propagate is not None:
         together_logger.propagate = _saved_together_propagate
         _saved_together_propagate = None
+    if _saved_together_level is not None:
+        together_logger.setLevel(_saved_together_level)
+        _saved_together_level = None
 
     if _saved_httpx_level is not None:
         logging.getLogger("httpx").setLevel(_saved_httpx_level)
         _saved_httpx_level = None
+
+    if _saved_together_log_env is not None:
+        was_set, value = _saved_together_log_env
+        if was_set:
+            os.environ["TOGETHER_LOG"] = value
+        else:
+            os.environ.pop("TOGETHER_LOG", None)
+        _saved_together_log_env = None
 
 
 def format_timeout_for_display(timeout: Union[float, httpx.Timeout, None]) -> str:
