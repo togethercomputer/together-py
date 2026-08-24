@@ -479,7 +479,8 @@ class TestFineTuningEventsAndCheckpoints:
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_events_paginates_by_created_at(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        cursor = "2024-01-01T00:00:19Z"
+        # Oldest-first payload; CLI pre-sorts newest-first before mock pagination.
+        cursor = "2024-01-01T00:00:01Z"
         events = [
             {
                 **_FT_EVENT,
@@ -504,10 +505,10 @@ class TestFineTuningEventsAndCheckpoints:
 
         assert first_page.exit_code == 0
         assert [event["message"] for event in json.loads(first_page.output)] == [
-            f"event {index}" for index in range(20)
+            f"event {index}" for index in range(20, 0, -1)
         ]
         assert second_page.exit_code == 0
-        assert [event["message"] for event in json.loads(second_page.output)] == ["event 20"]
+        assert [event["message"] for event in json.loads(second_page.output)] == ["event 0"]
 
     @pytest.mark.respx(base_url=base_url)
     def test_list_checkpoints_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

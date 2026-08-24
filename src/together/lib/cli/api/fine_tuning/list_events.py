@@ -17,6 +17,8 @@ async def list_events(
     """List fine-tuning events."""
     response = await config.client.fine_tuning.list_events(fine_tune_id)
     response.data = response.data or []
+    # Newest first, matching other CLI list commands. FinetuneEvent has no `id`.
+    response.data.sort(key=lambda x: x.created_at, reverse=True)
 
     events, next_cursor = mock_pagination(response.data, cursor_field="created_at", cursor=after)
 
