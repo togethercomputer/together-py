@@ -19,7 +19,7 @@ from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
     flush_pending_events,
-    sanitize_cli_error_message,
+    format_cli_error_for_telemetry,
 )
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
@@ -376,7 +376,7 @@ async def launcher(
                 "command": parsed_command,
                 "arguments": explicit_args,
                 "is_beta_command": is_beta_command,
-                "error": sanitize_cli_error_message(str(e)),
+                "error": format_cli_error_for_telemetry(e, command=parsed_command),
             },
         )
         sys.exit(e.code)
@@ -387,7 +387,7 @@ async def launcher(
                 "command": parsed_command,
                 "arguments": explicit_args,
                 "is_beta_command": is_beta_command,
-                "error": sanitize_cli_error_message(str(e)),
+                "error": format_cli_error_for_telemetry(e, command=parsed_command),
             },
         )
 

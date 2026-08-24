@@ -16,6 +16,7 @@ from together.lib.cli._track_cli import (
     save_telemetry_config,
     telemetry_config_path,
     sanitize_cli_error_message,
+    format_cli_error_for_telemetry,
 )
 
 
@@ -103,6 +104,96 @@ def test_sanitize_cli_error_message_redacts_secrets_before_truncation() -> None:
     out = sanitize_cli_error_message(f"{secret}{tail}")
     assert "sk-1" not in out
     assert "123456" not in out
+
+
+def _long_signature_command(
+    name: str | None = None,
+    num_gpus: int | None = None,
+    region: str | None = None,
+    billing_type: str | None = None,
+    nvidia_driver_version: str | None = None,
+    cuda_version: str | None = None,
+    duration_days: int | None = None,
+    gpu_type: str | None = None,
+    cluster_type: str | None = None,
+) -> None:
+    del (
+        name,
+        num_gpus,
+        region,
+        billing_type,
+        nvidia_driver_version,
+        cuda_version,
+        duration_days,
+        gpu_type,
+        cluster_type,
+    )
+
+
+def test_format_unknown_option_error_is_option_and_command() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    # Parser shape: keyword=None, raw CLI token in value.
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--bogus-flag", source="cli"),
+        argument_collection=ArgumentCollection(),
+        target=_long_signature_command,
+    )
+    raw = str(err)
+    assert "Function defined in file" in raw
+    assert _long_signature_command.__code__.co_filename in raw
+
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown option: "--bogus-flag" for command "clusters create"'
+    assert "Function defined in file" not in out
+    assert ".py" not in out
+    assert err.verbose is True
+
+
+def test_format_unknown_option_error_without_command() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--bogus-flag", source="cli"),
+        argument_collection=ArgumentCollection(),
+    )
+    assert format_cli_error_for_telemetry(err) == 'Unknown option: "--bogus-flag"'
+
+
+def test_format_unknown_option_error_strips_inline_value() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--auth-token=hunter2secret", source="cli"),
+        argument_collection=ArgumentCollection(),
+    )
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown option: "--auth-token" for command "clusters create"'
+    assert "hunter2secret" not in out
+
+
+def test_format_cyclopts_error_omits_install_path() -> None:
+    from cyclopts.exceptions import UnknownCommandError
+
+    # UnknownCommandError appends its diagnostic to the verbose preamble, unlike a bare
+    # CycloptsError which stringifies to "" once verbose=False.
+    err = UnknownCommandError(unused_tokens=["bogus-cmd"], target=_long_signature_command)
+    raw = str(err)
+    assert "Function defined in file" in raw
+    assert _long_signature_command.__code__.co_filename in raw
+    assert 'Unknown command "bogus-cmd"' in raw
+
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown command "bogus-cmd".'
+    assert "Function defined in file" not in out
+    assert _long_signature_command.__code__.co_filename not in out
+    assert err.verbose is True
 
 
 def test_telemetry_env_opt_out_only_explicit_values(monkeypatch: pytest.MonkeyPatch) -> None:
