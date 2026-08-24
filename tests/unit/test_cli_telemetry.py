@@ -314,6 +314,26 @@ def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     assert is_beta is False
 
 
+def test_parse_command_and_flags_normalizes_rm_alias_to_delete() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "rm", "ep_1", "--json"])
+    assert cmd == "endpoints delete"
+    assert is_beta is True
+    assert "json" in flags
+
+
+def test_parse_command_and_flags_keeps_beta_endpoints_delete_alias() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "delete", "ep_1", "--json"])
+    assert cmd == "endpoints delete"
+    assert is_beta is True
+    assert "json" in flags
+
+
 def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens
