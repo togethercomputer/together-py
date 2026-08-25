@@ -182,12 +182,24 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
 
 
 @dataclass
+class ExperimentalConfig:
+    """Opt-in experimental features. Off by default; may change or be removed."""
+
+    optimization_collection: bool = False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ExperimentalConfig:
+        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+
+
+@dataclass
 class JigConfig:
     """Main configuration from jig.toml or pyproject.toml"""
 
     model_name: str = ""
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
+    experimental: ExperimentalConfig = field(default_factory=ExperimentalConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
     _unique_name_hint: str = "Update project.name in pyproject.toml"
 
@@ -254,6 +266,7 @@ class JigConfig:
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
             deploy=DeployConfig.from_dict(jig_config.get("deploy", {})),
+            experimental=ExperimentalConfig.from_dict(jig_config.get("experimental", {})),
             model_name=name,
             _path=path,
             _unique_name_hint=hint,
@@ -824,6 +837,12 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
+        # Opt-in experimental features are in extra_body
+        experimental = {k: v for k, v in asdict(self.config.experimental).items() if v}
+        extra_kwargs: dict[str, Any] = {}
+        if experimental:
+            extra_kwargs["extra_body"] = {"experimental": experimental}
+
         self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
             self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
@@ -843,12 +862,12 @@ class Jig:
         no_track = False
 
         try:
-            response = self.api.update(self.name, **deploy_data)
+            response = self.api.update(self.name, **deploy_data, **extra_kwargs)
             no_track = str(response.status) == "Ready"
             console.print("\N{CHECK MARK} Applied new deployment configuration")
         except NotFoundError:
             try:
-                response = self.api.deploy(**deploy_data)
+                response = self.api.deploy(**deploy_data, **extra_kwargs)
                 console.print(f"\N{CHECK MARK} Deployed: {self.name}")
             except APIError as e:
                 if "already exists" in e.message:
