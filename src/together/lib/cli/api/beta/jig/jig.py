@@ -185,7 +185,7 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
 class ExperimentalConfig:
     """Opt-in experimental features. Off by default; may change or be removed."""
 
-    optimization_collection: bool = False
+    auto_optimize: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ExperimentalConfig:
