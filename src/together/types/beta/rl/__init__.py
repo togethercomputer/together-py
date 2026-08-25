@@ -5,6 +5,7 @@ from __future__ import annotations
 from .d_type import DType as DType
 from .session import Session as Session
 from .loss_type import LossType as LossType
+from .checkpoint import Checkpoint as Checkpoint
 from .adam_params import AdamParams as AdamParams
 from .lora_config import LoraConfig as LoraConfig
 from .muon_params import MuonParams as MuonParams
@@ -17,6 +18,7 @@ from .routed_experts import RoutedExperts as RoutedExperts
 from .session_status import SessionStatus as SessionStatus
 from .wandb_metadata import WandbMetadata as WandbMetadata
 from .checkpoint_file import CheckpointFile as CheckpointFile
+from .checkpoint_type import CheckpointType as CheckpointType
 from .dro_loss_params import DroLossParams as DroLossParams
 from .model_resources import ModelResources as ModelResources
 from .operation_error import OperationError as OperationError

@@ -16,6 +16,7 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.rl import CheckpointVariant, checkpoint_download_params
+from ....types.beta.rl.checkpoint import Checkpoint
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.checkpoint_download_response import CheckpointDownloadResponse
 
@@ -41,6 +42,42 @@ class CheckpointsResource(SyncAPIResource):
         For more information, see https://www.github.com/togethercomputer/together-py#with_streaming_response
         """
         return CheckpointsResourceWithStreamingResponse(self)
+
+    def retrieve(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Checkpoint:
+        """
+        Returns metadata for a checkpoint: type, base model, LoRA rank, step, and owning
+        session.
+
+        Args:
+          id: ID of the checkpoint
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template("/rl/checkpoints/{id}", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Checkpoint,
+        )
 
     def download(
         self,
@@ -108,6 +145,42 @@ class AsyncCheckpointsResource(AsyncAPIResource):
         """
         return AsyncCheckpointsResourceWithStreamingResponse(self)
 
+    async def retrieve(
+        self,
+        id: str,
+        *,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Checkpoint:
+        """
+        Returns metadata for a checkpoint: type, base model, LoRA rank, step, and owning
+        session.
+
+        Args:
+          id: ID of the checkpoint
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            path_template("/rl/checkpoints/{id}", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Checkpoint,
+        )
+
     async def download(
         self,
         id: str,
@@ -160,6 +233,9 @@ class CheckpointsResourceWithRawResponse:
     def __init__(self, checkpoints: CheckpointsResource) -> None:
         self._checkpoints = checkpoints
 
+        self.retrieve = to_raw_response_wrapper(
+            checkpoints.retrieve,
+        )
         self.download = to_raw_response_wrapper(
             checkpoints.download,
         )
@@ -169,6 +245,9 @@ class AsyncCheckpointsResourceWithRawResponse:
     def __init__(self, checkpoints: AsyncCheckpointsResource) -> None:
         self._checkpoints = checkpoints
 
+        self.retrieve = async_to_raw_response_wrapper(
+            checkpoints.retrieve,
+        )
         self.download = async_to_raw_response_wrapper(
             checkpoints.download,
         )
@@ -178,6 +257,9 @@ class CheckpointsResourceWithStreamingResponse:
     def __init__(self, checkpoints: CheckpointsResource) -> None:
         self._checkpoints = checkpoints
 
+        self.retrieve = to_streamed_response_wrapper(
+            checkpoints.retrieve,
+        )
         self.download = to_streamed_response_wrapper(
             checkpoints.download,
         )
@@ -187,6 +269,9 @@ class AsyncCheckpointsResourceWithStreamingResponse:
     def __init__(self, checkpoints: AsyncCheckpointsResource) -> None:
         self._checkpoints = checkpoints
 
+        self.retrieve = async_to_streamed_response_wrapper(
+            checkpoints.retrieve,
+        )
         self.download = async_to_streamed_response_wrapper(
             checkpoints.download,
         )
