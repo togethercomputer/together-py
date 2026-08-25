@@ -338,11 +338,18 @@ Methods:
 Types:
 
 ```python
-from together.types.beta.rl import CheckpointDownloadResponse, CheckpointFile, CheckpointVariant
+from together.types.beta.rl import (
+    Checkpoint,
+    CheckpointDownloadResponse,
+    CheckpointFile,
+    CheckpointType,
+    CheckpointVariant,
+)
 ```
 
 Methods:
 
+- <code title="get /rl/checkpoints/{id}">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">retrieve</a>(id) -> <a href="./src/together/types/beta/rl/checkpoint.py">Checkpoint</a></code>
 - <code title="get /rl/checkpoints/{id}/download">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">download</a>(id, \*\*<a href="src/together/types/beta/rl/checkpoint_download_params.py">params</a>) -> <a href="./src/together/types/beta/rl/checkpoint_download_response.py">CheckpointDownloadResponse</a></code>
 
 ### ModelResources

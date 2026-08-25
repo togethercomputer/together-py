@@ -28,8 +28,8 @@ class JigDeployParams(TypedDict, total=False):
     name: Required[str]
     """Name is the unique identifier for your deployment.
 
-    Must contain only alphanumeric characters, underscores, or hyphens (1-100
-    characters)
+    Must contain lowercase letters, numbers, or hyphens, start with a lowercase
+    letter or number, and be 4-63 characters. It cannot be changed.
     """
 
     args: SequenceNotStr[str]
