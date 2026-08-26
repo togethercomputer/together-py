@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.31.0"
+version = "2.32.0"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -17,8 +17,6 @@ dependencies = [
   "sniffio",
   "cyclopts>=4.6.0",
   "rich>=13.7.1",
-  "tqdm>=4.67.1",
-  "types-tqdm>=4.67.0.20250516",
   "filelock>=3.13.1",
   "types-pyyaml>=6.0.12.20250915",
   "tomli>=2.0.0; python_version < '3.11'",

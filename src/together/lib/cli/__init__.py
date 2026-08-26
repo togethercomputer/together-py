@@ -19,7 +19,7 @@ from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
     flush_pending_events,
-    sanitize_cli_error_message,
+    format_cli_error_for_telemetry,
 )
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
@@ -31,6 +31,7 @@ from together.lib.cli.utils._help_examples import (
     EVALS_HELP_EXAMPLES,
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
+    BATCHES_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
@@ -47,9 +48,11 @@ from together.lib.cli.utils._help_examples import (
     FILES_UPLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
+    BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
+    BATCHES_DOWNLOAD_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     BETA_ENDPOINTS_AB_HELP_EXAMPLES,
@@ -376,7 +379,7 @@ async def launcher(
                 "command": parsed_command,
                 "arguments": explicit_args,
                 "is_beta_command": is_beta_command,
-                "error": sanitize_cli_error_message(str(e)),
+                "error": format_cli_error_for_telemetry(e, command=parsed_command),
             },
         )
         sys.exit(e.code)
@@ -387,7 +390,7 @@ async def launcher(
                 "command": parsed_command,
                 "arguments": explicit_args,
                 "is_beta_command": is_beta_command,
-                "error": sanitize_cli_error_message(str(e)),
+                "error": format_cli_error_for_telemetry(e, command=parsed_command),
             },
         )
 
@@ -540,6 +543,23 @@ evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs"
 evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), alias="get", help="Get eval job details")
 evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
 
+## Batches API commands
+batches_app = app.command(App(name="batches", help="Submit and manage batch jobs", help_epilogue=BATCHES_HELP_EXAMPLES))
+batches_app.command(
+    (f"{_CLI}.batches.submit:submit"),
+    help="Submit a new batch job",
+    help_epilogue=BATCHES_SUBMIT_HELP_EXAMPLES,
+    sort_key=1,
+)
+batches_app.command((f"{_CLI}.batches.list:list"), alias="ls", help="List batch jobs")
+batches_app.command((f"{_CLI}.batches.retrieve:retrieve"), alias="get", help="Get batch job details")
+batches_app.command(
+    (f"{_CLI}.batches.download:download"),
+    help="Download batch job output (and error) files",
+    help_epilogue=BATCHES_DOWNLOAD_HELP_EXAMPLES,
+)
+batches_app.command((f"{_CLI}.batches.cancel:cancel"), help="Cancel a batch job")
+
 ## Telemetry API commands
 telemetry_app = app.command(App(name="telemetry", help="Configure CLI telemetry"))
 telemetry_app.command((f"{_CLI}.telemetry.status:status"), help="Show telemetry status")
@@ -669,6 +689,7 @@ beta_endpoints_app.command(
     help_epilogue=BETA_ENDPOINTS_LS_HELP_EXAMPLES,
     sort_key=2,
 )
+# Hidden `list` alias for `tg beta endpoints list …` (visible command is `ls`).
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.list:list"),
     name="list",
@@ -699,6 +720,12 @@ beta_endpoints_app.command(
     sort_key=5,
     help="Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID",
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
+)
+# Hidden `delete` alias for `tg beta endpoints delete …` (visible command is `rm`).
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.rm:rm"),
+    name="delete",
+    show=False,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.events:events"),

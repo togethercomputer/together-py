@@ -223,6 +223,44 @@ ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg endpoints update ENDPOINT_ID --inactive-timeout 30[/primary]
 """
 
+## Batches API commands
+
+BATCHES_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Submit a chat completions batch from a local file:
+  [primary]tg batches submit ./requests.jsonl chat.completions[/primary]
+
+[dim]-[/dim] List batch jobs:
+  [primary]tg batches ls[/primary]
+
+[dim]-[/dim] Get details of a batch job:
+  [primary]tg batches <batch-id>[/primary]
+
+[dim]-[/dim] Print batch results to stdout:
+  [primary]tg batches download <batch-id>[/primary]
+
+[dim]-[/dim] Cancel a batch job:
+  [primary]tg batches cancel <batch-id>[/primary]
+"""
+
+BATCHES_SUBMIT_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Submit a chat completions batch from a local JSONL file:
+  [primary]tg batches submit ./requests.jsonl chat.completions[/primary]
+
+[dim]-[/dim] Submit using a previously uploaded file ID:
+  [primary]tg batches submit file-abc123 --api chat.completions[/primary]
+
+[dim]-[/dim] Submit an audio transcription batch:
+  [primary]tg batches submit ./audio.jsonl --api audio.transcriptions[/primary]
+"""
+
+BATCHES_DOWNLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Print batch output to stdout:
+  [primary]tg batches download <batch-id>[/primary]
+
+[dim]-[/dim] Download batch output to a file:
+  [primary]tg batches download <batch-id> --output ./results.jsonl[/primary]
+"""
+
 ## Evals API commands
 
 EVALS_HELP_EXAMPLES = """[dim]Examples:[/dim]

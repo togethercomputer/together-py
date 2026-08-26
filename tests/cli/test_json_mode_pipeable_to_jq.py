@@ -36,7 +36,7 @@ class JSONValidator:
 
     # Invokes the command on the command line
     # It then pipes the results to jq to assert that the JSON is valid
-    def run_and_assert(self, command: str, **kwargs: Any) -> None:
+    def run_and_assert(self, command: str, *, allow_nonzero: bool = False, **kwargs: Any) -> None:
         if self._skip:
             print(f"Skipping {command} because it is not supported in JSON mode")
             return
@@ -50,7 +50,7 @@ class JSONValidator:
             )
 
         command_result = run_command(command)
-        if command_result.returncode != 0:
+        if command_result.returncode != 0 and not allow_nonzero:
             ns = " ".join(self.namespace_parts)
             raise AssertionError(f"{ns} {command} exited {command_result.returncode}: stderr={command_result.stderr!r}")
         try:
@@ -90,6 +90,16 @@ class TestJSONMode:
         evals.skip.run_and_assert("list --limit 1")
         evals.skip.run_and_assert("retrieve eval-123")
         evals.skip.run_and_assert("status eval-123")
+
+    def test_batches_json_mode(self) -> None:
+        batches = JSONValidator("batches")
+        # Prism's create example has no job; submit correctly exits 1 when job is null.
+        batches.run_and_assert("submit file-abc123def456ghi789 chat.completions", allow_nonzero=True)
+        batches.run_and_assert("list")
+        batches.run_and_assert("retrieve batch_job_abc123def456")
+        batches.run_and_assert("cancel batch_job_abc123def456")
+        # Prism job has no status; download errors as JSON and must still be jq-parseable.
+        batches.run_and_assert("download batch_job_abc123def456", allow_nonzero=True)
 
     # All files commands (subprocess against mock server; no respx — child process never sees patches).
     def test_files_json_mode(self) -> None:

@@ -11,6 +11,7 @@ from respx.models import Call
 
 from tests.cli.utils import CliRunner
 from together.types.beta import AbMember
+from together.lib.cli._track_cli import CliTrackingEvents
 from together.lib.cli.api.beta.endpoints.rm import _members_without_deployment
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -134,6 +135,16 @@ def _rm_args(resource_id: str, *extra: str) -> list[str]:
     return ["beta", "endpoints", "rm", "--project", "proj", resource_id, "--json", *extra]
 
 
+def _capture_cli_events(monkeypatch: pytest.MonkeyPatch) -> list[tuple[CliTrackingEvents, dict[str, Any]]]:
+    events: list[tuple[CliTrackingEvents, dict[str, Any]]] = []
+
+    def capture(event: CliTrackingEvents, payload: dict[str, Any]) -> None:
+        events.append((event, payload))
+
+    monkeypatch.setattr("together.lib.cli.track_cli", capture)
+    return events
+
+
 class TestMembersWithoutDeployment:
     def test_returns_percent_to_control(self) -> None:
         members = [
@@ -173,7 +184,9 @@ class TestBetaEndpointsRm:
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
+        events = _capture_cli_events(monkeypatch)
         respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 400,
@@ -189,6 +202,8 @@ class TestBetaEndpointsRm:
         assert "tg beta endpoints rm dep_variant" in result.output
         assert "tg beta endpoints rm dep_shadow" in result.output
         assert "tg beta endpoints rm ep_1" in result.output
+        failure = next(payload for event, payload in events if event is CliTrackingEvents.CommandFailed)
+        assert failure["error"] == "Endpoint deletion blocked by child deployments"
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_endpoint_blocked_by_deployments_json(
@@ -440,7 +455,9 @@ class TestBetaEndpointsRm:
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
+        events = _capture_cli_events(monkeypatch)
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
@@ -496,6 +513,8 @@ class TestBetaEndpointsRm:
         assert body["autoscaling"] == {"minReplicas": 0, "maxReplicas": 0}
         assert "Scaled min/max replicas to 0" in result.output
         assert "tg beta endpoints rm dep_control" in result.output
+        failure = next(payload for event, payload in events if event is CliTrackingEvents.CommandFailed)
+        assert failure["error"] == "Deployment deletion deferred while the deployment scales down"
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_rejects_unknown_prefix(self, cli_runner: CliRunner) -> None:
