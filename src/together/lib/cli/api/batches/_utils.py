@@ -79,8 +79,11 @@ def print_batch_detail(job: BatchJob) -> None:
         if job.error:
             console.print(f"   {escape_rich_markup(job.error)}")
 
-    if job.status in _INCOMPLETE_STATUSES and job.progress is not None:
-        console.print(f"{format_progress(job.progress)} {format_status(job.status)}")
+    if job.status:
+        if job.status in _INCOMPLETE_STATUSES and job.progress is not None:
+            console.print(f"{format_progress(job.progress)} {format_status(job.status)}")
+        else:
+            console.print(format_status(job.status))
 
     if job.status in _DOWNLOADABLE_STATUSES and job.id and (job.output_file_id or job.error_file_id):
         console.print("\nDownload results with:")

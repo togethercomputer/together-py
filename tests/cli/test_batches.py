@@ -257,6 +257,37 @@ class TestBatchesRetrieve:
         assert "tg batches download" not in result.output
 
     @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize(
+        ("status", "expected"),
+        [
+            ("CANCELLED", "Cancelled"),
+            ("EXPIRED", "Expired"),
+            ("FAILED", "Failed"),
+            ("COMPLETED", "Completed"),
+        ],
+    )
+    def test_retrieve_always_prints_status(
+        self, status: str, expected: str, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        job = {**_BATCH_JOB, "status": status, "error": None, "error_file_id": None}
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        result = cli_runner.invoke(["batches", "get", "batch_job_newer"])
+        assert result.exit_code == 0
+        assert any(line.strip() == expected for line in result.output.splitlines())
+        assert "█" not in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_prints_status_when_in_progress_without_progress(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        job = {**_BATCH_JOB_OLDER, "progress": None}
+        respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=job))
+        result = cli_runner.invoke(["batches", "get", "batch_job_older"])
+        assert result.exit_code == 0
+        assert "In_progress" in result.output
+        assert "█" not in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_retrieve_error_header_printed_once(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         job = {
             **_BATCH_JOB,
