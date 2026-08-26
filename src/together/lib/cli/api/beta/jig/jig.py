@@ -734,6 +734,8 @@ class Jig:
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
+        mounts = self.config.deploy.volume_mounts
+        self.prewarm(volume=mounts[0].name if mounts else None, images=[self.image_with_digest(tag)])
 
     def build_and_push(self, tag: str = "latest", docker_args: str | None = None) -> None:
         """One-shot build + push via a single buildx invocation (no --load).
@@ -786,6 +788,8 @@ class Jig:
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build+push failed")
         console.print("\N{CHECK MARK} Built and pushed")
+        mounts = self.config.deploy.volume_mounts
+        self.prewarm(volume=mounts[0].name if mounts else None, images=[self.image_with_digest(tag)])
 
     def deploy(
         self,
@@ -808,7 +812,6 @@ class Jig:
             else:
                 self.build_and_push(tag, docker_args)
             deployment_image = self.image_with_digest(tag)
-            self.prewarm(images=[deployment_image])
 
         if build_only:
             console.print("\N{CHECK MARK} Build complete (--build-only)")
