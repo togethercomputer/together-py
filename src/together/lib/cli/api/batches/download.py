@@ -135,14 +135,11 @@ async def download(
         )
 
     if config.json:
-        payload: dict[str, str] = {
-            "batch_id": id,
-            "output_file_id": output_file_id,
-        }
-        if job.error_file_id:
-            payload["error_file_id"] = job.error_file_id
-        console.print_json(openapi_dumps(payload).decode("utf-8"))
-        return
+        _fail(
+            json_mode=True,
+            error="Pass --output to download batch result files; --json does not print file contents to stdout.",
+            rich_message="",
+        )
 
     await stream_file_content_to_stdout(config.client, output_file_id)
     if job.error_file_id:
