@@ -109,7 +109,12 @@ class TestOperations:
             gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -123,7 +128,12 @@ class TestOperations:
             gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -141,7 +151,12 @@ class TestOperations:
             gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -162,7 +177,12 @@ class TestOperations:
                 gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
                 samples=[
                     {
-                        "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                        "loss_fn_inputs": {
+                            "foo": {
+                                "data": [1, 2, 3],
+                                "dtype": "int64",
+                            }
+                        },
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
@@ -174,7 +194,12 @@ class TestOperations:
             session_id="session_id",
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -187,7 +212,12 @@ class TestOperations:
             session_id="session_id",
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -204,7 +234,12 @@ class TestOperations:
             session_id="session_id",
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -224,7 +259,12 @@ class TestOperations:
                 session_id="",
                 samples=[
                     {
-                        "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                        "loss_fn_inputs": {
+                            "foo": {
+                                "data": [1, 2, 3],
+                                "dtype": "int64",
+                            }
+                        },
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
@@ -237,7 +277,12 @@ class TestOperations:
             loss={"type": "LOSS_TYPE_GRPO"},
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -270,76 +315,21 @@ class TestOperations:
             },
             samples=[
                 {
-                    "loss_inputs": {
-                        "target_tokens": {
-                            "data": [123, 456, 789],
-                            "dtype": "D_TYPE_INT64",
-                        },
-                        "cispo_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "dro_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "grpo_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "reference_logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "importance_sampling_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "ppo_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "routed_experts": {
-                            "shape": ["512", "64", "8"],
-                            "data": "U3RhaW5sZXNzIHJvY2tz",
-                            "object_uri": "https://example.com",
-                        },
-                        "weights": {
-                            "data": [0, 0, 0.5, 1],
-                            "dtype": "D_TYPE_FLOAT32",
-                        },
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                            "shape": [3],
+                            "sparse_col_indices": [0, 2],
+                            "sparse_crow_indices": [0, 2],
+                        }
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
+                    "routed_experts": {
+                        "shape": ["512", "64", "8"],
+                        "data": "U3RhaW5sZXNzIHJvY2tz",
+                        "object_uri": "https://example.com",
+                    },
                 }
             ],
         )
@@ -352,7 +342,12 @@ class TestOperations:
             loss={"type": "LOSS_TYPE_GRPO"},
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -370,7 +365,12 @@ class TestOperations:
             loss={"type": "LOSS_TYPE_GRPO"},
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -391,7 +391,12 @@ class TestOperations:
                 loss={"type": "LOSS_TYPE_GRPO"},
                 samples=[
                     {
-                        "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                        "loss_fn_inputs": {
+                            "foo": {
+                                "data": [1, 2, 3],
+                                "dtype": "int64",
+                            }
+                        },
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
@@ -1043,7 +1048,12 @@ class TestAsyncOperations:
             gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1057,7 +1067,12 @@ class TestAsyncOperations:
             gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1075,7 +1090,12 @@ class TestAsyncOperations:
             gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1096,7 +1116,12 @@ class TestAsyncOperations:
                 gradients=[{"data": [-0.1, 0.05, -0.08, 0.12, -0.03]}],
                 samples=[
                     {
-                        "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                        "loss_fn_inputs": {
+                            "foo": {
+                                "data": [1, 2, 3],
+                                "dtype": "int64",
+                            }
+                        },
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
@@ -1108,7 +1133,12 @@ class TestAsyncOperations:
             session_id="session_id",
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1121,7 +1151,12 @@ class TestAsyncOperations:
             session_id="session_id",
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1138,7 +1173,12 @@ class TestAsyncOperations:
             session_id="session_id",
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1158,7 +1198,12 @@ class TestAsyncOperations:
                 session_id="",
                 samples=[
                     {
-                        "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                        "loss_fn_inputs": {
+                            "foo": {
+                                "data": [1, 2, 3],
+                                "dtype": "int64",
+                            }
+                        },
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
@@ -1171,7 +1216,12 @@ class TestAsyncOperations:
             loss={"type": "LOSS_TYPE_GRPO"},
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1204,76 +1254,21 @@ class TestAsyncOperations:
             },
             samples=[
                 {
-                    "loss_inputs": {
-                        "target_tokens": {
-                            "data": [123, 456, 789],
-                            "dtype": "D_TYPE_INT64",
-                        },
-                        "cispo_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "dro_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "grpo_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "reference_logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "importance_sampling_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "ppo_inputs": {
-                            "advantages": {
-                                "data": [0.5, 0.5],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                            "logprobs": {
-                                "data": [-1.2, -0.8],
-                                "dtype": "D_TYPE_FLOAT32",
-                            },
-                        },
-                        "routed_experts": {
-                            "shape": ["512", "64", "8"],
-                            "data": "U3RhaW5sZXNzIHJvY2tz",
-                            "object_uri": "https://example.com",
-                        },
-                        "weights": {
-                            "data": [0, 0, 0.5, 1],
-                            "dtype": "D_TYPE_FLOAT32",
-                        },
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                            "shape": [3],
+                            "sparse_col_indices": [0, 2],
+                            "sparse_crow_indices": [0, 2],
+                        }
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
+                    "routed_experts": {
+                        "shape": ["512", "64", "8"],
+                        "data": "U3RhaW5sZXNzIHJvY2tz",
+                        "object_uri": "https://example.com",
+                    },
                 }
             ],
         )
@@ -1286,7 +1281,12 @@ class TestAsyncOperations:
             loss={"type": "LOSS_TYPE_GRPO"},
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1304,7 +1304,12 @@ class TestAsyncOperations:
             loss={"type": "LOSS_TYPE_GRPO"},
             samples=[
                 {
-                    "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                    "loss_fn_inputs": {
+                        "foo": {
+                            "data": [1, 2, 3],
+                            "dtype": "int64",
+                        }
+                    },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
@@ -1325,7 +1330,12 @@ class TestAsyncOperations:
                 loss={"type": "LOSS_TYPE_GRPO"},
                 samples=[
                     {
-                        "loss_inputs": {"target_tokens": {"data": [123, 456, 789]}},
+                        "loss_fn_inputs": {
+                            "foo": {
+                                "data": [1, 2, 3],
+                                "dtype": "int64",
+                            }
+                        },
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
