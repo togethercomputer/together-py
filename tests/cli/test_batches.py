@@ -361,28 +361,42 @@ class TestBatchesDownload:
                 },
             )
         )
-        respx_mock.get("/files/file-err").mock(
-            return_value=httpx.Response(
-                200,
-                json={
-                    "id": "file-err",
-                    "bytes": 12,
-                    "created_at": 1,
-                    "filename": "batch-errors.jsonl",
-                    "FileType": "jsonl",
-                    "object": "file",
-                    "Processed": True,
-                    "purpose": "batch-api",
-                },
-            )
-        )
 
         result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--output", str(tmp_path)])
         assert result.exit_code == 0
         assert (tmp_path / "batch-output.jsonl").read_bytes() == b'{"ok":true}\n'
-        assert (tmp_path / "batch-errors.jsonl").read_bytes() == b'{"err":true}\n'
+        assert (tmp_path / "batch-output.errors.jsonl").read_bytes() == b'{"err":true}\n'
         assert "Output saved" in result.output
         assert "Errors saved" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_download_directory_disambiguates_identical_filenames(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        job = {**_BATCH_JOB, "error_file_id": "file-err"}
+        file_meta = {
+            "bytes": 12,
+            "created_at": 1,
+            "filename": "batch.jsonl",
+            "FileType": "jsonl",
+            "object": "file",
+            "Processed": True,
+            "purpose": "batch-api",
+        }
+        respx_mock.get("/batches/batch_job_newer").mock(return_value=httpx.Response(200, json=job))
+        respx_mock.get("/files/file-out/content").mock(return_value=httpx.Response(200, content=b'{"ok":true}\n'))
+        respx_mock.get("/files/file-err/content").mock(return_value=httpx.Response(200, content=b'{"err":true}\n'))
+        respx_mock.get("/files/file-out").mock(return_value=httpx.Response(200, json={"id": "file-out", **file_meta}))
+
+        result = cli_runner.invoke(["batches", "download", "batch_job_newer", "--output", str(tmp_path), "--json"])
+        assert result.exit_code == 0
+        assert (tmp_path / "batch.jsonl").read_bytes() == b'{"ok":true}\n'
+        assert (tmp_path / "batch.errors.jsonl").read_bytes() == b'{"err":true}\n'
+        body = json.loads(result.output)
+        paths = [item["path"] for item in body["files"]]
+        assert paths[0] != paths[1]
+        assert Path(paths[0]).name == "batch.jsonl"
+        assert Path(paths[1]).name == "batch.errors.jsonl"
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_output_to_file(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:

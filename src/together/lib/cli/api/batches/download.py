@@ -98,7 +98,13 @@ async def download(
             error_file_id = None
 
         if error_file_id:
-            err_dest = output if directory_output else _error_output_path(output)
+            if directory_output and saved:
+                # Server filenames are not unique across output/error files.
+                err_dest = _error_output_path(Path(saved[0]["path"]))
+            elif directory_output:
+                err_dest = output
+            else:
+                err_dest = _error_output_path(output)
             err_path = await download_file_content(
                 config.client,
                 error_file_id,
