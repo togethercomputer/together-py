@@ -139,7 +139,7 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
 
 def test_sample_requests_object_backed_routing(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = SampleResult(policy_segments=[], sequences=[])
-    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[expected]))
+    patch_wait(monkeypatch, SimpleNamespace(results=[expected]))
     client = FakeClient()
     trainer = _make_session(client)
     model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))])
