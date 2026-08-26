@@ -200,7 +200,7 @@ class TestBetaEndpointsUpdate:
         assert "--scale-to-zero-window" not in output
 
     def test_update_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(_update_args("dep_control", "--scale-to-zero-window", "300s"))
+        result = cli_runner.invoke(["beta", "endpoints", "update", "--scale-to-zero-window"])
 
         assert result.exit_code != 0
         assert "Unknown option" in result.output
