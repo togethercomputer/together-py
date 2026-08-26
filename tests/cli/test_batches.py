@@ -72,12 +72,12 @@ def _file_response(**kwargs: Any) -> FileResponse:
 
 
 class TestBatchesSubmit:
-    def test_submit_help_describes_api_and_model_flags(self, cli_runner: CliRunner) -> None:
+    def test_submit_help_describes_api_types(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["batches", "submit", "--help"])
         assert result.exit_code == 0
         assert "--api" in result.output
-        assert "--model" in result.output
-        assert "-M" in result.output
+        assert "--model" not in result.output
+        assert "-M" not in result.output
         assert "chat.completions" in result.output
         assert "audio.transcriptions" in result.output
         assert "audio.translations" in result.output
@@ -85,13 +85,13 @@ class TestBatchesSubmit:
     @pytest.mark.respx(base_url=base_url)
     def test_submit_positional_args(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
-        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B"])
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
         assert result.exit_code == 0
         assert "batch_job_created" in result.output
         payload = json.loads(cast(Call, route.calls[0]).request.content)
         assert payload["endpoint"] == "/v1/chat/completions"
         assert payload["input_file_id"] == "file-abc123"
-        assert payload["model_id"] == "Qwen/Qwen3.5-9B"
+        assert "model_id" not in payload
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_flag_args(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -103,21 +103,17 @@ class TestBatchesSubmit:
                 "file-abc123",
                 "--api",
                 "audio.transcriptions",
-                "-M",
-                "openai/whisper-large-v3",
             ]
         )
         assert result.exit_code == 0
         payload = json.loads(cast(Call, route.calls[0]).request.content)
         assert payload["endpoint"] == "/v1/audio/transcriptions"
-        assert payload["model_id"] == "openai/whisper-large-v3"
+        assert "model_id" not in payload
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
-        result = cli_runner.invoke(
-            ["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B", "--json"]
-        )
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "--json"])
         assert result.exit_code == 0
         body = json.loads(result.output)
         assert body["job"]["id"] == "batch_job_created"
@@ -129,7 +125,7 @@ class TestBatchesSubmit:
         create = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
         with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
             upload_mock.return_value = _file_response(id="file-uploaded")
-            result = cli_runner.invoke(["batches", "submit", str(sample), "chat.completions", "Qwen/Qwen3.5-9B"])
+            result = cli_runner.invoke(["batches", "submit", str(sample), "chat.completions"])
         assert result.exit_code == 0
         upload_mock.assert_called_once()
         assert upload_mock.call_args.kwargs["purpose"] == "batch-api"
@@ -138,12 +134,12 @@ class TestBatchesSubmit:
         assert payload["input_file_id"] == "file-uploaded"
 
     def test_submit_rejects_directory(self, tmp_path: Path, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["batches", "submit", str(tmp_path), "chat.completions", "Qwen/Qwen3.5-9B"])
+        result = cli_runner.invoke(["batches", "submit", str(tmp_path), "chat.completions"])
         assert result.exit_code == 1
         assert "directory" in result.output.lower()
 
     def test_submit_rejects_invalid_api(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["batches", "submit", "file-abc123", "not.an.api", "Qwen/Qwen3.5-9B"])
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "not.an.api"])
         assert result.exit_code == 1
 
     @pytest.mark.respx(base_url=base_url)
@@ -151,7 +147,7 @@ class TestBatchesSubmit:
         respx_mock.post("/batches").mock(
             return_value=httpx.Response(200, json={"job": None, "warning": "validation failed: missing [/close] tag"})
         )
-        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B"])
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
         assert result.exit_code == 1
         assert "was not created" in result.output
         assert "MarkupError" not in result.output
@@ -160,9 +156,7 @@ class TestBatchesSubmit:
     @pytest.mark.respx(base_url=base_url)
     def test_submit_null_job_json_exits_nonzero(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.post("/batches").mock(return_value=httpx.Response(200, json={"job": None, "warning": "nope"}))
-        result = cli_runner.invoke(
-            ["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B", "--json"]
-        )
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "--json"])
         assert result.exit_code == 1
         body = json.loads(result.output)
         assert body["job"] is None
@@ -171,7 +165,7 @@ class TestBatchesSubmit:
     @pytest.mark.respx(base_url=base_url)
     def test_submit_does_not_print_x_model_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
-        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions", "Qwen/Qwen3.5-9B"])
+        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
         assert result.exit_code == 0
         assert "X Model Id" not in result.output
         assert "Qwen/Qwen3.5-9B" in result.output
