@@ -813,6 +813,12 @@ class Jig:
                 self.build_and_push(tag, docker_args)
             deployment_image = self.image_with_digest(tag)
 
+        # Built images prewarm inside push/build_and_push; warm explicitly passed
+        # images as well when they live in our registry.
+        if (existing_image or self.config.deploy.image) and deployment_image.startswith(self.registry()):
+            mounts = self.config.deploy.volume_mounts
+            self.prewarm(volume=mounts[0].name if mounts else None, images=[deployment_image])
+
         if build_only:
             console.print("\N{CHECK MARK} Build complete (--build-only)")
             return
