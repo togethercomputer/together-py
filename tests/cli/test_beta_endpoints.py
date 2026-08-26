@@ -179,6 +179,37 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Do not pass --model-revision when --model already includes a revision" in result.output
 
+    def test_deploy_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
+
+        output = " ".join(result.output.replace("│", " ").split())
+        assert result.exit_code == 0
+        assert "--scale-up-window" in output
+        assert "--scale-down-window" in output
+        assert "--scale-to-zero-window" not in output
+
+    def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_1",
+                "--scale-to-zero-window",
+                "300s",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "Unknown option" in result.output
+        assert "--scale-to-zero-window" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(
         self,
