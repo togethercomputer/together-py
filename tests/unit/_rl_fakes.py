@@ -52,9 +52,9 @@ class FakeSessions:
     async def create(self, **_payload: Any) -> Any:
         return SimpleNamespace(id="sess")
 
-    async def stop(self, session_id: str) -> dict[str, Any]:
+    async def stop(self, session_id: str) -> Any:
         self.last_stop = session_id
-        return {"id": "stop-op"}
+        return SimpleNamespace(id="stop-op", status="TRAINING_SESSION_STATUS_STOPPED")
 
     async def retrieve(self, _session_id: str) -> Any:
         return SimpleNamespace(
@@ -68,9 +68,9 @@ class FakeModelResources:
         self.num_generator_replicas = 1
         self.last_stop: str | None = None
 
-    async def stop(self, model_resources_id: str) -> dict[str, Any]:
+    async def stop(self, model_resources_id: str, **_payload: Any) -> Any:
         self.last_stop = model_resources_id
-        return {"id": "stop-op"}
+        return SimpleNamespace(id="stop-op", status="MODEL_RESOURCES_STATUS_STOPPING")
 
     async def create(self, **_payload: Any) -> Any:
         return SimpleNamespace(id="res-1")

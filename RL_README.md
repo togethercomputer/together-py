@@ -407,8 +407,8 @@ Polling is bounded by the connection pool, not by a poll scheduler: every waitin
 fixed `interval` (default 0.5s, no backoff), and once a session's client has `TOGETHER_RL_MAX_CONNECTIONS`
 requests in flight the rest queue there instead of reaching the service. On that client a `429` is retried up
 to 7 times, honouring `Retry-After` and backing off exponentially otherwise. With many operations waiting at
-once, raise `interval` rather than the connection cap. (`ModelResourcesClient` polls only for provisioning and
-keeps the SDK defaults, so the connection cap and its retries do not apply to it.)
+once, raise `interval` rather than the connection cap. `ModelResourcesClient` polls for provisioning and
+stop, and keeps the SDK connection defaults.
 
 ## Tinker-compatible entry point
 
@@ -547,7 +547,7 @@ ModelResourcesClient.attach(model_resources_id="...").stop()
 3. Optionally call `create_inference_checkpoint()` to snapshot the model and
    `download_checkpoint(client, ...)` to pull weights locally.
 4. To pause and resume later: `session.create_training_checkpoint()` → save `checkpoint_id`, `session.stop()`, then create a new session with `resume_from_checkpoint_id=...` over the same resources.
-5. Close the session when finished (context manager or `stop()`).
+5. Close the session when finished (context manager or `stop()`), then stop its model resources.
 
 Create more than one session on the same resources for multi-LoRA, and stop the resources after stopping the
 sessions.
@@ -877,7 +877,8 @@ Checkpoint metadata (type, base model, session, step, optional LoRA rank) is `cl
 
 #### `session.stop()`
 
-Stops the session. Called automatically when using `SessionClient` as a context manager.
+Stops the session and waits until it reaches `STOPPED`, `ERROR`, or `EXPIRED`. Called automatically when
+using `SessionClient` as a context manager.
 
 #### Context manager
 
@@ -1001,8 +1002,9 @@ Fetches the current resources state from the API (status, base model).
 
 #### `resources.stop()`
 
-Stops the resources and releases the GPUs. Stop attached trainers first. Called automatically when using
-`ModelResourcesClient` as a context manager.
+Stops the resources and waits until they reach `STOPPING`, when billing has stopped. Stop attached sessions
+first. `force=True` also stops every attached session and should be reserved for sessions this process cannot
+stop itself. Called automatically when using `ModelResourcesClient` as a context manager.
 
 ---
 

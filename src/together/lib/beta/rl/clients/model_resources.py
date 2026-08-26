@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import asyncio
+import warnings
 from types import TracebackType
 from typing import Any, TypeVar
 from dataclasses import field, dataclass
@@ -17,6 +18,7 @@ from .session import (
 )
 from ....._types import omit
 from ....._client import AsyncTogether
+from ....._exceptions import NotFoundError
 from .....types.beta.rl.model_resources import ModelResources
 from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
 from .....types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
@@ -26,6 +28,8 @@ from .....types.beta.rl.model_resource_create_params import ComputeConfig
 _T = TypeVar("_T")
 
 _READY_STATUS = "MODEL_RESOURCES_STATUS_READY"
+# STOPPING is terminal here: billing has already stopped. Session stop cannot
+# use the same set — TRAINING_SESSION_STATUS_STOPPING still holds the LoRA slot.
 _TERMINAL_STATUSES = {
     "MODEL_RESOURCES_STATUS_ERROR",
     "MODEL_RESOURCES_STATUS_STOPPING",
@@ -33,6 +37,8 @@ _TERMINAL_STATUSES = {
 }
 DEFAULT_MODEL_RESOURCES_CREATION_TIMEOUT: float | None = 3600.0
 DEFAULT_MODEL_RESOURCES_CREATION_INTERVAL: float = 10.0
+DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT: float | None = 300.0
+DEFAULT_MODEL_RESOURCES_STOP_INTERVAL: float = 2.0
 _PROVISIONING_TIMEOUT = httpx.Timeout(timeout=300, connect=300)
 
 
@@ -261,7 +267,7 @@ class ModelResourcesClient:
         )
 
     def stop(self, *, force: bool = False) -> ModelResources | None:
-        """Stop the remote resource. None when this handle was already torn down.
+        """Stop the resource and wait until billing stops.
 
         force also stops every session attached to the resource, including sessions this
         process does not own. Without it the API refuses while any session is still active.
@@ -269,18 +275,37 @@ class ModelResourcesClient:
         return self._loop.run_teardown(self._stop_remote(force=force))
 
     async def stop_async(self, *, force: bool = False) -> ModelResources | None:
-        """Stop the remote resource. None when this handle was already torn down.
-
-        force also stops every session attached to the resource, including sessions this
-        process does not own. Without it the API refuses while any session is still active.
-        """
+        """See :meth:`stop`."""
         return await self._loop.run_teardown_async(self._stop_remote(force=force))
 
     async def _stop_remote(self, *, force: bool) -> ModelResources:
         output = await self._client.beta.rl.model_resources.stop(
             self._model_resources_id, force=force if force else omit
         )
-        await self._client.close()
+        try:
+            if output.status not in _TERMINAL_STATUSES:
+                start = time.monotonic()
+                while True:
+                    try:
+                        current = await self._client.beta.rl.model_resources.retrieve(self._model_resources_id)
+                    except NotFoundError:
+                        # Already gone. Transient retrieve failures are retried by the
+                        # HTTP client; remaining errors still raise.
+                        break
+                    if current.status in _TERMINAL_STATUSES:
+                        break
+                    if (
+                        DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT is not None
+                        and time.monotonic() - start >= DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT
+                    ):
+                        warnings.warn(
+                            f"Timed out waiting for model resources {self._model_resources_id} to stop billing",
+                            stacklevel=2,
+                        )
+                        break
+                    await asyncio.sleep(DEFAULT_MODEL_RESOURCES_STOP_INTERVAL)
+        finally:
+            await self._client.close()
         return output
 
     def detach(self) -> None:

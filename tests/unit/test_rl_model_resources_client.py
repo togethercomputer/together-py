@@ -12,12 +12,14 @@ from together.lib.beta.rl.clients import model_resources as model_resources_clie
 from together.lib.beta.rl.clients.session import SessionClient
 from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
 
+_STOPPING = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPING")
+
 
 def _fake_client(status: str = "MODEL_RESOURCES_STATUS_READY") -> MagicMock:
     client = MagicMock()
     client.beta.rl.model_resources.create = AsyncMock(return_value=SimpleNamespace(id="res-1"))
     client.beta.rl.model_resources.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
-    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     return client
 
@@ -127,15 +129,33 @@ async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPa
 
 async def test_stop_async_closes_client() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.beta.rl.model_resources.retrieve = AsyncMock()
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
     result = await resources.stop_async()
 
-    assert result == {"id": "res-1"}
+    assert result is _STOPPING
     assert resources._loop.closed
     client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.beta.rl.model_resources.retrieve.assert_not_awaited()
+    client.close.assert_awaited_once()
+
+
+async def test_stop_async_waits_until_resources_stop_billing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(model_resources_client_module, "DEFAULT_MODEL_RESOURCES_STOP_INTERVAL", 0.0)
+    client = MagicMock()
+    output = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=output)
+    client.beta.rl.model_resources.retrieve = AsyncMock(return_value=_STOPPING)
+    client.close = AsyncMock()
+    resources = ModelResourcesClient("res-1", _client=cast(Any, client))
+
+    result = await resources.stop_async()
+
+    assert result is output
+    client.beta.rl.model_resources.retrieve.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
 
 
@@ -144,7 +164,7 @@ def test_retrieve_returns_resource() -> None:
     client.beta.rl.model_resources.retrieve = AsyncMock(
         return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
     )
-    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
@@ -271,7 +291,7 @@ def test_detach_marks_the_handle_closed_without_stopping() -> None:
 
 def test_context_manager_stops() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
@@ -284,7 +304,7 @@ def test_context_manager_stops() -> None:
 
 async def test_async_context_manager_stops() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
@@ -297,7 +317,7 @@ async def test_async_context_manager_stops() -> None:
 
 async def test_stop_forwards_force_to_the_api() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value={"id": "res-1"})
+    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 

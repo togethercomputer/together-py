@@ -5,8 +5,10 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 
+from together import NotFoundError
 from tests.unit.rl_wait import patch_wait
 from tests.unit._rl_fakes import FakeClient
 from together.lib.beta.rl import (
@@ -508,23 +510,100 @@ async def test_wait_for_creation_times_out() -> None:
         await trainer._wait_for_creation_async(timeout=0.0, interval=0.0)
 
 
+def _instant_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(session_client_module, "DEFAULT_SESSION_STOP_TIMEOUT", 0.0)
+    monkeypatch.setattr(session_client_module, "DEFAULT_SESSION_STOP_INTERVAL", 0.0)
+
+
 async def test_stop_async_closes_client() -> None:
     client = MagicMock()
-    client.beta.rl.sessions.stop = AsyncMock(return_value={"id": "stop-op"})
+    output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED")
+    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
+    client.beta.rl.sessions.retrieve = AsyncMock()
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
     result = await trainer.stop_async()
 
-    assert result == {"id": "stop-op"}
+    assert result is output
     assert trainer._loop.closed
     client.beta.rl.sessions.stop.assert_awaited_once_with("sess")
+    client.beta.rl.sessions.retrieve.assert_not_awaited()
+    client.close.assert_awaited_once()
+
+
+async def test_stop_async_waits_until_session_is_inactive(monkeypatch: pytest.MonkeyPatch) -> None:
+    _instant_stop(monkeypatch)
+    client = MagicMock()
+    output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
+    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
+    client.beta.rl.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
+    client.close = AsyncMock()
+    trainer = SessionClient("sess", _client=cast(Any, client))
+
+    result = await trainer.stop_async()
+
+    assert result is output
+    client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess")
+    client.close.assert_awaited_once()
+
+
+async def test_stop_async_treats_missing_session_as_inactive(monkeypatch: pytest.MonkeyPatch) -> None:
+    _instant_stop(monkeypatch)
+    request = httpx.Request("GET", "https://api.together.xyz/sessions/sess")
+    not_found = NotFoundError(
+        "Session not found",
+        response=httpx.Response(404, request=request),
+        body=None,
+    )
+    client = MagicMock()
+    output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
+    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
+    client.beta.rl.sessions.retrieve = AsyncMock(side_effect=not_found)
+    client.close = AsyncMock()
+    trainer = SessionClient("sess", _client=cast(Any, client))
+
+    result = await trainer.stop_async()
+
+    assert result is output
+    client.close.assert_awaited_once()
+
+
+async def test_stop_async_warns_on_timeout_and_closes_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    _instant_stop(monkeypatch)
+    client = MagicMock()
+    output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
+    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
+    client.beta.rl.sessions.retrieve = AsyncMock(
+        return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
+    )
+    client.close = AsyncMock()
+    trainer = SessionClient("sess", _client=cast(Any, client))
+
+    with pytest.warns(UserWarning, match="model_resources.stop\\(force=True\\)"):
+        result = await trainer.stop_async()
+
+    assert result is output
+    client.close.assert_awaited_once()
+
+
+async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
+    _instant_stop(monkeypatch)
+    client = MagicMock()
+    client.beta.rl.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING"))
+    client.beta.rl.sessions.retrieve = AsyncMock(side_effect=KeyboardInterrupt)
+    client.close = AsyncMock()
+    trainer = SessionClient("sess", _client=cast(Any, client))
+
+    with pytest.raises(KeyboardInterrupt):
+        await trainer._stop_remote()
+
     client.close.assert_awaited_once()
 
 
 def test_stop_marks_the_handle_closed() -> None:
     client = MagicMock()
-    client.beta.rl.sessions.stop = AsyncMock(return_value={"id": "stop-op"})
+    client.beta.rl.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
     trainer.stop()

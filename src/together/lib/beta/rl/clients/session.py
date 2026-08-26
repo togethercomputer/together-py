@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 import asyncio
+import warnings
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from dataclasses import field, dataclass
@@ -15,6 +16,7 @@ from .._loop import LoopGate, run_untracked, on_client_loop, run_untracked_async
 from ....._types import omit
 from ....._client import AsyncTogether
 from .._operations import require_output
+from ....._exceptions import NotFoundError
 from ....._base_client import DefaultAsyncHttpxClient
 from .....types.beta.rl.session import Session
 from .....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
@@ -30,14 +32,23 @@ _T = TypeVar("_T")
 
 
 _RUNNING_STATUS = "TRAINING_SESSION_STATUS_RUNNING"
+# Create treats STOPPING as failure: the session never became usable.
 _TERMINAL_STATUSES = {
     "TRAINING_SESSION_STATUS_STOPPED",
     "TRAINING_SESSION_STATUS_STOPPING",
     "TRAINING_SESSION_STATUS_ERROR",
     "TRAINING_SESSION_STATUS_EXPIRED",
 }
+# Stop waits until the LoRA slot is released. STOPPING still holds it.
+_INACTIVE_STATUSES = {
+    "TRAINING_SESSION_STATUS_STOPPED",
+    "TRAINING_SESSION_STATUS_ERROR",
+    "TRAINING_SESSION_STATUS_EXPIRED",
+}
 DEFAULT_SESSION_CREATION_TIMEOUT: float | None = 3600.0
 DEFAULT_SESSION_CREATION_INTERVAL: float = 10.0
+DEFAULT_SESSION_STOP_TIMEOUT: float | None = 300.0
+DEFAULT_SESSION_STOP_INTERVAL: float = 2.0
 DEFAULT_CHECKPOINT_TIMEOUT: float | None = 7200.0  # 2 h — large models (e.g. 400B) can take well over 5 min
 DEFAULT_OPERATION_TIMEOUT: float | None = _operations.DEFAULT_OPERATION_TIMEOUT
 DEFAULT_OPERATION_INTERVAL: float = _operations.DEFAULT_OPERATION_INTERVAL
@@ -222,7 +233,7 @@ class SessionClient:
         )
 
     def stop(self) -> Session | None:
-        """Stop the remote session. None when this handle was already torn down."""
+        """Stop the remote session and wait until it is inactive."""
         return self._loop.run_teardown(self._stop_remote())
 
     def detach(self) -> None:
@@ -380,10 +391,35 @@ class SessionClient:
         return cast(TrainingCheckpointResult, result)
 
     async def stop_async(self) -> Session | None:
-        """Stop the remote session. None when this handle was already torn down."""
+        """Stop the remote session and wait until it is inactive."""
         return await self._loop.run_teardown_async(self._stop_remote())
 
     async def _stop_remote(self) -> Session:
         output = await self._client.beta.rl.sessions.stop(self._session_id)
-        await self._client.close()
+        try:
+            if output.status not in _INACTIVE_STATUSES:
+                start = time.monotonic()
+                while True:
+                    try:
+                        current = await self._client.beta.rl.sessions.retrieve(self._session_id)
+                    except NotFoundError:
+                        # Already gone. Transient retrieve failures are retried by the
+                        # HTTP client (max_retries); remaining errors still raise.
+                        break
+                    if current.status in _INACTIVE_STATUSES:
+                        break
+                    if (
+                        DEFAULT_SESSION_STOP_TIMEOUT is not None
+                        and time.monotonic() - start >= DEFAULT_SESSION_STOP_TIMEOUT
+                    ):
+                        warnings.warn(
+                            f"Timed out waiting for session {self._session_id} to become inactive; "
+                            "it may still block model resource stop. Call "
+                            "model_resources.stop(force=True) to stop the resource anyway",
+                            stacklevel=2,
+                        )
+                        break
+                    await asyncio.sleep(DEFAULT_SESSION_STOP_INTERVAL)
+        finally:
+            await self._client.close()
         return output
