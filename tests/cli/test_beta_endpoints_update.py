@@ -190,6 +190,22 @@ class TestBetaEndpointsUpdate:
         assert result.exit_code != 0
         assert "pass both --min-replicas 0 and --max-replicas 0" in result.output.replace("\n", " ")
 
+    def test_update_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "update", "--help"])
+
+        output = " ".join(result.output.replace("│", " ").split())
+        assert result.exit_code == 0
+        assert "--scale-up-window" in output
+        assert "--scale-down-window" in output
+        assert "--scale-to-zero-window" not in output
+
+    def test_update_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "update", "--scale-to-zero-window"])
+
+        assert result.exit_code != 0
+        assert "Unknown option" in result.output
+        assert "--scale-to-zero-window" in result.output
+
     @pytest.mark.respx(base_url=base_url)
     def test_update_unknown_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
