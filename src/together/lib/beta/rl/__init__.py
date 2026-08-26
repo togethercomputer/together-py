@@ -55,6 +55,7 @@ from ....types.beta.rl.model_input_chunk_param import ModelInputChunk
 from ....types.beta.rl.encoded_text_chunk_param import EncodedTextChunk
 from ....types.beta.rl.loss_target_tokens_param import LossTargetTokens
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
+from ....types.beta.rl.routed_experts_param_param import RoutedExpertsParam as RoutedExperts
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 from ....types.beta.rl.muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfig
@@ -101,6 +102,7 @@ __all__ = [
     "DroLossParams",
     "CrossEntropyLossParams",
     "LossInputs",
+    "RoutedExperts",
     "Weights",
     "LossTargetTokens",
     "LossAdvantages",

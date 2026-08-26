@@ -24,6 +24,7 @@ from together.lib.beta.rl import (
     MuonParams,
     SampleResult,
     ForwardResult,
+    RoutedExperts,
     SessionClient,
     WandbMetadata,
     ModelInputChunk,
@@ -77,6 +78,15 @@ def test_lora_config_has_clean_public_name() -> None:
     assert LoraConfig(rank=8) == {"rank": 8}
 
 
+def test_routed_experts_supports_object_uri_without_inline_data() -> None:
+    routing = RoutedExperts(object_uri="s3://bucket/routing.bin", shape=[4, 2, 8])
+
+    assert routing == {
+        "object_uri": "s3://bucket/routing.bin",
+        "shape": [4, 2, 8],
+    }
+
+
 def test_trainer_only_session_rejects_generator_access() -> None:
     session = SessionClient("sess", _client=cast(Any, FakeClient()), _has_generator=False)
 
@@ -122,6 +132,27 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
     assert kwargs["model_inputs"] == model_inputs
+    trainer.stop()
+
+
+def test_sample_requests_object_backed_routing(monkeypatch: pytest.MonkeyPatch) -> None:
+    expected = SampleResult(policy_segments=[], sequences=[])
+    _patch_submit_and_wait(monkeypatch, SimpleNamespace(results=[expected]))
+    client = FakeClient()
+    trainer = _make_session(client)
+    model_input = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2]))])
+
+    result = _generator(trainer).sample(
+        prompt=model_input,
+        return_routed_experts=True,
+        return_routed_experts_object_uri=True,
+    )
+
+    assert result is expected
+    assert client.beta.rl.operations.last_call is not None
+    _, _, kwargs = client.beta.rl.operations.last_call
+    assert kwargs["return_routed_experts"] is True
+    assert kwargs["return_routed_experts_object_uri"] is True
     trainer.stop()
 
 
