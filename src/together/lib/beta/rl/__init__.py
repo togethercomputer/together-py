@@ -10,6 +10,7 @@
 from .clients import Trainer, Generator, SessionClient, ModelResourcesClient
 from .checkpoints import download_checkpoint, download_checkpoint_async
 from ....types.beta.rl.session import Session
+from ....types.beta.rl.checkpoint import Checkpoint
 from ....types.beta.rl.adam_params import AdamParams
 from ....types.beta.rl.muon_params import MuonParams
 from ....types.beta.rl.stop_reason import StopReason
@@ -18,6 +19,7 @@ from ....types.beta.rl.session_error import SessionError
 from ....types.beta.rl.weights_param import Weights
 from ....types.beta.rl.forward_result import Logprob, ForwardResult
 from ....types.beta.rl.session_status import SessionStatus
+from ....types.beta.rl.checkpoint_type import CheckpointType
 from ....types.beta.rl.dro_loss_params import DroLossParams
 from ....types.beta.rl.model_resources import ModelResources
 from ....types.beta.rl.ppo_loss_params import PpoLossParams
@@ -85,6 +87,8 @@ __all__ = [
     "AdamwOptimizerConfig",
     "MuonOptimizerConfig",
     "MuonScalingStrategy",
+    "Checkpoint",
+    "CheckpointType",
     "CheckpointVariant",
     "Gradient",
     "WeightSyncType",

@@ -873,6 +873,8 @@ def download_checkpoint(
 
 **Returns:** list of `Path` objects pointing to the downloaded files.
 
+Checkpoint metadata (type, base model, session, step, optional LoRA rank) is `client.beta.rl.checkpoints.retrieve(id)` and returns `Checkpoint`. `type` is `CheckpointType`: `CHECKPOINT_TYPE_TRAINING` or `CHECKPOINT_TYPE_INFERENCE`. Only inference checkpoints support download.
+
 #### `session.stop()`
 
 Stops the session. Called automatically when using `SessionClient` as a context manager.
@@ -1207,7 +1209,8 @@ if state.status == "TRAINING_SESSION_STATUS_ERROR":
 `TRAINING_SESSION_ERROR_CODE_SESSION_FAILED` — branch on `code`, not on `message`.
 
 `TrainingCheckpoint` and `InferenceCheckpoint` both carry `id`, `step`, and `created_at` — pass `id` to
-[`download_checkpoint(...)`](#download_checkpoint) or `resume_from_checkpoint_id`.
+[`download_checkpoint(...)`](#download_checkpoint), `resume_from_checkpoint_id`, or
+`client.beta.rl.checkpoints.retrieve(id)` for `Checkpoint` metadata.
 `InferenceCheckpoint` additionally carries `registration` (`None` until the checkpoint is registered), whose
 `registered_model_name` and `registered_at` are what [dedicated endpoint
 deployment](#deploying-a-checkpoint-as-a-dedicated-endpoint) consumes.
