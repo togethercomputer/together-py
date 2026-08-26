@@ -31,6 +31,7 @@ from together.lib.cli.utils._help_examples import (
     EVALS_HELP_EXAMPLES,
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
+    BATCHES_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
@@ -47,9 +48,11 @@ from together.lib.cli.utils._help_examples import (
     FILES_UPLOAD_HELP_EXAMPLES,
     BETA_CLUSTERS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
+    BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
+    BATCHES_DOWNLOAD_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     BETA_ENDPOINTS_AB_HELP_EXAMPLES,
@@ -539,6 +542,23 @@ evals_app.command(
 evals_app.command((f"{_CLI}.evals.list:list"), alias="ls", help="List eval jobs")
 evals_app.command((f"{_CLI}.evals.retrieve:retrieve"), alias="get", help="Get eval job details")
 evals_app.command((f"{_CLI}.evals.status:status"), help="Get an eval job's status")
+
+## Batches API commands
+batches_app = app.command(App(name="batches", help="Submit and manage batch jobs", help_epilogue=BATCHES_HELP_EXAMPLES))
+batches_app.command(
+    (f"{_CLI}.batches.submit:submit"),
+    help="Submit a new batch job",
+    help_epilogue=BATCHES_SUBMIT_HELP_EXAMPLES,
+    sort_key=1,
+)
+batches_app.command((f"{_CLI}.batches.list:list"), alias="ls", help="List batch jobs")
+batches_app.command((f"{_CLI}.batches.retrieve:retrieve"), alias="get", help="Get batch job details")
+batches_app.command(
+    (f"{_CLI}.batches.download:download"),
+    help="Download batch job output (and error) files",
+    help_epilogue=BATCHES_DOWNLOAD_HELP_EXAMPLES,
+)
+batches_app.command((f"{_CLI}.batches.cancel:cancel"), help="Cancel a batch job")
 
 ## Telemetry API commands
 telemetry_app = app.command(App(name="telemetry", help="Configure CLI telemetry"))
