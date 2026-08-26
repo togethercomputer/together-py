@@ -635,6 +635,19 @@ class Jig:
                     f"The following versions are available: {', '.join(str(v) for v in sorted(versions))}"
                 )
 
+    def prewarm(self, volume: str | None = None, images: list[str] | None = None) -> None:
+        """Silent best-effort cache prewarm in the target fleet; never blocks the flow."""
+        body: dict[str, Any] = {}
+        if volume:
+            body["volume"] = volume
+        if images:
+            body["images"] = images
+        try:
+            self.together._client.post("/deployments/prewarm", json=body, headers=self.together.auth_headers)
+        except Exception as e:
+            if DEBUG:
+                console.print(f"Prewarm request failed: {e}")
+
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
@@ -721,6 +734,8 @@ class Jig:
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
+        mounts = self.config.deploy.volume_mounts
+        self.prewarm(volume=mounts[0].name if mounts else None, images=[self.image_with_digest(tag)])
 
     def build_and_push(self, tag: str = "latest", docker_args: str | None = None) -> None:
         """One-shot build + push via a single buildx invocation (no --load).
@@ -773,6 +788,8 @@ class Jig:
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build+push failed")
         console.print("\N{CHECK MARK} Built and pushed")
+        mounts = self.config.deploy.volume_mounts
+        self.prewarm(volume=mounts[0].name if mounts else None, images=[self.image_with_digest(tag)])
 
     def deploy(
         self,
@@ -795,6 +812,12 @@ class Jig:
             else:
                 self.build_and_push(tag, docker_args)
             deployment_image = self.image_with_digest(tag)
+
+        # Built images prewarm inside push/build_and_push; warm explicitly passed
+        # images as well when they live in our registry.
+        if (existing_image or self.config.deploy.image) and deployment_image.startswith(self.registry()):
+            mounts = self.config.deploy.volume_mounts
+            self.prewarm(volume=mounts[0].name if mounts else None, images=[deployment_image])
 
         if build_only:
             console.print("\N{CHECK MARK} Build complete (--build-only)")
@@ -1346,6 +1369,8 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
         raise CliDiagnosticExit("Volume upload failed after the volume was created") from None
 
+    jig.prewarm(volume=name)
+
 
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
     """Update a volume and re-upload files"""
@@ -1363,6 +1388,8 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     console.print(f"\N{INFORMATION SOURCE} Updating volume {name}, version {new_version} from {source}")
     jig.api.volumes.update(name, content={"type": "files", "source_prefix": remote_prefix})
     console.print("\N{CHECK MARK} Volume updated successfully")
+
+    jig.prewarm(volume=name)
 
 
 def volumes_delete(jig: Jig, name: str) -> None:
