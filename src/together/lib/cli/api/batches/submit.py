@@ -12,6 +12,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.batches._utils import API_TO_ENDPOINT, BatchApiType, print_batch_detail
+from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
 def _check_path_exists(path_string: str) -> bool:
@@ -38,9 +39,14 @@ async def submit(
     """Submit a new batch job."""
     input_file_id = file
     if _check_path_exists(file):
-        file_upload = await show_loading_status(
-            "Uploading file...",
-            config.client.files.upload(Path(file), purpose="batch-api", check=False),
+        input_path = Path(file)
+        file_upload = await upload_file_with_progress(
+            config.client.files.upload,
+            input_path,
+            enabled=not config.json,
+            description=f"Uploading batch input file {input_path.name}",
+            purpose="batch-api",
+            check=False,
         )
         input_file_id = file_upload.id
 
