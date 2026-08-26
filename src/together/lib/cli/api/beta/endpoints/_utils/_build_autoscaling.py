@@ -111,7 +111,6 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[True],
     infer_replica_defaults: bool = ...,
@@ -125,7 +124,6 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[False],
     infer_replica_defaults: bool = ...,
@@ -138,7 +136,6 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = None,
     required: bool = False,
     infer_replica_defaults: bool = True,
@@ -177,7 +174,6 @@ def build_autoscaling(
             "max_replicas": max_replicas,
             "scale_up_window": normalize_duration(scale_up_window, option_name="--scale-up-window"),
             "scale_down_window": normalize_duration(scale_down_window, option_name="--scale-down-window"),
-            "scale_to_zero_window": normalize_duration(scale_to_zero_window, option_name="--scale-to-zero-window"),
             "scaling_metrics": scaling_metrics,
         }.items()
         if value is not None

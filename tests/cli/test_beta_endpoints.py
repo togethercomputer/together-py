@@ -179,6 +179,60 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Do not pass --model-revision when --model already includes a revision" in result.output
 
+    def test_deploy_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
+
+        output = " ".join(result.output.replace("│", " ").split())
+        assert result.exit_code == 0
+        assert "--scale-up-window" in output
+        assert "--scale-down-window" in output
+        assert "--scale-to-zero-window" not in output
+
+    def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "deploy", "--scale-to-zero-window"])
+
+        assert result.exit_code != 0
+        assert "Unknown option" in result.output
+        assert "--scale-to-zero-window" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_ignores_leftover_scale_to_zero_window(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--scale-to-zero-window",
+                "300s",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert "scaleToZeroWindow" not in deployment_body.get("autoscaling", {})
+        assert "scale_to_zero_window" not in deployment_body.get("autoscaling", {})
+
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(
         self,
