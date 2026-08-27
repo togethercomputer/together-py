@@ -36,7 +36,7 @@ from together.lib.beta.rl._arrays import coerce_sample, coerce_gradient, coerce_
 
 
 @pytest.fixture
-def numpy() -> Any:
+def np() -> Any:
     return pytest.importorskip("numpy")
 
 
@@ -67,7 +67,7 @@ class FakeTensor:
     def float(self) -> FakeTensor:
         return replace(self, values=self.values.astype("float32"), bfloat16=False)
 
-    def tolist(self) -> list[Any]:  # never called; present so the array duck test recognizes this
+    def tolist(self) -> list[Any]:  # Never called; present so the array duck test recognizes this.
         return cast(list[Any], self.values.tolist())
 
     def numpy(self) -> Any:
@@ -93,21 +93,26 @@ def _last_kwargs(client: FakeClient) -> dict[str, Any]:
     return client.beta.rl.operations.last_call[2]
 
 
-def test_numpy_array_value_takes_the_array_dtype(numpy: Any) -> None:
-    coerced = coerce_sample(_sample({"target_tokens": numpy.array([1, 2, 3], dtype=numpy.int32)}))
+def test_numpy_array_value_takes_the_array_dtype(np: Any) -> None:
+    coerced = coerce_sample(_sample({"target_tokens": np.array([1, 2, 3], dtype=np.int32)}))
 
     assert coerced["loss_fn_inputs"] == {"target_tokens": {"data": [1, 2, 3], "dtype": "int64"}}
+
+
+def _detached_device_tensor(np: Any) -> FakeTensor:
+    """A float tensor still attached to the autograd graph and resident on a device."""
+    return FakeTensor(
+        np.array([0.5, -0.25], dtype=np.float64),
+        is_floating_point=True,
+        requires_grad=True,
+        on_device=True,
+    )
 
 
 _TENSOR_CASES: list[tuple[str, Callable[[Any], FakeTensor], dict[str, Any]]] = [
     (
         "advantages",
-        lambda np: FakeTensor(
-            np.array([0.5, -0.25], dtype=np.float64),
-            is_floating_point=True,
-            requires_grad=True,
-            on_device=True,
-        ),
+        _detached_device_tensor,
         {"data": [0.5, -0.25], "dtype": "float32"},
     ),
     (
@@ -134,15 +139,15 @@ _TENSOR_CASES: list[tuple[str, Callable[[Any], FakeTensor], dict[str, Any]]] = [
     ids=["detached-and-moved-to-host", "bfloat16-widens", "integer-not-widened", "bool-becomes-int"],
 )
 def test_tensor_values_reach_the_wire_shape(
-    numpy: Any, key: str, make_tensor: Callable[[Any], FakeTensor], expected: dict[str, Any]
+    np: Any, key: str, make_tensor: Callable[[Any], FakeTensor], expected: dict[str, Any]
 ) -> None:
-    coerced = coerce_sample(_sample({key: make_tensor(numpy)}))
+    coerced = coerce_sample(_sample({key: make_tensor(np)}))
 
     assert coerced["loss_fn_inputs"][key] == expected
 
 
-def test_array_data_keeps_its_declared_dtype(numpy: Any) -> None:
-    tensor = TensorData(data=numpy.array([1, 2, 3], dtype=numpy.int64), dtype="int64")
+def test_array_data_keeps_its_declared_dtype(np: Any) -> None:
+    tensor = TensorData(data=np.array([1, 2, 3], dtype=np.int64), dtype="int64")
 
     coerced = coerce_sample(_sample({"target_tokens": tensor}))
 
@@ -183,23 +188,23 @@ def test_float_list_overrides_the_pinned_dtype() -> None:
     assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [0.5, 1.5], "dtype": "float32"}
 
 
-def test_lossy_declared_dtype_is_rejected(numpy: Any) -> None:
-    tensor = TensorData(data=numpy.array([1.5, 2.5], dtype=numpy.float32), dtype="int64")
+def test_lossy_declared_dtype_is_rejected(np: Any) -> None:
+    tensor = TensorData(data=np.array([1.5, 2.5], dtype=np.float32), dtype="int64")
 
     with pytest.raises(ValueError, match="declares dtype 'int64'"):
         coerce_sample(_sample({"target_tokens": tensor}))
 
 
-def test_widening_declared_dtype_is_applied(numpy: Any) -> None:
-    tensor = TensorData(data=numpy.array([1, 2], dtype=numpy.int64), dtype="float32")
+def test_widening_declared_dtype_is_applied(np: Any) -> None:
+    tensor = TensorData(data=np.array([1, 2], dtype=np.int64), dtype="float32")
 
     coerced = coerce_sample(_sample({"weights": tensor}))
 
     assert coerced["loss_fn_inputs"]["weights"] == {"data": [1.0, 2.0], "dtype": "float32"}
 
 
-def test_numpy_scalars_in_list_data_serialize(numpy: Any) -> None:
-    tensor = TensorData(data=[numpy.float32(0.5), numpy.float32(1.5)], dtype="float32")
+def test_numpy_scalars_in_list_data_serialize(np: Any) -> None:
+    tensor = TensorData(data=[np.float32(0.5), np.float32(1.5)], dtype="float32")
 
     coerced = coerce_sample(_sample({"advantages": tensor}))
 
@@ -215,8 +220,8 @@ def test_json_ready_sample_keeps_its_values() -> None:
     assert coerced["model_input"] == sample["model_input"]
 
 
-def test_caller_dict_is_not_mutated(numpy: Any) -> None:
-    target_tokens = numpy.array([1, 2], dtype=numpy.int64)
+def test_caller_dict_is_not_mutated(np: Any) -> None:
+    target_tokens = np.array([1, 2], dtype=np.int64)
     inputs: dict[str, Any] = {"target_tokens": target_tokens}
     sample = _sample(inputs)
 
@@ -225,8 +230,8 @@ def test_caller_dict_is_not_mutated(numpy: Any) -> None:
     assert inputs["target_tokens"] is target_tokens
 
 
-def test_multidimensional_array_is_rejected(numpy: Any) -> None:
-    sample = _sample({"target_tokens": numpy.zeros((2, 2), dtype=numpy.int64)})
+def test_multidimensional_array_is_rejected(np: Any) -> None:
+    sample = _sample({"target_tokens": np.zeros((2, 2), dtype=np.int64)})
 
     with pytest.raises(ValueError, match="2-dimensional"):
         coerce_sample(sample)
@@ -246,24 +251,24 @@ def test_unsupported_value_type_is_rejected(value: Any) -> None:
         coerce_sample(_sample({"target_tokens": value}))
 
 
-def test_float_token_array_is_rejected(numpy: Any) -> None:
+def test_float_token_array_is_rejected(np: Any) -> None:
     with pytest.raises(ValueError, match="must be an integer array"):
-        coerce_model_input(_model_input(numpy.array([1.0, 2.0])))
+        coerce_model_input(_model_input(np.array([1.0, 2.0])))
 
 
-def test_prompt_tokens_become_integers(numpy: Any) -> None:
-    coerced = coerce_model_input(_model_input(FakeTensor(numpy.array([101, 102], dtype=numpy.int64))))
+def test_prompt_tokens_become_integers(np: Any) -> None:
+    coerced = coerce_model_input(_model_input(FakeTensor(np.array([101, 102], dtype=np.int64))))
 
     assert coerced["chunks"][0]["encoded_text"]["tokens"] == [101, 102]  # type: ignore[index]
 
 
-def test_gradient_data_keeps_its_proto_dtype(numpy: Any) -> None:
-    gradient = Gradient(data=numpy.array([0.5, -0.5], dtype=numpy.float32), dtype="D_TYPE_FLOAT32")
+def test_gradient_data_keeps_its_proto_dtype(np: Any) -> None:
+    gradient = Gradient(data=np.array([0.5, -0.5], dtype=np.float32), dtype="D_TYPE_FLOAT32")
 
     assert coerce_gradient(gradient) == {"data": [0.5, -0.5], "dtype": "D_TYPE_FLOAT32"}
 
 
-def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.MonkeyPatch, numpy: Any) -> None:
+def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     client = FakeClient()
     session = SessionClient("sess", _client=cast(Any, client))
@@ -271,11 +276,11 @@ def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.Monkey
     session.trainer.forward_backward(
         samples=[
             Sample(
-                model_input=_model_input(numpy.array([1, 2], dtype=numpy.int64)),
+                model_input=_model_input(np.array([1, 2], dtype=np.int64)),
                 loss_fn_inputs={
-                    "target_tokens": numpy.array([1, 2], dtype=numpy.int64),
-                    "logprobs": numpy.array([-0.5, -0.25], dtype=numpy.float32),
-                    "advantages": numpy.array([1.0, 1.0], dtype=numpy.float32),
+                    "target_tokens": np.array([1, 2], dtype=np.int64),
+                    "logprobs": np.array([-0.5, -0.25], dtype=np.float32),
+                    "advantages": np.array([1.0, 1.0], dtype=np.float32),
                 },
             )
         ],
@@ -296,7 +301,7 @@ def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.Monkey
     session.stop()
 
 
-def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPatch, numpy: Any) -> None:
+def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     session = SessionClient("sess", _client=cast(Any, FakeClient()))
 
@@ -305,9 +310,9 @@ def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPat
             samples=[
                 _sample(
                     {
-                        "target_tokens": numpy.array([1, 2], dtype=numpy.int64),
-                        "logprobs": numpy.array([-0.5, -0.25], dtype=numpy.float32),
-                        "advantages": numpy.array([1, 1], dtype=numpy.int64),
+                        "target_tokens": np.array([1, 2], dtype=np.int64),
+                        "logprobs": np.array([-0.5, -0.25], dtype=np.float32),
+                        "advantages": np.array([1, 1], dtype=np.int64),
                     }
                 )
             ],
@@ -316,14 +321,14 @@ def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPat
     session.stop()
 
 
-def test_custom_forward_backward_serializes_gradient_arrays(monkeypatch: pytest.MonkeyPatch, numpy: Any) -> None:
+def test_custom_forward_backward_serializes_gradient_arrays(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, SimpleNamespace(logprobs=[]))
     client = FakeClient()
     session = SessionClient("sess", _client=cast(Any, client))
 
     session.trainer.custom_forward_backward(
-        samples=[_sample({"target_tokens": numpy.array([1, 2], dtype=numpy.int64)})],
-        gradients=[Gradient(data=numpy.array([0.5, -0.5], dtype=numpy.float32))],
+        samples=[_sample({"target_tokens": np.array([1, 2], dtype=np.int64)})],
+        gradients=[Gradient(data=np.array([0.5, -0.5], dtype=np.float32))],
     )
 
     kwargs = _last_kwargs(client)
@@ -331,25 +336,25 @@ def test_custom_forward_backward_serializes_gradient_arrays(monkeypatch: pytest.
     session.stop()
 
 
-def test_sample_batch_serializes_array_prompts(monkeypatch: pytest.MonkeyPatch, numpy: Any) -> None:
+def test_sample_batch_serializes_array_prompts(monkeypatch: pytest.MonkeyPatch, np: Any) -> None:
     patch_wait(monkeypatch, SimpleNamespace(results=[SampleResult(policy_segments=[], sequences=[])]))
     client = FakeClient()
     session = SessionClient("sess", _client=cast(Any, client))
 
-    session.generator.sample_batch(prompts=[_model_input(numpy.array([7, 8], dtype=numpy.int32))])
+    session.generator.sample_batch(prompts=[_model_input(np.array([7, 8], dtype=np.int32))])
 
     kwargs = _last_kwargs(client)
     assert json.loads(json.dumps(kwargs["model_inputs"])) == [{"chunks": [{"encoded_text": {"tokens": [7, 8]}}]}]
     session.stop()
 
 
-def test_numpy_scalars_in_lists_become_json_numbers(numpy: Any) -> None:
+def test_numpy_scalars_in_lists_become_json_numbers(np: Any) -> None:
     """A list built with `list(array)` holds numpy scalars, which `json` cannot encode."""
     sample = _sample(
-        {"target_tokens": list(numpy.array([1, 2], dtype=numpy.int64))},
-        tokens=list(numpy.array([101, 102], dtype=numpy.int64)),
+        {"target_tokens": list(np.array([1, 2], dtype=np.int64))},
+        tokens=list(np.array([101, 102], dtype=np.int64)),
     )
-    gradient = Gradient(data=list(numpy.array([0.5], dtype=numpy.float32)), dtype="D_TYPE_FLOAT32")
+    gradient = Gradient(data=list(np.array([0.5], dtype=np.float32)), dtype="D_TYPE_FLOAT32")
 
     coerced = coerce_sample(sample)
 
@@ -364,7 +369,41 @@ def test_numpy_scalars_in_lists_become_json_numbers(numpy: Any) -> None:
     assert coerced["model_input"]["chunks"][0]["encoded_text"]["tokens"] == [101, 102]  # type: ignore[index]
 
 
-def test_boolean_list_becomes_integers(numpy: Any) -> None:
-    coerced = coerce_sample(_sample({"mask": [True, numpy.bool_(False)]}))
+def test_boolean_list_becomes_integers(np: Any) -> None:
+    coerced = coerce_sample(_sample({"mask": [True, np.bool_(False)]}))
 
     assert coerced["loss_fn_inputs"] == {"mask": {"data": [1, 0], "dtype": "int64"}}
+
+
+def test_gradient_without_array_data_is_untouched() -> None:
+    gradient = Gradient(data=b"packed", dtype="D_TYPE_FLOAT32")  # type: ignore[typeddict-item]
+
+    assert coerce_gradient(gradient) is gradient
+
+
+def test_tensor_mapping_keeps_its_other_keys(np: Any) -> None:
+    tensor = TensorData(data=np.array([1, 2], dtype=np.int64), dtype="int64", shape=[2])
+
+    coerced = coerce_sample(_sample({"target_tokens": tensor}))
+
+    assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [1, 2], "dtype": "int64", "shape": [2]}
+
+
+def test_complex_array_under_a_declared_dtype_is_rejected(np: Any) -> None:
+    tensor = TensorData(data=np.array([1 + 2j], dtype=np.complex128), dtype="float32")
+
+    with pytest.raises(ValueError, match="unsupported dtype"):
+        coerce_sample(_sample({"target_tokens": tensor}))
+
+
+def test_sparse_tensor_is_rejected(np: Any) -> None:
+    class SparseTensor(FakeTensor):
+        is_sparse = True
+
+    with pytest.raises(ValueError, match="sparse tensor"):
+        coerce_sample(_sample({"target_tokens": SparseTensor(np.array([1, 2], dtype=np.int64))}))
+
+
+def test_errors_name_the_offending_sample(np: Any) -> None:
+    with pytest.raises(ValueError, match=r"samples\[1\]\.loss_fn_inputs\['target_tokens'\]"):
+        coerce_sample(_sample({"target_tokens": np.zeros((2, 2), dtype=np.int64)}), "samples[1]")

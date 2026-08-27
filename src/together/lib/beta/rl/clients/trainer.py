@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
 from .._arrays import coerce_sample, coerce_gradient
-from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, validate_sample, validate_loss_config
+from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, InputSpec, validate_sample, validate_loss_config
 from ....._types import Omit, omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
@@ -41,6 +41,17 @@ def _resolve_loss_type(loss: LossConfig) -> LossConfig:
     return {**loss, "type": proto} if proto is not None else loss
 
 
+def _coerced_batch(samples: Iterable[Sample], inputs: InputSpec) -> list[Sample]:
+    """Coerce every sample into its wire shape and validate it, labelled by batch index."""
+    batch: list[Sample] = []
+    for index, sample in enumerate(samples):
+        label = f"samples[{index}]"
+        coerced = coerce_sample(sample, label)
+        validate_sample(coerced, inputs, label=label)
+        batch.append(coerced)
+    return batch
+
+
 async def _submit_forward_backward(
     session: SessionClient,
     *,
@@ -55,11 +66,8 @@ async def _submit_forward_backward(
     gradients, and ``return_loss_fn_outputs`` returns the per-sample output tensors. Either
     can be used without the other.
     """
-    batch = [coerce_sample(sample) for sample in samples]
     proto_loss = _resolve_loss_type(loss)
-    spec = validate_loss_config(proto_loss)
-    for index, sample in enumerate(batch):
-        validate_sample(sample, spec, label=f"samples[{index}]")
+    batch = _coerced_batch(samples, validate_loss_config(proto_loss))
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
@@ -84,13 +92,14 @@ async def _submit_custom_forward_backward(
     gradients: Iterable[Gradient],
 ) -> CustomForwardBackwardOperation:
     """POST a custom_forward_backward operation without waiting for it."""
-    batch = [coerce_sample(sample) for sample in samples]
-    for index, sample in enumerate(batch):
-        validate_sample(sample, CUSTOM_FORWARD_BACKWARD_INPUTS, label=f"samples[{index}]")
+    batch = _coerced_batch(samples, CUSTOM_FORWARD_BACKWARD_INPUTS)
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
-        body={"samples": batch, "gradients": [coerce_gradient(gradient) for gradient in gradients]},
+        body={
+            "samples": batch,
+            "gradients": [coerce_gradient(gradient, f"gradients[{index}]") for index, gradient in enumerate(gradients)],
+        },
         expected_type=OperationCustomForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
