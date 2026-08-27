@@ -130,6 +130,23 @@ class TestBatchesSubmit:
         upload_mock.assert_called_once()
         assert upload_mock.call_args.kwargs["purpose"] == "batch-api"
         assert upload_mock.call_args.kwargs["check"] is False
+        assert upload_mock.call_args.kwargs["progress_callback"] is not None
+        payload = json.loads(cast(Call, create.calls[0]).request.content)
+        assert payload["input_file_id"] == "file-uploaded"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_submit_local_file_json_disables_upload_progress(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        sample = tmp_path / "requests.jsonl"
+        sample.write_text('{"custom_id": "1"}\n', encoding="utf-8")
+        create = respx_mock.post("/batches").mock(return_value=httpx.Response(200, json=_BATCH_CREATE))
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            upload_mock.return_value = _file_response(id="file-uploaded")
+            result = cli_runner.invoke(["batches", "submit", str(sample), "chat.completions", "--json"])
+        assert result.exit_code == 0
+        upload_mock.assert_called_once()
+        assert upload_mock.call_args.kwargs["progress_callback"] is None
         payload = json.loads(cast(Call, create.calls[0]).request.content)
         assert payload["input_file_id"] == "file-uploaded"
 
