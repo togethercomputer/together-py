@@ -12,6 +12,20 @@ Methods:
 
 # Beta
 
+## Organization
+
+### Usage
+
+Types:
+
+```python
+from together.types.beta.organization import (
+    BillingUsageLineItem,
+    BillingUsageReport,
+    BillingUsageWindow,
+)
+```
+
 ## Endpoints
 
 Types:

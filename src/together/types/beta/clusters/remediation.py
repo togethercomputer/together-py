@@ -6,7 +6,60 @@ from typing_extensions import Literal
 
 from ...._models import BaseModel
 
-__all__ = ["Remediation", "LinkedAlert"]
+__all__ = [
+    "Remediation",
+    "LinkedAlert",
+    "LinkedAlertAnnotation",
+    "LinkedAlertAnnotationSlurmNodeUnavailable",
+    "LinkedAlertAnnotationXid",
+    "LinkedAlertAnnotationXidEvent",
+]
+
+
+class LinkedAlertAnnotationSlurmNodeUnavailable(BaseModel):
+    """Details for a Slurm node unavailable passive health check alert."""
+
+    reason: str
+    """Drain reason reported for the unavailable Slurm node."""
+
+
+class LinkedAlertAnnotationXidEvent(BaseModel):
+    """One NVIDIA Xid code observed during the alert window."""
+
+    count: int
+    """Number of times this Xid code appeared in the alert window."""
+
+    mnemonic: str
+    """Driver mnemonic for the Xid code when metadata is available."""
+
+    xid_code: str
+    """NVIDIA Xid code, such as `79`."""
+
+
+class LinkedAlertAnnotationXid(BaseModel):
+    """Details for a DmesgXidError passive health check alert."""
+
+    events: List[LinkedAlertAnnotationXidEvent]
+    """Xid events observed during the alert window."""
+
+
+class LinkedAlertAnnotation(BaseModel):
+    """Typed content parsed from passive health check alert annotations."""
+
+    description: str
+    """Static explanation for the alert."""
+
+    summary_line: str
+    """Per-firing summary line parsed from the evidence annotation."""
+
+    title: str
+    """Alert title from the Alertmanager summary annotation."""
+
+    slurm_node_unavailable: Optional[LinkedAlertAnnotationSlurmNodeUnavailable] = None
+    """Details for a Slurm node unavailable passive health check alert."""
+
+    xid: Optional[LinkedAlertAnnotationXid] = None
+    """Details for a DmesgXidError passive health check alert."""
 
 
 class LinkedAlert(BaseModel):
@@ -15,8 +68,11 @@ class LinkedAlert(BaseModel):
     alert_name: str
     """Alertmanager alert name."""
 
+    annotation: LinkedAlertAnnotation
+    """Typed content parsed from passive health check alert annotations."""
+
     annotations: Dict[str, str]
-    """Alertmanager annotations as key-value strings."""
+    """Legacy Alertmanager annotations as key-value strings."""
 
     cluster_id: str
     """Cluster UUID the alert was raised against."""
