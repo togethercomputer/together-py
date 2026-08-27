@@ -141,7 +141,7 @@ def test_tensor_values_reach_the_wire_shape(
     assert coerced["loss_fn_inputs"][key] == expected
 
 
-def test_tensor_data_with_array_data_keeps_its_declared_dtype(numpy: Any) -> None:
+def test_array_data_keeps_its_declared_dtype(numpy: Any) -> None:
     tensor = TensorData(data=numpy.array([1, 2, 3], dtype=numpy.int64), dtype="int64")
 
     coerced = coerce_sample(_sample({"target_tokens": tensor}))
@@ -149,7 +149,7 @@ def test_tensor_data_with_array_data_keeps_its_declared_dtype(numpy: Any) -> Non
     assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [1, 2, 3], "dtype": "int64"}
 
 
-def test_plain_lists_infer_the_dtype_their_key_pins() -> None:
+def test_lists_infer_the_dtype_their_key_pins() -> None:
     # `advantages` is float32 even though every value is an int, matching tinker's key table.
     coerced = coerce_sample(_sample({"target_tokens": [1, 2], "advantages": [0, 1]}))
 
@@ -176,19 +176,34 @@ def test_bool_list_becomes_integers() -> None:
     assert coerced["loss_fn_inputs"]["mask"] == {"data": [1, 0], "dtype": "int64"}
 
 
-def test_float_list_overrides_the_dtype_its_key_pins() -> None:
+def test_float_list_overrides_the_pinned_dtype() -> None:
     # int64 would contradict the data; float32 is what validate_sample rejects by name.
     coerced = coerce_sample(_sample({"target_tokens": [0.5, 1.5]}))
 
     assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [0.5, 1.5], "dtype": "float32"}
 
 
-def test_declared_dtype_casts_the_array_it_describes(numpy: Any) -> None:
+def test_lossy_declared_dtype_is_rejected(numpy: Any) -> None:
     tensor = TensorData(data=numpy.array([1.5, 2.5], dtype=numpy.float32), dtype="int64")
 
-    coerced = coerce_sample(_sample({"target_tokens": tensor}))
+    with pytest.raises(ValueError, match="declares dtype 'int64'"):
+        coerce_sample(_sample({"target_tokens": tensor}))
 
-    assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [1, 2], "dtype": "int64"}
+
+def test_widening_declared_dtype_is_applied(numpy: Any) -> None:
+    tensor = TensorData(data=numpy.array([1, 2], dtype=numpy.int64), dtype="float32")
+
+    coerced = coerce_sample(_sample({"weights": tensor}))
+
+    assert coerced["loss_fn_inputs"]["weights"] == {"data": [1.0, 2.0], "dtype": "float32"}
+
+
+def test_numpy_scalars_in_list_data_serialize(numpy: Any) -> None:
+    tensor = TensorData(data=[numpy.float32(0.5), numpy.float32(1.5)], dtype="float32")
+
+    coerced = coerce_sample(_sample({"advantages": tensor}))
+
+    assert json.dumps(coerced["loss_fn_inputs"]["advantages"]["data"]) == "[0.5, 1.5]"
 
 
 def test_json_ready_sample_keeps_its_values() -> None:
@@ -281,7 +296,7 @@ def test_forward_backward_submits_serializable_arrays(monkeypatch: pytest.Monkey
     session.stop()
 
 
-def test_integer_advantages_array_still_fails_dtype_validation(monkeypatch: pytest.MonkeyPatch, numpy: Any) -> None:
+def test_integer_advantages_array_fails_validation(monkeypatch: pytest.MonkeyPatch, numpy: Any) -> None:
     patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
     session = SessionClient("sess", _client=cast(Any, FakeClient()))
 

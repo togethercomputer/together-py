@@ -26,7 +26,6 @@ from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 _WireDtype: TypeAlias = Literal["int64", "float32"]
 
 _KIND_DTYPES: Mapping[str, _WireDtype] = {"f": "float32", "i": "int64", "u": "int64"}
-_NUMPY_DTYPES: Mapping[str, str] = {"int64": "int64", "float32": "float32"}
 
 
 def _to_array(value: object) -> Any | None:
@@ -34,10 +33,10 @@ def _to_array(value: object) -> Any | None:
 
     Recognized by the attributes actually used downstream, so anything else falls through
     to the caller's own error rather than an ``AttributeError`` from deep inside here.
-    Torch tensors are detached and moved to the host, and floats narrower than ``float32``
-    (``bfloat16`` above all) widen — numpy cannot represent them, and ``float32`` is the
-    only float the wire carries. Booleans become integers, since JSON would otherwise
-    render them as ``true``/``false`` under an ``int64`` dtype.
+    Torch tensors are detached and moved to the host, and every float tensor becomes
+    ``float32`` — the only float the wire carries, and the only one numpy can take a
+    ``bfloat16`` to. Booleans become integers, since JSON would otherwise render them as
+    ``true``/``false`` under an ``int64`` dtype.
     """
     if not (hasattr(value, "ndim") and hasattr(value, "dtype") and hasattr(value, "tolist")):
         return None
@@ -59,22 +58,14 @@ def _to_wire_list(array: Any, label: str) -> list[Any]:
     return cast("list[Any]", array.tolist())
 
 
-def _list_dtype(key: str, values: Sequence[object]) -> _WireDtype:
-    """Infer a wire dtype for a plain list of numbers.
+def _list_dtype(key: str, values: Sequence[Any]) -> _WireDtype:
+    """Pick a wire dtype for an already-validated list of numbers.
 
     A key with a single accepted dtype pins it, so ``advantages=[0, 1]`` is ``float32``
     the way tinker's key table has it. Floating-point values override that pin rather than
     being relabeled as integers: the resulting dtype is what ``validate_sample`` rejects,
     which names the offending key and its accepted dtypes.
-
-    Raises:
-        ValueError: If ``values`` holds anything that is not a real number.
     """
-    if not all(isinstance(value, numbers.Real) for value in values):
-        raise ValueError(
-            f"loss_fn_inputs[{key!r}] must be a flat list of numbers; flatten a nested one, or pass"
-            " a torch/numpy array or a TensorData with an explicit dtype instead."
-        )
     if any(not isinstance(value, numbers.Integral) for value in values):
         return "float32"
     allowed = INPUT_DTYPES.get(key)
@@ -83,9 +74,36 @@ def _list_dtype(key: str, values: Sequence[object]) -> _WireDtype:
     return "int64"
 
 
-def _to_json_numbers(values: Sequence[Any]) -> list[Any]:
-    """Narrow a numeric list onto the plain ints and floats ``json`` can encode."""
+def _to_json_numbers(values: Sequence[Any], label: str) -> list[Any]:
+    """Narrow a numeric sequence onto the plain ints and floats ``json`` can encode.
+
+    Raises:
+        ValueError: If the sequence holds anything that is not a real number, which a
+            nested list is the usual cause of.
+    """
+    if not all(isinstance(value, numbers.Real) for value in values):
+        raise ValueError(
+            f"{label} must be a flat list of numbers; flatten a nested one, or pass a torch/numpy array instead."
+        )
     return [int(value) if isinstance(value, numbers.Integral) else float(value) for value in values]
+
+
+def _cast_to_declared(array: Any, declared: _WireDtype, label: str) -> Any:
+    """Align an array with the dtype its own tensor mapping declares.
+
+    A widening cast is silent, the way tinker's ``TensorData`` does it. A lossy one is not:
+    truncating ``1.5`` to ``1`` under a declared ``int64`` would corrupt token IDs with no
+    signal, and the bare-array branch already refuses to recast silently.
+
+    Raises:
+        ValueError: If the declared dtype cannot hold the array's values.
+    """
+    if declared == "int64" and array.dtype.kind == "f":
+        raise ValueError(
+            f"{label} holds floating-point values but declares dtype 'int64'; cast the array"
+            " yourself if truncation is intended, or declare 'float32'."
+        )
+    return array.astype(declared)
 
 
 def _coerce_tensor(key: str, value: object) -> TensorData:
@@ -98,14 +116,18 @@ def _coerce_tensor(key: str, value: object) -> TensorData:
     label = f"loss_fn_inputs[{key!r}]"
     if isinstance(value, Mapping):
         tensor = cast("Mapping[str, Any]", value)
-        array = _to_array(tensor.get("data"))
+        data = tensor.get("data")
+        array = _to_array(data)
         if array is None:
-            return cast("TensorData", value)
-        # Cast to the dtype the caller declared, as tinker's TensorData does, so `data` and
-        # `dtype` cannot contradict each other on the wire.
-        numpy_dtype = _NUMPY_DTYPES.get(cast(str, tensor.get("dtype")))
-        if numpy_dtype is not None:
-            array = array.astype(numpy_dtype)
+            if not isinstance(data, (list, tuple)):
+                return cast("TensorData", value)
+            # Narrowed even though it is already a list: it may hold numpy scalars, which
+            # `json` cannot encode.
+            values = cast("Sequence[Any]", data)
+            return cast("TensorData", {**tensor, "data": _to_json_numbers(values, f"{label}['data']")})
+        declared = tensor.get("dtype")
+        if declared == "int64" or declared == "float32":
+            array = _cast_to_declared(array, declared, f"{label}['data']")
         return cast("TensorData", {**tensor, "data": _to_wire_list(array, f"{label}['data']")})
 
     array = _to_array(value)
@@ -119,8 +141,7 @@ def _coerce_tensor(key: str, value: object) -> TensorData:
 
     if isinstance(value, (list, tuple)):
         values = cast("Sequence[Any]", value)
-        dtype = _list_dtype(key, values)  # rejects non-numbers before they reach _to_json_numbers
-        return {"data": _to_json_numbers(values), "dtype": dtype}
+        return {"data": _to_json_numbers(values, label), "dtype": _list_dtype(key, values)}
 
     raise ValueError(
         f"{label} must be a TensorData mapping, a torch/numpy array, or a numeric list, got {type(value).__name__}."
