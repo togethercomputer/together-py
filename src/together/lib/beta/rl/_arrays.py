@@ -10,8 +10,7 @@ Arrays are recognized by duck typing rather than ``isinstance``: torch and numpy
 optional dependencies, and a caller who passes plain lists should not pull either import in.
 
 Every helper takes a ``label`` naming the field it is working on, so an error out of a
-256-sample batch says which sample and which key it came from. The labels match the ones
-``validate_sample`` uses, since the submitters run both passes under the same index.
+256-sample batch says which sample and which key it came from.
 """
 
 from __future__ import annotations
@@ -41,13 +40,14 @@ def _to_array(value: object, label: str) -> Any:
     as ``true``/``false`` under an ``int64`` dtype.
 
     Raises:
-        ValueError: If the value is a sparse tensor, which the wire cannot carry.
+        ValueError: If the value is a sparse tensor or holds a dtype the wire cannot carry.
     """
     if not (hasattr(value, "ndim") and hasattr(value, "dtype") and hasattr(value, "tolist")):
         return None
     detach = getattr(value, "detach", None)
     if detach is not None:  # A torch tensor; numpy arrays have no autograd graph or device.
-        if getattr(value, "is_sparse", False) or getattr(value, "is_sparse_csr", False):
+        # Every sparse layout, not just COO and CSR: the rest cannot reach `.numpy()` either.
+        if str(getattr(value, "layout", "torch.strided")) != "torch.strided":
             raise ValueError(
                 f"{label} is a sparse tensor, but training operations accept dense tensors only;"
                 " call .to_dense() before submitting."
@@ -55,19 +55,11 @@ def _to_array(value: object, label: str) -> Any:
         tensor = detach().cpu()
         value = (tensor.float() if tensor.dtype.is_floating_point else tensor).numpy()
     array = cast(Any, value)
-    return array.astype("int64") if array.dtype.kind == "b" else array
-
-
-def _wire_dtype(array: Any, label: str) -> _WireDtype:
-    """Map an array's element kind onto the dtype the wire names.
-
-    Raises:
-        ValueError: If the wire has no dtype for that kind.
-    """
-    dtype = _KIND_DTYPES.get(array.dtype.kind)
-    if dtype is None:
+    if array.dtype.kind == "b":
+        array = array.astype("int64")
+    if array.dtype.kind not in _KIND_DTYPES:
         raise ValueError(f"{label} has unsupported dtype {array.dtype}; use an integer or float array.")
-    return dtype
+    return array
 
 
 def _to_wire_list(array: Any, label: str) -> list[int | float]:
@@ -90,7 +82,7 @@ def _to_json_number(value: Any, label: str) -> int | float:
     Raises:
         ValueError: If the element is not a number, which a nested list is the usual cause of.
     """
-    if type(value) is int or type(value) is float:  # noqa: E721
+    if type(value) is int or type(value) is float:
         return value  # The common case, and the only one that needs no work at all.
     item = getattr(value, "item", None)  # Every numpy and torch scalar has one; native numbers do not.
     scalar = item() if item is not None else value
@@ -131,16 +123,16 @@ def _cast_to_declared(array: Any, declared: _WireDtype, label: str) -> Any:
     rounding ``1.5`` to ``1`` under a declared ``int64`` would corrupt token IDs with no signal.
 
     Raises:
-        ValueError: If the array's dtype is one the wire has no name for, or if the declared
-            dtype cannot hold its values.
+        ValueError: If the declared dtype cannot hold the array's values.
     """
-    _wire_dtype(array, label)  # An unsupported kind is an error here, not a silent astype().
     if declared == "int64" and array.dtype.kind == "f":
         raise ValueError(
             f"{label} holds floating-point values but declares dtype 'int64'; cast the array"
             " yourself if truncation is intended, or declare 'float32'."
         )
-    return array.astype(declared)
+    # Widening integers is the only cast that changes a value. Sending a float array through
+    # float32 would round-trip it instead, so 0.1 reaches the wire as 0.10000000149011612.
+    return array.astype("float32") if declared == "float32" and array.dtype.kind != "f" else array
 
 
 def _coerce_tensor(key: str, value: object, label: str) -> TensorData:
@@ -169,11 +161,11 @@ def _coerce_tensor(key: str, value: object, label: str) -> TensorData:
     if array is not None:
         # An array keeps its own dtype, as tinker's does, so an integer `advantages` array
         # fails the pinned-dtype check rather than being silently widened.
-        return {"data": _to_wire_list(array, label), "dtype": _wire_dtype(array, label)}
+        return {"data": _to_wire_list(array, label), "dtype": _KIND_DTYPES[array.dtype.kind]}
 
     if isinstance(value, (list, tuple)):
-        data = _to_json_numbers(cast(Sequence[Any], value), label)
-        return {"data": data, "dtype": _list_dtype(key, data)}
+        numbers = _to_json_numbers(cast(Sequence[Any], value), label)
+        return {"data": numbers, "dtype": _list_dtype(key, numbers)}
 
     raise ValueError(
         f"{label} must be a TensorData mapping, a torch/numpy array, or a numeric list, got {type(value).__name__}."

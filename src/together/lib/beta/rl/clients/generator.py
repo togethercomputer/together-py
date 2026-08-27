@@ -30,7 +30,7 @@ async def _submit_sample_batch(
     """POST a sample operation without waiting for it."""
     body: dict[str, Any] = {
         "model_inputs": [
-            coerce_model_input(model_input, f"model_inputs[{index}]") for index, model_input in enumerate(model_inputs)
+            coerce_model_input(model_input, f"prompts[{index}]") for index, model_input in enumerate(model_inputs)
         ]
     }
     if sampling_params is not None:

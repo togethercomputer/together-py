@@ -41,8 +41,12 @@ def _resolve_loss_type(loss: LossConfig) -> LossConfig:
     return {**loss, "type": proto} if proto is not None else loss
 
 
-def _coerced_batch(samples: Iterable[Sample], inputs: InputSpec) -> list[Sample]:
-    """Coerce every sample into its wire shape and validate it, labelled by batch index."""
+def _coerce_batch(samples: Iterable[Sample], inputs: InputSpec) -> list[Sample]:
+    """Coerce every sample into its wire shape and validate it.
+
+    Both passes walk the same tensors, so they share one ``samples[i]`` label and an error
+    from either names the same sample.
+    """
     batch: list[Sample] = []
     for index, sample in enumerate(samples):
         label = f"samples[{index}]"
@@ -67,7 +71,7 @@ async def _submit_forward_backward(
     can be used without the other.
     """
     proto_loss = _resolve_loss_type(loss)
-    batch = _coerced_batch(samples, validate_loss_config(proto_loss))
+    batch = _coerce_batch(samples, validate_loss_config(proto_loss))
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
@@ -92,7 +96,7 @@ async def _submit_custom_forward_backward(
     gradients: Iterable[Gradient],
 ) -> CustomForwardBackwardOperation:
     """POST a custom_forward_backward operation without waiting for it."""
-    batch = _coerced_batch(samples, CUSTOM_FORWARD_BACKWARD_INPUTS)
+    batch = _coerce_batch(samples, CUSTOM_FORWARD_BACKWARD_INPUTS)
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,

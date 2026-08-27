@@ -49,6 +49,11 @@ class FakeTensor:
     requires_grad: bool = False
     on_device: bool = False
     bfloat16: bool = False
+    is_sparse: bool = False
+
+    @property
+    def layout(self) -> str:
+        return "torch.sparse_coo" if self.is_sparse else "torch.strided"
 
     @property
     def dtype(self) -> Any:
@@ -175,10 +180,11 @@ def test_nested_list_is_rejected() -> None:
         coerce_sample(_sample({"target_tokens": [[1, 2], [3, 4]]}))
 
 
-def test_bool_list_becomes_integers() -> None:
-    coerced = coerce_sample(_sample({"mask": [True, False]}))
+def test_bool_list_becomes_integers(np: Any) -> None:
+    """A Python bool and a numpy bool both narrow; neither may reach JSON as true/false."""
+    coerced = coerce_sample(_sample({"mask": [True, np.bool_(False)]}))
 
-    assert coerced["loss_fn_inputs"]["mask"] == {"data": [1, 0], "dtype": "int64"}
+    assert coerced["loss_fn_inputs"] == {"mask": {"data": [1, 0], "dtype": "int64"}}
 
 
 def test_float_list_overrides_the_pinned_dtype() -> None:
@@ -203,7 +209,7 @@ def test_widening_declared_dtype_is_applied(np: Any) -> None:
     assert coerced["loss_fn_inputs"]["weights"] == {"data": [1.0, 2.0], "dtype": "float32"}
 
 
-def test_numpy_scalars_in_list_data_serialize(np: Any) -> None:
+def test_numpy_scalars_in_declared_tensor_data_serialize(np: Any) -> None:
     tensor = TensorData(data=[np.float32(0.5), np.float32(1.5)], dtype="float32")
 
     coerced = coerce_sample(_sample({"advantages": tensor}))
@@ -348,7 +354,7 @@ def test_sample_batch_serializes_array_prompts(monkeypatch: pytest.MonkeyPatch, 
     session.stop()
 
 
-def test_numpy_scalars_in_lists_become_json_numbers(np: Any) -> None:
+def test_numpy_scalars_in_bare_lists_become_json_numbers(np: Any) -> None:
     """A list built with `list(array)` holds numpy scalars, which `json` cannot encode."""
     sample = _sample(
         {"target_tokens": list(np.array([1, 2], dtype=np.int64))},
@@ -367,12 +373,6 @@ def test_numpy_scalars_in_lists_become_json_numbers(np: Any) -> None:
     )
     assert coerced["loss_fn_inputs"] == {"target_tokens": {"data": [1, 2], "dtype": "int64"}}
     assert coerced["model_input"]["chunks"][0]["encoded_text"]["tokens"] == [101, 102]  # type: ignore[index]
-
-
-def test_boolean_list_becomes_integers(np: Any) -> None:
-    coerced = coerce_sample(_sample({"mask": [True, np.bool_(False)]}))
-
-    assert coerced["loss_fn_inputs"] == {"mask": {"data": [1, 0], "dtype": "int64"}}
 
 
 def test_gradient_without_array_data_is_untouched() -> None:
@@ -397,13 +397,17 @@ def test_complex_array_under_a_declared_dtype_is_rejected(np: Any) -> None:
 
 
 def test_sparse_tensor_is_rejected(np: Any) -> None:
-    class SparseTensor(FakeTensor):
-        is_sparse = True
+    tensor = FakeTensor(np.array([1, 2], dtype=np.int64), is_sparse=True)
 
     with pytest.raises(ValueError, match="sparse tensor"):
-        coerce_sample(_sample({"target_tokens": SparseTensor(np.array([1, 2], dtype=np.int64))}))
+        coerce_sample(_sample({"target_tokens": tensor}))
 
 
 def test_errors_name_the_offending_sample(np: Any) -> None:
     with pytest.raises(ValueError, match=r"samples\[1\]\.loss_fn_inputs\['target_tokens'\]"):
         coerce_sample(_sample({"target_tokens": np.zeros((2, 2), dtype=np.int64)}), "samples[1]")
+
+
+def test_complex_bare_array_is_rejected(np: Any) -> None:
+    with pytest.raises(ValueError, match="unsupported dtype"):
+        coerce_sample(_sample({"target_tokens": np.array([1 + 2j], dtype=np.complex128)}))
