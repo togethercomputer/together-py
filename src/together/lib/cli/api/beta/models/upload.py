@@ -14,6 +14,7 @@ from cyclopts import Parameter
 from together._utils import path_template
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.components.loader import loading_status
 from together.lib.cli.components.upload_progress import UploadProgressTracker, format_bytes
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
 
@@ -290,11 +291,7 @@ async def _upload_model_files(
     show_progress: bool = False,
 ) -> str:
     if show_progress:
-        with console.status(
-            "[progress.description]Preparing files (computing hashes)...[/progress.description]",
-            spinner="dots",
-            spinner_style="bar.pulse",
-        ):
+        with loading_status("Preparing files (computing hashes)..."):
             local_files = await _prepare_files(local_path)
     else:
         local_files = await _prepare_files(local_path)

@@ -90,6 +90,66 @@ def test_upload_progress_tracker_skips_render_when_not_terminal(
         assert tracker.as_callback() is not None
 
 
+async def test_upload_progress_prints_completion_under_debug(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.utils import _debug
+    from together.lib.cli.components import upload_progress as upload_progress_mod
+    from together.lib.cli.components.upload_progress import UploadProgressTracker
+
+    monkeypatch.setattr(_debug, "_enabled", True)
+    printed: list[str] = []
+
+    class _TerminalConsole:
+        is_terminal = True
+
+        def print(self, message: object, *_args: object, **_kwargs: object) -> None:
+            printed.append(str(message))
+
+    monkeypatch.setattr(upload_progress_mod, "console", _TerminalConsole())
+    file = tmp_path / "weights.bin"
+    file.write_bytes(b"x" * 8)
+    tracker = UploadProgressTracker(
+        total_bytes=8,
+        total_parts=1,
+        total_files=1,
+        enabled=True,
+    )
+    with tracker:
+        assert tracker._progress is None
+        await tracker.part_completed(
+            file_path="weights.bin",
+            part_number=1,
+            total_file_parts=1,
+            bytes_count=8,
+        )
+        await tracker.file_completed("weights.bin")
+    assert any("weights.bin part 1/1" in line for line in printed)
+    assert any("weights.bin complete" in line for line in printed)
+
+
+async def test_download_progress_prints_completion_under_debug(monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.utils import _debug
+    from together.lib.cli.components import download_progress as download_progress_mod
+    from together.lib.cli.components.download_progress import DownloadProgressTracker
+
+    monkeypatch.setattr(_debug, "_enabled", True)
+    printed: list[str] = []
+
+    class _TerminalConsole:
+        is_terminal = True
+
+        def print(self, message: object, *_args: object, **_kwargs: object) -> None:
+            printed.append(str(message))
+
+    monkeypatch.setattr(download_progress_mod, "console", _TerminalConsole())
+    tracker = DownloadProgressTracker(total_bytes=10, total_files=2, enabled=True)
+    with tracker:
+        assert tracker._progress is None
+        await tracker.file_completed("a.bin")
+        await tracker.file_completed("b.bin", skipped=True)
+    assert any("a.bin complete" in line for line in printed)
+    assert any("b.bin skipped" in line for line in printed)
+
+
 def test_download_progress_tracker_skips_render_when_not_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
     from together.lib.cli.components import download_progress as download_progress_mod
     from together.lib.cli.components.download_progress import DownloadProgressTracker

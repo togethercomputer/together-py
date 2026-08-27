@@ -10,7 +10,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.loader import loading_status, show_loading_status
 from together.lib.cli.api.endpoints._utils import print_endpoint, handle_endpoint_api_errors
 
 from .hardware import hardware as list_hardware
@@ -133,11 +133,7 @@ async def create(
     print_endpoint(response)
 
     if wait:
-        with console.status(
-            "[progress.description]Waiting for endpoint to start...[/progress.description]",
-            spinner="dots",
-            spinner_style="bar.pulse",
-        ):
+        with loading_status("Waiting for endpoint to start..."):
             while (await config.client.endpoints.retrieve(response.id)).state != "STARTED":
                 await asyncio.sleep(1)
         console.print("[green]√[/green] Endpoint started")
