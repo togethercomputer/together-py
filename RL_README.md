@@ -1136,10 +1136,11 @@ The rules follow Tinker's `Datum` closely, so the same values work through eithe
   `float32`, the only float the wire carries (`bfloat16` included).
 - **numpy** and torch arrays keep their own dtype — a float array under `target_tokens` or
   an integer array under `advantages` raises rather than being silently recast.
-- **`TensorData(data=<array>, dtype=...)`** is the same thing with the dtype spelled out,
-  and it type-checks without a `cast` because `data` is `Iterable[float]`. A widening
-  declaration is applied (`int64` data under `dtype="float32"`); a lossy one raises rather
-  than truncating.
+- **`TensorData(data=<array>, dtype=...)`** is the same thing with the dtype spelled out. A
+  widening declaration is applied (`int64` data under `dtype="float32"`); a lossy one raises
+  rather than truncating. Since `loss_fn_inputs` stays annotated `Mapping[str, TensorData]`,
+  matching Tinker's `LossFnInputs = Dict[str, TensorData]`, this is also the spelling a type
+  checker accepts where a bare array would need a `cast`.
 - **plain lists** take the dtype their key pins in the key table below (so `advantages=[0, 1]`
   is `float32`), falling back to the element types for `weights`, `mask`, and keys this SDK
   does not know. A list holding floats stays `float32` even under an integer key, so the
@@ -1154,11 +1155,6 @@ than always being `float32`, and unsigned integer arrays are accepted.
 
 The same coercion applies to `Gradient.data` on `custom_forward_backward()`. Torch and
 numpy stay optional dependencies; nothing imports them unless you pass their types in.
-
-`Sample.loss_fn_inputs` stays annotated `Mapping[str, TensorData]`, matching Tinker's own
-`LossFnInputs = Dict[str, TensorData]`, so a type-checked caller passing a bare tensor needs
-a `cast`. `TensorData(data=<array>, dtype=...)` is the annotated-friendly spelling. The
-runtime contract is the one described above.
 
 `loss_fn_inputs` keys are flat, including for GRPO:
 

@@ -44,7 +44,7 @@ def numpy() -> Any:
 class FakeTensor:
     """A torch-shaped stand-in that fails the way a real tensor would."""
 
-    array: Any
+    values: Any
     is_floating_point: bool = False
     requires_grad: bool = False
     on_device: bool = False
@@ -56,7 +56,7 @@ class FakeTensor:
 
     @property
     def ndim(self) -> int:
-        return cast(int, self.array.ndim)
+        return cast(int, self.values.ndim)
 
     def detach(self) -> FakeTensor:
         return replace(self, requires_grad=False)
@@ -65,10 +65,10 @@ class FakeTensor:
         return replace(self, on_device=False)
 
     def float(self) -> FakeTensor:
-        return replace(self, array=self.array.astype("float32"), bfloat16=False)
+        return replace(self, values=self.values.astype("float32"), bfloat16=False)
 
     def tolist(self) -> list[Any]:  # never called; present so the array duck test recognizes this
-        return cast("list[Any]", self.array.tolist())
+        return cast(list[Any], self.values.tolist())
 
     def numpy(self) -> Any:
         if self.requires_grad:
@@ -77,7 +77,7 @@ class FakeTensor:
             raise TypeError("can't convert a device tensor to numpy")
         if self.bfloat16:
             raise TypeError("Got unsupported ScalarType BFloat16")
-        return self.array
+        return self.values
 
 
 def _model_input(tokens: Any) -> ModelInput:
@@ -341,3 +341,30 @@ def test_sample_batch_serializes_array_prompts(monkeypatch: pytest.MonkeyPatch, 
     kwargs = _last_kwargs(client)
     assert json.loads(json.dumps(kwargs["model_inputs"])) == [{"chunks": [{"encoded_text": {"tokens": [7, 8]}}]}]
     session.stop()
+
+
+def test_numpy_scalars_in_lists_become_json_numbers(numpy: Any) -> None:
+    """A list built with `list(array)` holds numpy scalars, which `json` cannot encode."""
+    sample = _sample(
+        {"target_tokens": list(numpy.array([1, 2], dtype=numpy.int64))},
+        tokens=list(numpy.array([101, 102], dtype=numpy.int64)),
+    )
+    gradient = Gradient(data=list(numpy.array([0.5], dtype=numpy.float32)), dtype="D_TYPE_FLOAT32")
+
+    coerced = coerce_sample(sample)
+
+    assert json.dumps(
+        {
+            "loss_fn_inputs": coerced["loss_fn_inputs"],
+            "model_input": coerced["model_input"],
+            "gradient": coerce_gradient(gradient),
+        }
+    )
+    assert coerced["loss_fn_inputs"] == {"target_tokens": {"data": [1, 2], "dtype": "int64"}}
+    assert coerced["model_input"]["chunks"][0]["encoded_text"]["tokens"] == [101, 102]  # type: ignore[index]
+
+
+def test_boolean_list_becomes_integers(numpy: Any) -> None:
+    coerced = coerce_sample(_sample({"mask": [True, numpy.bool_(False)]}))
+
+    assert coerced["loss_fn_inputs"] == {"mask": {"data": [1, 0], "dtype": "int64"}}
