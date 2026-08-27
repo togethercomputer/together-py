@@ -10,9 +10,11 @@ tensor that still carries an autograd graph, lives off the host, or holds ``bflo
 from __future__ import annotations
 
 import json
+import array
 from types import SimpleNamespace
 from typing import Any, cast
 from dataclasses import replace, dataclass
+from collections.abc import Callable
 
 import pytest
 
@@ -52,6 +54,10 @@ class FakeTensor:
     def dtype(self) -> Any:
         return SimpleNamespace(is_floating_point=self.is_floating_point)
 
+    @property
+    def ndim(self) -> int:
+        return cast(int, self.array.ndim)
+
     def detach(self) -> FakeTensor:
         return replace(self, requires_grad=False)
 
@@ -61,7 +67,7 @@ class FakeTensor:
     def float(self) -> FakeTensor:
         return replace(self, array=self.array.astype("float32"), bfloat16=False)
 
-    def tolist(self) -> list[Any]:  # only ever reached through numpy(); marks this as an array
+    def tolist(self) -> list[Any]:  # never called; present so the array duck test recognizes this
         return cast("list[Any]", self.array.tolist())
 
     def numpy(self) -> Any:
@@ -93,33 +99,46 @@ def test_numpy_array_value_takes_the_array_dtype(numpy: Any) -> None:
     assert coerced["loss_fn_inputs"] == {"target_tokens": {"data": [1, 2, 3], "dtype": "int64"}}
 
 
-def test_tensor_is_detached_and_moved_to_the_host(numpy: Any) -> None:
-    advantages = FakeTensor(
-        numpy.array([0.5, -0.25], dtype=numpy.float64),
-        is_floating_point=True,
-        requires_grad=True,
-        on_device=True,
-    )
+_TENSOR_CASES: list[tuple[str, Callable[[Any], FakeTensor], dict[str, Any]]] = [
+    (
+        "advantages",
+        lambda np: FakeTensor(
+            np.array([0.5, -0.25], dtype=np.float64),
+            is_floating_point=True,
+            requires_grad=True,
+            on_device=True,
+        ),
+        {"data": [0.5, -0.25], "dtype": "float32"},
+    ),
+    (
+        "advantages",
+        lambda np: FakeTensor(np.array([1.0, 2.0], dtype=np.float64), is_floating_point=True, bfloat16=True),
+        {"data": [1.0, 2.0], "dtype": "float32"},
+    ),
+    (
+        "target_tokens",
+        lambda np: FakeTensor(np.array([7, 8], dtype=np.int64)),
+        {"data": [7, 8], "dtype": "int64"},
+    ),
+    (
+        "mask",
+        lambda np: FakeTensor(np.array([True, False])),
+        {"data": [1, 0], "dtype": "int64"},
+    ),
+]
 
-    coerced = coerce_sample(_sample({"target_tokens": [1, 2], "advantages": advantages}))
 
-    assert coerced["loss_fn_inputs"]["advantages"] == {"data": [0.5, -0.25], "dtype": "float32"}
+@pytest.mark.parametrize(
+    ("key", "make_tensor", "expected"),
+    _TENSOR_CASES,
+    ids=["detached-and-moved-to-host", "bfloat16-widens", "integer-not-widened", "bool-becomes-int"],
+)
+def test_tensor_values_reach_the_wire_shape(
+    numpy: Any, key: str, make_tensor: Callable[[Any], FakeTensor], expected: dict[str, Any]
+) -> None:
+    coerced = coerce_sample(_sample({key: make_tensor(numpy)}))
 
-
-def test_bfloat16_widens_to_float32(numpy: Any) -> None:
-    advantages = FakeTensor(numpy.array([1.0, 2.0], dtype=numpy.float64), is_floating_point=True, bfloat16=True)
-
-    coerced = coerce_sample(_sample({"advantages": advantages}))
-
-    assert coerced["loss_fn_inputs"]["advantages"] == {"data": [1.0, 2.0], "dtype": "float32"}
-
-
-def test_integer_tensor_is_not_widened(numpy: Any) -> None:
-    target_tokens = FakeTensor(numpy.array([7, 8], dtype=numpy.int64))
-
-    coerced = coerce_sample(_sample({"target_tokens": target_tokens}))
-
-    assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [7, 8], "dtype": "int64"}
+    assert coerced["loss_fn_inputs"][key] == expected
 
 
 def test_tensor_data_with_array_data_keeps_its_declared_dtype(numpy: Any) -> None:
@@ -147,24 +166,48 @@ def test_list_under_an_unknown_key_infers_from_its_values() -> None:
 
 
 def test_nested_list_is_rejected() -> None:
-    with pytest.raises(ValueError, match="flat numeric list"):
+    with pytest.raises(ValueError, match="flat list of numbers"):
         coerce_sample(_sample({"target_tokens": [[1, 2], [3, 4]]}))
 
 
-def test_json_ready_sample_is_returned_unchanged() -> None:
+def test_bool_list_becomes_integers() -> None:
+    coerced = coerce_sample(_sample({"mask": [True, False]}))
+
+    assert coerced["loss_fn_inputs"]["mask"] == {"data": [1, 0], "dtype": "int64"}
+
+
+def test_float_list_overrides_the_dtype_its_key_pins() -> None:
+    # int64 would contradict the data; float32 is what validate_sample rejects by name.
+    coerced = coerce_sample(_sample({"target_tokens": [0.5, 1.5]}))
+
+    assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [0.5, 1.5], "dtype": "float32"}
+
+
+def test_declared_dtype_casts_the_array_it_describes(numpy: Any) -> None:
+    tensor = TensorData(data=numpy.array([1.5, 2.5], dtype=numpy.float32), dtype="int64")
+
+    coerced = coerce_sample(_sample({"target_tokens": tensor}))
+
+    assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [1, 2], "dtype": "int64"}
+
+
+def test_json_ready_sample_keeps_its_values() -> None:
     sample = _sample({"target_tokens": TensorData(data=[1, 2], dtype="int64")})
 
-    assert coerce_sample(sample) is sample
+    coerced = coerce_sample(sample)
+
+    assert coerced["loss_fn_inputs"] == {"target_tokens": {"data": [1, 2], "dtype": "int64"}}
+    assert coerced["model_input"] == sample["model_input"]
 
 
 def test_caller_dict_is_not_mutated(numpy: Any) -> None:
-    array = numpy.array([1, 2], dtype=numpy.int64)
-    inputs: dict[str, Any] = {"target_tokens": array}
+    target_tokens = numpy.array([1, 2], dtype=numpy.int64)
+    inputs: dict[str, Any] = {"target_tokens": target_tokens}
     sample = _sample(inputs)
 
     coerce_sample(sample)
 
-    assert inputs["target_tokens"] is array
+    assert inputs["target_tokens"] is target_tokens
 
 
 def test_multidimensional_array_is_rejected(numpy: Any) -> None:
@@ -174,9 +217,18 @@ def test_multidimensional_array_is_rejected(numpy: Any) -> None:
         coerce_sample(sample)
 
 
-def test_unsupported_value_type_is_rejected() -> None:
-    with pytest.raises(TypeError, match="must be a TensorData mapping"):
-        coerce_sample(_sample({"target_tokens": object()}))
+@pytest.mark.parametrize(
+    "value",
+    [
+        pytest.param(object(), id="arbitrary-object"),
+        # Has `tolist`, but none of the array attributes the coercion needs; it must reach
+        # the actionable error rather than an AttributeError from inside the array path.
+        pytest.param(array.array("l", [1, 2]), id="stdlib-array"),
+    ],
+)
+def test_unsupported_value_type_is_rejected(value: Any) -> None:
+    with pytest.raises(ValueError, match="must be a TensorData mapping"):
+        coerce_sample(_sample({"target_tokens": value}))
 
 
 def test_float_token_array_is_rejected(numpy: Any) -> None:

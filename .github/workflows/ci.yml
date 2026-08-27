@@ -120,7 +120,7 @@ jobs:
       - name: Check tinker is installed
         run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker"
 
-      - name: Run tests that need torch/numpy
+      - name: Run tests that need numpy or tinker
         run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_rl_tinker_*.py tests/unit/test_rl_native_arrays.py
 
   test-integration:
