@@ -1040,6 +1040,33 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     assert sent["loss_fn_inputs"]["weights"]["data"] == long_weights[:8]
 
 
+def test_forward_backward_rejects_non_finite_tensor_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    """JSON cannot carry -inf, so it must be caught before the payload is uploaded."""
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
+    monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 10)
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    with pytest.raises(ValueError, match="NaN or infinite"):
+        trainer.trainer.forward_backward(
+            samples=[
+                Sample(
+                    model_input=ModelInput(
+                        chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=list(range(20))))],
+                    ),
+                    loss_fn_inputs={
+                        "target_tokens": TensorData(data=list(range(20)), dtype="int64"),
+                        "weights": TensorData(data=[float("-inf")] + [1.0] * 19, dtype="float32"),
+                    },
+                )
+            ],
+            loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
+        )
+
+    assert client.captured_put_body is None
+    trainer.stop()
+
+
 def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPatch) -> None:
     """Payloads exceeding R2's single-PUT limit raise before any upload is attempted."""
     patch_wait(monkeypatch, ForwardBackwardResult(loss=1.0, metrics={}))
