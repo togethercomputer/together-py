@@ -48,7 +48,8 @@ def _to_array(value: object, label: str) -> Any:
 
     Torch tensors are detached and moved to the host, and a float dtype numpy cannot hold
     (``bfloat16`` above all) widens to ``float32`` first. Boolean arrays become integers,
-    since JSON would otherwise render them as ``true``/``false`` under an ``int64`` dtype.
+    since JSON would otherwise render them as ``true``/``false`` under an ``int64`` dtype,
+    and ``longdouble`` narrows to ``float64``, the widest float ``json`` can encode.
 
     Raises:
         ValueError: If the value is a sparse tensor or holds a dtype the wire cannot carry.
@@ -68,6 +69,10 @@ def _to_array(value: object, label: str) -> Any:
     array = cast(Any, value)
     if array.dtype.kind == "b":
         array = array.astype("int64")
+    if array.dtype.char == "g":
+        # numpy's longdouble is the one float whose tolist() hands back numpy scalars rather
+        # than native floats. Identified by typecode: its width and name vary by platform.
+        array = array.astype("float64")
     if array.dtype.kind not in _KIND_DTYPES:
         raise ValueError(f"{label} has unsupported dtype {array.dtype}; use an integer or float array.")
     return array

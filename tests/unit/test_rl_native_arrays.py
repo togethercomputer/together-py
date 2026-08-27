@@ -448,3 +448,11 @@ def test_declared_int64_over_a_float_list_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="declares dtype 'int64'"):
         coerce_sample(_sample({"target_tokens": tensor}))
+
+
+def test_longdouble_array_narrows_to_native_floats(np: Any) -> None:
+    """longdouble is the one float dtype whose tolist() yields numpy scalars, not floats."""
+    coerced = coerce_sample(_sample({"advantages": np.array([0.1, 0.2], dtype=np.longdouble)}))
+
+    data = coerced["loss_fn_inputs"]["advantages"]["data"]
+    assert json.dumps(data) == "[0.1, 0.2]"
