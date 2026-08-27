@@ -29,22 +29,25 @@ from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
 _WireDtype: TypeAlias = Literal["int64", "float32"]
 
 _KIND_DTYPES: Mapping[str, _WireDtype] = types.MappingProxyType({"f": "float32", "i": "int64", "u": "int64"})
+_NUMPY_FLOATS = frozenset({"torch.float16", "torch.float32", "torch.float64"})
 
 
 def _widened(tensor: Any) -> Any:
-    """Widen a float torch tensor to ``float32`` only when numpy cannot hold its dtype.
+    """Widen a float torch tensor to ``float32`` unless numpy can hold its dtype as it is.
 
-    ``bfloat16`` is the case that matters. Widening a wider float would round-trip its
-    values instead, inflating every number on the wire.
+    ``bfloat16`` is the case that matters, since numpy cannot hold it at all. Widening a
+    dtype numpy already holds would round-trip its values instead, inflating every number
+    on the wire. Tested by name rather than by ``dtype.itemsize``, which torch only grew
+    in 2.1 — an older torch would otherwise fall back to widening everything.
     """
-    return tensor.float() if getattr(tensor.dtype, "itemsize", 0) < 4 else tensor
+    return tensor if str(tensor.dtype) in _NUMPY_FLOATS else tensor.float()
 
 
 def _to_array(value: object, label: str) -> Any:
     """Return ``value`` as a numpy array ready to serialize, or ``None`` if it is not an array.
 
-    Torch tensors are detached and moved to the host; those whose float dtype numpy cannot
-    hold (``bfloat16`` above all) widen to ``float32`` first. Boolean arrays become integers,
+    Torch tensors are detached and moved to the host, and a float dtype numpy cannot hold
+    (``bfloat16`` above all) widens to ``float32`` first. Boolean arrays become integers,
     since JSON would otherwise render them as ``true``/``false`` under an ``int64`` dtype.
 
     Raises:
@@ -126,6 +129,14 @@ def _list_dtype(key: str, values: Sequence[int | float]) -> _WireDtype:
     return "int64"
 
 
+def _lossy_int64(label: str) -> ValueError:
+    """Build the error for floating-point data under a declared ``int64`` dtype."""
+    return ValueError(
+        f"{label} holds floating-point values but declares dtype 'int64'; cast them"
+        " yourself if truncation is intended, or declare 'float32'."
+    )
+
+
 def _cast_to_declared(array: Any, declared: _WireDtype, label: str) -> Any:
     """Align an array with the dtype its own tensor mapping declares.
 
@@ -136,10 +147,7 @@ def _cast_to_declared(array: Any, declared: _WireDtype, label: str) -> Any:
         ValueError: If the declared dtype cannot hold the array's values.
     """
     if declared == "int64" and array.dtype.kind == "f":
-        raise ValueError(
-            f"{label} holds floating-point values but declares dtype 'int64'; cast the array"
-            " yourself if truncation is intended, or declare 'float32'."
-        )
+        raise _lossy_int64(label)
     # Widening integers is the only cast that changes a value. Sending a float array through
     # float32 would round-trip it instead, so 0.1 reaches the wire as 0.10000000149011612.
     return array.astype("float32") if declared == "float32" and array.dtype.kind != "f" else array
@@ -157,12 +165,14 @@ def _coerce_tensor(key: str, value: object, label: str) -> TensorData:
         data = tensor.get("data")
         data_label = f"{label}['data']"
         array = _to_array(data, data_label)
+        declared = tensor.get("dtype")
         if array is None:
             if not isinstance(data, (list, tuple)):
                 return cast(TensorData, value)
-            values = cast(Sequence[Any], data)
-            return cast(TensorData, {**tensor, "data": _to_json_numbers(values, data_label)})
-        declared = tensor.get("dtype")
+            numbers = _to_json_numbers(cast(Sequence[Any], data), data_label)
+            if declared == "int64" and any(isinstance(number, float) for number in numbers):
+                raise _lossy_int64(data_label)
+            return cast(TensorData, {**tensor, "data": numbers})
         if declared in ("int64", "float32"):
             array = _cast_to_declared(array, declared, data_label)
         return cast(TensorData, {**tensor, "data": _to_wire_list(array, data_label)})

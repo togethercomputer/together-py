@@ -15,6 +15,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 from dataclasses import replace, dataclass
 from collections.abc import Callable
+from typing_extensions import override
 
 import pytest
 
@@ -41,14 +42,28 @@ def np() -> Any:
 
 
 @dataclass(frozen=True)
+class FakeDtype:
+    """A torch dtype stand-in: the coercion reads it by name, as torch prints it."""
+
+    name: str
+
+    @override
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def is_floating_point(self) -> bool:
+        return self.name.startswith(("torch.float", "torch.bfloat"))
+
+
+@dataclass(frozen=True)
 class FakeTensor:
     """A torch-shaped stand-in that fails the way a real tensor would."""
 
     values: Any
-    is_floating_point: bool = False
+    dtype_name: str = "torch.int64"
     requires_grad: bool = False
     on_device: bool = False
-    bfloat16: bool = False
     is_sparse: bool = False
 
     @property
@@ -56,8 +71,8 @@ class FakeTensor:
         return "torch.sparse_coo" if self.is_sparse else "torch.strided"
 
     @property
-    def dtype(self) -> Any:
-        return SimpleNamespace(is_floating_point=self.is_floating_point, itemsize=2 if self.bfloat16 else 4)
+    def dtype(self) -> FakeDtype:
+        return FakeDtype(self.dtype_name)
 
     @property
     def ndim(self) -> int:
@@ -70,7 +85,7 @@ class FakeTensor:
         return replace(self, on_device=False)
 
     def float(self) -> FakeTensor:
-        return replace(self, values=self.values.astype("float32"), bfloat16=False)
+        return replace(self, values=self.values.astype("float32"), dtype_name="torch.float32")
 
     def tolist(self) -> list[Any]:  # Never called; present so the array duck test recognizes this.
         return cast(list[Any], self.values.tolist())
@@ -80,7 +95,7 @@ class FakeTensor:
             raise RuntimeError("Can't call numpy() on Tensor that requires grad")
         if self.on_device:
             raise TypeError("can't convert a device tensor to numpy")
-        if self.bfloat16:
+        if self.dtype_name == "torch.bfloat16":
             raise TypeError("Got unsupported ScalarType BFloat16")
         return self.values
 
@@ -108,7 +123,7 @@ def _detached_device_tensor(np: Any) -> FakeTensor:
     """A float tensor still attached to the autograd graph and resident on a device."""
     return FakeTensor(
         np.array([0.5, -0.25], dtype=np.float64),
-        is_floating_point=True,
+        dtype_name="torch.float64",
         requires_grad=True,
         on_device=True,
     )
@@ -122,7 +137,7 @@ _TENSOR_CASES: list[tuple[str, Callable[[Any], FakeTensor], dict[str, Any]]] = [
     ),
     (
         "advantages",
-        lambda np: FakeTensor(np.array([1.0, 2.0], dtype=np.float64), is_floating_point=True, bfloat16=True),
+        lambda np: FakeTensor(np.array([1.0, 2.0], dtype=np.float32), dtype_name="torch.bfloat16"),
         {"data": [1.0, 2.0], "dtype": "float32"},
     ),
     (
@@ -132,7 +147,7 @@ _TENSOR_CASES: list[tuple[str, Callable[[Any], FakeTensor], dict[str, Any]]] = [
     ),
     (
         "mask",
-        lambda np: FakeTensor(np.array([True, False])),
+        lambda np: FakeTensor(np.array([True, False]), dtype_name="torch.bool"),
         {"data": [1, 0], "dtype": "int64"},
     ),
 ]
@@ -415,7 +430,7 @@ def test_complex_bare_array_is_rejected(np: Any) -> None:
 
 def test_wide_float_tensor_keeps_its_precision(np: Any) -> None:
     """Only dtypes numpy cannot hold widen; a float64 tensor must not round-trip through float32."""
-    tensor = FakeTensor(np.array([0.1, 0.2], dtype=np.float64), is_floating_point=True)
+    tensor = FakeTensor(np.array([0.1, 0.2], dtype=np.float64), dtype_name="torch.float64")
 
     coerced = coerce_sample(_sample({"advantages": tensor}))
 
@@ -425,3 +440,11 @@ def test_wide_float_tensor_keeps_its_precision(np: Any) -> None:
 def test_float_token_list_is_rejected() -> None:
     with pytest.raises(ValueError, match="must hold integers"):
         coerce_model_input(_model_input([1.5, 2.0]))
+
+
+def test_declared_int64_over_a_float_list_is_rejected() -> None:
+    """The array spelling raises; the list spelling must not ship mislabeled data instead."""
+    tensor = TensorData(data=[1.5, 2.5], dtype="int64")
+
+    with pytest.raises(ValueError, match="declares dtype 'int64'"):
+        coerce_sample(_sample({"target_tokens": tensor}))
