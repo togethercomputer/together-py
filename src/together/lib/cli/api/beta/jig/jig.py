@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import json
 import time
@@ -62,6 +63,7 @@ BUILDX_CACHE_MIN_FREE_BYTES = 50 * 1024**3
 _TRACK_POLL_INTERVAL = 3
 _TRACK_TIMEOUT = 600
 _TRACK_READY_TIMEOUT = 120
+_DEPLOYMENT_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 class JigError(Exception):
@@ -181,6 +183,14 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
     return None
 
 
+def validate_deployment_name(name: str) -> str | None:
+    if not 4 <= len(name) <= 63:
+        return "must be 4-63 characters"
+    if not _DEPLOYMENT_NAME_PATTERN.fullmatch(name):
+        return "must contain only lowercase letters, numbers, or hyphens, and start with a lowercase letter or number"
+    return None
+
+
 @dataclass
 class JigConfig:
     """Main configuration from jig.toml or pyproject.toml"""
@@ -194,6 +204,11 @@ class JigConfig:
     def __post_init__(self) -> None:
         if err := validate(self, type(self)):
             raise JigError(f"Invalid {self._path}: {err}")
+        if err := validate_deployment_name(self.model_name):
+            raise JigError(
+                f"Invalid {self._path}: deployment name {self.model_name!r} {err}. "
+                f"Tip: {self._unique_name_hint}"
+            )
 
     @classmethod
     def find(cls, config_path: str | None = None, init: bool = False) -> JigConfig:

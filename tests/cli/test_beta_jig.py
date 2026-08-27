@@ -74,6 +74,40 @@ def _write_jig_project(path: Path) -> None:
     path.joinpath("pyproject.toml").write_text(_PYPROJECT, encoding="utf-8")
 
 
+def test_config_accepts_sdk_deployment_name_constraints(tmp_path: Path) -> None:
+    _write_jig_project(tmp_path)
+
+    with _chdir(tmp_path):
+        config = _jig_mod.Config.find()
+
+    assert config.model_name == _DEPLOY_NAME
+
+
+@pytest.mark.parametrize("name", ["abc", "bad_name", "BadName", "-bad", "a" * 64])
+def test_config_rejects_invalid_sdk_deployment_names(tmp_path: Path, name: str) -> None:
+    tmp_path.joinpath("jig.toml").write_text(f'name = "{name}"\n', encoding="utf-8")
+
+    with _chdir(tmp_path):
+        with pytest.raises(_jig_mod.JigError, match="deployment name"):
+            _jig_mod.Config.find()
+
+
+def test_config_rejects_invalid_project_name_fallback(tmp_path: Path) -> None:
+    tmp_path.joinpath("pyproject.toml").write_text(
+        """[project]
+name = "Bad_Name"
+
+[tool.jig.image]
+cmd = "python app.py"
+""",
+        encoding="utf-8",
+    )
+
+    with _chdir(tmp_path):
+        with pytest.raises(_jig_mod.JigError, match="update `project.name`"):
+            _jig_mod.Config.find()
+
+
 def test_jig_failure_exit_preserves_diagnostic(capsys: pytest.CaptureFixture[str]) -> None:
     message = "Volume example not found"
 
