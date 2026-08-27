@@ -1132,8 +1132,9 @@ Sample(
 
 The rules follow Tinker's `Datum` closely, so the same values work through either entry point:
 
-- **torch** tensors are detached and moved to the host; every float tensor becomes
-  `float32`, the only float the wire carries (`bfloat16` included).
+- **torch** tensors are detached and moved to the host. A float dtype numpy cannot hold
+  (`bfloat16`) widens to `float32` first; wider floats are left alone, so their values reach
+  the wire exactly as a numpy array of the same data would.
 - **numpy** and torch arrays keep their own dtype — a float array under `target_tokens` or
   an integer array under `advantages` raises rather than being silently recast.
 - **`TensorData(data=<array>, dtype=...)`** is the same thing with the dtype spelled out. A

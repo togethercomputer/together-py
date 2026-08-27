@@ -57,7 +57,7 @@ class FakeTensor:
 
     @property
     def dtype(self) -> Any:
-        return SimpleNamespace(is_floating_point=self.is_floating_point)
+        return SimpleNamespace(is_floating_point=self.is_floating_point, itemsize=2 if self.bfloat16 else 4)
 
     @property
     def ndim(self) -> int:
@@ -364,7 +364,7 @@ def test_numpy_scalars_in_bare_lists_become_json_numbers(np: Any) -> None:
 
     coerced = coerce_sample(sample)
 
-    assert json.dumps(
+    json.dumps(  # Must be encodable; a numpy scalar left in place raises TypeError here.
         {
             "loss_fn_inputs": coerced["loss_fn_inputs"],
             "model_input": coerced["model_input"],
@@ -411,3 +411,17 @@ def test_errors_name_the_offending_sample(np: Any) -> None:
 def test_complex_bare_array_is_rejected(np: Any) -> None:
     with pytest.raises(ValueError, match="unsupported dtype"):
         coerce_sample(_sample({"target_tokens": np.array([1 + 2j], dtype=np.complex128)}))
+
+
+def test_wide_float_tensor_keeps_its_precision(np: Any) -> None:
+    """Only dtypes numpy cannot hold widen; a float64 tensor must not round-trip through float32."""
+    tensor = FakeTensor(np.array([0.1, 0.2], dtype=np.float64), is_floating_point=True)
+
+    coerced = coerce_sample(_sample({"advantages": tensor}))
+
+    assert coerced["loss_fn_inputs"]["advantages"] == {"data": [0.1, 0.2], "dtype": "float32"}
+
+
+def test_float_token_list_is_rejected() -> None:
+    with pytest.raises(ValueError, match="must hold integers"):
+        coerce_model_input(_model_input([1.5, 2.0]))

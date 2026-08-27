@@ -31,13 +31,21 @@ _WireDtype: TypeAlias = Literal["int64", "float32"]
 _KIND_DTYPES: Mapping[str, _WireDtype] = types.MappingProxyType({"f": "float32", "i": "int64", "u": "int64"})
 
 
+def _widened(tensor: Any) -> Any:
+    """Widen a float torch tensor to ``float32`` only when numpy cannot hold its dtype.
+
+    ``bfloat16`` is the case that matters. Widening a wider float would round-trip its
+    values instead, inflating every number on the wire.
+    """
+    return tensor.float() if getattr(tensor.dtype, "itemsize", 0) < 4 else tensor
+
+
 def _to_array(value: object, label: str) -> Any:
     """Return ``value`` as a numpy array ready to serialize, or ``None`` if it is not an array.
 
-    Torch tensors are detached and moved to the host, and every float *torch* tensor becomes
-    ``float32`` — the only float the wire carries, and the only one numpy can take a
-    ``bfloat16`` to. Boolean arrays become integers, since JSON would otherwise render them
-    as ``true``/``false`` under an ``int64`` dtype.
+    Torch tensors are detached and moved to the host; those whose float dtype numpy cannot
+    hold (``bfloat16`` above all) widen to ``float32`` first. Boolean arrays become integers,
+    since JSON would otherwise render them as ``true``/``false`` under an ``int64`` dtype.
 
     Raises:
         ValueError: If the value is a sparse tensor or holds a dtype the wire cannot carry.
@@ -53,7 +61,7 @@ def _to_array(value: object, label: str) -> Any:
                 " call .to_dense() before submitting."
             )
         tensor = detach().cpu()
-        value = (tensor.float() if tensor.dtype.is_floating_point else tensor).numpy()
+        value = (_widened(tensor) if tensor.dtype.is_floating_point else tensor).numpy()
     array = cast(Any, value)
     if array.dtype.kind == "b":
         array = array.astype("int64")
@@ -82,6 +90,8 @@ def _to_json_number(value: Any, label: str) -> int | float:
     Raises:
         ValueError: If the element is not a number, which a nested list is the usual cause of.
     """
+    # Exact types on purpose: `isinstance` would let `bool` through, and JSON renders a bool
+    # as true/false where an integer dtype needs 1/0.
     if type(value) is int or type(value) is float:
         return value  # The common case, and the only one that needs no work at all.
     item = getattr(value, "item", None)  # Every numpy and torch scalar has one; native numbers do not.
@@ -176,7 +186,7 @@ def _coerce_chunk(chunk: object, label: str) -> object:
     """Convert one input chunk's tokens into a JSON integer list.
 
     Raises:
-        ValueError: If the tokens are a non-integer array, or hold anything but numbers.
+        ValueError: If the tokens are not integers, or hold anything but numbers.
     """
     if not isinstance(chunk, Mapping):
         return chunk
@@ -194,6 +204,8 @@ def _coerce_chunk(chunk: object, label: str) -> object:
         tokens = _to_wire_list(array, token_label)
     elif isinstance(raw_tokens, (list, tuple)):
         tokens = _to_json_numbers(cast(Sequence[Any], raw_tokens), token_label)
+        if any(isinstance(token, float) for token in tokens):
+            raise ValueError(f"{token_label} must hold integers, but holds floating-point values.")
     else:
         return typed_chunk
     return {**typed_chunk, "encoded_text": {**encoded, "tokens": tokens}}

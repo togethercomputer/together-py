@@ -115,8 +115,8 @@ jobs:
       - name: Install Python ${{ env.PYTHON_VERSION }}
         run: uv python install "$PYTHON_VERSION"
 
-      # The tests importorskip on both, so without this the job would pass green if the
-      # extra ever stops resolving on this interpreter, or stops pulling numpy in.
+      # Each test file importorskips one of these, so without this the job would pass green
+      # if the extra ever stops resolving on this interpreter, or stops pulling numpy in.
       - name: Check tinker and numpy are installed
         run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker, numpy"
 
