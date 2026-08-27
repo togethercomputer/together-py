@@ -1109,8 +1109,41 @@ Sample(
 Construct each `loss_fn_inputs` value with the exported `TensorData` TypedDict. Dtypes are lowercase: `{"data": [...], "dtype":
 "int64"}` or `{"data": [...], "dtype": "float32"}`. Only one-dimensional dense
 tensors are accepted, and `shape` is inferred from `data`. A dtype mismatch
-raises client-side — worth knowing because Tinker infers the dtype by key name
+raises client-side — worth knowing because the dtype is inferred by key name
 for plain Python lists, but a numpy or torch array keeps its own.
+
+#### Torch and numpy inputs
+
+Each `loss_fn_inputs` value may also be a one-dimensional torch tensor, numpy array, or
+plain numeric list, and `EncodedTextChunk.tokens` may be an integer torch/numpy array. The
+clients convert them to the wire shape at submit time, so no `.tolist()` is needed:
+
+```python
+Sample(
+    model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=prompt_ids))]),
+    loss_fn_inputs={
+        "target_tokens": torch.tensor(targets, dtype=torch.int64),
+        "logprobs": sampled_logprobs,       # torch tensor, autograd graph and device are fine
+        "advantages": np.asarray(advantages, dtype=np.float32),
+        "weights": [0.0, 1.0, 1.0],         # plain list
+    },
+)
+```
+
+The rules match Tinker's `Datum`, so the same values work through either entry point:
+
+- **torch** tensors are detached and moved to the host; floats narrower than `float32`
+  (including `bfloat16`) widen to `float32`.
+- **numpy** and torch arrays keep their own dtype — a float array under `target_tokens` or
+  an integer array under `advantages` raises rather than being silently recast.
+- **plain lists** take the dtype their key pins in the table above (so `advantages=[0, 1]`
+  is `float32`), falling back to the element types for `weights`, `mask`, and keys this SDK
+  does not know.
+- Only 1-D dense values are accepted. Multi-dimensional arrays and sparse tensors raise;
+  flatten them first. Native results stay plain lists — nothing is converted back to torch.
+
+The same coercion applies to `Gradient.data` on `custom_forward_backward()`. Torch and
+numpy stay optional dependencies; nothing imports them unless you pass their types in.
 
 `loss_fn_inputs` keys are flat, including for GRPO:
 

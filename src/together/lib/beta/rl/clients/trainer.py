@@ -6,6 +6,7 @@ from collections.abc import Iterable
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
+from .._arrays import coerce_sample, coerce_gradient
 from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, validate_sample, validate_loss_config
 from ....._types import Omit, omit
 from .._payloads import prepare_operation_body, resolve_result_payload
@@ -54,7 +55,7 @@ async def _submit_forward_backward(
     gradients, and ``return_loss_fn_outputs`` returns the per-sample output tensors. Either
     can be used without the other.
     """
-    batch = list(samples)
+    batch = [coerce_sample(sample) for sample in samples]
     proto_loss = _resolve_loss_type(loss)
     spec = validate_loss_config(proto_loss)
     for index, sample in enumerate(batch):
@@ -83,13 +84,13 @@ async def _submit_custom_forward_backward(
     gradients: Iterable[Gradient],
 ) -> CustomForwardBackwardOperation:
     """POST a custom_forward_backward operation without waiting for it."""
-    batch = list(samples)
+    batch = [coerce_sample(sample) for sample in samples]
     for index, sample in enumerate(batch):
         validate_sample(sample, CUSTOM_FORWARD_BACKWARD_INPUTS, label=f"samples[{index}]")
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
-        body={"samples": batch, "gradients": list(gradients)},
+        body={"samples": batch, "gradients": [coerce_gradient(gradient) for gradient in gradients]},
         expected_type=OperationCustomForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None

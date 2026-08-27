@@ -120,8 +120,8 @@ jobs:
       - name: Check tinker is installed
         run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker"
 
-      - name: Run Tinker wrapper tests
-        run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_rl_tinker_*.py
+      - name: Run tests that need torch/numpy
+        run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_rl_tinker_*.py tests/unit/test_rl_native_arrays.py
 
   test-integration:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork) && (github.event_name != 'push' || github.event.head_commit.message != 'codegen metadata')
