@@ -20,7 +20,7 @@ the full API reference remains in [api.md](api.md).
   then `download_checkpoint(client, ...)` with a configured `Together` client to pull the weights locally.
 - To save/resume from the full training state, call `session.create_training_checkpoint()` to get a `checkpoint_id`, stop the session, then create a new session with `resume_from_checkpoint_id=checkpoint_id` (and `lora_config` if used) over the same resources.
 - Use `session.retrieve()` to fetch the full session state from the API (status, checkpoints, step).
-- All request data uses typed constructors exported from `together.lib.beta.rl`. Every one of them (`Sample`, `ModelInput`, `LossConfig`, `LossInputs`, `LoraConfig`, `OptimizerConfig`, etc.) is a `TypedDict`, so plain dicts also work at runtime.
+- All request data uses typed constructors exported from `together.lib.beta.rl`. Every one of them (`Sample`, `ModelInput`, `LossConfig`, `TensorData`, `LoraConfig`, `OptimizerConfig`, etc.) is a `TypedDict`, so plain dicts also work at runtime.
 
 ## Quickstart: SFT-style loop (sync)
 
@@ -30,13 +30,11 @@ from together.lib.beta.rl import (
     ModelResourcesClient,
     AdamParams,
     EncodedTextChunk,
+    TensorData,
     LossConfig,
-    LossInputs,
-    LossTargetTokens,
     ModelInput,
     ModelInputChunk,
     Sample,
-    Weights,
 )
 
 resources = ModelResourcesClient.create(
@@ -60,16 +58,16 @@ chunk = ModelInputChunk(
 samples = [
     Sample(
         model_input=ModelInput(chunks=[chunk]),
-        loss_inputs=LossInputs(
-            weights=Weights(
+        loss_fn_inputs={
+            "weights": TensorData(
                 data=weights,
-                dtype="D_TYPE_FLOAT32",
+                dtype="float32",
             ),
-            target_tokens=LossTargetTokens(
+            "target_tokens": TensorData(
                 data=target_tokens,
-                dtype="D_TYPE_INT64",
+                dtype="int64",
             ),
-        ),
+        },
     )
 ]
 
@@ -91,18 +89,13 @@ from together.lib.beta.rl import (
     ModelResourcesClient,
     AdamParams,
     EncodedTextChunk,
-    GrpoLossInputs,
+    TensorData,
     GrpoLossParams,
-    LossAdvantages,
     LossConfig,
-    LossInputs,
-    LossLogprobs,
-    LossTargetTokens,
     ModelInput,
     ModelInputChunk,
     Sample,
     SamplingParams,
-    Weights,
 )
 
 resources = ModelResourcesClient.create(
@@ -144,26 +137,24 @@ for seq in sample_result.sequences:
     )
     samples.append(Sample(
         model_input=ModelInput(chunks=[chunk]),
-        loss_inputs=LossInputs(
-            weights=Weights(
+        loss_fn_inputs={
+            "weights": TensorData(
                 data=weights,
-                dtype="D_TYPE_FLOAT32",
+                dtype="float32",
             ),
-            target_tokens=LossTargetTokens(
+            "target_tokens": TensorData(
                 data=target_tokens,
-                dtype="D_TYPE_INT64",
+                dtype="int64",
             ),
-            grpo_inputs=GrpoLossInputs(
-                advantages=LossAdvantages(
-                    data=advantages,
-                    dtype="D_TYPE_FLOAT32",
-                ),
-                logprobs=LossLogprobs(
-                    data=logprobs,
-                    dtype="D_TYPE_FLOAT32",
-                ),
+            "advantages": TensorData(
+                data=advantages,
+                dtype="float32",
             ),
-        ),
+            "logprobs": TensorData(
+                data=logprobs,
+                dtype="float32",
+            ),
+        },
     ))
 
 loss = LossConfig(
@@ -479,21 +470,51 @@ Training and sampling methods:
 
 ### Loss functions
 
-The converter expects each `Datum.loss_fn_inputs` to carry exactly `target_tokens`, `logprobs`, and
-`advantages` (as `TensorData`) and maps them into Together's `{loss}_inputs` wire shape. Missing or
-unexpected keys raise `ValueError`. Only losses that fit that shape are accepted:
+The converter serializes genuine Tinker `TensorData` values directly into the generic
+`loss_fn_inputs` request shape, preserving lowercase dtypes. Each `loss_fn` declares its own set of
+accepted keys (see the table below). A Datum that omits a key the loss requires raises `ValueError`
+client-side rather than failing as an opaque server rejection. A Datum carrying a key the loss does
+not declare warns and is still sent: `loss_fn_inputs` is an open map on the wire, so an unrecognized
+key may be a scratch key or a server input newer than this SDK, and rejecting it would put an SDK
+release on the critical path of every new server input.
 
-| `loss_fn` | Status | Notes |
-| --------- | ------ | ----- |
-| `importance_sampling` | Supported | No `loss_fn_config` keys |
-| `ppo` | Supported | Optional `loss_fn_config`: `clip_low_threshold`, `clip_high_threshold` |
-| `cross_entropy` | Rejected | Datum carries `weights`, not `logprobs` / `advantages` |
-| `cispo`, `dro` | Rejected | Datum carries keys beyond `{target_tokens, logprobs, advantages}` |
+Tensors must be one-dimensional and dense; anything else raises. Tinker builds a 2-D tensor
+whenever `target_tokens` or `weights` come from a 2-D torch tensor — CSR-encoded when that saves
+space, dense otherwise — and training operations accept neither. `shape` is not sent: for a 1-D
+tensor it is redundant with `len(data)`. Large payloads also strip it from the inline validation
+body, where it would otherwise describe the full tensor beside a truncated `data`.
 
-Unknown `loss_fn_config` keys raise `ValueError`.
+Omitted `loss_fn_config` keys fall through to Together's server defaults. Together's spec pins those
+to match Tinker's documented ones (PPO `clip_low_threshold=0.8` / `clip_high_threshold=1.2`; CISPO
+`0.0` / `4.0`), so the two backends agree without the client pinning them. Nothing
+in this SDK observes those defaults, so the spec owns that guarantee. The current compatibility training client
+exposes:
+
+| `loss_fn` | Notes |
+| --------- | ----- |
+| `cross_entropy` | Datum requires `target_tokens` and `weights`; optional `mask`; no config keys |
+| `importance_sampling` | Datum requires `target_tokens`, `logprobs`, `advantages`; optional `weights`, `mask`; no config keys |
+| `ppo` | Same Datum keys as `importance_sampling`; optional `loss_fn_config`: `clip_low_threshold`, `clip_high_threshold` |
+| `cispo` | Same Datum keys as `importance_sampling`; optional `loss_fn_config`: `clip_low_threshold`, `clip_high_threshold` |
+| `dro` | Same Datum keys as `importance_sampling`; required `loss_fn_config`: `beta` |
+
+Unknown `loss_fn_config` keys raise `ValueError` — unlike `loss_fn_inputs`, the config shape is
+generated from the spec, so a key outside it is always a caller error.
 
 ### Limitations
 
+- **Per-datum clip thresholds.** Tinker recognizes `clip_low_threshold` / `clip_high_threshold` as
+  per-token `Datum.loss_fn_inputs` entries. Together takes them only as scalar `loss_fn_config`
+  values, so a Datum carrying them draws an "Unsupported keys" `UserWarning` and is forwarded
+  unread; pass them through `loss_fn_config` instead.
+- **Fractional `weights` outside `cross_entropy`.** Tinker multiplies `weights` into the per-token
+  loss for every loss function. Together honors fractional weights only for `cross_entropy`; for the
+  policy losses a weight acts as a 0/1 mask (`0` excludes the token, anything non-zero includes it at
+  full weight). A Datum carrying fractional `weights` under `importance_sampling`/`ppo`/`cispo`/`dro`
+  is accepted and trains, but its gradients differ from Tinker's, so the wrapper warns once per
+  call site (Python's default warning filter dedups repeats, so a loop that warns on step 1 will not
+  warn again on step 200 — the condition has not gone away). Use `mask` for inclusion/exclusion, and keep
+  fractional weighting to `cross_entropy`.
 - **Empty `loss_fn_outputs`.** `forward_backward(...).result()` is a genuine
   `tinker.ForwardBackwardOutput`. Together's total loss is published as `metrics["loss:sum"]`
   (plus any Together-native metric keys), so scripts that only read `.metrics` keep working.
@@ -759,9 +780,10 @@ weights for sampling. Every loop that samples after an optim step must add
 stale policy with no client-side error.
 
 Also drop `policy_segments` from training `Sample`s (it is no longer a request
-field; `SampleResult.policy_segments` on the response is unchanged). And switch
-`Weights` to float data with `dtype="D_TYPE_FLOAT32"` — the old
-`dtype="D_TYPE_INT64"` int arrays are no longer the documented contract.
+field; `SampleResult.policy_segments` on the response is unchanged). Replace the
+removed named loss-input wrappers with `loss_fn_inputs`, using the exported
+`TensorData` with a lowercase `dtype` (`"float32"` for floating-point weights,
+`"int64"` for token IDs).
 
 ```python
 def optim_step(
@@ -1013,6 +1035,8 @@ stop itself. Called automatically when using `ModelResourcesClient` as a context
 A training sample has the shape:
 
 ```python
+from together.lib.beta.rl import TensorData
+
 chunk = ModelInputChunk(
     encoded_text=EncodedTextChunk(
         tokens=[1, 2, 3],
@@ -1020,49 +1044,62 @@ chunk = ModelInputChunk(
 )
 Sample(
     model_input=ModelInput(chunks=[chunk]),
-    loss_inputs=LossInputs(
-        weights=Weights(
+    loss_fn_inputs={
+        "weights": TensorData(
             data=[0.0, 1.0, 1.0],
-            dtype="D_TYPE_FLOAT32",
+            dtype="float32",
         ),
-        target_tokens=LossTargetTokens(
+        "target_tokens": TensorData(
             data=[2, 3, 0],
-            dtype="D_TYPE_INT64",
+            dtype="int64",
         ),
-    ),
+    },
 )
 ```
 
 `Sample` fields:
 
-| Field             | Type                                  | When to use                                                                 |
-| ----------------- | ------------------------------------- | --------------------------------------------------------------------------- |
+| Field             | Type                          | When to use                                                                 |
+| ----------------- | ----------------------------- | --------------------------------------------------------------------------- |
 | `model_input` | `ModelInput` | Always required. The full token sequence (prompt + response) to train on. |
-| `loss_inputs` | `LossInputs` | Always required. Per-token loss inputs (see below).                       |
+| `loss_fn_inputs` | `Mapping[str, TensorData]` | Always required. Per-token tensors keyed by the input names accepted by the selected loss. |
+| `routed_experts` | `RoutedExperts` | Optional. Per-token expert routing for MoE models. |
 
-`LossInputs` fields:
+Construct each `loss_fn_inputs` value with the exported `TensorData` TypedDict. Dtypes are lowercase: `{"data": [...], "dtype":
+"int64"}` or `{"data": [...], "dtype": "float32"}`. Only one-dimensional dense
+tensors are accepted, and `shape` is inferred from `data`. A dtype mismatch
+raises client-side — worth knowing because Tinker infers the dtype by key name
+for plain Python lists, but a numpy or torch array keeps its own.
 
-| Field                        | Type                                | When to use                                                                 |
-| ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------- |
-| `target_tokens`              | `LossTargetTokens`             | Always required. Next-token targets (shifted by 1).                         |
-| `weights`                    | `Weights`                      | Required for cross-entropy `forward_backward`; optional for `forward` and advantage-based losses, where omission includes all tokens. Per-token non-negative floats (`dtype="D_TYPE_FLOAT32"`); cross-entropy honors fractional weights, other losses treat them as a 0/1 mask. |
-| `grpo_inputs`                | `GrpoLossInputs`               | GRPO loss only. See [GRPO loss inputs](#grpo-loss-inputs).                  |
-| `ppo_inputs`                 | `PpoLossInputs`                | PPO loss only.                                                              |
-| `cispo_inputs`               | `CispoLossInputs`              | CISPO loss only.                                                            |
-| `dro_inputs`                 | `DroLossInputs`                | DRO loss only.                                                              |
-| `importance_sampling_inputs` | `ImportanceSamplingLossInputs` | Importance-sampling loss only.                                              |
+`loss_fn_inputs` keys are flat, including for GRPO:
 
-#### GRPO loss inputs
+| Key | Tensor type | Required by | Description |
+| --- | --- | --- | --- |
+| `target_tokens` | `TensorData` (`int64`) | Every loss | Next-token targets, shifted by one position. |
+| `weights` | `TensorData` (`int64` or `float32`) | Cross-entropy; optional for policy losses | Per-token non-negative weights. Cross-entropy honors fractional values; policy losses treat values as a 0/1 mask. Omission for a policy loss includes all tokens. |
+| `mask` | `TensorData` (`int64` or `float32`) | Optional for every loss | Per-token inclusion mask. |
+| `advantages` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | Per-token advantage values. |
+| `logprobs` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | Per-token log probabilities from the generator policy. |
+| `reference_logprobs` | `TensorData` (`float32`) | GRPO when `beta > 0` | Per-token reference-model log probabilities used for the KL penalty. |
 
-`GrpoLossInputs` contains per-token data for the GRPO loss:
+Every training operation validates `loss_fn_inputs` client-side, before any upload or
+submission:
 
-| Field                  | Type                    | Required      | Description                                                            |
-| ---------------------- | ----------------------- | ------------- | ---------------------------------------------------------------------- |
-| `advantages`           | `LossAdvantages`   | Yes           | Per-token advantage values.                                            |
-| `logprobs`             | `LossLogprobs`     | Yes           | Log probabilities from the generator model.                            |
-| `reference_logprobs`   | `LossLogprobs`     | If `beta > 0` | Log probabilities from the reference model for KL penalty computation. |
+- **Missing a key the loss requires** raises `ValueError` — the loss cannot be computed
+  without it, so this is always a caller error.
+- **A key outside the table above** emits a `UserWarning` and is sent anyway. The wire
+  shape is an open `map<string, TensorData>`, so an unrecognized key may be a server
+  input newer than this SDK; rejecting it would put an SDK release on the critical path
+  of every new server input.
+- **A dtype other than the one the table pins** raises `ValueError`.
 
-Each tensor TypedDict has `data` (list of floats) and `dtype` (`"D_TYPE_FLOAT32"`).
+`forward()` and `custom_forward_backward()` carry no loss config, so they require only
+`target_tokens` and recognize `weights` and `mask`. Reusing one batch across `forward()`
+and `forward_backward()` therefore warns about the policy keys — `advantages`, `logprobs`
+— and still submits.
+
+A `RoutedExperts` value carries exactly one source — an inline `data` buffer or an `object_uri` —
+alongside `shape`; see the `RoutedExperts` entry in [`api.md`](api.md) for the field-level contract.
 
 ### Sampling params
 
@@ -1105,7 +1142,8 @@ so loop code written against other RL SDKs works unchanged.
 loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
 ```
 
-Standard next-token prediction loss. Requires `weights` and `target_tokens` in `loss_inputs`.
+Standard next-token prediction loss. Requires `weights` and `target_tokens` in
+`loss_fn_inputs`.
 
 #### GRPO
 
@@ -1124,7 +1162,7 @@ loss = LossConfig(
 | Field                 | Type    | Default                                    | Description                                                                               |
 | --------------------- | ------- | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | `agg_type`            | `str`   | `GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON` | How to aggregate per-token loss (see below).                                              |
-| `beta`                | `float` | `0.0`                                      | KL penalty coefficient. When > 0, `reference_logprobs` must be provided in `grpo_inputs`. |
+| `beta`                | `float` | `0.0`                                      | KL penalty coefficient. When > 0, `reference_logprobs` must be provided in `loss_fn_inputs`. |
 | `clip_low_threshold`  | `float` | _(server default)_                         | Lower bound the importance-sampling ratio is clamped to (e.g. `0.8`). Must be <= 1.       |
 | `clip_high_threshold` | `float` | _(server default)_                         | Upper bound the importance-sampling ratio is clamped to (e.g. `1.2`). Must be >= 1.       |
 | `ratio_type`          | `str`   | `GRPO_LOSS_RATIO_TYPE_TOKEN`               | Token-level ratios (standard GRPO) or `GRPO_LOSS_RATIO_TYPE_SEQUENCE` for GSPO-style loss. |
@@ -1137,7 +1175,9 @@ Aggregation types:
 | `GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN`    | Mean over valid tokens.              |
 | `GRPO_LOSS_AGGREGATION_TYPE_SEQUENCE_MEAN` | Mean over sequences.                 |
 
-Requires `target_tokens` and `grpo_inputs` (with `advantages`, `logprobs`, and optionally `reference_logprobs`) in `loss_inputs`; `weights` is optional.
+Requires the flat `target_tokens`, `advantages`, and `logprobs` keys in
+`loss_fn_inputs`; `reference_logprobs` is required when `beta > 0`, while
+`weights` and `mask` are optional.
 
 ---
 

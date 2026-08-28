@@ -14,49 +14,14 @@ from ._teardown import _Lifecycle
 from ._converters import (
     _to_sample,
     _to_adam_params,
-    _loss_inputs_key,
+    _to_loss_config,
+    _warn_on_binarized_weights,
     _to_forward_backward_output,
 )
 from .._operations import DEFAULT_OPERATION_INTERVAL
 from ..clients.session import SessionClient
 from ..clients.trainer import _submit_forward_backward
-from .....types.beta.rl.loss_type import LossType
-from .....types.beta.rl.ppo_loss_params import PpoLossParams
-from .....types.beta.rl.loss_config_param import LossConfig
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
-
-# Only the losses whose Datum shape matches _to_sample. cispo/dro are in tinker's
-# LossFnType but their Datums carry extra keys, so they stay rejected in _loss_inputs_key.
-_WIRE_LOSS: dict[types.LossFnType, LossType] = {
-    "importance_sampling": "LOSS_TYPE_IMPORTANCE_SAMPLING",
-    "ppo": "LOSS_TYPE_PPO",
-}
-_LOSS_CONFIG_KEYS: dict[types.LossFnType, frozenset[str]] = {
-    "importance_sampling": frozenset(),
-    "ppo": frozenset({"clip_low_threshold", "clip_high_threshold"}),
-}
-
-
-def _to_loss_config(loss_fn: types.LossFnType, config: dict[str, float] | None) -> LossConfig:
-    if loss_fn not in _WIRE_LOSS:
-        raise ValueError(f"the tinker wrapper supports loss_fn {sorted(_WIRE_LOSS)} only, got {loss_fn!r}")
-    values = config or {}
-    accepted = _LOSS_CONFIG_KEYS[loss_fn]
-    unknown = values.keys() - accepted
-    if unknown:
-        raise ValueError(
-            f"Unsupported loss_fn_config keys for {loss_fn!r}: {sorted(unknown)}; accepted keys are {sorted(accepted)}"
-        )
-
-    loss = LossConfig(type=_WIRE_LOSS[loss_fn])
-    if loss_fn == "ppo" and values:
-        params = PpoLossParams()
-        if "clip_low_threshold" in values:
-            params["clip_low_threshold"] = values["clip_low_threshold"]
-        if "clip_high_threshold" in values:
-            params["clip_high_threshold"] = values["clip_high_threshold"]
-        loss["ppo_params"] = params
-    return loss
 
 
 async def _wait(session: SessionClient, operation: Any, timeout: float | None) -> Any:
@@ -107,8 +72,13 @@ class TrainingClient:
         loss_fn_config: dict[str, float] | None = None,
     ) -> _Pending[types.ForwardBackwardOutput]:
         session = self._session
-        samples = [_to_sample(datum, _loss_inputs_key(loss_fn)) for datum in data]
+        # Config first: it is O(1) and rejects a misspelled key before the batch-sized
+        # conversion below runs. The converters re-check keys and dtypes that
+        # `_submit_forward_backward` checks again for native callers; the pass is
+        # deliberate, so tinker users get Datum-worded errors rather than `samples[i]`.
         loss = _to_loss_config(loss_fn, loss_fn_config)
+        samples = [_to_sample(datum, loss_fn) for datum in data]
+        _warn_on_binarized_weights(samples, loss_fn)
         operation = session.run(_submit_forward_backward(session, samples=samples, loss=loss))
         return _Pending(session, operation, _resolve_forward_backward)
 

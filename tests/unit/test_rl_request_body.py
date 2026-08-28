@@ -4,8 +4,9 @@ import os
 import json
 import importlib
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, get_args, get_origin, get_type_hints
 from unittest.mock import AsyncMock, MagicMock
+from typing_extensions import Required
 
 import httpx
 import pytest
@@ -15,26 +16,45 @@ from respx.models import Call
 from together import Together, AsyncTogether
 from together.lib.beta.rl import (
     Sample,
-    Weights,
     AdamParams,
     LossConfig,
-    LossInputs,
     ModelInput,
     MuonParams,
-    LossLogprobs,
+    TensorData,
     SessionClient,
-    GrpoLossInputs,
     GrpoLossParams,
-    LossAdvantages,
     SamplingParams,
     ModelInputChunk,
     EncodedTextChunk,
-    LossTargetTokens,
+    _losses as rl_losses,
     download_checkpoint,
     download_checkpoint_async,
 )
+from together.types.beta.rl import (
+    loss_config_param,
+    tensor_data_param,
+    operation_forward_params,
+    operation_forward_backward_params,
+    operation_custom_forward_backward_params,
+)
+from together.lib.beta.rl._payloads import _VALIDATION_OMITTED_KEYS
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+LEGACY_RL_LOSS_INPUT_NAMES = frozenset(
+    {
+        "LossInputs",
+        "LossTargetTokens",
+        "Weights",
+        "LossAdvantages",
+        "LossLogprobs",
+        "GrpoLossInputs",
+        "PpoLossInputs",
+        "CispoLossInputs",
+        "DroLossInputs",
+        "ImportanceSamplingLossInputs",
+    }
+)
 
 
 class TestRLRequestBody:
@@ -106,26 +126,24 @@ class TestRLRequestBody:
         samples = [
             Sample(
                 model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
-                loss_inputs=LossInputs(
-                    weights=Weights(
+                loss_fn_inputs={
+                    "weights": TensorData(
                         data=[0.0, 1.0, 1.0],
-                        dtype="D_TYPE_FLOAT32",
+                        dtype="float32",
                     ),
-                    target_tokens=LossTargetTokens(
+                    "target_tokens": TensorData(
                         data=[2, 3, 0],
-                        dtype="D_TYPE_INT64",
+                        dtype="int64",
                     ),
-                    grpo_inputs=GrpoLossInputs(
-                        advantages=LossAdvantages(
-                            data=[1.0, 1.0, 1.0],
-                            dtype="D_TYPE_FLOAT32",
-                        ),
-                        logprobs=LossLogprobs(
-                            data=[-0.1, -0.2, -0.3],
-                            dtype="D_TYPE_FLOAT32",
-                        ),
+                    "advantages": TensorData(
+                        data=[1.0, 1.0, 1.0],
+                        dtype="float32",
                     ),
-                ),
+                    "logprobs": TensorData(
+                        data=[-0.1, -0.2, -0.3],
+                        dtype="float32",
+                    ),
+                },
             )
         ]
         loss = LossConfig(
@@ -436,3 +454,69 @@ def test_public_rl_names_have_no_param_suffix() -> None:
 def test_public_rl_names_are_importable() -> None:
     module = importlib.import_module("together.lib.beta.rl")
     assert [name for name in module.__all__ if not hasattr(module, name)] == []
+
+
+def test_public_rl_legacy_loss_inputs_are_not_exported() -> None:
+    module = importlib.import_module("together.lib.beta.rl")
+    assert LEGACY_RL_LOSS_INPUT_NAMES.isdisjoint(module.__all__)
+    assert all(not hasattr(module, name) for name in LEGACY_RL_LOSS_INPUT_NAMES)
+
+
+def _generated_sample_shapes() -> list[Any]:
+    """Every generated sample TypedDict the handwritten Sample stands in for."""
+    return [
+        operation_forward_params.Sample,
+        operation_forward_backward_params.Sample,
+        operation_custom_forward_backward_params.Sample,
+    ]
+
+
+def test_handwritten_sample_matches_generated_shape() -> None:
+    """Assert the handwritten Sample still matches every generated sample shape.
+
+    Nothing else syncs it with codegen, so a field added to any generated sample shape
+    must fail here rather than silently narrowing the public surface.
+    """
+    shapes = _generated_sample_shapes()
+    assert len(shapes) > 1
+
+    for shape in shapes:
+        generated_keys = set(get_type_hints(shape))
+        assert set(Sample.__annotations__) == generated_keys, shape.__name__
+
+    required_keys, _ = rl_losses._split_required(get_type_hints(Sample, include_extras=True))
+    assert required_keys == {"model_input", "loss_fn_inputs"}
+
+
+def test_handwritten_loss_config_matches_generated_shape() -> None:
+    """The stable facade must expose every field in the generated loss config."""
+    assert set(LossConfig.__annotations__) == set(get_type_hints(loss_config_param.LossConfig))
+
+
+def test_native_loss_specs_cover_generated_loss_types() -> None:
+    generated_loss_types = set(get_args(rl_losses.LossType)) - {"LOSS_TYPE_UNSPECIFIED"}
+    assert set(rl_losses.LOSS_SPECS) == generated_loss_types
+
+
+def test_loss_specs_only_use_known_tensor_inputs() -> None:
+    for spec in (*rl_losses.LOSS_SPECS.values(), rl_losses.FORWARD_INPUTS):
+        assert spec.required_inputs | spec.optional_inputs <= rl_losses.INPUT_DTYPES.keys()
+
+
+def test_validation_omitted_keys_stay_optional() -> None:
+    """Assert every key the validation body drops is optional where it lives.
+
+    `_shrink_for_validation` drops these keys, which is only valid while codegen leaves
+    them optional. If a future spec marked one Required, every large-payload operation
+    would start failing server-side validation with nothing failing locally.
+    """
+    # The pinned set keeps a new _VALIDATION_OMITTED_KEYS entry from skipping this test.
+    assert _VALIDATION_OMITTED_KEYS == {"routed_experts", "shape", "sparse_crow_indices", "sparse_col_indices"}
+
+    for shape in _generated_sample_shapes():
+        hints = get_type_hints(shape, include_extras=True)
+        assert get_origin(hints["routed_experts"]) is not Required, shape.__name__
+
+    tensor_hints = get_type_hints(tensor_data_param.TensorData, include_extras=True)
+    for key in ("shape", "sparse_crow_indices", "sparse_col_indices"):
+        assert get_origin(tensor_hints[key]) is not Required, key

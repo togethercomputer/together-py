@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
-from together.lib.beta.rl._payloads import _truncate_sequences
+from together.lib.beta.rl._payloads import _shrink_for_validation
 
 
 @pytest.mark.parametrize(
@@ -25,7 +25,96 @@ from together.lib.beta.rl._payloads import _truncate_sequences
             [{"tokens": [1, 2, 3]}, {"tokens": [6, 7, 8]}],
             id="list_of_dicts",
         ),
+        # Short strings elsewhere must survive so the body still validates.
+        pytest.param({"dtype": "float32"}, 8, {"dtype": "float32"}, id="short_strings_kept"),
+        # A tensor's shape/CSR indices describe the full array, so keeping them beside a
+        # truncated `data` would ship a self-contradicting pair.
+        pytest.param(
+            {"target_tokens": {"data": [1, 2, 3, 4], "dtype": "int64", "shape": [4], "sparse_col_indices": [0, 1]}},
+            2,
+            {"target_tokens": {"data": [1, 2], "dtype": "int64"}},
+            id="tensor_metadata_dropped",
+        ),
     ],
 )
-def test_truncate_sequences(data: Any, max_len: int, expected: Any) -> None:
-    assert _truncate_sequences(data, max_len) == expected
+def test_shrink_for_validation(data: Any, max_len: int, expected: Any) -> None:
+    assert _shrink_for_validation(data, max_len) == expected
+
+
+def test_validation_body_drops_routed_experts() -> None:
+    """The inline body stands in for a payload already uploaded to R2, so it must not
+    carry the routed-experts buffer that made the payload large in the first place."""
+    body = {
+        "samples": [
+            {
+                "model_input": {"chunks": [{"encoded_text": {"tokens": [1, 2, 3]}}]},
+                "routed_experts": {"data": "A" * 5000, "shape": [3, 4, 2]},
+            }
+        ]
+    }
+
+    validation_body = cast("dict[str, Any]", _shrink_for_validation(dict(body)))
+
+    sample = validation_body["samples"][0]
+    assert "routed_experts" not in sample
+    assert sample["model_input"] == {"chunks": [{"encoded_text": {"tokens": [1, 2, 3]}}]}
+
+
+def test_validation_body_shares_budget_across_model_input_chunks() -> None:
+    body = {
+        "samples": [
+            {
+                "model_input": {
+                    "chunks": [
+                        {"encoded_text": {"tokens": [1, 2, 3, 4, 5]}},
+                        {"encoded_text": {"tokens": [6, 7, 8, 9, 10]}},
+                    ]
+                }
+            }
+        ]
+    }
+
+    validation_body = cast("dict[str, Any]", _shrink_for_validation(dict(body)))
+
+    assert validation_body["samples"][0]["model_input"]["chunks"] == [
+        {"encoded_text": {"tokens": [1, 2, 3, 4, 5]}},
+        {"encoded_text": {"tokens": [6, 7, 8]}},
+    ]
+
+
+def test_validation_body_keeps_model_input_and_loss_tensors_aligned() -> None:
+    body = {
+        "samples": [
+            {
+                "model_input": {
+                    "chunks": [
+                        {"encoded_text": {"tokens": [1, 2, 3]}},
+                        {"encoded_text": {"tokens": [4, 5, 6, 7, 8]}},
+                        {"encoded_text": {"tokens": [9, 10]}},
+                    ]
+                },
+                "loss_fn_inputs": {
+                    "target_tokens": {
+                        "data": list(range(10)),
+                        "dtype": "int64",
+                        "shape": [10],
+                    },
+                    "weights": {
+                        "data": [1.0] * 10,
+                        "dtype": "float32",
+                    },
+                },
+            }
+        ]
+    }
+
+    validation_body = cast("dict[str, Any]", _shrink_for_validation(dict(body)))
+    sample = validation_body["samples"][0]
+
+    assert [chunk["encoded_text"]["tokens"] for chunk in sample["model_input"]["chunks"]] == [
+        [1, 2, 3],
+        [4, 5, 6, 7, 8],
+    ]
+    assert len(sample["loss_fn_inputs"]["target_tokens"]["data"]) == 8
+    assert len(sample["loss_fn_inputs"]["weights"]["data"]) == 8
+    assert "shape" not in sample["loss_fn_inputs"]["target_tokens"]

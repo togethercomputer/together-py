@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Literal, Sequence, cast
+from typing import Any, Literal, cast
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 from tinker.types.topk_prompt_logprobs import TopkPromptLogprobs
@@ -11,13 +12,16 @@ from tinker.types.topk_prompt_logprobs import TopkPromptLogprobs
 from .. import (
     Sample as WireSample,
     AdamParams as WireAdamParams,
-    LossInputs,
+    LossConfig as WireLossConfig,
     SampleResult,
     SamplingParams as WireSamplingParams,
     ForwardBackwardResult,
 )
 from ._compat import types
+from ._losses import loss_spec
+from .._losses import INPUT_DTYPES, validate_keys, validate_input_keys
 from .....types.beta.rl.model_input_param import ModelInput as WireModelInput
+from .....types.beta.rl.tensor_data_param import TensorData as WireTensorData
 from .....types.beta.rl.model_input_chunk_param import ModelInputChunk as WireModelInputChunk
 
 _TOPK_MASK_LOGPROB = -99999.0
@@ -33,59 +37,129 @@ def _to_model_input(model_input: types.ModelInput) -> WireModelInput:
     return {"chunks": chunks}
 
 
-_WIRE_DTYPE = {"int64": "D_TYPE_INT64", "float32": "D_TYPE_FLOAT32"}
+def _to_tensor(key: str, tensor: types.TensorData) -> WireTensorData:
+    """Serialize one tinker ``TensorData`` into its wire shape.
 
+    Emits the flattened ``data`` and its ``dtype``. ``shape`` is deliberately omitted:
+    only one-dimensional tensors get this far, so it is always ``[len(data)]`` and the
+    server infers it.
 
-def _to_tensor(tensor: Any) -> dict[str, Any]:
-    """One of tinker's ``TensorData`` arrays as a wire tensor.
+    Args:
+        key: The ``loss_fn_inputs`` entry being serialized, used to make errors actionable.
+        tensor: The tinker tensor to serialize.
 
-    ``dtype`` is required: the server rejects an unset one outright, since a tensor whose
-    element type it had to guess could be silently reinterpreted.
+    Returns:
+        The wire tensor with its ``data`` and ``dtype``.
+
+    Raises:
+        ValueError: If the tensor is multi-dimensional, which training operations
+            reject (Tinker produces such tensors from 2-D torch ``target_tokens``/
+            ``weights``, either dense or CSR-encoded), or if its dtype is not the one
+            the request shape pins for ``key``.
     """
-    if tensor.dtype not in _WIRE_DTYPE:
-        msg = f"Together supports {sorted(_WIRE_DTYPE)} tensors only, got {tensor.dtype!r}"
-        raise ValueError(msg)
-    return {"data": tensor.tolist(), "dtype": _WIRE_DTYPE[tensor.dtype]}
+    # Checked before to_numpy(), which reconstructs a sparse tensor through torch. A
+    # sparse tensor's `data` holds only the non-zero values, so it is unusable without
+    # the CSR indices the wire shape cannot carry.
+    if tensor.sparse_crow_indices is not None or tensor.sparse_col_indices is not None:
+        raise ValueError(
+            f"Datum.loss_fn_inputs[{key!r}] is a sparse CSR tensor (shape {tensor.shape}), but training"
+            " operations accept one-dimensional dense tensors only; flatten it before building the Datum."
+        )
+    # Rank comes from the array, not the optional `shape` field: a TensorData built
+    # straight from nested lists holds a 2-D array and leaves `shape` unset, and its
+    # `data` property would silently flatten it.
+    array = tensor.to_numpy()
+    if array.ndim != 1:
+        raise ValueError(
+            f"Datum.loss_fn_inputs[{key!r}] is {array.ndim}-dimensional, but training operations accept"
+            " one-dimensional dense tensors only; flatten it before building the Datum."
+        )
+    # Tinker coerces plain lists by key name, but a numpy/torch array keeps its own
+    # dtype, so this catches e.g. an integer `advantages` array before the server does.
+    allowed = INPUT_DTYPES.get(key)
+    if allowed is not None and tensor.dtype not in allowed:
+        raise ValueError(
+            f"Datum.loss_fn_inputs[{key!r}] has dtype {tensor.dtype!r}, but the request shape accepts"
+            f" {sorted(allowed)}; use a {sorted(allowed)[0]} array instead."
+        )
+    # The cast narrows `tensor.dtype` (a plain str) onto the wire literal the dtype
+    # check above already enforced. `array` is already 1-D, so tolist() skips the
+    # extra copy `tensor.data` would flatten into.
+    return cast("WireTensorData", {"data": array.tolist(), "dtype": tensor.dtype})
 
 
-def _to_sample(datum: types.Datum, loss_inputs_key: str) -> WireSample:
-    required = ("target_tokens", "logprobs", "advantages")
+def _to_sample(datum: types.Datum, loss_fn: types.LossFnType) -> WireSample:
+    """Serialize a tinker ``Datum`` into the wire sample shape ``loss_fn`` accepts.
+
+    Each loss declares its own ``loss_fn_inputs`` shape, so the datum is validated
+    against that loss rather than against the union of every loss's keys — otherwise
+    a mismatch only surfaces as an opaque server rejection.
+
+    Args:
+        datum: The tinker datum to serialize.
+        loss_fn: The loss the request will carry, which selects the accepted keys.
+
+    Returns:
+        The wire sample, with its tensors under ``loss_fn_inputs``.
+
+    Raises:
+        ValueError: If ``loss_fn`` is unsupported or a key the loss requires is missing.
+            A key the loss does not declare warns and is forwarded.
+    """
+    spec = loss_spec(loss_fn)
     inputs = datum.loss_fn_inputs
-    if set(inputs) != set(required):
-        raise ValueError(f"Datum.loss_fn_inputs keys {sorted(inputs)} != expected {list(required)}")
-    arrays = {key: _to_tensor(inputs[key]) for key in required}
-    # `weights` stays omitted, like tinker's Datum: advantages of 0.0 already mask the
-    # prompt positions, so gradients match exactly; only per-token KL/entropy diagnostics
-    # count prompt tokens as active and read slightly diluted.
-    loss_inputs = cast(
-        "LossInputs",
-        {
-            "target_tokens": arrays["target_tokens"],
-            loss_inputs_key: {
-                "logprobs": arrays["logprobs"],
-                "advantages": arrays["advantages"],
-            },
-        },
-    )
+    validate_input_keys(f"Datum.loss_fn_inputs for {loss_fn!r}", inputs.keys(), spec)
     return WireSample(
         model_input=_to_model_input(datum.model_input),
-        loss_inputs=loss_inputs,
+        loss_fn_inputs={key: _to_tensor(key, tensor) for key, tensor in inputs.items()},
     )
 
 
-# Losses whose Datum.loss_fn_inputs are exactly {target_tokens, logprobs, advantages}.
-# cross_entropy carries weights instead; cispo/dro carry extra keys — both fail in
-# _loss_inputs_key / _to_sample rather than silently dropping fields.
-# grpo is a Together wire loss, not a tinker LossFnType, so it is not listed here.
-_ADVANTAGE_LOSSES = frozenset({"importance_sampling", "ppo"})
+def _to_loss_config(loss_fn: types.LossFnType, config: Mapping[str, float] | None) -> WireLossConfig:
+    """Map a tinker loss and its config onto Together's wire selector."""
+    spec = loss_spec(loss_fn)
+    values = config or {}
+    validate_keys(
+        f"loss_fn_config for {loss_fn!r}",
+        values.keys(),
+        required=spec.required_params,
+        optional=spec.optional_params,
+    )
+
+    loss: dict[str, Any] = {"type": spec.wire_type}
+    if values and spec.params_key is not None:
+        loss[spec.params_key] = dict(values)
+    return cast("WireLossConfig", loss)
 
 
-def _loss_inputs_key(loss_fn: str) -> str:
-    loss = loss_fn.removeprefix("LOSS_TYPE_").lower()
-    if loss not in _ADVANTAGE_LOSSES:
-        msg = f"the tinker wrapper supports loss_fn {sorted(_ADVANTAGE_LOSSES)} only, got {loss!r}"
-        raise ValueError(msg)
-    return f"{loss}_inputs"
+def _has_fractional_weights(sample: WireSample) -> bool:
+    """Whether a converted sample's weights carry a value other than 0 or 1."""
+    weights = sample["loss_fn_inputs"].get("weights")
+    if weights is None:
+        return False
+    return not np.isin(weights["data"], (0, 1)).all()
+
+
+def _warn_on_binarized_weights(samples: Sequence[WireSample], loss_fn: types.LossFnType) -> None:
+    """Warn when a policy loss carries weights Together will read as a 0/1 mask.
+
+    Tinker multiplies ``weights`` into the per-token loss for every loss; Together honors
+    fractional values for ``cross_entropy`` only. Silently training a different objective
+    is the failure this warns about, mirroring ``_stop_strings``.
+
+    Args:
+        samples: Converted samples about to be submitted.
+        loss_fn: The loss they will be submitted under.
+    """
+    if loss_fn == "cross_entropy":
+        return
+    if any(_has_fractional_weights(sample) for sample in samples):
+        warnings.warn(
+            f"Together honors fractional loss_fn_inputs['weights'] for cross_entropy only; {loss_fn!r}"
+            " treats every non-zero weight as 1, so gradients differ from Tinker's."
+            " Use 'mask' when the intent is including or excluding tokens.",
+            stacklevel=3,  # _warn_on_binarized_weights -> forward_backward -> caller
+        )
 
 
 def _to_forward_backward_output(result: ForwardBackwardResult) -> types.ForwardBackwardOutput:

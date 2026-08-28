@@ -1,20 +1,22 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, cast, get_args
+from typing import Any, cast, get_args
 from dataclasses import dataclass
+from collections.abc import Iterable
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
+from .._losses import FORWARD_INPUTS, validate_sample, validate_loss_config
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
+from .._request_types import Sample, LossConfig
 from .....types.beta.rl.loss_type import LossType
 from .....types.beta.rl.adam_params import AdamParams
 from .....types.beta.rl.muon_params import MuonParams
 from .....types.beta.rl.forward_result import ForwardResult
 from .....types.beta.rl.weight_sync_type import WeightSyncType
 from .....types.beta.rl.forward_operation import ForwardOperation
-from .....types.beta.rl.loss_config_param import LossConfig
 from .....types.beta.rl.optim_step_result import OptimStepResult
 from .....types.beta.rl.weights_sync_result import WeightsSyncResult
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
@@ -22,23 +24,23 @@ from .....types.beta.rl.operation_forward_params import OperationForwardParams
 from .....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from .....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
 from .....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
-from .....types.beta.rl.operation_forward_backward_params import Sample, OperationForwardBackwardParams
+from .....types.beta.rl.operation_forward_backward_params import OperationForwardBackwardParams
 from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
 
-_PROTO_LOSS_TYPES = frozenset(get_args(LossType))
 _PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {
-    proto.removeprefix("LOSS_TYPE_").lower(): proto for proto in _PROTO_LOSS_TYPES
+    proto.removeprefix("LOSS_TYPE_").lower(): proto for proto in get_args(LossType)
 }
 
 
 def _resolve_loss_type(loss: LossConfig) -> LossConfig:
-    given = loss["type"]
-    if given in _PROTO_LOSS_TYPES:
-        return loss
-    if given not in _PROTO_LOSS_TYPE_BY_SHORT_NAME:
-        msg = f"Unknown loss type {given!r}; expected one of {sorted(_PROTO_LOSS_TYPE_BY_SHORT_NAME)}"
-        raise ValueError(msg)
-    return {**loss, "type": _PROTO_LOSS_TYPE_BY_SHORT_NAME[given]}
+    """Expand a short loss name (``"ppo"``) into its proto spelling, if it is one.
+
+    An unrecognized name is returned untouched so that `validate_loss_config` raises the
+    one error naming the one accepted vocabulary.
+    """
+    given = cast("str | None", loss.get("type"))
+    proto = _PROTO_LOSS_TYPE_BY_SHORT_NAME.get(given) if given is not None else None
+    return {**loss, "type": proto} if proto is not None else loss
 
 
 async def _submit_forward_backward(
@@ -48,11 +50,15 @@ async def _submit_forward_backward(
     loss: LossConfig,
 ) -> ForwardBackwardOperation:
     """POST a forward_backward operation without waiting for it."""
+    batch = list(samples)
     proto_loss = _resolve_loss_type(loss)
+    spec = validate_loss_config(proto_loss)
+    for index, sample in enumerate(batch):
+        validate_sample(sample, spec, label=f"samples[{index}]")
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
-        body={"loss": proto_loss, "samples": list(samples)},
+        body={"loss": proto_loss, "samples": batch},
         expected_type=OperationForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
@@ -70,10 +76,13 @@ async def _submit_forward(
     samples: Iterable[Sample],
 ) -> ForwardOperation:
     """POST a forward operation without waiting for it."""
+    batch = list(samples)
+    for index, sample in enumerate(batch):
+        validate_sample(sample, FORWARD_INPUTS, label=f"samples[{index}]")
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
-        body={"samples": list(samples)},
+        body={"samples": batch},
         expected_type=OperationForwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
@@ -91,10 +100,13 @@ async def _submit_custom_forward_backward(
     gradients: Iterable[Gradient],
 ) -> CustomForwardBackwardOperation:
     """POST a custom_forward_backward operation without waiting for it."""
+    batch = list(samples)
+    for index, sample in enumerate(batch):
+        validate_sample(sample, FORWARD_INPUTS, label=f"samples[{index}]")
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
-        body={"samples": list(samples), "gradients": list(gradients)},
+        body={"samples": batch, "gradients": list(gradients)},
         expected_type=OperationCustomForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None

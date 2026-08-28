@@ -15,15 +15,14 @@ from together.lib.beta.rl import (
     Sample,
     Logprob,
     Trainer,
-    Weights,
     Gradient,
     Generator,
     AdamParams,
     LoraConfig,
     LossConfig,
-    LossInputs,
     ModelInput,
     MuonParams,
+    TensorData,
     SampleResult,
     ForwardResult,
     RoutedExperts,
@@ -33,11 +32,11 @@ from together.lib.beta.rl import (
     OptimStepResult,
     SessionMetadata,
     EncodedTextChunk,
-    LossTargetTokens,
     WeightsSyncResult,
     ForwardBackwardResult,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
+    _losses as rl_losses,
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
@@ -261,13 +260,13 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
     samples = [
         Sample(
             model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
-            loss_inputs=LossInputs(
-                target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-                weights=Weights(
+            loss_fn_inputs={
+                "target_tokens": TensorData(data=[1, 2, 3], dtype="int64"),
+                "weights": TensorData(
                     data=[1.0, 0.0, 1.0],
-                    dtype="D_TYPE_FLOAT32",
+                    dtype="float32",
                 ),
-            ),
+            },
         )
     ]
     loss = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
@@ -712,13 +711,29 @@ def _small_sample() -> Sample:
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
         ),
-        loss_inputs=LossInputs(
-            target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-            weights=Weights(
+        loss_fn_inputs={
+            "target_tokens": TensorData(data=[1, 2, 3], dtype="int64"),
+            "weights": TensorData(
                 data=[1.0, 0.0, 1.0],
-                dtype="D_TYPE_FLOAT32",
+                dtype="float32",
             ),
+        },
+    )
+
+
+def _policy_sample(*, reference_logprobs: bool = False) -> Sample:
+    inputs: dict[str, Any] = {
+        "target_tokens": TensorData(data=[1, 2, 3], dtype="int64"),
+        "logprobs": TensorData(data=[-0.1, -0.2, -0.3], dtype="float32"),
+        "advantages": TensorData(data=[1.0, 0.5, -0.5], dtype="float32"),
+    }
+    if reference_logprobs:
+        inputs["reference_logprobs"] = TensorData(data=[-0.2, -0.3, -0.4], dtype="float32")
+    return Sample(
+        model_input=ModelInput(
+            chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
         ),
+        loss_fn_inputs=inputs,
     )
 
 
@@ -753,13 +768,13 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))],
         ),
-        loss_inputs=LossInputs(
-            target_tokens=LossTargetTokens(data=[1, 2, 3], dtype="D_TYPE_INT64"),
-            weights=Weights(
+        loss_fn_inputs={
+            "target_tokens": TensorData(data=[1, 2, 3], dtype="int64"),
+            "weights": TensorData(
                 data=(value for value in (1.0, 0.0, 1.0)),
-                dtype="D_TYPE_FLOAT32",
+                dtype="float32",
             ),
-        ),
+        },
     )
     trainer.trainer.forward_backward(
         samples=[sample],
@@ -768,7 +783,7 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
-    assert kwargs["samples"][0]["loss_inputs"]["weights"]["data"] == [1.0, 0.0, 1.0]
+    assert kwargs["samples"][0]["loss_fn_inputs"]["weights"]["data"] == [1.0, 0.0, 1.0]
     trainer.stop()
 
 
@@ -787,9 +802,16 @@ def test_resolve_loss_type(given: str, expected: str) -> None:
     assert loss["type"] == given, "input config must not be mutated"
 
 
-def test_resolve_loss_type_rejects_unknown_name() -> None:
-    with pytest.raises(ValueError, match="Unknown loss type"):
-        trainer_module._resolve_loss_type(cast(Any, {"type": "gspo"}))
+def test_resolve_loss_type_passes_unknown_name_through() -> None:
+    """Normalizing is not validating: `_losses` owns the one loss-type vocabulary.
+
+    An unrecognized name reaches `validate_loss_config` untouched so a caller sees one
+    error naming one set of accepted types, not two with different alphabets.
+    """
+    assert trainer_module._resolve_loss_type(cast(Any, {"type": "gspo"})) == {"type": "gspo"}
+
+    with pytest.raises(ValueError, match="Unsupported loss type"):
+        rl_losses.validate_loss_config(cast(Any, {"type": "gspo"}))
 
 
 def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -798,12 +820,149 @@ def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch)
     client = FakeClient()
     trainer = _make_session(client)
 
-    trainer.trainer.forward_backward(samples=[_small_sample()], loss=cast(Any, {"type": "ppo"}))
+    trainer.trainer.forward_backward(samples=[_policy_sample()], loss=cast(Any, {"type": "ppo"}))
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
     assert kwargs["loss"] == {"type": "LOSS_TYPE_PPO"}
     trainer.stop()
+
+
+@pytest.mark.parametrize(
+    ("loss", "sample"),
+    [
+        ({"type": "LOSS_TYPE_CROSS_ENTROPY"}, _small_sample()),
+        ({"type": "LOSS_TYPE_GRPO", "grpo_params": {"beta": 0.1}}, _policy_sample(reference_logprobs=True)),
+        ({"type": "LOSS_TYPE_IMPORTANCE_SAMPLING"}, _policy_sample()),
+        ({"type": "LOSS_TYPE_PPO", "ppo_params": {"clip_low_threshold": 0.8}}, _policy_sample()),
+        ({"type": "LOSS_TYPE_CISPO", "cispo_params": {"clip_high_threshold": 1.2}}, _policy_sample()),
+        ({"type": "LOSS_TYPE_DRO", "dro_params": {"beta": 0.1}}, _policy_sample()),
+    ],
+)
+def test_forward_backward_accepts_each_generated_loss(
+    monkeypatch: pytest.MonkeyPatch,
+    loss: dict[str, Any],
+    sample: Sample,
+) -> None:
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    client = FakeClient()
+    session = _make_session(client)
+
+    session.trainer.forward_backward(samples=(item for item in [sample]), loss=cast(Any, loss))
+
+    assert client.beta.rl.operations.last_call is not None
+    assert client.beta.rl.operations.last_call[2]["loss"] == loss
+    session.stop()
+
+
+@pytest.mark.parametrize(
+    ("loss", "message"),
+    [
+        ({}, "Unsupported loss type"),
+        ({"type": "LOSS_TYPE_DRO"}, "dro_params"),
+        ({"type": "LOSS_TYPE_DRO", "dro_params": {}}, "beta"),
+        ({"type": "LOSS_TYPE_PPO", "ppo_params": {"beta": 0.1}}, "Unsupported keys"),
+        ({"type": "LOSS_TYPE_PPO", "grpo_params": {}}, "Unsupported keys"),
+    ],
+)
+def test_forward_backward_rejects_invalid_loss_config_before_submission(
+    loss: dict[str, Any],
+    message: str,
+) -> None:
+    client = FakeClient()
+    session = _make_session(client)
+
+    with pytest.raises(ValueError, match=message):
+        session.trainer.forward_backward(samples=[_policy_sample()], loss=cast(Any, loss))
+
+    assert client.beta.rl.operations.last_call is None
+    assert client.captured_put_body is None
+    session.stop()
+
+
+@pytest.mark.parametrize(
+    ("method", "sample", "message"),
+    [
+        ("forward_backward", _small_sample(), "advantages"),
+        (
+            "forward",
+            cast(
+                Any,
+                {
+                    "model_input": ModelInput(
+                        chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]
+                    ),
+                    "loss_fn_inputs": {
+                        "target_tokens": TensorData(data=[1, 2, 3], dtype="float32"),
+                    },
+                },
+            ),
+            "dtype",
+        ),
+        (
+            "custom_forward_backward",
+            cast(
+                Any,
+                {
+                    "model_input": ModelInput(
+                        chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]
+                    ),
+                    "loss_fn_inputs": {},
+                },
+            ),
+            "target_tokens",
+        ),
+    ],
+)
+def test_training_operations_reject_invalid_loss_inputs_before_submission(
+    method: str,
+    sample: Sample,
+    message: str,
+) -> None:
+    client = FakeClient()
+    session = _make_session(client)
+
+    with pytest.raises(ValueError, match=message):
+        if method == "forward_backward":
+            session.trainer.forward_backward(samples=[sample], loss=LossConfig(type="LOSS_TYPE_PPO"))
+        elif method == "forward":
+            session.trainer.forward(samples=[sample])
+        else:
+            session.trainer.custom_forward_backward(
+                samples=[sample],
+                gradients=[Gradient(data=[0.1, 0.2, 0.3], dtype="D_TYPE_FLOAT32")],
+            )
+
+    assert client.beta.rl.operations.last_call is None
+    assert client.captured_put_body is None
+    session.stop()
+
+
+def test_forward_warns_but_submits_undeclared_loss_input(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An undeclared tensor key warns and still ships.
+
+    ``loss_fn_inputs`` is an open map on the wire, so a key this SDK has not heard of may
+    be a server input newer than the client. Reusing one batch across ``forward`` and
+    ``forward_backward`` is the ordinary native idiom and must not raise.
+    """
+    patch_wait(monkeypatch, ForwardResult(logprobs=[Logprob(data=[-1.0, -2.0, -3.0])]))
+    client = FakeClient()
+    session = _make_session(client)
+
+    sample = Sample(
+        model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
+        loss_fn_inputs={
+            "target_tokens": TensorData(data=[1, 2, 3], dtype="int64"),
+            "logprobs": TensorData(data=[-0.1, -0.2, -0.3], dtype="float32"),
+        },
+    )
+    with pytest.warns(UserWarning, match="logprobs"):
+        session.trainer.forward(samples=[sample])
+
+    assert client.beta.rl.operations.last_call is not None
+    _, _, kwargs = client.beta.rl.operations.last_call
+    assert kwargs["samples"] == [_sample_payload(sample)]
+    session.stop()
 
 
 async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -819,13 +978,13 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
         model_input=ModelInput(
             chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=long_tokens))],
         ),
-        loss_inputs=LossInputs(
-            target_tokens=LossTargetTokens(data=long_tokens, dtype="D_TYPE_INT64"),
-            weights=Weights(
+        loss_fn_inputs={
+            "target_tokens": TensorData(data=long_tokens, dtype="int64"),
+            "weights": TensorData(
                 data=long_weights,
-                dtype="D_TYPE_FLOAT32",
+                dtype="float32",
             ),
-        ),
+        },
     )
 
     result = await trainer.trainer.forward_backward_async(
@@ -847,7 +1006,7 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     assert len(kwargs["samples"]) == 1
     sent = kwargs["samples"][0]
     assert sent["model_input"]["chunks"][0]["encoded_text"]["tokens"] == long_tokens[:8]
-    assert sent["loss_inputs"]["weights"]["data"] == long_weights[:8]
+    assert sent["loss_fn_inputs"]["weights"]["data"] == long_weights[:8]
 
 
 def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -865,10 +1024,10 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
                     model_input=ModelInput(
                         chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=list(range(50))))],
                     ),
-                    loss_inputs=LossInputs(
-                        target_tokens=LossTargetTokens(data=list(range(50)), dtype="D_TYPE_INT64"),
-                        weights=Weights(data=[1.0] * 50, dtype="D_TYPE_FLOAT32"),
-                    ),
+                    loss_fn_inputs={
+                        "target_tokens": TensorData(data=list(range(50)), dtype="int64"),
+                        "weights": TensorData(data=[1.0] * 50, dtype="float32"),
+                    },
                 )
             ],
             loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),

@@ -3,7 +3,7 @@ from __future__ import annotations
 import signal
 import warnings
 from types import SimpleNamespace
-from typing import Any, Callable, cast
+from typing import Any, Callable, cast, get_args
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -14,8 +14,15 @@ import numpy as np
 from tinker import types
 from tinker.types.image_chunk import ImageChunk
 
-from together.lib.beta.rl import tinker as tinker_compat
-from together.lib.beta.rl.tinker import _service, _sampling, _teardown, _training, _converters
+from together.lib.beta import rl
+from together.lib.beta.rl import (
+    Sample,
+    LossConfig,
+    tinker as tinker_compat,
+    _losses as rl_losses,
+    _request_types,
+)
+from together.lib.beta.rl.tinker import _losses, _service, _sampling, _teardown, _converters
 from together.lib.beta.rl.clients.session import SessionClient
 from together.types.beta.rl.sample_result import SampleResult
 from together.types.beta.rl.sampled_sequence import SampledSequence
@@ -81,33 +88,25 @@ def _rl_loop_datum() -> types.Datum:
 def test_datum_arrays_pass_through_unshifted() -> None:
     """The arrays must NOT be shifted again: rl_loop pre-shifts them, and a second
     shift (e.g. apply_label_shift) would silently train against the wrong targets."""
-    sample = _converters._to_sample(_rl_loop_datum(), "importance_sampling_inputs")
+    sample = _converters._to_sample(_rl_loop_datum(), "importance_sampling")
 
-    inputs = sample["loss_inputs"]
-    assert "target_tokens" in inputs
-    assert "importance_sampling_inputs" in inputs
+    inputs = sample["loss_fn_inputs"]
     assert inputs["target_tokens"]["data"] == [0, 0, 0, 10, 11, 12]
-    assert inputs["importance_sampling_inputs"]["logprobs"]["data"] == [0.0, 0.0, 0.0, -0.5, -0.25, -0.125]
-    assert inputs["importance_sampling_inputs"]["advantages"]["data"] == [0.0, 0.0, 0.0, 0.5, 0.5, 0.5]
+    assert inputs["logprobs"]["data"] == [0.0, 0.0, 0.0, -0.5, -0.25, -0.125]
+    assert inputs["advantages"]["data"] == [0.0, 0.0, 0.0, 0.5, 0.5, 0.5]
 
 
 def test_datum_converts_field_for_field() -> None:
-    sample = _converters._to_sample(_rl_loop_datum(), "importance_sampling_inputs")
+    sample = _converters._to_sample(_rl_loop_datum(), "importance_sampling")
 
     chunks = sample["model_input"]["chunks"]
     assert isinstance(chunks, list)
     assert [chunk["encoded_text"]["tokens"] for chunk in chunks] == [[1, 2, 3, 4], [10, 11]]
     assert "policy_segments" not in sample
-    # weights deliberately omitted: advantages mask the prompt positions already
-    assert "weights" not in sample["loss_inputs"]
-    # dtype is not optional — the server rejects a tensor whose element type it would
-    # have to guess ("value must be in list [1]" on target_tokens.dtype).
-    inputs = sample["loss_inputs"]
-    target_tokens: dict[str, Any] = dict(inputs.get("target_tokens") or {})
-    is_inputs: dict[str, Any] = dict(inputs.get("importance_sampling_inputs") or {})
-    assert target_tokens.get("dtype") == "D_TYPE_INT64"
-    assert is_inputs.get("logprobs", {}).get("dtype") == "D_TYPE_FLOAT32"
-    assert is_inputs.get("advantages", {}).get("dtype") == "D_TYPE_FLOAT32"
+    inputs = sample["loss_fn_inputs"]
+    assert inputs["target_tokens"]["dtype"] == "int64"
+    assert inputs["logprobs"]["dtype"] == "float32"
+    assert inputs["advantages"]["dtype"] == "float32"
 
 
 def test_model_input_rejects_non_text_chunks() -> None:
@@ -115,21 +114,42 @@ def test_model_input_rejects_non_text_chunks() -> None:
         _converters._to_model_input(types.ModelInput(chunks=[ImageChunk(data=b"", format="png")]))
 
 
-def test_loss_inputs_key_matches_wire_field() -> None:
-    assert _converters._loss_inputs_key("LOSS_TYPE_IMPORTANCE_SAMPLING") == "importance_sampling_inputs"
-    assert _converters._loss_inputs_key("ppo") == "ppo_inputs"
+def test_tensor_shape_is_not_sent() -> None:
+    """`shape` is redundant for a 1-D tensor, so the converter never sends it; _payloads
+    separately strips it from the truncated inline validation body."""
+    tensor = types.TensorData([2.0, 3.0, 4.0], dtype="float32", shape=[3])
+
+    converted = _converters._to_tensor("advantages", tensor)
+
+    assert converted == {"data": [2.0, 3.0, 4.0], "dtype": "float32"}
 
 
-def test_loss_inputs_key_rejects_losses_the_conversion_does_not_fit() -> None:
-    """cross_entropy Datums carry weights, not logprobs/advantages, and cispo Datums
-    carry extra clip thresholds — converting them with the hardcoded pair would either
-    crash confusingly or silently train a different loss. grpo is Together-only."""
-    with pytest.raises(ValueError, match="cross_entropy"):
-        _converters._loss_inputs_key("LOSS_TYPE_CROSS_ENTROPY")
-    with pytest.raises(ValueError, match="cispo"):
-        _converters._loss_inputs_key("LOSS_TYPE_CISPO")
-    with pytest.raises(ValueError, match="grpo"):
-        _converters._loss_inputs_key("LOSS_TYPE_GRPO")
+@pytest.mark.parametrize(
+    ("tensor", "message"),
+    [
+        # Tinker CSR-encodes a 2-D torch tensor when that saves space...
+        (
+            types.TensorData(
+                [2.0, 3.0],
+                dtype="float32",
+                shape=[2, 3],
+                sparse_crow_indices=[0, 1, 2],
+                sparse_col_indices=[1, 2],
+            ),
+            "'weights'.*sparse CSR",
+        ),
+        # ...and leaves it dense otherwise, which the wire shape rejects just the same.
+        (types.TensorData([1.0, 0.0, 1.0, 1.0], dtype="float32", shape=[2, 2]), "'weights'.*2-dimensional"),
+        # Nested lists leave `shape` unset, so rank has to come from the array itself —
+        # reading the optional field would let this through and silently flatten it.
+        (types.TensorData([[1.0, 0.0], [1.0, 1.0]], dtype="float32"), "'weights'.*2-dimensional"),
+    ],
+)
+def test_multi_dimensional_tensor_is_rejected(tensor: types.TensorData, message: str) -> None:
+    """Training operations take 1-D dense tensors only, so the request must fail here,
+    naming the offending key, instead of coming back as an opaque server error."""
+    with pytest.raises(ValueError, match=message):
+        _converters._to_tensor("weights", tensor)
 
 
 def test_forward_backward_output_maps_loss_into_tinker_metrics() -> None:
@@ -151,45 +171,131 @@ def test_forward_backward_output_does_not_overwrite_existing_loss_sum() -> None:
     assert output.metrics["loss:sum"] == 9.0
 
 
+def _tensors(*keys: str) -> dict[str, types.TensorData]:
+    """One placeholder tensor per key, typed as the wire shape declares it."""
+    return {
+        key: types.TensorData([1, 2], dtype="int64")
+        if key == "target_tokens"
+        else types.TensorData([1.0, 0.5], dtype="float32")
+        for key in keys
+    }
+
+
 @pytest.mark.parametrize(
-    "loss_fn_inputs",
+    ("loss_fn", "loss_fn_inputs", "message"),
     [
-        {
-            "target_tokens": types.TensorData([1, 2], dtype="int64"),
-            "logprobs": types.TensorData([0.0, -0.1], dtype="float32"),
-        },
-        {
-            "target_tokens": types.TensorData([1, 2], dtype="int64"),
-            "logprobs": types.TensorData([0.0, -0.1], dtype="float32"),
-            "advantages": types.TensorData([0.0, 1.0], dtype="float32"),
-            "weights": types.TensorData([1.0, 1.0], dtype="float32"),
-        },
+        ("importance_sampling", _tensors("logprobs", "advantages"), "must include.*'target_tokens'"),
+        ("importance_sampling", _tensors("target_tokens", "logprobs"), "must include.*'advantages'"),
+        ("cross_entropy", _tensors("target_tokens"), "must include.*'weights'"),
     ],
 )
-def test_to_sample_rejects_wrong_loss_input_keys(loss_fn_inputs: dict[str, Any]) -> None:
-    """Missing or extra Datum fields must fail with ValueError, not a bare KeyError or silent drop."""
+def test_to_sample_rejects_missing_required_inputs(
+    loss_fn: types.LossFnType, loss_fn_inputs: dict[str, Any], message: str
+) -> None:
+    """A key the loss requires and the caller omitted is always the caller's error."""
+    datum = types.Datum(model_input=types.ModelInput.from_ints([1, 2]), loss_fn_inputs=loss_fn_inputs)
+
+    with pytest.raises(ValueError, match=message):
+        _converters._to_sample(datum, loss_fn)
+
+
+@pytest.mark.parametrize(
+    ("loss_fn", "loss_fn_inputs", "message"),
+    [
+        ("importance_sampling", _tensors("target_tokens", "logprobs", "advantages", "unknown"), "keys.*'unknown'"),
+        # reference_logprobs belongs to grpo only, which the wrapper does not support.
+        (
+            "importance_sampling",
+            _tensors("target_tokens", "logprobs", "advantages", "reference_logprobs"),
+            "keys.*'reference_logprobs'",
+        ),
+        # cross_entropy has no advantages term.
+        ("cross_entropy", _tensors("target_tokens", "weights", "advantages"), "keys.*'advantages'"),
+    ],
+)
+def test_to_sample_warns_but_forwards_undeclared_inputs(
+    loss_fn: types.LossFnType, loss_fn_inputs: dict[str, Any], message: str
+) -> None:
+    """An undeclared key warns and still ships.
+
+    ``loss_fn_inputs`` is an open map on the wire and tinker itself does no per-loss key
+    validation, so a key this table has not heard of may be a scratch key or a server
+    input newer than the SDK. Warning keeps the typo signal without making the SDK a gate.
+    """
+    datum = types.Datum(model_input=types.ModelInput.from_ints([1, 2]), loss_fn_inputs=loss_fn_inputs)
+
+    with pytest.warns(UserWarning, match=message):
+        sample = _converters._to_sample(datum, loss_fn)
+
+    assert set(sample["loss_fn_inputs"]) == set(loss_fn_inputs)
+
+
+@pytest.mark.parametrize(
+    ("loss_fn", "config", "expected_type", "expected_params"),
+    [
+        ("cross_entropy", None, "LOSS_TYPE_CROSS_ENTROPY", None),
+        ("importance_sampling", None, "LOSS_TYPE_IMPORTANCE_SAMPLING", None),
+        (
+            "ppo",
+            {"clip_low_threshold": 0.9, "clip_high_threshold": 1.1},
+            "LOSS_TYPE_PPO",
+            ("ppo_params", {"clip_low_threshold": 0.9, "clip_high_threshold": 1.1}),
+        ),
+        (
+            "cispo",
+            {"clip_low_threshold": 0.1, "clip_high_threshold": 3.0},
+            "LOSS_TYPE_CISPO",
+            ("cispo_params", {"clip_low_threshold": 0.1, "clip_high_threshold": 3.0}),
+        ),
+        ("dro", {"beta": 0.01}, "LOSS_TYPE_DRO", ("dro_params", {"beta": 0.01})),
+    ],
+)
+def test_loss_fn_config_routes_to_matching_params(
+    loss_fn: types.LossFnType,
+    config: dict[str, float] | None,
+    expected_type: str,
+    expected_params: tuple[str, Any] | None,
+) -> None:
+    loss = _converters._to_loss_config(loss_fn, config)
+
+    assert loss["type"] == expected_type
+    if expected_params is None:
+        assert set(loss) == {"type"}
+    else:
+        key, value = expected_params
+        assert loss[key] == value  # type: ignore[literal-required]
+
+
+def test_unsupported_loss_fn_is_rejected() -> None:
+    """grpo is a real Together loss the wrapper deliberately does not map, so a tinker
+    script can reach both paths with it — each must say so rather than fail server-side."""
+    loss_fn = "grpo"
     datum = types.Datum(
         model_input=types.ModelInput.from_ints([1, 2]),
-        loss_fn_inputs=loss_fn_inputs,
-    )
-    with pytest.raises(ValueError, match="!= expected"):
-        _converters._to_sample(datum, "importance_sampling_inputs")
-
-
-def test_loss_fn_config_routes_only_supported_keys() -> None:
-    """A misspelled clipping threshold must fail instead of silently changing PPO's objective."""
-    loss = _training._to_loss_config(
-        "ppo",
-        {"clip_low_threshold": 0.9, "clip_high_threshold": 1.1},
+        loss_fn_inputs=_tensors("target_tokens", "logprobs", "advantages"),
     )
 
-    assert "ppo_params" in loss
-    assert loss["ppo_params"] == {
-        "clip_low_threshold": 0.9,
-        "clip_high_threshold": 1.1,
-    }
-    with pytest.raises(ValueError, match="accepted keys.*clip_high_threshold"):
-        _training._to_loss_config("ppo", {"clip_hgh_threshold": 1.1})
+    with pytest.raises(ValueError, match="Unknown loss_fn"):
+        _converters._to_sample(datum, cast(Any, loss_fn))
+    with pytest.raises(ValueError, match="Unknown loss_fn"):
+        _converters._to_loss_config(cast(Any, loss_fn), None)
+
+
+@pytest.mark.parametrize(
+    ("loss_fn", "config", "message"),
+    [
+        # A misspelled threshold must fail instead of silently changing PPO's objective.
+        ("ppo", {"clip_hgh_threshold": 1.1}, "accepted keys.*clip_high_threshold"),
+        ("cross_entropy", {"beta": 0.1}, "Unsupported keys in loss_fn_config"),
+        ("dro", None, "must include.*'beta'"),
+        ("dro", {}, "must include.*'beta'"),
+    ],
+)
+def test_loss_fn_config_key_validation(
+    loss_fn: types.LossFnType, config: dict[str, float] | None, message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        _converters._to_loss_config(loss_fn, config)
 
 
 def test_sampling_params_inject_tinker_defaults() -> None:
@@ -327,6 +433,14 @@ def test_module_reexports_types_without_genuine_clients() -> None:
     assert not hasattr(tinker_compat, "resources")
     with pytest.raises(AttributeError, match="RestClient"):
         _ = tinker_compat.RestClient
+
+
+def test_request_types_are_reexported() -> None:
+    """The package re-export must resolve to the handwritten request types, not to a
+    regenerated types.beta.rl symbol of the same name."""
+    assert Sample is _request_types.Sample
+    assert LossConfig is _request_types.LossConfig
+    assert {"Sample", "LossConfig"} <= set(rl.__all__)
 
 
 def test_create_lora_training_client_warns_on_reproducibility_kwargs(
@@ -579,6 +693,75 @@ def test_forward_backward_result_is_tinker_shaped(monkeypatch: pytest.MonkeyPatc
     assert output.loss_fn_outputs == []
 
 
+def _policy_datum() -> types.Datum:
+    """A minimal policy-loss Datum; _rl_loop_datum's alignment is asserted elsewhere."""
+    return types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={
+            "target_tokens": types.TensorData([2, 0], dtype="int64"),
+            "logprobs": types.TensorData([-0.5, -0.25], dtype="float32"),
+            "advantages": types.TensorData([0.5, 0.5], dtype="float32"),
+        },
+    )
+
+
+def _cross_entropy_datum() -> types.Datum:
+    return types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={
+            "target_tokens": types.TensorData([2, 0], dtype="int64"),
+            "weights": types.TensorData([1.0, 0.0], dtype="float32"),
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("datum", "loss_fn", "expected_type", "expected_loss_fn_inputs"),
+    [
+        (
+            _policy_datum(),
+            "importance_sampling",
+            "LOSS_TYPE_IMPORTANCE_SAMPLING",
+            {
+                "target_tokens": {"data": [2, 0], "dtype": "int64"},
+                "logprobs": {"data": [-0.5, -0.25], "dtype": "float32"},
+                "advantages": {"data": [0.5, 0.5], "dtype": "float32"},
+            },
+        ),
+        (
+            _cross_entropy_datum(),
+            "cross_entropy",
+            "LOSS_TYPE_CROSS_ENTROPY",
+            {
+                "target_tokens": {"data": [2, 0], "dtype": "int64"},
+                "weights": {"data": [1.0, 0.0], "dtype": "float32"},
+            },
+        ),
+    ],
+)
+def test_forward_backward_submits_generic_tensor_map(
+    datum: types.Datum,
+    loss_fn: types.LossFnType,
+    expected_type: str,
+    expected_loss_fn_inputs: dict[str, Any],
+) -> None:
+    """Datums go out under loss_fn_inputs, never Together's named loss_inputs shape."""
+    submitted: list[dict[str, Any]] = []
+
+    async def forward_backward(_session_id: str, **kwargs: Any) -> dict[str, Any]:
+        submitted.append(kwargs)
+        return _OPERATION
+
+    session = _session_with_operations(forward_backward=forward_backward)
+    tinker_compat.TrainingClient(session).forward_backward([datum], loss_fn)
+
+    request = submitted[0]
+    assert request["loss"]["type"] == expected_type
+    sample = request["samples"][0]
+    assert "loss_inputs" not in sample
+    assert sample["loss_fn_inputs"] == expected_loss_fn_inputs
+
+
 def test_operations_post_eagerly_at_call_time() -> None:
     """grpo_gsm8k fires all sample POSTs before collecting any, and submits
     forward_backward + optim_step before resolving either; a lazy-submit refactor
@@ -739,3 +922,72 @@ def test_failed_explicit_close_can_be_retried() -> None:
         raise AssertionError(f"retry close should succeed: {exc}") from exc
     assert lifecycle.closed is True
     assert lifecycle.session is None
+
+
+def test_tinker_loss_specs_share_native_contracts() -> None:
+    for loss_fn, spec in _losses.LOSS_SPECS.items():
+        assert spec is rl_losses.LOSS_SPECS[spec.wire_type], loss_fn
+
+
+def test_loss_specs_cover_every_mappable_loss() -> None:
+    assert set(_losses.LOSS_SPECS) == set(get_args(types.LossFnType))
+    mapped = {spec.wire_type for spec in _losses.LOSS_SPECS.values()}
+    assert set(rl_losses.LOSS_SPECS) - mapped == {"LOSS_TYPE_GRPO"}
+
+
+@pytest.mark.parametrize(
+    ("key", "dtype"),
+    [("target_tokens", "float32"), ("advantages", "int64"), ("logprobs", "int64")],
+)
+def test_tensor_dtype_must_match_request_shape(key: str, dtype: types.TensorDtype) -> None:
+    """Tinker coerces plain lists by key name, but a numpy/torch array keeps its own
+    dtype — so `np.array([1, 0])` advantages would reach the server as an int64 tensor
+    where the shape pins float32. That must fail here, naming the key."""
+    with pytest.raises(ValueError, match=f"{key}.*has dtype"):
+        _converters._to_tensor(key, types.TensorData([1, 0], dtype=dtype))
+
+
+@pytest.mark.parametrize("key", ["weights", "mask"])
+@pytest.mark.parametrize("dtype", ["int64", "float32"])
+def test_union_typed_tensors_accept_either_dtype(key: str, dtype: types.TensorDtype) -> None:
+    """weights/mask are the TensorData union, so neither dtype may be rejected."""
+    assert _converters._to_tensor(key, types.TensorData([1, 0], dtype=dtype))["dtype"] == dtype
+
+
+def test_fractional_weights_warn_for_policy_losses() -> None:
+    """Together binarizes policy-loss weights while Tinker multiplies them in, so a
+    ported script would silently optimize a different objective without this warning."""
+    datum = types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={
+            "target_tokens": types.TensorData([2, 0], dtype="int64"),
+            "logprobs": types.TensorData([-0.5, -0.25], dtype="float32"),
+            "advantages": types.TensorData([0.5, 0.5], dtype="float32"),
+            "weights": types.TensorData([0.5, 1.0], dtype="float32"),
+        },
+    )
+    session = _session_with_operations(forward_backward=AsyncMock(return_value=_OPERATION))
+
+    with pytest.warns(UserWarning, match="gradients differ from Tinker"):
+        tinker_compat.TrainingClient(session).forward_backward([datum], "importance_sampling")
+
+
+@pytest.mark.parametrize(
+    ("loss_fn", "input_keys", "weights"),
+    [
+        # cross_entropy honors fractional weights, so there is nothing to warn about...
+        ("cross_entropy", ("target_tokens",), [0.5, 1.0]),
+        # ...and a 0/1 policy weight already means what Together will do with it.
+        ("importance_sampling", ("target_tokens", "logprobs", "advantages"), [0.0, 1.0]),
+    ],
+)
+def test_weights_do_not_warn_when_semantics_agree(
+    loss_fn: types.LossFnType, input_keys: tuple[str, ...], weights: list[float]
+) -> None:
+    inputs = {**_tensors(*input_keys), "weights": types.TensorData(weights, dtype="float32")}
+    datum = types.Datum(model_input=types.ModelInput.from_ints([1, 2]), loss_fn_inputs=inputs)
+    session = _session_with_operations(forward_backward=AsyncMock(return_value=_OPERATION))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        tinker_compat.TrainingClient(session).forward_backward([datum], loss_fn)

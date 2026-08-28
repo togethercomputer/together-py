@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any, Union, TypeVar, cast
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing_extensions import TypeAlias
 
 import httpx
@@ -19,28 +19,70 @@ logger = logging.getLogger("together")
 _LARGE_PAYLOAD_THRESHOLD = 0.5 * 1024 * 1024  # 0.5 MiB
 _MAX_PAYLOAD_SIZE = 5 * 1024**3 - 5 * 1024**2  # 4.995 GiB, R2's single-PUT upload limit
 _VALIDATION_MAX_SEQ_LEN = 8
+# Metadata that would contradict the truncated `data` it describes, so the inline body
+# drops it rather than shipping a self-inconsistent pair: `routed_experts` is a base64
+# buffer sequence truncation cannot shrink, and a tensor's shape/CSR indices describe
+# the full array. All are optional wherever they survive shrinking (asserted by
+# tests/unit/test_rl_request_body.py::test_validation_omitted_keys_stay_optional).
+_VALIDATION_OMITTED_KEYS = frozenset({"routed_experts", "shape", "sparse_crow_indices", "sparse_col_indices"})
 _MAX_RETRIES = 5
 
 JsonValue: TypeAlias = Union[str, int, float, bool, None, Mapping[str, Any], list[Any]]
 ResultModel = TypeVar("ResultModel", bound=BaseModel)
 
 
-def _truncate_sequences(data: JsonValue, max_len: int = _VALIDATION_MAX_SEQ_LEN) -> JsonValue:
+def _shrink_member(key: str, value: JsonValue, max_len: int) -> JsonValue:
+    """Shrink one mapping member, giving model-input chunks their shared token budget."""
+    if key == "chunks" and isinstance(value, list):
+        return _shrink_model_input_chunks(value, max_len)
+    return _shrink_for_validation(value, max_len)
+
+
+def _shrink_for_validation(data: JsonValue, max_len: int = _VALIDATION_MAX_SEQ_LEN) -> JsonValue:
+    """Shrink a serialized body into an inline stand-in for an uploaded payload.
+
+    Numeric sequences are truncated to ``max_len`` and ``_VALIDATION_OMITTED_KEYS`` are
+    dropped at every depth, so no surviving metadata describes the untruncated data.
+    Model-input chunks consume one shared token budget to stay aligned with loss tensor
+    data, which is truncated to the same ``max_len``.
+    """
     if isinstance(data, dict):
-        return {k: _truncate_sequences(v, max_len) for k, v in data.items()}
+        return {
+            key: _shrink_member(key, value, max_len)
+            for key, value in data.items()
+            if key not in _VALIDATION_OMITTED_KEYS
+        }
     if isinstance(data, list):
         if data and isinstance(data[0], (int, float)):
             return data[:max_len]
-        return [_truncate_sequences(item, max_len) for item in data]
+        return [_shrink_for_validation(item, max_len) for item in data]
     return data
 
 
-def _build_validation_body(body: Mapping[str, Any]) -> dict[str, Any]:
-    validation_body = dict(body)
-    for field, value in validation_body.items():
-        if isinstance(value, list):
-            validation_body[field] = _truncate_sequences(cast(JsonValue, value))
-    return validation_body
+def _shrink_model_input_chunks(chunks: Sequence[Any], max_len: int) -> list[Any]:
+    """Shrink encoded-text chunks in order against one token budget."""
+    shrunk_chunks: list[Any] = []
+    remaining = max_len
+
+    for chunk in chunks:
+        if remaining <= 0:
+            break
+
+        shrunk_chunks.append(_shrink_for_validation(chunk, remaining))
+        if not isinstance(chunk, dict):
+            continue
+
+        chunk_mapping = cast("Mapping[str, Any]", chunk)
+        encoded_text = chunk_mapping.get("encoded_text")
+        if not isinstance(encoded_text, dict):
+            continue
+
+        encoded_text_mapping = cast("Mapping[str, Any]", encoded_text)
+        tokens = encoded_text_mapping.get("tokens")
+        if isinstance(tokens, list):
+            remaining -= min(len(cast("list[Any]", tokens)), remaining)
+
+    return shrunk_chunks
 
 
 async def prepare_operation_body(
@@ -62,8 +104,9 @@ async def prepare_operation_body(
     Returns:
         A tuple containing the transformed request body and an optional payload ID.
         When the payload is small, the serialized body is returned with no payload
-        ID. When it is large, the full serialized body is uploaded and the
-        returned body contains truncated sequence fields for inline validation.
+        ID. When it is large, the full serialized body is uploaded and the returned
+        body is shrunk for inline validation: sequences are truncated and the keys in
+        ``_VALIDATION_OMITTED_KEYS`` are dropped.
     """
     serialized = transform(body, expected_type=expected_type)
     payload = json.dumps(serialized, separators=(",", ":")).encode()
@@ -78,7 +121,7 @@ async def prepare_operation_body(
         )
 
     payload_id = await _upload_payload(client, session_id=session_id, payload=payload)
-    return _build_validation_body(serialized), payload_id
+    return cast("dict[str, Any]", _shrink_for_validation(serialized)), payload_id
 
 
 async def _upload_payload(
