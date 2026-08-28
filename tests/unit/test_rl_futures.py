@@ -26,8 +26,9 @@ def _operation(op_id: str = "op-1") -> SampleOperation:
     return SampleOperation(id=op_id, status="TRAINING_OPERATION_STATUS_PENDING")
 
 
-async def _identity(output: Any) -> Any:
-    return output
+async def _identity(completed: Any) -> Any:
+    """Resolvers receive the completed operation; most only want its output."""
+    return completed.output
 
 
 @pytest.fixture
@@ -198,10 +199,10 @@ async def test_cached_resolve_skips_second_wait(monkeypatch: pytest.MonkeyPatch)
     timeouts = patch_wait(monkeypatch, "value")
     resolves = 0
 
-    async def resolve(output: Any) -> str:
+    async def resolve(completed: Any) -> str:
         nonlocal resolves
         resolves += 1
-        return cast(str, output)
+        return cast(str, completed.output)
 
     future = OperationFuture(_session(), _operation(), resolve)
     assert await future == "value"
@@ -214,12 +215,12 @@ async def test_resolve_failure_is_not_cached(monkeypatch: pytest.MonkeyPatch) ->
     timeouts = patch_wait(monkeypatch, "value")
     resolves = 0
 
-    async def resolve(output: Any) -> str:
+    async def resolve(completed: Any) -> str:
         nonlocal resolves
         resolves += 1
         if resolves == 1:
             raise ValueError("resolver bug")
-        return cast(str, output)
+        return cast(str, completed.output)
 
     future = OperationFuture(_session(), _operation(), resolve)
 

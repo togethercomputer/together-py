@@ -90,6 +90,10 @@ jobs:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: './scripts/test --ignore=tests/integration'
 
+  # The tinker extra resolves to nothing below 3.11, so the wrapper's tests importorskip
+  # themselves away on test-others' min-version (3.10) pass. Its max-version pass does
+  # reach 3.11+, but only once the min-version pass succeeds, so an unrelated failure
+  # there takes this package's coverage with it.
   test-tinker:
     timeout-minutes: 10
     name: test-tinker

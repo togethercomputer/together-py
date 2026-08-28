@@ -165,8 +165,8 @@ def _warn_on_binarized_weights(samples: Sequence[WireSample], loss_fn: types.Los
 def _to_forward_backward_output(result: ForwardBackwardResult) -> types.ForwardBackwardOutput:
     """Map Together's scalar loss + metrics onto tinker's ForwardBackwardOutput.
 
-    Per-datum ``loss_fn_outputs`` are left empty: Together does not return them, and
-    inventing logprobs would silently corrupt scripts that read them. Scripts that only
+    Per-datum ``loss_fn_outputs`` stay empty: the forward_backward wire has no logprobs,
+    and inventing them would silently corrupt scripts that read them. Scripts that only
     read ``.metrics`` (including tinker's ``loss:sum``) keep working because Together's
     total ``loss`` is published under that key.
     """
@@ -190,7 +190,9 @@ def _stop_strings(stop: str | Sequence[str] | Sequence[int]) -> list[str]:
             f"Together's sampling stop takes strings only; ignoring token-id stops {token_ids}."
             " Generation will rely on the model's own end token, so trajectories can"
             " differ from Tinker when a dropped token is not that end token.",
-            stacklevel=4,  # _stop_strings -> _to_sampling_params -> sample -> caller
+            # Points at the conversion rather than counting frames up to the caller: the
+            # depth differs per entry point, and the message names the offending stops.
+            stacklevel=2,
         )
     return strings
 
@@ -268,4 +270,5 @@ def _to_sample_response(result: SampleResult, topk_prompt_logprobs: int = 0) -> 
         ],
         prompt_logprobs_np=_prompt_logprobs(result),
         topk_prompt_logprobs_np=_topk_prompt_logprobs(result, topk_prompt_logprobs),
+        prompt_cache_hit_tokens=result.sequences[0].prompt_cache_hit_tokens if result.sequences else 0,
     )

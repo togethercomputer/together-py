@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import logging
 import warnings
 from typing import Any
 
-from .. import ModelResourcesClient
-from ._teardown import _Lifecycle, _stop_on_exit, _exit_on_sigterm, _log_release_hint
+from .. import ModelResources, ModelResourcesClient
+from .._loop import run_untracked
+from ._teardown import _Lifecycle, _stop_on_exit, _exit_on_sigterm
 from ._training import TrainingClient
+from ..clients.session import SessionClient
 from .....types.beta.rl.lora_config_param import LoraConfigParam
-
-logger = logging.getLogger("together")
 
 # Tinker HTTP-client options that Together's resource client does not honor.
 _KNOWN_IGNORED_KWARGS = frozenset(
@@ -26,6 +25,53 @@ _KNOWN_IGNORED_KWARGS = frozenset(
 # Ops/transport knobs a migrator likely tuned on purpose; warn so "work or warn" holds.
 # Headers/query stay silent — boilerplate plumbing nobody verifies after the import swap.
 _WARNED_IGNORED_KWARGS = frozenset({"http_client", "max_retries", "timeout"})
+
+
+def _check_attached(attached: ModelResources, base_model: str) -> None:
+    """Reject borrowed resources a LoRA session cannot legitimately run on."""
+    if attached.base_model != base_model:
+        raise ValueError(
+            f"Attached model resources use base model {attached.base_model!r}, not requested {base_model!r}"
+        )
+    if not attached.lora_enabled:
+        raise ValueError("Attached model resources do not support LoRA training sessions")
+
+
+def _build_lora_config(rank: int, seed: int | None, train_unembed: bool) -> LoraConfigParam:
+    lora_config = LoraConfigParam(rank=rank)
+    if seed is not None:
+        lora_config["seed"] = seed
+    if not train_unembed:
+        lora_config["train_unembed"] = False
+    return lora_config
+
+
+def _start_training_client(
+    session: SessionClient,
+    model_resources: ModelResourcesClient,
+    *,
+    owns_model_resources: bool,
+) -> TrainingClient:
+    lifecycle = _Lifecycle(session, model_resources, owns_model_resources=owns_model_resources)
+    _stop_on_exit(lifecycle)
+    return TrainingClient(session, lifecycle)
+
+
+def _warn_ignored_train_options(train_mlp: bool, train_attn: bool) -> None:
+    unsupported = [
+        name
+        for name, enabled in (
+            ("train_mlp", train_mlp),
+            ("train_attn", train_attn),
+        )
+        if not enabled
+    ]
+    if unsupported:
+        warnings.warn(
+            f"Together ignores {unsupported}: per-module training selection is not "
+            "configurable for mlp/attn, so runs will not reproduce Tinker behavior exactly",
+            stacklevel=2,
+        )
 
 
 class ServiceClient:
@@ -83,74 +129,55 @@ class ServiceClient:
         be selected independently, so non-default values warn and are ignored.
         """
         del user_metadata
-        unsupported = [
-            name
-            for name, enabled in (
-                ("train_mlp", train_mlp),
-                ("train_attn", train_attn),
-            )
-            if enabled is not True
-        ]
-        if unsupported:
-            warnings.warn(
-                f"Together ignores {unsupported}: per-module training selection is not "
-                "configurable for mlp/attn, so runs will not reproduce Tinker behavior exactly",
-                stacklevel=2,
-            )
-
+        _warn_ignored_train_options(train_mlp, train_attn)
+        # Before handing the work off: signals can only be installed from the main thread,
+        # and _provision_async runs on the process loop.
         _exit_on_sigterm()
-        owns_model_resources = self._model_resources_id is None
-        if owns_model_resources:
-            model_resources = ModelResourcesClient.create(
+        return run_untracked(self._provision_async(base_model, rank, seed, train_unembed))
+
+    async def create_lora_training_client_async(
+        self,
+        base_model: str,
+        rank: int = 32,
+        seed: int | None = None,
+        train_mlp: bool = True,
+        train_attn: bool = True,
+        train_unembed: bool = True,
+        user_metadata: dict[str, str] | None = None,
+    ) -> TrainingClient:
+        """Async twin of :meth:`create_lora_training_client`."""
+        del user_metadata
+        _warn_ignored_train_options(train_mlp, train_attn)
+        _exit_on_sigterm()
+        return await self._provision_async(base_model, rank, seed, train_unembed)
+
+    async def _provision_async(
+        self, base_model: str, rank: int, seed: int | None, train_unembed: bool
+    ) -> TrainingClient:
+        model_resources_id = self._model_resources_id
+        owns_model_resources = model_resources_id is None
+        if model_resources_id is None:
+            model_resources = await ModelResourcesClient.create_async(
                 base_model=base_model,
                 api_key=self._api_key,
                 base_url=self._base_url,
             )
         else:
-            assert self._model_resources_id is not None
-            model_resources = ModelResourcesClient.attach(
-                model_resources_id=self._model_resources_id,
+            model_resources = await ModelResourcesClient.attach_async(
+                model_resources_id=model_resources_id,
                 api_key=self._api_key,
                 base_url=self._base_url,
             )
-            attached = model_resources.retrieve()
-            if attached.base_model != base_model:
-                model_resources.detach()
-                raise ValueError(
-                    f"Attached model resources use base model {attached.base_model!r}, not requested {base_model!r}"
-                )
-            if not attached.lora_enabled:
-                model_resources.detach()
-                raise ValueError("Attached model resources do not support LoRA training sessions")
 
-        lora_config = LoraConfigParam(rank=rank)
-        if seed is not None:
-            lora_config["seed"] = seed
-        if not train_unembed:
-            lora_config["train_unembed"] = False
+        # One release path: everything from here on holds resources that must be given back.
         try:
-            session = model_resources.create_session(lora_config=lora_config)
+            if not owns_model_resources:
+                _check_attached(await model_resources.retrieve_async(), base_model)
+            session = await model_resources.create_session_async(
+                lora_config=_build_lora_config(rank, seed, train_unembed)
+            )
         except BaseException:
-            try:
-                if owns_model_resources:
-                    model_resources.stop()
-                else:
-                    model_resources.detach()
-            except BaseException as exc:
-                if owns_model_resources:
-                    _log_release_hint(model_resources)
-                else:
-                    logger.error(
-                        "[model-resources:%s] failed to detach after session creation failed: %r",
-                        model_resources.model_resources_id,
-                        exc,
-                    )
+            await _Lifecycle(None, model_resources, owns_model_resources=owns_model_resources).aclose(automatic=True)
             raise
 
-        lifecycle = _Lifecycle(
-            session,
-            model_resources,
-            owns_model_resources=owns_model_resources,
-        )
-        _stop_on_exit(lifecycle)
-        return TrainingClient(session, lifecycle)
+        return _start_training_client(session, model_resources, owns_model_resources=owns_model_resources)

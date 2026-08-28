@@ -410,7 +410,7 @@ Together by changing only its import line:
 import together.lib.beta.rl.tinker as tinker  # instead of: import tinker
 ```
 
-Install the optional extra (requires Python >= 3.11); that pulls in `tinker==0.22.3`:
+Install the optional extra (requires Python >= 3.11):
 
 ```bash
 pip install 'together[tinker]'
@@ -465,8 +465,12 @@ Training and sampling methods:
   ignored (no named checkpoints or caller-controlled retries).
 - `SamplingClient.sample(prompt, num_samples, sampling_params, include_prompt_logprobs=False, topk_prompt_logprobs=0)` —
   both prompt-logprob flags are honored; `topk_prompt_logprobs` must be in `0..20` or a `ValueError` is raised.
-- `future.result(timeout=None)` — polls to completion. Pass a float to bound polling; omit or pass `None`
-  to wait indefinitely.
+- `APIFuture` is Together's shared `OperationFuture`: `.id` exposes the submitted operation ID;
+  `.result(timeout=None)`, `.result_async(timeout=None)`, and `await future` poll lazily and cache
+  the result. Call `.result()` only outside a running event loop — notebook cells are exempt, as they
+  are for the session's own blocking methods. A future awaited from a loop of your own (for example
+  inside `asyncio.run(...)`) is bridged onto the shared process loop and polls concurrently, so gathering
+  N of them takes about as long as the slowest one.
 
 ### Loss functions
 
@@ -518,7 +522,7 @@ generated from the spec, so a key outside it is always a caller error.
 - **Empty `loss_fn_outputs`.** `forward_backward(...).result()` is a genuine
   `tinker.ForwardBackwardOutput`. Together's total loss is published as `metrics["loss:sum"]`
   (plus any Together-native metric keys), so scripts that only read `.metrics` keep working.
-  `loss_fn_outputs` is always `[]` — Together does not return per-datum logprobs, and inventing
+  `loss_fn_outputs` is always `[]` — the fwd-bwd wire has no per-datum logprobs, and inventing
   them would silently corrupt training. Accesses like `result.loss_fn_outputs[i]["logprobs"]`
   (used in `tinker_cookbook/rl/train.py`, `supervised/train.py`, and several tutorials) therefore
   fail; those scripts need to skip per-datum logprobs here.
@@ -532,8 +536,10 @@ generated from the spec, so a key outside it is always a caller error.
   differ from tinker when a dropped token is not that end token. Cookbook renderers often emit non-EOS
   stops (e.g. `GptOssRenderer`'s `<|return|>` / `<|call|>`, `Llama3Renderer`'s `<|eot_id|>`) — pass
   those as strings if you need them enforced.
-- **No async.** Futures expose `result(timeout=...)` only — not tinker's `result_async` / `__await__`.
-  `*_async` methods and `await future` do not work.
+- **Async matches tinker.** Training `forward_backward_async` / `optim_step_async` return the same
+  lazy `OperationFuture` (exported as `APIFuture`) as the sync methods. `SamplingClient.sample_async`
+  awaits and returns a `SampleResponse`. `save_weights_and_get_sampling_client_async` returns a
+  `SamplingClient`, and `ServiceClient.create_lora_training_client_async` returns a `TrainingClient`.
 - **No checkpointing.** `save_state`, `load_state`, `create_training_client_from_state`, and
   `save_weights_for_sampler` are absent, as is `RestClient`.
 
@@ -549,10 +555,22 @@ with service_client.create_lora_training_client(base_model="Qwen/Qwen3-8B", rank
 
 `TrainingClient.close()` (and the context manager) always stops the session this client created. If
 `ServiceClient` provisioned the model resources, they are stopped too; if you passed
-`model_resources_id=...`, they are only detached and left running.
+`model_resources_id=...`, they are only detached and left running. A notebook cell may call it, exactly
+as it may call the session's own blocking methods.
 
-An interpreter-exit fallback also stops owned resources (registered so it runs before the HTTP client's
-executor shuts down). SIGTERM on the main thread is translated to `SystemExit` so that fallback can run.
+Inside a running event loop, close asynchronously:
+
+```python
+async with await service_client.create_lora_training_client_async(base_model="Qwen/Qwen3-8B", rank=32) as training_client:
+    ...
+# or: await training_client.close_async()
+```
+
+An interpreter-exit fallback also stops owned resources from either construction path (registered so it
+runs before the HTTP client's executor shuts down). SIGTERM on the main thread is translated to
+`SystemExit` so that fallback can run. Explicit close remains preferable because it reports failures
+immediately.
+
 If automatic teardown fails, the GPUs stay allocated — release them with:
 
 ```python

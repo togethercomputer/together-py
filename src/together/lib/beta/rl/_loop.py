@@ -49,6 +49,15 @@ def _in_notebook() -> bool:
     return shell is not None and type(shell).__name__ in _NOTEBOOK_SHELLS
 
 
+def blocking_would_stall_caller() -> bool:
+    """True when a sync block would freeze the caller's own loop (notebooks are exempt)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return not _in_notebook()
+
+
 def _pool_size() -> int | None:
     """Rollout thread-pool width from the environment, None when unset."""
     value = os.environ.get(_THREAD_POOL_SIZE_ENV)

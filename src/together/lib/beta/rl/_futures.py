@@ -17,17 +17,19 @@ class OperationFuture(Generic[T]):
     """Lazy handle for a submitted RL operation.
 
     Polling starts only when the caller collects via ``result()``,
-    ``result_async()``, or ``await``. ``resolve`` receives the completed operation's
-    ``output`` and returns the value callers see. A resolved value is cached, as is a
-    failed operation status; transport and resolver errors are not, so the caller may
-    collect again. Collection waits indefinitely unless the caller passes ``timeout``.
+    ``result_async()``, or ``await``. ``resolve`` receives the completed operation and
+    returns the value callers see; it gets the whole operation, not just ``output``, so
+    that a resolver rejecting an empty output can name the operation that produced it.
+    A resolved value is cached, as is a failed operation status; transport and resolver
+    errors are not, so the caller may collect again. Collection waits indefinitely
+    unless the caller passes ``timeout``.
     """
 
     def __init__(
         self,
         session: SessionClient,
         operation: _operations.OperationResponse,
-        resolve: Callable[[Any], Awaitable[T]],
+        resolve: Callable[[_operations.OperationResponse], Awaitable[T]],
     ) -> None:
         self._session = session
         self._operation = operation
@@ -86,7 +88,7 @@ class OperationFuture(Generic[T]):
                 raise
 
             # Resolver bugs are local and may be transient; do not make them sticky.
-            value = await self._resolve(completed.output)
+            value = await self._resolve(completed)
             self._value = value
             self._resolved = True
             return value

@@ -18,8 +18,8 @@ from __future__ import annotations
 from typing import Any
 
 from ._compat import types as types
-from ._futures import _Pending as APIFuture
 from ._service import ServiceClient as ServiceClient
+from .._futures import OperationFuture as APIFuture
 from ._sampling import SamplingClient as SamplingClient
 from ._training import TrainingClient as TrainingClient
 
