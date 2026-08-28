@@ -12,7 +12,7 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from tests.unit.rl_wait import patch_wait
-from together.lib.beta.rl import tinker as tinker_compat
+from together.lib.beta.rl import tinker as tinker_compat, _payloads
 from tests.unit._rl_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
@@ -100,7 +100,7 @@ def test_sample_result_resolves_payload_stub(monkeypatch: pytest.MonkeyPatch) ->
         resolved_with.append(result)
         return SimpleNamespace(results=[wire_result])
 
-    monkeypatch.setattr(_sampling, "resolve_result_payload", fake_resolve)
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
     session = _session_with_operations(sample=AsyncMock(return_value=_OPERATION))
 
     response = (
@@ -135,7 +135,7 @@ async def test_sample_async_returns_sample_response(monkeypatch: pytest.MonkeyPa
     async def fake_resolve(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
         return result
 
-    monkeypatch.setattr(_sampling, "resolve_result_payload", fake_resolve)
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
     session = _session_with_operations(sample=AsyncMock(return_value=_OPERATION))
 
     response = await tinker_compat.SamplingClient(session).sample_async(
@@ -176,3 +176,35 @@ def test_stale_sampling_client_is_rejected_by_both_twins(collect: str) -> None:
         else:
             asyncio.run(stale.sample_async(*args))
     _close(stale._session)
+
+
+def test_compute_logprobs_posts_prompt_logprobs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """compute_logprobs is a one-token sample with prompt_logprobs on; index 0 comes back None."""
+    output = SimpleNamespace(
+        results=[
+            SampleResult(
+                policy_segments=[],
+                sequences=[SampledSequence(prompt_cache_hit_tokens=0, stop_reason="STOP_REASON_STOP", tokens=[1])],
+                prompt_logprobs=[0.0, -0.25, -0.5],
+            )
+        ]
+    )
+    patch_wait(monkeypatch, output)
+
+    async def fake_resolve(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
+        return result
+
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
+    posted: dict[str, Any] = {}
+
+    async def sample(_session_id: str, **kwargs: Any) -> dict[str, Any]:
+        posted.update(kwargs)
+        return _OPERATION
+
+    session = _session_with_operations(sample=sample)
+    result = tinker_compat.SamplingClient(session).compute_logprobs(types.ModelInput.from_ints([1, 2, 3])).result()
+
+    assert result == [None, -0.25, -0.5]
+    assert posted["prompt_logprobs"] is True
+    assert posted["sampling_params"]["max_tokens"] == 1
+    _close(session)

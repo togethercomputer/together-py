@@ -14,6 +14,7 @@ from together.lib.beta.rl import _losses as rl_losses
 from tests.unit._rl_tinker import _tensors, _rl_loop_datum, _advantage_datum
 from together.lib.beta.rl.tinker import _losses, _converters
 from together.types.beta.rl.sample_result import SampleResult
+from together.types.beta.rl.forward_result import Logprob, ForwardResult
 from together.types.beta.rl.sampled_sequence import SampledSequence
 from together.types.beta.rl.prompt_top_logprobs import PromptTopLogprobs
 from together.types.beta.rl.forward_backward_result import ForwardBackwardResult
@@ -355,3 +356,44 @@ def test_ppo_datum_uses_flat_loss_fn_inputs() -> None:
 
     assert inputs["logprobs"]["data"] == [0.0, -0.5, -0.25]
     assert inputs["advantages"]["data"] == [0.0, 0.5, 0.5]
+
+
+def test_with_zero_weights_if_missing_synthesizes_zero_weights() -> None:
+    """Tinker's custom-loss prep accepts a targets-only Datum; the CE wire shape requires weights."""
+    datum = types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={"target_tokens": types.TensorData([1, 2], dtype="int64")},
+    )
+
+    filled = _converters._with_zero_weights_if_missing(datum)
+
+    assert filled.loss_fn_inputs["weights"].data == [0.0, 0.0]
+
+
+def test_with_zero_weights_rejects_unexpected_keys() -> None:
+    datum = types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={
+            "target_tokens": types.TensorData([1, 2], dtype="int64"),
+            "logprobs": types.TensorData([0.0, -0.1], dtype="float32"),
+        },
+    )
+
+    with pytest.raises(ValueError, match="unexpected keys.*logprobs"):
+        _converters._with_zero_weights_if_missing(datum)
+
+
+def test_forward_output_fills_loss_fn_outputs_from_real_logprobs() -> None:
+    output = _converters._to_forward_output(ForwardResult(logprobs=[Logprob(data=[-0.1, -0.2]), Logprob(data=[-0.3])]))
+
+    assert len(output.loss_fn_outputs) == 2
+    assert output.loss_fn_outputs[0]["logprobs"].data == pytest.approx([-0.1, -0.2])
+    assert output.loss_fn_outputs[1]["logprobs"].data == pytest.approx([-0.3])
+    assert output.metrics == {}
+
+
+def test_compute_logprobs_shapes_first_token_to_none() -> None:
+    """Tinker's first prompt logprob is undefined; callers expect ``None`` at index 0."""
+    assert _converters._to_compute_logprobs([0.1, -0.2, -0.3]) == [None, -0.2, -0.3]
+    assert _converters._to_compute_logprobs([]) == []
+    assert _converters._to_compute_logprobs([0.5]) == [None]

@@ -8,9 +8,10 @@ against the ``tinker`` SDK runs on Together by changing only its import line::
 Types resolve to the genuine ``tinker.types`` ones (via ``__getattr__``), so
 objects built by ``tinker_cookbook`` — renderer prompts, ``Datum``s — pass
 through unchanged; only the service client swaps. Unsupported Tinker clients
-(``RestClient``, ``resources``, …) are not exposed. ``forward_backward`` returns
-a genuine ``ForwardBackwardOutput`` whose ``.metrics`` includes Together's total
-loss under ``loss:sum``, but per-datum ``loss_fn_outputs`` are always empty.
+(``RestClient``, ``resources``, …) are not exposed. ``forward`` fills per-datum
+``loss_fn_outputs`` with real logprobs; ``forward_backward`` still leaves them
+empty (Together's fwd-bwd wire has no per-datum logprobs) but publishes the
+total loss under ``metrics["loss:sum"]``.
 """
 
 from __future__ import annotations

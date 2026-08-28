@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import warnings
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock
 
@@ -12,7 +13,7 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from tests.unit.rl_wait import patch_wait
-from together.lib.beta.rl import tinker as tinker_compat, _operations as rl_ops
+from together.lib.beta.rl import tinker as tinker_compat, _payloads, _operations as rl_ops
 from tests.unit._rl_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
@@ -23,6 +24,8 @@ from tests.unit._rl_tinker import (
     _training_client,
     _session_with_operations,
 )
+from together.lib.beta.rl.tinker import _training
+from together.types.beta.rl.forward_result import Logprob, ForwardResult
 
 
 def test_save_weights_publishes_synchronously(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -367,4 +370,164 @@ def test_forward_backward_sends_loss_with_flat_inputs(monkeypatch: pytest.Monkey
 
     assert posted[0]["loss"]["type"] == "LOSS_TYPE_PPO"
     assert posted[0]["samples"][0]["loss_fn_inputs"]["advantages"]["data"] == [0.0, 0.5, 0.5]
+    _close(session)
+
+
+def test_forward_warns_that_loss_fn_config_goes_nowhere() -> None:
+    """Together's forward returns logprobs and no loss, so a valid config has nothing to
+    shape — but a bad key must still raise rather than vanish."""
+    session = _session_with_operations(forward=AsyncMock(return_value=_OPERATION))
+    training = _training_client(session)
+
+    with pytest.warns(UserWarning, match="ignores loss_fn_config on forward"):
+        training.forward([_rl_loop_datum()], "ppo", {"clip_high_threshold": 0.3})
+    with pytest.raises(ValueError, match="Unsupported keys in loss_fn_config"):
+        training.forward([_rl_loop_datum()], "ppo", {"nope": 1.0})
+    _close(session)
+
+
+def test_forward_fills_loss_fn_outputs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """forward is the one path whose wire carries per-datum logprobs; they must land in
+    loss_fn_outputs rather than staying empty like forward_backward's."""
+    patch_wait(monkeypatch, ForwardResult(logprobs=[Logprob(data=[-0.1, -0.2])]))
+
+    async def fake_resolve(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
+        return result
+
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
+    session = _session_with_operations(forward=AsyncMock(return_value=_OPERATION))
+
+    output = _training_client(session).forward([_cross_entropy_datum()], "cross_entropy").result()
+
+    assert len(output.loss_fn_outputs) == 1
+    assert output.loss_fn_outputs[0]["logprobs"].data == pytest.approx([-0.1, -0.2])
+    _close(session)
+
+
+def test_forward_drops_policy_inputs_the_wire_cannot_use() -> None:
+    """An RL datum always carries logprobs/advantages, but forward returns logprobs and no
+    loss, so those keys cannot change its output. Forwarding them would trip the forward
+    shape's undeclared-key warning on every training loop's forward call (an error here)."""
+    posted: list[dict[str, Any]] = []
+
+    async def forward(_session_id: str, **kwargs: Any) -> dict[str, Any]:
+        posted.append(kwargs)
+        return _OPERATION
+
+    session = _session_with_operations(forward=forward)
+    _training_client(session).forward([_rl_loop_datum()], "importance_sampling")
+
+    assert set(posted[0]["samples"][0]["loss_fn_inputs"]) == {"target_tokens"}
+    _close(session)
+
+
+def test_forward_forwards_a_genuinely_unknown_input_with_a_warning() -> None:
+    """Only the known policy keys are dropped; a key this SDK has not heard of may be a
+    server input newer than the SDK, so it warns and goes through like everywhere else."""
+    posted: list[dict[str, Any]] = []
+
+    async def forward(_session_id: str, **kwargs: Any) -> dict[str, Any]:
+        posted.append(kwargs)
+        return _OPERATION
+
+    session = _session_with_operations(forward=forward)
+    datum = _rl_loop_datum()
+    datum.loss_fn_inputs["router_bias"] = types.TensorData([0.0, 0.0], dtype="float32")
+
+    with pytest.warns(UserWarning, match="Unsupported loss_fn_inputs keys"):
+        _training_client(session).forward([datum], "importance_sampling")
+
+    assert set(posted[0]["samples"][0]["loss_fn_inputs"]) == {"target_tokens", "router_bias"}
+    _close(session)
+
+
+def test_forward_backward_custom_submits_grads(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The custom path runs forward, then posts the client loss's dL/dlogprobs verbatim —
+    not tinker's CE-weights surrogate."""
+    pytest.importorskip("torch")
+    import torch
+
+    waits = iter([ForwardResult(logprobs=[Logprob(data=[-1.0, -2.0])]), {"ok": True}])
+
+    async def fake(
+        *,
+        client: Any,  # noqa: ARG001
+        session_id: str,  # noqa: ARG001
+        operation: Any,
+        timeout: float | None,  # noqa: ARG001
+        interval: float,  # noqa: ARG001
+    ) -> Any:
+        return SimpleNamespace(
+            id=getattr(operation, "id", "op"),
+            status="TRAINING_OPERATION_STATUS_COMPLETED",
+            output=next(waits),
+            error=None,
+        )
+
+    monkeypatch.setattr(rl_ops, "async_wait_for_operation", fake)
+
+    async def fake_resolve(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
+        return result
+
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
+    custom_posted: list[Any] = []
+
+    async def custom_forward_backward(_session_id: str, **kwargs: Any) -> dict[str, Any]:
+        custom_posted.append(kwargs)
+        return _OPERATION
+
+    session = _session_with_operations(
+        forward=AsyncMock(return_value=_OPERATION),
+        custom_forward_backward=custom_forward_backward,
+    )
+
+    def loss_fn(_data: Any, logprobs_list: list[torch.Tensor]) -> tuple[torch.Tensor, dict[str, float]]:
+        loss = sum(lp.sum() for lp in logprobs_list)
+        return loss, {"custom_metric": 1.5}
+
+    # Weights omitted on purpose — the custom path must synthesize zeros.
+    datum = types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={"target_tokens": types.TensorData([1, 2], dtype="int64")},
+    )
+    output = _training_client(session).forward_backward_custom([datum], loss_fn).result()
+
+    assert output.metrics["custom_metric"] == 1.5
+    assert output.loss_fn_outputs[0]["logprobs"].data == pytest.approx([-1.0, -2.0])
+    assert custom_posted[0]["gradients"][0]["data"] == pytest.approx([1.0, 1.0])
+    assert custom_posted[0]["samples"][0]["loss_fn_inputs"]["weights"]["data"] == [0.0, 0.0]
+    _close(session)
+
+
+def test_custom_loss_grads_raise_when_grad_missing() -> None:
+    pytest.importorskip("torch")
+    import torch
+
+    def loss_fn(_data: Any, _logprobs_list: list[torch.Tensor]) -> tuple[torch.Tensor, dict[str, float]]:
+        # The loss ignores the leaves, so backward never populates their .grad.
+        return torch.tensor(0.0, requires_grad=True), {}
+
+    with pytest.raises(ValueError, match="No gradient computed"):
+        _training._custom_loss_grads([], [[-1.0, -2.0]], loss_fn)
+
+
+def test_forward_backward_custom_rejects_logprob_count_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Two samples, but forward returns only one logprob array.
+    patch_wait(monkeypatch, ForwardResult(logprobs=[Logprob(data=[-1.0])]))
+
+    async def fake_resolve(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
+        return result
+
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
+    session = _session_with_operations(forward=AsyncMock(return_value=_OPERATION))
+    datum = types.Datum(
+        model_input=types.ModelInput.from_ints([1, 2]),
+        loss_fn_inputs={"target_tokens": types.TensorData([1, 2], dtype="int64")},
+    )
+
+    def loss_fn(_data: Any, logprobs_list: list[Any]) -> tuple[Any, dict[str, float]]:
+        return sum(logprobs_list), {}
+
+    with pytest.raises(RuntimeError, match="1 logprob arrays for 2 samples"):
+        _training_client(session).forward_backward_custom([datum, datum], loss_fn)
     _close(session)

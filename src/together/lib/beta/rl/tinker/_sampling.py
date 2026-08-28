@@ -8,9 +8,14 @@ from dataclasses import field, dataclass
 from .. import SamplingParams as WireSamplingParams
 from ._compat import types
 from .._futures import OperationFuture
-from .._payloads import resolve_result_payload
-from ._converters import _to_model_input, _to_sample_response, _to_sampling_params
-from .._operations import OperationResponse, require_output
+from .._payloads import resolve_operation_payload
+from ._converters import (
+    _to_model_input,
+    _to_sample_response,
+    _to_sampling_params,
+    _to_compute_logprobs,
+)
+from .._operations import OperationResponse
 from ..clients.session import SessionClient
 from ..clients.generator import _submit_sample_batch
 from .....types.beta.rl.model_input_param import ModelInput as WireModelInput
@@ -29,11 +34,7 @@ async def _resolve_sample(
     session: SessionClient,
     topk_prompt_logprobs: int,
 ) -> types.SampleResponse:
-    resolved = await resolve_result_payload(
-        session._client,
-        session_id=session.session_id,
-        result=require_output(completed.output, operation=completed),
-    )
+    resolved = await resolve_operation_payload(completed, session=session)
     return _to_sample_response(resolved.results[0], topk_prompt_logprobs)
 
 
@@ -52,6 +53,14 @@ def _to_sample_request(
     if not 0 <= topk_prompt_logprobs <= _MAX_TOPK_PROMPT_LOGPROBS:
         raise ValueError(f"topk_prompt_logprobs must be between 0 and {_MAX_TOPK_PROMPT_LOGPROBS}")
     return _to_model_input(prompt), _to_sampling_params(sampling_params)
+
+
+async def _resolve_compute_logprobs(completed: OperationResponse, *, session: SessionClient) -> list[float | None]:
+    resolved = await resolve_operation_payload(completed, session=session)
+    result = resolved.results[0] if resolved.results else None
+    if result is None or result.prompt_logprobs is None:
+        raise RuntimeError("Sample result did not include prompt logprobs; the generator may not support them")
+    return _to_compute_logprobs(result.prompt_logprobs)
 
 
 @dataclass(frozen=True)
@@ -128,4 +137,29 @@ class SamplingClient:
             )
         )
         resolve = partial(_resolve_sample, session=session, topk_prompt_logprobs=topk_prompt_logprobs)
+        return OperationFuture(session, operation, resolve)
+
+    def compute_logprobs(self, prompt: types.ModelInput) -> OperationFuture[list[float | None]]:
+        self._check_fresh()
+        return self._session.run(self._submit_compute_logprobs_async(prompt))
+
+    async def compute_logprobs_async(self, prompt: types.ModelInput) -> list[float | None]:
+        self._check_fresh()
+        future = await self._submit_compute_logprobs_async(prompt)
+        return await future
+
+    async def _submit_compute_logprobs_async(self, prompt: types.ModelInput) -> OperationFuture[list[float | None]]:
+        session = self._session
+        # Same mechanism as native SamplingClient.compute_logprobs: sample with
+        # max_tokens=1 and prompt_logprobs=True, then reshape the first token to None.
+        operation = await session.run_async(
+            _submit_sample_batch(
+                session,
+                model_inputs=[_to_model_input(prompt)],
+                num_samples=1,
+                sampling_params=WireSamplingParams(max_tokens=1),
+                prompt_logprobs=True,
+            )
+        )
+        resolve = partial(_resolve_compute_logprobs, session=session)
         return OperationFuture(session, operation, resolve)

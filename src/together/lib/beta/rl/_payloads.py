@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Union, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Union, TypeVar, cast
 from collections.abc import Mapping, Sequence
 from typing_extensions import TypeAlias
 
@@ -13,6 +13,10 @@ from ...._utils import transform
 from ...._client import AsyncTogether
 from ...._compat import model_parse
 from ...._models import BaseModel
+from ._operations import OperationResponse, require_output
+
+if TYPE_CHECKING:
+    from .clients.session import SessionClient
 
 logger = logging.getLogger("together")
 
@@ -211,3 +215,12 @@ async def resolve_result_payload(
     raw = await _download_payload(client, session_id=session_id, payload_id=payload_id)
     data = json.loads(raw)
     return model_parse(type(result), data)
+
+
+async def resolve_operation_payload(completed: OperationResponse, *, session: SessionClient) -> Any:
+    """Resolve a completed operation's required output, downloading its external payload if any."""
+    return await resolve_result_payload(
+        session._client,
+        session_id=session.session_id,
+        result=require_output(completed.output, operation=completed),
+    )

@@ -457,14 +457,20 @@ training_client.optim_step(adam_params).result()
 
 Training and sampling methods:
 
+- `TrainingClient.forward(data, loss_fn, loss_fn_config=None)` — returns a future of
+  tinker's `ForwardBackwardOutput` whose per-datum `loss_fn_outputs[i]["logprobs"]` come from
+  Together's `ForwardResult`. A non-`None` `loss_fn_config` warns (forward returns logprobs only).
 - `TrainingClient.forward_backward(data, loss_fn, loss_fn_config=None)` — returns a future of
   tinker's `ForwardBackwardOutput`. See [Loss functions](#loss-functions) for accepted values.
+- `TrainingClient.forward_backward_custom(data, loss_fn, *, loss_type_input="logprobs")` —
+  two-pass custom loss (forward logprobs → client loss → custom gradients). Requires PyTorch.
 - `TrainingClient.optim_step(adam_params)` — Adam fields are forwarded as-is (including `grad_clip_norm`).
 - `TrainingClient.save_weights_and_get_sampling_client(name=None, retry_config=None)` — publishes weights
   synchronously and returns a `SamplingClient`. Non-`None` `name` / `retry_config` warn and are
   ignored (no named checkpoints or caller-controlled retries).
 - `SamplingClient.sample(prompt, num_samples, sampling_params, include_prompt_logprobs=False, topk_prompt_logprobs=0)` —
   both prompt-logprob flags are honored; `topk_prompt_logprobs` must be in `0..20` or a `ValueError` is raised.
+- `SamplingClient.compute_logprobs(prompt)` — returns a future of `list[float | None]` with index 0 as `None`.
 - `APIFuture` is Together's shared `OperationFuture`: `.id` exposes the submitted operation ID;
   `.result(timeout=None)`, `.result_async(timeout=None)`, and `await future` poll lazily and cache
   the result. Call `.result()` only outside a running event loop — notebook cells are exempt, as they
@@ -519,13 +525,14 @@ generated from the spec, so a key outside it is always a caller error.
   call site (Python's default warning filter dedups repeats, so a loop that warns on step 1 will not
   warn again on step 200 — the condition has not gone away). Use `mask` for inclusion/exclusion, and keep
   fractional weighting to `cross_entropy`.
-- **Empty `loss_fn_outputs`.** `forward_backward(...).result()` is a genuine
-  `tinker.ForwardBackwardOutput`. Together's total loss is published as `metrics["loss:sum"]`
-  (plus any Together-native metric keys), so scripts that only read `.metrics` keep working.
-  `loss_fn_outputs` is always `[]` — the fwd-bwd wire has no per-datum logprobs, and inventing
-  them would silently corrupt training. Accesses like `result.loss_fn_outputs[i]["logprobs"]`
-  (used in `tinker_cookbook/rl/train.py`, `supervised/train.py`, and several tutorials) therefore
-  fail; those scripts need to skip per-datum logprobs here.
+- **`loss_fn_outputs` on `forward` only.** `forward(...).result().loss_fn_outputs[i]["logprobs"]`
+  are real Together logprobs. `forward_backward(...).result()` is a genuine
+  `tinker.ForwardBackwardOutput` whose total loss is published as `metrics["loss:sum"]`
+  (plus any Together-native metric keys), so scripts that only read `.metrics` keep working,
+  but its `loss_fn_outputs` is always `[]` — the fwd-bwd wire has no per-datum logprobs, and
+  inventing them would silently corrupt training. Accesses like
+  `result.loss_fn_outputs[i]["logprobs"]` (used in `tinker_cookbook/rl/train.py`,
+  `supervised/train.py`, and several tutorials) therefore need `forward` here.
 - **Sampling clients are not weight snapshots.** Together's sampler serves the most recently published
   weights. After a later `save_weights_and_get_sampling_client()`, sampling on an earlier client raises
   `RuntimeError` rather than silently using the wrong policy. This breaks DPO-style frozen reference
@@ -536,12 +543,14 @@ generated from the spec, so a key outside it is always a caller error.
   differ from tinker when a dropped token is not that end token. Cookbook renderers often emit non-EOS
   stops (e.g. `GptOssRenderer`'s `<|return|>` / `<|call|>`, `Llama3Renderer`'s `<|eot_id|>`) — pass
   those as strings if you need them enforced.
-- **Async matches tinker.** Training `forward_backward_async` / `optim_step_async` return the same
-  lazy `OperationFuture` (exported as `APIFuture`) as the sync methods. `SamplingClient.sample_async`
-  awaits and returns a `SampleResponse`. `save_weights_and_get_sampling_client_async` returns a
-  `SamplingClient`, and `ServiceClient.create_lora_training_client_async` returns a `TrainingClient`.
+- **Async matches tinker.** Training `forward_async` / `forward_backward_async` /
+  `forward_backward_custom_async` / `optim_step_async` return the same lazy `OperationFuture`
+  (exported as `APIFuture`) as the sync methods. `SamplingClient.sample_async` /
+  `compute_logprobs_async` await and return their values. `save_weights_and_get_sampling_client_async`
+  returns a `SamplingClient`, and `ServiceClient.create_lora_training_client_async` returns a
+  `TrainingClient`.
 - **No checkpointing.** `save_state`, `load_state`, `create_training_client_from_state`, and
-  `save_weights_for_sampler` are absent, as is `RestClient`.
+  `save_weights_for_sampler` are absent (deferred to a follow-up), as is `RestClient`.
 
 ### Resource lifecycle
 
