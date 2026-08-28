@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 from typing import Optional, Annotated, cast, get_args
 from pathlib import Path
@@ -14,7 +13,8 @@ from together._utils._json import openapi_dumps
 from together.lib.resources.files import FileAlreadyExistsError
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.check_progress import CheckProgressTracker, should_show_check_progress
+from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
 async def upload(
@@ -25,12 +25,14 @@ async def upload(
     config: CLIConfigParameter,
 ) -> None:
     """Upload file."""
-    if config.json:
-        os.environ.setdefault("TOGETHER_DISABLE_TQDM", "true")
-
     # Manually handle check here so we can exit and provide the user good error messages
     if not no_check:
-        report = check_file(file)
+        with CheckProgressTracker(file, enabled=should_show_check_progress(file, json_mode=config.json)) as tracker:
+            report = check_file(
+                file,
+                purpose=purpose or "fine-tune",
+                progress_callback=tracker.as_callback(),
+            )
         if report["is_check_passed"] is False:
             if config.json:
                 console.print_json(openapi_dumps(report).decode("utf-8"))
@@ -47,11 +49,13 @@ async def upload(
         sys.exit(1)
 
     try:
-        response = await show_loading_status(
-            "Uploading file",
-            config.client.files.upload(
-                file=file, purpose=purpose, check=False, raise_if_already_exists=not config.json
-            ),
+        response = await upload_file_with_progress(
+            config.client.files.upload,
+            file,
+            enabled=not config.json,
+            purpose=purpose,
+            check=False,
+            raise_if_already_exists=not config.json,
         )
     except FileAlreadyExistsError as e:
         console.print(

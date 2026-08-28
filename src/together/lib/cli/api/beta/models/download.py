@@ -12,17 +12,6 @@ from typing_extensions import Annotated
 
 import httpx
 from cyclopts import Parameter
-from rich.progress import (
-    TaskID,
-    Progress,
-    BarColumn,
-    TextColumn,
-    SpinnerColumn,
-    DownloadColumn,
-    TaskProgressColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
 
 from together import omit
 from together._utils import path_template
@@ -33,8 +22,9 @@ from together.lib.cli.api.beta.models.upload import (
     FILE_CONCURRENCY,
     PART_CONCURRENCY,
     _file_etag,
-    _format_bytes,
 )
+from together.lib.cli.components.upload_progress import format_bytes
+from together.lib.cli.components.download_progress import DownloadProgressTracker
 
 PART_DOWNLOAD_TIMEOUT_SECONDS = 30 * 60
 PART_DOWNLOAD_MAX_ATTEMPTS = 5
@@ -136,73 +126,7 @@ def _check_disk_space(base_path: Path, need_bytes: int) -> None:
     base_path.mkdir(parents=True, exist_ok=True)
     usage = shutil.disk_usage(base_path)
     if usage.free < need_bytes:
-        raise ValueError(f"insufficient disk space: need {_format_bytes(need_bytes)}, have {_format_bytes(usage.free)}")
-
-
-class DownloadProgressTracker:
-    def __init__(self, *, total_bytes: int, total_files: int, enabled: bool) -> None:
-        self.enabled = enabled
-        self.total_bytes = total_bytes
-        self.total_files = total_files
-        self.downloaded_bytes = 0
-        self.completed_files = 0
-        self.skipped_files = 0
-        self._lock = asyncio.Lock()
-        self._progress: Progress | None = None
-        self._bytes_task: TaskID | None = None
-        self._files_task: TaskID | None = None
-
-    def __enter__(self) -> DownloadProgressTracker:
-        if not self.enabled:
-            return self
-        self._progress = Progress(
-            SpinnerColumn(style="bar.pulse"),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(bar_width=40, style="bar.complete", complete_style="bar.finished"),
-            TaskProgressColumn(),
-            TextColumn("•"),
-            DownloadColumn(),
-            TransferSpeedColumn(),
-            TimeRemainingColumn(),
-            console=console,
-        )
-        self._progress.start()
-        self._bytes_task = self._progress.add_task("Overall", total=max(self.total_bytes, 1))
-        self._files_task = self._progress.add_task(
-            f"Files (0/{self.total_files})",
-            total=max(self.total_files, 1),
-        )
-        return self
-
-    def __exit__(self, *_args: object) -> None:
-        if self._progress is not None:
-            self._progress.stop()
-
-    async def bytes_completed(self, count: int) -> None:
-        async with self._lock:
-            self.downloaded_bytes += count
-            if not self.enabled or self._progress is None:
-                return
-            assert self._bytes_task is not None
-            self._progress.update(self._bytes_task, completed=self.downloaded_bytes)
-
-    async def file_completed(self, file_path: str, *, skipped: bool = False) -> None:
-        async with self._lock:
-            self.completed_files += 1
-            if skipped:
-                self.skipped_files += 1
-            if not self.enabled or self._progress is None:
-                return
-            assert self._files_task is not None
-            self._progress.update(
-                self._files_task,
-                completed=self.completed_files,
-                description=f"Files ({self.completed_files}/{self.total_files})",
-            )
-            if skipped:
-                self._progress.console.print(f"[dim]↷[/dim] {file_path} skipped (already exists)")
-            else:
-                self._progress.console.print(f"[success]✓[/success] {file_path} complete")
+        raise ValueError(f"insufficient disk space: need {format_bytes(need_bytes)}, have {format_bytes(usage.free)}")
 
 
 def _preallocate_file(path: Path, size: int) -> None:
@@ -374,7 +298,7 @@ async def _download_model_files(
         enabled=show_progress and len(remote_files) > 0,
     )
     if show_progress and remote_files:
-        console.print(f"Downloading {len(remote_files)} file(s), {_format_bytes(total_bytes)} total")
+        console.print(f"Downloading {len(remote_files)} file(s), {format_bytes(total_bytes)} total")
         console.print(f"[dim]Revision:[/dim] {rev}")
     with progress:
         await _download_files(remote_files, dst, progress=progress)

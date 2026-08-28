@@ -1,13 +1,5 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from .rl import (
-    RlResource,
-    AsyncRlResource,
-    RlResourceWithRawResponse,
-    AsyncRlResourceWithRawResponse,
-    RlResourceWithStreamingResponse,
-    AsyncRlResourceWithStreamingResponse,
-)
 from .jig import (
     JigResource,
     AsyncJigResource,
@@ -62,12 +54,6 @@ __all__ = [
     "AsyncModelsResourceWithRawResponse",
     "ModelsResourceWithStreamingResponse",
     "AsyncModelsResourceWithStreamingResponse",
-    "RlResource",
-    "AsyncRlResource",
-    "RlResourceWithRawResponse",
-    "AsyncRlResourceWithRawResponse",
-    "RlResourceWithStreamingResponse",
-    "AsyncRlResourceWithStreamingResponse",
     "JigResource",
     "AsyncJigResource",
     "JigResourceWithRawResponse",

@@ -92,6 +92,40 @@ def test_command_system_exit_failure_emits_started_then_failed(
 
 
 @pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_interactive_missing_required_argument_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setattr("together.lib.cli.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("together.lib.cli.sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr("together.lib.cli.sys.stderr.isatty", lambda: True)
+    monkeypatch.setattr("together.lib.cli._is_agent_or_ci", lambda: False)
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "models",
+            "configs",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "models configs"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "Missing required argument: --model"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
 def test_command_system_exit_zero_emits_started_then_completed(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,
@@ -127,6 +161,38 @@ def test_command_exception_emits_started_then_failed_then_reraises(
     ]
     err = track_cli_capture[1][1]["error"]
     assert "something broke" in err
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+def test_unknown_option_error_telemetry_is_option_and_command(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+) -> None:
+    r = cli_runner.invoke(["beta", "clusters", "create", "--not-a-real-option"])
+    assert r.exit_code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "clusters create"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == 'Unknown option: "--not-a-real-option" for command "clusters create"'
+    assert "Function defined in file" not in failed["error"]
+    assert ".py" not in failed["error"]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+def test_unknown_option_equals_value_telemetry_strips_value(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+) -> None:
+    r = cli_runner.invoke(["beta", "clusters", "create", "--auth-token=hunter2secret"])
+    assert r.exit_code == 1
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "clusters create"
+    assert failed["error"] == 'Unknown option: "--auth-token" for command "clusters create"'
+    assert "hunter2secret" not in failed["error"]
 
 
 @pytest.mark.usefixtures("isolated_cli_config")

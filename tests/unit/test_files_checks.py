@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from together.lib.utils.files import check_file
+from together.lib.utils.files import FileCheckProgress, check_file
 
 
 def test_check_jsonl_valid_general(tmp_path: Path):
@@ -195,6 +195,18 @@ def test_check_jsonl_valid_conversational_multimodal_single_turn(tmp_path: Path)
     assert report["utf8"]
     assert report["num_samples"] == len(content)
     assert report["has_min_samples"]
+
+
+@pytest.mark.parametrize("purpose", ["fine-tune", "eval"])
+def test_check_jsonl_allows_trailing_blank_line(tmp_path: Path, purpose: str):
+    file = tmp_path / "trailing_blank.jsonl"
+    file.write_text('{"text": "hello"}\n{"text": "world"}\n\n')
+
+    report = check_file(file, purpose=purpose)
+
+    assert report["is_check_passed"]
+    assert report["num_samples"] == 2
+    assert report["load_json"] is True
 
 
 def test_check_jsonl_empty_file(tmp_path: Path):
@@ -489,3 +501,173 @@ def test_check_file_unknown_extension(tmp_path: Path) -> None:
     assert not report["is_check_passed"]
     assert "Unknown extension" in report["message"]
     assert report["message"] == report["filetype"]
+
+
+def test_check_file_reports_progress_callback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("together.lib.utils.files.CHECK_PROGRESS_STEP_BYTES", 8)
+    file = tmp_path / "valid.jsonl"
+    content = [{"text": "Hello, world!"}, {"text": "How are you?"}]
+    file.write_text("\n".join(json.dumps(item) for item in content) + "\n")
+
+    events: list[FileCheckProgress] = []
+    report = check_file(file, progress_callback=events.append)
+
+    assert report["is_check_passed"]
+    assert events
+    assert {event.phase for event in events} == {"utf8", "jsonl"}
+    for phase in ("utf8", "jsonl"):
+        phase_events = [event for event in events if event.phase == phase]
+        assert phase_events[0].processed_bytes == 0
+        assert phase_events[-1].processed_bytes == phase_events[-1].total_bytes == file.stat().st_size
+        assert any(0 < event.processed_bytes < event.total_bytes for event in phase_events)
+
+
+def test_check_csv_reports_progress_callback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("together.lib.utils.files.CHECK_PROGRESS_STEP_BYTES", 8)
+    file = tmp_path / "valid.csv"
+    with file.open("w") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["text"])
+        writer.writeheader()
+        for index in range(20):
+            writer.writerow({"text": f"row-{index}-{'x' * 16}"})
+
+    events: list[FileCheckProgress] = []
+    report = check_file(file, purpose="eval", progress_callback=events.append)
+
+    assert report["is_check_passed"]
+    assert {event.phase for event in events} == {"utf8", "csv"}
+    csv_events = [event for event in events if event.phase == "csv"]
+    assert csv_events[0].processed_bytes == 0
+    assert csv_events[-1].processed_bytes == csv_events[-1].total_bytes == file.stat().st_size
+    assert any(0 < event.processed_bytes < event.total_bytes for event in csv_events)
+
+
+def test_check_parquet_reports_progress_callback(tmp_path: Path) -> None:
+    pyarrow = pytest.importorskip("pyarrow")
+    parquet = pytest.importorskip("pyarrow.parquet")
+
+    file = tmp_path / "valid.parquet"
+    table = pyarrow.table(
+        {
+            "input_ids": [[1, 2], [3, 4]],
+            "attention_mask": [[1, 1], [1, 1]],
+            "labels": [[1, 2], [3, 4]],
+            "position_ids": [[0, 1], [0, 1]],
+        }
+    )
+    parquet.write_table(table, file)
+
+    events: list[FileCheckProgress] = []
+    report = check_file(file, progress_callback=events.append)
+
+    assert report["is_check_passed"]
+    parquet_events = [event for event in events if event.phase == "parquet"]
+    assert parquet_events
+    assert parquet_events[0].processed_bytes == 0
+    assert parquet_events[-1].processed_bytes == parquet_events[-1].total_bytes == file.stat().st_size
+
+
+def test_check_progress_tracker_does_not_reset_across_phases(tmp_path: Path) -> None:
+    from together.lib.cli.components.check_progress import CheckProgressTracker
+
+    file = tmp_path / "valid.jsonl"
+    file.write_bytes(b"x" * 100)
+    with CheckProgressTracker(file, enabled=True) as tracker:
+        assert tracker._progress is not None and tracker._task is not None
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 0
+        assert task.total == 200
+
+        callback = tracker.as_callback()
+        assert callback is not None
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="utf8"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 0
+        assert task.total == 200
+
+        callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="utf8"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 100
+        assert task.total == 200
+
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="jsonl"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 100
+        assert task.total == 200
+
+        callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="jsonl"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 200
+        assert task.total == 200
+
+
+def test_check_progress_tracker_parquet_is_single_pass(tmp_path: Path) -> None:
+    from together.lib.cli.components.check_progress import CheckProgressTracker
+
+    file = tmp_path / "valid.parquet"
+    file.write_bytes(b"x" * 100)
+    with CheckProgressTracker(file, enabled=True) as tracker:
+        assert tracker._progress is not None and tracker._task is not None
+        callback = tracker.as_callback()
+        assert callback is not None
+        callback(FileCheckProgress(processed_bytes=0, total_bytes=100, phase="parquet"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 0
+        assert task.total == 100
+        callback(FileCheckProgress(processed_bytes=100, total_bytes=100, phase="parquet"))
+        task = tracker._progress.tasks[tracker._task]
+        assert task.completed == 100
+        assert task.total == 100
+
+
+def test_encoded_line_size_counts_crlf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.utils.files import _encoded_line_size
+
+    file = tmp_path / "crlf.jsonl"
+    line1 = b'{"text": "hello"}\r\n'
+    line2 = b'{"text": "world"}\r\n'
+    file.write_bytes(line1 + line2)
+
+    with file.open(encoding="utf-8") as handle:
+        first = handle.readline()
+        assert first.endswith("\n") and not first.endswith("\r\n")
+        assert _encoded_line_size(handle, first) == len(line1)
+
+    monkeypatch.setattr("together.lib.utils.files.CHECK_PROGRESS_STEP_BYTES", 1)
+    events: list[FileCheckProgress] = []
+    report = check_file(file, progress_callback=events.append)
+    assert report["is_check_passed"]
+    jsonl_events = [event for event in events if event.phase == "jsonl"]
+    mid = [event for event in jsonl_events if 0 < event.processed_bytes < event.total_bytes]
+    assert mid
+    assert mid[0].processed_bytes == len(line1)
+    assert jsonl_events[-1].processed_bytes == jsonl_events[-1].total_bytes == file.stat().st_size
+
+
+def test_should_show_check_progress(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from together.lib.cli.components import check_progress as check_progress_mod
+    from together.lib.cli.components.check_progress import should_show_check_progress
+
+    class _Console:
+        is_terminal = True
+
+    monkeypatch.setattr(check_progress_mod, "console", _Console())
+    monkeypatch.setattr(check_progress_mod, "CHECK_PROGRESS_MIN_BYTES", 10)
+
+    missing = tmp_path / "missing.jsonl"
+    assert should_show_check_progress(missing, json_mode=False) is False
+
+    tiny = tmp_path / "tiny.jsonl"
+    tiny.write_text("{}\n")
+    assert should_show_check_progress(tiny, json_mode=False) is False
+
+    large = tmp_path / "large.jsonl"
+    large.write_bytes(b"x" * 10)
+    assert should_show_check_progress(large, json_mode=False) is True
+    assert should_show_check_progress(large, json_mode=True) is False
+
+    class _NonTerminalConsole:
+        is_terminal = False
+
+    monkeypatch.setattr(check_progress_mod, "console", _NonTerminalConsole())
+    assert should_show_check_progress(large, json_mode=False) is False
