@@ -93,6 +93,30 @@ def test_command_system_exit_failure_emits_started_then_failed(
 
 @pytest.mark.usefixtures("isolated_cli_config")
 @pytest.mark.asyncio
+async def test_missing_api_key_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher("endpoints", "list", project_id="project")
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "endpoints list"
+    assert failed["error"] == "Together API key missing"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
 async def test_interactive_missing_required_argument_preserves_diagnostic(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     monkeypatch: pytest.MonkeyPatch,
