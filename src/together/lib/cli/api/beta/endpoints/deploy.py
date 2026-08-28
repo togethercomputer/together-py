@@ -119,10 +119,6 @@ async def deploy(
             help="Cooldown after scaling down before removing more replicas (seconds, e.g. 60 or 60s). Higher values improve stability."
         ),
     ] = None,
-    scale_to_zero_window: Annotated[
-        Optional[str],
-        Parameter(help="Idle time before scaling to zero replicas (seconds, e.g. 300 or 300s)."),
-    ] = None,
     scaling_metric: Annotated[
         Optional[ScalingMetricName],
         Parameter(
@@ -211,7 +207,6 @@ async def deploy(
         max_replicas=max_replicas,
         scale_up_window=scale_up_window,
         scale_down_window=scale_down_window,
-        scale_to_zero_window=scale_to_zero_window,
         scaling_metrics=build_scaling_metrics(
             scaling_metric=scaling_metric,
             scaling_target=scaling_target,
@@ -339,8 +334,6 @@ def _print_deployment_preview(
         add_row("--scale-up-window", str(scale_up))
     if scale_down := autoscaling.get("scale_down_window"):
         add_row("--scale-down-window", str(scale_down))
-    if scale_to_zero := autoscaling.get("scale_to_zero_window"):
-        add_row("--scale-to-zero-window", str(scale_to_zero))
     if metrics := autoscaling.get("scaling_metrics"):
         metric = next(iter(metrics))
         add_row("--scaling-metric", metric["name"])

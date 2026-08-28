@@ -13,7 +13,27 @@ from .session_metadata import SessionMetadata
 from .training_checkpoint import TrainingCheckpoint
 from .inference_checkpoint import InferenceCheckpoint
 
-__all__ = ["Session"]
+__all__ = ["Session", "PolicyState"]
+
+
+class PolicyState(BaseModel):
+    """Session-scoped policy and weight versions for this session"""
+
+    applied_weights_version: Union[str, int]
+    """Policy version successfully applied to the generator for this session."""
+
+    pending_publish: bool
+    """True when a generator publish has been requested but has not finished."""
+
+    target_weights_version: Union[str, int]
+    """Policy version promised to the generator by the latest weights-sync."""
+
+    trainer_step: Union[str, int]
+    """Policy version produced by the last completed optimizer step.
+
+    Distinct from `TrainingSession.step`, which is the durable optimizer-step
+    counter.
+    """
 
 
 class Session(BaseModel):
@@ -42,6 +62,9 @@ class Session(BaseModel):
 
     The session runs on that resource's GPU pods.
     """
+
+    policy_state: PolicyState
+    """Session-scoped policy and weight versions for this session"""
 
     status: SessionStatus
     """Status of the training session"""

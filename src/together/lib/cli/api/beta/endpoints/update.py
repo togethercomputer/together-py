@@ -56,10 +56,6 @@ async def update(
         Optional[str],
         Parameter(help="Cooldown in seconds before removing more replicas after scale-down (for example, 60s)"),
     ] = None,
-    scale_to_zero_window: Annotated[
-        Optional[str],
-        Parameter(help="Idle time in seconds before scaling to zero replicas (for example, 300s)"),
-    ] = None,
     scaling_metric: Annotated[
         Optional[ScalingMetricName],
         Parameter(
@@ -120,7 +116,6 @@ async def update(
         max_replicas=max_replicas,
         scale_up_window=scale_up_window,
         scale_down_window=scale_down_window,
-        scale_to_zero_window=scale_to_zero_window,
         scaling_metrics=build_scaling_metrics(
             scaling_metric=scaling_metric,
             scaling_target=scaling_target,

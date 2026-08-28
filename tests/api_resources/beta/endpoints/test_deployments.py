@@ -44,7 +44,7 @@ class TestDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "cache_hit_rate",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",
@@ -200,7 +200,7 @@ class TestDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "cache_hit_rate",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",
@@ -422,7 +422,7 @@ class TestAsyncDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "cache_hit_rate",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",
@@ -578,7 +578,7 @@ class TestAsyncDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "cache_hit_rate",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",

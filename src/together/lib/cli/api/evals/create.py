@@ -21,6 +21,7 @@ from together.types.eval_create_params import (
     ParametersEvaluationCompareParametersModelAEvaluationModelRequest,
     ParametersEvaluationCompareParametersModelBEvaluationModelRequest,
 )
+from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
 async def create(
@@ -140,7 +141,15 @@ async def create(
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(input_data_file_path):
-        file_upload = await config.client.files.upload(Path(input_data_file_path), purpose="eval", check=False)
+        input_data_path = Path(input_data_file_path)
+        file_upload = await upload_file_with_progress(
+            config.client.files.upload,
+            input_data_path,
+            enabled=not config.json,
+            description=f"Uploading eval input file {input_data_path.name}",
+            purpose="eval",
+            check=False,
+        )
         training_file = file_upload.id
     else:
         training_file = input_data_file_path

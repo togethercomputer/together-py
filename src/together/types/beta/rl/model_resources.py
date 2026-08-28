@@ -2,6 +2,7 @@
 
 from typing import Optional
 from datetime import datetime
+from typing_extensions import Literal
 
 from ...._models import BaseModel
 from .optimizer_config import OptimizerConfig
@@ -19,6 +20,9 @@ class ComputeConfig(BaseModel):
 
     0 means the resource runs the trainer only, with no generator.
     """
+
+    gpu_type: Optional[Literal["H100-80GB", "B200-SXM"]] = None
+    """GPU type selected for this resource."""
 
 
 class ModelResources(BaseModel):

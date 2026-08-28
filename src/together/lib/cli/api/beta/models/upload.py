@@ -10,21 +10,11 @@ from dataclasses import dataclass
 
 import httpx
 from cyclopts import Parameter
-from rich.progress import (
-    TaskID,
-    Progress,
-    BarColumn,
-    TextColumn,
-    SpinnerColumn,
-    DownloadColumn,
-    TaskProgressColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
 
 from together._utils import path_template
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.components.upload_progress import UploadProgressTracker, format_bytes
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
 
 PART_SIZE_BYTES = 20 * 1024 * 1024
@@ -143,135 +133,6 @@ def _create_upload_body(
 
 def _trim_etag(value: str) -> str:
     return value.strip().strip('"')
-
-
-def _format_bytes(num: int) -> str:
-    size = float(num)
-    for unit in ("B", "KB", "MB", "GB", "TB"):
-        if size < 1024 or unit == "TB":
-            if unit == "B":
-                return f"{int(size)} B"
-            return f"{size:.1f} {unit}"
-        size /= 1024
-    return f"{size:.1f} PB"
-
-
-class UploadProgressTracker:
-    def __init__(
-        self,
-        *,
-        total_bytes: int,
-        total_parts: int,
-        total_files: int,
-        enabled: bool,
-    ) -> None:
-        self.enabled = enabled
-        self.total_bytes = total_bytes
-        self.total_parts = total_parts
-        self.total_files = total_files
-        self.uploaded_bytes = 0
-        self.completed_parts = 0
-        self.completed_files = 0
-        self._lock = asyncio.Lock()
-        self._progress: Progress | None = None
-        self._bytes_task: TaskID | None = None
-        self._parts_task: TaskID | None = None
-        self._files_task: TaskID | None = None
-
-    @classmethod
-    def from_upload_plan(
-        cls,
-        local_files: list[LocalFile],
-        remote_files: list[dict[str, Any]],
-        *,
-        enabled: bool,
-    ) -> UploadProgressTracker:
-        local_by_path = {file.path: file for file in local_files}
-        total_bytes = 0
-        total_parts = 0
-        total_files = 0
-        for remote_file in remote_files:
-            if remote_file.get("skipUpload"):
-                continue
-            path = str(remote_file.get("path", ""))
-            local_file = local_by_path[path]
-            total_bytes += local_file.size
-            total_parts += len(local_file.parts)
-            total_files += 1
-        return cls(
-            total_bytes=total_bytes,
-            total_parts=total_parts,
-            total_files=total_files,
-            enabled=enabled,
-        )
-
-    def __enter__(self) -> UploadProgressTracker:
-        if not self.enabled:
-            return self
-        self._progress = Progress(
-            SpinnerColumn(style="bar.pulse"),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(bar_width=40, style="bar.complete", complete_style="bar.finished"),
-            TaskProgressColumn(),
-            TextColumn("•"),
-            DownloadColumn(),
-            TransferSpeedColumn(),
-            TimeRemainingColumn(),
-            console=console,
-        )
-        self._progress.start()
-        self._bytes_task = self._progress.add_task("Overall", total=max(self.total_bytes, 1))
-        self._parts_task = self._progress.add_task(
-            f"Parts (0/{self.total_parts})",
-            total=max(self.total_parts, 1),
-        )
-        self._files_task = self._progress.add_task(
-            f"Files (0/{self.total_files})",
-            total=max(self.total_files, 1),
-        )
-        return self
-
-    def __exit__(self, *_args: object) -> None:
-        if self._progress is not None:
-            self._progress.stop()
-
-    async def part_completed(
-        self,
-        *,
-        file_path: str,
-        part_number: int,
-        total_file_parts: int,
-        bytes_count: int,
-    ) -> None:
-        async with self._lock:
-            self.uploaded_bytes += bytes_count
-            self.completed_parts += 1
-            if not self.enabled or self._progress is None:
-                return
-            assert self._bytes_task is not None
-            assert self._parts_task is not None
-            self._progress.update(self._bytes_task, completed=self.uploaded_bytes)
-            self._progress.update(
-                self._parts_task,
-                completed=self.completed_parts,
-                description=f"Parts ({self.completed_parts}/{self.total_parts})",
-            )
-            self._progress.console.print(
-                f"[success]✓[/success] {file_path} part {part_number}/{total_file_parts} ({_format_bytes(bytes_count)})"
-            )
-
-    async def file_completed(self, file_path: str) -> None:
-        async with self._lock:
-            self.completed_files += 1
-            if not self.enabled or self._progress is None:
-                return
-            assert self._files_task is not None
-            self._progress.update(
-                self._files_task,
-                completed=self.completed_files,
-                description=f"Files ({self.completed_files}/{self.total_files})",
-            )
-            self._progress.console.print(f"[success]✓[/success] {file_path} complete")
 
 
 async def _read_file_part(path: Path, offset: int, size: int, chunk_size: int = 1024 * 1024) -> AsyncIterator[bytes]:
@@ -465,7 +326,7 @@ async def _upload_model_files(
         console.print(
             f"Uploading {progress.total_files} file(s), "
             f"{progress.total_parts} part(s), "
-            f"{_format_bytes(progress.total_bytes)} total"
+            f"{format_bytes(progress.total_bytes)} total"
         )
     with progress:
         complete_files = await _upload_files(local_files, remote_files, progress=progress)

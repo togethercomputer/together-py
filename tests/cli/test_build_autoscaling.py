@@ -59,7 +59,6 @@ def test_build_autoscaling_includes_single_metric() -> None:
         max_replicas=3,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         scaling_metrics=build_scaling_metrics(scaling_metric="inflight_requests", scaling_target=16),
         required=True,
     )
@@ -82,7 +81,6 @@ def test_build_autoscaling_defaults_both_bounds_when_required() -> None:
         max_replicas=None,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=True,
     )
 
@@ -109,7 +107,6 @@ def test_build_autoscaling_infers_missing_replica_bounds(
         max_replicas=max_replicas,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=True,
     )
 
@@ -135,7 +132,6 @@ def test_build_autoscaling_rejects_invalid_explicit_bounds(
             max_replicas=max_replicas,
             scale_up_window=None,
             scale_down_window=None,
-            scale_to_zero_window=None,
             required=False,
         )
 
@@ -166,7 +162,6 @@ def test_build_autoscaling_update_requires_explicit_zero_bounds(
             max_replicas=max_replicas,
             scale_up_window=None,
             scale_down_window=None,
-            scale_to_zero_window=None,
             required=False,
             infer_replica_defaults=False,
         )
@@ -180,7 +175,6 @@ def test_build_autoscaling_update_keeps_partial_nonzero_patch() -> None:
         max_replicas=None,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=False,
         infer_replica_defaults=False,
     )
@@ -194,8 +188,25 @@ def test_build_autoscaling_accepts_stopped_deployment() -> None:
         max_replicas=0,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=True,
     )
 
     assert autoscaling == {"min_replicas": 0, "max_replicas": 0}
+
+
+def test_build_autoscaling_omits_scale_to_zero_window() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=2,
+        scale_up_window="30s",
+        scale_down_window="60s",
+        required=True,
+    )
+
+    assert autoscaling == {
+        "min_replicas": 1,
+        "max_replicas": 2,
+        "scale_up_window": "30s",
+        "scale_down_window": "60s",
+    }
+    assert "scale_to_zero_window" not in autoscaling

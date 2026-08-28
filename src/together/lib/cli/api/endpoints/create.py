@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import asyncio
 from typing import Optional, Annotated
 
@@ -8,6 +7,7 @@ from cyclopts import Parameter
 
 from together import APIError, omit
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
@@ -60,7 +60,7 @@ async def create(
         console.print(
             f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})",
         )
-        sys.exit(1)
+        raise CliDiagnosticExit("Endpoint minimum replicas cannot exceed maximum replicas")
 
     if availability_zone:
         try:
@@ -71,7 +71,7 @@ async def create(
                     console.print("Available zones:")
                     for zone in sorted(valid_zones.avzones):
                         console.print(f"  {zone}")
-                sys.exit(1)
+                raise CliDiagnosticExit("Endpoint availability zone is invalid")
         except Exception:
             pass
 
@@ -109,7 +109,8 @@ async def create(
         ):
             console.print("Invalid hardware selected." if hardware else "Missing required argument --hardware")
             await list_hardware(model=model, config=config, available=True)
-            sys.exit(1)
+            diagnostic = "Endpoint hardware is invalid" if hardware else "Endpoint hardware is required"
+            raise CliDiagnosticExit(diagnostic) from None
         elif "model" in error_msg and (
             "not found" in error_msg
             or "invalid" in error_msg
@@ -121,7 +122,7 @@ async def create(
                 "Please check that the model name is correct and that it supports dedicated endpoint deployment.",
             )
             console.print("You can browse available models at: https://api.together.ai/models")
-            sys.exit(1)
+            raise CliDiagnosticExit("Endpoint model is unavailable") from None
         raise e
 
     if config.json:

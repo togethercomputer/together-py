@@ -1,4 +1,3 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-__title__ = "together"
-__version__ = "2.32.0"  # x-release-please-version
+from __future__ import annotations

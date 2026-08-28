@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing_extensions import Required, TypedDict
+from typing_extensions import Literal, Required, TypedDict
 
 from .optimizer_config_param import OptimizerConfigParam
 
@@ -25,6 +25,9 @@ class ModelResourceCreateParams(TypedDict, total=False):
 
 class ComputeConfig(TypedDict, total=False):
     """Compute layout to provision."""
+
+    gpu_type: Literal["H100-80GB", "B200-SXM"]
+    """GPU type to provision. Omit to use the model's default GPU type."""
 
     num_generator_replicas: int
     """Number of generator replicas. 0 runs the trainer only, with no generator."""

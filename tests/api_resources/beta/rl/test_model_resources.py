@@ -32,7 +32,10 @@ class TestModelResources:
     def test_method_create_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.create(
             base_model="Qwen/Qwen3-0.6B",
-            compute_config={"num_generator_replicas": 2},
+            compute_config={
+                "gpu_type": "B200-SXM",
+                "num_generator_replicas": 2,
+            },
             lora_enabled=True,
             optimizer_config={
                 "adamw": {},
@@ -149,7 +152,10 @@ class TestModelResources:
     def test_method_estimate_cost_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.estimate_cost(
             base_model="Qwen/Qwen3-0.6B",
-            compute_config={"num_generator_replicas": 2},
+            compute_config={
+                "gpu_type": "B200-SXM",
+                "num_generator_replicas": 2,
+            },
             lora_enabled=True,
             optimizer_config={
                 "adamw": {},
@@ -245,7 +251,10 @@ class TestAsyncModelResources:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.create(
             base_model="Qwen/Qwen3-0.6B",
-            compute_config={"num_generator_replicas": 2},
+            compute_config={
+                "gpu_type": "B200-SXM",
+                "num_generator_replicas": 2,
+            },
             lora_enabled=True,
             optimizer_config={
                 "adamw": {},
@@ -362,7 +371,10 @@ class TestAsyncModelResources:
     async def test_method_estimate_cost_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.estimate_cost(
             base_model="Qwen/Qwen3-0.6B",
-            compute_config={"num_generator_replicas": 2},
+            compute_config={
+                "gpu_type": "B200-SXM",
+                "num_generator_replicas": 2,
+            },
             lora_enabled=True,
             optimizer_config={
                 "adamw": {},

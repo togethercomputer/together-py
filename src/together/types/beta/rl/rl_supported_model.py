@@ -1,20 +1,22 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from typing import Optional
+from typing import List, Optional
+from typing_extensions import Literal
 
 from ...._models import BaseModel
 
 __all__ = [
     "RlSupportedModel",
-    "GeneratorConfig",
-    "GeneratorConfigSamplingDefaults",
-    "TrainerConfig",
-    "TrainerConfigFull",
-    "TrainerConfigLora",
+    "ComputeConfig",
+    "ComputeConfigGeneratorConfig",
+    "ComputeConfigGeneratorConfigSamplingDefaults",
+    "ComputeConfigTrainerConfig",
+    "ComputeConfigTrainerConfigFull",
+    "ComputeConfigTrainerConfigLora",
 ]
 
 
-class GeneratorConfigSamplingDefaults(BaseModel):
+class ComputeConfigGeneratorConfigSamplingDefaults(BaseModel):
     """Default sampling parameters used for sample requests."""
 
     logprobs: int
@@ -30,20 +32,20 @@ class GeneratorConfigSamplingDefaults(BaseModel):
     """Sampling temperature"""
 
 
-class GeneratorConfig(BaseModel):
-    """Inference config.
+class ComputeConfigGeneratorConfig(BaseModel):
+    """Inference config for this GPU type.
 
-    Set when the model can be provisioned with generator replicas.
+    Set when the model can be provisioned with generator replicas on this GPU type.
     """
 
     context_length: int
     """Maximum tokens in a single inference request (prompt + completion)"""
 
-    sampling_defaults: GeneratorConfigSamplingDefaults
+    sampling_defaults: ComputeConfigGeneratorConfigSamplingDefaults
     """Default sampling parameters used for sample requests."""
 
 
-class TrainerConfigFull(BaseModel):
+class ComputeConfigTrainerConfigFull(BaseModel):
     """Full-weight training config. Set when the model supports full-weight training."""
 
     max_batch_size: int
@@ -53,7 +55,7 @@ class TrainerConfigFull(BaseModel):
     """Maximum sequence length in tokens"""
 
 
-class TrainerConfigLora(BaseModel):
+class ComputeConfigTrainerConfigLora(BaseModel):
     """LoRA training config. Set when the model supports LoRA training."""
 
     max_batch_size: int
@@ -66,14 +68,36 @@ class TrainerConfigLora(BaseModel):
     """Maximum sequence length in tokens"""
 
 
-class TrainerConfig(BaseModel):
-    """Training config. Set when the model supports at least one training mode."""
+class ComputeConfigTrainerConfig(BaseModel):
+    """Training config for this GPU type.
 
-    full: Optional[TrainerConfigFull] = None
+    Set when the model supports at least one training mode on this GPU type.
+    """
+
+    full: Optional[ComputeConfigTrainerConfigFull] = None
     """Full-weight training config. Set when the model supports full-weight training."""
 
-    lora: Optional[TrainerConfigLora] = None
+    lora: Optional[ComputeConfigTrainerConfigLora] = None
     """LoRA training config. Set when the model supports LoRA training."""
+
+
+class ComputeConfig(BaseModel):
+    """A validated hardware configuration available for an RL base model."""
+
+    gpu_type: Literal["H100-80GB", "B200-SXM"]
+    """GPU type this configuration provisions."""
+
+    generator_config: Optional[ComputeConfigGeneratorConfig] = None
+    """Inference config for this GPU type.
+
+    Set when the model can be provisioned with generator replicas on this GPU type.
+    """
+
+    trainer_config: Optional[ComputeConfigTrainerConfig] = None
+    """Training config for this GPU type.
+
+    Set when the model supports at least one training mode on this GPU type.
+    """
 
 
 class RlSupportedModel(BaseModel):
@@ -85,11 +109,8 @@ class RlSupportedModel(BaseModel):
     base_model: str
     """Base model identifier to pass as base_model when creating a model resource"""
 
-    generator_config: Optional[GeneratorConfig] = None
-    """Inference config.
+    default_gpu_type: Literal["H100-80GB", "B200-SXM"]
+    """GPU type used when model-resource creation omits gpu_type."""
 
-    Set when the model can be provisioned with generator replicas.
-    """
-
-    trainer_config: Optional[TrainerConfig] = None
-    """Training config. Set when the model supports at least one training mode."""
+    compute_configs: Optional[List[ComputeConfig]] = None
+    """Validated GPU configurations available for this base model."""

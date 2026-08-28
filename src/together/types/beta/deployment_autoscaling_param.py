@@ -13,11 +13,19 @@ __all__ = ["DeploymentAutoscalingParam", "ScalingMetric"]
 class ScalingMetric(TypedDict, total=False):
     """Metric and target used by the autoscaler to recommend a replica count."""
 
-    name: Required[str]
-    """
-    Metric name, such as `gpu_utilization`, `ttft`, `inflight_requests`,
-    `e2e_latency`, `throughput_per_replica`, or `decoding_speed`.
-    """
+    name: Required[
+        Literal[
+            "cache_hit_rate",
+            "decoding_speed",
+            "e2e_latency",
+            "gpu_utilization",
+            "inflight_requests",
+            "throughput_per_replica",
+            "token_utilization",
+            "ttft",
+        ]
+    ]
+    """Autoscaling metric name from the server allowlist."""
 
     target: Required[float]
     """Target interpreted according to `type`.
