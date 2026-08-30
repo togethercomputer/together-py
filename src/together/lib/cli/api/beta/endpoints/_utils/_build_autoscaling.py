@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-import sys
 from typing import Literal, cast, overload
 
 from together.types.beta import DeploymentAutoscalingParam
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 from together.types.beta.deployment_autoscaling_param import ScalingMetric
 
@@ -57,7 +57,7 @@ def normalize_duration(value: str | None, *, option_name: str) -> str | None:
     if _BARE_SECONDS_RE.match(value):
         return f"{value}s"
     console.print(f"Error: {option_name} must be a duration in seconds, e.g. 30 or 30s (got {value!r}).")
-    sys.exit(1)
+    raise CliDiagnosticExit(f"Invalid autoscaling duration for {option_name}")
 
 
 def build_scaling_metrics(
@@ -72,13 +72,13 @@ def build_scaling_metrics(
 
     if scaling_metric is None or scaling_target is None:
         console.print("Error: --scaling-metric and --scaling-target must be set together.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Autoscaling metric and target must be set together")
 
     metric_type = _METRIC_TYPES.get(scaling_metric)
     if metric_type is None:
         known = ", ".join(SCALING_METRIC_NAMES)
         console.print(f"Error: unknown --scaling-metric {scaling_metric!r}. Choose one of: {known}.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Unknown autoscaling metric")
 
     metric: ScalingMetric = {
         "name": scaling_metric,
@@ -92,13 +92,13 @@ def build_scaling_metrics(
                 f"Error: --scaling-percentile must be one of {', '.join(sorted(_VALID_PERCENTILES))} "
                 f"(got {scaling_percentile!r})."
             )
-            sys.exit(1)
+            raise CliDiagnosticExit("Invalid autoscaling percentile")
         if metric_type != "METRIC_TARGET_TYPE_VALUE":
             console.print(
                 f"Error: --scaling-percentile only applies to latency metrics "
                 f"(ttft, e2e_latency, decoding_speed), not {scaling_metric!r}."
             )
-            sys.exit(1)
+            raise CliDiagnosticExit("Autoscaling percentile requires a latency metric")
         metric["percentile"] = scaling_percentile
 
     return [metric]
@@ -154,18 +154,18 @@ def build_autoscaling(
     elif (min_replicas == 0 or max_replicas == 0) and not (min_replicas == 0 and max_replicas == 0):
         # Updates are patchy: don't invent the other bound when stopping.
         console.print("Error: to stop a deployment, pass both --min-replicas 0 and --max-replicas 0.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Scaling to zero requires both replica bounds")
 
     if min_replicas is not None and max_replicas is not None and (min_replicas == 0) != (max_replicas == 0):
         console.print(
             "Error: --min-replicas and --max-replicas must both be 0 to stop a deployment. "
             "Pass --min-replicas 0 --max-replicas 0."
         )
-        sys.exit(1)
+        raise CliDiagnosticExit("Scaling to zero requires both replica bounds")
 
     if min_replicas is not None and max_replicas is not None and min_replicas > max_replicas:
         console.print(f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})")
-        sys.exit(1)
+        raise CliDiagnosticExit("Autoscaling minimum replicas cannot exceed maximum replicas")
 
     autoscaling = {
         key: value
@@ -182,5 +182,5 @@ def build_autoscaling(
         if not required:
             return None
         console.print("Error: deployment create requires autoscaling. Pass --min-replicas and/or --max-replicas.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Deployment creation requires autoscaling")
     return cast(DeploymentAutoscalingParam, autoscaling)
