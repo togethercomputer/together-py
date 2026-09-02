@@ -38,6 +38,7 @@ from .lora_config_param import LoraConfigParam as LoraConfigParam
 from .loss_config_param import LossConfig as LossConfig
 from .model_input_param import ModelInput as ModelInput
 from .optim_step_result import OptimStepResult as OptimStepResult
+from .tensor_data_param import TensorDataParam as TensorDataParam
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
 from .rl_supported_model import RlSupportedModel as RlSupportedModel
 from .session_error_code import SessionErrorCode as SessionErrorCode
@@ -50,6 +51,7 @@ from .grpo_loss_ratio_type import GrpoLossRatioType as GrpoLossRatioType
 from .inference_checkpoint import InferenceCheckpoint as InferenceCheckpoint
 from .operation_error_code import OperationErrorCode as OperationErrorCode
 from .optim_step_operation import OptimStepOperation as OptimStepOperation
+from .routed_experts_param import RoutedExpertsParam as RoutedExpertsParam
 from .wandb_metadata_param import WandbMetadataParam as WandbMetadataParam
 from .model_resources_error import ModelResourcesError as ModelResourcesError
 from .muon_optimizer_config import MuonOptimizerConfig as MuonOptimizerConfig
@@ -65,7 +67,6 @@ from .weights_sync_operation import WeightsSyncOperation as WeightsSyncOperation
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
 from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
-from .tensor_data_param_param import TensorDataParam as TensorDataParam
 from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
 from .operation_forward_params import OperationForwardParams as OperationForwardParams
 from .cross_entropy_loss_params import CrossEntropyLossParams as CrossEntropyLossParams
@@ -75,7 +76,6 @@ from .grpo_loss_aggregation_type import GrpoLossAggregationType as GrpoLossAggre
 from .model_resource_list_params import ModelResourceListParams as ModelResourceListParams
 from .model_resource_stop_params import ModelResourceStopParams as ModelResourceStopParams
 from .model_resources_error_code import ModelResourcesErrorCode as ModelResourcesErrorCode
-from .routed_experts_param_param import RoutedExpertsParam as RoutedExpertsParam
 from .training_checkpoint_result import TrainingCheckpointResult as TrainingCheckpointResult
 from .inference_checkpoint_result import InferenceCheckpointResult as InferenceCheckpointResult
 from .muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfigParam

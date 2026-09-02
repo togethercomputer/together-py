@@ -6,8 +6,8 @@ from typing import Dict, Iterable
 from typing_extensions import Required, TypedDict
 
 from .model_input_param import ModelInput
-from .tensor_data_param_param import TensorDataParam
-from .routed_experts_param_param import RoutedExpertsParam
+from .tensor_data_param import TensorDataParam
+from .routed_experts_param import RoutedExpertsParam
 
 __all__ = ["OperationForwardParams", "Sample"]
 
