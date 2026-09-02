@@ -332,6 +332,7 @@ class TestOperations:
                     },
                 }
             ],
+            return_loss_fn_outputs=True,
         )
         assert_matches_type(ForwardBackwardOperation, operation, path=["response"])
 
@@ -1271,6 +1272,7 @@ class TestAsyncOperations:
                     },
                 }
             ],
+            return_loss_fn_outputs=True,
         )
         assert_matches_type(ForwardBackwardOperation, operation, path=["response"])
 

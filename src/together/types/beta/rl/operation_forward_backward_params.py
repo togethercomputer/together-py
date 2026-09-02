@@ -7,7 +7,7 @@ from typing_extensions import Required, TypedDict
 
 from .loss_config_param import LossConfig
 from .model_input_param import ModelInput
-from .tensor_data_param import TensorData
+from .tensor_data_param_param import TensorDataParam
 from .routed_experts_param_param import RoutedExpertsParam
 
 __all__ = ["OperationForwardBackwardParams", "Sample"]
@@ -20,9 +20,17 @@ class OperationForwardBackwardParams(TypedDict, total=False):
     samples: Required[Iterable[Sample]]
     """Batch of training samples to process"""
 
+    return_loss_fn_outputs: bool
+    """
+    Return the loss function's per-sample output tensors alongside the loss and
+    metrics. Defaults to false. Enabling it increases the response size
+    substantially for large batches and reduces step throughput, so leave it unset
+    for ordinary training steps.
+    """
+
 
 class Sample(TypedDict, total=False):
-    loss_fn_inputs: Required[Dict[str, TensorData]]
+    loss_fn_inputs: Required[Dict[str, TensorDataParam]]
     """Per-token loss tensors keyed by name.
 
     Include `target_tokens` and the inputs required by the selected loss. Each

@@ -292,6 +292,7 @@ from together.types.beta.rl import (
     InferenceCheckpointOperation,
     InferenceCheckpointResult,
     LossConfig,
+    LossFnOutput,
     LossType,
     ModelInput,
     ModelInputChunk,

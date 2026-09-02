@@ -1,35 +1,35 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-from __future__ import annotations
+from typing import List, Optional
+from typing_extensions import Literal
 
-from typing import Iterable
-from typing_extensions import Literal, Required, TypedDict
+from ...._models import BaseModel
 
 __all__ = ["TensorData"]
 
 
-class TensorData(TypedDict, total=False):
+class TensorData(BaseModel):
     """A tensor encoded as flattened row-major values, with an optional shape."""
 
-    data: Required[Iterable[float]]
+    data: List[float]
     """Flattened one-dimensional values encoded as JSON numbers."""
 
-    dtype: Required[Literal["int64", "float32"]]
+    dtype: Literal["int64", "float32"]
     """Tensor element type, either `int64` or `float32`."""
 
-    shape: Iterable[int]
+    shape: Optional[List[int]] = None
     """
     Optional tensor shape; training operations accept one-dimensional tensors only,
     and the dimension must match the data length.
     """
 
-    sparse_col_indices: Iterable[int]
+    sparse_col_indices: Optional[List[int]] = None
     """
     Reserved for Tinker schema compatibility; current training operations reject
     sparse tensors.
     """
 
-    sparse_crow_indices: Iterable[int]
+    sparse_crow_indices: Optional[List[int]] = None
     """
     Reserved for Tinker schema compatibility; current training operations reject
     sparse tensors.

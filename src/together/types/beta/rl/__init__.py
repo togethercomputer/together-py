@@ -10,9 +10,11 @@ from .adam_params import AdamParams as AdamParams
 from .lora_config import LoraConfig as LoraConfig
 from .muon_params import MuonParams as MuonParams
 from .stop_reason import StopReason as StopReason
+from .tensor_data import TensorData as TensorData
 from .sample_result import SampleResult as SampleResult
 from .session_error import SessionError as SessionError
 from .forward_result import ForwardResult as ForwardResult
+from .loss_fn_output import LossFnOutput as LossFnOutput
 from .routed_experts import RoutedExperts as RoutedExperts
 from .session_status import SessionStatus as SessionStatus
 from .wandb_metadata import WandbMetadata as WandbMetadata
@@ -36,7 +38,6 @@ from .lora_config_param import LoraConfigParam as LoraConfigParam
 from .loss_config_param import LossConfig as LossConfig
 from .model_input_param import ModelInput as ModelInput
 from .optim_step_result import OptimStepResult as OptimStepResult
-from .tensor_data_param import TensorData as TensorData
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
 from .rl_supported_model import RlSupportedModel as RlSupportedModel
 from .session_error_code import SessionErrorCode as SessionErrorCode
@@ -64,6 +65,7 @@ from .weights_sync_operation import WeightsSyncOperation as WeightsSyncOperation
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
 from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
+from .tensor_data_param_param import TensorDataParam as TensorDataParam
 from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
 from .operation_forward_params import OperationForwardParams as OperationForwardParams
 from .cross_entropy_loss_params import CrossEntropyLossParams as CrossEntropyLossParams
