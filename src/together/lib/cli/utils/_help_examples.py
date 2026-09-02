@@ -579,7 +579,7 @@ BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta clusters create --non-interactive \\
     --name my-cluster --cluster-type KUBERNETES --gpu-type H100_SXM \\
     --region us-central-8 --num-gpus 8 --billing-type ON_DEMAND \\
-    --nvidia-version-id <nvidia-version-id> --volume <volume-id>[/primary]
+    --driver nvidia-565-22 --volume <volume-id>[/primary]
 
 [dim]-[/dim] Update or delete a cluster:
   [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
@@ -605,7 +605,7 @@ BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --region us-central-8 \\
     --num-gpus 8 \\
     --billing-type ON_DEMAND \\
-    --nvidia-version-id <nvidia-version-id> \\
+    --driver nvidia-565-22 \\
     --volume <volume-id>[/primary]
 """
 
