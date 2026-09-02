@@ -196,6 +196,17 @@ def test_format_cyclopts_error_omits_install_path() -> None:
     assert err.verbose is True
 
 
+def test_format_empty_cyclopts_error_uses_exception_type() -> None:
+    from cyclopts.exceptions import CycloptsError
+
+    assert format_cli_error_for_telemetry(CycloptsError()) == "CycloptsError"
+
+
+@pytest.mark.parametrize("error", [RuntimeError(), RuntimeError(" \n")])
+def test_format_empty_error_uses_exception_type(error: RuntimeError) -> None:
+    assert format_cli_error_for_telemetry(error) == "RuntimeError"
+
+
 def test_telemetry_env_opt_out_only_explicit_values(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)
     assert is_tracking_enabled() is True
