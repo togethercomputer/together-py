@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.33.0](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.0) (2026-09-02)
+
+
+### Features
+
+* **cli:** add `list`/`delete` aliases for beta endpoints `ls`/`rm` (ENG-92294) ([#538](https://github.com/togethercomputer/together-py/issues/538)) ([b071670](https://github.com/togethercomputer/together-py/commit/b0716705a031bb9a34aa95717149722461a72e7e))
+* **CLI:** add `tg batches` commands for the batch API ([#525](https://github.com/togethercomputer/together-py/issues/525)) ([013976d](https://github.com/togethercomputer/together-py/commit/013976dd92b9cb0ebb8d0e0a0f7e1a5b9b12d116))
+* **cli:** introduce ExperimentalConfig for experimental opt-in features in jig ([#543](https://github.com/togethercomputer/together-py/issues/543)) ([d653373](https://github.com/togethercomputer/together-py/commit/d6533731a811be30966ea9233d0322cf14120ca4))
+* **endpoints:** List enum values for endpoint scaling metric values ([be959b2](https://github.com/togethercomputer/together-py/commit/be959b278bd07913aa7f76b096f68e8ddb12d302))
+* ENG-92086 - call prewarm API after volume upload and image build ([#535](https://github.com/togethercomputer/together-py/issues/535)) ([b436f0c](https://github.com/togethercomputer/together-py/commit/b436f0ce35aa9001ee02b2eb5e2cf28346e54b6a))
+* **Evals CLI:** show files upload progress during evals create ([#534](https://github.com/togethercomputer/together-py/issues/534)) ([37ddff1](https://github.com/togethercomputer/together-py/commit/37ddff1fd7c5f313cde527adcf0c37a816a1b605))
+* expose RL GPU configurations in OpenAPI ([91b508a](https://github.com/togethercomputer/together-py/commit/91b508a182555166da33d0c02c3d9d31ea7261f3))
+* expose RL session policy state ([e83ef66](https://github.com/togethercomputer/together-py/commit/e83ef663f896cc6d9dd88c87a0b5755b81217f6d))
+* **rl:** add forward-backward loss function outputs ([c6d8f3b](https://github.com/togethercomputer/together-py/commit/c6d8f3bcb63caf6b8e4ae16b6c44107b2fc8d7c8))
+
+
+### Bug Fixes
+
+* **cli:** preserve endpoint API failure diagnostics ([#537](https://github.com/togethercomputer/together-py/issues/537)) ([ba27d45](https://github.com/togethercomputer/together-py/commit/ba27d450eae86f4eafb9d91e8191a0863af9142c))
+* **cli:** preserve endpoint creation diagnostics ([#541](https://github.com/togethercomputer/together-py/issues/541)) ([4641ddf](https://github.com/togethercomputer/together-py/commit/4641ddf3b624322bcd5456628549305069b6e463))
+* **cli:** preserve endpoint deletion failure diagnostics ([#533](https://github.com/togethercomputer/together-py/issues/533)) ([6c706ae](https://github.com/togethercomputer/together-py/commit/6c706aedea354a404a0cc5155bf16ffc315f4b01))
+* **cli:** preserve missing argument diagnostics ([#549](https://github.com/togethercomputer/together-py/issues/549)) ([d98ddc1](https://github.com/togethercomputer/together-py/commit/d98ddc1b539e28a8506d63de881508bbf01d4745))
+* **cli:** remove --scale-to-zero-window from beta endpoints ([#545](https://github.com/togethercomputer/together-py/issues/545)) ([53710f9](https://github.com/togethercomputer/together-py/commit/53710f97d178523b37b87800aee449749b0a9424))
+* **cli:** show upload progress for batch submit ([#546](https://github.com/togethercomputer/together-py/issues/546)) ([5b23e37](https://github.com/togethercomputer/together-py/commit/5b23e375d3e4436821476f2f29e6fbb544a00d88))
+* **cli:** stabilize UnknownOptionError telemetry ([#539](https://github.com/togethercomputer/together-py/issues/539)) ([23c3498](https://github.com/togethercomputer/together-py/commit/23c34988cdc351b705a5dee85f2f21da2c8e4d84))
+* **Finetuning CLI:** remove broken pagination on `list-events` command ([#540](https://github.com/togethercomputer/together-py/issues/540)) ([cd8018d](https://github.com/togethercomputer/together-py/commit/cd8018ddb910b66e8c62ade30034c3314487af0f))
+
+
+### Chores
+
+* **cli:** drop `tqdm` dependency (DX-458) ([#523](https://github.com/togethercomputer/together-py/issues/523)) ([479dd6a](https://github.com/togethercomputer/together-py/commit/479dd6aec61141b18ff2b8da419846d9f9eec6cd))
+
+
+### Documentation
+
+* **openapi:** sync rollout landing floor descriptions ([222b48a](https://github.com/togethercomputer/together-py/commit/222b48a887c623285a1e1ddebf817206badb55ea))
+* sync rollout final target semantics ([be0aa66](https://github.com/togethercomputer/together-py/commit/be0aa6698e9cebbea21237ec71c22d3e1d410b5a))
+
 ## [2.32.0](https://github.com/togethercomputer/together-py/compare/v2.31.0...v2.32.0) (2026-08-26)
 
 
