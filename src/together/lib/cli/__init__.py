@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import inspect
-from typing import Optional, Annotated, get_args, get_origin
+from typing import Literal, Optional, Annotated, get_args, get_origin
 
 import httpx
 from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
@@ -117,6 +117,13 @@ _GLOBAL_PARAM_HELP = {
 # stripped; reported separately via is_beta_command).
 _NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
 
+# Internal environment shorthands for the hidden --env flag. An explicit
+# --base-url wins; TOGETHER_BASE_URL only applies when neither flag is given.
+_ENV_BASE_URLS = {
+    "qa": "https://api.qa.together.ai/v1",
+    "prod": "https://api.together.ai/v1",
+}
+
 
 async def _resolve_project_id(client: AsyncTogether) -> str:
     me = await client.whoami()
@@ -210,6 +217,7 @@ async def launcher(
     *tokens: Annotated[str, Parameter(show=False, allow_leading_hyphen=True)],
     api_key: Annotated[Optional[str], Parameter(show=False)] = None,
     base_url: Annotated[Optional[str], Parameter(show=False)] = None,
+    env: Annotated[Optional[Literal["qa", "prod"]], Parameter(show=False)] = None,
     timeout: Annotated[Optional[int], Parameter(show=False)] = None,
     max_retries: Annotated[Optional[int], Parameter(show=False)] = None,
     debug: Annotated[Optional[bool], Parameter(show=False)] = False,
@@ -248,6 +256,9 @@ async def launcher(
     # project resolution these commands worked with no key; skip client setup so
     # they stay keyless.
     no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+
+    if base_url is None and env is not None:
+        base_url = _ENV_BASE_URLS[env]
 
     client = _create_client(api_key, base_url, timeout, max_retries, project_id, require_api_key=not no_auth_command)
 
@@ -591,6 +602,10 @@ clusters_app.command(
     help_epilogue=BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
 )
 clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), alias="-d", help="Delete a cluster")
+clusters_app.command(
+    (f"{_CLI}.beta.clusters.recreate:recreate"),
+    help="Recreate a cluster, preserving its reservation",
+)
 clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
 clusters_app.command(
     (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),

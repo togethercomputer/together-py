@@ -1174,6 +1174,60 @@ class TestBetaClustersDelete:
         assert result.exit_code == 0
 
 
+class TestBetaClustersRecreate:
+    @pytest.mark.respx(base_url=base_url)
+    def test_recreate_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/compute/clusters/c-rec:recreate").mock(
+            return_value=httpx.Response(200, json={"id": "intent-1", "cluster_id": "c-rec", "status": "pending"})
+        )
+        result = cli_runner.invoke(["beta", "clusters", "recreate", "c-rec", "--json"])
+        assert json.loads(result.output) == {"id": "intent-1", "cluster_id": "c-rec", "status": "pending"}
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_recreate_confirm_yes_sends_reason(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        c = _cluster_body("c1", "to-recreate")
+        respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
+        route = respx_mock.post("/compute/clusters/c1:recreate").mock(
+            return_value=httpx.Response(200, json={"id": "intent-1", "cluster_id": "c1", "status": "pending"})
+        )
+        result = cli_runner.invoke(["beta", "clusters", "recreate", "c1", "--reason", "maintenance"], input="y\n")
+        assert "Recreate requested" in result.output
+        assert "intent-1" in result.output
+        assert result.exit_code == 0
+        sent = json.loads(route.calls.last.request.content)
+        assert sent == {"reason": "maintenance"}
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_recreate_with_new_spec(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/compute/clusters/c1:recreate").mock(
+            return_value=httpx.Response(200, json={"id": "intent-2", "cluster_id": "c1", "status": "pending"})
+        )
+        result = cli_runner.invoke(
+            ["beta", "clusters", "recreate", "c1", "--cluster-type", "SLURM", "--num-gpus", "16", "--json"]
+        )
+        assert result.exit_code == 0
+        sent = json.loads(route.calls.last.request.content)
+        assert sent == {"new_spec": {"cluster_type": "SLURM", "num_gpus": 16}}
+
+    @pytest.mark.respx(base_url="https://api.qa.together.ai/v1")
+    def test_recreate_env_flag_targets_qa(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.post("/compute/clusters/c-qa:recreate").mock(
+            return_value=httpx.Response(200, json={"id": "intent-3", "cluster_id": "c-qa", "status": "pending"})
+        )
+        result = cli_runner.invoke(["--env", "qa", "beta", "clusters", "recreate", "c-qa", "--json"])
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == "intent-3"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_recreate_confirm_no(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        # No POST route is mocked: an unexpected recreate call would fail loudly.
+        c = _cluster_body("c1", "keep-me")
+        respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
+        result = cli_runner.invoke(["beta", "clusters", "recreate", "c1"], input="n\n")
+        assert result.exit_code == 0
+
+
 class TestBetaClustersGetCredentials:
     @pytest.mark.respx(base_url=base_url)
     def test_get_credentials_stdout(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
