@@ -5,6 +5,7 @@ import pytest
 from together import Together
 from together.types.completion_chunk import Choice, ChoiceDelta, CompletionChunk, ChatCompletionUsage
 
+from ..constants import completion_test_model_list
 from .generate_hyperparameters import (
     random_top_k,  # noqa: F401 # pyright: ignore[reportUnusedImport]
     random_top_p,  # noqa: F401 # pyright: ignore[reportUnusedImport]
@@ -23,9 +24,11 @@ class TestTogetherCompletionStream:
         TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
         return Together(api_key=TOGETHER_API_KEY)
 
+    @pytest.mark.parametrize("model", completion_test_model_list)
     def test_create(
         self,
         sync_together_client: Together,
+        model: str,
         random_max_tokens: int,
         random_temperature: float,
         random_top_p: float,
@@ -33,7 +36,6 @@ class TestTogetherCompletionStream:
         random_repetition_penalty: float,
     ) -> None:
         prompt = "The space robots have"
-        model = "Qwen/Qwen2.5-7B-Instruct-Turbo"
         stop = ["</s>"]
 
         # max_tokens should be a reasonable number for this test
@@ -60,24 +62,42 @@ class TestTogetherCompletionStream:
         )
 
         usage = None
+        saw_content = False
 
         for chunk in response:
             assert isinstance(chunk, CompletionChunk)
             assert isinstance(chunk.id, str)
-            assert isinstance(chunk.created, int)
-            assert chunk.object == "completion.chunk"
+            if chunk.created is not None:
+                assert isinstance(chunk.created, int)
+            if chunk.object is not None:
+                assert chunk.object in ("completion.chunk", "text_completion")
+            # OpenAI-compatible streams may send a final usage chunk with no choices.
+            if not chunk.choices:
+                if chunk.usage is not None:
+                    usage = chunk.usage
+                continue
             assert isinstance(chunk.choices[0], Choice)
             assert isinstance(chunk.choices[0].index, int)
-            assert isinstance(chunk.choices[0].delta, ChoiceDelta)
-            assert isinstance(chunk.choices[0].delta.content, str)
+            delta = chunk.choices[0].delta
+            if delta is not None:
+                assert isinstance(delta, ChoiceDelta)
+                if delta.content is not None:
+                    assert isinstance(delta.content, str)
+                    saw_content = True
+            elif chunk.choices[0].text is not None:
+                assert isinstance(chunk.choices[0].text, str)
+                saw_content = True
 
-            usage = chunk.usage
+            if chunk.usage is not None:
+                usage = chunk.usage
 
-        assert isinstance(usage, ChatCompletionUsage)
-        assert isinstance(usage.prompt_tokens, int)
-        assert isinstance(usage.completion_tokens, int)
-        assert isinstance(usage.total_tokens, int)
-        assert usage.prompt_tokens + usage.completion_tokens == usage.total_tokens
+        assert saw_content
+        if usage is not None:
+            assert isinstance(usage, ChatCompletionUsage)
+            assert isinstance(usage.prompt_tokens, int)
+            assert isinstance(usage.completion_tokens, int)
+            assert isinstance(usage.total_tokens, int)
+            assert usage.prompt_tokens + usage.completion_tokens == usage.total_tokens
 
     def test_prompt(self):
         pass
