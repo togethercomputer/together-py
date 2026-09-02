@@ -68,12 +68,12 @@ jobs:
       - name: Check whether production is ahead of staging
         id: diff
         run: |
-          # Content compare: would merging production into staging change its tree?
-          # If not, staging already has production's content (release-please commits).
-          MERGED=$(git merge-tree --write-tree origin/main production/main) || MERGED=conflict
-          STAGING_TREE=$(git rev-parse 'origin/main^{tree}')
-          if [ "$MERGED" = "$STAGING_TREE" ]; then
-            echo "Staging already has production's content. Nothing to pull back."
+          # Ancestry, not tree. generate + trunk-sync-lock refuse unless
+          # production/main is an ancestor of staging/main. Identical trees with
+          # extra production merge commits (a heal PR merged on both trunks)
+          # still need a SHA fast-forward — skipping them wedges codegen.
+          if git -c credential.helper= merge-base --is-ancestor production/main origin/main; then
+            echo "Production is already contained in staging. Nothing to pull back."
             echo "behind=false" >> "$GITHUB_OUTPUT"
           else
             echo "behind=true" >> "$GITHUB_OUTPUT"
@@ -85,17 +85,19 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
-          # Prefer a SHA-preserving fast-forward. If the trunks have forked
-          # (staging is not an ancestor of production), open a heal PR instead.
-          if git -c credential.helper= merge-base --is-ancestor origin/main production/main; then
-            git -c credential.helper= push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" production/main:refs/heads/main
-            echo "Fast-forwarded staging/main to production/main."
-            exit 0
-          fi
-
-          echo "::warning title=Back-sync blocked::staging main is not an ancestor of production/main — opening a heal PR."
-          branch="stlc/heal-promote-ancestry"
           staging_url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Prefer a SHA-preserving fast-forward. Direct push often fails on an
+          # org "changes via PR" ruleset; fall through to a merge-commit PR.
+          if git -c credential.helper= merge-base --is-ancestor origin/main production/main; then
+            if git -c credential.helper= push "$staging_url" production/main:refs/heads/main; then
+              echo "Fast-forwarded staging/main to production/main."
+              exit 0
+            fi
+            echo "::warning title=Back-sync push blocked::Could not fast-forward staging/main (ruleset). Opening a back-sync PR — merge it with a merge commit, never squash."
+          else
+            echo "::warning title=Back-sync blocked::staging main is not an ancestor of production/main — opening a heal PR."
+          fi
+          branch="stlc/heal-promote-ancestry"
           git checkout -B "$branch" origin/main
           if ! git -c credential.helper= merge production/main -m "Merge production into staging (heal promote ancestry)"; then
             echo "::error title=Heal merge conflicted::Could not auto-merge production into staging. Resolve ancestry manually."
@@ -118,9 +120,11 @@ jobs:
               --title "Merge production into staging (heal promote ancestry)" \
               --reviewer blainekasten \
               --body "$(cat <<'EOF'
-          Staging and production have forked, so a fast-forward back-sync is unsafe.
+          Restores SHA ancestry so codegen / promote / trunk-sync-lock can proceed.
 
-          This PR merges `production/main` into staging to restore ancestry so promote/back-sync can fast-forward again. Review carefully — both trunks had unique commits.
+          Direct fast-forward of `staging/main` was blocked (org PR ruleset) or the trunks had forked. **Merge this PR with a merge commit or GitHub's fast-forward merge. Do not squash or rebase** — that rewrites SHAs and leaves production ahead, which holds codegen again.
+
+          After merge, re-run **Generate SDKs with stlc** on `togethercomputer/openapi`.
           EOF
           )"
             echo "Opened heal PR and requested review from blainekasten."
