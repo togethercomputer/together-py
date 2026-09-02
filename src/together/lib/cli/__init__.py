@@ -169,7 +169,7 @@ def _create_client(
                     "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
                 )
                 console.print("You can find your api key at https://api.together.ai/settings/api-keys")
-                sys.exit(1)
+                raise CliDiagnosticExit("Together API key missing")
 
             client._client.event_hooks["request"].append(block_requests_for_api_key)
         else:
