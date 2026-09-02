@@ -144,6 +144,24 @@ def test_command_system_exit_zero_emits_started_then_completed(
 
 
 @pytest.mark.usefixtures("isolated_cli_config")
+def test_command_system_exit_130_emits_started_then_user_aborted(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _exit_130() -> None:
+        sys.exit(130)
+
+    monkeypatch.setattr("together.lib.cli.api.telemetry.status.status", _exit_130)
+    r = cli_runner.invoke(["telemetry", "status"])
+    assert r.exit_code == 130
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandUserAborted.value,
+    ]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
 def test_command_exception_emits_started_then_failed_then_reraises(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,

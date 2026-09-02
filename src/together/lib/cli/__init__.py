@@ -374,6 +374,13 @@ async def launcher(
             command_succeeded = True
             sys.exit(0)
 
+        if e.code == 130:
+            track_cli(
+                CliTrackingEvents.CommandUserAborted,
+                {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
+            )
+            sys.exit(130)
+
         track_cli(
             CliTrackingEvents.CommandFailed,
             {
