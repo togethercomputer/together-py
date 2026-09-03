@@ -126,6 +126,42 @@ async def test_interactive_missing_required_argument_preserves_diagnostic(
 
 
 @pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_model_download_validation_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "models",
+            "download",
+            "ml_example@rev-a",
+            str(tmp_path),
+            "--revision",
+            "rev-b",
+            "--json",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "models download"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "Invalid model download request"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
 def test_command_system_exit_zero_emits_started_then_completed(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,
