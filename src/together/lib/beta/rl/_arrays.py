@@ -30,6 +30,19 @@ _WireDtype: TypeAlias = Literal["int64", "float32"]
 
 _KIND_DTYPES: Mapping[str, _WireDtype] = types.MappingProxyType({"f": "float32", "i": "int64", "u": "int64"})
 _NUMPY_FLOATS = frozenset({"torch.float16", "torch.float32", "torch.float64"})
+_INT64_MIN = -(2**63)
+_INT64_MAX = 2**63 - 1
+_FLOAT32_MAX = 3.4028234663852886e38
+
+
+def _require_wire_range(numbers: Sequence[int | float], dtype: _WireDtype, label: str) -> None:
+    """Reject values the declared wire dtype cannot hold as a finite number."""
+    if dtype == "int64":
+        if any(number < _INT64_MIN or number > _INT64_MAX for number in numbers):
+            raise ValueError(f"{label} holds values outside signed int64; cast them or use a signed integer dtype.")
+        return
+    if any(isinstance(number, float) and abs(number) > _FLOAT32_MAX for number in numbers):
+        raise ValueError(f"{label} holds values outside float32; the wire type is float32.")
 
 
 def _widened(tensor: Any) -> Any:
@@ -176,20 +189,30 @@ def _coerce_tensor(key: str, value: object, label: str) -> TensorData:
             numbers = _to_json_numbers(cast(Sequence[Any], data), data_label)
             if declared == "int64" and any(isinstance(number, float) for number in numbers):
                 raise _lossy_int64(data_label)
+            wire = declared if declared in ("int64", "float32") else _list_dtype(key, numbers)
+            _require_wire_range(numbers, wire, data_label)
             return cast(TensorData, {**tensor, "data": numbers})
+        wire = declared if declared in ("int64", "float32") else _KIND_DTYPES[array.dtype.kind]
         if declared in ("int64", "float32"):
             array = _cast_to_declared(array, declared, data_label)
-        return cast(TensorData, {**tensor, "data": _to_wire_list(array, data_label)})
+        numbers = _to_wire_list(array, data_label)
+        _require_wire_range(numbers, wire, data_label)
+        return cast(TensorData, {**tensor, "data": numbers})
 
     array = _to_array(value, label)
     if array is not None:
         # An array keeps its own dtype, as tinker's does, so an integer `advantages` array
         # fails the pinned-dtype check rather than being silently widened.
-        return {"data": _to_wire_list(array, label), "dtype": _KIND_DTYPES[array.dtype.kind]}
+        dtype = _KIND_DTYPES[array.dtype.kind]
+        numbers = _to_wire_list(array, label)
+        _require_wire_range(numbers, dtype, label)
+        return {"data": numbers, "dtype": dtype}
 
     if isinstance(value, (list, tuple)):
         numbers = _to_json_numbers(cast(Sequence[Any], value), label)
-        return {"data": numbers, "dtype": _list_dtype(key, numbers)}
+        dtype = _list_dtype(key, numbers)
+        _require_wire_range(numbers, dtype, label)
+        return {"data": numbers, "dtype": dtype}
 
     raise ValueError(
         f"{label} must be a TensorData mapping, a torch/numpy array, or a numeric list, got {type(value).__name__}."
@@ -222,6 +245,7 @@ def _coerce_chunk(chunk: object, label: str) -> object:
             raise ValueError(f"{token_label} must hold integers, but holds floating-point values.")
     else:
         return typed_chunk
+    _require_wire_range(tokens, "int64", token_label)
     return {**typed_chunk, "encoded_text": {**encoded, "tokens": tokens}}
 
 
@@ -276,4 +300,5 @@ def coerce_gradient(gradient: Gradient, label: str = "gradient") -> Gradient:
         data = _to_json_numbers(cast(Sequence[Any], raw_data), data_label)
     else:
         return gradient
+    _require_wire_range(data, "float32", data_label)
     return cast(Gradient, {**mapping, "data": data})

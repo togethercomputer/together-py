@@ -450,6 +450,31 @@ def test_declared_int64_over_a_float_list_is_rejected() -> None:
         coerce_sample(_sample({"target_tokens": tensor}))
 
 
+def test_uint64_values_outside_signed_int64_are_rejected(np: Any) -> None:
+    with pytest.raises(ValueError, match="outside signed int64"):
+        coerce_sample(_sample({"target_tokens": np.array([2**63], dtype=np.uint64)}))
+
+
+def test_list_values_outside_signed_int64_are_rejected() -> None:
+    with pytest.raises(ValueError, match="outside signed int64"):
+        coerce_sample(_sample({"target_tokens": [2**63]}))
+
+
+def test_uint64_token_values_outside_signed_int64_are_rejected(np: Any) -> None:
+    with pytest.raises(ValueError, match="outside signed int64"):
+        coerce_model_input(_model_input(np.array([2**63], dtype=np.uint64)))
+
+
+def test_float64_values_outside_float32_are_rejected(np: Any) -> None:
+    with pytest.raises(ValueError, match="outside float32"):
+        coerce_sample(_sample({"advantages": np.array([6.805646932770577e38], dtype=np.float64)}))
+
+
+def test_list_values_outside_float32_are_rejected() -> None:
+    with pytest.raises(ValueError, match="outside float32"):
+        coerce_sample(_sample({"advantages": [6.805646932770577e38]}))
+
+
 def test_longdouble_array_narrows_to_native_floats(np: Any) -> None:
     """longdouble is the one float dtype whose tolist() yields numpy scalars, not floats."""
     coerced = coerce_sample(_sample({"advantages": np.array([0.1, 0.2], dtype=np.longdouble)}))
