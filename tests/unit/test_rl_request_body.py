@@ -33,7 +33,6 @@ from together.lib.beta.rl import (
 from together.types.beta.rl import (
     loss_config_param,
     tensor_data_param,
-    operation_forward_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
@@ -465,7 +464,6 @@ def test_public_rl_legacy_loss_inputs_are_not_exported() -> None:
 def _generated_sample_shapes() -> list[Any]:
     """Every generated sample TypedDict the handwritten Sample stands in for."""
     return [
-        operation_forward_params.Sample,
         operation_forward_backward_params.Sample,
         operation_custom_forward_backward_params.Sample,
     ]
@@ -499,7 +497,7 @@ def test_native_loss_specs_cover_generated_loss_types() -> None:
 
 
 def test_loss_specs_only_use_known_tensor_inputs() -> None:
-    for spec in (*rl_losses.LOSS_SPECS.values(), rl_losses.FORWARD_INPUTS):
+    for spec in (*rl_losses.LOSS_SPECS.values(), rl_losses.CUSTOM_FORWARD_BACKWARD_INPUTS):
         assert spec.required_inputs | spec.optional_inputs <= rl_losses.INPUT_DTYPES.keys()
 
 

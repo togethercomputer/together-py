@@ -22,7 +22,7 @@ from ....types.beta.rl.muon_params import MuonParams
 from ....types.beta.rl.stop_reason import StopReason
 from ....types.beta.rl.sample_result import SampleResult
 from ....types.beta.rl.session_error import SessionError
-from ....types.beta.rl.forward_result import Logprob, ForwardResult
+from ....types.beta.rl.loss_fn_output import LossFnOutput
 from ....types.beta.rl.session_status import SessionStatus
 from ....types.beta.rl.checkpoint_type import CheckpointType
 from ....types.beta.rl.dro_loss_params import DroLossParams
@@ -106,13 +106,12 @@ __all__ = [
     "SampleResult",
     "SampledSequence",
     "StopReason",
-    "ForwardResult",
     "ForwardBackwardResult",
+    "LossFnOutput",
     "CustomForwardBackwardResult",
     "OptimStepResult",
     "WeightsSyncResult",
     "TrainingCheckpointResult",
     "InferenceCheckpointResult",
-    "Logprob",
     "PolicyVersionSegment",
 ]

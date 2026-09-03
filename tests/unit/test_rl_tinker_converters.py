@@ -13,8 +13,9 @@ from tinker.types.image_chunk import ImageChunk
 from together.lib.beta.rl import _losses as rl_losses
 from tests.unit._rl_tinker import _tensors, _rl_loop_datum, _advantage_datum
 from together.lib.beta.rl.tinker import _losses, _converters
+from together.types.beta.rl.tensor_data import TensorData as WireTensorData
 from together.types.beta.rl.sample_result import SampleResult
-from together.types.beta.rl.forward_result import Logprob, ForwardResult
+from together.types.beta.rl.loss_fn_output import LossFnOutput
 from together.types.beta.rl.sampled_sequence import SampledSequence
 from together.types.beta.rl.prompt_top_logprobs import PromptTopLogprobs
 from together.types.beta.rl.forward_backward_result import ForwardBackwardResult
@@ -384,12 +385,38 @@ def test_with_zero_weights_rejects_unexpected_keys() -> None:
 
 
 def test_forward_output_fills_loss_fn_outputs_from_real_logprobs() -> None:
-    output = _converters._to_forward_output(ForwardResult(logprobs=[Logprob(data=[-0.1, -0.2]), Logprob(data=[-0.3])]))
+    output = _converters._to_forward_backward_output(
+        ForwardBackwardResult(
+            loss=0.5,
+            loss_fn_outputs=[
+                LossFnOutput(tensors={"logprobs": WireTensorData(data=values, dtype="float32")})
+                for values in ([-0.1, -0.2], [-0.3])
+            ],
+        )
+    )
 
     assert len(output.loss_fn_outputs) == 2
     assert output.loss_fn_outputs[0]["logprobs"].data == pytest.approx([-0.1, -0.2])
     assert output.loss_fn_outputs[1]["logprobs"].data == pytest.approx([-0.3])
-    assert output.metrics == {}
+    assert output.metrics == {"loss:sum": 0.5}
+
+
+def test_unit_weights_replace_the_zero_weights_that_would_mask_logprobs() -> None:
+    sample = _converters._to_sample(
+        types.Datum(
+            model_input=types.ModelInput.from_ints([1, 2]),
+            loss_fn_inputs={
+                "target_tokens": types.TensorData([1, 2], dtype="int64"),
+                "weights": types.TensorData([0.0, 0.0], dtype="float32"),
+            },
+        ),
+        "cross_entropy",
+    )
+
+    scored = _converters._with_unit_weights(sample)
+
+    assert scored["loss_fn_inputs"]["weights"]["data"] == [1.0, 1.0]
+    assert scored["loss_fn_inputs"]["target_tokens"]["data"] == [1, 2]
 
 
 def test_compute_logprobs_shapes_first_token_to_none() -> None:

@@ -72,7 +72,8 @@ _LOSS_CONFIG_HINTS = get_type_hints(loss_config_param.LossConfig, include_extras
 _LOSS_CONFIG_REQUIRED, _ = _split_required(_LOSS_CONFIG_HINTS)
 _POLICY_REQUIRED_INPUTS = frozenset({"target_tokens", "logprobs", "advantages"})
 _POLICY_OPTIONAL_INPUTS = frozenset({"weights", "mask"})
-FORWARD_INPUTS = InputSpec(
+# The one operation that carries no loss config, so no loss declares its inputs.
+CUSTOM_FORWARD_BACKWARD_INPUTS = InputSpec(
     required_inputs=frozenset({"target_tokens"}),
     optional_inputs=frozenset({"weights", "mask"}),
 )

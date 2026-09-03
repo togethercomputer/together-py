@@ -8,7 +8,6 @@ from typing_extensions import TypeAlias
 
 from ...._client import AsyncTogether
 from ....types.beta.rl.sample_operation import SampleOperation
-from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
 from ....types.beta.rl.weights_sync_operation import WeightsSyncOperation
 from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
@@ -17,7 +16,6 @@ from ....types.beta.rl.inference_checkpoint_operation import InferenceCheckpoint
 from ....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
 
 OperationResponse: TypeAlias = Union[
-    ForwardOperation,
     ForwardBackwardOperation,
     CustomForwardBackwardOperation,
     OptimStepOperation,
@@ -57,11 +55,6 @@ async def async_retrieve_operation(
     session_id: str,
     operation: OperationResponse,
 ) -> OperationResponse:
-    if isinstance(operation, ForwardOperation):
-        return await client.beta.rl.operations.retrieve_forward(
-            operation_id=operation.id,
-            session_id=session_id,
-        )
     if isinstance(operation, ForwardBackwardOperation):
         return await client.beta.rl.operations.retrieve_forward_backward(
             operation_id=operation.id,

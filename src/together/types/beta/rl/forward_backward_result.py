@@ -9,7 +9,7 @@ __all__ = ["ForwardBackwardResult"]
 
 
 class ForwardBackwardResult(BaseModel):
-    """Result of a forward-backward pass operation"""
+    """Result of a scored forward or forward-backward operation"""
 
     loss: float
     """Loss value"""

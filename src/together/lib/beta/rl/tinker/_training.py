@@ -19,20 +19,14 @@ from ._converters import (
     _to_sample,
     _to_adam_params,
     _to_loss_config,
-    _to_forward_output,
-    _to_forward_sample,
+    _with_unit_weights,
     _warn_on_binarized_weights,
     _to_forward_backward_output,
     _with_zero_weights_if_missing,
 )
-from .._operations import OperationResponse, require_output
+from .._operations import OperationResponse
 from ..clients.session import SessionClient
-from ..clients.trainer import (
-    _submit_forward,
-    _submit_forward_backward,
-    _submit_custom_forward_backward,
-)
-from .....types.beta.rl.forward_result import ForwardResult
+from ..clients.trainer import _submit_forward_backward, _submit_custom_forward_backward
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from .....types.beta.rl.operation_custom_forward_backward_params import Gradient
 
@@ -58,37 +52,15 @@ def _to_forward_backward_request(
     return samples, loss
 
 
-def _to_forward_request(
-    data: list[types.Datum],
-    loss_fn: types.LossFnType,
-    loss_fn_config: dict[str, float] | None,
-) -> list[WireSample]:
-    """Render one forward call's samples, accounting for a config forward cannot use.
-
-    Validated on the caller's frame for the same reason as its forward_backward sibling.
-    The operation returns logprobs and no loss, so nothing in the config could change what
-    the caller sees — but a bad key still has to raise rather than vanish, and a good one
-    still has to say it is going nowhere.
-    """
-    _to_loss_config(loss_fn, loss_fn_config)
-    if loss_fn_config is not None:
-        warnings.warn(
-            "Together ignores loss_fn_config on forward(): the operation returns "
-            "logprobs only, with no loss for the config to shape",
-            stacklevel=2,
-        )
-    return [_to_forward_sample(datum) for datum in data]
-
-
-def _to_custom_request(data: list[types.Datum], loss_type_input: str) -> list[WireSample]:
-    """Render one forward_backward_custom call's samples, rejecting caller mistakes.
+def _to_custom_request(data: list[types.Datum], loss_type_input: str) -> tuple[list[WireSample], WireLossConfig]:
+    """Render one forward_backward_custom call's wire payload, rejecting caller mistakes.
 
     Validated on the caller's frame for the same reason as its forward_backward sibling.
     """
     if loss_type_input != "logprobs":
         raise ValueError(f"Unsupported loss_type_input={loss_type_input!r}; only 'logprobs' is supported")
     prepared = [_with_zero_weights_if_missing(datum) for datum in data]
-    return [_to_sample(datum, "cross_entropy") for datum in prepared]
+    return [_to_sample(datum, "cross_entropy") for datum in prepared], _to_loss_config("cross_entropy", None)
 
 
 def _warn_ignored_publish_args(name: str | None, retry_config: Any) -> None:
@@ -101,14 +73,11 @@ def _warn_ignored_publish_args(name: str | None, retry_config: Any) -> None:
         )
 
 
-async def _resolve_forward_backward(completed: OperationResponse) -> types.ForwardBackwardOutput:
-    output = require_output(completed.output, operation=completed)
-    return _to_forward_backward_output(ForwardBackwardResult.model_validate(output))
-
-
-async def _resolve_forward(completed: OperationResponse, *, session: SessionClient) -> types.ForwardBackwardOutput:
+async def _resolve_forward_backward(
+    completed: OperationResponse, *, session: SessionClient
+) -> types.ForwardBackwardOutput:
     resolved = await resolve_operation_payload(completed, session=session)
-    return _to_forward_output(ForwardResult.model_validate(resolved))
+    return _to_forward_backward_output(ForwardBackwardResult.model_validate(resolved))
 
 
 async def _resolve_optim_step(completed: OperationResponse) -> types.OptimStepResponse:
@@ -218,50 +187,76 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        return_loss_fn_outputs: bool = True,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
-        """Loss-free forward pass whose result carries per-datum logprobs in ``loss_fn_outputs``."""
-        samples = _to_forward_request(data, loss_fn, loss_fn_config)
-        return self._session.run(self._submit_forward_async(samples))
+        """Gradient-free scoring pass carrying per-datum logprobs in ``loss_fn_outputs``.
+
+        ``loss_fn`` decides what those logprobs mean: a position it excludes, such as a
+        zero-weight one, comes back masked to zero rather than a true log-probability.
+        """
+        samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
+        return self._session.run(
+            self._submit_forward_backward_async(
+                samples, loss, forward_only=True, return_loss_fn_outputs=return_loss_fn_outputs
+            )
+        )
 
     async def forward_async(
         self,
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        return_loss_fn_outputs: bool = True,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """See :meth:`forward`."""
-        samples = _to_forward_request(data, loss_fn, loss_fn_config)
-        return await self._submit_forward_async(samples)
-
-    async def _submit_forward_async(self, samples: list[WireSample]) -> OperationFuture[types.ForwardBackwardOutput]:
-        session = self._session
-        operation = await session.run_async(_submit_forward(session, samples=samples))
-        return OperationFuture(session, operation, partial(_resolve_forward, session=session))
+        samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
+        return await self._submit_forward_backward_async(
+            samples, loss, forward_only=True, return_loss_fn_outputs=return_loss_fn_outputs
+        )
 
     def forward_backward(
         self,
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        return_loss_fn_outputs: bool = False,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
+        """Set ``return_loss_fn_outputs`` to read per-datum logprobs back with the update."""
         samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
-        return self._session.run(self._submit_forward_backward_async(samples, loss))
+        return self._session.run(
+            self._submit_forward_backward_async(samples, loss, return_loss_fn_outputs=return_loss_fn_outputs)
+        )
 
     async def forward_backward_async(
         self,
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        return_loss_fn_outputs: bool = False,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
+        """See :meth:`forward_backward`."""
         samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
-        return await self._submit_forward_backward_async(samples, loss)
+        return await self._submit_forward_backward_async(samples, loss, return_loss_fn_outputs=return_loss_fn_outputs)
 
     async def _submit_forward_backward_async(
-        self, samples: list[WireSample], loss: WireLossConfig
+        self,
+        samples: list[WireSample],
+        loss: WireLossConfig,
+        *,
+        forward_only: bool = False,
+        return_loss_fn_outputs: bool = False,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         session = self._session
-        operation = await session.run_async(_submit_forward_backward(session, samples=samples, loss=loss))
-        return OperationFuture(session, operation, _resolve_forward_backward)
+        operation = await session.run_async(
+            _submit_forward_backward(
+                session,
+                samples=samples,
+                loss=loss,
+                forward_only=forward_only,
+                return_loss_fn_outputs=return_loss_fn_outputs,
+            )
+        )
+        return OperationFuture(session, operation, partial(_resolve_forward_backward, session=session))
 
     def forward_backward_custom(
         self,
@@ -274,8 +269,8 @@ class TrainingClient:
         # The two loop hops stay separate so the torch backward in between runs on the
         # calling thread, not the shared session loop, where it would stall every other
         # handle's in-flight polling.
-        samples = _to_custom_request(data, loss_type_input)
-        forward_out = self._session.run(self._submit_forward_async(samples)).result()
+        samples, loss = _to_custom_request(data, loss_type_input)
+        forward_out = self._session.run(self._submit_scoring_pass_async(samples, loss)).result()
         gradients, metrics = _grads_from_forward(data, forward_out, loss_fn)
         return self._session.run(self._submit_custom_grads_async(samples, gradients, metrics, forward_out))
 
@@ -292,10 +287,20 @@ class TrainingClient:
         CE-weights surrogate (``weights = -grad``). The torch backward runs on the
         caller's own frame, like tinker's.
         """
-        samples = _to_custom_request(data, loss_type_input)
-        forward_out = await (await self._submit_forward_async(samples))
+        samples, loss = _to_custom_request(data, loss_type_input)
+        forward_out = await (await self._submit_scoring_pass_async(samples, loss))
         gradients, metrics = _grads_from_forward(data, forward_out, loss_fn)
         return await self._submit_custom_grads_async(samples, gradients, metrics, forward_out)
+
+    async def _submit_scoring_pass_async(
+        self, samples: list[WireSample], loss: WireLossConfig
+    ) -> OperationFuture[types.ForwardBackwardOutput]:
+        return await self._submit_forward_backward_async(
+            [_with_unit_weights(sample) for sample in samples],
+            loss,
+            forward_only=True,
+            return_loss_fn_outputs=True,
+        )
 
     async def _submit_custom_grads_async(
         self,

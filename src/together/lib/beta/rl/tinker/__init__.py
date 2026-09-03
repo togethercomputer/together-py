@@ -9,9 +9,10 @@ Types resolve to the genuine ``tinker.types`` ones (via ``__getattr__``), so
 objects built by ``tinker_cookbook`` — renderer prompts, ``Datum``s — pass
 through unchanged; only the service client swaps. Unsupported Tinker clients
 (``RestClient``, ``resources``, …) are not exposed. ``forward`` fills per-datum
-``loss_fn_outputs`` with real logprobs; ``forward_backward`` still leaves them
-empty (Together's fwd-bwd wire has no per-datum logprobs) but publishes the
-total loss under ``metrics["loss:sum"]``.
+``loss_fn_outputs`` with real logprobs, and ``forward_backward`` does too when asked
+via ``return_loss_fn_outputs`` — an argument Tinker itself has no equivalent for, since
+on Together the two operations are one. Both publish the total loss under
+``metrics["loss:sum"]``.
 """
 
 from __future__ import annotations
