@@ -65,6 +65,7 @@ class FakeTensor:
     requires_grad: bool = False
     on_device: bool = False
     is_sparse: bool = False
+    numpy_available: bool = True
 
     @property
     def layout(self) -> str:
@@ -76,7 +77,7 @@ class FakeTensor:
 
     @property
     def ndim(self) -> int:
-        return cast(int, self.values.ndim)
+        return 1 if isinstance(self.values, list) else cast(int, self.values.ndim)
 
     def detach(self) -> FakeTensor:
         return replace(self, requires_grad=False)
@@ -85,12 +86,16 @@ class FakeTensor:
         return replace(self, on_device=False)
 
     def float(self) -> FakeTensor:
+        if isinstance(self.values, list):
+            return replace(self, values=[float(value) for value in self.values], dtype_name="torch.float32")
         return replace(self, values=self.values.astype("float32"), dtype_name="torch.float32")
 
-    def tolist(self) -> list[Any]:  # Never called; present so the array duck test recognizes this.
-        return cast(list[Any], self.values.tolist())
+    def tolist(self) -> list[Any]:
+        return list(self.values) if isinstance(self.values, list) else cast(list[Any], self.values.tolist())
 
     def numpy(self) -> Any:
+        if not self.numpy_available:
+            raise RuntimeError("Numpy is not available")
         if self.requires_grad:
             raise RuntimeError("Can't call numpy() on Tensor that requires grad")
         if self.on_device:
@@ -483,7 +488,24 @@ def test_integer_list_outside_float32_is_rejected() -> None:
 def test_string_tokens_are_preserved() -> None:
     coerced = coerce_model_input(_model_input(["101", "102"]))
 
-    assert coerced["chunks"][0]["encoded_text"]["tokens"] == ["101", "102"]
+    chunks = list(coerced["chunks"])
+    assert chunks[0]["encoded_text"]["tokens"] == ["101", "102"]
+
+
+def test_torch_tensor_serializes_without_numpy() -> None:
+    tensor = FakeTensor([7, 8], numpy_available=False)
+
+    coerced = coerce_sample(_sample({"target_tokens": tensor}))
+
+    assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [7, 8], "dtype": "int64"}
+
+
+def test_torch_bool_tensor_serializes_without_numpy() -> None:
+    tensor = FakeTensor([True, False], dtype_name="torch.bool", numpy_available=False)
+
+    coerced = coerce_sample(_sample({"mask": tensor}))
+
+    assert coerced["loss_fn_inputs"]["mask"] == {"data": [1, 0], "dtype": "int64"}
 
 
 def test_longdouble_array_narrows_to_native_floats(np: Any) -> None:

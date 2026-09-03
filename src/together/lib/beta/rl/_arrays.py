@@ -18,6 +18,7 @@ from __future__ import annotations
 import math
 import types
 from typing import Any, cast
+from dataclasses import dataclass
 from collections.abc import Mapping, Iterable, Sequence
 from typing_extensions import Literal, TypeAlias
 
@@ -45,7 +46,9 @@ def _require_wire_range(numbers: Sequence[int | float], dtype: _WireDtype, label
         if any(number < _INT64_MIN or number > _INT64_MAX for number in numbers):
             raise ValueError(f"{label} holds values outside signed int64; cast them or use a signed integer dtype.")
         return
-    if any(math.isfinite(number) and abs(number) > _FLOAT32_MAX for number in numbers):
+    if any(
+        abs(number) > _FLOAT32_MAX and (not isinstance(number, float) or math.isfinite(number)) for number in numbers
+    ):
         raise ValueError(f"{label} holds values outside float32; the wire type is float32.")
 
 
@@ -60,13 +63,57 @@ def _widened(tensor: Any) -> Any:
     return tensor if str(tensor.dtype) in _NUMPY_FLOATS else tensor.float()
 
 
+@dataclass(frozen=True)
+class _HostArray:
+    """A 1-D numeric buffer with the numpy attributes the rest of this module reads."""
+
+    data: tuple[int | float, ...]
+    kind: str
+    ndim: int
+
+    @property
+    def dtype(self) -> Any:
+        return types.SimpleNamespace(kind=self.kind, char="")
+
+    def astype(self, name: str) -> _HostArray:
+        if name == "int64":
+            return _HostArray(tuple(int(value) for value in self.data), "i", self.ndim)
+        if name in ("float32", "float64"):
+            return _HostArray(tuple(float(value) for value in self.data), "f", self.ndim)
+        return self
+
+    def tolist(self) -> list[int | float]:
+        return list(self.data)
+
+
+def _torch_kind(dtype: Any) -> str:
+    name = str(dtype)
+    if name == "torch.bool":
+        return "b"
+    if "uint" in name:
+        return "u"
+    if "int" in name:
+        return "i"
+    return "f"
+
+
+def _host_array_from_torch(tensor: Any) -> _HostArray:
+    values = tensor.tolist()
+    kind = _torch_kind(tensor.dtype)
+    if kind == "b":
+        values = [int(value) for value in values]
+        kind = "i"
+    return _HostArray(tuple(values), kind, int(getattr(tensor, "ndim", 1)))
+
+
 def _to_array(value: object, label: str) -> Any:
     """Return ``value`` as a numpy array ready to serialize, or ``None`` if it is not an array.
 
-    Torch tensors are detached and moved to the host, and a float dtype numpy cannot hold
-    (``bfloat16`` above all) widens to ``float32`` first. Boolean arrays become integers,
-    since JSON would otherwise render them as ``true``/``false`` under an ``int64`` dtype,
-    and ``longdouble`` narrows to ``float64``, the widest float ``json`` can encode.
+    Torch tensors are detached and moved to the host, converted through ``tolist`` so
+    numpy need not be installed, and a float dtype numpy cannot hold (``bfloat16`` above
+    all) widens to ``float32`` first. Boolean arrays become integers, since JSON would
+    otherwise render them as ``true``/``false`` under an ``int64`` dtype, and
+    ``longdouble`` narrows to ``float64``, the widest float ``json`` can encode.
 
     Raises:
         ValueError: If the value is a sparse tensor or holds a dtype the wire cannot carry.
@@ -75,14 +122,16 @@ def _to_array(value: object, label: str) -> Any:
         return None
     detach = getattr(value, "detach", None)
     if detach is not None:  # A torch tensor; numpy arrays have no autograd graph or device.
-        # Every sparse layout, not just COO and CSR: the rest cannot reach `.numpy()` either.
+        # Every sparse layout, not just COO and CSR.
         if str(getattr(value, "layout", "torch.strided")) != "torch.strided":
             raise ValueError(
                 f"{label} is a sparse tensor, but training operations accept dense tensors only;"
                 " call .to_dense() before submitting."
             )
         tensor = detach().cpu()
-        value = (_widened(tensor) if tensor.dtype.is_floating_point else tensor).numpy()
+        if tensor.dtype.is_floating_point:
+            tensor = _widened(tensor)
+        value = _host_array_from_torch(tensor)
     array = cast(Any, value)
     if array.dtype.kind == "b":  # numpy boolean
         array = array.astype("int64")
@@ -239,10 +288,11 @@ def _coerce_chunk(chunk: object, label: str) -> object:
     raw_tokens = encoded.get("tokens")
     token_label = f"{label}.encoded_text.tokens"
     array = _to_array(raw_tokens, token_label)
+    tokens: list[int | float | str]
     if array is not None:
         if array.dtype.kind not in ("i", "u"):
             raise ValueError(f"{token_label} must be an integer array, got {array.dtype}.")
-        tokens = _to_wire_list(array, token_label)
+        tokens = list(_to_wire_list(array, token_label))
     elif isinstance(raw_tokens, (list, tuple)):
         tokens = [
             token if type(token) is str else _to_json_number(token, token_label)
