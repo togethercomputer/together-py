@@ -886,6 +886,134 @@ class TestBetaModelsRemoteUploads:
         assert json.loads(result.output)["id"] == "ru_1"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_create_remote_upload_with_revision(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/projects/proj/models/uploads").mock(
+            return_value=httpx.Response(200, json=_remote_upload_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "remote-uploads",
+                "create",
+                "ml_1",
+                "--project",
+                "proj",
+                "--from",
+                "https://huggingface.co/acme/model",
+                "--revision",
+                "abc123",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {
+            "modelId": "ml_1",
+            "remoteUrl": "https://huggingface.co/acme/model@abc123",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_remote_upload_with_repo_id_revision(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.post("/projects/proj/models/uploads").mock(
+            return_value=httpx.Response(200, json=_remote_upload_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "remote-uploads",
+                "create",
+                "ml_1",
+                "--project",
+                "proj",
+                "--from",
+                "acme/model",
+                "--revision",
+                "main",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode())["remoteUrl"] == "acme/model@main"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_remote_upload_matching_embedded_revision(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        route = respx_mock.post("/projects/proj/models/uploads").mock(
+            return_value=httpx.Response(200, json=_remote_upload_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "remote-uploads",
+                "create",
+                "ml_1",
+                "--project",
+                "proj",
+                "--from",
+                "https://huggingface.co/acme/model@abc123",
+                "--revision",
+                "abc123",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert (
+            json.loads(cast(Call, route.calls[0]).request.content.decode())["remoteUrl"]
+            == "https://huggingface.co/acme/model@abc123"
+        )
+
+    def test_create_remote_upload_rejects_conflicting_revision(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "remote-uploads",
+                "create",
+                "ml_1",
+                "--project",
+                "proj",
+                "--from",
+                "https://huggingface.co/acme/model@rev-a",
+                "--revision",
+                "rev-b",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "conflicting revisions" in result.output
+
+    def test_create_remote_upload_rejects_revision_on_presigned_url(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "models",
+                "remote-uploads",
+                "create",
+                "ml_1",
+                "--project",
+                "proj",
+                "--from",
+                "https://bucket.s3.amazonaws.com/model.tar.gz",
+                "--revision",
+                "abc123",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "only supported for Hugging Face sources" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_retrieve_remote_upload(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/projects/proj/models/uploads/ru_1").mock(
             return_value=httpx.Response(200, json=_remote_upload_body())
