@@ -14,7 +14,7 @@ from ._compat import types
 from .._futures import OperationFuture
 from ._sampling import SamplingClient, _PublishedWeights
 from ._teardown import _Lifecycle
-from ....._types import Omit, omit
+from ....._types import omit
 from .._payloads import resolve_operation_payload
 from ._converters import (
     _to_sample,
@@ -244,7 +244,7 @@ class TrainingClient:
         return await self._submit_forward_backward_async(
             samples,
             loss,
-            return_loss_fn_outputs=return_loss_fn_outputs if return_loss_fn_outputs is not None else omit,
+            return_loss_fn_outputs=return_loss_fn_outputs,
         )
 
     async def _submit_forward_backward_async(
@@ -252,8 +252,8 @@ class TrainingClient:
         samples: list[WireSample],
         loss: WireLossConfig,
         *,
-        forward_only: bool | Omit = omit,
-        return_loss_fn_outputs: bool | Omit = omit,
+        forward_only: bool | None = None,
+        return_loss_fn_outputs: bool | None = None,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         session = self._session
         operation = await session.run_async(
@@ -261,8 +261,8 @@ class TrainingClient:
                 session,
                 samples=samples,
                 loss=loss,
-                forward_only=forward_only,
-                return_loss_fn_outputs=return_loss_fn_outputs,
+                forward_only=forward_only if forward_only is not None else omit,
+                return_loss_fn_outputs=return_loss_fn_outputs if return_loss_fn_outputs is not None else omit,
             )
         )
         return OperationFuture(session, operation, partial(_resolve_forward_backward, session=session))

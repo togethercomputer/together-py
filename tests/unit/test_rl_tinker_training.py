@@ -170,11 +170,13 @@ def _cross_entropy_datum() -> types.Datum:
         ),
     ],
 )
+@pytest.mark.parametrize("entrypoint", ["sync", "async"])
 def test_forward_backward_submits_generic_tensor_map(
     datum: types.Datum,
     loss_fn: types.LossFnType,
     expected_type: str,
     expected_loss_fn_inputs: dict[str, Any],
+    entrypoint: str,
 ) -> None:
     """Datums go out under loss_fn_inputs, never Together's named loss_inputs shape."""
     submitted: list[dict[str, Any]] = []
@@ -184,7 +186,11 @@ def test_forward_backward_submits_generic_tensor_map(
         return _OPERATION
 
     session = _session_with_operations(forward_backward=forward_backward)
-    _training_client(session).forward_backward([datum], loss_fn)
+    training = _training_client(session)
+    if entrypoint == "sync":
+        training.forward_backward([datum], loss_fn)
+    else:
+        asyncio.run(training.forward_backward_async([datum], loss_fn))
 
     request = submitted[0]
     assert request["loss"]["type"] == expected_type
