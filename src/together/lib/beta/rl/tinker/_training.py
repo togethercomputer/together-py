@@ -188,6 +188,7 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        *,
         return_loss_fn_outputs: bool = True,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """Gradient-free scoring pass carrying per-datum logprobs in ``loss_fn_outputs``.
@@ -207,6 +208,7 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        *,
         return_loss_fn_outputs: bool = True,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """See :meth:`forward`."""
@@ -220,6 +222,7 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        *,
         return_loss_fn_outputs: bool | Omit = omit,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """Set ``return_loss_fn_outputs`` to read per-datum logprobs back with the update."""
@@ -233,6 +236,7 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
+        *,
         return_loss_fn_outputs: bool | Omit = omit,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """See :meth:`forward_backward`."""

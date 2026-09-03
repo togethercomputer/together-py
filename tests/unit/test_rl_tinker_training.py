@@ -416,6 +416,30 @@ def test_forward_fills_loss_fn_outputs(monkeypatch: pytest.MonkeyPatch) -> None:
     _close(session)
 
 
+def test_forward_masks_zero_weight_positions(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A zero-weight position scores as exactly 0.0, not a true logprob.
+
+    forward submits a real loss with forward_only, so the loss's own masking reaches the
+    logprobs it reads back. The zero is that mask artifact and is intended: the datum's
+    weights go to the wire unchanged, deliberately unlike the custom path's scoring pass,
+    which rewrites them to unit weights because it discards the loss.
+    """
+    posted: list[dict[str, Any]] = []
+
+    async def forward_backward(_session_id: str, **kwargs: Any) -> Any:
+        posted.append(kwargs)
+        return _OPERATION
+
+    patch_wait(monkeypatch, _scored_output([-0.1, 0.0]))
+    session = _session_with_operations(forward_backward=forward_backward)
+
+    output = _training_client(session).forward([_cross_entropy_datum()], "cross_entropy").result()
+
+    assert posted[0]["samples"][0]["loss_fn_inputs"]["weights"]["data"] == [1.0, 0.0]
+    assert output.loss_fn_outputs[0]["logprobs"].data == pytest.approx([-0.1, 0.0])
+    _close(session)
+
+
 def test_forward_sends_the_policy_inputs_its_loss_declares() -> None:
     """forward scores under a real loss, so an RL datum's policy keys go through as-is
     rather than being dropped as unreadable."""
