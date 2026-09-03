@@ -67,11 +67,10 @@ def _to_array(value: object, label: str) -> Any:
         tensor = detach().cpu()
         value = (_widened(tensor) if tensor.dtype.is_floating_point else tensor).numpy()
     array = cast(Any, value)
-    if array.dtype.kind == "b":
+    if array.dtype.kind == "b":  # numpy boolean
         array = array.astype("int64")
-    if array.dtype.char == "g":
-        # numpy's longdouble is the one float whose tolist() hands back numpy scalars rather
-        # than native floats. Identified by typecode: its width and name vary by platform.
+    if array.dtype.char == "g":  # numpy longdouble; width and name vary by platform
+        # The one float whose tolist() hands back numpy scalars rather than native floats.
         array = array.astype("float64")
     if array.dtype.kind not in _KIND_DTYPES:
         raise ValueError(f"{label} has unsupported dtype {array.dtype}; use an integer or float array.")
