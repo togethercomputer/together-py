@@ -15,6 +15,7 @@ Every helper takes a ``label`` naming the field it is working on, so an error ou
 
 from __future__ import annotations
 
+import math
 import types
 from typing import Any, cast
 from collections.abc import Mapping, Iterable, Sequence
@@ -36,12 +37,15 @@ _FLOAT32_MAX = 3.4028234663852886e38
 
 
 def _require_wire_range(numbers: Sequence[int | float], dtype: _WireDtype, label: str) -> None:
-    """Reject values the declared wire dtype cannot hold as a finite number."""
+    """Reject finite values the declared wire dtype cannot hold.
+
+    Non-finite floats are left for ``prepare_operation_body``, which names them as NaN/inf.
+    """
     if dtype == "int64":
         if any(number < _INT64_MIN or number > _INT64_MAX for number in numbers):
             raise ValueError(f"{label} holds values outside signed int64; cast them or use a signed integer dtype.")
         return
-    if any(isinstance(number, float) and abs(number) > _FLOAT32_MAX for number in numbers):
+    if any(math.isfinite(number) and abs(number) > _FLOAT32_MAX for number in numbers):
         raise ValueError(f"{label} holds values outside float32; the wire type is float32.")
 
 
@@ -240,12 +244,15 @@ def _coerce_chunk(chunk: object, label: str) -> object:
             raise ValueError(f"{token_label} must be an integer array, got {array.dtype}.")
         tokens = _to_wire_list(array, token_label)
     elif isinstance(raw_tokens, (list, tuple)):
-        tokens = _to_json_numbers(cast(Sequence[Any], raw_tokens), token_label)
+        tokens = [
+            token if type(token) is str else _to_json_number(token, token_label)
+            for token in cast(Sequence[Any], raw_tokens)
+        ]
         if any(isinstance(token, float) for token in tokens):
             raise ValueError(f"{token_label} must hold integers, but holds floating-point values.")
     else:
         return typed_chunk
-    _require_wire_range(tokens, "int64", token_label)
+    _require_wire_range([token for token in tokens if type(token) is int], "int64", token_label)
     return {**typed_chunk, "encoded_text": {**encoded, "tokens": tokens}}
 
 

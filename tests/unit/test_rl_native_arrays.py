@@ -475,6 +475,17 @@ def test_list_values_outside_float32_are_rejected() -> None:
         coerce_sample(_sample({"advantages": [6.805646932770577e38]}))
 
 
+def test_integer_list_outside_float32_is_rejected() -> None:
+    with pytest.raises(ValueError, match="outside float32"):
+        coerce_sample(_sample({"advantages": [10**100]}))
+
+
+def test_string_tokens_are_preserved() -> None:
+    coerced = coerce_model_input(_model_input(["101", "102"]))
+
+    assert coerced["chunks"][0]["encoded_text"]["tokens"] == ["101", "102"]
+
+
 def test_longdouble_array_narrows_to_native_floats(np: Any) -> None:
     """longdouble is the one float dtype whose tolist() yields numpy scalars, not floats."""
     coerced = coerce_sample(_sample({"advantages": np.array([0.1, 0.2], dtype=np.longdouble)}))
