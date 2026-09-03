@@ -188,6 +188,7 @@ def test_forward_backward_submits_generic_tensor_map(
 
     request = submitted[0]
     assert request["loss"]["type"] == expected_type
+    assert request["return_loss_fn_outputs"] is _training.omit
     sample = request["samples"][0]
     assert "loss_inputs" not in sample
     assert sample["loss_fn_inputs"] == expected_loss_fn_inputs

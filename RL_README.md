@@ -783,7 +783,7 @@ def forward_backward(
     *,
     samples: Iterable[Sample],
     loss: LossConfig,
-    return_loss_fn_outputs: bool | Omit = omit,
+    return_loss_fn_outputs: bool | None = None,
 ) -> ForwardBackwardResult
 ```
 
@@ -791,7 +791,7 @@ def forward_backward(
 | --------- | ------------------- | ------------ | -------------------------------------------------------------- |
 | `samples` | `Iterable[Sample]`  | _(required)_ | Batch of training samples (see [Training sample](#training-sample)). |
 | `loss`    | `LossConfig`   | _(required)_ | Loss configuration (see [Loss configs](#loss-configurations)). |
-| `return_loss_fn_outputs` | `bool \| Omit` | `omit` | Read the per-sample output tensors back with the update. Left unsent unless set, so the service default stands. |
+| `return_loss_fn_outputs` | `bool \| None` | `None` | Read the per-sample output tensors back with the update. Left unsent unless set, so the service default stands. |
 
 `session.trainer.forward(...)` submits this same operation with `forward_only=True`, scoring a
 batch under `loss` without accumulating gradients, and asks for `loss_fn_outputs` by default.

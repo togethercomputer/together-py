@@ -122,6 +122,12 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
+        """Score a batch without accumulating gradients, reading back its per-token logprobs.
+
+        The logprobs land in ``loss_fn_outputs[i].tensors["logprobs"]``. ``loss`` decides
+        what they mean: a position the loss excludes, such as a zero-weight one, comes back
+        masked to zero rather than a true log-probability.
+        """
         return self._session.run(
             self.forward_async(
                 samples=samples,
@@ -142,12 +148,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
-        """Score a batch without accumulating gradients, reading back its per-token logprobs.
-
-        The logprobs land in ``loss_fn_outputs[i].tensors["logprobs"]``. ``loss`` decides
-        what they mean: a position the loss excludes, such as a zero-weight one, comes back
-        masked to zero rather than a true log-probability.
-        """
+        """See :meth:`forward`."""
         operation = await _submit_forward_backward(
             self._session,
             samples=samples,
@@ -167,10 +168,15 @@ class Trainer:
         *,
         samples: Iterable[Sample],
         loss: LossConfig,
-        return_loss_fn_outputs: bool | Omit = omit,
+        return_loss_fn_outputs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
+        """Accumulate gradients over a batch, optionally reading back its per-token logprobs.
+
+        Set ``return_loss_fn_outputs`` to receive ``loss_fn_outputs[i].tensors["logprobs"]``
+        alongside the gradient update, subject to the same masking as :meth:`forward`.
+        """
         return self._session.run(
             self.forward_backward_async(
                 samples=samples,
@@ -187,20 +193,16 @@ class Trainer:
         *,
         samples: Iterable[Sample],
         loss: LossConfig,
-        return_loss_fn_outputs: bool | Omit = omit,
+        return_loss_fn_outputs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
-        """Accumulate gradients over a batch, optionally reading back its per-token logprobs.
-
-        Set ``return_loss_fn_outputs`` to receive ``loss_fn_outputs[i].tensors["logprobs"]``
-        alongside the gradient update, subject to the same masking as :meth:`forward_async`.
-        """
+        """See :meth:`forward_backward`."""
         operation = await _submit_forward_backward(
             self._session,
             samples=samples,
             loss=loss,
-            return_loss_fn_outputs=return_loss_fn_outputs,
+            return_loss_fn_outputs=return_loss_fn_outputs if return_loss_fn_outputs is not None else omit,
         )
         result = await self._session._submit_and_wait(
             operation,

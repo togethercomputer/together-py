@@ -223,7 +223,7 @@ class TrainingClient:
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
         *,
-        return_loss_fn_outputs: bool | Omit = omit,
+        return_loss_fn_outputs: bool | None = None,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """Set ``return_loss_fn_outputs`` to read per-datum logprobs back with the update."""
         samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
@@ -237,11 +237,15 @@ class TrainingClient:
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
         *,
-        return_loss_fn_outputs: bool | Omit = omit,
+        return_loss_fn_outputs: bool | None = None,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """See :meth:`forward_backward`."""
         samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
-        return await self._submit_forward_backward_async(samples, loss, return_loss_fn_outputs=return_loss_fn_outputs)
+        return await self._submit_forward_backward_async(
+            samples,
+            loss,
+            return_loss_fn_outputs=return_loss_fn_outputs if return_loss_fn_outputs is not None else omit,
+        )
 
     async def _submit_forward_backward_async(
         self,
