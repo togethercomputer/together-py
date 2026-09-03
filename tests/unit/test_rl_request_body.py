@@ -517,6 +517,6 @@ def test_validation_omitted_keys_stay_optional() -> None:
         hints = get_type_hints(shape, include_extras=True)
         assert get_origin(hints["routed_experts"]) is not Required, shape.__name__
 
-    tensor_hints = get_type_hints(tensor_data_param.TensorData, include_extras=True)
+    tensor_hints = get_type_hints(tensor_data_param.TensorDataParam, include_extras=True)
     for key in ("shape", "sparse_crow_indices", "sparse_col_indices"):
         assert get_origin(tensor_hints[key]) is not Required, key

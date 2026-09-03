@@ -6,8 +6,8 @@ from typing import Dict, Iterable
 from typing_extensions import Required, TypedDict
 
 from .model_input_param import ModelInput
-from .tensor_data_param import TensorData
-from .routed_experts_param_param import RoutedExpertsParam
+from .tensor_data_param import TensorDataParam
+from .routed_experts_param import RoutedExpertsParam
 
 __all__ = ["OperationForwardParams", "Sample"]
 
@@ -18,7 +18,7 @@ class OperationForwardParams(TypedDict, total=False):
 
 
 class Sample(TypedDict, total=False):
-    loss_fn_inputs: Required[Dict[str, TensorData]]
+    loss_fn_inputs: Required[Dict[str, TensorDataParam]]
     """Per-token loss tensors keyed by name.
 
     Include `target_tokens` and the inputs required by the selected loss. Each

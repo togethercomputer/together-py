@@ -41,6 +41,7 @@ from ....types.beta.rl.session_error_code import SessionErrorCode
 from ....types.beta.rl.training_checkpoint import TrainingCheckpoint
 from ....types.beta.rl.weights_sync_result import WeightsSyncResult
 from ....types.beta.rl.inference_checkpoint import InferenceCheckpoint
+from ....types.beta.rl.routed_experts_param import RoutedExpertsParam as RoutedExperts
 from ....types.beta.rl.wandb_metadata_param import WandbMetadataParam as WandbMetadata
 from ....types.beta.rl.muon_scaling_strategy import MuonScalingStrategy
 from ....types.beta.rl.model_resources_status import ModelResourcesStatus
@@ -51,7 +52,6 @@ from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
 from ....types.beta.rl.model_input_chunk_param import ModelInputChunk
 from ....types.beta.rl.encoded_text_chunk_param import EncodedTextChunk
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
-from ....types.beta.rl.routed_experts_param_param import RoutedExpertsParam as RoutedExperts
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 from ....types.beta.rl.muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfig

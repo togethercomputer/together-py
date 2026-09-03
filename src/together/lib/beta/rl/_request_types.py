@@ -11,9 +11,9 @@ from ....types.beta.rl.ppo_loss_params import PpoLossParams
 from ....types.beta.rl.grpo_loss_params import GrpoLossParams
 from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.model_input_param import ModelInput
-from ....types.beta.rl.tensor_data_param import TensorData
+from ....types.beta.rl.tensor_data_param import TensorDataParam as TensorData
+from ....types.beta.rl.routed_experts_param import RoutedExpertsParam
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
-from ....types.beta.rl.routed_experts_param_param import RoutedExpertsParam
 
 
 class LossConfig(TypedDict, total=False):

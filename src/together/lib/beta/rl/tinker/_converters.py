@@ -22,7 +22,7 @@ from ._compat import types
 from ._losses import loss_spec
 from .._losses import LOSS_SPECS, INPUT_DTYPES, FORWARD_INPUTS, validate_keys, validate_input_keys
 from .....types.beta.rl.model_input_param import ModelInput as WireModelInput
-from .....types.beta.rl.tensor_data_param import TensorData as WireTensorData
+from .....types.beta.rl.tensor_data_param import TensorDataParam as WireTensorData
 from .....types.beta.rl.model_input_chunk_param import ModelInputChunk as WireModelInputChunk
 
 _TOPK_MASK_LOGPROB = -99999.0

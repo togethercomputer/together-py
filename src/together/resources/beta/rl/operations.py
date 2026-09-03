@@ -237,6 +237,7 @@ class OperationsResource(SyncAPIResource):
         *,
         loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
+        return_loss_fn_outputs: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -255,6 +256,11 @@ class OperationsResource(SyncAPIResource):
 
           samples: Batch of training samples to process
 
+          return_loss_fn_outputs: Return the loss function's per-sample output tensors alongside the loss and
+              metrics. Defaults to false. Enabling it increases the response size
+              substantially for large batches and reduces step throughput, so leave it unset
+              for ordinary training steps.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -271,6 +277,7 @@ class OperationsResource(SyncAPIResource):
                 {
                     "loss": loss,
                     "samples": samples,
+                    "return_loss_fn_outputs": return_loss_fn_outputs,
                 },
                 operation_forward_backward_params.OperationForwardBackwardParams,
             ),
@@ -995,6 +1002,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         *,
         loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
+        return_loss_fn_outputs: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1013,6 +1021,11 @@ class AsyncOperationsResource(AsyncAPIResource):
 
           samples: Batch of training samples to process
 
+          return_loss_fn_outputs: Return the loss function's per-sample output tensors alongside the loss and
+              metrics. Defaults to false. Enabling it increases the response size
+              substantially for large batches and reduces step throughput, so leave it unset
+              for ordinary training steps.
+
           extra_headers: Send extra headers
 
           extra_query: Add additional query parameters to the request
@@ -1029,6 +1042,7 @@ class AsyncOperationsResource(AsyncAPIResource):
                 {
                     "loss": loss,
                     "samples": samples,
+                    "return_loss_fn_outputs": return_loss_fn_outputs,
                 },
                 operation_forward_backward_params.OperationForwardBackwardParams,
             ),
