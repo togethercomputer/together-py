@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
 from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, validate_sample, validate_loss_config
-from ....._types import omit
+from ....._types import Omit, omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
 from .._request_types import Sample, LossConfig
@@ -45,8 +45,8 @@ async def _submit_forward_backward(
     *,
     samples: Iterable[Sample],
     loss: LossConfig,
-    forward_only: bool = False,
-    return_loss_fn_outputs: bool = False,
+    forward_only: bool | Omit = omit,
+    return_loss_fn_outputs: bool | Omit = omit,
 ) -> ForwardBackwardOperation:
     """POST a forward_backward operation without waiting for it.
 
@@ -167,7 +167,7 @@ class Trainer:
         *,
         samples: Iterable[Sample],
         loss: LossConfig,
-        return_loss_fn_outputs: bool = False,
+        return_loss_fn_outputs: bool | Omit = omit,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
@@ -187,7 +187,7 @@ class Trainer:
         *,
         samples: Iterable[Sample],
         loss: LossConfig,
-        return_loss_fn_outputs: bool = False,
+        return_loss_fn_outputs: bool | Omit = omit,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:

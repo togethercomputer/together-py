@@ -14,6 +14,7 @@ from ._compat import types
 from .._futures import OperationFuture
 from ._sampling import SamplingClient, _PublishedWeights
 from ._teardown import _Lifecycle
+from ....._types import Omit, omit
 from .._payloads import resolve_operation_payload
 from ._converters import (
     _to_sample,
@@ -219,7 +220,7 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
-        return_loss_fn_outputs: bool = False,
+        return_loss_fn_outputs: bool | Omit = omit,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """Set ``return_loss_fn_outputs`` to read per-datum logprobs back with the update."""
         samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
@@ -232,7 +233,7 @@ class TrainingClient:
         data: list[types.Datum],
         loss_fn: types.LossFnType,
         loss_fn_config: dict[str, float] | None = None,
-        return_loss_fn_outputs: bool = False,
+        return_loss_fn_outputs: bool | Omit = omit,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         """See :meth:`forward_backward`."""
         samples, loss = _to_forward_backward_request(data, loss_fn, loss_fn_config)
@@ -243,8 +244,8 @@ class TrainingClient:
         samples: list[WireSample],
         loss: WireLossConfig,
         *,
-        forward_only: bool = False,
-        return_loss_fn_outputs: bool = False,
+        forward_only: bool | Omit = omit,
+        return_loss_fn_outputs: bool | Omit = omit,
     ) -> OperationFuture[types.ForwardBackwardOutput]:
         session = self._session
         operation = await session.run_async(

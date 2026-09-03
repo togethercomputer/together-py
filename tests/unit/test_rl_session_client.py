@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
-from together import NotFoundError
+from together import NotFoundError, omit
 from tests.unit.rl_wait import patch_wait
 from tests.unit._rl_fakes import FakeClient
 from together.lib.beta.rl import (
@@ -247,7 +247,7 @@ def test_forward_scores_the_batch_without_gradients(monkeypatch: pytest.MonkeyPa
 
 
 def test_forward_backward_accumulates_gradients(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The gradient path must not ask for the per-sample outputs, which cost throughput."""
+    """The gradient path must send neither flag, leaving the service defaults in force."""
     patch_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
     client = FakeClient()
     trainer = _make_session(client)
@@ -256,8 +256,8 @@ def test_forward_backward_accumulates_gradients(monkeypatch: pytest.MonkeyPatch)
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
-    assert kwargs["forward_only"] is False
-    assert kwargs["return_loss_fn_outputs"] is False
+    assert kwargs["forward_only"] is omit
+    assert kwargs["return_loss_fn_outputs"] is omit
     trainer.stop()
 
 
