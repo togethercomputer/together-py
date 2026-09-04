@@ -24,7 +24,6 @@ from ....types.beta.rl import (
     SamplingParams,
     WeightSyncType,
     operation_sample_params,
-    operation_forward_params,
     operation_optim_step_params,
     operation_weights_sync_params,
     operation_forward_backward_params,
@@ -35,7 +34,6 @@ from ....types.beta.rl.muon_params import MuonParams
 from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.sample_operation import SampleOperation
 from ....types.beta.rl.weight_sync_type import WeightSyncType
-from ....types.beta.rl.forward_operation import ForwardOperation
 from ....types.beta.rl.loss_config_param import LossConfig
 from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.optim_step_operation import OptimStepOperation
@@ -191,52 +189,13 @@ class OperationsResource(SyncAPIResource):
             cast_to=CustomForwardBackwardOperation,
         )
 
-    def forward(
-        self,
-        session_id: str,
-        *,
-        samples: Iterable[operation_forward_params.Sample],
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ForwardOperation:
-        """
-        Submits a forward operation that will asynchronously run a no-grad forward pass
-        and return per-token log-probabilities for each sample.
-
-        Args:
-          session_id: Training session ID
-
-          samples: Batch of training samples for which to compute per-token log-probabilities
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not session_id:
-            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        return self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/forward", session_id=session_id),
-            body=maybe_transform({"samples": samples}, operation_forward_params.OperationForwardParams),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=ForwardOperation,
-        )
-
     def forward_backward(
         self,
         session_id: str,
         *,
         loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
+        forward_only: bool | Omit = omit,
         return_loss_fn_outputs: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -255,6 +214,11 @@ class OperationsResource(SyncAPIResource):
           loss: Loss function configuration
 
           samples: Batch of training samples to process
+
+          forward_only: Run the forward pass only: report the loss and metrics, and the per-sample
+              outputs when requested, without accumulating gradients. Defaults to false. Pair
+              it with `return_loss_fn_outputs` to score a batch and read back its per-token
+              log-probabilities.
 
           return_loss_fn_outputs: Return the loss function's per-sample output tensors alongside the loss and
               metrics. Defaults to false. Enabling it increases the response size
@@ -277,6 +241,7 @@ class OperationsResource(SyncAPIResource):
                 {
                     "loss": loss,
                     "samples": samples,
+                    "forward_only": forward_only,
                     "return_loss_fn_outputs": return_loss_fn_outputs,
                 },
                 operation_forward_backward_params.OperationForwardBackwardParams,
@@ -380,50 +345,6 @@ class OperationsResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=CustomForwardBackwardOperation,
-        )
-
-    def retrieve_forward(
-        self,
-        operation_id: str,
-        *,
-        session_id: str,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ForwardOperation:
-        """
-        Retrieves the current status and result of a forward operation.
-
-        Args:
-          session_id: Training session ID
-
-          operation_id: Operation ID
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not session_id:
-            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not operation_id:
-            raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
-        return self._get(
-            path_template(
-                "/rl/training-sessions/{session_id}/operations/forward/{operation_id}",
-                session_id=session_id,
-                operation_id=operation_id,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=ForwardOperation,
         )
 
     def retrieve_forward_backward(
@@ -956,52 +877,13 @@ class AsyncOperationsResource(AsyncAPIResource):
             cast_to=CustomForwardBackwardOperation,
         )
 
-    async def forward(
-        self,
-        session_id: str,
-        *,
-        samples: Iterable[operation_forward_params.Sample],
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ForwardOperation:
-        """
-        Submits a forward operation that will asynchronously run a no-grad forward pass
-        and return per-token log-probabilities for each sample.
-
-        Args:
-          session_id: Training session ID
-
-          samples: Batch of training samples for which to compute per-token log-probabilities
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not session_id:
-            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        return await self._post(
-            path_template("/rl/training-sessions/{session_id}/operations/forward", session_id=session_id),
-            body=await async_maybe_transform({"samples": samples}, operation_forward_params.OperationForwardParams),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=ForwardOperation,
-        )
-
     async def forward_backward(
         self,
         session_id: str,
         *,
         loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
+        forward_only: bool | Omit = omit,
         return_loss_fn_outputs: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -1020,6 +902,11 @@ class AsyncOperationsResource(AsyncAPIResource):
           loss: Loss function configuration
 
           samples: Batch of training samples to process
+
+          forward_only: Run the forward pass only: report the loss and metrics, and the per-sample
+              outputs when requested, without accumulating gradients. Defaults to false. Pair
+              it with `return_loss_fn_outputs` to score a batch and read back its per-token
+              log-probabilities.
 
           return_loss_fn_outputs: Return the loss function's per-sample output tensors alongside the loss and
               metrics. Defaults to false. Enabling it increases the response size
@@ -1042,6 +929,7 @@ class AsyncOperationsResource(AsyncAPIResource):
                 {
                     "loss": loss,
                     "samples": samples,
+                    "forward_only": forward_only,
                     "return_loss_fn_outputs": return_loss_fn_outputs,
                 },
                 operation_forward_backward_params.OperationForwardBackwardParams,
@@ -1145,50 +1033,6 @@ class AsyncOperationsResource(AsyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=CustomForwardBackwardOperation,
-        )
-
-    async def retrieve_forward(
-        self,
-        operation_id: str,
-        *,
-        session_id: str,
-        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
-        # The extra values given here take precedence over values defined on the client or passed to this method.
-        extra_headers: Headers | None = None,
-        extra_query: Query | None = None,
-        extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = not_given,
-    ) -> ForwardOperation:
-        """
-        Retrieves the current status and result of a forward operation.
-
-        Args:
-          session_id: Training session ID
-
-          operation_id: Operation ID
-
-          extra_headers: Send extra headers
-
-          extra_query: Add additional query parameters to the request
-
-          extra_body: Add additional JSON properties to the request
-
-          timeout: Override the client-level default timeout for this request, in seconds
-        """
-        if not session_id:
-            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not operation_id:
-            raise ValueError(f"Expected a non-empty value for `operation_id` but received {operation_id!r}")
-        return await self._get(
-            path_template(
-                "/rl/training-sessions/{session_id}/operations/forward/{operation_id}",
-                session_id=session_id,
-                operation_id=operation_id,
-            ),
-            options=make_request_options(
-                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
-            ),
-            cast_to=ForwardOperation,
         )
 
     async def retrieve_forward_backward(
@@ -1591,9 +1435,6 @@ class OperationsResourceWithRawResponse:
         self.custom_forward_backward = to_raw_response_wrapper(
             operations.custom_forward_backward,
         )
-        self.forward = to_raw_response_wrapper(
-            operations.forward,
-        )
         self.forward_backward = to_raw_response_wrapper(
             operations.forward_backward,
         )
@@ -1602,9 +1443,6 @@ class OperationsResourceWithRawResponse:
         )
         self.retrieve_custom_forward_backward = to_raw_response_wrapper(
             operations.retrieve_custom_forward_backward,
-        )
-        self.retrieve_forward = to_raw_response_wrapper(
-            operations.retrieve_forward,
         )
         self.retrieve_forward_backward = to_raw_response_wrapper(
             operations.retrieve_forward_backward,
@@ -1645,9 +1483,6 @@ class AsyncOperationsResourceWithRawResponse:
         self.custom_forward_backward = async_to_raw_response_wrapper(
             operations.custom_forward_backward,
         )
-        self.forward = async_to_raw_response_wrapper(
-            operations.forward,
-        )
         self.forward_backward = async_to_raw_response_wrapper(
             operations.forward_backward,
         )
@@ -1656,9 +1491,6 @@ class AsyncOperationsResourceWithRawResponse:
         )
         self.retrieve_custom_forward_backward = async_to_raw_response_wrapper(
             operations.retrieve_custom_forward_backward,
-        )
-        self.retrieve_forward = async_to_raw_response_wrapper(
-            operations.retrieve_forward,
         )
         self.retrieve_forward_backward = async_to_raw_response_wrapper(
             operations.retrieve_forward_backward,
@@ -1699,9 +1531,6 @@ class OperationsResourceWithStreamingResponse:
         self.custom_forward_backward = to_streamed_response_wrapper(
             operations.custom_forward_backward,
         )
-        self.forward = to_streamed_response_wrapper(
-            operations.forward,
-        )
         self.forward_backward = to_streamed_response_wrapper(
             operations.forward_backward,
         )
@@ -1710,9 +1539,6 @@ class OperationsResourceWithStreamingResponse:
         )
         self.retrieve_custom_forward_backward = to_streamed_response_wrapper(
             operations.retrieve_custom_forward_backward,
-        )
-        self.retrieve_forward = to_streamed_response_wrapper(
-            operations.retrieve_forward,
         )
         self.retrieve_forward_backward = to_streamed_response_wrapper(
             operations.retrieve_forward_backward,
@@ -1753,9 +1579,6 @@ class AsyncOperationsResourceWithStreamingResponse:
         self.custom_forward_backward = async_to_streamed_response_wrapper(
             operations.custom_forward_backward,
         )
-        self.forward = async_to_streamed_response_wrapper(
-            operations.forward,
-        )
         self.forward_backward = async_to_streamed_response_wrapper(
             operations.forward_backward,
         )
@@ -1764,9 +1587,6 @@ class AsyncOperationsResourceWithStreamingResponse:
         )
         self.retrieve_custom_forward_backward = async_to_streamed_response_wrapper(
             operations.retrieve_custom_forward_backward,
-        )
-        self.retrieve_forward = async_to_streamed_response_wrapper(
-            operations.retrieve_forward,
         )
         self.retrieve_forward_backward = async_to_streamed_response_wrapper(
             operations.retrieve_forward_backward,

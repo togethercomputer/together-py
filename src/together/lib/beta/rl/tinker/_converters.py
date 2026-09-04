@@ -14,13 +14,12 @@ from .. import (
     AdamParams as WireAdamParams,
     LossConfig as WireLossConfig,
     SampleResult,
-    ForwardResult,
     SamplingParams as WireSamplingParams,
     ForwardBackwardResult,
 )
 from ._compat import types
 from ._losses import loss_spec
-from .._losses import LOSS_SPECS, INPUT_DTYPES, FORWARD_INPUTS, validate_keys, validate_input_keys
+from .._losses import INPUT_DTYPES, validate_keys, validate_input_keys
 from .....types.beta.rl.model_input_param import ModelInput as WireModelInput
 from .....types.beta.rl.tensor_data_param import TensorDataParam as WireTensorData
 from .....types.beta.rl.model_input_chunk_param import ModelInputChunk as WireModelInputChunk
@@ -133,27 +132,18 @@ def _to_loss_config(loss_fn: types.LossFnType, config: Mapping[str, float] | Non
     return cast("WireLossConfig", loss)
 
 
-# Keys a training loss declares but a loss-free forward cannot read (today: logprobs,
-# advantages, reference_logprobs). Derived so a new policy key lands here automatically.
-_FORWARD_DROPPED_INPUTS = frozenset().union(
-    *((spec.required_inputs | spec.optional_inputs) for spec in LOSS_SPECS.values())
-) - (FORWARD_INPUTS.required_inputs | FORWARD_INPUTS.optional_inputs)
+def _with_unit_weights(sample: WireSample) -> WireSample:
+    """Weight every position, so a scoring pass over the sample reads back true logprobs.
 
-
-def _to_forward_sample(datum: types.Datum) -> WireSample:
-    """Serialize a datum for a loss-free forward pass, dropping the policy keys it cannot read.
-
-    forward returns logprobs and no loss, so an RL datum's policy keys (``logprobs``/
-    ``advantages``/``reference_logprobs``) cannot change the output. Dropping them — rather
-    than warning and forwarding, as the training path does — keeps every RL loop's forward
-    call from tripping the forward shape's undeclared-key warning on keys it always carries.
-    A genuinely unknown key still warns and is forwarded, like everywhere else.
+    A position its loss excludes comes back masked to zero. Without this, the zero weights
+    the custom path prepares for the gradient operation would hide the very logprobs its
+    client loss runs on.
     """
-    inputs = {key: tensor for key, tensor in datum.loss_fn_inputs.items() if key not in _FORWARD_DROPPED_INPUTS}
-    validate_input_keys("Datum.loss_fn_inputs for forward()", inputs.keys(), FORWARD_INPUTS)
+    target_tokens = sample["loss_fn_inputs"]["target_tokens"]
+    weights = cast("WireTensorData", {"data": [1.0] * len(target_tokens["data"]), "dtype": "float32"})
     return WireSample(
-        model_input=_to_model_input(datum.model_input),
-        loss_fn_inputs={key: _to_tensor(key, tensor) for key, tensor in inputs.items()},
+        model_input=sample["model_input"],
+        loss_fn_inputs={**sample["loss_fn_inputs"], "weights": weights},
     )
 
 
@@ -206,30 +196,23 @@ def _with_zero_weights_if_missing(datum: types.Datum) -> types.Datum:
 
 
 def _to_forward_backward_output(result: ForwardBackwardResult) -> types.ForwardBackwardOutput:
-    """Map Together's scalar loss + metrics onto tinker's ForwardBackwardOutput.
+    """Map Together's loss, metrics and per-sample outputs onto tinker's ForwardBackwardOutput.
 
-    Per-datum ``loss_fn_outputs`` stay empty: the forward_backward wire has no logprobs,
-    and inventing them would silently corrupt scripts that read them. Scripts that only
-    read ``.metrics`` (including tinker's ``loss:sum``) keep working because Together's
-    total ``loss`` is published under that key. Use ``forward`` when logprobs are needed.
+    Together's total ``loss`` is published under ``metrics["loss:sum"]``, so scripts that
+    only read ``.metrics`` keep working. Per-datum ``loss_fn_outputs`` carry real logprobs
+    only when the operation was asked for them, which ``forward`` does and
+    ``forward_backward`` does not; they stay empty otherwise, since inventing them would
+    silently corrupt scripts that read them.
     """
     metrics = dict(result.metrics or {})
     metrics.setdefault("loss:sum", result.loss)
     return types.ForwardBackwardOutput(
         loss_fn_output_type="",
-        loss_fn_outputs=[],
-        metrics=metrics,
-    )
-
-
-def _to_forward_output(result: ForwardResult) -> types.ForwardBackwardOutput:
-    """Map Together ``ForwardResult.logprobs`` onto tinker's per-datum ``loss_fn_outputs``."""
-    return types.ForwardBackwardOutput(
-        loss_fn_output_type="",
         loss_fn_outputs=[
-            {"logprobs": types.TensorData(list(entry.data), dtype="float32")} for entry in result.logprobs
+            {"logprobs": types.TensorData(list(output.tensors["logprobs"].data), dtype="float32")}
+            for output in result.loss_fn_outputs or []
         ],
-        metrics={},
+        metrics=metrics,
     )
 
 

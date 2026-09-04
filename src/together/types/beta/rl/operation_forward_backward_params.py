@@ -20,6 +20,14 @@ class OperationForwardBackwardParams(TypedDict, total=False):
     samples: Required[Iterable[Sample]]
     """Batch of training samples to process"""
 
+    forward_only: bool
+    """
+    Run the forward pass only: report the loss and metrics, and the per-sample
+    outputs when requested, without accumulating gradients. Defaults to false. Pair
+    it with `return_loss_fn_outputs` to score a batch and read back its per-token
+    log-probabilities.
+    """
+
     return_loss_fn_outputs: bool
     """
     Return the loss function's per-sample output tensors alongside the loss and

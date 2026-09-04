@@ -6,6 +6,7 @@ import importlib
 from types import SimpleNamespace
 from typing import Any, cast, get_args, get_origin, get_type_hints
 from unittest.mock import AsyncMock, MagicMock
+from collections.abc import Callable, Awaitable
 from typing_extensions import Required
 
 import httpx
@@ -16,6 +17,7 @@ from respx.models import Call
 from together import Together, AsyncTogether
 from together.lib.beta.rl import (
     Sample,
+    Trainer,
     AdamParams,
     LossConfig,
     ModelInput,
@@ -33,7 +35,6 @@ from together.lib.beta.rl import (
 from together.types.beta.rl import (
     loss_config_param,
     tensor_data_param,
-    operation_forward_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
@@ -55,6 +56,31 @@ LEGACY_RL_LOSS_INPUT_NAMES = frozenset(
         "ImportanceSamplingLossInputs",
     }
 )
+
+
+ForwardBackwardCall = Callable[[Trainer, list[Sample], LossConfig], Awaitable[object]]
+
+# Each case pairs a trainer call with the flag keys its request body must carry: an ordinary
+# forward_backward sends neither flag, while an explicit False must reach the wire as false.
+FORWARD_BACKWARD_FLAG_CASES: list[tuple[ForwardBackwardCall, dict[str, bool]]] = [
+    (
+        lambda trainer, samples, loss: trainer.forward_async(samples=samples, loss=loss),
+        {"forward_only": True, "return_loss_fn_outputs": True},
+    ),
+    (lambda trainer, samples, loss: trainer.forward_backward_async(samples=samples, loss=loss), {}),
+    (
+        lambda trainer, samples, loss: trainer.forward_backward_async(
+            samples=samples, loss=loss, return_loss_fn_outputs=True
+        ),
+        {"return_loss_fn_outputs": True},
+    ),
+    (
+        lambda trainer, samples, loss: trainer.forward_backward_async(
+            samples=samples, loss=loss, return_loss_fn_outputs=False
+        ),
+        {"return_loss_fn_outputs": False},
+    ),
+]
 
 
 class TestRLRequestBody:
@@ -163,6 +189,57 @@ class TestRLRequestBody:
             "loss": loss,
             "samples": samples,
         }
+
+    @parametrize
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize(
+        ("call", "expected_flags"),
+        FORWARD_BACKWARD_FLAG_CASES,
+        ids=["forward", "forward_backward", "forward_backward_outputs_true", "forward_backward_outputs_false"],
+    )
+    async def test_forward_backward_flags_in_wire_body(
+        self,
+        async_client: AsyncTogether,
+        respx_mock: MockRouter,
+        call: ForwardBackwardCall,
+        expected_flags: dict[str, bool],
+    ) -> None:
+        respx_mock.post("/rl/training-sessions/sess/operations/forward-backward").mock(
+            return_value=httpx.Response(200, json={"id": "op-1"})
+        )
+        respx_mock.get("/rl/training-sessions/sess/operations/forward-backward/op-1").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "op-1",
+                    "status": "TRAINING_OPERATION_STATUS_COMPLETED",
+                    "output": {"loss": 1.0, "metrics": {}},
+                },
+            )
+        )
+
+        session = SessionClient("sess", _client=async_client)
+        samples = [
+            Sample(
+                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
+                loss_fn_inputs={
+                    "weights": TensorData(data=[0.0, 1.0, 1.0], dtype="float32"),
+                    "target_tokens": TensorData(data=[2, 3, 0], dtype="int64"),
+                    "advantages": TensorData(data=[1.0, 1.0, 1.0], dtype="float32"),
+                    "logprobs": TensorData(data=[-0.1, -0.2, -0.3], dtype="float32"),
+                },
+            )
+        ]
+        loss = LossConfig(
+            type="LOSS_TYPE_GRPO",
+            grpo_params=GrpoLossParams(agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN", beta=0.1),
+        )
+
+        await call(session.trainer, samples, loss)
+
+        request = cast(httpx.Request, cast(Any, respx_mock.calls[0]).request)
+        body = json.loads(request.content)
+        assert body == {"loss": loss, "samples": samples, **expected_flags}
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
@@ -465,7 +542,6 @@ def test_public_rl_legacy_loss_inputs_are_not_exported() -> None:
 def _generated_sample_shapes() -> list[Any]:
     """Every generated sample TypedDict the handwritten Sample stands in for."""
     return [
-        operation_forward_params.Sample,
         operation_forward_backward_params.Sample,
         operation_custom_forward_backward_params.Sample,
     ]
@@ -499,7 +575,7 @@ def test_native_loss_specs_cover_generated_loss_types() -> None:
 
 
 def test_loss_specs_only_use_known_tensor_inputs() -> None:
-    for spec in (*rl_losses.LOSS_SPECS.values(), rl_losses.FORWARD_INPUTS):
+    for spec in (*rl_losses.LOSS_SPECS.values(), rl_losses.CUSTOM_FORWARD_BACKWARD_INPUTS):
         assert spec.required_inputs | spec.optional_inputs <= rl_losses.INPUT_DTYPES.keys()
 
 

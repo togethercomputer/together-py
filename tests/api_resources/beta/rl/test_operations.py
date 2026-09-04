@@ -11,7 +11,6 @@ from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
 from together.types.beta.rl import (
     SampleOperation,
-    ForwardOperation,
     OptimStepOperation,
     WeightsSyncOperation,
     ForwardBackwardOperation,
@@ -189,88 +188,6 @@ class TestOperations:
             )
 
     @parametrize
-    def test_method_forward(self, client: Together) -> None:
-        operation = client.beta.rl.operations.forward(
-            session_id="session_id",
-            samples=[
-                {
-                    "loss_fn_inputs": {
-                        "foo": {
-                            "data": [1, 2, 3],
-                            "dtype": "int64",
-                        }
-                    },
-                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                }
-            ],
-        )
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    def test_raw_response_forward(self, client: Together) -> None:
-        response = client.beta.rl.operations.with_raw_response.forward(
-            session_id="session_id",
-            samples=[
-                {
-                    "loss_fn_inputs": {
-                        "foo": {
-                            "data": [1, 2, 3],
-                            "dtype": "int64",
-                        }
-                    },
-                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                }
-            ],
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        operation = response.parse()
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    def test_streaming_response_forward(self, client: Together) -> None:
-        with client.beta.rl.operations.with_streaming_response.forward(
-            session_id="session_id",
-            samples=[
-                {
-                    "loss_fn_inputs": {
-                        "foo": {
-                            "data": [1, 2, 3],
-                            "dtype": "int64",
-                        }
-                    },
-                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                }
-            ],
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            operation = response.parse()
-            assert_matches_type(ForwardOperation, operation, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    def test_path_params_forward(self, client: Together) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
-            client.beta.rl.operations.with_raw_response.forward(
-                session_id="",
-                samples=[
-                    {
-                        "loss_fn_inputs": {
-                            "foo": {
-                                "data": [1, 2, 3],
-                                "dtype": "int64",
-                            }
-                        },
-                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    }
-                ],
-            )
-
-    @parametrize
     def test_method_forward_backward(self, client: Together) -> None:
         operation = client.beta.rl.operations.forward_backward(
             session_id="session_id",
@@ -332,6 +249,7 @@ class TestOperations:
                     },
                 }
             ],
+            forward_only=True,
             return_loss_fn_outputs=True,
         )
         assert_matches_type(ForwardBackwardOperation, operation, path=["response"])
@@ -515,54 +433,6 @@ class TestOperations:
 
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `operation_id` but received ''"):
             client.beta.rl.operations.with_raw_response.retrieve_custom_forward_backward(
-                operation_id="",
-                session_id="session_id",
-            )
-
-    @parametrize
-    def test_method_retrieve_forward(self, client: Together) -> None:
-        operation = client.beta.rl.operations.retrieve_forward(
-            operation_id="operation_id",
-            session_id="session_id",
-        )
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    def test_raw_response_retrieve_forward(self, client: Together) -> None:
-        response = client.beta.rl.operations.with_raw_response.retrieve_forward(
-            operation_id="operation_id",
-            session_id="session_id",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        operation = response.parse()
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    def test_streaming_response_retrieve_forward(self, client: Together) -> None:
-        with client.beta.rl.operations.with_streaming_response.retrieve_forward(
-            operation_id="operation_id",
-            session_id="session_id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            operation = response.parse()
-            assert_matches_type(ForwardOperation, operation, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    def test_path_params_retrieve_forward(self, client: Together) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
-            client.beta.rl.operations.with_raw_response.retrieve_forward(
-                operation_id="operation_id",
-                session_id="",
-            )
-
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `operation_id` but received ''"):
-            client.beta.rl.operations.with_raw_response.retrieve_forward(
                 operation_id="",
                 session_id="session_id",
             )
@@ -1129,88 +999,6 @@ class TestAsyncOperations:
             )
 
     @parametrize
-    async def test_method_forward(self, async_client: AsyncTogether) -> None:
-        operation = await async_client.beta.rl.operations.forward(
-            session_id="session_id",
-            samples=[
-                {
-                    "loss_fn_inputs": {
-                        "foo": {
-                            "data": [1, 2, 3],
-                            "dtype": "int64",
-                        }
-                    },
-                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                }
-            ],
-        )
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    async def test_raw_response_forward(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.rl.operations.with_raw_response.forward(
-            session_id="session_id",
-            samples=[
-                {
-                    "loss_fn_inputs": {
-                        "foo": {
-                            "data": [1, 2, 3],
-                            "dtype": "int64",
-                        }
-                    },
-                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                }
-            ],
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        operation = await response.parse()
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    async def test_streaming_response_forward(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.rl.operations.with_streaming_response.forward(
-            session_id="session_id",
-            samples=[
-                {
-                    "loss_fn_inputs": {
-                        "foo": {
-                            "data": [1, 2, 3],
-                            "dtype": "int64",
-                        }
-                    },
-                    "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                }
-            ],
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            operation = await response.parse()
-            assert_matches_type(ForwardOperation, operation, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    async def test_path_params_forward(self, async_client: AsyncTogether) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
-            await async_client.beta.rl.operations.with_raw_response.forward(
-                session_id="",
-                samples=[
-                    {
-                        "loss_fn_inputs": {
-                            "foo": {
-                                "data": [1, 2, 3],
-                                "dtype": "int64",
-                            }
-                        },
-                        "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    }
-                ],
-            )
-
-    @parametrize
     async def test_method_forward_backward(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.forward_backward(
             session_id="session_id",
@@ -1272,6 +1060,7 @@ class TestAsyncOperations:
                     },
                 }
             ],
+            forward_only=True,
             return_loss_fn_outputs=True,
         )
         assert_matches_type(ForwardBackwardOperation, operation, path=["response"])
@@ -1455,54 +1244,6 @@ class TestAsyncOperations:
 
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `operation_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.retrieve_custom_forward_backward(
-                operation_id="",
-                session_id="session_id",
-            )
-
-    @parametrize
-    async def test_method_retrieve_forward(self, async_client: AsyncTogether) -> None:
-        operation = await async_client.beta.rl.operations.retrieve_forward(
-            operation_id="operation_id",
-            session_id="session_id",
-        )
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    async def test_raw_response_retrieve_forward(self, async_client: AsyncTogether) -> None:
-        response = await async_client.beta.rl.operations.with_raw_response.retrieve_forward(
-            operation_id="operation_id",
-            session_id="session_id",
-        )
-
-        assert response.is_closed is True
-        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-        operation = await response.parse()
-        assert_matches_type(ForwardOperation, operation, path=["response"])
-
-    @parametrize
-    async def test_streaming_response_retrieve_forward(self, async_client: AsyncTogether) -> None:
-        async with async_client.beta.rl.operations.with_streaming_response.retrieve_forward(
-            operation_id="operation_id",
-            session_id="session_id",
-        ) as response:
-            assert not response.is_closed
-            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
-
-            operation = await response.parse()
-            assert_matches_type(ForwardOperation, operation, path=["response"])
-
-        assert cast(Any, response.is_closed) is True
-
-    @parametrize
-    async def test_path_params_retrieve_forward(self, async_client: AsyncTogether) -> None:
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
-            await async_client.beta.rl.operations.with_raw_response.retrieve_forward(
-                operation_id="operation_id",
-                session_id="",
-            )
-
-        with pytest.raises(ValueError, match=r"Expected a non-empty value for `operation_id` but received ''"):
-            await async_client.beta.rl.operations.with_raw_response.retrieve_forward(
                 operation_id="",
                 session_id="session_id",
             )

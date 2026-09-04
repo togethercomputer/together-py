@@ -16,5 +16,6 @@ class LossFnOutput(BaseModel):
 
     Built-in losses return `logprobs`: the model's float32 per-token
     log-probabilities under the current policy, one value per token of the sample's
-    input. Values at positions excluded from the loss are unspecified.
+    input. Positions excluded from the loss, such as zero-weight positions, are
+    masked to zero rather than true log-probabilities.
     """

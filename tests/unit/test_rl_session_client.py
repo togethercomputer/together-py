@@ -8,12 +8,11 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
-from together import NotFoundError
+from together import NotFoundError, omit
 from tests.unit.rl_wait import patch_wait
 from tests.unit._rl_fakes import FakeClient
 from together.lib.beta.rl import (
     Sample,
-    Logprob,
     Trainer,
     Gradient,
     Generator,
@@ -24,7 +23,6 @@ from together.lib.beta.rl import (
     MuonParams,
     TensorData,
     SampleResult,
-    ForwardResult,
     RoutedExperts,
     SessionClient,
     WandbMetadata,
@@ -45,6 +43,8 @@ from together.lib.beta.rl.clients import (
     trainer as trainer_module,
     generator as generator_module,
 )
+from together.types.beta.rl.tensor_data import TensorData as TensorDataModel
+from together.types.beta.rl.loss_fn_output import LossFnOutput
 from together.types.beta.rl.sample_operation import SampleOperation
 
 
@@ -56,6 +56,19 @@ def _make_session(client: FakeClient | None = None) -> SessionClient:
 
 def _sample_payload(sample: Sample) -> dict[str, Any]:
     return dict(sample)
+
+
+_CROSS_ENTROPY = LossConfig(type="LOSS_TYPE_CROSS_ENTROPY")
+
+
+def _scored_result(*logprobs: list[float]) -> ForwardBackwardResult:
+    """A forward_only result, whose per-sample outputs carry the logprobs forward reads."""
+    return ForwardBackwardResult(
+        loss=0.5,
+        loss_fn_outputs=[
+            LossFnOutput(tensors={"logprobs": TensorDataModel(data=values, dtype="float32")}) for values in logprobs
+        ],
+    )
 
 
 def _generator(session: SessionClient) -> Generator:
@@ -211,24 +224,40 @@ def test_prompt_logprobs_from_results_raises_when_missing() -> None:
         generator_module._prompt_logprobs_from_results([result])
 
 
-def test_forward_passes_samples(monkeypatch: pytest.MonkeyPatch) -> None:
-    patch_wait(
-        monkeypatch,
-        ForwardResult(logprobs=[Logprob(data=[-1.0, -2.0, -3.0])]),
-    )
+def test_forward_scores_the_batch_without_gradients(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_wait(monkeypatch, _scored_result([-1.0, -2.0, -3.0]))
     client = FakeClient()
     trainer = _make_session(client)
 
     samples = [_small_sample()]
-    result = trainer.trainer.forward(samples=samples)
+    result = trainer.trainer.forward(samples=samples, loss=_CROSS_ENTROPY)
 
-    assert result.logprobs[0].data == [-1.0, -2.0, -3.0]
+    assert result.loss_fn_outputs is not None
+    assert result.loss_fn_outputs[0].tensors["logprobs"].data == [-1.0, -2.0, -3.0]
     assert client.beta.rl.operations.last_call is not None
     method, args, kwargs = client.beta.rl.operations.last_call
-    assert method == "forward"
+    assert method == "forward_backward"
     assert args == ("sess",)
     assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
+    assert kwargs["loss"] == _CROSS_ENTROPY
+    assert kwargs["forward_only"] is True
+    assert kwargs["return_loss_fn_outputs"] is True
     assert kwargs.get("extra_body") is None
+    trainer.stop()
+
+
+def test_forward_backward_accumulates_gradients(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The gradient path must send neither flag, leaving the service defaults in force."""
+    patch_wait(monkeypatch, ForwardBackwardResult(loss=0.5, metrics={}))
+    client = FakeClient()
+    trainer = _make_session(client)
+
+    trainer.trainer.forward_backward(samples=[_small_sample()], loss=_CROSS_ENTROPY)
+
+    assert client.beta.rl.operations.last_call is not None
+    _, _, kwargs = client.beta.rl.operations.last_call
+    assert kwargs["forward_only"] is omit
+    assert kwargs["return_loss_fn_outputs"] is omit
     trainer.stop()
 
 
@@ -894,6 +923,7 @@ def test_forward_backward_rejects_invalid_loss_config_before_submission(
                     ),
                     "loss_fn_inputs": {
                         "target_tokens": TensorData(data=[1, 2, 3], dtype="float32"),
+                        "weights": TensorData(data=[1.0, 1.0, 1.0], dtype="float32"),
                     },
                 },
             ),
@@ -926,7 +956,7 @@ def test_training_operations_reject_invalid_loss_inputs_before_submission(
         if method == "forward_backward":
             session.trainer.forward_backward(samples=[sample], loss=LossConfig(type="LOSS_TYPE_PPO"))
         elif method == "forward":
-            session.trainer.forward(samples=[sample])
+            session.trainer.forward(samples=[sample], loss=_CROSS_ENTROPY)
         else:
             session.trainer.custom_forward_backward(
                 samples=[sample],
@@ -945,7 +975,7 @@ def test_forward_warns_but_submits_undeclared_loss_input(monkeypatch: pytest.Mon
     be a server input newer than the client. Reusing one batch across ``forward`` and
     ``forward_backward`` is the ordinary native idiom and must not raise.
     """
-    patch_wait(monkeypatch, ForwardResult(logprobs=[Logprob(data=[-1.0, -2.0, -3.0])]))
+    patch_wait(monkeypatch, _scored_result([-1.0, -2.0, -3.0]))
     client = FakeClient()
     session = _make_session(client)
 
@@ -953,11 +983,12 @@ def test_forward_warns_but_submits_undeclared_loss_input(monkeypatch: pytest.Mon
         model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
         loss_fn_inputs={
             "target_tokens": TensorData(data=[1, 2, 3], dtype="int64"),
+            "weights": TensorData(data=[1.0, 1.0, 1.0], dtype="float32"),
             "logprobs": TensorData(data=[-0.1, -0.2, -0.3], dtype="float32"),
         },
     )
     with pytest.warns(UserWarning, match="logprobs"):
-        session.trainer.forward(samples=[sample])
+        session.trainer.forward(samples=[sample], loss=_CROSS_ENTROPY)
 
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call

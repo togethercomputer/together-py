@@ -6,21 +6,18 @@ from collections.abc import Iterable
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
-from .._losses import FORWARD_INPUTS, validate_sample, validate_loss_config
-from ....._types import omit
+from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, validate_sample, validate_loss_config
+from ....._types import Omit, omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
 from .._request_types import Sample, LossConfig
 from .....types.beta.rl.loss_type import LossType
 from .....types.beta.rl.adam_params import AdamParams
 from .....types.beta.rl.muon_params import MuonParams
-from .....types.beta.rl.forward_result import ForwardResult
 from .....types.beta.rl.weight_sync_type import WeightSyncType
-from .....types.beta.rl.forward_operation import ForwardOperation
 from .....types.beta.rl.optim_step_result import OptimStepResult
 from .....types.beta.rl.weights_sync_result import WeightsSyncResult
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
-from .....types.beta.rl.operation_forward_params import OperationForwardParams
 from .....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
 from .....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
 from .....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
@@ -48,8 +45,15 @@ async def _submit_forward_backward(
     *,
     samples: Iterable[Sample],
     loss: LossConfig,
+    forward_only: bool | Omit = omit,
+    return_loss_fn_outputs: bool | Omit = omit,
 ) -> ForwardBackwardOperation:
-    """POST a forward_backward operation without waiting for it."""
+    """POST a forward_backward operation without waiting for it.
+
+    The two flags are independent: ``forward_only`` scores the batch without accumulating
+    gradients, and ``return_loss_fn_outputs`` returns the per-sample output tensors. Either
+    can be used without the other.
+    """
     batch = list(samples)
     proto_loss = _resolve_loss_type(loss)
     spec = validate_loss_config(proto_loss)
@@ -66,29 +70,8 @@ async def _submit_forward_backward(
         session._session_id,
         loss=proto_loss,
         samples=cast("list[Any]", body["samples"]),
-        extra_body=extra_body,
-    )
-
-
-async def _submit_forward(
-    session: SessionClient,
-    *,
-    samples: Iterable[Sample],
-) -> ForwardOperation:
-    """POST a forward operation without waiting for it."""
-    batch = list(samples)
-    for index, sample in enumerate(batch):
-        validate_sample(sample, FORWARD_INPUTS, label=f"samples[{index}]")
-    body, large_payload_id = await prepare_operation_body(
-        session._client,
-        session_id=session._session_id,
-        body={"samples": batch},
-        expected_type=OperationForwardParams,
-    )
-    extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.beta.rl.operations.forward(
-        session._session_id,
-        samples=cast("list[Any]", body["samples"]),
+        forward_only=forward_only,
+        return_loss_fn_outputs=return_loss_fn_outputs,
         extra_body=extra_body,
     )
 
@@ -102,7 +85,7 @@ async def _submit_custom_forward_backward(
     """POST a custom_forward_backward operation without waiting for it."""
     batch = list(samples)
     for index, sample in enumerate(batch):
-        validate_sample(sample, FORWARD_INPUTS, label=f"samples[{index}]")
+        validate_sample(sample, CUSTOM_FORWARD_BACKWARD_INPUTS, label=f"samples[{index}]")
     body, large_payload_id = await prepare_operation_body(
         session._client,
         session_id=session._session_id,
@@ -134,25 +117,50 @@ class Trainer:
         self,
         *,
         samples: Iterable[Sample],
+        loss: LossConfig,
+        return_loss_fn_outputs: bool = True,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> ForwardResult:
-        return self._session.run(self.forward_async(samples=samples, timeout=timeout, interval=interval))
+    ) -> ForwardBackwardResult:
+        """Score a batch without accumulating gradients, reading back its per-token logprobs.
+
+        The logprobs land in ``loss_fn_outputs[i].tensors["logprobs"]``. ``loss`` decides
+        what they mean: a position the loss excludes, such as a zero-weight one, comes back
+        masked to zero rather than a true log-probability.
+        """
+        return self._session.run(
+            self.forward_async(
+                samples=samples,
+                loss=loss,
+                return_loss_fn_outputs=return_loss_fn_outputs,
+                timeout=timeout,
+                interval=interval,
+            )
+        )
 
     @on_client_loop
     async def forward_async(
         self,
         *,
         samples: Iterable[Sample],
+        loss: LossConfig,
+        return_loss_fn_outputs: bool = True,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> ForwardResult:
-        operation = await _submit_forward(self._session, samples=samples)
+    ) -> ForwardBackwardResult:
+        """See :meth:`forward`."""
+        operation = await _submit_forward_backward(
+            self._session,
+            samples=samples,
+            loss=loss,
+            forward_only=True,
+            return_loss_fn_outputs=return_loss_fn_outputs,
+        )
         result = await self._session._submit_and_wait(operation, timeout=timeout, interval=interval)
         return await resolve_result_payload(
             self._session._client,
             session_id=self._session._session_id,
-            result=cast(ForwardResult, result),
+            result=cast(ForwardBackwardResult, result),
         )
 
     def forward_backward(
@@ -160,13 +168,20 @@ class Trainer:
         *,
         samples: Iterable[Sample],
         loss: LossConfig,
+        return_loss_fn_outputs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
+        """Accumulate gradients over a batch, optionally reading back its per-token logprobs.
+
+        Set ``return_loss_fn_outputs`` to receive ``loss_fn_outputs[i].tensors["logprobs"]``
+        alongside the gradient update, subject to the same masking as :meth:`forward`.
+        """
         return self._session.run(
             self.forward_backward_async(
                 samples=samples,
                 loss=loss,
+                return_loss_fn_outputs=return_loss_fn_outputs,
                 timeout=timeout,
                 interval=interval,
             )
@@ -178,16 +193,27 @@ class Trainer:
         *,
         samples: Iterable[Sample],
         loss: LossConfig,
+        return_loss_fn_outputs: bool | None = None,
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> ForwardBackwardResult:
-        operation = await _submit_forward_backward(self._session, samples=samples, loss=loss)
+        """See :meth:`forward_backward`."""
+        operation = await _submit_forward_backward(
+            self._session,
+            samples=samples,
+            loss=loss,
+            return_loss_fn_outputs=return_loss_fn_outputs if return_loss_fn_outputs is not None else omit,
+        )
         result = await self._session._submit_and_wait(
             operation,
             timeout=timeout,
             interval=interval,
         )
-        return cast(ForwardBackwardResult, result)
+        return await resolve_result_payload(
+            self._session._client,
+            session_id=self._session._session_id,
+            result=cast(ForwardBackwardResult, result),
+        )
 
     def custom_forward_backward(
         self,

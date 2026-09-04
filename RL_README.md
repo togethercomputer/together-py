@@ -457,11 +457,16 @@ training_client.optim_step(adam_params).result()
 
 Training and sampling methods:
 
-- `TrainingClient.forward(data, loss_fn, loss_fn_config=None)` — returns a future of
-  tinker's `ForwardBackwardOutput` whose per-datum `loss_fn_outputs[i]["logprobs"]` come from
-  Together's `ForwardResult`. A non-`None` `loss_fn_config` warns (forward returns logprobs only).
+- `TrainingClient.forward(data, loss_fn, loss_fn_config=None, *, return_loss_fn_outputs=True)` —
+  a gradient-free scoring pass under `loss_fn`, returning a future of tinker's
+  `ForwardBackwardOutput` whose per-datum `loss_fn_outputs[i]["logprobs"]` are the scores the
+  loss produced. `loss_fn_config` shapes that loss exactly as it does on `forward_backward`, so
+  a position the loss excludes — a zero-`weights` one, say — comes back as exactly `0.0` rather
+  than a true log-probability.
 - `TrainingClient.forward_backward(data, loss_fn, loss_fn_config=None)` — returns a future of
-  tinker's `ForwardBackwardOutput`. See [Loss functions](#loss-functions) for accepted values.
+  tinker's `ForwardBackwardOutput`. The keyword-only `return_loss_fn_outputs=True` reads the same
+  per-datum logprobs back alongside the gradient update, under the same masking; left unset it
+  follows the service default. See [Loss functions](#loss-functions) for accepted values.
 - `TrainingClient.forward_backward_custom(data, loss_fn, *, loss_type_input="logprobs")` —
   two-pass custom loss (forward logprobs → client loss → custom gradients). Requires PyTorch.
 - `TrainingClient.optim_step(adam_params)` — Adam fields are forwarded as-is (including `grad_clip_norm`).
@@ -525,14 +530,17 @@ generated from the spec, so a key outside it is always a caller error.
   call site (Python's default warning filter dedups repeats, so a loop that warns on step 1 will not
   warn again on step 200 — the condition has not gone away). Use `mask` for inclusion/exclusion, and keep
   fractional weighting to `cross_entropy`.
-- **`loss_fn_outputs` on `forward` only.** `forward(...).result().loss_fn_outputs[i]["logprobs"]`
-  are real Together logprobs. `forward_backward(...).result()` is a genuine
-  `tinker.ForwardBackwardOutput` whose total loss is published as `metrics["loss:sum"]`
-  (plus any Together-native metric keys), so scripts that only read `.metrics` keep working,
-  but its `loss_fn_outputs` is always `[]` — the fwd-bwd wire has no per-datum logprobs, and
-  inventing them would silently corrupt training. Accesses like
+- **`loss_fn_outputs` carry the loss's masking.** Both training calls can return per-datum
+  logprobs: `forward` asks for them by default, and `forward_backward` does when passed
+  `return_loss_fn_outputs=True`, leaving `loss_fn_outputs` empty otherwise. Either way the
+  numbers come out of the loss that scored the batch, so a position that loss excludes — a
+  zero-`weights` one, say — reads exactly `0.0` instead of a true log-probability. Tinker's
+  `forward` scored under no loss and masked nothing, so accesses like
   `result.loss_fn_outputs[i]["logprobs"]` (used in `tinker_cookbook/rl/train.py`,
-  `supervised/train.py`, and several tutorials) therefore need `forward` here.
+  `supervised/train.py`, and several tutorials) only read back true logprobs at positions the
+  loss keeps. `forward_backward(...).result()` is still a genuine `tinker.ForwardBackwardOutput`
+  whose total loss is published as `metrics["loss:sum"]` (plus any Together-native metric keys),
+  so scripts that only read `.metrics` keep working.
 - **Sampling clients are not weight snapshots.** Together's sampler serves the most recently published
   weights. After a later `save_weights_and_get_sampling_client()`, sampling on an earlier client raises
   `RuntimeError` rather than silently using the wrong policy. This breaks DPO-style frozen reference
@@ -775,6 +783,7 @@ def forward_backward(
     *,
     samples: Iterable[Sample],
     loss: LossConfig,
+    return_loss_fn_outputs: bool | None = None,
 ) -> ForwardBackwardResult
 ```
 
@@ -782,6 +791,10 @@ def forward_backward(
 | --------- | ------------------- | ------------ | -------------------------------------------------------------- |
 | `samples` | `Iterable[Sample]`  | _(required)_ | Batch of training samples (see [Training sample](#training-sample)). |
 | `loss`    | `LossConfig`   | _(required)_ | Loss configuration (see [Loss configs](#loss-configurations)). |
+| `return_loss_fn_outputs` | `bool \| None` | `None` | Read the per-sample output tensors back with the update. Left unsent unless set, so the service default stands. |
+
+`session.trainer.forward(...)` submits this same operation with `forward_only=True`, scoring a
+batch under `loss` without accumulating gradients, and asks for `loss_fn_outputs` by default.
 
 **Returns:** `ForwardBackwardResult`. The resolved value has:
 
@@ -789,6 +802,7 @@ def forward_backward(
 | --------- | ------------------ | ------------------------------------------------------------------------------------ |
 | `loss`    | `float`            | Scalar loss value for the batch.                                                     |
 | `metrics` | `dict[str, float]` | Loss-specific metrics (e.g. `loss/clip/high_fraction`, `loss/kl_ref/mean` for GRPO). |
+| `loss_fn_outputs` | `list[LossFnOutput] \| None` | Per-sample output tensors when `return_loss_fn_outputs` asked for them, else `None`. `tensors["logprobs"]` holds one score per position, masked by `loss`: a position the loss excludes (zero `weights`, for instance) is exactly `0.0`, not a true log-probability. |
 
 #### `session.trainer.optim_step(...)`
 
@@ -1120,10 +1134,11 @@ submission:
   of every new server input.
 - **A dtype other than the one the table pins** raises `ValueError`.
 
-`forward()` and `custom_forward_backward()` carry no loss config, so they require only
-`target_tokens` and recognize `weights` and `mask`. Reusing one batch across `forward()`
-and `forward_backward()` therefore warns about the policy keys — `advantages`, `logprobs`
-— and still submits.
+`forward()` scores under a real loss, so it validates `loss_fn_inputs` against that loss just
+as `forward_backward()` does: `cross_entropy` requires `weights`, and the policy losses require
+`advantages` and `logprobs`. Only `custom_forward_backward()` carries no loss config, so it
+requires just `target_tokens` and recognizes `weights` and `mask`; reusing a policy-loss batch
+there warns about `advantages` and `logprobs` and still submits.
 
 A `RoutedExperts` value carries exactly one source — an inline `data` buffer or an `object_uri` —
 alongside `shape`; see the `RoutedExperts` entry in [`api.md`](api.md) for the field-level contract.

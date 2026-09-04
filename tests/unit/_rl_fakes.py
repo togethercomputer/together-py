@@ -16,10 +16,6 @@ class FakeOperations:
         self.last_call = ("sample", (session_id,), payload)
         return {"id": "sample-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
 
-    async def forward(self, session_id: str, **payload: Any) -> dict[str, Any]:
-        self.last_call = ("forward", (session_id,), payload)
-        return {"id": "fwd-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
-
     async def forward_backward(self, session_id: str, **payload: Any) -> dict[str, Any]:
         self.last_call = ("forward_backward", (session_id,), payload)
         return {"id": "fb-op", "status": "TRAINING_OPERATION_STATUS_PENDING"}
