@@ -196,6 +196,22 @@ def test_unknown_option_equals_value_telemetry_strips_value(
 
 
 @pytest.mark.usefixtures("isolated_cli_config")
+def test_unknown_command_telemetry_omits_argument_values(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+) -> None:
+    r = cli_runner.invoke(["chat", "-m", "private-model", "-p", "private prompt"])
+    assert r.exit_code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    for _, payload in track_cli_capture:
+        assert payload["command"] == "chat"
+        assert "private" not in repr(payload)
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
 def test_command_keyboard_interrupt_emits_started_then_user_aborted(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     cli_runner: CliRunner,
