@@ -445,6 +445,29 @@ def test_parse_command_and_flags_positionals_are_argument_names_not_command_toke
     assert is_beta is True
 
 
+@pytest.mark.parametrize(
+    ("tokens", "expected_command", "expected_beta"),
+    [
+        (["chat", "-m", "private-model", "-p", "private prompt"], "chat", False),
+        (["chat", "private-model", "private prompt"], "chat", False),
+        (["chat -m private-model -p private-prompt"], "chat", False),
+        (["beta", "unknown", "private-value"], "unknown", True),
+    ],
+)
+def test_parse_unknown_command_does_not_treat_argument_values_as_command_tokens(
+    tokens: list[str],
+    expected_command: str,
+    expected_beta: bool,
+) -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, _, is_beta, _ = preparse_tokens(app, tokens)
+    assert cmd == expected_command
+    assert is_beta is expected_beta
+    assert "private" not in cmd
+
+
 def test_telemetry_status_no_api_key(monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
     monkeypatch.delenv("TOGETHER_TELEMETRY_DISABLED", raising=False)
