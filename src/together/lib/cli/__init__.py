@@ -24,7 +24,7 @@ from together.lib.cli._track_cli import (
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
@@ -357,6 +357,12 @@ async def launcher(
             {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
         )
         command_succeeded = True
+    except CliBrokenPipeError:
+        track_cli(
+            CliTrackingEvents.CommandUserAborted,
+            {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
+        )
+        sys.exit(1)
     except KeyboardInterrupt:
         track_cli(
             CliTrackingEvents.CommandUserAborted,
