@@ -15,6 +15,7 @@ class ScalingMetric(TypedDict, total=False):
 
     name: Required[
         Literal[
+            "active_sessions",
             "cache_hit_rate",
             "decoding_speed",
             "e2e_latency",
