@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import json
-from typing import cast
+from typing import Any, cast
 from textwrap import dedent
 
 import httpx
@@ -10,6 +10,7 @@ import pytest
 from respx import MockRouter
 
 from tests.cli.utils import CliRunner
+from together.lib.cli._track_cli import CliTrackingEvents
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -166,6 +167,36 @@ class TestModelsUpload:
         assert result.exit_code == 0
         out = json.loads(result.output)
         assert out["message"] == _UPLOAD_BODY["message"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_upload_rejection_preserves_telemetry_diagnostic(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        events: list[tuple[CliTrackingEvents, dict[str, Any]]] = []
+
+        def capture(event: CliTrackingEvents, payload: dict[str, Any]) -> None:
+            events.append((event, payload))
+
+        monkeypatch.setattr("together.lib.cli.track_cli", capture)
+        respx_mock.post("/models").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": None, "message": "Private upload rejection details"},
+            )
+        )
+
+        result = cli_runner.invoke(
+            ["models", "upload", "--model-name", "model-123", "--model-source", "s3://model-123"]
+        )
+
+        assert result.exit_code == 1
+        assert "Private upload rejection details" in result.output
+        failure = next(payload for event, payload in events if event is CliTrackingEvents.CommandFailed)
+        assert failure["error"] == "Model upload request was rejected"
+        assert "Private upload rejection details" not in failure["error"]
 
 
 class TestModelsListInvalid:
