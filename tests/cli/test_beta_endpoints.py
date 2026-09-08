@@ -378,6 +378,49 @@ class TestBetaEndpointsDeploy:
         assert create_deployment_route.call_count == 1
 
     @pytest.mark.respx(base_url=base_url)
+    def test_deploy_accepts_active_sessions_scaling_metric(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--scaling-metric",
+                "active_sessions",
+                "--scaling-target",
+                "25",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["autoscaling"]["scalingMetrics"] == [
+            {
+                "name": "active_sessions",
+                "type": "METRIC_TARGET_TYPE_VALUE",
+                "target": 25.0,
+            }
+        ]
+
+    @pytest.mark.respx(base_url=base_url)
     def test_deploy_reuses_endpoint_when_name_already_exists(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:

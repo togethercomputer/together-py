@@ -170,6 +170,34 @@ class TestBetaEndpointsUpdate:
         }
 
     @pytest.mark.respx(base_url=base_url)
+    def test_update_accepts_active_sessions_scaling_metric(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            _update_args("dep_control", "--scaling-metric", "active_sessions", "--scaling-target", "25")
+        )
+
+        assert result.exit_code == 0, result.output
+        req = cast(Call, route.calls[0]).request
+        assert "updateMask=autoscaling" in str(req.url)
+        assert json.loads(req.content.decode()) == {
+            "autoscaling": {
+                "scalingMetrics": [
+                    {
+                        "name": "active_sessions",
+                        "type": "METRIC_TARGET_TYPE_VALUE",
+                        "target": 25.0,
+                    }
+                ]
+            },
+        }
+
+    @pytest.mark.respx(base_url=base_url)
     def test_update_idle_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
         route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_idle").mock(
