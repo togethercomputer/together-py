@@ -86,12 +86,16 @@ class FakeTensor:
         return replace(self, on_device=False)
 
     def float(self) -> FakeTensor:
-        if isinstance(self.values, list):
-            return replace(self, values=[float(value) for value in self.values], dtype_name="torch.float32")
-        return replace(self, values=self.values.astype("float32"), dtype_name="torch.float32")
+        values = self.values
+        if hasattr(values, "astype"):
+            return replace(self, values=values.astype("float32"), dtype_name="torch.float32")
+        return replace(self, values=[float(value) for value in values], dtype_name="torch.float32")
 
     def tolist(self) -> list[Any]:
-        return list(self.values) if isinstance(self.values, list) else cast(list[Any], self.values.tolist())
+        values = self.values
+        if hasattr(values, "tolist"):
+            return cast(list[Any], values.tolist())
+        return list(values)
 
     def numpy(self) -> Any:
         if not self.numpy_available:
