@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
+from .._arrays import coerce_model_input
 from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
@@ -27,7 +28,11 @@ async def _submit_sample_batch(
     return_routed_experts_object_uri: bool | None = None,
 ) -> SampleOperation:
     """POST a sample operation without waiting for it."""
-    body: dict[str, Any] = {"model_inputs": model_inputs}
+    body: dict[str, Any] = {
+        "model_inputs": [
+            coerce_model_input(model_input, f"prompts[{index}]") for index, model_input in enumerate(model_inputs)
+        ]
+    }
     if sampling_params is not None:
         body["sampling_params"] = sampling_params
     if num_samples is not None:

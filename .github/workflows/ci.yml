@@ -115,13 +115,13 @@ jobs:
       - name: Install Python ${{ env.PYTHON_VERSION }}
         run: uv python install "$PYTHON_VERSION"
 
-      # The tests importorskip("tinker"), so without this the job would pass green if
-      # the extra ever stops resolving on this interpreter.
-      - name: Check tinker is installed
-        run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker"
+      # Each test file importorskips one of these, so without this the job would pass green
+      # if the extra ever stops resolving on this interpreter, or stops pulling numpy in.
+      - name: Check tinker and numpy are installed
+        run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker, numpy"
 
-      - name: Run Tinker wrapper tests
-        run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_rl_tinker_*.py
+      - name: Run tests that need numpy or tinker
+        run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_rl_tinker_*.py tests/unit/test_rl_native_arrays.py
 
   test-integration:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork) && (github.event_name != 'push' || github.event.head_commit.message != 'codegen metadata')

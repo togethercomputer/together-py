@@ -43,7 +43,11 @@ class Sample(TypedDict, total=False):
 
     Attributes:
         model_input: The tokens the sample is scored against.
-        loss_fn_inputs: Per-token loss tensors keyed by their public input names.
+        loss_fn_inputs: Per-token loss tensors keyed by their public input names. At runtime
+            each value may also be a one-dimensional torch tensor, numpy array, or numeric
+            list; the clients coerce it to a ``TensorData`` before submitting. The annotation
+            stays narrow, as tinker's own ``LossFnInputs`` does, so a type-checked caller
+            passing an array needs a ``cast``.
         routed_experts: Optional per-token expert routing for MoE models.
     """
 

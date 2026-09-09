@@ -113,7 +113,18 @@ async def prepare_operation_body(
         ``_VALIDATION_OMITTED_KEYS`` are dropped.
     """
     serialized = transform(body, expected_type=expected_type)
-    payload = json.dumps(serialized, separators=(",", ":")).encode()
+    # JSON has no NaN or infinity, and `json.dumps` emits bare `NaN` and `-Infinity` tokens
+    # by default, which the server cannot parse.
+    try:
+        payload = json.dumps(serialized, separators=(",", ":"), allow_nan=False).encode()
+    except ValueError as error:
+        if "Out of range float" not in str(error):
+            raise  # Some other encoding failure; its own message is the useful one.
+        raise ValueError(
+            "Operation payload holds a NaN or infinite value, which JSON cannot represent."
+            " Check the request tensors and float parameters for non-finite entries; to mask"
+            " a position, give it a zero 'weights' entry rather than a -inf logprob."
+        ) from error
     if len(payload) <= _LARGE_PAYLOAD_THRESHOLD:
         return serialized, None
 
