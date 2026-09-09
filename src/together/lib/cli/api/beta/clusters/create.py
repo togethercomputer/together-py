@@ -32,12 +32,14 @@ BillingTypeParameter = Annotated[
     Optional[Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"]],
     Parameter(help="Billing type to use for the cluster"),
 ]
-NvidiaDriverVersionParameter = Annotated[Optional[str], Parameter(help="Nvidia driver version to use for the cluster")]
-CudaVersionParameter = Annotated[Optional[str], Parameter(help="CUDA version to use for the cluster")]
-OSParameter = Annotated[Optional[str], Parameter(help="Operating system for NVIDIA version selection")]
-NvidiaVersionIDParameter = Annotated[
-    Optional[str], Parameter(help="NVIDIA version catalog ID to use directly for the cluster")
+NvidiaDriverVersionParameter = Annotated[
+    Optional[str], Parameter(help="Legacy NVIDIA driver selector; pair with --cuda-version")
 ]
+CudaVersionParameter = Annotated[
+    Optional[str], Parameter(help="Legacy CUDA selector; pair with --nvidia-driver-version")
+]
+OSParameter = Annotated[Optional[str], Parameter(help="Operating system for NVIDIA version selection")]
+DriverParameter = Annotated[Optional[str], Parameter(help="Canonical NVIDIA version catalog ID to use for the cluster")]
 DurationDaysParameter = Annotated[
     Optional[int], Parameter(help="Duration in days to keep the cluster running for reserved clusters")
 ]
@@ -119,7 +121,7 @@ def _resolve_nvidia_version(
         )
     if len(matches) > 1:
         choices = "; ".join(_format_nvidia_version(version) for version in matches)
-        guidance = "Use --nvidia-version-id." if os_name else "Add --os or use --nvidia-version-id."
+        guidance = "Use --driver." if os_name else "Add --os or use --driver."
         raise TogetherError(
             f"Multiple NVIDIA versions match {requested} in region '{region}'. {guidance} Matches: {choices}"
         )
@@ -158,24 +160,46 @@ async def _set_nvidia_version_params(
     os_name: str | None,
 ) -> None:
     semantic_version_given = any(value is not None for value in (nvidia_driver_version, cuda_version, os_name))
-    if nvidia_version_id and semantic_version_given:
-        raise TogetherError("Use either --nvidia-version-id or --nvidia-driver-version/--cuda-version/--os, not both.")
-
     has_driver = nvidia_driver_version is not None
     has_cuda = cuda_version is not None
-    if not nvidia_version_id and (has_driver != has_cuda or (os_name is not None and not has_driver)):
+    if has_driver != has_cuda or (os_name is not None and not has_driver):
         raise TogetherError("--nvidia-driver-version and --cuda-version must be provided together; --os requires both.")
 
     if nvidia_version_id:
         params["nvidia_version_id"] = nvidia_version_id
-        params.pop("nvidia_driver_version", None)
-        params.pop("cuda_version", None)
+        if not semantic_version_given:
+            params.pop("nvidia_driver_version", None)
+            params.pop("cuda_version", None)
+            return
+
+        if os_name is None:
+            return
+
+        region = params.get("region")
+        if not region:
+            raise TogetherError("--region is required when selecting an NVIDIA version.")
+
+        if catalog is None:
+            catalog = await config.client.beta.clusters.list_regions()
+        selected = _resolve_nvidia_version(
+            catalog,
+            region=region,
+            nvidia_driver_version=nvidia_driver_version,
+            cuda_version=cuda_version,
+            os_name=os_name,
+        )
+        if selected.id and selected.id != nvidia_version_id:
+            raise TogetherError(
+                f"--driver {nvidia_version_id!r} does not match "
+                f"--nvidia-driver-version/--cuda-version/--os selection {selected.id!r}."
+            )
         return
 
-    if not interactive and not has_driver:
-        raise TogetherError(
-            "Use --nvidia-version-id or provide --nvidia-driver-version and --cuda-version in non-interactive mode."
-        )
+    if not has_driver:
+        if not interactive:
+            params.pop("nvidia_driver_version", None)
+            params.pop("cuda_version", None)
+            return
 
     if has_driver and os_name is None:
         return
@@ -210,7 +234,7 @@ async def create(
     nvidia_driver_version: NvidiaDriverVersionParameter = None,
     cuda_version: CudaVersionParameter = None,
     os: OSParameter = None,
-    nvidia_version_id: NvidiaVersionIDParameter = None,
+    driver: DriverParameter = None,
     duration_days: DurationDaysParameter = None,
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
@@ -318,7 +342,7 @@ async def create(
         params=params,
         catalog=catalog,
         interactive=interactive,
-        nvidia_version_id=nvidia_version_id,
+        nvidia_version_id=driver,
         nvidia_driver_version=nvidia_driver_version,
         cuda_version=cuda_version,
         os_name=os,
