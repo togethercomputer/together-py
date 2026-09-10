@@ -12,6 +12,7 @@ from cyclopts.command_spec import CommandSpec
 from tests.cli.utils import CliRunner
 from together.lib.cli import app as tg_app
 from together.lib.cli._track_cli import CliTrackingEvents
+from together.lib.cli.utils._console import CliBrokenPipeError
 
 
 def _reset_telemetry_command_specs() -> None:
@@ -207,6 +208,24 @@ def test_command_keyboard_interrupt_emits_started_then_user_aborted(
     monkeypatch.setattr("together.lib.cli.api.telemetry.status.status", _interrupt)
     r = cli_runner.invoke(["telemetry", "status"])
     assert r.exit_code == 0
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandUserAborted.value,
+    ]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+def test_command_broken_pipe_emits_started_then_user_aborted(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _broken_pipe() -> None:
+        raise CliBrokenPipeError
+
+    monkeypatch.setattr("together.lib.cli.api.telemetry.status.status", _broken_pipe)
+    r = cli_runner.invoke(["telemetry", "status"])
+    assert r.exit_code == 1
     assert _event_kinds(track_cli_capture) == [
         CliTrackingEvents.CommandStarted.value,
         CliTrackingEvents.CommandUserAborted.value,

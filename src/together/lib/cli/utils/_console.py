@@ -3,12 +3,26 @@ from __future__ import annotations
 import os
 import sys
 from typing import Any, TextIO, Literal, cast
+from typing_extensions import override
 
 from rich.theme import Theme
 from rich.console import Console
 
 CliThemeName = Literal["light", "dark"]
 StreamName = Literal["stdout", "stderr"]
+
+
+class CliBrokenPipeError(BrokenPipeError):
+    """Raised when Rich stops rendering because an output consumer closed its pipe."""
+
+
+class _CliConsole(Console):
+    @override
+    def on_broken_pipe(self) -> None:
+        try:
+            super().on_broken_pipe()
+        except SystemExit:
+            raise CliBrokenPipeError from None
 
 
 class _EncodingSafeStream:
@@ -141,7 +155,7 @@ def build_theme(theme_name: CliThemeName | None = None) -> Theme:
 def create_console(theme_name: CliThemeName | None = None, *, stderr: bool = False) -> Console:
     stream_name: StreamName = "stderr" if stderr else "stdout"
     stream = cast(TextIO, _EncodingSafeStream(stream_name))
-    return Console(theme=build_theme(theme_name), highlight=False, file=stream, stderr=stderr)
+    return _CliConsole(theme=build_theme(theme_name), highlight=False, file=stream, stderr=stderr)
 
 
 cli_theme_name: CliThemeName = resolve_cli_theme()
