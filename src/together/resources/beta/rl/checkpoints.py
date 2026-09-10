@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 
-from ...._types import Body, Query, Headers, NotGiven, not_given
+from ...._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
 from ...._utils import path_template, maybe_transform, async_maybe_transform
 from ...._compat import cached_property
 from ...._resource import SyncAPIResource, AsyncAPIResource
@@ -15,9 +15,10 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.rl import CheckpointVariant, checkpoint_download_params
+from ....types.beta.rl import CheckpointVariant, checkpoint_list_params, checkpoint_download_params
 from ....types.beta.rl.checkpoint import Checkpoint
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
+from ....types.beta.rl.checkpoints_list_response import CheckpointsListResponse
 from ....types.beta.rl.checkpoint_download_response import CheckpointDownloadResponse
 
 __all__ = ["CheckpointsResource", "AsyncCheckpointsResource"]
@@ -77,6 +78,63 @@ class CheckpointsResource(SyncAPIResource):
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
             cast_to=Checkpoint,
+        )
+
+    def list(
+        self,
+        *,
+        after: str | Omit = omit,
+        base_model: str | Omit = omit,
+        limit: int | Omit = omit,
+        session_id: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> CheckpointsListResponse:
+        """Lists training checkpoints owned by the caller.
+
+        Filter by session or base model
+        to recover a checkpoint ID for resume. Inference checkpoints are not included;
+        they remain on the training session and in the model catalog.
+
+        Args:
+          after: Cursor for pagination (ID of the last checkpoint from the previous page)
+
+          base_model: Only return checkpoints trained from this base model. Match is exact.
+
+          limit: Maximum number of checkpoints to return (1-100)
+
+          session_id: Only return checkpoints produced by this training session
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._get(
+            "/rl/checkpoints",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "after": after,
+                        "base_model": base_model,
+                        "limit": limit,
+                        "session_id": session_id,
+                    },
+                    checkpoint_list_params.CheckpointListParams,
+                ),
+            ),
+            cast_to=CheckpointsListResponse,
         )
 
     def download(
@@ -181,6 +239,63 @@ class AsyncCheckpointsResource(AsyncAPIResource):
             cast_to=Checkpoint,
         )
 
+    async def list(
+        self,
+        *,
+        after: str | Omit = omit,
+        base_model: str | Omit = omit,
+        limit: int | Omit = omit,
+        session_id: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> CheckpointsListResponse:
+        """Lists training checkpoints owned by the caller.
+
+        Filter by session or base model
+        to recover a checkpoint ID for resume. Inference checkpoints are not included;
+        they remain on the training session and in the model catalog.
+
+        Args:
+          after: Cursor for pagination (ID of the last checkpoint from the previous page)
+
+          base_model: Only return checkpoints trained from this base model. Match is exact.
+
+          limit: Maximum number of checkpoints to return (1-100)
+
+          session_id: Only return checkpoints produced by this training session
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._get(
+            "/rl/checkpoints",
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {
+                        "after": after,
+                        "base_model": base_model,
+                        "limit": limit,
+                        "session_id": session_id,
+                    },
+                    checkpoint_list_params.CheckpointListParams,
+                ),
+            ),
+            cast_to=CheckpointsListResponse,
+        )
+
     async def download(
         self,
         id: str,
@@ -236,6 +351,9 @@ class CheckpointsResourceWithRawResponse:
         self.retrieve = to_raw_response_wrapper(
             checkpoints.retrieve,
         )
+        self.list = to_raw_response_wrapper(
+            checkpoints.list,
+        )
         self.download = to_raw_response_wrapper(
             checkpoints.download,
         )
@@ -247,6 +365,9 @@ class AsyncCheckpointsResourceWithRawResponse:
 
         self.retrieve = async_to_raw_response_wrapper(
             checkpoints.retrieve,
+        )
+        self.list = async_to_raw_response_wrapper(
+            checkpoints.list,
         )
         self.download = async_to_raw_response_wrapper(
             checkpoints.download,
@@ -260,6 +381,9 @@ class CheckpointsResourceWithStreamingResponse:
         self.retrieve = to_streamed_response_wrapper(
             checkpoints.retrieve,
         )
+        self.list = to_streamed_response_wrapper(
+            checkpoints.list,
+        )
         self.download = to_streamed_response_wrapper(
             checkpoints.download,
         )
@@ -271,6 +395,9 @@ class AsyncCheckpointsResourceWithStreamingResponse:
 
         self.retrieve = async_to_streamed_response_wrapper(
             checkpoints.retrieve,
+        )
+        self.list = async_to_streamed_response_wrapper(
+            checkpoints.list,
         )
         self.download = async_to_streamed_response_wrapper(
             checkpoints.download,
