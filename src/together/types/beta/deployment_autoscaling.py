@@ -14,6 +14,7 @@ class ScalingMetric(BaseModel):
     """Metric and target used by the autoscaler to recommend a replica count."""
 
     name: Literal[
+        "active_sessions",
         "cache_hit_rate",
         "decoding_speed",
         "e2e_latency",

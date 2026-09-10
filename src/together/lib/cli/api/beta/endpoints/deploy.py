@@ -125,6 +125,7 @@ async def deploy(
             help=(
                 """Autoscaling metric. Must be set with --scaling-target; --scaling-percentile is optional and only applies to latency metrics.
 
+- active_sessions: Active sessions across the deployment.
 - inflight_requests: Concurrent in-flight requests per replica.
 - gpu_utilization: GPU compute utilization (%).
 - token_utilization: KV-cache utilization (%).

@@ -19,6 +19,7 @@ MetricType = Literal[
 ]
 
 ScalingMetricName = Literal[
+    "active_sessions",
     "inflight_requests",
     "gpu_utilization",
     "token_utilization",
@@ -33,6 +34,7 @@ ScalingPercentile = Literal["p50", "p90", "p95", "p99"]
 
 # Fixed type per metric name (see examples/internal-team-guides/autoscaling.md).
 _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
+    "active_sessions": "METRIC_TARGET_TYPE_VALUE",
     "inflight_requests": "METRIC_TARGET_TYPE_AVERAGE_VALUE",
     "gpu_utilization": "METRIC_TARGET_TYPE_UTILIZATION",
     "token_utilization": "METRIC_TARGET_TYPE_UTILIZATION",
