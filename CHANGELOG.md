@@ -1,13 +1,6 @@
 # Changelog
 
-## [2.33.1](https://github.com/togethercomputer/together-py/compare/v2.33.0...v2.33.1) (2026-09-10)
-
-
-### Bug Fixes
-
-* **ci:** grant id-token write for PyPI trusted publishing (DX-995) ([#563](https://github.com/togethercomputer/together-py/issues/563)) ([1e4b181](https://github.com/togethercomputer/together-py/commit/1e4b181eb28f16bb20e07e53039b91538a4385a7))
-
-## [2.33.0](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.0) (2026-09-10)
+## [2.33.1](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.1) (2026-09-10)
 
 
 ### Features
