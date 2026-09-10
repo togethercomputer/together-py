@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.33.0](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.0) (2026-09-10)
+## [2.33.1](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.1) (2026-09-10)
 
 
 ### Features
