@@ -1,13 +1,6 @@
 # Changelog
 
-## [2.33.2](https://github.com/togethercomputer/together-py/compare/v2.33.1...v2.33.2) (2026-09-10)
-
-
-### Bug Fixes
-
-* **ci:** Add environment to trusted publishers script ([#565](https://github.com/togethercomputer/together-py/issues/565)) ([bbc7f5b](https://github.com/togethercomputer/together-py/commit/bbc7f5be122555b78aed5e7b88c178ce9807994f))
-
-## [2.33.1](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.1) (2026-09-10)
+## [2.33.2](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.2) (2026-09-10)
 
 
 ### Features
