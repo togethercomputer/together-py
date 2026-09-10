@@ -56,6 +56,7 @@ from .muon_optimizer_config import MuonOptimizerConfig as MuonOptimizerConfig
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy
 from .session_create_params import SessionCreateParams as SessionCreateParams
 from .adamw_optimizer_config import AdamwOptimizerConfig as AdamwOptimizerConfig
+from .checkpoint_list_params import CheckpointListParams as CheckpointListParams
 from .model_resources_status import ModelResourcesStatus as ModelResourcesStatus
 from .optimizer_config_param import OptimizerConfigParam as OptimizerConfigParam
 from .policy_version_segment import PolicyVersionSegment as PolicyVersionSegment
@@ -66,6 +67,7 @@ from .forward_backward_result import ForwardBackwardResult as ForwardBackwardRes
 from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
 from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
+from .checkpoints_list_response import CheckpointsListResponse as CheckpointsListResponse
 from .cross_entropy_loss_params import CrossEntropyLossParams as CrossEntropyLossParams
 from .checkpoint_download_params import CheckpointDownloadParams as CheckpointDownloadParams
 from .forward_backward_operation import ForwardBackwardOperation as ForwardBackwardOperation
