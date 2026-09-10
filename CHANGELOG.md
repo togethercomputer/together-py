@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.33.0](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.0) (2026-09-10)
+
+
+### Features
+
+* **CLI:** add `list`/`delete` aliases for beta endpoints `ls`/`rm` (ENG-92294) ([#538](https://github.com/togethercomputer/together-py/issues/538)) ([b071670](https://github.com/togethercomputer/together-py/commit/b0716705a031bb9a34aa95717149722461a72e7e))
+* **CLI:** add `tg batches` commands for the batch API ([#525](https://github.com/togethercomputer/together-py/issues/525)) ([013976d](https://github.com/togethercomputer/together-py/commit/013976dd92b9cb0ebb8d0e0a0f7e1a5b9b12d116))
+* **Jig CLI:** introduce ExperimentalConfig for experimental opt-in features ([#543](https://github.com/togethercomputer/together-py/issues/543)) ([d653373](https://github.com/togethercomputer/together-py/commit/d6533731a811be30966ea9233d0322cf14120ca4))
+* **Endpoints:** List enum values for endpoint scaling metric values ([be959b2](https://github.com/togethercomputer/together-py/commit/be959b278bd07913aa7f76b096f68e8ddb12d302))
+* **Jig CLI:** call prewarm API after volume upload and image build ([#535](https://github.com/togethercomputer/together-py/issues/535)) ([b436f0c](https://github.com/togethercomputer/together-py/commit/b436f0ce35aa9001ee02b2eb5e2cf28346e54b6a))
+* **Evals CLI:** show files upload progress during evals create ([#534](https://github.com/togethercomputer/together-py/issues/534)) ([37ddff1](https://github.com/togethercomputer/together-py/commit/37ddff1fd7c5f313cde527adcf0c37a816a1b605))
+
+
+### Bug Fixes
+
+* **CLI:** accept active sessions autoscaling metric ([#561](https://github.com/togethercomputer/together-py/issues/561)) ([6012a84](https://github.com/togethercomputer/together-py/commit/6012a84f8e400f709a17d2b0cdc4053a9677f20a))
+* **CLI:** classify broken pipes as user aborts ([#559](https://github.com/togethercomputer/together-py/issues/559)) ([ac444a5](https://github.com/togethercomputer/together-py/commit/ac444a5efe886fed81a4389d7c71ebdfd80b2b9b))
+* **CLI:** preserve autoscaling validation diagnostics ([#553](https://github.com/togethercomputer/together-py/issues/553)) ([2abd3d0](https://github.com/togethercomputer/together-py/commit/2abd3d05fb389c081582b2e0535737abe8e90101))
+* **CLI:** preserve empty failure diagnostics ([#554](https://github.com/togethercomputer/together-py/issues/554)) ([650c00a](https://github.com/togethercomputer/together-py/commit/650c00af2072bb40d3003fefb659b32012da7c29))
+* **CLI:** preserve endpoint API failure diagnostics ([#537](https://github.com/togethercomputer/together-py/issues/537)) ([ba27d45](https://github.com/togethercomputer/together-py/commit/ba27d450eae86f4eafb9d91e8191a0863af9142c))
+* **CLI:** preserve endpoint creation diagnostics ([#541](https://github.com/togethercomputer/together-py/issues/541)) ([4641ddf](https://github.com/togethercomputer/together-py/commit/4641ddf3b624322bcd5456628549305069b6e463))
+* **CLI:** preserve endpoint deletion failure diagnostics ([#533](https://github.com/togethercomputer/together-py/issues/533)) ([6c706ae](https://github.com/togethercomputer/together-py/commit/6c706aedea354a404a0cc5155bf16ffc315f4b01))
+* **CLI:** preserve missing API key diagnostic ([#552](https://github.com/togethercomputer/together-py/issues/552)) ([3a34161](https://github.com/togethercomputer/together-py/commit/3a341610fb8c01336d89cada490832df491b35ab))
+* **CLI:** preserve missing argument diagnostics ([#549](https://github.com/togethercomputer/together-py/issues/549)) ([d98ddc1](https://github.com/togethercomputer/together-py/commit/d98ddc1b539e28a8506d63de881508bbf01d4745))
+* **CLI:** preserve model download diagnostics ([#555](https://github.com/togethercomputer/together-py/issues/555)) ([f6eb1cf](https://github.com/togethercomputer/together-py/commit/f6eb1cf24c4ebf53d3728a03bb7433ef3b527192))
+* **cli:** preserve model upload rejection diagnostic ([#560](https://github.com/togethercomputer/together-py/issues/560)) ([e192907](https://github.com/togethercomputer/together-py/commit/e192907e3043495b7202d114db2c7a61804852aa))
+* **CLI:** remove --scale-to-zero-window from beta endpoints ([#545](https://github.com/togethercomputer/together-py/issues/545)) ([53710f9](https://github.com/togethercomputer/together-py/commit/53710f97d178523b37b87800aee449749b0a9424))
+* **CLI:** show upload progress for batch submit ([#546](https://github.com/togethercomputer/together-py/issues/546)) ([5b23e37](https://github.com/togethercomputer/together-py/commit/5b23e375d3e4436821476f2f29e6fbb544a00d88))
+* **CLI:** stabilize UnknownOptionError telemetry ([#539](https://github.com/togethercomputer/together-py/issues/539)) ([23c3498](https://github.com/togethercomputer/together-py/commit/23c34988cdc351b705a5dee85f2f21da2c8e4d84))
+* **Finetuning CLI:** remove broken pagination on `list-events` command ([#540](https://github.com/togethercomputer/together-py/issues/540)) ([cd8018d](https://github.com/togethercomputer/together-py/commit/cd8018ddb910b66e8c62ade30034c3314487af0f))
+
+
+### Chores
+
+* **CLI:** drop `tqdm` dependency (DX-458) ([#523](https://github.com/togethercomputer/together-py/issues/523)) ([479dd6a](https://github.com/togethercomputer/together-py/commit/479dd6aec61141b18ff2b8da419846d9f9eec6cd))
+
 ## [2.32.0](https://github.com/togethercomputer/together-py/compare/v2.31.0...v2.32.0) (2026-08-26)
 
 
