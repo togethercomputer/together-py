@@ -18,6 +18,16 @@ def test_build_scaling_metrics_utilization() -> None:
     ]
 
 
+def test_build_scaling_metrics_active_sessions() -> None:
+    assert build_scaling_metrics(scaling_metric="active_sessions", scaling_target=25) == [
+        {
+            "name": "active_sessions",
+            "type": "METRIC_TARGET_TYPE_VALUE",
+            "target": 25,
+        }
+    ]
+
+
 def test_build_scaling_metrics_latency_with_percentile() -> None:
     assert build_scaling_metrics(
         scaling_metric="ttft",
