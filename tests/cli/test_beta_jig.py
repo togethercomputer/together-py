@@ -74,6 +74,49 @@ def _write_jig_project(path: Path) -> None:
     path.joinpath("pyproject.toml").write_text(_PYPROJECT, encoding="utf-8")
 
 
+def test_jig_config_accepts_valid_deployment_name(tmp_path: Path) -> None:
+    cfg = _jig_mod.Config.load(
+        {"project": {"name": "a-valid-jig-name"}, "tool": {"jig": {}}},
+        tmp_path / "pyproject.toml",
+    )
+
+    assert cfg.model_name == "a-valid-jig-name"
+
+
+@pytest.mark.parametrize(
+    ("data", "path", "expected_hint"),
+    [
+        (
+            {"project": {"name": "valid-name"}, "tool": {"jig": {"name": "Bad_Name"}}},
+            "pyproject.toml",
+            "update `name` in your pyproject.toml",
+        ),
+        (
+            {"project": {"name": "abc"}, "tool": {"jig": {}}},
+            "pyproject.toml",
+            "update `project.name` in your pyproject.toml",
+        ),
+        (
+            {"name": "bad_name"},
+            "jig.toml",
+            "update `name` in",
+        ),
+    ],
+)
+def test_jig_config_rejects_invalid_deployment_name(
+    tmp_path: Path,
+    data: dict[str, Any],
+    path: str,
+    expected_hint: str,
+) -> None:
+    with pytest.raises(_jig_mod.JigError) as exc_info:
+        _jig_mod.Config.load(data, tmp_path / path)
+
+    message = str(exc_info.value)
+    assert "deployment name must contain only lowercase letters, numbers, or hyphens" in message
+    assert expected_hint in message
+
+
 def test_jig_failure_exit_preserves_diagnostic(capsys: pytest.CaptureFixture[str]) -> None:
     message = "Volume example not found"
 

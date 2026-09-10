@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import json
 import time
@@ -66,6 +67,13 @@ _TRACK_READY_TIMEOUT = 120
 
 class JigError(Exception):
     """Actionable runtime error"""
+
+
+_JIG_DEPLOYMENT_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{3,62}$")
+_JIG_DEPLOYMENT_NAME_HELP = (
+    "deployment name must contain only lowercase letters, numbers, or hyphens, "
+    "start with a lowercase letter or number, and be 4-63 characters"
+)
 
 
 # == Configuration ==
@@ -181,6 +189,12 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
     return None
 
 
+def validate_deployment_name(name: str) -> str | None:
+    if _JIG_DEPLOYMENT_NAME_RE.fullmatch(name):
+        return None
+    return f"model_name: {_JIG_DEPLOYMENT_NAME_HELP}; got {name!r}"
+
+
 @dataclass
 class ExperimentalConfig:
     """Opt-in experimental features. Off by default; may change or be removed."""
@@ -206,6 +220,8 @@ class JigConfig:
     def __post_init__(self) -> None:
         if err := validate(self, type(self)):
             raise JigError(f"Invalid {self._path}: {err}")
+        if err := validate_deployment_name(self.model_name):
+            raise JigError(f"Invalid {self._path}: {err}. Tip: {self._unique_name_hint}")
 
     @classmethod
     def find(cls, config_path: str | None = None, init: bool = False) -> JigConfig:
