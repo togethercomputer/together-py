@@ -378,9 +378,7 @@ class TestBetaEndpointsDeploy:
         assert create_deployment_route.call_count == 1
 
     @pytest.mark.respx(base_url=base_url)
-    def test_deploy_accepts_active_sessions_scaling_metric(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
+    def test_deploy_accepts_active_sessions_scaling_metric(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_model_and_config(respx_mock)
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(

@@ -170,9 +170,7 @@ class TestBetaEndpointsUpdate:
         }
 
     @pytest.mark.respx(base_url=base_url)
-    def test_update_accepts_active_sessions_scaling_metric(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
+    def test_update_accepts_active_sessions_scaling_metric(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
         route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json=_deployment_body())
