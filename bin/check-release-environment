@@ -2,8 +2,9 @@
 
 errors=()
 
-if [ -z "${PYPI_TOKEN}" ]; then
-  errors+=("The PYPI_TOKEN secret has not been set. Please set it in either this repository's secrets or your organization secrets.")
+# Publishing uses PyPI trusted publishing (GitHub OIDC). No PYPI_TOKEN is required.
+if ! grep -q 'id-token: write' .github/workflows/publish-pypi.yml; then
+  errors+=("publish-pypi.yml is missing id-token: write, required for PyPI trusted publishing.")
 fi
 
 lenErrors=${#errors[@]}
