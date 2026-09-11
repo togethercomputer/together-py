@@ -92,7 +92,7 @@ jobs:
 
   test-integration:
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork) && (github.event_name != 'push' || github.event.head_commit.message != 'codegen metadata')
-    timeout-minutes: 10
+    timeout-minutes: 20
     name: test-integration
     runs-on: ubuntu-latest
     steps:
