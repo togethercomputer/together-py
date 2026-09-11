@@ -11,7 +11,10 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._assert_explicit_project_id import assert_explicit_project_id
-from together.lib.cli.api.beta.models.remote_uploads._utils import print_remote_upload_detail
+from together.lib.cli.api.beta.models.remote_uploads._utils import (
+    apply_huggingface_revision,
+    print_remote_upload_detail,
+)
 
 
 async def create(
@@ -19,8 +22,16 @@ async def create(
     *,
     remote_url: Annotated[
         str,
-        Parameter(name="--from", help="Hugging Face repository URL or presigned S3/GCS archive URL"),
+        Parameter(
+            name="--from",
+            help="Hugging Face repository URL, org/model, or presigned S3/GCS archive URL. "
+            "Pin an HF revision with @<commit|tag|branch> or --revision",
+        ),
     ],
+    revision: Annotated[
+        Optional[str],
+        Parameter(help="Hugging Face commit, tag, or branch to import"),
+    ] = None,
     token: Annotated[
         Optional[str], Parameter(help="Source credential for a gated or private Hugging Face repository")
     ] = None,
@@ -29,6 +40,8 @@ async def create(
     """Start a remote upload job."""
 
     await assert_explicit_project_id(config)
+
+    remote_url = apply_huggingface_revision(remote_url, revision)
 
     response = await show_loading_status(
         "Starting remote upload...",
