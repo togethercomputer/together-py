@@ -61,6 +61,7 @@ class TestDeployments:
             model_revision_id="modelRevisionId",
             placement={
                 "inline": {
+                    "compliance_policy": {"hipaa": True},
                     "constraint": "ENFORCEMENT_REQUIRED",
                     "regions": ["string"],
                 }
@@ -439,6 +440,7 @@ class TestAsyncDeployments:
             model_revision_id="modelRevisionId",
             placement={
                 "inline": {
+                    "compliance_policy": {"hipaa": True},
                     "constraint": "ENFORCEMENT_REQUIRED",
                     "regions": ["string"],
                 }
