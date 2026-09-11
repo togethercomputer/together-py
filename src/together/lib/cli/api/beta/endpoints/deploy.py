@@ -196,6 +196,9 @@ async def deploy(
             "Do not pass --model-revision when --model already includes a revision. "
             "Specify the revision only in the fully qualified --model path."
         )
+    inline_placement_value = placement.to_json()
+    if placement_id and inline_placement_value is not None:
+        raise ValueError("Use either --placement or inline placement options, not both.")
 
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
@@ -224,7 +227,7 @@ async def deploy(
     if placement_id:
         placement_value = PlacementProfile(profile=placement_id)
     else:
-        placement_value = placement.to_json()
+        placement_value = inline_placement_value
 
     model_path = construct_model_path(resolved_model, resolved_revision)
 
@@ -354,8 +357,10 @@ def _print_deployment_preview(
                     "--constraint",
                     "required" if constraint == "ENFORCEMENT_REQUIRED" else "preferred",
                 )
-            if inline.get("hipaa"):
-                add_row("--hipaa", "true")
+            if (compliance_policy := inline.get("compliance_policy")) and (
+                hipaa := compliance_policy.get("hipaa")
+            ) is not None:
+                add_row("--placement.hipaa", "true" if hipaa else "false")
 
     if enable_lora is not None:
         add_row("--enable-lora", "true" if enable_lora else "false")

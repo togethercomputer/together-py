@@ -11,6 +11,7 @@ from rich.columns import Columns
 from rich.padding import Padding
 
 from together.types.beta import Endpoint, EndpointDeployment
+from together.types.beta.endpoint_deployment import PlacementProfile
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_datetime
 from together.lib.cli.utils.config import CLIConfigParameter
@@ -261,5 +262,27 @@ def print_deployment_detail(deployment: EndpointDeployment | None) -> None:
     console.print(
         f"[dim][primary]Traffic:[/primary][/dim]\t{format_estimated_traffic(deployment.estimated_effective_traffic_share)}"
     )
+    _print_placement(deployment)
     console.print(f"[dim][primary]ETag:[/primary][/dim]\t\t{deployment.etag}")
     console.print(f"[dim][primary]Created:[/primary][/dim]\t{format_datetime(deployment.created_at)}")
+
+
+def _print_placement(deployment: EndpointDeployment) -> None:
+    placement = deployment.placement
+    if placement is None:
+        return
+    if isinstance(placement, PlacementProfile):
+        console.print(f"[dim][primary]Placement:[/primary][/dim]\t{placement.profile}")
+        return
+
+    inline = getattr(placement, "inline", None)
+    if inline is None:
+        return
+    if inline.regions:
+        console.print(f"[dim][primary]Regions:[/primary][/dim]\t{', '.join(inline.regions)}")
+    if inline.constraint:
+        constraint = "required" if inline.constraint == "ENFORCEMENT_REQUIRED" else "preferred"
+        console.print(f"[dim][primary]Constraint:[/primary][/dim]\t{constraint}")
+    hipaa = getattr(inline.compliance_policy, "hipaa", None) if inline.compliance_policy else None
+    if hipaa is not None:
+        console.print(f"[dim][primary]HIPAA:[/primary][/dim]\t\t{'Yes' if hipaa else 'No'}")

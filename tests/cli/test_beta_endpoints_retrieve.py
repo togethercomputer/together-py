@@ -122,6 +122,45 @@ class TestBetaEndpointsRetrieve:
         assert payload["endpointId"] == "ep_1"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_deployment_exposes_hipaa_compliance(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(
+                200,
+                json=_deployment_body(
+                    hardware="1x-h100",
+                    etag="etag-1",
+                    placement={
+                        "inline": {
+                            "regions": ["us-east-1"],
+                            "constraint": "ENFORCEMENT_REQUIRED",
+                            "compliancePolicy": {"hipaa": True},
+                        }
+                    },
+                ),
+            )
+        )
+
+        json_result = cli_runner.invoke(
+            ["beta", "endpoints", "retrieve", "dep_control", "--project", "proj", "--json"]
+        )
+        assert json_result.exit_code == 0, json_result.output
+        payload = json.loads(json_result.output)
+        assert payload["placement"]["inline"]["compliancePolicy"]["hipaa"] is True
+
+        result = cli_runner.invoke(["beta", "endpoints", "retrieve", "dep_control", "--project", "proj"])
+        assert result.exit_code == 0, result.output
+        output = " ".join(result.output.split())
+        assert "HIPAA" in output
+        assert "Yes" in output
+        assert "us-east-1" in output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/endpoints").mock(
