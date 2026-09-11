@@ -97,17 +97,18 @@ def _long_option_names_in_tokens(tokens: list[str]) -> list[str]:
     return names
 
 
-def _legacy_command_before_first_option(tokens: list[str]) -> tuple[str, bool]:
+def _unknown_command_fallback(tokens: list[str]) -> tuple[str, bool]:
     """Fallback when cyclopts cannot resolve a command chain (unknown invocations)."""
-    parts: list[str] = []
-    for token in tokens:
-        if token.startswith("--"):
-            break
-        parts.append(token)
-    is_beta_command = bool(parts and parts[0] == "beta")
-    if is_beta_command:
-        parts = parts[1:]
-    return (" ".join(parts), is_beta_command)
+    is_beta_command = bool(tokens and tokens[0] == "beta")
+    command_index = 1 if is_beta_command else 0
+    if command_index >= len(tokens) or tokens[command_index].startswith("-"):
+        return ("", is_beta_command)
+
+    # Once command resolution fails, every later token may be an argument value.
+    # Keep only the unknown subcommand, including when a caller supplied a quoted
+    # invocation as one token.
+    command = tokens[command_index].split(maxsplit=1)[0]
+    return (command, is_beta_command)
 
 
 # First subcommand token only (alias -> primary name) for stable telemetry.
@@ -149,7 +150,7 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
     argv = list(tokens)
     argv = _expand_implicit_retrieve_tokens(app, *argv)
     chain, apps, rest_after_chain = app.parse_commands(argv, include_parent_meta=False)
-    legacy_cmd, legacy_beta = _legacy_command_before_first_option(argv)
+    fallback_cmd, fallback_beta = _unknown_command_fallback(argv)
 
     if chain:
         is_beta_command = chain[0] == "beta"
@@ -157,10 +158,10 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
         parsed_command = " ".join(chain_tail)
         # ``beta`` alone matches first; remaining tokens are not nested beta subcommands (invalid path).
         if chain == ("beta",) and rest_after_chain:
-            parsed_command = legacy_cmd
+            parsed_command = fallback_cmd
     else:
-        parsed_command = legacy_cmd
-        is_beta_command = legacy_beta
+        parsed_command = fallback_cmd
+        is_beta_command = fallback_beta
 
     # App.default handlers (e.g. beta endpoints retrieve) don't rewrite argv; still tag telemetry.
     parsed_command = _telemetry_command_for_default(parsed_command, apps, rest_after_chain)
