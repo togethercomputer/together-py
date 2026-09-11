@@ -357,8 +357,10 @@ def _print_deployment_preview(
                     "--constraint",
                     "required" if constraint == "ENFORCEMENT_REQUIRED" else "preferred",
                 )
-            if (compliance_policy := inline.get("compliance_policy")) and compliance_policy.get("hipaa") is not None:
-                add_row("--placement.hipaa", "true" if compliance_policy["hipaa"] else "false")
+            if (compliance_policy := inline.get("compliance_policy")) and (
+                hipaa := compliance_policy.get("hipaa")
+            ) is not None:
+                add_row("--placement.hipaa", "true" if hipaa else "false")
 
     if enable_lora is not None:
         add_row("--enable-lora", "true" if enable_lora else "false")
