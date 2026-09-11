@@ -146,9 +146,7 @@ class TestBetaEndpointsRetrieve:
             )
         )
 
-        json_result = cli_runner.invoke(
-            ["beta", "endpoints", "retrieve", "dep_control", "--project", "proj", "--json"]
-        )
+        json_result = cli_runner.invoke(["beta", "endpoints", "retrieve", "dep_control", "--project", "proj", "--json"])
         assert json_result.exit_code == 0, json_result.output
         payload = json.loads(json_result.output)
         assert payload["placement"]["inline"]["compliancePolicy"]["hipaa"] is True

@@ -11,7 +11,6 @@ from rich.columns import Columns
 from rich.padding import Padding
 
 from together.types.beta import Endpoint, EndpointDeployment
-from together.types.beta.endpoint_deployment import PlacementProfile
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_datetime
 from together.lib.cli.utils.config import CLIConfigParameter
@@ -19,6 +18,7 @@ from together.types.beta.endpoints import AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
+from together.types.beta.endpoint_deployment import PlacementProfile
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
