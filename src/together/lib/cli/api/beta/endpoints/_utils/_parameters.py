@@ -4,7 +4,6 @@ from typing import Literal, Optional, Annotated
 from typing_extensions import override
 
 from cyclopts import Group, Parameter
-from cyclopts.validators import mutually_exclusive
 
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
@@ -19,7 +18,7 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH
 class PlacementModel:
     regions: Optional[str] = None
     constraint: Optional[Literal["required", "preferred"]] = None
-    # hipaa: Optional[bool] = None
+    hipaa: Optional[bool] = None
 
     def __init__(
         self,
@@ -27,14 +26,14 @@ class PlacementModel:
         constraint: Annotated[
             Optional[Literal["required", "preferred"]], Parameter(help="Inline placement enforcement")
         ] = None,
-        # hipaa: Annotated[Optional[bool], Parameter(help="Require HIPAA-eligible placement", negative=())] = None,
+        hipaa: Annotated[Optional[bool], Parameter(help="Require HIPAA-eligible placement", negative=())] = None,
     ):
         self.regions = regions
         self.constraint = constraint
-        # self.hipaa = hipaa
+        self.hipaa = hipaa
 
     def to_json(self) -> Placement | None:
-        if self.regions is None and self.constraint is None:  # and self.hipaa is None:
+        if self.regions is None and self.constraint is None and self.hipaa is None:
             return None
 
         inline: DeploymentPlacementConfigParam = {}
@@ -43,8 +42,8 @@ class PlacementModel:
             inline["regions"] = self.regions.split(",")
         if self.constraint:
             inline["constraint"] = "ENFORCEMENT_REQUIRED" if self.constraint == "required" else "ENFORCEMENT_PREFERRED"
-        # if self.hipaa:
-        #     inline["hipaa"] = self.hipaa
+        if self.hipaa is not None:
+            inline["compliance_policy"] = {"hipaa": self.hipaa}
 
         return PlacementInline(inline=inline)
 
@@ -52,7 +51,7 @@ class PlacementModel:
 placement_model = PlacementModel()
 
 
-PlacementGroup = Group(validator=mutually_exclusive)
+PlacementGroup = Group("Placement")
 
 
 class ModelPromptParameter(PromptParameter):
