@@ -567,6 +567,31 @@ def test_check_parquet_reports_progress_callback(tmp_path: Path) -> None:
     assert parquet_events[-1].processed_bytes == parquet_events[-1].total_bytes == file.stat().st_size
 
 
+def test_check_file_rejects_oversized_parquet_before_format_checks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pyarrow = pytest.importorskip("pyarrow")
+    parquet = pytest.importorskip("pyarrow.parquet")
+
+    file = tmp_path / "oversized.parquet"
+    table = pyarrow.table(
+        {
+            "input_ids": [[1]],
+            "attention_mask": [[1]],
+            "labels": [[1]],
+            "position_ids": [[0]],
+        }
+    )
+    parquet.write_table(table, file)
+    monkeypatch.setattr("together.lib.utils.files.MAX_FILE_SIZE_GB", 0)
+
+    report = check_file(file)
+
+    assert not report["is_check_passed"]
+    assert report["file_size"] == file.stat().st_size
+    assert "Maximum supported file size" in report["message"]
+
+
 def test_check_progress_tracker_does_not_reset_across_phases(tmp_path: Path) -> None:
     from together.lib.cli.components.check_progress import CheckProgressTracker
 
