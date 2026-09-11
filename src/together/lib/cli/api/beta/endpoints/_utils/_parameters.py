@@ -4,6 +4,7 @@ from typing import Literal, Optional, Annotated
 from typing_extensions import override
 
 from cyclopts import Group, Parameter
+from cyclopts.validators import mutually_exclusive
 
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
@@ -51,7 +52,7 @@ class PlacementModel:
 placement_model = PlacementModel()
 
 
-PlacementGroup = Group("Placement")
+PlacementGroup = Group(validator=mutually_exclusive)
 
 
 class ModelPromptParameter(PromptParameter):
