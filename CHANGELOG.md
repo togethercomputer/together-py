@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.34.0](https://github.com/togethercomputer/together-py/compare/v2.33.2...v2.34.0) (2026-09-11)
+
+
+### Features
+
+* **deployments:** add deployment compliance policy for hipaa requirements ([c5865fa](https://github.com/togethercomputer/together-py/commit/c5865fa53f83c87444cff05fc8bc1815c31c49d4))
+
+
+### Bug Fixes
+
+* **openapi:** align RL optimizer config names ([588451d](https://github.com/togethercomputer/together-py/commit/588451dd6870d2b71af4ded047bd0cfd81b47a35))
+
 ## [2.33.2](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.2) (2026-09-10)
 
 
