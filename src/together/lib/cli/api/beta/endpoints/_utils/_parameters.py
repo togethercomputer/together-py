@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, Annotated
+from typing import TYPE_CHECKING, Literal, Optional, Annotated
 from typing_extensions import override
 
 from cyclopts import Group, Parameter
-from cyclopts.validators import mutually_exclusive
+
+if TYPE_CHECKING:
+    from cyclopts.argument import ArgumentCollection
 
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
@@ -52,7 +54,21 @@ class PlacementModel:
 placement_model = PlacementModel()
 
 
-PlacementGroup = Group(validator=mutually_exclusive)
+def exclusive_profile_or_inline(arguments: ArgumentCollection) -> None:
+    """Treat a placement profile as exclusive with inline flags.
+
+    Cyclopts flattens ``PlacementModel`` fields into the same group, so
+    ``mutually_exclusive`` would also forbid combining ``--placement.regions``,
+    ``--placement.constraint``, and ``--placement.hipaa``.
+    """
+    leaves = [argument for argument in arguments.filter_by(value_set=True) if not argument.children]
+    has_profile = any(argument.field_info.name == "placement_id" for argument in leaves)
+    has_inline = any(argument.keys for argument in leaves)
+    if has_profile and has_inline:
+        raise ValueError("Use either --placement or inline placement options, not both.")
+
+
+PlacementGroup = Group(validator=exclusive_profile_or_inline)
 
 
 class ModelPromptParameter(PromptParameter):
