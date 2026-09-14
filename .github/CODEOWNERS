@@ -2,4 +2,4 @@
 # GitHub requests a review from these owners when a PR touches matching paths.
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-* @blainekasten
+* @togethercomputer/devrel
