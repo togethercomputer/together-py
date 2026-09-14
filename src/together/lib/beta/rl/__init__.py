@@ -32,9 +32,11 @@ from ....types.beta.rl.sampling_params import SamplingParams
 from ....types.beta.rl.grpo_loss_params import GrpoLossParams
 from ....types.beta.rl.sampled_sequence import SampledSequence
 from ....types.beta.rl.weight_sync_type import WeightSyncType
+from ....types.beta.rl.adam_config_param import AdamConfigParam as AdamConfig
 from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
 from ....types.beta.rl.model_input_param import ModelInput
+from ....types.beta.rl.muon_config_param import MuonConfigParam as MuonConfig
 from ....types.beta.rl.optim_step_result import OptimStepResult
 from ....types.beta.rl.checkpoint_variant import CheckpointVariant
 from ....types.beta.rl.session_error_code import SessionErrorCode
@@ -54,8 +56,6 @@ from ....types.beta.rl.encoded_text_chunk_param import EncodedTextChunk
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
 from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
 from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
-from ....types.beta.rl.muon_optimizer_config_param import MuonOptimizerConfigParam as MuonOptimizerConfig
-from ....types.beta.rl.adamw_optimizer_config_param import AdamwOptimizerConfigParam as AdamwOptimizerConfig
 from ....types.beta.rl.model_resource_create_params import ComputeConfig
 from ....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
 from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
@@ -79,8 +79,8 @@ __all__ = [
     "MuonParams",
     "LoraConfig",
     "OptimizerConfig",
-    "AdamwOptimizerConfig",
-    "MuonOptimizerConfig",
+    "AdamConfig",
+    "MuonConfig",
     "MuonScalingStrategy",
     "Checkpoint",
     "CheckpointType",
