@@ -186,6 +186,7 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
+        assert "--placement.hipaa" in output
         assert "--scale-to-zero-window" not in output
 
     def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
@@ -194,6 +195,27 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Unknown option" in result.output
         assert "--scale-to-zero-window" in result.output
+
+    def test_deploy_rejects_placement_profile_with_inline_options(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "ml_1",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--placement",
+                "pp_1",
+                "--placement.hipaa",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "Use either --placement or inline placement options" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_ignores_leftover_scale_to_zero_window(
@@ -300,6 +322,52 @@ class TestBetaEndpointsDeploy:
         assert deployment_body["autoscaling"] == {"minReplicas": 1, "maxReplicas": 1}
         update_body = json.loads(cast(Call, update_endpoint_route.calls[0]).request.content.decode())
         assert update_body["trafficSplit"] == [{"deploymentId": "dep_1", "weight": 1.0}]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_sends_hipaa_compliance_policy(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--placement.regions",
+                "us-east-1,us-west-2",
+                "--placement.constraint",
+                "required",
+                "--placement.hipaa",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["placement"] == {
+            "inline": {
+                "regions": ["us-east-1", "us-west-2"],
+                "constraint": "ENFORCEMENT_REQUIRED",
+                "compliancePolicy": {"hipaa": True},
+            }
+        }
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_preview_shows_gpu_and_estimated_price_before_project_confirm(
