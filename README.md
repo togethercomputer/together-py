@@ -1,0 +1,913 @@
+# Together Python API library
+
+<!-- prettier-ignore -->
+[![PyPI version](https://img.shields.io/pypi/v/together.svg?label=pypi%20(stable))](https://pypi.org/project/together/)
+
+The Together Python library provides convenient access to the Together REST API from any Python 3.9+
+application. The library includes type definitions for all request params and response fields,
+and offers both synchronous and asynchronous clients powered by [httpx](https://github.com/encode/httpx).
+
+It is generated with [Stainless](https://www.stainless.com/).
+
+## Documentation
+
+The REST API documentation can be found on [docs.together.ai](https://docs.together.ai/). The full API of this library can be found in [api.md](api.md).
+
+## Installation
+
+```sh
+pip install together
+```
+
+```sh
+uv add together
+```
+
+## Usage
+
+The full API of this library can be found in [api.md](api.md).
+
+```python
+import os
+from together import Together
+
+client = Together(
+    api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
+)
+
+chat_completion = client.chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test!",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+)
+print(chat_completion.choices)
+```
+
+While you can provide an `api_key` keyword argument,
+we recommend using [python-dotenv](https://pypi.org/project/python-dotenv/)
+to add `TOGETHER_API_KEY="My API Key"` to your `.env` file
+so that your API Key is not stored in source control.
+
+## Async usage
+
+Simply import `AsyncTogether` instead of `Together` and use `await` with each API call:
+
+```python
+import os
+import asyncio
+from together import AsyncTogether
+
+client = AsyncTogether(
+    api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
+)
+
+
+async def main() -> None:
+    chat_completion = await client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": "Say this is a test!",
+            }
+        ],
+        model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    )
+    print(chat_completion.choices)
+
+
+asyncio.run(main())
+```
+
+Functionality between the synchronous and asynchronous clients is otherwise identical.
+
+### With aiohttp
+
+By default, the async client uses `httpx` for HTTP requests. However, for improved concurrency performance you may also use `aiohttp` as the HTTP backend.
+
+You can enable this by installing `aiohttp`:
+
+```sh
+# install from PyPI
+pip install '--pre together[aiohttp]'
+```
+
+Then you can enable it by instantiating the client with `http_client=DefaultAioHttpClient()`:
+
+```python
+import os
+import asyncio
+from together import DefaultAioHttpClient
+from together import AsyncTogether
+
+
+async def main() -> None:
+    async with AsyncTogether(
+        api_key=os.environ.get("TOGETHER_API_KEY"),  # This is the default and can be omitted
+        http_client=DefaultAioHttpClient(),
+    ) as client:
+        chat_completion = await client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Say this is a test!",
+                }
+            ],
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        )
+        print(chat_completion.choices)
+
+
+asyncio.run(main())
+```
+
+## Streaming responses
+
+We provide support for streaming responses using Server Side Events (SSE).
+
+```python
+from together import Together
+
+client = Together()
+
+stream = client.chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test!",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    stream=True,
+)
+for chat_completion in stream:
+    print(chat_completion.choices)
+```
+
+The async client uses the exact same interface.
+
+```python
+from together import AsyncTogether
+
+client = AsyncTogether()
+
+stream = await client.chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test!",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    stream=True,
+)
+async for chat_completion in stream:
+    print(chat_completion.choices)
+```
+
+## Realtime transcription
+
+Transcribe live audio — a microphone, a phone call, a meeting — as it is being
+spoken. You stream PCM audio over a WebSocket and receive interim text within
+moments and a finalized transcript for each utterance. Requires the `realtime`
+extra:
+
+```sh
+uv add "together[realtime]"
+```
+
+Use `client.beta.realtime.transcription()`: a session built for live sources. If
+the connection drops mid-conversation, the session holds on to the speech the
+server hadn't transcribed yet, reconnects automatically, and picks up where
+the transcript left off — words spoken during the outage still come back as
+text.
+
+```python
+from together import AsyncTogether
+from together.realtime import TranscriptDelta, TranscriptCompleted
+
+client = AsyncTogether()
+
+async with client.beta.realtime.transcription(
+    model="openai/whisper-large-v3",
+    sample_rate=16_000,
+) as session:
+    # feed audio from your capture source as it arrives (any chunk size)
+    await session.append(pcm_chunk)  # 16 kHz mono 16-bit PCM
+
+    async for event in session:
+        if isinstance(event, TranscriptDelta):
+            print("interim:", event.text)  # updates while a phrase is spoken
+        elif isinstance(event, TranscriptCompleted):
+            print("final:", event.text)  # one per finished utterance
+
+    transcript = await session.flush()  # finalize whatever was said last
+```
+
+What to know before integrating:
+
+- **Audio in**: 16 kHz mono 16-bit PCM (`pcm_s16le_16000`). Resample your
+  source before appending — passing `sample_rate=` lets the SDK reject a
+  mismatch loudly instead of incorrecly transcribing different sample rate .
+  `append()` never blocks on network state, so it is safe to call from a capture loop.
+- **Utterance boundaries**: detected server-side by default — final
+  transcripts arrive on their own as the speaker pauses. To control
+  segmentation yourself, pass `turn_detection={"type": "none"}` and call
+  `await session.commit()` when each segment ends.
+- **Tuning**: `language`, `prompt`, and turn-detection parameters
+  (`min_silence_duration_ms`, `max_speech_duration_s`, ...) are passed
+  through to the service.
+- **When the connection drops**: The session emits
+  `Reconnecting`/`Reconnected` events and tries to retry the connection.
+   Transcripts recomputed from speech that was carried across the reconnect are marked
+  `replayed=True` and may overlap text you already received; voice agents
+  that act on each final can set `buffer={"max_replay_seconds": 0}` to
+  resume live with no re-emission instead.
+- **If audio is ever dropped** (an outage longer than the retention window),
+  the session tells you with a `BufferGap` event.
+- **If an endpoint fails for good**, calls raise `RealtimeConnectionError`.
+  To keep a conversation alive across endpoint outages, run a failover ring —
+  see [`examples/realtime_failover.py`](examples/realtime_failover.py):
+  on failure, `session.pending_audio()` hands you the un-transcribed speech
+  to seed a new session on another endpoint.
+- **Sync applications**: `Together().beta.realtime.transcription(...)` mirrors the
+  async API on a background thread — good for a handful of sessions; use the
+  async client for high concurrency.
+- **Full manual control** (raw wire events, no automatic recovery):
+  `client.beta.realtime.connect()`.
+
+See [`examples/realtime_transcription.py`](examples/realtime_transcription.py)
+for a runnable end-to-end example.
+
+## Using types
+
+Nested request parameters are [TypedDicts](https://docs.python.org/3/library/typing.html#typing.TypedDict). Responses are [Pydantic models](https://docs.pydantic.dev) which also provide helper methods for things like:
+
+- Serializing back into JSON, `model.to_json()`
+- Converting to a dictionary, `model.to_dict()`
+
+Typed requests and responses provide autocomplete and documentation within your editor. If you would like to see type errors in VS Code to help catch bugs earlier, set `python.analysis.typeCheckingMode` to `basic`.
+
+## Pagination
+
+List methods in the Together API are paginated.
+
+This library provides auto-paginating iterators with each list response, so you do not have to request successive pages manually:
+
+```python
+from together import Together
+
+client = Together()
+
+all_endpoints = []
+# Automatically fetches more pages as needed.
+for endpoint in client.beta.endpoints.list(
+    project_id="projectId",
+):
+    # Do something with endpoint here
+    all_endpoints.append(endpoint)
+print(all_endpoints)
+```
+
+Or, asynchronously:
+
+```python
+import asyncio
+from together import AsyncTogether
+
+client = AsyncTogether()
+
+
+async def main() -> None:
+    all_endpoints = []
+    # Iterate through items across all pages, issuing requests as needed.
+    async for endpoint in client.beta.endpoints.list(
+        project_id="projectId",
+    ):
+        all_endpoints.append(endpoint)
+    print(all_endpoints)
+
+
+asyncio.run(main())
+```
+
+Alternatively, you can use the `.has_next_page()`, `.next_page_info()`, or `.get_next_page()` methods for more granular control working with pages:
+
+```python
+first_page = await client.beta.endpoints.list(
+    project_id="projectId",
+)
+if first_page.has_next_page():
+    print(f"will fetch next page using these details: {first_page.next_page_info()}")
+    next_page = await first_page.get_next_page()
+    print(f"number of items we just fetched: {len(next_page.data)}")
+
+# Remove `await` for non-async usage.
+```
+
+Or just work directly with the returned data:
+
+```python
+first_page = await client.beta.endpoints.list(
+    project_id="projectId",
+)
+
+print(f"next page cursor: {first_page.next_cursor}")  # => "next page cursor: ..."
+for endpoint in first_page.data:
+    print(endpoint.id)
+
+# Remove `await` for non-async usage.
+```
+
+## Nested params
+
+Nested parameters are dictionaries, typed using `TypedDict`, for example:
+
+```python
+from together import Together
+
+client = Together()
+
+chat_completion = client.chat.completions.create(
+    messages=[
+        {
+            "content": "content",
+            "role": "system",
+        }
+    ],
+    model="model",
+    reasoning={},
+)
+print(chat_completion.reasoning)
+```
+
+The async client uses the exact same interface. If you pass a [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) instance, the file contents will be read asynchronously automatically.
+
+## Handling errors
+
+When the library is unable to connect to the API (for example, due to network connection problems or a timeout), a subclass of `together.APIConnectionError` is raised.
+
+When the API returns a non-success status code (that is, 4xx or 5xx
+response), a subclass of `together.APIStatusError` is raised, containing `status_code` and `response` properties.
+
+All errors inherit from `together.APIError`.
+
+```python
+import together
+from together import Together
+
+client = Together()
+
+try:
+    client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": "Say this is a test",
+            }
+        ],
+        model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    )
+except together.APIConnectionError as e:
+    print("The server could not be reached")
+    print(e.__cause__)  # an underlying Exception, likely raised within httpx.
+except together.RateLimitError as e:
+    print("A 429 status code was received; we should back off a bit.")
+except together.APIStatusError as e:
+    print("Another non-200-range status code was received")
+    print(e.status_code)
+    print(e.response)
+```
+
+Error codes are as follows:
+
+| Status Code | Error Type                 |
+| ----------- | -------------------------- |
+| 400         | `BadRequestError`          |
+| 401         | `AuthenticationError`      |
+| 403         | `PermissionDeniedError`    |
+| 404         | `NotFoundError`            |
+| 422         | `UnprocessableEntityError` |
+| 429         | `RateLimitError`           |
+| >=500       | `InternalServerError`      |
+| N/A         | `APIConnectionError`       |
+
+### Retries
+
+Certain errors are automatically retried 2 times by default, with a short exponential backoff.
+Connection errors (for example, due to a network connectivity problem), 408 Request Timeout, 409 Conflict,
+429 Rate Limit, and >=500 Internal errors are all retried by default.
+
+You can use the `max_retries` option to configure or disable retry settings:
+
+```python
+from together import Together
+
+# Configure the default for all requests:
+client = Together(
+    # default is 2
+    max_retries=0,
+)
+
+# Or, configure per-request:
+client.with_options(max_retries=5).chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+)
+```
+
+### Timeouts
+
+By default requests time out after 1 minute. You can configure this with a `timeout` option,
+which accepts a float or an [`httpx.Timeout`](https://www.python-httpx.org/advanced/timeouts/#fine-tuning-the-configuration) object:
+
+```python
+from together import Together
+
+# Configure the default for all requests:
+client = Together(
+    # 20 seconds (default is 1 minute)
+    timeout=20.0,
+)
+
+# More granular control:
+client = Together(
+    timeout=httpx.Timeout(60.0, read=5.0, write=10.0, connect=2.0),
+)
+
+# Override per-request:
+client.with_options(timeout=5.0).chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+)
+```
+
+On timeout, an `APITimeoutError` is thrown.
+
+Note that requests that time out are [retried twice by default](#retries).
+
+## Advanced
+
+### Logging
+
+We use the standard library [`logging`](https://docs.python.org/3/library/logging.html) module.
+
+You can enable logging by setting the environment variable `TOGETHER_LOG` to `info`.
+
+```shell
+$ export TOGETHER_LOG=info
+```
+
+Or to `debug` for more verbose logging.
+
+### How to tell whether `None` means `null` or missing
+
+In an API response, a field may be explicitly `null`, or missing entirely; in either case, its value is `None` in this library. You can differentiate the two cases with `.model_fields_set`:
+
+```py
+if response.my_field is None:
+  if 'my_field' not in response.model_fields_set:
+    print('Got json like {}, without a "my_field" key present at all.')
+  else:
+    print('Got json like {"my_field": null}.')
+```
+
+### Accessing raw response data (e.g. headers)
+
+The "raw" Response object can be accessed by prefixing `.with_raw_response.` to any HTTP method call, e.g.,
+
+```py
+from together import Together
+
+client = Together()
+response = client.chat.completions.with_raw_response.create(
+    messages=[{
+        "role": "user",
+        "content": "Say this is a test",
+    }],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+)
+print(response.headers.get('X-My-Header'))
+
+completion = response.parse()  # get the object that `chat.completions.create()` would have returned
+print(completion.choices)
+```
+
+These methods return an [`APIResponse`](https://github.com/togethercomputer/together-py/tree/main/src/together/_response.py) object.
+
+The async client returns an [`AsyncAPIResponse`](https://github.com/togethercomputer/together-py/tree/main/src/together/_response.py) with the same structure, the only difference being `await`able methods for reading the response content.
+
+#### `.with_streaming_response`
+
+The above interface eagerly reads the full response body when you make the request, which may not always be what you want.
+
+To stream the response body, use `.with_streaming_response` instead, which requires a context manager and only reads the response body once you call `.read()`, `.text()`, `.json()`, `.iter_bytes()`, `.iter_text()`, `.iter_lines()` or `.parse()`. In the async client, these are async methods.
+
+```python
+with client.chat.completions.with_streaming_response.create(
+    messages=[
+        {
+            "role": "user",
+            "content": "Say this is a test",
+        }
+    ],
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+) as response:
+    print(response.headers.get("X-My-Header"))
+
+    for line in response.iter_lines():
+        print(line)
+```
+
+The context manager is required so that the response will reliably be closed.
+
+### Making custom/undocumented requests
+
+This library is typed for convenient access to the documented API.
+
+If you need to access undocumented endpoints, params, or response properties, the library can still be used.
+
+#### Undocumented endpoints
+
+To make requests to undocumented endpoints, you can make requests using `client.get`, `client.post`, and other
+http verbs. Options on the client will be respected (such as retries) when making this request.
+
+```py
+import httpx
+
+response = client.post(
+    "/foo",
+    cast_to=httpx.Response,
+    body={"my_param": True},
+)
+
+print(response.headers.get("x-foo"))
+```
+
+#### Undocumented request params
+
+If you want to explicitly send an extra param, you can do so with the `extra_query`, `extra_body`, and `extra_headers` request
+options.
+
+#### Undocumented response properties
+
+To access undocumented response properties, you can access the extra fields like `response.unknown_prop`. You
+can also get all the extra fields on the Pydantic model as a dict with
+[`response.model_extra`](https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel.model_extra).
+
+### Configuring the HTTP client
+
+You can directly override the [httpx client](https://www.python-httpx.org/api/#client) to customize it for your use case, including:
+
+- Support for [proxies](https://www.python-httpx.org/advanced/proxies/)
+- Custom [transports](https://www.python-httpx.org/advanced/transports/)
+- Additional [advanced](https://www.python-httpx.org/advanced/clients/) functionality
+
+```python
+import httpx
+from together import Together, DefaultHttpxClient
+
+client = Together(
+    # Or use the `TOGETHER_BASE_URL` env var
+    base_url="http://my.test.server.example.com:8083",
+    http_client=DefaultHttpxClient(
+        proxy="http://my.test.proxy.example.com",
+        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+    ),
+)
+```
+
+You can also customize the client on a per-request basis by using `with_options()`:
+
+```python
+client.with_options(http_client=DefaultHttpxClient(...))
+```
+
+### Managing HTTP resources
+
+By default the library closes underlying HTTP connections whenever the client is [garbage collected](https://docs.python.org/3/reference/datamodel.html#object.__del__). You can manually close the client using the `.close()` method if desired, or with a context manager that closes when exiting.
+
+```py
+from together import Together
+
+with Together() as client:
+  # make requests here
+  ...
+
+# HTTP client is now closed
+```
+
+## Usage – CLI
+
+### Files
+
+```bash
+# Help
+tg files --help
+
+# Check file
+tg files check example.jsonl
+
+# Upload file
+tg files upload example.jsonl
+
+# List files
+tg files list
+
+# Retrieve file metadata
+tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+
+# Retrieve file content
+tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+
+# Delete remote file
+tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+```
+
+### Fine-tuning
+
+```bash
+# `tg ft` and `tg fine-tuning` are equivalent
+
+# Help
+tg ft --help
+
+# Create fine-tune job
+tg ft create \
+  --model togethercomputer/llama-2-7b-chat \
+  --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
+
+# List fine-tune jobs
+tg ft list
+
+# Retrieve fine-tune job details
+tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# List fine-tune job events
+tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# Cancel running job
+tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# Download fine-tuned model weights
+tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+```
+
+### Models
+
+```bash
+# Help
+tg models --help
+
+# List models
+tg models list
+```
+
+## Versioning
+
+This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
+
+1. Changes that only affect static types, without breaking runtime behavior.
+2. Changes to library internals which are technically public but not intended or documented for external use. _(Please open a GitHub issue to let us know if you are relying on such internals.)_
+3. Changes that we do not expect to impact the vast majority of users in practice.
+
+We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
+
+We are keen for your feedback; please open an [issue](https://www.github.com/togethercomputer/together-py/issues) with questions, bugs, or suggestions.
+
+### Determining the installed version
+
+If you've upgraded to the latest version but aren't seeing any new features you were expecting then your python environment is likely still using an older version.
+
+You can determine the version that is being used at runtime with:
+
+```py
+import together
+print(together.__version__)
+```
+
+## Requirements
+
+Python 3.9 or higher.
+
+## Usage – CLI
+
+### Files
+
+```bash
+# Help
+tg files --help
+
+# Check file
+tg files check example.jsonl
+
+# Upload file
+tg files upload example.jsonl
+
+# List files
+tg files list
+
+# Retrieve file metadata
+tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+
+# Retrieve file content
+tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+
+# Delete remote file
+tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
+```
+
+### Fine-tuning
+
+```bash
+# `tg ft` and `tg fine-tuning` are equivalent
+
+# Help
+tg ft --help
+
+# Create fine-tune job
+tg ft create \
+  --model togethercomputer/llama-2-7b-chat \
+  --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
+
+# List fine-tune jobs
+tg ft list
+
+# Retrieve fine-tune job details
+tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# List fine-tune job events
+tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# List fine-tune checkpoints
+tg ft list-checkpoints ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# Cancel running job
+tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# Download fine-tuned model weights
+tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+
+# Delete fine-tuned model weights
+tg ft delete ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
+```
+
+### Models
+
+```bash
+# Help
+tg models --help
+
+# List models
+tg models list
+
+# Upload a model
+tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face
+```
+
+### Clusters
+
+```bash
+# Help
+tg beta clusters --help
+
+# Create a cluster
+tg beta clusters create
+
+# List clusters
+tg beta clusters list
+
+# Retrieve cluster details
+tg beta clusters retrieve [cluster-id]
+
+# Update a cluster
+tg beta clusters update [cluster-id]
+
+# Retrieve Together cluster configuration options such as regions, gpu types and drivers available
+tg beta clusters list-regions
+```
+
+##### Cluster Storage
+
+```bash
+# Help
+tg beta clusters storage --help
+
+# Create cluster storage volume
+tg beta clusters storage create
+
+# List storage volumes
+tg beta clusters storage list
+
+# Retrieve storage volume
+tg beta clusters storage retrieve [storage-id]
+
+# Delete storage volume
+tg beta clusters storage delete [storage-id]
+```
+
+### Jig (Container Deployments)
+
+```bash
+# Help
+tg beta jig --help
+
+# Initialize jig configuration (creates pyproject.toml)
+tg beta jig init
+
+# Generate Dockerfile from config
+tg beta jig dockerfile
+
+# Build container image
+tg beta jig build
+tg beta jig build --tag v1.0 --warmup
+
+# Push image to registry
+tg beta jig push
+tg beta jig push --tag v1.0
+
+# Deploy model (builds, pushes, and deploys)
+tg beta jig deploy
+tg beta jig deploy --build-only
+tg beta jig deploy --image existing-image:tag
+
+# Get deployment status
+tg beta jig status
+
+# Get deployment endpoint URL
+tg beta jig endpoint
+
+# View deployment logs
+tg beta jig logs
+tg beta jig logs --follow
+
+# Destroy deployment
+tg beta jig destroy
+
+# Get queue metrics
+tg beta jig queue-status
+
+# List all deployments
+tg beta jig list
+```
+
+##### Jig Secrets
+
+```bash
+# Help
+tg beta jig secrets --help
+
+# Set a secret (creates or updates)
+tg beta jig secrets set --name MY_SECRET --value "secret-value"
+
+# Remove a secret from local state
+tg beta jig secrets unset --name MY_SECRET
+
+# List all secrets with sync status
+tg beta jig secrets list
+```
+
+##### Jig Volumes
+
+```bash
+# Help
+tg beta jig volumes --help
+
+# Create a volume and upload files from directory
+tg beta jig volumes create --name my-volume --source ./data
+
+# Update a volume with new files
+tg beta jig volumes update --name my-volume --source ./data
+
+# Set volume mount path for deployment
+tg beta jig volumes set --name my-volume --mount-path /app/data
+
+# Remove volume from deployment config (does not delete remote volume)
+tg beta jig volumes unset --name my-volume
+
+# Delete a volume
+tg beta jig volumes delete --name my-volume
+
+# Describe a volume
+tg beta jig volumes describe --name my-volume
+
+# List all volumes
+tg beta jig volumes list
+```
+
+## Contributing
+
+See [the contributing documentation](./CONTRIBUTING.md).

@@ -1,0 +1,21 @@
+# File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+from __future__ import annotations
+
+from typing_extensions import TypedDict
+
+__all__ = ["JigRetrieveLogsParams"]
+
+
+class JigRetrieveLogsParams(TypedDict, total=False):
+    replica_id: str
+    """Replica ID to filter logs"""
+
+    revision: str
+    """Deployment revision (UUID) to filter logs"""
+
+    version: str
+    """
+    Deployment image version (tag or last 4 characters of image digest) to filter
+    logs
+    """
