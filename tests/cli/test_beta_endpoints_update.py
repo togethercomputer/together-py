@@ -232,6 +232,27 @@ class TestBetaEndpointsUpdate:
         assert "Unknown option" in result.output
         assert "--scale-to-zero-window" in result.output
 
+    def test_update_rejects_opaque_duration_locally(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(_update_args("dep_control", "--scale-up-window", "abc"))
+
+        assert result.exit_code != 0
+        assert "--scale-up-window must be a duration" in result.output
+        assert "abc" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_converts_human_duration_windows(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(_update_args("dep_control", "--scale-up-window", "10m", "--scale-down-window", "2m"))
+
+        assert result.exit_code == 0, result.output
+        assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {
+            "autoscaling": {"scaleUpWindow": "600s", "scaleDownWindow": "120s"},
+        }
+
     @pytest.mark.respx(base_url=base_url)
     def test_update_unknown_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)

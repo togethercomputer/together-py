@@ -220,3 +220,20 @@ def test_build_autoscaling_omits_scale_to_zero_window() -> None:
         "scale_down_window": "60s",
     }
     assert "scale_to_zero_window" not in autoscaling
+
+
+def test_build_autoscaling_converts_human_duration_units() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=2,
+        scale_up_window="10m",
+        scale_down_window="1h",
+        required=True,
+    )
+
+    assert autoscaling == {
+        "min_replicas": 1,
+        "max_replicas": 2,
+        "scale_up_window": "600s",
+        "scale_down_window": "3600s",
+    }

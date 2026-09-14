@@ -110,13 +110,13 @@ async def deploy(
     scale_up_window: Annotated[
         Optional[str],
         Parameter(
-            help="How long the metric must stay above the target before adding replicas (seconds, e.g. 30 or 30s). Prevents thrashing from brief spikes."
+            help="How long the metric must stay above the target before adding replicas (e.g. 30, 30s, or 10m). Prevents thrashing from brief spikes."
         ),
     ] = None,
     scale_down_window: Annotated[
         Optional[str],
         Parameter(
-            help="Cooldown after scaling down before removing more replicas (seconds, e.g. 60 or 60s). Higher values improve stability."
+            help="Cooldown after scaling down before removing more replicas (e.g. 60, 60s, or 10m). Higher values improve stability."
         ),
     ] = None,
     scaling_metric: Annotated[

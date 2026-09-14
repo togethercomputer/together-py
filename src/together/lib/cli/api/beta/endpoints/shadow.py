@@ -24,6 +24,7 @@ from together.types.beta.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
+from together.lib.cli.api.beta.endpoints._utils._duration import normalize_duration
 from together.lib.cli.api.beta.endpoints._utils._parameters import ModelParameter, EndpointPromptParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
@@ -79,7 +80,9 @@ async def shadow(
     ] = None,
     window: Annotated[
         Optional[str],
-        Parameter(help="Observation window for adaptive sampling; applies with --target-qps (default: 60s)"),
+        Parameter(
+            help="Observation window for adaptive sampling; applies with --target-qps (e.g. 60s or 5m; default: 60s)"
+        ),
     ] = None,
     enable_lora: Annotated[
         bool,
@@ -94,6 +97,7 @@ async def shadow(
     traffic-split warm-up deployments are valid shadow targets.
     """
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
+    window = normalize_duration(window, option_name="--window")
 
     endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
     resolved = await resolve_model_and_config(config, model, config_id=config_id)

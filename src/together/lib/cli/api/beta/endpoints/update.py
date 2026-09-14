@@ -50,11 +50,11 @@ async def update(
     ] = None,
     scale_up_window: Annotated[
         Optional[str],
-        Parameter(help="Seconds the metric must stay above target before adding replicas (for example, 30s)"),
+        Parameter(help="How long the metric must stay above target before adding replicas (e.g. 30, 30s, or 10m)"),
     ] = None,
     scale_down_window: Annotated[
         Optional[str],
-        Parameter(help="Cooldown in seconds before removing more replicas after scale-down (for example, 60s)"),
+        Parameter(help="Cooldown before removing more replicas after scale-down (e.g. 60, 60s, or 10m)"),
     ] = None,
     scaling_metric: Annotated[
         Optional[ScalingMetricName],

@@ -554,3 +554,57 @@ class TestBetaEndpointShadow:
         assert experiment_body["source"] == {
             "endpoint": {"sampling": {"adaptiveUniform": {"targetQps": 5.0}}},
         }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_converts_human_metric_window(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint(respx_mock)
+        _mock_model_and_config(respx_mock)
+        create_experiment_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_experiment_body(
+                    name="shadow-target_qps-5.0-window-300s",
+                    source={"endpoint": {"sampling": {"adaptive_uniform": {"target_qps": 5.0, "window": "300s"}}}},
+                ),
+            )
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(200, json=_shadow_target_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "shadow",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--name",
+                "shadow-dep",
+                "--target-qps",
+                "5",
+                "--window",
+                "5m",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        experiment_body = json.loads(cast(Call, create_experiment_route.calls[0]).request.content.decode())
+        assert experiment_body["name"] == "shadow-target_qps-5.0-window-300s"
+        assert experiment_body["source"] == {
+            "endpoint": {"sampling": {"adaptiveUniform": {"targetQps": 5.0, "window": "300s"}}},
+        }

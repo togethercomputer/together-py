@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import re
 from typing import Literal, cast, overload
 
 from together.types.beta import DeploymentAutoscalingParam
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 from together.types.beta.deployment_autoscaling_param import ScalingMetric
-
-# OpenAPI DE.Autoscaling windows: protobuf Duration JSON, seconds only (e.g. "30s").
-_DURATION_RE = re.compile(r"^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$")
-_BARE_SECONDS_RE = re.compile(r"^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?$")
+from together.lib.cli.api.beta.endpoints._utils._duration import normalize_duration
 
 MetricType = Literal[
     "METRIC_TARGET_TYPE_VALUE",
@@ -47,19 +43,6 @@ _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
 
 _VALID_PERCENTILES: frozenset[ScalingPercentile] = frozenset({"p50", "p90", "p95", "p99"})
 SCALING_METRIC_NAMES = tuple(_METRIC_TYPES)
-
-
-def normalize_duration(value: str | None, *, option_name: str) -> str | None:
-    """Accept bare seconds (`30`) or Duration JSON (`30s`); reject other units."""
-    if value is None:
-        return None
-    value = value.strip()
-    if _DURATION_RE.match(value):
-        return value
-    if _BARE_SECONDS_RE.match(value):
-        return f"{value}s"
-    console.print(f"Error: {option_name} must be a duration in seconds, e.g. 30 or 30s (got {value!r}).")
-    raise CliDiagnosticExit(f"Invalid autoscaling duration for {option_name}")
 
 
 def build_scaling_metrics(
