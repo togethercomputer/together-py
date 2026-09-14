@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from together._types import omit
-from together.lib.beta.rl import ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata, MuonOptimizerConfig
+from together.lib.beta.rl import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
 from together.lib.beta.rl.clients import model_resources as model_resources_client_module
 from together.lib.beta.rl.clients.session import SessionClient
 from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
@@ -83,7 +83,7 @@ async def test_create_async_forwards_optimizer_config(monkeypatch: pytest.Monkey
     client = _fake_client()
     _patch_together(monkeypatch, client)
 
-    optimizer_config = OptimizerConfig(muon=MuonOptimizerConfig(scaling_strategy="MUON_SCALING_STRATEGY_MATCH_ADAMW"))
+    optimizer_config = OptimizerConfig(muon=MuonConfig(scaling_strategy="MUON_SCALING_STRATEGY_MATCH_ADAM"))
     await ModelResourcesClient.create_async(
         base_model="Qwen/Qwen3-0.6B",
         optimizer_config=optimizer_config,
@@ -92,7 +92,7 @@ async def test_create_async_forwards_optimizer_config(monkeypatch: pytest.Monkey
     )
 
     create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
-    assert create_kwargs["optimizer_config"] == {"muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_MATCH_ADAMW"}}
+    assert create_kwargs["optimizer_config"] == {"muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_MATCH_ADAM"}}
 
 
 async def test_create_async_omits_optimizer_config_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
