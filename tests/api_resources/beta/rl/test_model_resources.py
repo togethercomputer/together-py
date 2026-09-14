@@ -38,7 +38,7 @@ class TestModelResources:
             },
             lora_enabled=True,
             optimizer_config={
-                "adamw": {},
+                "adam": {},
                 "muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_ORIGINAL"},
             },
         )
@@ -158,7 +158,7 @@ class TestModelResources:
             },
             lora_enabled=True,
             optimizer_config={
-                "adamw": {},
+                "adam": {},
                 "muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_ORIGINAL"},
             },
         )
@@ -257,7 +257,7 @@ class TestAsyncModelResources:
             },
             lora_enabled=True,
             optimizer_config={
-                "adamw": {},
+                "adam": {},
                 "muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_ORIGINAL"},
             },
         )
@@ -377,7 +377,7 @@ class TestAsyncModelResources:
             },
             lora_enabled=True,
             optimizer_config={
-                "adamw": {},
+                "adam": {},
                 "muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_ORIGINAL"},
             },
         )

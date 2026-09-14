@@ -3,8 +3,8 @@
 from typing import Optional
 
 from ...._models import BaseModel
-from .muon_optimizer_config import MuonOptimizerConfig
-from .adamw_optimizer_config import AdamwOptimizerConfig
+from .adam_config import AdamConfig
+from .muon_config import MuonConfig
 
 __all__ = ["OptimizerConfig"]
 
@@ -12,8 +12,8 @@ __all__ = ["OptimizerConfig"]
 class OptimizerConfig(BaseModel):
     """Optimizer configuration"""
 
-    adamw: Optional[AdamwOptimizerConfig] = None
-    """Use the AdamW optimizer."""
+    adam: Optional[AdamConfig] = None
+    """Use the Adam optimizer."""
 
-    muon: Optional[MuonOptimizerConfig] = None
+    muon: Optional[MuonConfig] = None
     """Use the Muon optimizer."""

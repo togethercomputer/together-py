@@ -2,10 +2,10 @@
 
 from ...._models import BaseModel
 
-__all__ = ["AdamwOptimizerConfig"]
+__all__ = ["AdamConfig"]
 
 
-class AdamwOptimizerConfig(BaseModel):
-    """AdamW optimizer configuration"""
+class AdamConfig(BaseModel):
+    """Adam optimizer configuration"""
 
     pass

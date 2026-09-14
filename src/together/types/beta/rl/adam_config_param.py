@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing_extensions import TypedDict
 
-__all__ = ["AdamwOptimizerConfigParam"]
+__all__ = ["AdamConfigParam"]
 
 
-class AdamwOptimizerConfigParam(TypedDict, total=False):
-    """AdamW optimizer configuration"""
+class AdamConfigParam(TypedDict, total=False):
+    """Adam optimizer configuration"""
 
     pass

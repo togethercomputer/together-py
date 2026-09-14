@@ -362,14 +362,14 @@ Types:
 
 ```python
 from together.types.beta.rl import (
-    AdamwOptimizerConfig,
+    AdamConfig,
     ModelResources,
     ModelResourcesError,
     ModelResourcesErrorCode,
     ModelResourcesEstimateCostResponse,
     ModelResourcesListResponse,
     ModelResourcesStatus,
-    MuonOptimizerConfig,
+    MuonConfig,
     MuonScalingStrategy,
     OptimizerConfig,
 )
