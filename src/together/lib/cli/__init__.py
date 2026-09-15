@@ -81,6 +81,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    BETA_ENDPOINTS_ROLLOUTS_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
@@ -738,6 +739,45 @@ beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.events:events"),
     help="List endpoint audit and lifecycle events",
     sort_key=6,
+)
+rollouts_app = beta_endpoints_app.command(
+    App(
+        name="rollouts",
+        help="Manage endpoint deployment rollouts",
+        group="Subcommands",
+        help_epilogue=BETA_ENDPOINTS_ROLLOUTS_HELP_EXAMPLES,
+    )
+)
+rollouts_app.command(
+    (f"{_CLI}.beta.endpoints.rollouts:create"),
+    help="Create a rollout",
+    sort_key=1,
+)
+rollouts_app.command(
+    (f"{_CLI}.beta.endpoints.rollouts:list"),
+    alias="ls",
+    help="List rollouts for an endpoint",
+    sort_key=2,
+)
+rollouts_app.command(
+    (f"{_CLI}.beta.endpoints.rollouts:retrieve"),
+    alias="get",
+    help="Get rollout details",
+    sort_key=3,
+)
+rollouts_app.command((f"{_CLI}.beta.endpoints.rollouts:start"), help="Start a pending rollout")
+rollouts_app.command((f"{_CLI}.beta.endpoints.rollouts:pause"), help="Pause a rollout")
+rollouts_app.command((f"{_CLI}.beta.endpoints.rollouts:resume"), help="Resume a paused rollout")
+rollouts_app.command((f"{_CLI}.beta.endpoints.rollouts:promote"), help="Promote a rollout immediately")
+rollouts_app.command((f"{_CLI}.beta.endpoints.rollouts:cancel"), help="Cancel a rollout")
+rollouts_app.command(
+    (f"{_CLI}.beta.endpoints.rollouts:preview_defaults"),
+    help="Preview rollout defaults",
+)
+rollouts_app.command(
+    (f"{_CLI}.beta.endpoints.rollouts:delete"),
+    alias=("rm", "-d"),
+    help="Delete a rollout record",
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.shadow:shadow"),

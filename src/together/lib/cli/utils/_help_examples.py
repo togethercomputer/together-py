@@ -350,6 +350,9 @@ BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror live traffic to a shadow deployment:
   [primary]tg beta endpoints shadow my-endpoint Qwen/Qwen2.5-7B --rate 0.1[/primary]
 
+[dim]-[/dim] Roll traffic from one deployment to another:
+  [primary]tg beta endpoints rollouts create my-endpoint --source-deployment dep_source --target-deployment dep_target --strategy canary[/primary]
+
 [dim]-[/dim] Delete a deployment, experiment, or entire endpoint:
   [primary]tg beta endpoints rm <ep_|dep_|abx_|exp_...>[/primary]
 """
@@ -421,6 +424,34 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
+"""
+
+BETA_ENDPOINTS_ROLLOUTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Create a canary rollout with default steps:
+  [primary]tg beta endpoints rollouts create my-endpoint \\
+    --source-deployment dep_source --target-deployment dep_target --strategy canary[/primary]
+
+[dim]-[/dim] Create and start a rollout with explicit canary steps:
+  [primary]tg beta endpoints rollouts create ep_xxxxxxxxxxxx \\
+    --source-deployment dep_source --target-deployment dep_target \\
+    --canary-step 25:1 --canary-step 50:2 --canary-step 100:4 --start[/primary]
+
+[dim]-[/dim] Preview API defaults before creating:
+  [primary]tg beta endpoints rollouts preview-defaults my-endpoint \\
+    --source-deployment dep_source --target-deployment dep_target[/primary]
+
+[dim]-[/dim] Add a metric gate:
+  [primary]tg beta endpoints rollouts create my-endpoint \\
+    --source-deployment dep_source --target-deployment dep_target \\
+    --metric '{"name":"router_latency","stat":"METRIC_STAT_TYPE_PERCENTILE","percentile":95,"thresholdCheck":{"operator":"THRESHOLD_OPERATOR_LT","value":30000}}'[/primary]
+
+[dim]-[/dim] Inspect and manage rollout lifecycle:
+  [primary]tg beta endpoints rollouts ls my-endpoint --filter active[/primary]
+  [primary]tg beta endpoints rollouts get my-endpoint rol_xxxxxxxxxxxx[/primary]
+  [primary]tg beta endpoints rollouts pause my-endpoint rol_xxxxxxxxxxxx --reason "checking metrics"[/primary]
+  [primary]tg beta endpoints rollouts resume my-endpoint rol_xxxxxxxxxxxx[/primary]
+  [primary]tg beta endpoints rollouts promote my-endpoint rol_xxxxxxxxxxxx[/primary]
+  [primary]tg beta endpoints rollouts cancel my-endpoint rol_xxxxxxxxxxxx --reason "rollback"[/primary]
 """
 
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
