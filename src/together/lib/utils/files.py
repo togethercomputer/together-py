@@ -171,7 +171,9 @@ def check_file(
         report_dict["message"] = (
             f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB, 3)} GB."
         )
+        report_dict["file_size"] = file_size
         report_dict["is_check_passed"] = False
+        return report_dict
     elif file_size == 0:
         report_dict["message"] = "File is empty"
         report_dict["file_size"] = 0
