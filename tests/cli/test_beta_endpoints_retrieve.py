@@ -443,3 +443,46 @@ class TestBetaEndpointsRetrieve:
 
         assert result.exit_code != 0
         assert 'Multiple deployments found for "control"' in json.loads(result.output)["error"]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_deployment_by_qualified_name_disambiguates(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        other = _endpoint_body(
+            id="ep_2",
+            name="my-project/other-endpoint",
+            trafficSplit=[{"deploymentId": "dep_other", "weight": 1.0}],
+            deployments=[
+                {
+                    "id": "dep_other",
+                    "name": "my-project/other-endpoint/control",
+                    "model": "projects/proj/models/ml_control/revisions/latest",
+                    "modelId": "ml_control",
+                    "hardware": "1x-h100",
+                    "state": "DEPLOYMENT_STATE_READY",
+                    "readyReplicas": 1,
+                    "desiredReplicas": 1,
+                    "createdAt": "2026-01-01T00:00:00Z",
+                    "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+                }
+            ],
+        )
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body(), other], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "endpoints", "get", "my-project/my-endpoint/control", "--project", "proj", "--json"]
+        )
+
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["id"] == "dep_control"
+        assert payload["endpointId"] == "ep_1"

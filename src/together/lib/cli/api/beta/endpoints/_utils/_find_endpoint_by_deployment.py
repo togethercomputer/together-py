@@ -20,7 +20,12 @@ def _deployment_matches(deployment_id_or_name: str, deployment_id: str, deployme
         return False
     if deployment_name == deployment_id_or_name:
         return True
-    return deployment_name.rsplit("/", 1)[-1] == deployment_id_or_name.rsplit("/", 1)[-1]
+    # Qualified names must match exactly. Last-segment matching would make
+    # ``proj/ep/foo`` collide with every other ``…/foo``, so the
+    # "use a fully qualified name" disambiguation hint would be a dead end.
+    if "/" in deployment_id_or_name:
+        return False
+    return deployment_name.rsplit("/", 1)[-1] == deployment_id_or_name
 
 
 async def _collect_deployment_matches(

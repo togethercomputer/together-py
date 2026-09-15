@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import uuid
-from typing import Any, Optional, cast
+from typing import Any, Optional, NamedTuple, cast
 from typing_extensions import Annotated
 
 from cyclopts import Parameter
@@ -35,7 +35,19 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_autoscaling
+from together.lib.cli.api.beta.endpoints._utils._shadow_experiments import find_shadows_for_deployment
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
+
+
+class ShadowResolution(NamedTuple):
+    """Result of deciding whether ENDPOINT is an existing deployment or a create target."""
+
+    endpoint: Endpoint | None = None
+    deployment_id: str | None = None
+
+    @property
+    def is_existing_deployment(self) -> bool:
+        return self.deployment_id is not None
 
 
 async def shadow(
@@ -124,15 +136,17 @@ ENDPOINT is an existing deployment. Accepted forms:
     source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
     shadow_name = build_shadow_name(rate, key, target_qps, window)
 
-    existing_deployment = await maybe_resolve_existing_deployment(
+    resolution = await maybe_resolve_existing_deployment(
         config,
         endpoint_or_deployment,
         model=model,
         config_id=config_id,
         enable_lora=enable_lora,
     )
-    if existing_deployment is not None:
-        endpoint, resolved_deployment_id = existing_deployment
+    if resolution.is_existing_deployment:
+        endpoint = resolution.endpoint
+        resolved_deployment_id = resolution.deployment_id
+        assert endpoint is not None and resolved_deployment_id is not None
         endpoint_id = endpoint.id
 
         verify_shadow_target_not_receiving_live_traffic(endpoint, resolved_deployment_id)
@@ -146,6 +160,13 @@ ENDPOINT is an existing deployment. Accepted forms:
         )
         assert deployment.id is not None
         target_name = name if name is not None else default_shadow_target_name(deployment.name)
+
+        await reject_if_already_shadow_target(
+            config.client,
+            endpoint_id=endpoint_id,
+            deployment_id=deployment.id,
+            shadow_name=shadow_name,
+        )
 
         experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
         assert experiment.id is not None
@@ -169,7 +190,10 @@ ENDPOINT is an existing deployment. Accepted forms:
 
     model = await resolve_model_for_create(model, config=config)
 
-    endpoint_id = (await resolve_endpoint(config, endpoint_or_deployment)).id
+    if resolution.endpoint is not None:
+        endpoint_id = resolution.endpoint.id
+    else:
+        endpoint_id = (await resolve_endpoint(config, endpoint_or_deployment)).id
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
 
@@ -248,27 +272,28 @@ async def maybe_resolve_existing_deployment(
     model: str | None,
     config_id: str | None,
     enable_lora: bool,
-) -> tuple[Endpoint, str] | None:
-    """Return ``(endpoint, deployment_id)`` when the first positional is an existing deployment."""
+) -> ShadowResolution:
+    """Resolve whether the first positional is an existing deployment or a create target."""
     if endpoint_or_deployment.startswith("ep_"):
-        return None
+        return ShadowResolution()
 
     explicitly_deployment = _is_explicit_deployment_ref(endpoint_or_deployment)
 
     if not explicitly_deployment and model is not None:
         # Create path: ENDPOINT + MODEL
-        return None
+        return ShadowResolution()
 
     if explicitly_deployment:
         # Reject conflicting create-only flags before the paginated endpoints.list walk.
         _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
-        return await resolve_deployment_id(config.client, endpoint_or_deployment)
+        endpoint, deployment_id = await resolve_deployment_id(config.client, endpoint_or_deployment)
+        return ShadowResolution(endpoint, deployment_id)
 
     # Bare / endpoint-style name with no MODEL: prefer an endpoint match so a deployment
     # that shares the last path segment does not silently switch this to attach-existing.
     try:
-        await resolve_endpoint(config, endpoint_or_deployment)
-        return None
+        endpoint = await resolve_endpoint(config, endpoint_or_deployment)
+        return ShadowResolution(endpoint)
     except ValueError:
         pass
 
@@ -278,11 +303,11 @@ async def maybe_resolve_existing_deployment(
         # Only "not found" falls through to create (prompt/require MODEL). Ambiguous names
         # must keep the disambiguation error instead of being rewritten as MODEL-required.
         if "not found in any endpoint" in str(e):
-            return None
+            return ShadowResolution()
         raise
 
     _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
-    return endpoint, deployment_id
+    return ShadowResolution(endpoint, deployment_id)
 
 
 async def resolve_model_for_create(
@@ -409,22 +434,58 @@ async def create_or_find_shadow_target(
         if "already exists" not in e.message.lower():
             raise
 
+        existing_by_name: ShadowExperimentTarget | None = None
+        existing_by_deployment: ShadowExperimentTarget | None = None
         async for target in client.beta.endpoints.shadow_experiments.targets.list(
             endpoint_id=endpoint_id,
             experiment_id=experiment_id,
         ):
-            if target.name == name:
-                if target.target_deployment_id == target_deployment_id:
-                    return target
-                raise ValueError(
-                    f"Shadow target {name} already exists on this experiment for a different deployment."
-                ) from None
-            if target.target_deployment_id == target_deployment_id:
-                return target
+            if existing_by_name is None and target.name == name:
+                existing_by_name = target
+            if existing_by_deployment is None and target.target_deployment_id == target_deployment_id:
+                existing_by_deployment = target
+            if existing_by_name is not None and existing_by_deployment is not None:
+                break
+
+        # Name uniqueness is what 409s. Decide from the full list so list order cannot
+        # skip a --name collision by returning an earlier same-deployment target.
+        if existing_by_name is not None:
+            if existing_by_name.target_deployment_id == target_deployment_id:
+                return existing_by_name
+            raise ValueError(
+                f"Shadow target {name} already exists on this experiment for a different deployment."
+            ) from None
+        if existing_by_deployment is not None:
+            raise ValueError(
+                f"Deployment {target_deployment_id} is already a shadow target "
+                f"as {existing_by_deployment.name!r}."
+            ) from None
         raise ValueError(
             f"Shadow target {name} already exists on experiment {experiment_id} but could not be loaded. "
             "This is likely a bug in the CLI. Please report it to the Together team."
         ) from None
+
+
+async def reject_if_already_shadow_target(
+    client: AsyncClient,
+    *,
+    endpoint_id: str,
+    deployment_id: str,
+    shadow_name: str,
+) -> None:
+    """Refuse to stack a second experiment onto a deployment that is already a target."""
+    existing = [
+        experiment
+        for experiment in await find_shadows_for_deployment(client, endpoint_id, deployment_id)
+        if experiment.name != shadow_name
+    ]
+    if not existing:
+        return
+    names = ", ".join(experiment.name for experiment in existing)
+    raise ValueError(
+        f"Deployment {deployment_id} is already a shadow target of {names}. "
+        f"Reuse the same sampling flags or remove it first (tg beta endpoints rm {deployment_id})."
+    )
 
 
 def default_shadow_target_name(deployment_name: str) -> str:

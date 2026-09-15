@@ -322,6 +322,76 @@ class TestBetaEndpointsRm:
         assert any("deleted empty shadow experiment" in action for action in payload["actions"])
 
     @pytest.mark.respx(base_url=base_url)
+    def test_rm_shadow_deployment_detaches_all_experiments(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _shadow_experiment_body(),
+                        _shadow_experiment_body(
+                            experiment_id="exp_2",
+                            name="shadow-rate-0.2",
+                            targets=[
+                                {
+                                    "id": "target_2",
+                                    "experimentId": "exp_2",
+                                    "name": "shadow-target-2",
+                                    "targetDeploymentId": "dep_shadow",
+                                    "createdAt": "2026-01-01T00:00:00Z",
+                                    "etag": "etag-target-2",
+                                }
+                            ],
+                            etag="etag-shadow-2",
+                        ),
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+        delete_target_1 = respx_mock.delete(
+            "/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets/target_1"
+        ).mock(return_value=httpx.Response(200, json={"id": "target_1"}))
+        delete_target_2 = respx_mock.delete(
+            "/projects/proj/endpoints/ep_1/shadowExperiments/exp_2/targets/target_2"
+        ).mock(return_value=httpx.Response(200, json={"id": "target_2"}))
+        delete_shadow_1 = respx_mock.delete("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1").mock(
+            return_value=httpx.Response(200, json={"id": "exp_1"})
+        )
+        delete_shadow_2 = respx_mock.delete("/projects/proj/endpoints/ep_1/shadowExperiments/exp_2").mock(
+            return_value=httpx.Response(200, json={"id": "exp_2"})
+        )
+        delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_shadow").mock(
+            return_value=httpx.Response(200, json={"id": "dep_shadow"})
+        )
+
+        result = cli_runner.invoke(_rm_args("dep_shadow"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_target_1.called
+        assert delete_target_2.called
+        assert delete_shadow_1.called
+        assert delete_shadow_2.called
+        assert delete_deployment.called
+        payload = json.loads(result.out_out)
+        assert payload["actions"].count("deleted empty shadow experiment exp_1") == 1
+        assert payload["actions"].count("deleted empty shadow experiment exp_2") == 1
+
+    @pytest.mark.respx(base_url=base_url)
     def test_rm_ab_variant_updates_members(
         self,
         respx_mock: MockRouter,

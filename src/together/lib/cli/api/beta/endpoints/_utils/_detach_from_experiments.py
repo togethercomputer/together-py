@@ -8,7 +8,7 @@ from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
     find_ab_for_deployment,
     members_without_deployment,
 )
-from together.lib.cli.api.beta.endpoints._utils._shadow_experiments import find_shadow_for_deployment
+from together.lib.cli.api.beta.endpoints._utils._shadow_experiments import find_shadows_for_deployment
 
 # Can't trust this code right now as the server is not properly setting
 # the traffic_mode for shadow deployments.
@@ -48,8 +48,8 @@ async def detach_deployment_from_experiments(
     # Can't trust this code right now as the server is not properly setting
     # check_shadow, check_ab = _experiment_checks_for_deployment(endpoint, deployment_id)
 
-    shadow = await find_shadow_for_deployment(config.client, endpoint_id, deployment_id)  # if check_shadow else None
-    if shadow is not None:
+    shadows = await find_shadows_for_deployment(config.client, endpoint_id, deployment_id)
+    for shadow in shadows:
         target = next(t for t in (shadow.targets or []) if t.target_deployment_id == deployment_id)
         await show_loading_status(
             "Removing deployment from shadow experiment...",
