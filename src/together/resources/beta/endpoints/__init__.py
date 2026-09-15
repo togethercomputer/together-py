@@ -16,6 +16,14 @@ from .hardware import (
     HardwareResourceWithStreamingResponse,
     AsyncHardwareResourceWithStreamingResponse,
 )
+from .rollouts import (
+    RolloutsResource,
+    AsyncRolloutsResource,
+    RolloutsResourceWithRawResponse,
+    AsyncRolloutsResourceWithRawResponse,
+    RolloutsResourceWithStreamingResponse,
+    AsyncRolloutsResourceWithStreamingResponse,
+)
 from .endpoints import (
     EndpointsResource,
     AsyncEndpointsResource,
@@ -76,6 +84,12 @@ __all__ = [
     "AsyncShadowExperimentsResourceWithRawResponse",
     "ShadowExperimentsResourceWithStreamingResponse",
     "AsyncShadowExperimentsResourceWithStreamingResponse",
+    "RolloutsResource",
+    "AsyncRolloutsResource",
+    "RolloutsResourceWithRawResponse",
+    "AsyncRolloutsResourceWithRawResponse",
+    "RolloutsResourceWithStreamingResponse",
+    "AsyncRolloutsResourceWithStreamingResponse",
     "HardwareResource",
     "AsyncHardwareResource",
     "HardwareResourceWithRawResponse",

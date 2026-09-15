@@ -2,23 +2,33 @@
 
 from __future__ import annotations
 
+from .rollout import Rollout as Rollout
 from .ab_experiment import AbExperiment as AbExperiment
 from .placement_profile import PlacementProfile as PlacementProfile
 from .shadow_experiment import ShadowExperiment as ShadowExperiment
 from .adapter_list_params import AdapterListParams as AdapterListParams
+from .rollout_list_params import RolloutListParams as RolloutListParams
+from .rollout_pause_params import RolloutPauseParams as RolloutPauseParams
 from .adapter_create_params import AdapterCreateParams as AdapterCreateParams
 from .adapter_delete_params import AdapterDeleteParams as AdapterDeleteParams
 from .adapter_list_response import AdapterListResponse as AdapterListResponse
 from .adapter_update_params import AdapterUpdateParams as AdapterUpdateParams
+from .rollout_cancel_params import RolloutCancelParams as RolloutCancelParams
+from .rollout_create_params import RolloutCreateParams as RolloutCreateParams
+from .rollout_delete_params import RolloutDeleteParams as RolloutDeleteParams
+from .rollout_resume_params import RolloutResumeParams as RolloutResumeParams
 from .deployment_list_params import DeploymentListParams as DeploymentListParams
 from .hardware_list_response import HardwareListResponse as HardwareListResponse
+from .rollout_promote_params import RolloutPromoteParams as RolloutPromoteParams
 from .adapter_create_response import AdapterCreateResponse as AdapterCreateResponse
 from .adapter_delete_response import AdapterDeleteResponse as AdapterDeleteResponse
 from .adapter_update_response import AdapterUpdateResponse as AdapterUpdateResponse
 from .inference_instance_type import InferenceInstanceType as InferenceInstanceType
+from .rollout_delete_response import RolloutDeleteResponse as RolloutDeleteResponse
 from .deployment_create_params import DeploymentCreateParams as DeploymentCreateParams
 from .deployment_delete_params import DeploymentDeleteParams as DeploymentDeleteParams
 from .deployment_update_params import DeploymentUpdateParams as DeploymentUpdateParams
+from .rollout_defaults_preview import RolloutDefaultsPreview as RolloutDefaultsPreview
 from .ab_experiment_list_params import AbExperimentListParams as AbExperimentListParams
 from .adapter_retrieve_response import AdapterRetrieveResponse as AdapterRetrieveResponse
 from .deployment_delete_response import DeploymentDeleteResponse as DeploymentDeleteResponse
@@ -28,6 +38,7 @@ from .ab_experiment_update_params import AbExperimentUpdateParams as AbExperimen
 from .ab_experiment_delete_response import AbExperimentDeleteResponse as AbExperimentDeleteResponse
 from .placement_profile_list_params import PlacementProfileListParams as PlacementProfileListParams
 from .shadow_experiment_list_params import ShadowExperimentListParams as ShadowExperimentListParams
+from .rollout_preview_defaults_params import RolloutPreviewDefaultsParams as RolloutPreviewDefaultsParams
 from .shadow_experiment_create_params import ShadowExperimentCreateParams as ShadowExperimentCreateParams
 from .shadow_experiment_delete_params import ShadowExperimentDeleteParams as ShadowExperimentDeleteParams
 from .shadow_experiment_update_params import ShadowExperimentUpdateParams as ShadowExperimentUpdateParams
