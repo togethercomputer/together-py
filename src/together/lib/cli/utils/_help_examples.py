@@ -553,6 +553,10 @@ BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
     --from https://huggingface.co/org/model[/primary]
 
+[dim]-[/dim] Pin a Hugging Face commit, tag, or branch:
+  [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
+    --from https://huggingface.co/org/model --revision abc123[/primary]
+
 [dim]-[/dim] Import a gated/private HF repo:
   [primary]tg beta models remote-uploads create ml_xxxxxxxxxxxx \\
     --from https://huggingface.co/org/private-model --token "$HF_TOKEN"[/primary]
