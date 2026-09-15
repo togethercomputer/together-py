@@ -10,11 +10,53 @@ import pytest
 from respx import MockRouter
 from respx.models import Call
 
+from together import APIError
 from tests.cli.utils import CliRunner
+from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfig
-from together.lib.cli.api.beta.endpoints.shadow import build_shadow_name, resolve_rate_or_target_qps
+from together.lib.cli.api.beta.endpoints.shadow import (
+    build_shadow_name,
+    resolve_model_for_create,
+    default_shadow_target_name,
+    resolve_rate_or_target_qps,
+    maybe_resolve_existing_deployment,
+    verify_shadow_target_not_receiving_live_traffic,
+)
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+
+def _whoami_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "api_key_id": "key-1",
+        "organization_id": "org-1",
+        "organization_name": "Acme",
+        "project_id": "proj",
+        "project_name": "My Project",
+        "project_slug": "my-project",
+        "user_id": "user-1",
+    }
+    body.update(overrides)
+    return body
+
+
+def _deployment_summary(
+    deployment_id: str = "dep_existing",
+    name: str = "my-project/my-endpoint/existing-shadow",
+    **overrides: Any,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": deployment_id,
+        "name": name,
+        "modelId": "ml_1",
+        "state": "DEPLOYMENT_STATE_READY",
+        "readyReplicas": 1,
+        "desiredReplicas": 1,
+        "createdAt": "2026-01-01T00:00:00Z",
+        "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
+    }
+    body.update(overrides)
+    return body
 
 
 def _endpoint_body(**overrides: Any) -> dict[str, Any]:
@@ -164,6 +206,68 @@ def _shadow_cli_args(**overrides: str) -> list[str]:
     return args
 
 
+def _shadow_existing_deployment_cli_args(**overrides: str) -> list[str]:
+    args = [
+        "beta",
+        "endpoints",
+        "shadow",
+        "--project",
+        "proj",
+        "--endpoint",
+        "dep_existing",
+        "--rate",
+        "0.1",
+        "--json",
+    ]
+    for key, value in overrides.items():
+        flag = f"--{key.replace('_', '-')}"
+        if flag in args:
+            index = args.index(flag)
+            args[index + 1] = value
+        else:
+            args.extend([flag, value])
+    return args
+
+
+def _mock_existing_deployment_lookup(
+    respx_mock: MockRouter,
+    *,
+    deployment_id: str = "dep_existing",
+    endpoint_id: str = "ep_1",
+    deployment_name: str = "my-project/my-endpoint/existing-shadow",
+    retrieve: bool = True,
+    traffic_split: list[dict[str, Any]] | None = None,
+) -> None:
+    endpoint_overrides: dict[str, Any] = {
+        "id": endpoint_id,
+        "deployments": [_deployment_summary(deployment_id=deployment_id, name=deployment_name)],
+    }
+    if traffic_split is not None:
+        endpoint_overrides["trafficSplit"] = traffic_split
+    data = [_endpoint_body(**endpoint_overrides)]
+    respx_mock.get("/projects/proj/endpoints").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "object": "list",
+                "data": data,
+                "next_cursor": None,
+            },
+        )
+    )
+    if retrieve:
+        respx_mock.get(f"/projects/proj/endpoints/{endpoint_id}/deployments/{deployment_id}").mock(
+            return_value=httpx.Response(
+                200,
+                json=_deployment_body(
+                    deployment_id=deployment_id,
+                    name=deployment_name,
+                    **({"endpointId": endpoint_id} if endpoint_id != "ep_1" else {}),
+                ),
+            )
+        )
+
+
 class TestBuildShadowName:
     def test_uniform_rate_only(self) -> None:
         assert build_shadow_name(0.1, None, None, None) == "shadow-rate-0.1"
@@ -216,6 +320,242 @@ class TestResolveRateOrTargetQps:
             PromptParameter.return_value.prompt = prompt
             with pytest.raises(ValueError, match="Rate must be between 0.0 and 1.0"):
                 await resolve_rate_or_target_qps(None, None, config=self._config())
+
+
+class TestMaybeResolveExistingDeployment:
+    def _config(self, client: MagicMock | None = None) -> CLIConfig:
+        return CLIConfig(client=client or MagicMock(), non_interactive=True, json=False, project_id="proj")
+
+    @pytest.mark.asyncio
+    async def test_endpoint_id_is_not_existing_deployment(self) -> None:
+        assert (
+            await maybe_resolve_existing_deployment(
+                self._config(),
+                "ep_1",
+                model=None,
+                config_id=None,
+                enable_lora=False,
+            )
+            is None
+        )
+
+    @pytest.mark.asyncio
+    async def test_endpoint_plus_model_is_create_path(self) -> None:
+        assert (
+            await maybe_resolve_existing_deployment(
+                self._config(),
+                "my-endpoint",
+                model="ml_1",
+                config_id=None,
+                enable_lora=False,
+            )
+            is None
+        )
+
+    @pytest.mark.asyncio
+    async def test_dep_id_resolves_existing_deployment(self) -> None:
+        endpoint = MagicMock(id="ep_1")
+        with patch(
+            "together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id",
+            AsyncMock(return_value=(endpoint, "dep_existing")),
+        ):
+            result = await maybe_resolve_existing_deployment(
+                self._config(),
+                "dep_existing",
+                model=None,
+                config_id=None,
+                enable_lora=False,
+            )
+        assert result == (endpoint, "dep_existing")
+
+    @pytest.mark.asyncio
+    async def test_rejects_model_with_dep_id_before_lookup(self) -> None:
+        resolve = AsyncMock()
+        with patch("together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id", resolve):
+            with pytest.raises(ValueError, match="Do not pass MODEL when ENDPOINT is an existing deployment"):
+                await maybe_resolve_existing_deployment(
+                    self._config(),
+                    "dep_existing",
+                    model="ml_1",
+                    config_id=None,
+                    enable_lora=False,
+                )
+        resolve.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_rejects_config_with_dep_id_before_lookup(self) -> None:
+        resolve = AsyncMock()
+        with patch("together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id", resolve):
+            with pytest.raises(ValueError, match="Do not pass --config when ENDPOINT is an existing deployment"):
+                await maybe_resolve_existing_deployment(
+                    self._config(),
+                    "dep_existing",
+                    model=None,
+                    config_id="cr_1",
+                    enable_lora=False,
+                )
+        resolve.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_rejects_enable_lora_with_dep_id_before_lookup(self) -> None:
+        resolve = AsyncMock()
+        with patch("together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id", resolve):
+            with pytest.raises(ValueError, match="Do not pass --enable-lora when ENDPOINT is an existing deployment"):
+                await maybe_resolve_existing_deployment(
+                    self._config(),
+                    "dep_existing",
+                    model=None,
+                    config_id=None,
+                    enable_lora=True,
+                )
+        resolve.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_bare_name_falls_through_when_not_a_deployment(self) -> None:
+        with patch(
+            "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",
+            AsyncMock(side_effect=ValueError("Endpoint my-endpoint not found.")),
+        ):
+            with patch(
+                "together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id",
+                AsyncMock(side_effect=ValueError("Deployment my-endpoint not found in any endpoint.")),
+            ):
+                assert (
+                    await maybe_resolve_existing_deployment(
+                        self._config(),
+                        "my-endpoint",
+                        model=None,
+                        config_id=None,
+                        enable_lora=False,
+                    )
+                    is None
+                )
+
+    @pytest.mark.asyncio
+    async def test_bare_name_prefers_endpoint_over_deployment(self) -> None:
+        resolve_deployment = AsyncMock()
+        with patch(
+            "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",
+            AsyncMock(return_value=MagicMock(id="ep_1")),
+        ):
+            with patch("together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id", resolve_deployment):
+                assert (
+                    await maybe_resolve_existing_deployment(
+                        self._config(),
+                        "my-endpoint",
+                        model=None,
+                        config_id=None,
+                        enable_lora=True,
+                    )
+                    is None
+                )
+        resolve_deployment.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_bare_name_raises_on_ambiguous_deployment(self) -> None:
+        with patch(
+            "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",
+            AsyncMock(side_effect=ValueError("Endpoint candidate not found.")),
+        ):
+            with patch(
+                "together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id",
+                AsyncMock(
+                    side_effect=ValueError(
+                        'Multiple deployments found for "candidate".\n'
+                        "Please specify a deployment ID (dep_...) or a fully qualified deployment name.\n"
+                    )
+                ),
+            ):
+                with pytest.raises(ValueError, match="Multiple deployments found"):
+                    await maybe_resolve_existing_deployment(
+                        self._config(),
+                        "candidate",
+                        model=None,
+                        config_id=None,
+                        enable_lora=False,
+                    )
+
+    @pytest.mark.asyncio
+    async def test_qualified_deployment_name_skips_endpoint_lookup(self) -> None:
+        endpoint = MagicMock(id="ep_1")
+        resolve_endpoint_mock = AsyncMock()
+        with patch("together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint", resolve_endpoint_mock):
+            with patch(
+                "together.lib.cli.api.beta.endpoints.shadow.resolve_deployment_id",
+                AsyncMock(return_value=(endpoint, "dep_existing")),
+            ):
+                result = await maybe_resolve_existing_deployment(
+                    self._config(),
+                    "my-project/my-endpoint/existing-shadow",
+                    model=None,
+                    config_id=None,
+                    enable_lora=False,
+                )
+        assert result == (endpoint, "dep_existing")
+        resolve_endpoint_mock.assert_not_called()
+
+
+class TestResolveModelForCreate:
+    def _config(self, *, non_interactive: bool = False) -> CLIConfig:
+        return CLIConfig(client=MagicMock(), non_interactive=non_interactive, json=False, project_id="proj")
+
+    @pytest.mark.asyncio
+    async def test_passthrough_model(self) -> None:
+        assert await resolve_model_for_create("ml_1", config=self._config()) == "ml_1"
+
+    @pytest.mark.asyncio
+    async def test_non_interactive_requires_model(self) -> None:
+        with pytest.raises(ValueError, match="MODEL is required when ENDPOINT is an endpoint ID or name"):
+            await resolve_model_for_create(None, config=self._config(non_interactive=True))
+
+    @pytest.mark.asyncio
+    async def test_prompts_for_model(self) -> None:
+        prompt = AsyncMock(return_value="ml_1")
+        with patch("together.lib.cli.api.beta.endpoints.shadow.ModelPromptParameter") as ModelPromptParameter:
+            ModelPromptParameter.return_value.preprompt = AsyncMock()
+            ModelPromptParameter.return_value.prompt = prompt
+            assert await resolve_model_for_create(None, config=self._config()) == "ml_1"
+
+    @pytest.mark.asyncio
+    async def test_preprompt_api_error_is_not_rewritten(self) -> None:
+        request = httpx.Request("GET", "https://api.together.ai/v2/projects/proj/models")
+        error = APIError("401 unauthorized", request, body={"error": {"message": "unauthorized", "type": "auth"}})
+        with patch("together.lib.cli.api.beta.endpoints.shadow.ModelPromptParameter") as ModelPromptParameter:
+            ModelPromptParameter.return_value.preprompt = AsyncMock(side_effect=error)
+            with pytest.raises(APIError, match="401 unauthorized"):
+                await resolve_model_for_create(None, config=self._config())
+
+    @pytest.mark.asyncio
+    async def test_missing_questionary_requires_model(self) -> None:
+        with patch("together.lib.cli.api.beta.endpoints.shadow.ModelPromptParameter") as ModelPromptParameter:
+            ModelPromptParameter.return_value.preprompt = AsyncMock()
+            ModelPromptParameter.return_value.prompt = AsyncMock(
+                side_effect=ImportError("No module named 'questionary'")
+            )
+            with pytest.raises(ValueError, match="MODEL is required when ENDPOINT is an endpoint ID or name"):
+                await resolve_model_for_create(None, config=self._config())
+
+
+class TestDefaultShadowTargetName:
+    def test_strips_qualified_deployment_name(self) -> None:
+        assert default_shadow_target_name("my-project/my-endpoint/existing-shadow") == "existing-shadow-target"
+
+    def test_bare_name(self) -> None:
+        assert default_shadow_target_name("existing-shadow") == "existing-shadow-target"
+
+
+class TestVerifyShadowTargetNotReceivingLiveTraffic:
+    def test_allows_absent_from_split(self) -> None:
+        verify_shadow_target_not_receiving_live_traffic(Endpoint.construct(**_endpoint_body()), "dep_existing")
+
+    def test_allows_zero_weight(self) -> None:
+        endpoint = Endpoint.construct(**_endpoint_body(trafficSplit=[{"deploymentId": "dep_existing", "weight": 0}]))
+        verify_shadow_target_not_receiving_live_traffic(endpoint, "dep_existing")
+
+    def test_rejects_live_member(self) -> None:
+        endpoint = Endpoint.construct(**_endpoint_body(trafficSplit=[{"deploymentId": "dep_existing", "weight": 1.0}]))
+        with pytest.raises(ValueError, match="live traffic-split member"):
+            verify_shadow_target_not_receiving_live_traffic(endpoint, "dep_existing")
 
 
 class TestBetaEndpointShadow:
@@ -554,3 +894,410 @@ class TestBetaEndpointShadow:
         assert experiment_body["source"] == {
             "endpoint": {"sampling": {"adaptiveUniform": {"targetQps": 5.0}}},
         }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_uses_existing_deployment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(respx_mock)
+        create_experiment_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json=_shadow_experiment_body())
+        )
+        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_target_body(
+                    name="existing-shadow-target",
+                    target_deployment_id="dep_existing",
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code == 0, result.output
+        assert create_experiment_route.call_count == 1
+
+        target_body = json.loads(cast(Call, create_target_route.calls[0]).request.content.decode())
+        assert target_body == {
+            "name": "existing-shadow-target",
+            "targetDeploymentId": "dep_existing",
+        }
+
+        output = json.loads(result.output)
+        assert output["deployment"]["id"] == "dep_existing"
+        assert output["shadow_experiment"]["id"] == "exp_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_existing_deployment_custom_target_name(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(respx_mock)
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json=_shadow_experiment_body())
+        )
+        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_target_body(
+                    name="candidate",
+                    target_deployment_id="dep_existing",
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args(name="candidate"))
+
+        assert result.exit_code == 0, result.output
+        target_body = json.loads(cast(Call, create_target_route.calls[0]).request.content.decode())
+        assert target_body == {
+            "name": "candidate",
+            "targetDeploymentId": "dep_existing",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_existing_deployment_reuses_experiment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(respx_mock)
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(
+                409,
+                json={"error": {"message": "Shadow experiment already exists", "type": "conflict"}},
+            )
+        )
+        list_route = respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_shadow_experiment_body(name="shadow-rate-0.1")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_target_body(target_deployment_id="dep_existing"),
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code == 0, result.output
+        assert list_route.call_count == 1
+        target_body = json.loads(cast(Call, create_target_route.calls[0]).request.content.decode())
+        assert target_body["targetDeploymentId"] == "dep_existing"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_existing_deployment_not_found(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code != 0
+        assert "Deployment dep_existing not found" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_rejects_model_with_deployment_id_before_lookup(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "shadow",
+                "--project",
+                "proj",
+                "--endpoint",
+                "dep_existing",
+                "--model",
+                "ml_1",
+                "--rate",
+                "0.1",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "Do not pass MODEL when ENDPOINT is an existing deployment" in result.output
+        assert respx_mock.calls.call_count == 0
+
+    def test_shadow_requires_model_for_endpoint(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "shadow",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--rate",
+                "0.1",
+                "--non-interactive",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "MODEL is required when ENDPOINT is an endpoint ID or name" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_strips_qualified_name_for_default_target(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(respx_mock)
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json=_shadow_experiment_body())
+        )
+        create_target_route = respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_target_body(name="existing-shadow-target", target_deployment_id="dep_existing"),
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code == 0, result.output
+        target_body = json.loads(cast(Call, create_target_route.calls[0]).request.content.decode())
+        assert target_body["name"] == "existing-shadow-target"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_ambiguous_deployment_name_keeps_disambiguation_error(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _endpoint_body(
+                            deployments=[
+                                _deployment_summary(deployment_id="dep_a", name="my-project/my-endpoint/candidate")
+                            ]
+                        ),
+                        _endpoint_body(
+                            id="ep_2",
+                            name="my-project/other-endpoint",
+                            trafficSplit=[{"deploymentId": "dep_b", "weight": 1.0}],
+                            deployments=[
+                                _deployment_summary(deployment_id="dep_b", name="my-project/other-endpoint/candidate")
+                            ],
+                        ),
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "shadow",
+                "--project",
+                "proj",
+                "--endpoint",
+                "candidate",
+                "--rate",
+                "0.1",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        error = json.loads(result.output)["error"]
+        assert "Multiple deployments found" in error
+        assert "MODEL is required" not in error
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_bare_endpoint_name_does_not_attach_matching_deployment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(
+            respx_mock,
+            deployment_name="my-project/my-endpoint/my-endpoint",
+            retrieve=False,
+        )
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "shadow",
+                "--project",
+                "proj",
+                "--endpoint",
+                "my-endpoint",
+                "--rate",
+                "0.1",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "MODEL is required when ENDPOINT is an endpoint ID or name" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_bare_endpoint_name_allows_create_flags(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(
+            respx_mock,
+            deployment_name="my-project/my-endpoint/my-endpoint",
+            retrieve=False,
+        )
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "shadow",
+                "--project",
+                "proj",
+                "--endpoint",
+                "my-endpoint",
+                "--enable-lora",
+                "--rate",
+                "0.1",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "Do not pass --enable-lora" not in result.output
+        assert "MODEL is required when ENDPOINT is an endpoint ID or name" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_rejects_live_traffic_split_member_before_creating_experiment(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(
+            respx_mock,
+            traffic_split=[{"deploymentId": "dep_existing", "weight": 1.0}],
+            retrieve=False,
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code != 0
+        assert "live traffic-split member" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_allows_zero_weight_traffic_split_member(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(
+            respx_mock,
+            traffic_split=[{"deploymentId": "dep_existing", "weight": 0}],
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json=_shadow_experiment_body())
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_target_body(name="existing-shadow-target", target_deployment_id="dep_existing"),
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code == 0, result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_reuses_existing_target_on_duplicate_name(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(respx_mock)
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json=_shadow_experiment_body())
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                409,
+                json={"error": {"message": "Shadow target already exists", "type": "conflict"}},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_shadow_target_body(name="existing-shadow-target", target_deployment_id="dep_existing")],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code == 0, result.output
+        output = json.loads(result.output)
+        assert output["deployment"]["id"] == "dep_existing"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_shadow_errors_when_duplicate_target_name_points_elsewhere(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_existing_deployment_lookup(respx_mock)
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json=_shadow_experiment_body())
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                409,
+                json={"error": {"message": "Shadow target already exists", "type": "conflict"}},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_shadow_target_body(name="existing-shadow-target", target_deployment_id="dep_other")],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
+
+        assert result.exit_code != 0
+        assert "already exists on this experiment for a different deployment" in result.output
