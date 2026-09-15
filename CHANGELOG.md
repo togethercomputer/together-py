@@ -5,18 +5,18 @@
 
 ### Features
 
-* Add Rollouts SDK code for endpoint deployments management ([54b6b70](https://github.com/togethercomputer/together-py/commit/54b6b701f4e9db6e618f9813982a4cc99afef00b))
-* **cli:** Add `beta endpoints rollout` command ([#77](https://github.com/togethercomputer/together-py/issues/77)) ([537859e](https://github.com/togethercomputer/together-py/commit/537859e9a5aacd7c427bc13a4e1662c02ac7efb8))
-* **deployments:** add deployment compliance policy for hipaa requirements ([c5865fa](https://github.com/togethercomputer/together-py/commit/c5865fa53f83c87444cff05fc8bc1815c31c49d4))
+* **Rollouts:** Add SDK code for endpoint rollouts ([54b6b70](https://github.com/togethercomputer/together-py/commit/54b6b701f4e9db6e618f9813982a4cc99afef00b))
+* **Rollouts CLI:** Add `beta endpoints rollout` command ([#77](https://github.com/togethercomputer/together-py/issues/77)) ([537859e](https://github.com/togethercomputer/together-py/commit/537859e9a5aacd7c427bc13a4e1662c02ac7efb8))
+* **Deployments CLI:** add deployment compliance policy for hipaa requirements ([c5865fa](https://github.com/togethercomputer/together-py/commit/c5865fa53f83c87444cff05fc8bc1815c31c49d4))
 * **Endpoints CLI:** add HIPAA placement flag for beta endpoints ([#568](https://github.com/togethercomputer/together-py/issues/568)) ([cc00709](https://github.com/togethercomputer/together-py/commit/cc00709c8bbf7f4507623cc0c8133db11679b3b8))
+
 
 
 ### Bug Fixes
 
-* **cli:** preserve beta command failure diagnostics ([#571](https://github.com/togethercomputer/together-py/issues/571)) ([b1ef04a](https://github.com/togethercomputer/together-py/commit/b1ef04acfd0f6371425cf0afebad0e78cbbc8ba7))
-* **files:** Fail parquet file validation when it is larger than the max file size validation ([#558](https://github.com/togethercomputer/together-py/issues/558)) ([0623132](https://github.com/togethercomputer/together-py/commit/06231321be3bf91e769733f34d8b199d6952ac79))
-* **openapi:** align RL optimizer config names ([588451d](https://github.com/togethercomputer/together-py/commit/588451dd6870d2b71af4ded047bd0cfd81b47a35))
-* **openapi:** sync rollout gate optional values ([850d532](https://github.com/togethercomputer/together-py/commit/850d532023e60c0480c1209ceb80c3dc29a2c034))
+* **CLI:** preserve beta command failure diagnostics ([#571](https://github.com/togethercomputer/together-py/issues/571)) ([b1ef04a](https://github.com/togethercomputer/together-py/commit/b1ef04acfd0f6371425cf0afebad0e78cbbc8ba7))
+* **Files:** Fail parquet file validation when it is larger than the max file size validation ([#558](https://github.com/togethercomputer/together-py/issues/558)) ([0623132](https://github.com/togethercomputer/together-py/commit/06231321be3bf91e769733f34d8b199d6952ac79))
+
 
 ## [2.33.2](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.2) (2026-09-10)
 
