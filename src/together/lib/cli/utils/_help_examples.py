@@ -387,6 +387,7 @@ BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --resume[/primary]
   [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --promote[/primary]
   [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --cancel --reason "freezing mid-canary"[/primary]
+  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --cancel revert[/primary]
 """
 
 BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
