@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from typing_extensions import Annotated
 
 from cyclopts import Group, Parameter
@@ -42,6 +42,7 @@ class NoActiveRolloutError(ValueError):
 
 
 _CONTROL_PARAMS = frozenset({"cancel", "pause", "resume", "promote"})
+_CANCEL_ONLY_PARAMS = frozenset({"cancel_disposition"})
 _METRIC_PARAMS = frozenset(
     {
         "metric",
@@ -69,6 +70,12 @@ _CREATE_PARAMS = frozenset(
 )
 _REASON_PARAMS = frozenset({"cancel", "pause"})
 _CANARY_ONLY_PARAMS = frozenset({"steps", "interval"}) | _METRIC_PARAMS
+CancelDispositionCli = Literal["freeze", "revert"]
+CancelDispositionApi = Literal["CANCEL_DISPOSITION_FREEZE", "CANCEL_DISPOSITION_REVERT"]
+_CANCEL_DISPOSITION_MAP: dict[CancelDispositionCli, CancelDispositionApi] = {
+    "freeze": "CANCEL_DISPOSITION_FREEZE",
+    "revert": "CANCEL_DISPOSITION_REVERT",
+}
 
 
 def _populated_names(argument_collection: ArgumentCollection) -> set[str]:
@@ -76,7 +83,7 @@ def _populated_names(argument_collection: ArgumentCollection) -> set[str]:
 
 
 def _control_mode_validator(argument_collection: ArgumentCollection) -> None:
-    """Controls are exclusive with create/strategy options; --reason only with --cancel/--pause."""
+    """Controls are exclusive with create/strategy options; control-only params require their flags."""
     populated = _populated_names(argument_collection)
     controls = populated & _CONTROL_PARAMS
     creates = populated & _CREATE_PARAMS
@@ -84,6 +91,8 @@ def _control_mode_validator(argument_collection: ArgumentCollection) -> None:
         raise ValueError("Strategy and create options cannot be combined with rollout control flags.")
     if "reason" in populated and not (populated & _REASON_PARAMS):
         raise ValueError("--reason is only valid with --cancel or --pause.")
+    if populated & _CANCEL_ONLY_PARAMS and "cancel" not in populated:
+        raise ValueError("--cancel-disposition is only valid with --cancel.")
 
 
 def _canary_options_validator(argument_collection: ArgumentCollection) -> None:
@@ -204,6 +213,17 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
         Parameter(
             name="--reason",
             help=("User-provided auditing reason for a cancel or pause action."),
+            group=(ControlDisplayGroup, ModeGroup),
+        ),
+    ] = None,
+    cancel_disposition: Annotated[
+        Optional[CancelDispositionCli],
+        Parameter(
+            name="--cancel-disposition",
+            help=(
+                "What to do with traffic when cancelling. Choices: freeze leaves the current split; "
+                "revert restores the source deployment."
+            ),
             group=(ControlDisplayGroup, ModeGroup),
         ),
     ] = None,
@@ -386,6 +406,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             resume=resume,
             promote=promote,
             reason=reason,
+            cancel_disposition=cancel_disposition,
             config=config,
         )
     else:
@@ -434,6 +455,7 @@ async def _control_rollout(
     resume: bool,
     promote: bool,
     reason: str | None,
+    cancel_disposition: CancelDispositionCli | None,
     config: CLIConfigParameter,
 ) -> tuple[Rollout, str]:
     existing_rollout = await _resolve_active_rollout(config, ref)
@@ -446,9 +468,14 @@ async def _control_rollout(
                 id=rollout_id,
                 endpoint_id=existing_rollout.endpoint_id,
                 reason=reason or "Cancelled via tg beta endpoints rollout --cancel",
+                disposition=(
+                    _cancel_disposition_to_api(cancel_disposition) if cancel_disposition is not None else omit
+                ),
                 etag=existing_rollout.etag or omit,
             ),
         )
+        if cancel_disposition == "revert":
+            return rollout, "Rollout cancelled (traffic reverted to source)."
         return rollout, "Rollout cancelled (traffic frozen at current split)."
 
     if pause:
@@ -486,6 +513,13 @@ async def _control_rollout(
         ),
     )
     return rollout, "Rollout promoted (100% traffic on target)."
+
+
+def _cancel_disposition_to_api(value: CancelDispositionCli) -> CancelDispositionApi:
+    if value not in _CANCEL_DISPOSITION_MAP:
+        known = ", ".join(_CANCEL_DISPOSITION_MAP)
+        raise ValueError(f"Unknown --cancel-disposition {value!r}. Choose one of: {known}.")
+    return _CANCEL_DISPOSITION_MAP[value]
 
 
 async def _create_and_start_rollout(
