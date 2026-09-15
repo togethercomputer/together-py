@@ -1211,12 +1211,31 @@ class TestBetaEndpointsRollout:
             return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_CANCELED"))
         )
 
-        result = cli_runner.invoke(_rollout_args("ep_1", "--cancel", "--cancel-disposition", "revert", "--json"))
+        result = cli_runner.invoke(_rollout_args("ep_1", "--cancel", "revert", "--json"))
 
         assert result.exit_code == 0, result.output
         assert cancel_route.called
         body = json.loads(cast(Call, cancel_route.calls[0]).request.content.decode())
         assert body["disposition"] == "CANCEL_DISPOSITION_REVERT"
+        assert body["reason"] == "Cancelled via tg beta endpoints rollout --cancel"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_cancel_with_freeze_disposition(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_active_rollout(respx_mock)
+        cancel_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/cancel").mock(
+            return_value=httpx.Response(200, json=_rollout_body(state="ROLLOUT_STATE_CANCELED"))
+        )
+
+        result = cli_runner.invoke(_rollout_args("ep_1", "--cancel", "freeze", "--json"))
+
+        assert result.exit_code == 0, result.output
+        assert cancel_route.called
+        body = json.loads(cast(Call, cancel_route.calls[0]).request.content.decode())
+        assert body["disposition"] == "CANCEL_DISPOSITION_FREEZE"
         assert body["reason"] == "Cancelled via tg beta endpoints rollout --cancel"
 
     @pytest.mark.respx(base_url=base_url)
@@ -1414,10 +1433,11 @@ class TestBetaEndpointsRollout:
         assert "--reason is only valid with --cancel or --pause" in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_rejects_cancel_disposition_without_cancel(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(_rollout_args("dep_target", "--cancel-disposition", "revert"))
+    def test_rejects_unknown_cancel_disposition(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(_rollout_args("dep_target", "--cancel", "nope"))
         assert result.exit_code != 0
-        assert "--cancel-disposition is only valid with --cancel" in result.output
+        assert "freeze" in result.output
+        assert "revert" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_rejects_retired_min_max_metric_stat(self, cli_runner: CliRunner) -> None:

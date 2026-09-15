@@ -42,7 +42,6 @@ class NoActiveRolloutError(ValueError):
 
 
 _CONTROL_PARAMS = frozenset({"cancel", "pause", "resume", "promote"})
-_CANCEL_ONLY_PARAMS = frozenset({"cancel_disposition"})
 _METRIC_PARAMS = frozenset(
     {
         "metric",
@@ -83,7 +82,7 @@ def _populated_names(argument_collection: ArgumentCollection) -> set[str]:
 
 
 def _control_mode_validator(argument_collection: ArgumentCollection) -> None:
-    """Controls are exclusive with create/strategy options; control-only params require their flags."""
+    """Controls are exclusive with create/strategy options; --reason requires --cancel/--pause."""
     populated = _populated_names(argument_collection)
     controls = populated & _CONTROL_PARAMS
     creates = populated & _CREATE_PARAMS
@@ -91,8 +90,6 @@ def _control_mode_validator(argument_collection: ArgumentCollection) -> None:
         raise ValueError("Strategy and create options cannot be combined with rollout control flags.")
     if "reason" in populated and not (populated & _REASON_PARAMS):
         raise ValueError("--reason is only valid with --cancel or --pause.")
-    if populated & _CANCEL_ONLY_PARAMS and "cancel" not in populated:
-        raise ValueError("--cancel-disposition is only valid with --cancel.")
 
 
 def _canary_options_validator(argument_collection: ArgumentCollection) -> None:
@@ -177,13 +174,17 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
         ),
     ] = None,
     cancel: Annotated[
-        bool,
+        Optional[list[CancelDispositionCli]],
         Parameter(
             name="--cancel",
-            help="Cancel an in-progress rollout, Endpoint and deployments will be left in the current traffic split",
+            help=(
+                "Cancel an in-progress rollout. Bare --cancel omits disposition (server defaults to freeze). "
+                "Optional value: freeze leaves the current split; revert restores the source."
+            ),
+            consume_multiple=(0, 1),
             group=(ControlDisplayGroup, ControlGroup, ModeGroup),
         ),
-    ] = False,
+    ] = None,
     pause: Annotated[
         bool,
         Parameter(
@@ -213,17 +214,6 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
         Parameter(
             name="--reason",
             help=("User-provided auditing reason for a cancel or pause action."),
-            group=(ControlDisplayGroup, ModeGroup),
-        ),
-    ] = None,
-    cancel_disposition: Annotated[
-        Optional[CancelDispositionCli],
-        Parameter(
-            name="--cancel-disposition",
-            help=(
-                "What to do with traffic when cancelling. Choices: freeze leaves the current split; "
-                "revert restores the source deployment."
-            ),
             group=(ControlDisplayGroup, ModeGroup),
         ),
     ] = None,
@@ -398,7 +388,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
     """Roll out a deployment, or control an existing rollout."""
     actions: list[str] = []
 
-    if cancel or pause or resume or promote:
+    if cancel is not None or pause or resume or promote:
         result, message = await _control_rollout(
             id,
             cancel=cancel,
@@ -406,7 +396,6 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             resume=resume,
             promote=promote,
             reason=reason,
-            cancel_disposition=cancel_disposition,
             config=config,
         )
     else:
@@ -450,18 +439,18 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
 async def _control_rollout(
     ref: str,
     *,
-    cancel: bool,
+    cancel: list[CancelDispositionCli] | None,
     pause: bool,
     resume: bool,
     promote: bool,
     reason: str | None,
-    cancel_disposition: CancelDispositionCli | None,
     config: CLIConfigParameter,
 ) -> tuple[Rollout, str]:
     existing_rollout = await _resolve_active_rollout(config, ref)
     rollout_id = existing_rollout.id
 
-    if cancel:
+    if cancel is not None:
+        cancel_disposition = cancel[0] if cancel else None
         rollout = await show_loading_status(
             "Cancelling rollout...",
             config.client.beta.endpoints.rollouts.cancel(
@@ -518,7 +507,7 @@ async def _control_rollout(
 def _cancel_disposition_to_api(value: CancelDispositionCli) -> CancelDispositionApi:
     if value not in _CANCEL_DISPOSITION_MAP:
         known = ", ".join(_CANCEL_DISPOSITION_MAP)
-        raise ValueError(f"Unknown --cancel-disposition {value!r}. Choose one of: {known}.")
+        raise ValueError(f"Unknown --cancel disposition {value!r}. Choose one of: {known}.")
     return _CANCEL_DISPOSITION_MAP[value]
 
 
