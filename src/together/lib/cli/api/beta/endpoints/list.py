@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-from typing import List, Iterable, Optional
+from typing import Iterable, Optional
 from typing_extensions import Annotated
 
 from cyclopts import Parameter
@@ -15,33 +14,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
-
-
-async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParameter) -> dict[str, str]:
-    model_resource_paths = {
-        (deployment.model, deployment.api_model_id)
-        for endpoint in endpoints
-        for deployment in endpoint.deployments or []
-        if deployment.model and deployment.api_model_id
-    }
-
-    async def fetch_model_name(model_resource_path: str, model_id: str) -> tuple[str, str]:
-        try:
-            match = MODEL_PATH_RE.match(model_resource_path)
-            if match is None:
-                return model_id, model_id
-            project_id, model_id = match.group(1), match.group(2)
-            model = await config.client.beta.models.retrieve(model_id, project_id=project_id)
-            return model_id, model.name
-        except Exception:
-            return model_id, model_id
-
-    return dict(
-        await asyncio.gather(
-            *(fetch_model_name(model_resource_path, model_id) for model_resource_path, model_id in model_resource_paths)
-        )
-    )
+from together.lib.cli.api.beta.endpoints._utils._resolve_model_names import resolve_model_names
 
 
 def _print_next_page(next_cursor: str | None, *, public: bool = False, org: bool = False) -> None:
@@ -91,7 +64,7 @@ async def list(
         return
 
     data = response.data or []
-    print_endpoints_table(data, model_names=await _resolve_model_names(data, config), empty_message=message)
+    print_endpoints_table(data, model_names=await resolve_model_names(data, config), empty_message=message)
     _print_next_page(response.next_cursor, org=org)
 
 

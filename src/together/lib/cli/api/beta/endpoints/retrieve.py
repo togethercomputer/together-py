@@ -18,7 +18,8 @@ from together.types.beta.endpoints import AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint
+from together.lib.cli.api.beta.endpoints._utils._resolve_model_names import resolve_model_names
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
 
@@ -128,10 +129,11 @@ async def _retrieve_endpoint(id: str, *, config: CLIConfigParameter) -> None:
     deployments_table.add_column("Model")
     deployments_table.add_column("Estimated Traffic")
     deployments_table.add_column("")
+    model_names = await resolve_model_names([endpoint], config)
     for i, deployment in enumerate(deployments):
         name = deployment.name.split("/")[-1]
 
-        model = (await resolve_model(config, deployment.model)).name
+        model = model_names.get(deployment.api_model_id, deployment.api_model_id)
 
         replicas = f"{deployment.ready_replicas or 0} / {deployment.desired_replicas or 0}"
         estimated_traffic = format_estimated_traffic(deployment.estimated_effective_traffic_share)

@@ -59,6 +59,19 @@ def _deployment_body(**overrides: Any) -> dict[str, Any]:
     return body
 
 
+def _model_body(**overrides: Any) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "id": "ml_control",
+        "projectId": "proj",
+        "organizationId": "org-1",
+        "name": "proj/model",
+        "visibility": "VISIBILITY_PRIVATE",
+        "weights": {"architecture": "llama", "type": "WEIGHTS_TYPE_DEFAULT"},
+    }
+    body.update(overrides)
+    return body
+
+
 def _whoami_body(**overrides: Any) -> dict[str, Any]:
     body: dict[str, Any] = {
         "api_key_id": "key-1",
@@ -139,6 +152,43 @@ class TestBetaEndpointsRetrieve:
         payload = json.loads(result.output)
         assert payload["id"] == "ep_1"
         assert payload["name"] == "my-project/my-endpoint"
+
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    def test_retrieve_endpoint_text_does_not_resolve_deployment_config(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        model_route = respx_mock.get("/projects/proj/models/ml_control").mock(
+            return_value=httpx.Response(200, json=_model_body())
+        )
+        configs_route = respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        {
+                            "id": f"cr_{index}",
+                            "projectId": "proj",
+                            "referenceModel": "projects/proj/models/ml_control",
+                            "referenceModelId": "ml_control",
+                            "selectors": [],
+                            "certifications": [],
+                        }
+                        for index in range(2)
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        _mock_endpoint_get_side_resources(respx_mock)
+
+        result = cli_runner.invoke(["beta", "endpoints", "get", "ep_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "proj/model" in result.output
+        assert model_route.call_count == 1
+        assert configs_route.call_count == 0
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
