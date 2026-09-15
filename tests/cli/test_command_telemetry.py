@@ -187,6 +187,73 @@ async def test_invalid_autoscaling_preserves_diagnostic(
 
 @pytest.mark.usefixtures("isolated_cli_config")
 @pytest.mark.asyncio
+async def test_missing_endpoint_update_option_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "endpoints",
+            "update",
+            "dep_example",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "endpoints update"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "At least one endpoint update option must be specified"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_model_upload_failure_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+    private_path = tmp_path / "private-customer-model"
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "models",
+            "upload",
+            "ml_example",
+            str(private_path),
+            "--non-interactive",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "models upload"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "Model file upload failed"
+    assert str(private_path) not in failed["error"]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
 async def test_model_download_validation_preserves_diagnostic(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     monkeypatch: pytest.MonkeyPatch,

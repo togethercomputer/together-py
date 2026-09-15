@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Any, Optional
 from typing_extensions import Annotated
 
@@ -9,6 +8,7 @@ from cyclopts.validators import Number
 
 from together import omit
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
@@ -136,7 +136,7 @@ async def update(
 
     if not update_mask and traffic_weight is None and ab_percent is None:
         console.print("Error: At least one update option must be specified.")
-        sys.exit(1)
+        raise CliDiagnosticExit("At least one endpoint update option must be specified")
 
     endpoint = await find_endpoint_by_deployment(config.client, id)
 
