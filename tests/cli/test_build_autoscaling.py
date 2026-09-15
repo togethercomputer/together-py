@@ -4,6 +4,7 @@ import pytest
 
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     build_autoscaling,
+    normalize_duration,
     build_scaling_metrics,
 )
 
@@ -220,3 +221,49 @@ def test_build_autoscaling_omits_scale_to_zero_window() -> None:
         "scale_down_window": "60s",
     }
     assert "scale_to_zero_window" not in autoscaling
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("30s", "30s"),
+        ("180s", "180s"),
+        ("1.5s", "1.5s"),
+        ("1.500s", "1.500s"),
+        ("30", "30s"),
+        ("10m", "600s"),
+        ("2m", "120s"),
+        ("1h", "3600s"),
+        ("10m30s", "630s"),
+        ("5m", "300s"),
+        ("1ms", "0.001s"),
+        ("-10m", "-600s"),
+    ],
+)
+def test_normalize_duration_accepts_human_and_proto_spellings(raw: str, expected: str) -> None:
+    assert normalize_duration(raw, option_name="--interval") == expected
+
+
+@pytest.mark.parametrize("raw", ["30S", "PT1M", "abc", "", "10m30", "10 x"])
+def test_normalize_duration_rejects_invalid_spellings(raw: str, capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        normalize_duration(raw, option_name="--interval")
+    output = capsys.readouterr().out
+    assert "--interval must be a duration" in output
+    assert f"got {raw!r}" in output
+
+
+def test_build_autoscaling_converts_human_duration_windows() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=1,
+        scale_up_window="10m",
+        scale_down_window="1h",
+        required=True,
+    )
+    assert autoscaling == {
+        "min_replicas": 1,
+        "max_replicas": 1,
+        "scale_up_window": "600s",
+        "scale_down_window": "3600s",
+    }

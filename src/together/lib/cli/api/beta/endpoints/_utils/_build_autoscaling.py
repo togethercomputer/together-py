@@ -8,9 +8,21 @@ from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 from together.types.beta.deployment_autoscaling_param import ScalingMetric
 
-# OpenAPI DE.Autoscaling windows: protobuf Duration JSON, seconds only (e.g. "30s").
+# Wire format is protobuf Duration JSON, seconds only (e.g. "30s", "600s").
+# CLI also accepts bare seconds (`30`) and Go-style units (`10m`, `1h`, `10m30s`).
 _DURATION_RE = re.compile(r"^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$")
 _BARE_SECONDS_RE = re.compile(r"^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?$")
+_HUMAN_TOKEN_RE = re.compile(r"(\d+(?:\.\d+)?)(ns|us|µs|μs|ms|h|m|s)")
+_UNIT_NANOS: dict[str, int] = {
+    "ns": 1,
+    "us": 1_000,
+    "µs": 1_000,
+    "μs": 1_000,
+    "ms": 1_000_000,
+    "s": 1_000_000_000,
+    "m": 60_000_000_000,
+    "h": 3_600_000_000_000,
+}
 
 MetricType = Literal[
     "METRIC_TARGET_TYPE_VALUE",
@@ -49,8 +61,56 @@ _VALID_PERCENTILES: frozenset[ScalingPercentile] = frozenset({"p50", "p90", "p95
 SCALING_METRIC_NAMES = tuple(_METRIC_TYPES)
 
 
+def _token_to_nanos(amount: str, unit: str) -> int:
+    unit_nanos = _UNIT_NANOS[unit]
+    if "." not in amount:
+        return int(amount) * unit_nanos
+    whole, frac = amount.split(".", 1)
+    whole_i = int(whole) if whole else 0
+    scale = int(10 ** len(frac))
+    return whole_i * unit_nanos + (int(frac) * unit_nanos) // scale
+
+
+def _format_proto_duration(nanos: int) -> str:
+    sign = "-" if nanos < 0 else ""
+    nanos = abs(nanos)
+    secs, rem = divmod(nanos, 1_000_000_000)
+    if rem == 0:
+        return f"{sign}{secs}s"
+    return f"{sign}{secs}.{rem:09d}".rstrip("0") + "s"
+
+
+def _human_duration_to_proto(value: str) -> str | None:
+    sign = -1 if value.startswith("-") else 1
+    if value.startswith("-") or value.startswith("+"):
+        value = value[1:]
+    if not value:
+        return None
+    total = 0
+    pos = 0
+    while pos < len(value):
+        match = _HUMAN_TOKEN_RE.match(value, pos)
+        if match is None:
+            return None
+        total += _token_to_nanos(match.group(1), match.group(2))
+        pos = match.end()
+    return _format_proto_duration(sign * total)
+
+
+@overload
+def normalize_duration(value: None, *, option_name: str) -> None: ...
+
+
+@overload
+def normalize_duration(value: str, *, option_name: str) -> str: ...
+
+
 def normalize_duration(value: str | None, *, option_name: str) -> str | None:
-    """Accept bare seconds (`30`) or Duration JSON (`30s`); reject other units."""
+    """Normalize a CLI duration to protobuf Duration JSON (`600s`).
+
+    Accepts Duration JSON (`30s`), bare seconds (`30`), and Go-style units
+    (`10m`, `1h`, `10m30s`). Other spellings exit with a named error.
+    """
     if value is None:
         return None
     value = value.strip()
@@ -58,8 +118,11 @@ def normalize_duration(value: str | None, *, option_name: str) -> str | None:
         return value
     if _BARE_SECONDS_RE.match(value):
         return f"{value}s"
-    console.print(f"Error: {option_name} must be a duration in seconds, e.g. 30 or 30s (got {value!r}).")
-    raise CliDiagnosticExit(f"Invalid autoscaling duration for {option_name}")
+    converted = _human_duration_to_proto(value)
+    if converted is not None and _DURATION_RE.match(converted):
+        return converted
+    console.print(f"Error: {option_name} must be a duration, e.g. 30, 30s, 10m, or 1h (got {value!r}).")
+    raise CliDiagnosticExit(f"Invalid duration for {option_name}")
 
 
 def build_scaling_metrics(

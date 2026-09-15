@@ -348,10 +348,45 @@ BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> --percent 10[/primary]
 
 [dim]-[/dim] Mirror live traffic to a shadow deployment:
-  [primary]tg beta endpoints shadow my-endpoint Qwen/Qwen2.5-7B --rate 0.1[/primary]
+  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> --rate 0.1[/primary]
 
-[dim]-[/dim] Delete a deployment, experiment, or entire endpoint:
-  [primary]tg beta endpoints rm <ep_|dep_|abx_|exp_...>[/primary]
+[dim]-[/dim] Delete a deployment, experiment, rollout, or entire endpoint:
+  [primary]tg beta endpoints rm <ep_|dep_|abx_|exp_|rol_...>[/primary]
+
+[dim]-[/dim] Roll out a deployment onto live traffic:
+  [primary]tg beta endpoints rollout <deployment-id> --rolling[/primary]
+"""
+
+BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Rolling (capacity-preserving batch swap):
+  [primary]tg beta endpoints rollout my-deployment --rolling[/primary]
+
+[dim]-[/dim] Blue-green cutover:
+  [primary]tg beta endpoints rollout my-deployment --blue-green[/primary]
+
+[dim]-[/dim] Canary (server-default steps/interval):
+  [primary]tg beta endpoints rollout my-deployment --canary[/primary]
+
+[dim]-[/dim] Canary with custom steps and interval:
+  [primary]tg beta endpoints rollout my-deployment --canary \\
+    --steps 5,25,50,100 --interval 30s[/primary]
+
+[dim]-[/dim] Canary with a metric gate (threshold or regression):
+  [primary]tg beta endpoints rollout my-deployment --canary \\
+    --metric router_latency --metric-stat p99 \\
+    --metric-threshold 500 --metric-operator lte[/primary]
+  [primary]tg beta endpoints rollout my-deployment --canary \\
+    --metric router_error_rate --metric-direction higher-is-worse[/primary]
+
+[dim]-[/dim] Roll out a deployment from an active shadow or a/b experiment:
+  [primary]tg beta endpoints rollout shadow-deployment --rolling --detach[/primary]
+
+[dim]-[/dim] Control an in-progress rollout (endpoint ID preferred; also accepts
+  endpoint name, deployment ID/name, or rollout ID — one active rollout per endpoint):
+  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --pause[/primary]
+  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --resume[/primary]
+  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --promote[/primary]
+  [primary]tg beta endpoints rollout ep_xxxxxxxxxxxx --cancel --reason "freezing mid-canary"[/primary]
 """
 
 BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -408,16 +443,19 @@ BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror 10% of live requests to a shadow deployment:
-  [primary]tg beta endpoints shadow my-endpoint Qwen/Qwen2.5-7B --rate 0.1[/primary]
+  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> \\
+    --rate 0.1[/primary]
 
 [dim]-[/dim] Adaptive sampling to a target QPS:
-  [primary]tg beta endpoints shadow ep_xxxxxxxxxxxx Qwen/Qwen2.5-7B --target-qps 5[/primary]
+  [primary]tg beta endpoints shadow zai-org/GLM-5.1 --endpoint <endpoint-name-or-id> \\
+    --target-qps 5[/primary]
 
 [dim]-[/dim] Sticky key-based sampling on a request field:
-  [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx --rate 0.2 --key user_id[/primary]
+  [primary]tg beta endpoints shadow deepseek-ai/DeepSeek-V4-Flash --endpoint <endpoint-name-or-id> \\
+    --rate 0.2 --key user_id[/primary]
 
 [dim]-[/dim] Shadow a private model with an explicit config:
-  [primary]tg beta endpoints shadow my-endpoint ml_xxxxxxxxxxxx \\
+  [primary]tg beta endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
 [dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
@@ -430,6 +468,9 @@ BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Delete an A/B or shadow experiment:
   [primary]tg beta endpoints rm abx_xxxxxxxxxxxx[/primary]
   [primary]tg beta endpoints rm exp_xxxxxxxxxxxx[/primary]
+
+[dim]-[/dim] Delete a rollout:
+  [primary]tg beta endpoints rm rol_xxxxxxxxxxxx[/primary]
 
 [dim]-[/dim] Delete an empty endpoint:
   [primary]tg beta endpoints rm ep_xxxxxxxxxxxx[/primary]

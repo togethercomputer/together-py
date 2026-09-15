@@ -7,7 +7,7 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import APIError, AsyncClient, omit
-from together.types.beta import AbMember, AbMemberParam, DeploymentAutoscalingParam, EndpointTrafficSplitEntryParam
+from together.types.beta import DeploymentAutoscalingParam, EndpointTrafficSplitEntryParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.types.beta.endpoint import Endpoint
@@ -16,12 +16,15 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.types.beta.endpoints.shadow_experiment import ShadowExperiment
-from together.lib.cli.api.beta.endpoints._utils._ab_experiments import find_ab_for_deployment
+from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
+from together.lib.cli.api.beta.endpoints._utils._detach_from_experiments import (
+    detach_deployment_from_experiments,
+)
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 
 
 async def rm(
-    id: Annotated[str, Parameter(help="Resource ID to delete (ep_..., dep_..., abx_..., or exp_...)")],
+    id: Annotated[str, Parameter(help="Resource ID to delete (ep_..., dep_..., abx_..., exp_..., or rol_...)")],
     force: Annotated[
         bool,
         Parameter(
@@ -43,8 +46,10 @@ async def rm(
         result = await _delete_ab_experiment(id, config=config)
     elif id.startswith("exp_"):
         result = await _delete_shadow_experiment(id, config=config)
+    elif id.startswith("rol_"):
+        result = await _delete_rollout(id, config=config)
     else:
-        raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, abx_, or exp_.")
+        raise ValueError(f"Unrecognized resource ID {id!r}. Expected a prefix of ep_, dep_, abx_, exp_, or rol_.")
 
     if config.json:
         console.print_json(openapi_dumps(result).decode("utf-8"))
@@ -127,62 +132,11 @@ async def _print_endpoint_delete_blocked(
 
 async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
     endpoint = await find_endpoint_by_deployment(config.client, deployment_id)
-    actions: list[str] = []
-
-    shadow = await _find_shadow_for_deployment(config.client, endpoint.id, deployment_id)
-    if shadow is not None:
-        target = next(t for t in (shadow.targets or []) if t.target_deployment_id == deployment_id)
-        await show_loading_status(
-            "Removing deployment from shadow experiment...",
-            config.client.beta.endpoints.shadow_experiments.targets.delete(
-                id=target.id,
-                endpoint_id=endpoint.id,
-                experiment_id=shadow.id,
-                etag=target.etag or omit,
-            ),
-        )
-        remaining = [t for t in (shadow.targets or []) if t.target_deployment_id != deployment_id]
-        if remaining:
-            actions.append(f"removed from shadow experiment {shadow.id}")
-        else:
-            await show_loading_status(
-                "Deleting empty shadow experiment...",
-                config.client.beta.endpoints.shadow_experiments.delete(
-                    id=shadow.id,
-                    endpoint_id=endpoint.id,
-                    etag=shadow.etag or omit,
-                ),
-            )
-            actions.append(f"deleted empty shadow experiment {shadow.id}")
-
-    ab = await find_ab_for_deployment(config.client, endpoint.id, deployment_id)
-    if ab is not None:
-        removed = next(m for m in ab.members if m.deployment_id == deployment_id)
-        remaining_members = [m for m in ab.members if m.deployment_id != deployment_id]
-        # A/B experiments require >= 2 members and a control; otherwise delete the experiment.
-        if len(remaining_members) < 2 or removed.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL":
-            await show_loading_status(
-                "Deleting A/B experiment...",
-                config.client.beta.endpoints.ab_experiments.delete(
-                    id=ab.id,
-                    endpoint_id=endpoint.id,
-                    etag=ab.etag or omit,
-                ),
-            )
-            actions.append(f"deleted A/B experiment {ab.id}")
-        else:
-            members = _members_without_deployment(ab.members, deployment_id)
-            await show_loading_status(
-                "Removing deployment from A/B experiment...",
-                config.client.beta.endpoints.ab_experiments.update(
-                    id=ab.id,
-                    endpoint_id=endpoint.id,
-                    update_mask="members",
-                    members=members,
-                    etag=ab.etag or omit,
-                ),
-            )
-            actions.append(f"removed from A/B experiment {ab.id}")
+    actions = await detach_deployment_from_experiments(
+        config,
+        endpoint=endpoint,
+        deployment_id=deployment_id,
+    )
 
     await _detach_from_traffic_split(config.client, endpoint, deployment_id)
 
@@ -278,19 +232,17 @@ async def _delete_shadow_experiment(experiment_id: str, *, config: CLIConfigPara
     }
 
 
-def _members_without_deployment(members: list[AbMember], deployment_id: str) -> list[AbMemberParam]:
-    removed = next((m for m in members if m.deployment_id == deployment_id), None)
-    if removed is None:
-        raise ValueError(f"Deployment {deployment_id} is not a member of the A/B experiment.")
-
-    remaining = [m for m in members if m.deployment_id != deployment_id]
-    result: list[AbMemberParam] = []
-    for member in remaining:
-        percent = member.percent
-        if member.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL":
-            percent = member.percent + removed.percent
-        result.append(AbMemberParam(deployment_id=member.deployment_id, role=member.role, percent=percent))
-    return result
+async def _delete_rollout(rollout_id: str, *, config: CLIConfigParameter) -> dict[str, Any]:
+    rollout = await resolve_rollout_by_id(config.client, rollout_id)
+    await show_loading_status(
+        "Deleting rollout...",
+        config.client.beta.endpoints.rollouts.delete(
+            id=rollout.id,
+            endpoint_id=rollout.endpoint_id,
+            etag=rollout.etag or omit,
+        ),
+    )
+    return {"message": f"Deleted rollout {rollout_id}", "id": rollout_id, "type": "rollout"}
 
 
 async def _detach_from_traffic_split(client: AsyncClient, endpoint: Endpoint, deployment_id: str) -> None:
@@ -309,22 +261,6 @@ async def _detach_from_traffic_split(client: AsyncClient, endpoint: Endpoint, de
         update_mask="trafficSplit",
         etag=endpoint.etag or omit,
     )
-
-
-async def _find_shadow_for_deployment(
-    client: AsyncClient,
-    endpoint_id: str,
-    deployment_id: str,
-) -> ShadowExperiment | None:
-    page = await client.beta.endpoints.shadow_experiments.list(
-        endpoint_id=endpoint_id,
-        include_targets=True,
-    )
-    for experiment in page.data:
-        for target in experiment.targets or []:
-            if target.target_deployment_id == deployment_id:
-                return experiment
-    return None
 
 
 async def _find_ab_experiment(

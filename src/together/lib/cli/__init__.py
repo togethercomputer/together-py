@@ -80,6 +80,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
@@ -725,7 +726,7 @@ beta_endpoints_app.command(
     name="rm",
     alias="-d",
     sort_key=5,
-    help="Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID",
+    help="Delete an endpoint, deployment, A/B experiment, shadow experiment, or rollout by ID",
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
 )
 # Hidden `delete` alias for `tg beta endpoints delete …` (visible command is `rm`).
@@ -738,6 +739,12 @@ beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.events:events"),
     help="List endpoint audit and lifecycle events",
     sort_key=6,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.rollout:rollout"),
+    help="Roll out a model to receive traffic over another model",
+    help_epilogue=BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
+    sort_key=9999,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.shadow:shadow"),
