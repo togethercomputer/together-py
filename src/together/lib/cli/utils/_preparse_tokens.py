@@ -12,6 +12,7 @@ _COMMAND_ID_IDENTIFIERS = {
     "fine-tuning": re.compile(r"^ft-"),
     "files": re.compile(r"^file-"),
     "evals": re.compile(r"^eval-"),
+    "batches": re.compile(r"^batch"),
     "endpoints": re.compile(r"^endpoint-"),
     "beta models configs": re.compile(r"^ep_"),
     # `beta endpoints` uses App.default(retrieve) instead of token rewriting.
@@ -121,7 +122,7 @@ def _canonical_telemetry_command(cmd: str) -> str:
     if primary is not None:
         parts[0] = primary
     parts = ["list" if p == "ls" else p for p in parts]
-    parts = ["delete" if p == "-d" else p for p in parts]
+    parts = ["delete" if p in {"-d", "rm"} else p for p in parts]
     parts = ["create" if p == "-c" else p for p in parts]
     parts = ["retrieve" if p == "get" else p for p in parts]
     return " ".join(parts)
@@ -135,7 +136,7 @@ def preparse_tokens(app: App, tokens: list[str]) -> tuple[str, list[str], bool, 
 
     Subcommand aliases (e.g. ``ft``) are normalized to their primary names (e.g. ``fine-tuning``).
     The ``list`` alias ``ls`` is normalized to ``list`` in the returned command path.
-    The ``delete`` alias ``-d`` is normalized to ``delete`` in the returned command path.
+    The ``delete`` aliases ``rm`` and ``-d`` are normalized to ``delete`` in the returned command path.
     The ``create`` alias ``-c`` is normalized to ``create`` in the returned command path.
     The ``retrieve`` alias ``get`` is normalized to ``retrieve`` in the returned command path.
     Implicit ``retrieve`` for most commands is applied here so telemetry matches execution.

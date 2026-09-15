@@ -15,6 +15,7 @@ from typing import Any, TypeVar, Callable, cast
 from pathlib import Path
 
 from detect_agent import determine_agent
+from cyclopts.exceptions import CycloptsError, UnknownOptionError
 
 from together import __version__
 from together.lib.utils import log_debug
@@ -25,6 +26,7 @@ _SESSION_ID = int(str(uuid.uuid4().int)[0:13])
 
 _ENV_TELEMETRY_OFF = frozenset({"1", "true", "yes"})
 _ERROR_MESSAGE_MAX_LEN = 500
+_ERROR_MESSAGE_TRUNCATION_MARKER = "\n…\n"
 _CONFIG_DIR_NAME = "together"
 _CONFIG_FILE_NAME = "cli.json"
 
@@ -220,8 +222,65 @@ def sanitize_cli_error_message(msg: str) -> str:
     """Sanitize the error messages caught for telemetry to remove sensitive information."""
     s = _redact_secrets_in_error_text(msg.strip())
     if len(s) > _ERROR_MESSAGE_MAX_LEN:
-        s = s[:_ERROR_MESSAGE_MAX_LEN] + "…"
+        remaining_len = _ERROR_MESSAGE_MAX_LEN - len(_ERROR_MESSAGE_TRUNCATION_MARKER)
+        prefix_len = remaining_len // 2
+        suffix_len = remaining_len - prefix_len
+        s = f"{s[:prefix_len]}{_ERROR_MESSAGE_TRUNCATION_MARKER}{s[-suffix_len:]}"
     return s
+
+
+def _option_name_without_inline_value(name: str) -> str:
+    """Keep ``--flag`` from ``--flag=value`` so telemetry doesn't embed secrets/paths."""
+    return name.split("=", 1)[0]
+
+
+def _unknown_option_name(exc: BaseException) -> str | None:
+    token = getattr(exc, "token", None)
+    if isinstance(token, str):
+        return _option_name_without_inline_value(token) if token else None
+    if token is None:
+        return None
+    keyword = getattr(token, "keyword", None)
+    if isinstance(keyword, str) and keyword:
+        return _option_name_without_inline_value(keyword)
+    value = getattr(token, "value", None)
+    if isinstance(value, str) and value:
+        return _option_name_without_inline_value(value)
+    return None
+
+
+def _stringify_cyclopts_error(exc: CycloptsError) -> str:
+    """Drop the verbose file-path / signature preamble (unique per install)."""
+    original = exc.verbose
+    try:
+        exc.verbose = False
+        return str(exc)
+    finally:
+        exc.verbose = original
+
+
+def format_cli_error_for_telemetry(exc: BaseException, *, command: str = "") -> str:
+    """Stable error text for CLI failure telemetry.
+
+    Cyclopts ``UnknownOptionError`` otherwise includes the command's install path and
+    full function signature, which makes every machine a unique event.
+    """
+    if isinstance(exc, UnknownOptionError):
+        option = _unknown_option_name(exc)
+        if option:
+            if command:
+                msg = f'Unknown option: "{option}" for command "{command}"'
+            else:
+                msg = f'Unknown option: "{option}"'
+            return sanitize_cli_error_message(msg)
+
+    if isinstance(exc, CycloptsError):
+        message = _stringify_cyclopts_error(exc)
+    else:
+        message = str(exc)
+
+    sanitized = sanitize_cli_error_message(message)
+    return sanitized or type(exc).__name__
 
 
 def _env_telemetry_disabled() -> bool:

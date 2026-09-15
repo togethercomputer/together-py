@@ -106,7 +106,7 @@ ENDPOINT is an existing deployment. Accepted forms:
     ] = None,
     enable_lora: Annotated[
         bool,
-        Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment"),
+        Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment", negative=()),
     ] = False,
     *,
     config: CLIConfigParameter,
@@ -178,7 +178,6 @@ ENDPOINT is an existing deployment. Accepted forms:
         max_replicas=1,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         scaling_metrics=None,
         required=True,
     )

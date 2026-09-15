@@ -24,6 +24,14 @@ from .hardware import (
     HardwareResourceWithStreamingResponse,
     AsyncHardwareResourceWithStreamingResponse,
 )
+from .rollouts import (
+    RolloutsResource,
+    AsyncRolloutsResource,
+    RolloutsResourceWithRawResponse,
+    AsyncRolloutsResourceWithRawResponse,
+    RolloutsResourceWithStreamingResponse,
+    AsyncRolloutsResourceWithStreamingResponse,
+)
 from ...._types import Body, Omit, Query, Headers, NotGiven, SequenceNotStr, omit, not_given
 from ...._utils import path_template, maybe_transform, async_maybe_transform
 from ...._compat import cached_property
@@ -98,6 +106,10 @@ class EndpointsResource(SyncAPIResource):
     @cached_property
     def shadow_experiments(self) -> ShadowExperimentsResource:
         return ShadowExperimentsResource(self._client)
+
+    @cached_property
+    def rollouts(self) -> RolloutsResource:
+        return RolloutsResource(self._client)
 
     @cached_property
     def hardware(self) -> HardwareResource:
@@ -672,6 +684,10 @@ class AsyncEndpointsResource(AsyncAPIResource):
     @cached_property
     def shadow_experiments(self) -> AsyncShadowExperimentsResource:
         return AsyncShadowExperimentsResource(self._client)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResource:
+        return AsyncRolloutsResource(self._client)
 
     @cached_property
     def hardware(self) -> AsyncHardwareResource:
@@ -1278,6 +1294,10 @@ class EndpointsResourceWithRawResponse:
         return ShadowExperimentsResourceWithRawResponse(self._endpoints.shadow_experiments)
 
     @cached_property
+    def rollouts(self) -> RolloutsResourceWithRawResponse:
+        return RolloutsResourceWithRawResponse(self._endpoints.rollouts)
+
+    @cached_property
     def hardware(self) -> HardwareResourceWithRawResponse:
         return HardwareResourceWithRawResponse(self._endpoints.hardware)
 
@@ -1330,6 +1350,10 @@ class AsyncEndpointsResourceWithRawResponse:
     @cached_property
     def shadow_experiments(self) -> AsyncShadowExperimentsResourceWithRawResponse:
         return AsyncShadowExperimentsResourceWithRawResponse(self._endpoints.shadow_experiments)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResourceWithRawResponse:
+        return AsyncRolloutsResourceWithRawResponse(self._endpoints.rollouts)
 
     @cached_property
     def hardware(self) -> AsyncHardwareResourceWithRawResponse:
@@ -1386,6 +1410,10 @@ class EndpointsResourceWithStreamingResponse:
         return ShadowExperimentsResourceWithStreamingResponse(self._endpoints.shadow_experiments)
 
     @cached_property
+    def rollouts(self) -> RolloutsResourceWithStreamingResponse:
+        return RolloutsResourceWithStreamingResponse(self._endpoints.rollouts)
+
+    @cached_property
     def hardware(self) -> HardwareResourceWithStreamingResponse:
         return HardwareResourceWithStreamingResponse(self._endpoints.hardware)
 
@@ -1438,6 +1466,10 @@ class AsyncEndpointsResourceWithStreamingResponse:
     @cached_property
     def shadow_experiments(self) -> AsyncShadowExperimentsResourceWithStreamingResponse:
         return AsyncShadowExperimentsResourceWithStreamingResponse(self._endpoints.shadow_experiments)
+
+    @cached_property
+    def rollouts(self) -> AsyncRolloutsResourceWithStreamingResponse:
+        return AsyncRolloutsResourceWithStreamingResponse(self._endpoints.rollouts)
 
     @cached_property
     def hardware(self) -> AsyncHardwareResourceWithStreamingResponse:

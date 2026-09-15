@@ -12,6 +12,7 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.lib.cli.api.beta.models.download import _download_failure_diagnostic
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -502,6 +503,38 @@ class TestBetaModelsListRevisions:
         assert "Failed" in result.output
         assert "Validation" in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_ls_revisions_table_renders_legacy_numeric_fields(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/models/19/revisions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        {
+                            "revisionId": 123,
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "validationStatus": "REVISION_VALIDATION_STATUS_SUCCESS",
+                        },
+                        {
+                            "revisionId": "rev-2",
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "validationStatus": 314159,
+                        },
+                    ],
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "ls-revisions", "19", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "123" in result.output
+        assert "rev-2" in result.output
+        assert "314159" in result.output
+
 
 class TestBetaModelsConfigs:
     @pytest.mark.respx(base_url=base_url)
@@ -742,6 +775,23 @@ class TestBetaModelsUpload:
 
 
 class TestBetaModelsDownload:
+    @pytest.mark.parametrize(
+        ("message", "diagnostic"),
+        [
+            (
+                'HuggingFace layout requires project/name, got "ml_private"',
+                "Hugging Face model download requires a project-qualified model name",
+            ),
+            ("download response missing file path", "Model download response is missing a file path"),
+            ("insufficient disk space: need 10 GB, have 1 GB", "Insufficient disk space for model download"),
+            ("could not resolve latest revision", "Could not resolve latest model revision"),
+            ("download after retries: private response", "Model download failed after retries"),
+            ("customer-specific failure", "Model download failed"),
+        ],
+    )
+    def test_download_failure_diagnostic_is_stable(self, message: str, diagnostic: str) -> None:
+        assert _download_failure_diagnostic(ValueError(message)) == diagnostic
+
     @pytest.mark.respx(base_url=base_url)
     def test_download_writes_files(
         self,

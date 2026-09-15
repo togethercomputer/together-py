@@ -168,7 +168,7 @@ class TestJig:
         jig = client.beta.jig.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
         )
         assert_matches_type(Deployment, jig, path=["response"])
 
@@ -177,7 +177,7 @@ class TestJig:
         jig = client.beta.jig.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
             args=["string"],
             autoscaling={
                 "metric": "HTTPTotalRequests",
@@ -217,7 +217,7 @@ class TestJig:
         response = client.beta.jig.with_raw_response.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
         )
 
         assert response.is_closed is True
@@ -230,7 +230,7 @@ class TestJig:
         with client.beta.jig.with_streaming_response.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -479,7 +479,7 @@ class TestAsyncJig:
         jig = await async_client.beta.jig.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
         )
         assert_matches_type(Deployment, jig, path=["response"])
 
@@ -488,7 +488,7 @@ class TestAsyncJig:
         jig = await async_client.beta.jig.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
             args=["string"],
             autoscaling={
                 "metric": "HTTPTotalRequests",
@@ -528,7 +528,7 @@ class TestAsyncJig:
         response = await async_client.beta.jig.with_raw_response.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
         )
 
         assert response.is_closed is True
@@ -541,7 +541,7 @@ class TestAsyncJig:
         async with async_client.beta.jig.with_streaming_response.deploy(
             gpu_type="h100-80gb",
             image="image",
-            name="x",
+            name="xxxx",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"

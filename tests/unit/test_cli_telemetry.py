@@ -16,6 +16,7 @@ from together.lib.cli._track_cli import (
     save_telemetry_config,
     telemetry_config_path,
     sanitize_cli_error_message,
+    format_cli_error_for_telemetry,
 )
 
 
@@ -25,10 +26,22 @@ def _xdg_config_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:  
 
 
 def test_sanitize_cli_error_message_truncates() -> None:
-    long = "a" * 600
+    long = "a" * 300 + "b" * 300
     out = sanitize_cli_error_message(long)
-    assert len(out) < len(long)
-    assert out.endswith("…")
+    assert len(out) == 500
+    assert out.startswith("a")
+    assert "\n…\n" in out
+    assert out.endswith("b")
+
+
+def test_sanitize_cli_error_message_preserves_diagnostic_tail() -> None:
+    long_signature = "Function signature: " + "parameter: type, " * 40
+    diagnostic = 'Invalid value for "--modality": "speech"'
+
+    out = sanitize_cli_error_message(f"CoercionError\n{long_signature}\n{diagnostic}")
+
+    assert out.startswith("CoercionError")
+    assert diagnostic in out
 
 
 def test_sanitize_cli_error_message_redacts_bearer() -> None:
@@ -91,6 +104,107 @@ def test_sanitize_cli_error_message_redacts_secrets_before_truncation() -> None:
     out = sanitize_cli_error_message(f"{secret}{tail}")
     assert "sk-1" not in out
     assert "123456" not in out
+
+
+def _long_signature_command(
+    name: str | None = None,
+    num_gpus: int | None = None,
+    region: str | None = None,
+    billing_type: str | None = None,
+    nvidia_driver_version: str | None = None,
+    cuda_version: str | None = None,
+    duration_days: int | None = None,
+    gpu_type: str | None = None,
+    cluster_type: str | None = None,
+) -> None:
+    del (
+        name,
+        num_gpus,
+        region,
+        billing_type,
+        nvidia_driver_version,
+        cuda_version,
+        duration_days,
+        gpu_type,
+        cluster_type,
+    )
+
+
+def test_format_unknown_option_error_is_option_and_command() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    # Parser shape: keyword=None, raw CLI token in value.
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--bogus-flag", source="cli"),
+        argument_collection=ArgumentCollection(),
+        target=_long_signature_command,
+    )
+    raw = str(err)
+    assert "Function defined in file" in raw
+    assert _long_signature_command.__code__.co_filename in raw
+
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown option: "--bogus-flag" for command "clusters create"'
+    assert "Function defined in file" not in out
+    assert ".py" not in out
+    assert err.verbose is True
+
+
+def test_format_unknown_option_error_without_command() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--bogus-flag", source="cli"),
+        argument_collection=ArgumentCollection(),
+    )
+    assert format_cli_error_for_telemetry(err) == 'Unknown option: "--bogus-flag"'
+
+
+def test_format_unknown_option_error_strips_inline_value() -> None:
+    from cyclopts.token import Token
+    from cyclopts.argument import ArgumentCollection
+    from cyclopts.exceptions import UnknownOptionError
+
+    err = UnknownOptionError(
+        token=Token(keyword=None, value="--auth-token=hunter2secret", source="cli"),
+        argument_collection=ArgumentCollection(),
+    )
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown option: "--auth-token" for command "clusters create"'
+    assert "hunter2secret" not in out
+
+
+def test_format_cyclopts_error_omits_install_path() -> None:
+    from cyclopts.exceptions import UnknownCommandError
+
+    # UnknownCommandError appends its diagnostic to the verbose preamble, unlike a bare
+    # CycloptsError which stringifies to "" once verbose=False.
+    err = UnknownCommandError(unused_tokens=["bogus-cmd"], target=_long_signature_command)
+    raw = str(err)
+    assert "Function defined in file" in raw
+    assert _long_signature_command.__code__.co_filename in raw
+    assert 'Unknown command "bogus-cmd"' in raw
+
+    out = format_cli_error_for_telemetry(err, command="clusters create")
+    assert out == 'Unknown command "bogus-cmd".'
+    assert "Function defined in file" not in out
+    assert _long_signature_command.__code__.co_filename not in out
+    assert err.verbose is True
+
+
+def test_format_empty_cyclopts_error_uses_exception_type() -> None:
+    from cyclopts.exceptions import CycloptsError
+
+    assert format_cli_error_for_telemetry(CycloptsError()) == "CycloptsError"
+
+
+@pytest.mark.parametrize("error", [RuntimeError(), RuntimeError(" \n")])
+def test_format_empty_error_uses_exception_type(error: RuntimeError) -> None:
+    assert format_cli_error_for_telemetry(error) == "RuntimeError"
 
 
 def test_telemetry_env_opt_out_only_explicit_values(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -300,6 +414,26 @@ def test_parse_command_and_flags_normalizes_minus_d_alias_to_delete() -> None:
     assert cmd == "endpoints delete"
     assert "endpoint_id" in flags
     assert is_beta is False
+
+
+def test_parse_command_and_flags_normalizes_rm_alias_to_delete() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "rm", "ep_1", "--json"])
+    assert cmd == "endpoints delete"
+    assert is_beta is True
+    assert "json" in flags
+
+
+def test_parse_command_and_flags_keeps_beta_endpoints_delete_alias() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["beta", "endpoints", "delete", "ep_1", "--json"])
+    assert cmd == "endpoints delete"
+    assert is_beta is True
+    assert "json" in flags
 
 
 def test_parse_command_and_flags_normalizes_minus_c_alias_to_create() -> None:

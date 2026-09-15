@@ -1,16 +1,28 @@
 from __future__ import annotations
 
 import re
-import sys
 from typing import Literal, cast, overload
 
 from together.types.beta import DeploymentAutoscalingParam
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 from together.types.beta.deployment_autoscaling_param import ScalingMetric
 
-# OpenAPI DE.Autoscaling windows: protobuf Duration JSON, seconds only (e.g. "30s").
+# Wire format is protobuf Duration JSON, seconds only (e.g. "30s", "600s").
+# CLI also accepts bare seconds (`30`) and Go-style units (`10m`, `1h`, `10m30s`).
 _DURATION_RE = re.compile(r"^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$")
 _BARE_SECONDS_RE = re.compile(r"^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?$")
+_HUMAN_TOKEN_RE = re.compile(r"(\d+(?:\.\d+)?)(ns|us|µs|μs|ms|h|m|s)")
+_UNIT_NANOS: dict[str, int] = {
+    "ns": 1,
+    "us": 1_000,
+    "µs": 1_000,
+    "μs": 1_000,
+    "ms": 1_000_000,
+    "s": 1_000_000_000,
+    "m": 60_000_000_000,
+    "h": 3_600_000_000_000,
+}
 
 MetricType = Literal[
     "METRIC_TARGET_TYPE_VALUE",
@@ -19,6 +31,7 @@ MetricType = Literal[
 ]
 
 ScalingMetricName = Literal[
+    "active_sessions",
     "inflight_requests",
     "gpu_utilization",
     "token_utilization",
@@ -33,6 +46,7 @@ ScalingPercentile = Literal["p50", "p90", "p95", "p99"]
 
 # Fixed type per metric name (see examples/internal-team-guides/autoscaling.md).
 _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
+    "active_sessions": "METRIC_TARGET_TYPE_VALUE",
     "inflight_requests": "METRIC_TARGET_TYPE_AVERAGE_VALUE",
     "gpu_utilization": "METRIC_TARGET_TYPE_UTILIZATION",
     "token_utilization": "METRIC_TARGET_TYPE_UTILIZATION",
@@ -47,8 +61,56 @@ _VALID_PERCENTILES: frozenset[ScalingPercentile] = frozenset({"p50", "p90", "p95
 SCALING_METRIC_NAMES = tuple(_METRIC_TYPES)
 
 
+def _token_to_nanos(amount: str, unit: str) -> int:
+    unit_nanos = _UNIT_NANOS[unit]
+    if "." not in amount:
+        return int(amount) * unit_nanos
+    whole, frac = amount.split(".", 1)
+    whole_i = int(whole) if whole else 0
+    scale = int(10 ** len(frac))
+    return whole_i * unit_nanos + (int(frac) * unit_nanos) // scale
+
+
+def _format_proto_duration(nanos: int) -> str:
+    sign = "-" if nanos < 0 else ""
+    nanos = abs(nanos)
+    secs, rem = divmod(nanos, 1_000_000_000)
+    if rem == 0:
+        return f"{sign}{secs}s"
+    return f"{sign}{secs}.{rem:09d}".rstrip("0") + "s"
+
+
+def _human_duration_to_proto(value: str) -> str | None:
+    sign = -1 if value.startswith("-") else 1
+    if value.startswith("-") or value.startswith("+"):
+        value = value[1:]
+    if not value:
+        return None
+    total = 0
+    pos = 0
+    while pos < len(value):
+        match = _HUMAN_TOKEN_RE.match(value, pos)
+        if match is None:
+            return None
+        total += _token_to_nanos(match.group(1), match.group(2))
+        pos = match.end()
+    return _format_proto_duration(sign * total)
+
+
+@overload
+def normalize_duration(value: None, *, option_name: str) -> None: ...
+
+
+@overload
+def normalize_duration(value: str, *, option_name: str) -> str: ...
+
+
 def normalize_duration(value: str | None, *, option_name: str) -> str | None:
-    """Accept bare seconds (`30`) or Duration JSON (`30s`); reject other units."""
+    """Normalize a CLI duration to protobuf Duration JSON (`600s`).
+
+    Accepts Duration JSON (`30s`), bare seconds (`30`), and Go-style units
+    (`10m`, `1h`, `10m30s`). Other spellings exit with a named error.
+    """
     if value is None:
         return None
     value = value.strip()
@@ -56,8 +118,11 @@ def normalize_duration(value: str | None, *, option_name: str) -> str | None:
         return value
     if _BARE_SECONDS_RE.match(value):
         return f"{value}s"
-    console.print(f"Error: {option_name} must be a duration in seconds, e.g. 30 or 30s (got {value!r}).")
-    sys.exit(1)
+    converted = _human_duration_to_proto(value)
+    if converted is not None and _DURATION_RE.match(converted):
+        return converted
+    console.print(f"Error: {option_name} must be a duration, e.g. 30, 30s, 10m, or 1h (got {value!r}).")
+    raise CliDiagnosticExit(f"Invalid duration for {option_name}")
 
 
 def build_scaling_metrics(
@@ -72,13 +137,13 @@ def build_scaling_metrics(
 
     if scaling_metric is None or scaling_target is None:
         console.print("Error: --scaling-metric and --scaling-target must be set together.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Autoscaling metric and target must be set together")
 
     metric_type = _METRIC_TYPES.get(scaling_metric)
     if metric_type is None:
         known = ", ".join(SCALING_METRIC_NAMES)
         console.print(f"Error: unknown --scaling-metric {scaling_metric!r}. Choose one of: {known}.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Unknown autoscaling metric")
 
     metric: ScalingMetric = {
         "name": scaling_metric,
@@ -92,13 +157,13 @@ def build_scaling_metrics(
                 f"Error: --scaling-percentile must be one of {', '.join(sorted(_VALID_PERCENTILES))} "
                 f"(got {scaling_percentile!r})."
             )
-            sys.exit(1)
+            raise CliDiagnosticExit("Invalid autoscaling percentile")
         if metric_type != "METRIC_TARGET_TYPE_VALUE":
             console.print(
                 f"Error: --scaling-percentile only applies to latency metrics "
                 f"(ttft, e2e_latency, decoding_speed), not {scaling_metric!r}."
             )
-            sys.exit(1)
+            raise CliDiagnosticExit("Autoscaling percentile requires a latency metric")
         metric["percentile"] = scaling_percentile
 
     return [metric]
@@ -111,7 +176,6 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[True],
     infer_replica_defaults: bool = ...,
@@ -125,7 +189,6 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = ...,
     required: Literal[False],
     infer_replica_defaults: bool = ...,
@@ -138,7 +201,6 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scale_to_zero_window: str | None,
     scaling_metrics: list[ScalingMetric] | None = None,
     required: bool = False,
     infer_replica_defaults: bool = True,
@@ -157,18 +219,18 @@ def build_autoscaling(
     elif (min_replicas == 0 or max_replicas == 0) and not (min_replicas == 0 and max_replicas == 0):
         # Updates are patchy: don't invent the other bound when stopping.
         console.print("Error: to stop a deployment, pass both --min-replicas 0 and --max-replicas 0.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Scaling to zero requires both replica bounds")
 
     if min_replicas is not None and max_replicas is not None and (min_replicas == 0) != (max_replicas == 0):
         console.print(
             "Error: --min-replicas and --max-replicas must both be 0 to stop a deployment. "
             "Pass --min-replicas 0 --max-replicas 0."
         )
-        sys.exit(1)
+        raise CliDiagnosticExit("Scaling to zero requires both replica bounds")
 
     if min_replicas is not None and max_replicas is not None and min_replicas > max_replicas:
         console.print(f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})")
-        sys.exit(1)
+        raise CliDiagnosticExit("Autoscaling minimum replicas cannot exceed maximum replicas")
 
     autoscaling = {
         key: value
@@ -177,7 +239,6 @@ def build_autoscaling(
             "max_replicas": max_replicas,
             "scale_up_window": normalize_duration(scale_up_window, option_name="--scale-up-window"),
             "scale_down_window": normalize_duration(scale_down_window, option_name="--scale-down-window"),
-            "scale_to_zero_window": normalize_duration(scale_to_zero_window, option_name="--scale-to-zero-window"),
             "scaling_metrics": scaling_metrics,
         }.items()
         if value is not None
@@ -186,5 +247,5 @@ def build_autoscaling(
         if not required:
             return None
         console.print("Error: deployment create requires autoscaling. Pass --min-replicas and/or --max-replicas.")
-        sys.exit(1)
+        raise CliDiagnosticExit("Deployment creation requires autoscaling")
     return cast(DeploymentAutoscalingParam, autoscaling)

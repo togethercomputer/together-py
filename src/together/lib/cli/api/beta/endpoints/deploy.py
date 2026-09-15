@@ -119,16 +119,13 @@ async def deploy(
             help="Cooldown after scaling down before removing more replicas (seconds, e.g. 60 or 60s). Higher values improve stability."
         ),
     ] = None,
-    scale_to_zero_window: Annotated[
-        Optional[str],
-        Parameter(help="Idle time before scaling to zero replicas (seconds, e.g. 300 or 300s)."),
-    ] = None,
     scaling_metric: Annotated[
         Optional[ScalingMetricName],
         Parameter(
             help=(
                 """Autoscaling metric. Must be set with --scaling-target; --scaling-percentile is optional and only applies to latency metrics.
 
+- active_sessions: Active sessions across the deployment.
 - inflight_requests: Concurrent in-flight requests per replica.
 - gpu_utilization: GPU compute utilization (%).
 - token_utilization: KV-cache utilization (%).
@@ -199,6 +196,9 @@ async def deploy(
             "Do not pass --model-revision when --model already includes a revision. "
             "Specify the revision only in the fully qualified --model path."
         )
+    inline_placement_value = placement.to_json()
+    if placement_id and inline_placement_value is not None:
+        raise ValueError("Use either --placement or inline placement options, not both.")
 
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
@@ -211,7 +211,6 @@ async def deploy(
         max_replicas=max_replicas,
         scale_up_window=scale_up_window,
         scale_down_window=scale_down_window,
-        scale_to_zero_window=scale_to_zero_window,
         scaling_metrics=build_scaling_metrics(
             scaling_metric=scaling_metric,
             scaling_target=scaling_target,
@@ -228,7 +227,7 @@ async def deploy(
     if placement_id:
         placement_value = PlacementProfile(profile=placement_id)
     else:
-        placement_value = placement.to_json()
+        placement_value = inline_placement_value
 
     model_path = construct_model_path(resolved_model, resolved_revision)
 
@@ -339,8 +338,6 @@ def _print_deployment_preview(
         add_row("--scale-up-window", str(scale_up))
     if scale_down := autoscaling.get("scale_down_window"):
         add_row("--scale-down-window", str(scale_down))
-    if scale_to_zero := autoscaling.get("scale_to_zero_window"):
-        add_row("--scale-to-zero-window", str(scale_to_zero))
     if metrics := autoscaling.get("scaling_metrics"):
         metric = next(iter(metrics))
         add_row("--scaling-metric", metric["name"])
@@ -360,8 +357,10 @@ def _print_deployment_preview(
                     "--constraint",
                     "required" if constraint == "ENFORCEMENT_REQUIRED" else "preferred",
                 )
-            if inline.get("hipaa"):
-                add_row("--hipaa", "true")
+            if (compliance_policy := inline.get("compliance_policy")) and (
+                hipaa := compliance_policy.get("hipaa")
+            ) is not None:
+                add_row("--placement.hipaa", "true" if hipaa else "false")
 
     if enable_lora is not None:
         add_row("--enable-lora", "true" if enable_lora else "false")

@@ -25,7 +25,6 @@ from datetime import datetime as dt
 from functools import cached_property
 from itertools import groupby
 from dataclasses import field, asdict, dataclass, is_dataclass
-from typing_extensions import override
 
 import httpx
 from cyclopts import Parameter
@@ -34,6 +33,7 @@ from together import Together
 from together._types import Omit, omit
 from together._exceptions import APIError, NotFoundError, AuthenticationError
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
 from together.lib.cli.utils._console import console
@@ -66,18 +66,6 @@ _TRACK_READY_TIMEOUT = 120
 
 class JigError(Exception):
     """Actionable runtime error"""
-
-
-class _JigCliExit(SystemExit):
-    """Exit with a diagnostic that command-failure telemetry can retain."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(1)
-        self.message = message
-
-    @override
-    def __str__(self) -> str:
-        return self.message
 
 
 # == Configuration ==
@@ -194,12 +182,24 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
 
 
 @dataclass
+class ExperimentalConfig:
+    """Opt-in experimental features. Off by default; may change or be removed."""
+
+    auto_optimize: bool = False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ExperimentalConfig:
+        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+
+
+@dataclass
 class JigConfig:
     """Main configuration from jig.toml or pyproject.toml"""
 
     model_name: str = ""
     image: ImageConfig = field(default_factory=ImageConfig)
     deploy: DeployConfig = field(default_factory=DeployConfig)
+    experimental: ExperimentalConfig = field(default_factory=ExperimentalConfig)
     _path: Path = field(default_factory=lambda: Path("pyproject.toml"))
     _unique_name_hint: str = "Update project.name in pyproject.toml"
 
@@ -266,6 +266,7 @@ class JigConfig:
         return cls(
             image=ImageConfig.from_dict(jig_config.get("image", {})),
             deploy=DeployConfig.from_dict(jig_config.get("deploy", {})),
+            experimental=ExperimentalConfig.from_dict(jig_config.get("experimental", {})),
             model_name=name,
             _path=path,
             _unique_name_hint=hint,
@@ -484,17 +485,13 @@ def _build_warm_image(base_image: str) -> None:
     console.print(f"Running: {' '.join(cmd)}")
     if (code := subprocess.run(cmd).returncode) != 0:
         console.print(f"\N{FIRE EXTINGUISHER} Warmup failed with code {code}")
-        sys.exit(1)
-        # TODO:
-        # raise Exit(1)
+        raise CliDiagnosticExit(f"Warmup failed with code {code}")
 
     # check cache was generated
     cache_files = list(cache_dir.rglob("*"))
     if not cache_files:
         console.print("\N{FIRE EXTINGUISHER} Warmup completed but no cache files were generated")
-        sys.exit(1)
-        # TODO:
-        # raise Exit(1)
+        raise CliDiagnosticExit("Warmup completed but no cache files were generated")
 
     console.print(f"\N{CHECK MARK} Warmup complete, {len(cache_files)} cache files generated")
 
@@ -651,6 +648,19 @@ class Jig:
                     f"The following versions are available: {', '.join(str(v) for v in sorted(versions))}"
                 )
 
+    def prewarm(self, volume: str | None = None, images: list[str] | None = None) -> None:
+        """Silent best-effort cache prewarm in the target fleet; never blocks the flow."""
+        body: dict[str, Any] = {}
+        if volume:
+            body["volume"] = volume
+        if images:
+            body["images"] = images
+        try:
+            self.together._client.post("/deployments/prewarm", json=body, headers=self.together.auth_headers)
+        except Exception as e:
+            if DEBUG:
+                console.print(f"Prewarm request failed: {e}")
+
     # == Build / Push / Deploy / Track ==
 
     def build(self, tag: str = "latest", warmup: bool = False, docker_args: str | None = None) -> None:
@@ -737,6 +747,8 @@ class Jig:
         if not ok:
             raise JigError("Push failed")
         console.print("\N{CHECK MARK} Pushed")
+        mounts = self.config.deploy.volume_mounts
+        self.prewarm(volume=mounts[0].name if mounts else None, images=[self.image_with_digest(tag)])
 
     def build_and_push(self, tag: str = "latest", docker_args: str | None = None) -> None:
         """One-shot build + push via a single buildx invocation (no --load).
@@ -789,6 +801,8 @@ class Jig:
         if subprocess.run(cmd).returncode != 0:
             raise JigError("Build+push failed")
         console.print("\N{CHECK MARK} Built and pushed")
+        mounts = self.config.deploy.volume_mounts
+        self.prewarm(volume=mounts[0].name if mounts else None, images=[self.image_with_digest(tag)])
 
     def deploy(
         self,
@@ -811,6 +825,12 @@ class Jig:
             else:
                 self.build_and_push(tag, docker_args)
             deployment_image = self.image_with_digest(tag)
+
+        # Built images prewarm inside push/build_and_push; warm explicitly passed
+        # images as well when they live in our registry.
+        if (existing_image or self.config.deploy.image) and deployment_image.startswith(self.registry()):
+            mounts = self.config.deploy.volume_mounts
+            self.prewarm(volume=mounts[0].name if mounts else None, images=[deployment_image])
 
         if build_only:
             console.print("\N{CHECK MARK} Build complete (--build-only)")
@@ -840,6 +860,12 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
+        # Opt-in experimental features are in extra_body
+        experimental = {k: v for k, v in asdict(self.config.experimental).items() if v}
+        extra_kwargs: dict[str, Any] = {}
+        if experimental:
+            extra_kwargs["extra_body"] = {"experimental": experimental}
+
         self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
             self.set_secret("TOGETHER_API_KEY", self.together.api_key, "Auth key for queue API")
@@ -859,12 +885,12 @@ class Jig:
         no_track = False
 
         try:
-            response = self.api.update(self.name, **deploy_data)
+            response = self.api.update(self.name, **deploy_data, **extra_kwargs)
             no_track = str(response.status) == "Ready"
             console.print("\N{CHECK MARK} Applied new deployment configuration")
         except NotFoundError:
             try:
-                response = self.api.deploy(**deploy_data)
+                response = self.api.deploy(**deploy_data, **extra_kwargs)
                 console.print(f"\N{CHECK MARK} Deployed: {self.name}")
             except APIError as e:
                 if "already exists" in e.message:
@@ -911,8 +937,7 @@ Note: Additional replicas may still be scaling up.""")
                     if event.replica_status_reason == "CrashLoopBackOff":
                         console.print(f"\N{CROSS MARK} [{rid}] Container is crash looping")
                         console.print(self.logs(rid))
-                        sys.exit(1)
-                        # raise Exit(1) from None
+                        raise CliDiagnosticExit("Deployment container is crash looping")
 
                     if event.volume_preload_status:
                         if not event.volume_preload_completed_at:
@@ -935,16 +960,16 @@ Note: Additional replicas may still be scaling up.""")
                             console.print(f"Deployment '{self.name}' may still be in progress.")
                             console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
                             console.print(self.logs(rid))
-                            sys.exit(1)
-                            # raise Exit(1) from None
+                            raise CliDiagnosticExit(
+                                "Deployment container was running but did not become ready before timeout"
+                            )
 
                 time.sleep(_TRACK_POLL_INTERVAL)
 
             console.print(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
-            sys.exit(1)
-            # raise Exit(1) from None
+            raise CliDiagnosticExit("Deployment tracking timed out")
         except KeyboardInterrupt:
             console.print(f"""
 \N{WARNING SIGN} Deployment tracking interrupted
@@ -1020,8 +1045,7 @@ Run 'jig status' to check current state.""")
                 if response.status in ("done", "finished"):
                     return
                 if response.status in ("failed", "error", "canceled"):
-                    sys.exit(1)
-                    # raise Exit(1) from None
+                    raise CliDiagnosticExit(f"Submitted job ended with status {response.status}")
                 time.sleep(1)
             except KeyboardInterrupt:
                 console.print(f"\nStopped watching {request_id}")
@@ -1123,7 +1147,7 @@ def _print_cli_result(result: Any) -> None:
 
 def _jig_fail(msg: str) -> typing.NoReturn:
     console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
-    raise _JigCliExit(msg)
+    raise CliDiagnosticExit(msg)
 
 
 def _asyncio_run_upload(coro: typing.Coroutine[typing.Any, typing.Any, None]) -> None:
@@ -1362,8 +1386,9 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
-        sys.exit(1)
-        # raise Exit(1) from None
+        raise CliDiagnosticExit("Volume upload failed after the volume was created") from None
+
+    jig.prewarm(volume=name)
 
 
 def volumes_update(jig: Jig, name: str, source: Path) -> None:
@@ -1382,6 +1407,8 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     console.print(f"\N{INFORMATION SOURCE} Updating volume {name}, version {new_version} from {source}")
     jig.api.volumes.update(name, content={"type": "files", "source_prefix": remote_prefix})
     console.print("\N{CHECK MARK} Volume updated successfully")
+
+    jig.prewarm(volume=name)
 
 
 def volumes_delete(jig: Jig, name: str) -> None:

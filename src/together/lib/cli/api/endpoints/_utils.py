@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import sys
 from typing import Any, TypeVar, Callable
 from functools import wraps
 
 from together import APIError
 from together.types import DedicatedEndpoint
 from together.lib.utils.tools import format_datetime
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -37,16 +37,16 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                     console.print(f"{prefix}: Endpoint {endpoint_display} not found.")
                     console.print(f"{prefix}: The endpoint may have been deleted or the ID may be incorrect.")
                     console.print(f"{prefix}: Use 'together endpoints list' to see your endpoints.")
-                    sys.exit(1)
+                    raise CliDiagnosticExit(f"{prefix}: endpoint not found") from None
                 if "permission" in error_lower or "forbidden" in error_lower or "unauthorized" in error_lower:
                     console.print(f"{prefix}: Failed")
                     console.print(f"{prefix}: You don't have permission to access this resource.")
                     console.print(f"{prefix}: This may belong to another user or organization.")
-                    sys.exit(1)
+                    raise CliDiagnosticExit(f"{prefix}: permission denied") from None
                 if "credentials" in error_lower or "authentication" in error_lower:
                     console.print(f"{prefix}: Failed")
                     console.print(f"{prefix}: Invalid API key or authentication failed.")
-                    sys.exit(1)
+                    raise CliDiagnosticExit(f"{prefix}: authentication failed") from None
                 raise e
 
         return wrapper  # type: ignore

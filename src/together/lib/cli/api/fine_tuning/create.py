@@ -18,6 +18,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.resources.fine_tuning import validate_early_stopping
 from together.lib.cli.components.model_dump import print_model_dump
+from together.lib.cli.components.upload_progress import upload_file_with_progress
 
 
 def get_confirmation_message(price_line: str, warning: str) -> str:
@@ -361,13 +362,27 @@ async def create(
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["training_file"]):
-        file_upload = await config.client.files.upload(Path(training_args["training_file"]), purpose="fine-tune")
+        training_path = Path(training_args["training_file"])
+        file_upload = await upload_file_with_progress(
+            config.client.files.upload,
+            training_path,
+            enabled=not config.json,
+            description=f"Uploading training file {training_path.name}",
+            purpose="fine-tune",
+        )
         training_args["training_file"] = file_upload.id
 
     # If the user passes a path to a file, try to upload it to the files API first
     # Uploads are idempotent so we can depend on this API always giving us a file ID
     if _check_path_exists(training_args["validation_file"]):
-        file_upload = await config.client.files.upload(Path(training_args["validation_file"]), purpose="fine-tune")
+        validation_path = Path(training_args["validation_file"])
+        file_upload = await upload_file_with_progress(
+            config.client.files.upload,
+            validation_path,
+            enabled=not config.json,
+            description=f"Uploading validation file {validation_path.name}",
+            purpose="fine-tune",
+        )
         training_args["validation_file"] = file_upload.id
 
     finetune_price_estimation_result = await show_loading_status(

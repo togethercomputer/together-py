@@ -4,6 +4,7 @@ import pytest
 
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     build_autoscaling,
+    normalize_duration,
     build_scaling_metrics,
 )
 
@@ -14,6 +15,16 @@ def test_build_scaling_metrics_utilization() -> None:
             "name": "gpu_utilization",
             "type": "METRIC_TARGET_TYPE_UTILIZATION",
             "target": 80,
+        }
+    ]
+
+
+def test_build_scaling_metrics_active_sessions() -> None:
+    assert build_scaling_metrics(scaling_metric="active_sessions", scaling_target=25) == [
+        {
+            "name": "active_sessions",
+            "type": "METRIC_TARGET_TYPE_VALUE",
+            "target": 25,
         }
     ]
 
@@ -59,7 +70,6 @@ def test_build_autoscaling_includes_single_metric() -> None:
         max_replicas=3,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         scaling_metrics=build_scaling_metrics(scaling_metric="inflight_requests", scaling_target=16),
         required=True,
     )
@@ -82,7 +92,6 @@ def test_build_autoscaling_defaults_both_bounds_when_required() -> None:
         max_replicas=None,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=True,
     )
 
@@ -109,7 +118,6 @@ def test_build_autoscaling_infers_missing_replica_bounds(
         max_replicas=max_replicas,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=True,
     )
 
@@ -135,7 +143,6 @@ def test_build_autoscaling_rejects_invalid_explicit_bounds(
             max_replicas=max_replicas,
             scale_up_window=None,
             scale_down_window=None,
-            scale_to_zero_window=None,
             required=False,
         )
 
@@ -166,7 +173,6 @@ def test_build_autoscaling_update_requires_explicit_zero_bounds(
             max_replicas=max_replicas,
             scale_up_window=None,
             scale_down_window=None,
-            scale_to_zero_window=None,
             required=False,
             infer_replica_defaults=False,
         )
@@ -180,7 +186,6 @@ def test_build_autoscaling_update_keeps_partial_nonzero_patch() -> None:
         max_replicas=None,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=False,
         infer_replica_defaults=False,
     )
@@ -194,8 +199,71 @@ def test_build_autoscaling_accepts_stopped_deployment() -> None:
         max_replicas=0,
         scale_up_window=None,
         scale_down_window=None,
-        scale_to_zero_window=None,
         required=True,
     )
 
     assert autoscaling == {"min_replicas": 0, "max_replicas": 0}
+
+
+def test_build_autoscaling_omits_scale_to_zero_window() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=2,
+        scale_up_window="30s",
+        scale_down_window="60s",
+        required=True,
+    )
+
+    assert autoscaling == {
+        "min_replicas": 1,
+        "max_replicas": 2,
+        "scale_up_window": "30s",
+        "scale_down_window": "60s",
+    }
+    assert "scale_to_zero_window" not in autoscaling
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("30s", "30s"),
+        ("180s", "180s"),
+        ("1.5s", "1.5s"),
+        ("1.500s", "1.500s"),
+        ("30", "30s"),
+        ("10m", "600s"),
+        ("2m", "120s"),
+        ("1h", "3600s"),
+        ("10m30s", "630s"),
+        ("5m", "300s"),
+        ("1ms", "0.001s"),
+        ("-10m", "-600s"),
+    ],
+)
+def test_normalize_duration_accepts_human_and_proto_spellings(raw: str, expected: str) -> None:
+    assert normalize_duration(raw, option_name="--interval") == expected
+
+
+@pytest.mark.parametrize("raw", ["30S", "PT1M", "abc", "", "10m30", "10 x"])
+def test_normalize_duration_rejects_invalid_spellings(raw: str, capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        normalize_duration(raw, option_name="--interval")
+    output = capsys.readouterr().out
+    assert "--interval must be a duration" in output
+    assert f"got {raw!r}" in output
+
+
+def test_build_autoscaling_converts_human_duration_windows() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=1,
+        scale_up_window="10m",
+        scale_down_window="1h",
+        required=True,
+    )
+    assert autoscaling == {
+        "min_replicas": 1,
+        "max_replicas": 1,
+        "scale_up_window": "600s",
+        "scale_down_window": "3600s",
+    }

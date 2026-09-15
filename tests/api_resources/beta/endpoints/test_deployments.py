@@ -44,7 +44,7 @@ class TestDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "active_sessions",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",
@@ -61,6 +61,7 @@ class TestDeployments:
             model_revision_id="modelRevisionId",
             placement={
                 "inline": {
+                    "compliance_policy": {"hipaa": True},
                     "constraint": "ENFORCEMENT_REQUIRED",
                     "regions": ["string"],
                 }
@@ -200,7 +201,7 @@ class TestDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "active_sessions",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",
@@ -422,7 +423,7 @@ class TestAsyncDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "active_sessions",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",
@@ -439,6 +440,7 @@ class TestAsyncDeployments:
             model_revision_id="modelRevisionId",
             placement={
                 "inline": {
+                    "compliance_policy": {"hipaa": True},
                     "constraint": "ENFORCEMENT_REQUIRED",
                     "regions": ["string"],
                 }
@@ -578,7 +580,7 @@ class TestAsyncDeployments:
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
-                        "name": "name",
+                        "name": "active_sessions",
                         "target": 0,
                         "type": "METRIC_TARGET_TYPE_VALUE",
                         "percentile": "percentile",

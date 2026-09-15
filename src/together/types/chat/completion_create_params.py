@@ -274,6 +274,10 @@ class MessageChatCompletionAssistantMessageParam(TypedDict, total=False):
 
     name: str
 
+    reasoning: Optional[str]
+
+    reasoning_content: Optional[str]
+
     tool_calls: Iterable[ToolChoiceParam]
 
 

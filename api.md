@@ -12,6 +12,20 @@ Methods:
 
 # Beta
 
+## Organization
+
+### Usage
+
+Types:
+
+```python
+from together.types.beta.organization import (
+    BillingUsageLineItem,
+    BillingUsageReport,
+    BillingUsageWindow,
+)
+```
+
 ## Endpoints
 
 Types:
@@ -112,6 +126,27 @@ Methods:
 - <code title="patch /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets/{id}">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">update</a>(id, \*, project_id, endpoint_id, experiment_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_update_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/shadow_experiment_target.py">ShadowExperimentTarget</a></code>
 - <code title="get /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">list</a>(endpoint_id, experiment_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/shadow_experiment_target.py">SyncCursorPagination[ShadowExperimentTarget]</a></code>
 - <code title="delete /projects/{projectId}/endpoints/{endpointId}/shadowExperiments/{experimentId}/targets/{id}">client.beta.endpoints.shadow_experiments.targets.<a href="./src/together/resources/beta/endpoints/shadow_experiments/targets.py">delete</a>(id, \*, project_id, endpoint_id, experiment_id, \*\*<a href="src/together/types/beta/endpoints/shadow_experiments/target_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/shadow_experiments/target_delete_response.py">TargetDeleteResponse</a></code>
+
+### Rollouts
+
+Types:
+
+```python
+from together.types.beta.endpoints import Rollout, RolloutDefaultsPreview, RolloutDeleteResponse
+```
+
+Methods:
+
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">create</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/rollout_create_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">retrieve</a>(id, \*, project_id, endpoint_id) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
+- <code title="get /projects/{projectId}/endpoints/{endpointId}/rollouts">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">list</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/rollout_list_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout.py">SyncCursorPagination[Rollout]</a></code>
+- <code title="delete /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">delete</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/rollout_delete_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout_delete_response.py">RolloutDeleteResponse</a></code>
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}/cancel">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">cancel</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/rollout_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}/pause">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">pause</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/rollout_pause_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts/preview-defaults">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">preview_defaults</a>(endpoint_id, \*, project_id, \*\*<a href="src/together/types/beta/endpoints/rollout_preview_defaults_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout_defaults_preview.py">RolloutDefaultsPreview</a></code>
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}/promote">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">promote</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/rollout_promote_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}/resume">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">resume</a>(id, \*, project_id, endpoint_id, \*\*<a href="src/together/types/beta/endpoints/rollout_resume_params.py">params</a>) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
+- <code title="post /projects/{projectId}/endpoints/{endpointId}/rollouts/{id}/start">client.beta.endpoints.rollouts.<a href="./src/together/resources/beta/endpoints/rollouts.py">start</a>(id, \*, project_id, endpoint_id) -> <a href="./src/together/types/beta/endpoints/rollout.py">Rollout</a></code>
 
 ### Hardware
 
