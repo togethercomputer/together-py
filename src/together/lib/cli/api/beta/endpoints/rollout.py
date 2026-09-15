@@ -60,6 +60,7 @@ _CREATE_PARAMS = frozenset(
         "blue_green",
         "rolling",
         "steps",
+        "step_replicas",
         "interval",
         "final_source_replicas",
         "final_target_replicas",
@@ -68,7 +69,7 @@ _CREATE_PARAMS = frozenset(
     }
 )
 _REASON_PARAMS = frozenset({"cancel", "pause"})
-_CANARY_ONLY_PARAMS = frozenset({"steps", "interval"}) | _METRIC_PARAMS
+_CANARY_ONLY_PARAMS = frozenset({"steps", "step_replicas", "interval"}) | _METRIC_PARAMS
 
 
 def _populated_names(argument_collection: ArgumentCollection) -> set[str]:
@@ -87,10 +88,10 @@ def _control_mode_validator(argument_collection: ArgumentCollection) -> None:
 
 
 def _canary_options_validator(argument_collection: ArgumentCollection) -> None:
-    """--steps/--interval/--metric* require --canary."""
+    """--steps/--step-replicas/--interval/--metric* require --canary."""
     populated = _populated_names(argument_collection)
     if populated & _CANARY_ONLY_PARAMS and "canary" not in populated:
-        raise ValueError("--steps, --interval, and --metric* require --canary.")
+        raise ValueError("--steps, --step-replicas, --interval, and --metric* require --canary.")
 
 
 # Display-only — do not put a mutually_exclusive validator here; --reason must
@@ -240,6 +241,17 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
                 "Comma-separated canary traffic percents, e.g. 10,50,100. "
                 "Only valid with --canary. Final step must be 100. "
                 "Omit to use the server default ladder."
+            ),
+        ),
+    ] = None,
+    step_replicas: Annotated[
+        Optional[str],
+        Parameter(
+            name="--step-replicas",
+            group=(CanaryGroup, ModeGroup),
+            help=(
+                "Comma-separated target replica counts aligned with --steps, e.g. 1,2,4,8. "
+                "Only valid with --canary and requires --steps."
             ),
         ),
     ] = None,
@@ -396,6 +408,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
             blue_green=blue_green,
             rolling=rolling,
             steps=steps,
+            step_replicas=step_replicas,
             interval=interval,
             metric=metric,
             metric_stat=metric_stat,
@@ -496,6 +509,7 @@ async def _create_and_start_rollout(
     blue_green: bool,
     rolling: bool,
     steps: str | None,
+    step_replicas: str | None,
     interval: str | None,
     metric: MetricCli | None,
     metric_stat: MetricStatCli | None,
@@ -515,6 +529,7 @@ async def _create_and_start_rollout(
         blue_green=blue_green,
         rolling=rolling,
         steps=steps,
+        step_replicas=step_replicas,
         interval=interval,
     )
     metrics_payload = build_rollout_metrics(
@@ -638,11 +653,12 @@ def resolve_rollout_strategy(
     blue_green: bool,
     rolling: bool,
     steps: str | None,
+    step_replicas: str | None,
     interval: str | None,
 ) -> tuple[Canary | None, BlueGreen | None, Rolling | None]:
     # Mutual exclusivity / canary-only options are enforced by Group validators above.
     if canary:
-        return build_canary(steps=steps, interval=interval), None, None
+        return build_canary(steps=steps, step_replicas=step_replicas, interval=interval), None, None
     if blue_green:
         return None, BlueGreen(), None
     if rolling:
@@ -650,11 +666,21 @@ def resolve_rollout_strategy(
     raise ValueError("Must specify a rollout strategy: --blue-green, --canary, or --rolling.")
 
 
-def build_canary(*, steps: str | None, interval: str | None) -> Canary:
+def build_canary(*, steps: str | None, step_replicas: str | None, interval: str | None) -> Canary:
     payload: Canary = {}
+    replicas: list[int] | None = None
+    if step_replicas is not None:
+        if steps is None:
+            raise ValueError("--step-replicas requires --steps.")
+        replicas = parse_canary_step_replicas(step_replicas)
     if steps is not None:
         percents = parse_canary_steps(steps)
-        payload["steps"] = [{"traffic": percent} for percent in percents]
+        if replicas is not None and len(replicas) != len(percents):
+            raise ValueError("--step-replicas must have the same number of entries as --steps.")
+        payload["steps"] = [
+            {"traffic": percent, **({"replicas": replicas[index]} if replicas is not None else {})}
+            for index, percent in enumerate(percents)
+        ]
     if interval is not None:
         payload["step_interval"] = normalize_duration(interval, option_name="--interval")
     return payload
@@ -673,6 +699,23 @@ def parse_canary_steps(value: str) -> list[int]:
             raise ValueError(f"Invalid canary step {part!r}. Expected an integer percent.") from exc
         percents.append(percent)
     return percents
+
+
+def parse_canary_step_replicas(value: str) -> list[int]:
+    parts = [part.strip() for part in value.split(",")]
+    if not parts or any(not part for part in parts):
+        raise ValueError("--step-replicas must be a comma-separated list of replica counts, e.g. 1,2,4.")
+
+    replicas: list[int] = []
+    for part in parts:
+        try:
+            replica_count = int(part)
+        except ValueError as exc:
+            raise ValueError(f"Invalid canary step replica count {part!r}. Expected an integer.") from exc
+        if replica_count < 0:
+            raise ValueError("--step-replicas values must be non-negative integers.")
+        replicas.append(replica_count)
+    return replicas
 
 
 def _infer_active_source(endpoint: Endpoint, *, target_id: str) -> str:

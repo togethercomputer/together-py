@@ -18,6 +18,7 @@ from together.lib.cli.api.beta.endpoints.rollout import (
     _infer_active_source,
     _verify_rollout_pair,
     resolve_rollout_strategy,
+    parse_canary_step_replicas,
 )
 from together.lib.cli.api.beta.endpoints.retrieve import (
     rollout_reason_rows,
@@ -196,36 +197,73 @@ class TestParseCanarySteps:
 
 class TestBuildCanary:
     def test_empty_uses_server_defaults(self) -> None:
-        assert build_canary(steps=None, interval=None) == {}
+        assert build_canary(steps=None, step_replicas=None, interval=None) == {}
 
     def test_builds_steps_and_interval(self) -> None:
-        assert build_canary(steps="10,50,100", interval="30s") == {
+        assert build_canary(steps="10,50,100", step_replicas=None, interval="30s") == {
             "steps": [{"traffic": 10}, {"traffic": 50}, {"traffic": 100}],
             "step_interval": "30s",
         }
 
+    def test_builds_step_replicas(self) -> None:
+        assert build_canary(steps="10,50,100", step_replicas="1,2,4", interval=None) == {
+            "steps": [
+                {"traffic": 10, "replicas": 1},
+                {"traffic": 50, "replicas": 2},
+                {"traffic": 100, "replicas": 4},
+            ]
+        }
+
     def test_converts_human_interval_to_proto_duration(self) -> None:
-        assert build_canary(steps=None, interval="10m") == {"step_interval": "600s"}
-        assert build_canary(steps=None, interval="10m30s") == {"step_interval": "630s"}
-        assert build_canary(steps=None, interval="1h") == {"step_interval": "3600s"}
-        assert build_canary(steps=None, interval="180") == {"step_interval": "180s"}
+        assert build_canary(steps=None, step_replicas=None, interval="10m") == {"step_interval": "600s"}
+        assert build_canary(steps=None, step_replicas=None, interval="10m30s") == {"step_interval": "630s"}
+        assert build_canary(steps=None, step_replicas=None, interval="1h") == {"step_interval": "3600s"}
+        assert build_canary(steps=None, step_replicas=None, interval="180") == {"step_interval": "180s"}
 
     def test_rejects_unparseable_interval(self, capsys: pytest.CaptureFixture[str]) -> None:
         with pytest.raises(SystemExit):
-            build_canary(steps=None, interval="abc")
+            build_canary(steps=None, step_replicas=None, interval="abc")
         output = capsys.readouterr().out
         assert "--interval must be a duration" in output
         assert "got 'abc'" in output
+
+    def test_rejects_step_replicas_without_steps(self) -> None:
+        with pytest.raises(ValueError, match="requires --steps"):
+            build_canary(steps=None, step_replicas="1,2", interval=None)
+
+    def test_rejects_mismatched_step_replicas(self) -> None:
+        with pytest.raises(ValueError, match="same number"):
+            build_canary(steps="10,50,100", step_replicas="1,2", interval=None)
+
+
+class TestParseCanaryStepReplicas:
+    def test_parses_comma_separated_counts(self) -> None:
+        assert parse_canary_step_replicas("1, 2,4") == [1, 2, 4]
+
+    def test_rejects_non_integer(self) -> None:
+        with pytest.raises(ValueError, match="Invalid canary step replica count"):
+            parse_canary_step_replicas("1,two")
+
+    def test_rejects_negative(self) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            parse_canary_step_replicas("1,-2")
 
 
 class TestResolveRolloutStrategy:
     def test_requires_strategy(self) -> None:
         with pytest.raises(ValueError, match="Must specify a rollout strategy"):
-            resolve_rollout_strategy(canary=False, blue_green=False, rolling=False, steps=None, interval=None)
+            resolve_rollout_strategy(
+                canary=False,
+                blue_green=False,
+                rolling=False,
+                steps=None,
+                step_replicas=None,
+                interval=None,
+            )
 
     def test_explicit_blue_green(self) -> None:
         canary, blue_green, rolling = resolve_rollout_strategy(
-            canary=False, blue_green=True, rolling=False, steps=None, interval=None
+            canary=False, blue_green=True, rolling=False, steps=None, step_replicas=None, interval=None
         )
         assert canary is None
         assert blue_green == {}
@@ -233,7 +271,7 @@ class TestResolveRolloutStrategy:
 
     def test_rolling(self) -> None:
         canary, blue_green, rolling = resolve_rollout_strategy(
-            canary=False, blue_green=False, rolling=True, steps=None, interval=None
+            canary=False, blue_green=False, rolling=True, steps=None, step_replicas=None, interval=None
         )
         assert canary is None
         assert blue_green is None
@@ -241,7 +279,7 @@ class TestResolveRolloutStrategy:
 
     def test_canary(self) -> None:
         canary, blue_green, rolling = resolve_rollout_strategy(
-            canary=True, blue_green=False, rolling=False, steps="10,100", interval="1m"
+            canary=True, blue_green=False, rolling=False, steps="10,100", step_replicas=None, interval="1m"
         )
         assert canary == {
             "steps": [{"traffic": 10}, {"traffic": 100}],
@@ -671,6 +709,58 @@ class TestBetaEndpointsRollout:
         assert body["canary"] == {
             "steps": [{"traffic": 10}, {"traffic": 50}, {"traffic": 100}],
             "stepInterval": "30s",
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_canary_with_step_replicas(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        create_route = respx_mock.post("/projects/proj/endpoints/ep_1/rollouts").mock(
+            return_value=httpx.Response(
+                200,
+                json=_rollout_body(
+                    state="ROLLOUT_STATE_PENDING",
+                    strategy="ROLLOUT_STRATEGY_TYPE_CANARY",
+                    currentStep=None,
+                    total_steps=3,
+                ),
+            )
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/rollouts/rol_1/start").mock(
+            return_value=httpx.Response(
+                200,
+                json=_rollout_body(strategy="ROLLOUT_STRATEGY_TYPE_CANARY", total_steps=3),
+            )
+        )
+
+        result = cli_runner.invoke(
+            _rollout_args(
+                "dep_target",
+                "--canary",
+                "--steps",
+                "10,50,100",
+                "--step-replicas",
+                "1,2,4",
+                "--json",
+            )
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, create_route.calls[0]).request.content.decode())
+        assert body["canary"] == {
+            "steps": [
+                {"traffic": 10, "replicas": 1},
+                {"traffic": 50, "replicas": 2},
+                {"traffic": 100, "replicas": 4},
+            ],
         }
 
     @pytest.mark.respx(base_url=base_url)
@@ -1360,6 +1450,26 @@ class TestBetaEndpointsRollout:
         result = cli_runner.invoke(_rollout_args("dep_target", "--steps", "10,100"))
         assert result.exit_code != 0
         assert "require --canary" in result.output.replace("\n", " ")
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rejects_step_replicas_without_canary(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(_rollout_args("dep_target", "--step-replicas", "1,2"))
+        assert result.exit_code != 0
+        assert "require --canary" in result.output.replace("\n", " ")
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rejects_step_replicas_without_steps(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(_rollout_args("dep_target", "--canary", "--step-replicas", "1,2"))
+        assert result.exit_code != 0
+        assert "--step-replicas requires --steps" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rejects_mismatched_step_replicas(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            _rollout_args("dep_target", "--canary", "--steps", "10,50,100", "--step-replicas", "1,2")
+        )
+        assert result.exit_code != 0
+        assert "--step-replicas must have the same number of entries as --steps" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_rejects_metric_without_canary(self, cli_runner: CliRunner) -> None:

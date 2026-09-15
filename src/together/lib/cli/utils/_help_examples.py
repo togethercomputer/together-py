@@ -371,6 +371,10 @@ BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints rollout my-deployment --canary \\
     --steps 5,25,50,100 --interval 30s[/primary]
 
+[dim]-[/dim] Canary with explicit target replicas per step:
+  [primary]tg beta endpoints rollout my-deployment --canary \\
+    --steps 5,25,50,100 --step-replicas 1,2,4,8[/primary]
+
 [dim]-[/dim] Canary with a metric gate (threshold or regression):
   [primary]tg beta endpoints rollout my-deployment --canary \\
     --metric router_latency --metric-stat p99 \\
