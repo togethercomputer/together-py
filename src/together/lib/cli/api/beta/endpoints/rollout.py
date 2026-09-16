@@ -10,6 +10,7 @@ from cyclopts.validators import Number, mutually_exclusive
 
 from together import AsyncClient, omit
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console, error_console
@@ -617,7 +618,7 @@ def _report_failed_create_start(
             payload["actions"] = actions
         console.print_json(openapi_dumps(payload).decode("utf-8"))
         # Avoid the outer APIError handler printing a second, ID-less JSON error.
-        raise SystemExit(1)
+        raise CliDiagnosticExit(error_message)
 
     if created_rollout_id is not None:
         error_console.print(

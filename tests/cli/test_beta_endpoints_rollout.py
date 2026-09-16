@@ -10,6 +10,7 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.lib.cli._track_cli import CliTrackingEvents
 from together.types.beta.endpoint import Endpoint
 from together.types.beta.endpoints.rollout import Rollout, StatusStep, StatusCondition, StatusConditionMetric
 from together.lib.cli.api.beta.endpoints.rollout import (
@@ -897,7 +898,15 @@ class TestBetaEndpointsRollout:
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
+        tracked: list[tuple[CliTrackingEvents, dict[str, Any]]] = []
+
+        def capture_event(event: CliTrackingEvents, args: dict[str, Any]) -> None:
+            tracked.append((event, args))
+
+        monkeypatch.setattr("together.lib.cli.track_cli", capture_event)
+
         endpoint = _endpoint_body()
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
@@ -937,6 +946,9 @@ class TestBetaEndpointsRollout:
         assert "deleted A/B experiment abx_1" in payload["actions"]
         assert "rol_1" in payload["hint"]
         assert "tg beta endpoints rm rol_1" in payload["hint"]
+        failure = next(args for event, args in tracked if event is CliTrackingEvents.CommandFailed)
+        assert "cannot start rollout" in failure["error"]
+        assert failure["error"] != "1"
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_start_failure_reports_orphan_rollout_without_detach(
