@@ -3,9 +3,9 @@ from __future__ import annotations
 import re
 from typing import Literal, cast, overload
 
+from together.types.beta import DeploymentAutoscalingParam
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
-from together.types.beta import DeploymentAutoscalingParam
 from together.types.beta.scaling_rules_param import ScalingRulesParam
 from together.types.beta.scaling_metric_param import ScalingMetricParam
 from together.types.beta.scaling_policy_param import ScalingPolicyParam

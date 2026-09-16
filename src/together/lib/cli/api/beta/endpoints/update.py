@@ -27,9 +27,9 @@ from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     ScalingPercentile,
     ScalingPolicySelect,
     build_autoscaling,
+    build_scaling_rules,
     build_scaling_metrics,
     build_scaling_policies,
-    build_scaling_rules,
 )
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 

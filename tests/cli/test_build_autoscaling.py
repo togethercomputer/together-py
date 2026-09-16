@@ -5,9 +5,9 @@ import pytest
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     build_autoscaling,
     normalize_duration,
+    build_scaling_rules,
     build_scaling_metrics,
     build_scaling_policies,
-    build_scaling_rules,
 )
 
 
