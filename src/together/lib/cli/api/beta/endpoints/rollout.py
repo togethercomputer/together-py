@@ -178,8 +178,10 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
         Parameter(
             name="--cancel",
             help=(
-                "Cancel an in-progress rollout. Bare --cancel omits disposition (server defaults to freeze). "
-                "Optional value: freeze leaves the current split; revert restores the source."
+                """Cancel an in-progress rollout. Bare --cancel uses server defined disposition. To control the disposition the following options are available:
+
+--cancel freeze - leaves the deployments at their current split.
+--cancel revert - restores the source deployment"""
             ),
             consume_multiple=(0, 1),
             group=(ControlDisplayGroup, ControlGroup, ModeGroup),
