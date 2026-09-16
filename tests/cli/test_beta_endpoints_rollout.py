@@ -940,6 +940,7 @@ class TestBetaEndpointsRollout:
 
         assert result.exit_code != 0
         payload = json.loads(result.out_out)
+        assert "cannot start rollout" in payload["error"]
         assert payload["id"] == "rol_1"
         assert payload["type"] == "rollout"
         assert payload["command"] == "tg beta endpoints rm rol_1"
@@ -947,8 +948,8 @@ class TestBetaEndpointsRollout:
         assert "rol_1" in payload["hint"]
         assert "tg beta endpoints rm rol_1" in payload["hint"]
         failure = next(args for event, args in tracked if event is CliTrackingEvents.CommandFailed)
-        assert "cannot start rollout" in failure["error"]
-        assert failure["error"] != "1"
+        assert failure["error"] == "Rollout created but failed to start"
+        assert "rol_1" not in failure["error"]
 
     @pytest.mark.respx(base_url=base_url)
     def test_create_start_failure_reports_orphan_rollout_without_detach(
