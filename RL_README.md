@@ -171,9 +171,7 @@ optim = session.trainer.optim_step(
         beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
     ),
 )
-sync = session.trainer.weights_sync(
-    weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
-)
+sync = session.trainer.weights_sync()
 print("step", optim.step, "weights_version", int(sync.weights_version))
 ```
 
@@ -815,10 +813,11 @@ raises `TypeError`). The old default was `WEIGHT_SYNC_TYPE_UNSPECIFIED` (also
 removed from the enum); bare `optim_step()` calls previously still sent that
 value on the wire. `optim_step` now only applies gradients — it does not publish
 weights for sampling. Every loop that samples after an optim step must add
-`session.trainer.weights_sync(weight_sync_type=...)` with an explicit mode
-(`SYNCHRONOUS`, `BACKGROUND_PUBLISH`, or `PIPELINE`), even if it never named
-`weight_sync_type` before. Without that call, subsequent samples keep using a
-stale policy with no client-side error.
+`session.trainer.weights_sync(...)`. The client defaults
+`weight_sync_type` to `WEIGHT_SYNC_TYPE_SYNCHRONOUS`; pass
+`BACKGROUND_PUBLISH` or `PIPELINE` when you want a different mode. Without
+that call, subsequent samples keep using a stale policy with no client-side
+error.
 
 Also drop `policy_segments` from training `Sample`s (it is no longer a request
 field; `SampleResult.policy_segments` on the response is unchanged). Replace the
@@ -871,13 +870,13 @@ Makes the session's current trained parameters available for sampling. Call afte
 ```python
 def weights_sync(
     *,
-    weight_sync_type: WeightSyncType,
+    weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_SYNCHRONOUS",
 ) -> WeightsSyncResult
 ```
 
-| Parameter          | Type             | Default      | Description                                                                 |
-| ------------------ | ---------------- | ------------ | --------------------------------------------------------------------------- |
-| `weight_sync_type` | `WeightSyncType` | _(required)_ | How updated parameters are made available for sampling. See values below. |
+| Parameter          | Type             | Default                           | Description                                                                 |
+| ------------------ | ---------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| `weight_sync_type` | `WeightSyncType` | `WEIGHT_SYNC_TYPE_SYNCHRONOUS`    | How updated parameters are made available for sampling. See values below. |
 
 Accepted `WeightSyncType` values: `"WEIGHT_SYNC_TYPE_SYNCHRONOUS"`,
 `"WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH"`, `"WEIGHT_SYNC_TYPE_PIPELINE"`.
