@@ -16,7 +16,9 @@ from together.lib.cli.utils._console import console, error_console
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
-from together.types.beta.endpoints.rollout_create_params import Canary, Rolling, BlueGreen
+from together.types.beta.endpoints.canary_config_param import CanaryConfigParam
+from together.types.beta.endpoints.rolling_config_param import RollingConfigParam
+from together.types.beta.endpoints.blue_green_config_param import BlueGreenConfigParam
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import normalize_duration
@@ -664,19 +666,19 @@ def resolve_rollout_strategy(
     rolling: bool,
     steps: str | None,
     interval: str | None,
-) -> tuple[Canary | None, BlueGreen | None, Rolling | None]:
+) -> tuple[CanaryConfigParam | None, BlueGreenConfigParam | None, RollingConfigParam | None]:
     # Mutual exclusivity / canary-only options are enforced by Group validators above.
     if canary:
         return build_canary(steps=steps, interval=interval), None, None
     if blue_green:
-        return None, BlueGreen(), None
+        return None, BlueGreenConfigParam(), None
     if rolling:
-        return None, None, Rolling()
+        return None, None, RollingConfigParam()
     raise ValueError("Must specify a rollout strategy: --blue-green, --canary, or --rolling.")
 
 
-def build_canary(*, steps: str | None, interval: str | None) -> Canary:
-    payload: Canary = {}
+def build_canary(*, steps: str | None, interval: str | None) -> CanaryConfigParam:
+    payload: CanaryConfigParam = {}
     if steps is not None:
         percents = parse_canary_steps(steps)
         payload["steps"] = [{"traffic": percent} for percent in percents]

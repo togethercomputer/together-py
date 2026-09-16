@@ -84,6 +84,9 @@ async def ab(
         max_replicas=1,
         scale_up_window=None,
         scale_down_window=None,
+        scale_to_zero_window=None,
+        scale_up=None,
+        scale_down=None,
         scaling_metrics=None,
         required=True,
     )
