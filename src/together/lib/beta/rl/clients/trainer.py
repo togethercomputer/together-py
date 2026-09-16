@@ -304,7 +304,7 @@ class Trainer:
     def weights_sync(
         self,
         *,
-        weight_sync_type: WeightSyncType,
+        weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_SYNCHRONOUS",
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> WeightsSyncResult:
@@ -320,7 +320,7 @@ class Trainer:
     async def weights_sync_async(
         self,
         *,
-        weight_sync_type: WeightSyncType,
+        weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_SYNCHRONOUS",
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> WeightsSyncResult:
