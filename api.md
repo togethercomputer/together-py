@@ -34,18 +34,37 @@ Types:
 from together.types.beta import (
     AbMember,
     DeploymentAutoscaling,
+    DeploymentMetrics,
     DeploymentPlacementConfig,
     DeploymentStatus,
     Endpoint,
     EndpointDeployment,
     EndpointDeploymentSummary,
     EndpointTrafficSplitEntry,
+    ErrorMetrics,
+    LatencyMetrics,
+    MetricsTimeRange,
+    RequestMetrics,
+    ResourceUtilization,
+    RuntimeInfo,
+    ScalingMetric,
+    ScalingPolicy,
+    ScalingRules,
     ShadowAdaptiveKeyBasedSampling,
+    ShadowAdaptiveKeyBasedSamplingResponse,
     ShadowAdaptiveUniformSampling,
+    ShadowAdaptiveUniformSamplingResponse,
     ShadowEndpointSource,
+    ShadowEndpointSourceResponse,
     ShadowKeyBasedSampling,
+    ShadowKeyBasedSamplingResponse,
     ShadowSource,
+    ShadowSourceResponse,
     ShadowUniformSampling,
+    ShadowUniformSamplingResponse,
+    ThroughputMetrics,
+    TimeSeriesDataPoint,
+    TokenMetrics,
     EndpointDeleteResponse,
     EndpointAnalyticsResponse,
     EndpointListEventsResponse,
@@ -132,7 +151,23 @@ Methods:
 Types:
 
 ```python
-from together.types.beta.endpoints import Rollout, RolloutDefaultsPreview, RolloutDeleteResponse
+from together.types.beta.endpoints import (
+    BlueGreenConfig,
+    CanaryConfig,
+    MetricResult,
+    MetricRule,
+    PauseInfo,
+    RegressionCheck,
+    RollingConfig,
+    Rollout,
+    RolloutCondition,
+    RolloutDefaultsPreview,
+    RolloutStatus,
+    RolloutStep,
+    RolloutStepStatus,
+    ThresholdCheck,
+    RolloutDeleteResponse,
+)
 ```
 
 Methods:
@@ -167,6 +202,7 @@ Types:
 
 ```python
 from together.types.beta.endpoints import (
+    DeploymentAdapterStatus,
     AdapterCreateResponse,
     AdapterRetrieveResponse,
     AdapterUpdateResponse,
@@ -206,6 +242,9 @@ Types:
 ```python
 from together.types.beta import (
     Model,
+    ModelDtypeCount,
+    ModelParameters,
+    ModelWeights,
     SupportedModel,
     SupportedModelDeploymentProfile,
     SupportedModelPerformanceBenchmarks,
@@ -253,7 +292,7 @@ Methods:
 Types:
 
 ```python
-from together.types.beta.models import Config
+from together.types.beta.models import Certification, Config, Selector
 ```
 
 Methods:

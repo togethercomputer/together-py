@@ -30,6 +30,10 @@ from ....types.beta.endpoints import (
     rollout_preview_defaults_params,
 )
 from ....types.beta.endpoints.rollout import Rollout
+from ....types.beta.endpoints.metric_rule_param import MetricRuleParam
+from ....types.beta.endpoints.canary_config_param import CanaryConfigParam
+from ....types.beta.endpoints.rolling_config_param import RollingConfigParam
+from ....types.beta.endpoints.blue_green_config_param import BlueGreenConfigParam
 from ....types.beta.endpoints.rollout_delete_response import RolloutDeleteResponse
 from ....types.beta.endpoints.rollout_defaults_preview import RolloutDefaultsPreview
 
@@ -63,12 +67,12 @@ class RolloutsResource(SyncAPIResource):
         project_id: str | None = None,
         source_deployment_id: str,
         target_deployment_id: str,
-        blue_green: rollout_create_params.BlueGreen | Omit = omit,
-        canary: rollout_create_params.Canary | Omit = omit,
+        blue_green: BlueGreenConfigParam | Omit = omit,
+        canary: CanaryConfigParam | Omit = omit,
         final_source_replicas: int | Omit = omit,
         final_target_replicas: int | Omit = omit,
-        metrics: Iterable[rollout_create_params.Metric] | Omit = omit,
-        rolling: rollout_create_params.Rolling | Omit = omit,
+        metrics: Iterable[MetricRuleParam] | Omit = omit,
+        rolling: RollingConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -497,12 +501,12 @@ class RolloutsResource(SyncAPIResource):
         project_id: str | None = None,
         source_deployment_id: str,
         target_deployment_id: str,
-        blue_green: rollout_preview_defaults_params.BlueGreen | Omit = omit,
-        canary: rollout_preview_defaults_params.Canary | Omit = omit,
+        blue_green: BlueGreenConfigParam | Omit = omit,
+        canary: CanaryConfigParam | Omit = omit,
         final_source_replicas: int | Omit = omit,
         final_target_replicas: int | Omit = omit,
-        metrics: Iterable[rollout_preview_defaults_params.Metric] | Omit = omit,
-        rolling: rollout_preview_defaults_params.Rolling | Omit = omit,
+        metrics: Iterable[MetricRuleParam] | Omit = omit,
+        rolling: RollingConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -792,12 +796,12 @@ class AsyncRolloutsResource(AsyncAPIResource):
         project_id: str | None = None,
         source_deployment_id: str,
         target_deployment_id: str,
-        blue_green: rollout_create_params.BlueGreen | Omit = omit,
-        canary: rollout_create_params.Canary | Omit = omit,
+        blue_green: BlueGreenConfigParam | Omit = omit,
+        canary: CanaryConfigParam | Omit = omit,
         final_source_replicas: int | Omit = omit,
         final_target_replicas: int | Omit = omit,
-        metrics: Iterable[rollout_create_params.Metric] | Omit = omit,
-        rolling: rollout_create_params.Rolling | Omit = omit,
+        metrics: Iterable[MetricRuleParam] | Omit = omit,
+        rolling: RollingConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1226,12 +1230,12 @@ class AsyncRolloutsResource(AsyncAPIResource):
         project_id: str | None = None,
         source_deployment_id: str,
         target_deployment_id: str,
-        blue_green: rollout_preview_defaults_params.BlueGreen | Omit = omit,
-        canary: rollout_preview_defaults_params.Canary | Omit = omit,
+        blue_green: BlueGreenConfigParam | Omit = omit,
+        canary: CanaryConfigParam | Omit = omit,
         final_source_replicas: int | Omit = omit,
         final_target_replicas: int | Omit = omit,
-        metrics: Iterable[rollout_preview_defaults_params.Metric] | Omit = omit,
-        rolling: rollout_preview_defaults_params.Rolling | Omit = omit,
+        metrics: Iterable[MetricRuleParam] | Omit = omit,
+        rolling: RollingConfigParam | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,

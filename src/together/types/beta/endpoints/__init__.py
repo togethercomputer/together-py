@@ -3,11 +3,27 @@
 from __future__ import annotations
 
 from .rollout import Rollout as Rollout
+from .pause_info import PauseInfo as PauseInfo
+from .metric_rule import MetricRule as MetricRule
+from .rollout_step import RolloutStep as RolloutStep
 from .ab_experiment import AbExperiment as AbExperiment
+from .canary_config import CanaryConfig as CanaryConfig
+from .metric_result import MetricResult as MetricResult
+from .rolling_config import RollingConfig as RollingConfig
+from .rollout_status import RolloutStatus as RolloutStatus
+from .threshold_check import ThresholdCheck as ThresholdCheck
+from .regression_check import RegressionCheck as RegressionCheck
+from .blue_green_config import BlueGreenConfig as BlueGreenConfig
+from .metric_rule_param import MetricRuleParam as MetricRuleParam
 from .placement_profile import PlacementProfile as PlacementProfile
+from .rollout_condition import RolloutCondition as RolloutCondition
 from .shadow_experiment import ShadowExperiment as ShadowExperiment
+from .rollout_step_param import RolloutStepParam as RolloutStepParam
 from .adapter_list_params import AdapterListParams as AdapterListParams
+from .canary_config_param import CanaryConfigParam as CanaryConfigParam
 from .rollout_list_params import RolloutListParams as RolloutListParams
+from .rollout_step_status import RolloutStepStatus as RolloutStepStatus
+from .rolling_config_param import RollingConfigParam as RollingConfigParam
 from .rollout_pause_params import RolloutPauseParams as RolloutPauseParams
 from .adapter_create_params import AdapterCreateParams as AdapterCreateParams
 from .adapter_delete_params import AdapterDeleteParams as AdapterDeleteParams
@@ -17,12 +33,15 @@ from .rollout_cancel_params import RolloutCancelParams as RolloutCancelParams
 from .rollout_create_params import RolloutCreateParams as RolloutCreateParams
 from .rollout_delete_params import RolloutDeleteParams as RolloutDeleteParams
 from .rollout_resume_params import RolloutResumeParams as RolloutResumeParams
+from .threshold_check_param import ThresholdCheckParam as ThresholdCheckParam
 from .deployment_list_params import DeploymentListParams as DeploymentListParams
 from .hardware_list_response import HardwareListResponse as HardwareListResponse
+from .regression_check_param import RegressionCheckParam as RegressionCheckParam
 from .rollout_promote_params import RolloutPromoteParams as RolloutPromoteParams
 from .adapter_create_response import AdapterCreateResponse as AdapterCreateResponse
 from .adapter_delete_response import AdapterDeleteResponse as AdapterDeleteResponse
 from .adapter_update_response import AdapterUpdateResponse as AdapterUpdateResponse
+from .blue_green_config_param import BlueGreenConfigParam as BlueGreenConfigParam
 from .inference_instance_type import InferenceInstanceType as InferenceInstanceType
 from .rollout_delete_response import RolloutDeleteResponse as RolloutDeleteResponse
 from .deployment_create_params import DeploymentCreateParams as DeploymentCreateParams
@@ -31,6 +50,7 @@ from .deployment_update_params import DeploymentUpdateParams as DeploymentUpdate
 from .rollout_defaults_preview import RolloutDefaultsPreview as RolloutDefaultsPreview
 from .ab_experiment_list_params import AbExperimentListParams as AbExperimentListParams
 from .adapter_retrieve_response import AdapterRetrieveResponse as AdapterRetrieveResponse
+from .deployment_adapter_status import DeploymentAdapterStatus as DeploymentAdapterStatus
 from .deployment_delete_response import DeploymentDeleteResponse as DeploymentDeleteResponse
 from .ab_experiment_create_params import AbExperimentCreateParams as AbExperimentCreateParams
 from .ab_experiment_delete_params import AbExperimentDeleteParams as AbExperimentDeleteParams

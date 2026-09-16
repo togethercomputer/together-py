@@ -39,8 +39,38 @@ class TestDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -196,8 +226,38 @@ class TestDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -418,8 +478,38 @@ class TestAsyncDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -575,8 +665,38 @@ class TestAsyncDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {

@@ -3,50 +3,13 @@
 from __future__ import annotations
 
 from typing import Iterable
-from typing_extensions import Literal, Required, Annotated, TypedDict
+from typing_extensions import Annotated, TypedDict
 
 from ..._utils import PropertyInfo
+from .scaling_rules_param import ScalingRulesParam
+from .scaling_metric_param import ScalingMetricParam
 
-__all__ = ["DeploymentAutoscalingParam", "ScalingMetric"]
-
-
-class ScalingMetric(TypedDict, total=False):
-    """Metric and target used by the autoscaler to recommend a replica count."""
-
-    name: Required[
-        Literal[
-            "active_sessions",
-            "cache_hit_rate",
-            "decoding_speed",
-            "e2e_latency",
-            "gpu_utilization",
-            "inflight_requests",
-            "throughput_per_replica",
-            "token_utilization",
-            "ttft",
-        ]
-    ]
-    """Autoscaling metric name from the server allowlist."""
-
-    target: Required[float]
-    """Target interpreted according to `type`.
-
-    Utilization uses a percentage from 0 to 100, value uses an absolute measurement,
-    and average value uses a per-replica measurement.
-    """
-
-    type: Required[
-        Literal["METRIC_TARGET_TYPE_VALUE", "METRIC_TARGET_TYPE_UTILIZATION", "METRIC_TARGET_TYPE_AVERAGE_VALUE"]
-    ]
-    """
-    Whether `target` is an absolute value, a utilization percentage, or a
-    per-replica average.
-    """
-
-    percentile: str
-    """
-    Percentile to evaluate for latency-based metrics: `p50`, `p90`, `p95`, or `p99`.
-    """
+__all__ = ["DeploymentAutoscalingParam"]
 
 
 class DeploymentAutoscalingParam(TypedDict, total=False):
@@ -65,6 +28,9 @@ class DeploymentAutoscalingParam(TypedDict, total=False):
     `maxReplicas` to `0` to stop the deployment.
     """
 
+    scale_down: Annotated[ScalingRulesParam, PropertyInfo(alias="scaleDown")]
+    """Rate limits applied after stabilization and before replica bounds."""
+
     scale_down_window: Annotated[str, PropertyInfo(alias="scaleDownWindow")]
     """Time a lower replica recommendation must remain stable before scaling down.
 
@@ -77,10 +43,13 @@ class DeploymentAutoscalingParam(TypedDict, total=False):
     replicas.
     """
 
+    scale_up: Annotated[ScalingRulesParam, PropertyInfo(alias="scaleUp")]
+    """Rate limits applied after stabilization and before replica bounds."""
+
     scale_up_window: Annotated[str, PropertyInfo(alias="scaleUpWindow")]
     """Stabilization window before scaling up."""
 
-    scaling_metrics: Annotated[Iterable[ScalingMetric], PropertyInfo(alias="scalingMetrics")]
+    scaling_metrics: Annotated[Iterable[ScalingMetricParam], PropertyInfo(alias="scalingMetrics")]
     """Metrics and targets that drive replica recommendations.
 
     When omitted, the platform uses concurrent in-flight requests per replica.

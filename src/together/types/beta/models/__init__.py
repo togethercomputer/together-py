@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from .config import Config as Config
+from .selector import Selector as Selector
+from .certification import Certification as Certification
 from .config_list_params import ConfigListParams as ConfigListParams
 from .remote_upload_list_params import RemoteUploadListParams as RemoteUploadListParams
 from .remote_upload_create_params import RemoteUploadCreateParams as RemoteUploadCreateParams
