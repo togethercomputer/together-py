@@ -459,7 +459,9 @@ BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror traffic to an existing deployment:
   [primary]tg beta endpoints shadow dep_xxxxxxxxxxxx --rate 0.1[/primary]
 
-[dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
+[dim]Note:[/dim] ENDPOINT is the first positional (`shadow <ENDPOINT> <MODEL>`). The 2.34.0 form
+`shadow <MODEL> --endpoint <ENDPOINT>` is no longer accepted. Shadow targets cannot be
+live traffic-split members or active rollout participants.
 """
 
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]
