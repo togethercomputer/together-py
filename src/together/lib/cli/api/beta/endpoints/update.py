@@ -21,10 +21,15 @@ from together.lib.cli.api.beta.endpoints._utils._ab_experiments import (
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     SCALING_METRIC_NAMES,
+    SCALING_POLICY_KINDS,
+    SCALING_POLICY_SELECTS,
     ScalingMetricName,
     ScalingPercentile,
+    ScalingPolicySelect,
     build_autoscaling,
+    build_scaling_rules,
     build_scaling_metrics,
+    build_scaling_policies,
 )
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 
@@ -56,6 +61,85 @@ async def update(
         Optional[str],
         Parameter(help="Cooldown in seconds before removing more replicas after scale-down (for example, 60s)"),
     ] = None,
+    scale_to_zero_window: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Idle period before automatically stopping the deployment and releasing replicas "
+                "(seconds, e.g. 300 or 5m)."
+            )
+        ),
+    ] = None,
+    scale_up_policy: Annotated[
+        Optional[list[str]],
+        Parameter(
+            help=(
+                "Scale-up rate limit policy as KIND:VALUE:PERIOD_SECONDS; repeat for multiple policies. "
+                f"KIND is one of {', '.join(SCALING_POLICY_KINDS)}. Examples: pods:2:60, percent:50:300."
+            ),
+            negative_iterable=(),
+        ),
+    ] = None,
+    scale_down_policy: Annotated[
+        Optional[list[str]],
+        Parameter(
+            help=(
+                "Scale-down rate limit policy as KIND:VALUE:PERIOD_SECONDS; repeat for multiple policies. "
+                f"KIND is one of {', '.join(SCALING_POLICY_KINDS)}. Examples: pods:1:60, percent:25:300."
+            ),
+            negative_iterable=(),
+        ),
+    ] = None,
+    scale_up_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(
+            help=(
+                "How to choose among scale-up rate limit policies. "
+                f"Choices: {', '.join(SCALING_POLICY_SELECTS)}."
+            )
+        ),
+    ] = None,
+    scale_down_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(
+            help=(
+                "How to choose among scale-down rate limit policies. "
+                f"Choices: {', '.join(SCALING_POLICY_SELECTS)}."
+            )
+        ),
+    ] = None,
+    clear_scale_up_policies: Annotated[
+        bool,
+        Parameter(
+            help="Clear configured scale-up policies and restore default policy limits.",
+            negative=(),
+            show_default=False,
+        ),
+    ] = False,
+    clear_scale_down_policies: Annotated[
+        bool,
+        Parameter(
+            help="Clear configured scale-down policies and restore default policy limits.",
+            negative=(),
+            show_default=False,
+        ),
+    ] = False,
+    reset_scale_up_select_policy: Annotated[
+        bool,
+        Parameter(
+            help="Reset the scale-up policy selector so the platform default applies.",
+            negative=(),
+            show_default=False,
+        ),
+    ] = False,
+    reset_scale_down_select_policy: Annotated[
+        bool,
+        Parameter(
+            help="Reset the scale-down policy selector so the platform default applies.",
+            negative=(),
+            show_default=False,
+        ),
+    ] = False,
     scaling_metric: Annotated[
         Optional[ScalingMetricName],
         Parameter(
@@ -111,11 +195,30 @@ async def update(
 ) -> None:
     """Update a deployment's parameters on an endpoint."""
 
+    scale_up_policies = build_scaling_policies(scale_up_policy, option_name="--scale-up-policy")
+    scale_down_policies = build_scaling_policies(scale_down_policy, option_name="--scale-down-policy")
+    scale_up_rules = build_scaling_rules(
+        policies=scale_up_policies,
+        select_policy=scale_up_select_policy,
+        clear_policies=clear_scale_up_policies,
+        reset_select_policy=reset_scale_up_select_policy,
+        option_name="--scale-up",
+    )
+    scale_down_rules = build_scaling_rules(
+        policies=scale_down_policies,
+        select_policy=scale_down_select_policy,
+        clear_policies=clear_scale_down_policies,
+        reset_select_policy=reset_scale_down_select_policy,
+        option_name="--scale-down",
+    )
     autoscaling = build_autoscaling(
         min_replicas=min_replicas,
         max_replicas=max_replicas,
         scale_up_window=scale_up_window,
         scale_down_window=scale_down_window,
+        scale_to_zero_window=scale_to_zero_window,
+        scale_up=scale_up_rules,
+        scale_down=scale_down_rules,
         scaling_metrics=build_scaling_metrics(
             scaling_metric=scaling_metric,
             scaling_target=scaling_target,
@@ -130,7 +233,26 @@ async def update(
 
     if autoscaling is not None:
         kwargs["autoscaling"] = autoscaling
-        update_mask.append("autoscaling")
+        update_mask.extend(
+            _autoscaling_update_mask(
+                min_replicas=min_replicas,
+                max_replicas=max_replicas,
+                scale_up_window=scale_up_window,
+                scale_down_window=scale_down_window,
+                scale_to_zero_window=scale_to_zero_window,
+                scaling_metric=scaling_metric,
+                scaling_target=scaling_target,
+                scaling_percentile=scaling_percentile,
+                scale_up_policies=scale_up_policies,
+                scale_down_policies=scale_down_policies,
+                scale_up_select_policy=scale_up_select_policy,
+                scale_down_select_policy=scale_down_select_policy,
+                clear_scale_up_policies=clear_scale_up_policies,
+                clear_scale_down_policies=clear_scale_down_policies,
+                reset_scale_up_select_policy=reset_scale_up_select_policy,
+                reset_scale_down_select_policy=reset_scale_down_select_policy,
+            )
+        )
     if etag is not None:
         kwargs["etag"] = etag
 
@@ -229,3 +351,54 @@ async def update(
         else:
             console.print(f"[green]√[/green] Updated A/B percent for deployment {id}.\n\n")
     await retrieve_endpoint(endpoint.id, config=config)
+
+
+def _autoscaling_update_mask(
+    *,
+    min_replicas: int | None,
+    max_replicas: int | None,
+    scale_up_window: str | None,
+    scale_down_window: str | None,
+    scale_to_zero_window: str | None,
+    scaling_metric: ScalingMetricName | None,
+    scaling_target: float | None,
+    scaling_percentile: ScalingPercentile | None,
+    scale_up_policies: object | None,
+    scale_down_policies: object | None,
+    scale_up_select_policy: ScalingPolicySelect | None,
+    scale_down_select_policy: ScalingPolicySelect | None,
+    clear_scale_up_policies: bool,
+    clear_scale_down_policies: bool,
+    reset_scale_up_select_policy: bool,
+    reset_scale_down_select_policy: bool,
+) -> list[str]:
+    if not (
+        clear_scale_up_policies
+        or clear_scale_down_policies
+        or reset_scale_up_select_policy
+        or reset_scale_down_select_policy
+    ):
+        return ["autoscaling"]
+
+    paths: list[str] = []
+    if min_replicas is not None:
+        paths.append("autoscaling.minReplicas")
+    if max_replicas is not None:
+        paths.append("autoscaling.maxReplicas")
+    if scale_up_window is not None:
+        paths.append("autoscaling.scaleUpWindow")
+    if scale_down_window is not None:
+        paths.append("autoscaling.scaleDownWindow")
+    if scale_to_zero_window is not None:
+        paths.append("autoscaling.scaleToZeroWindow")
+    if scaling_metric is not None or scaling_target is not None or scaling_percentile is not None:
+        paths.append("autoscaling.scalingMetrics")
+    if scale_up_policies is not None or clear_scale_up_policies:
+        paths.append("autoscaling.scaleUp.policies")
+    if scale_down_policies is not None or clear_scale_down_policies:
+        paths.append("autoscaling.scaleDown.policies")
+    if scale_up_select_policy is not None or reset_scale_up_select_policy:
+        paths.append("autoscaling.scaleUp.selectPolicy")
+    if scale_down_select_policy is not None or reset_scale_down_select_policy:
+        paths.append("autoscaling.scaleDown.selectPolicy")
+    return paths

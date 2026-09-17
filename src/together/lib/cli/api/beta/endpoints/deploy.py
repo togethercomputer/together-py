@@ -44,10 +44,15 @@ from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import (
     resolve_hardware_pricing,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
+    SCALING_POLICY_KINDS,
+    SCALING_POLICY_SELECTS,
     ScalingMetricName,
     ScalingPercentile,
+    ScalingPolicySelect,
     build_autoscaling,
+    build_scaling_rules,
     build_scaling_metrics,
+    build_scaling_policies,
 )
 
 EndpointParameter = Annotated[
@@ -117,6 +122,53 @@ async def deploy(
         Optional[str],
         Parameter(
             help="Cooldown after scaling down before removing more replicas (seconds, e.g. 60 or 60s). Higher values improve stability."
+        ),
+    ] = None,
+    scale_to_zero_window: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Idle period before automatically stopping the deployment and releasing replicas "
+                "(seconds, e.g. 300 or 5m)."
+            )
+        ),
+    ] = None,
+    scale_up_policy: Annotated[
+        Optional[list[str]],
+        Parameter(
+            help=(
+                "Scale-up rate limit policy as KIND:VALUE:PERIOD_SECONDS; repeat for multiple policies. "
+                f"KIND is one of {', '.join(SCALING_POLICY_KINDS)}. Examples: pods:2:60, percent:50:300."
+            ),
+            negative_iterable=(),
+        ),
+    ] = None,
+    scale_down_policy: Annotated[
+        Optional[list[str]],
+        Parameter(
+            help=(
+                "Scale-down rate limit policy as KIND:VALUE:PERIOD_SECONDS; repeat for multiple policies. "
+                f"KIND is one of {', '.join(SCALING_POLICY_KINDS)}. Examples: pods:1:60, percent:25:300."
+            ),
+            negative_iterable=(),
+        ),
+    ] = None,
+    scale_up_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(
+            help=(
+                "How to choose among scale-up rate limit policies. "
+                f"Choices: {', '.join(SCALING_POLICY_SELECTS)}."
+            )
+        ),
+    ] = None,
+    scale_down_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(
+            help=(
+                "How to choose among scale-down rate limit policies. "
+                f"Choices: {', '.join(SCALING_POLICY_SELECTS)}."
+            )
         ),
     ] = None,
     scaling_metric: Annotated[
@@ -211,6 +263,17 @@ async def deploy(
         max_replicas=max_replicas,
         scale_up_window=scale_up_window,
         scale_down_window=scale_down_window,
+        scale_to_zero_window=scale_to_zero_window,
+        scale_up=build_scaling_rules(
+            policies=build_scaling_policies(scale_up_policy, option_name="--scale-up-policy"),
+            select_policy=scale_up_select_policy,
+            option_name="--scale-up",
+        ),
+        scale_down=build_scaling_rules(
+            policies=build_scaling_policies(scale_down_policy, option_name="--scale-down-policy"),
+            select_policy=scale_down_select_policy,
+            option_name="--scale-down",
+        ),
         scaling_metrics=build_scaling_metrics(
             scaling_metric=scaling_metric,
             scaling_target=scaling_target,
@@ -338,6 +401,12 @@ def _print_deployment_preview(
         add_row("--scale-up-window", str(scale_up))
     if scale_down := autoscaling.get("scale_down_window"):
         add_row("--scale-down-window", str(scale_down))
+    if scale_to_zero := autoscaling.get("scale_to_zero_window"):
+        add_row("--scale-to-zero-window", str(scale_to_zero))
+    if scale_up := autoscaling.get("scale_up"):
+        _add_scaling_rule_rows(add_row, "--scale-up", scale_up)
+    if scale_down_rules := autoscaling.get("scale_down"):
+        _add_scaling_rule_rows(add_row, "--scale-down", scale_down_rules)
     if metrics := autoscaling.get("scaling_metrics"):
         metric = next(iter(metrics))
         add_row("--scaling-metric", metric["name"])
@@ -384,6 +453,14 @@ def _print_deployment_preview(
             f"[dim][/dim][yellow]This deployment will utilize {hardware_pricing.gpu_label}, "
             f"which is estimated to cost approximately {hardware_pricing.estimated_price_label}.[/yellow]\n"
         )
+
+
+def _add_scaling_rule_rows(add_row: Any, prefix: str, rules: dict[str, Any]) -> None:
+    for policy in rules.get("policies") or []:
+        kind = "pods" if policy["type"] == "SCALING_POLICY_TYPE_PODS" else "percent"
+        add_row(f"{prefix}-policy", f"{kind}:{policy['value']}:{policy['period_seconds']}")
+    if select_policy := rules.get("select_policy"):
+        add_row(f"{prefix}-select-policy", select_policy.removeprefix("SCALING_POLICY_SELECT_").lower())
 
 
 # Helper method to enable the users to use this command to either create a new endpoint+deployment

@@ -21,7 +21,9 @@ from together.types.beta.endpoints import Rollout, AbExperiment, ShadowExperimen
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.rollout import StatusStep, StatusCondition, StatusStepMetric, StatusConditionMetric
+from together.types.beta.endpoints.metric_result import MetricResult
+from together.types.beta.endpoints.rollout_condition import RolloutCondition
+from together.types.beta.endpoints.rollout_step_status import RolloutStepStatus
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
@@ -390,13 +392,13 @@ def format_step_state(state: str) -> str:
     return f"[{style}]{text}[/{style}]" if style else text
 
 
-def _status_steps(rollout: Rollout) -> list[StatusStep]:
+def _status_steps(rollout: Rollout) -> list[RolloutStepStatus]:
     if not rollout.status:
         return []
     return list(rollout.status.steps or [])
 
 
-def _step_at(rollout: Rollout, index: int) -> StatusStep | None:
+def _step_at(rollout: Rollout, index: int) -> RolloutStepStatus | None:
     steps = _status_steps(rollout)
     for step in steps:
         if step.step_index == index:
@@ -406,7 +408,7 @@ def _step_at(rollout: Rollout, index: int) -> StatusStep | None:
     return None
 
 
-def _gate_status_step(rollout: Rollout) -> StatusStep | None:
+def _gate_status_step(rollout: Rollout) -> RolloutStepStatus | None:
     """Step that tripped a gate, else the current step."""
     failed = [step for step in _status_steps(rollout) if step.state == "ROLLOUT_STEP_STATE_FAILED"]
     if failed:
@@ -416,7 +418,7 @@ def _gate_status_step(rollout: Rollout) -> StatusStep | None:
     return None
 
 
-def format_status_step_line(step: StatusStep, *, fallback_index: int | None = None) -> str:
+def format_status_step_line(step: RolloutStepStatus, *, fallback_index: int | None = None) -> str:
     index = step.step_index if step.step_index is not None else fallback_index
     parts = [f"{index + 1}" if index is not None else "?"]
     if step.target_traffic_percent is not None:
@@ -426,7 +428,7 @@ def format_status_step_line(step: StatusStep, *, fallback_index: int | None = No
     return " ".join(parts)
 
 
-def format_rollout_condition_summary(condition: StatusCondition) -> str | None:
+def format_rollout_condition_summary(condition: RolloutCondition) -> str | None:
     """Humanize ``status.condition`` category/message/step into one line."""
     parts: list[str] = []
     if condition.category:
@@ -440,7 +442,7 @@ def format_rollout_condition_summary(condition: StatusCondition) -> str | None:
     return " ".join(parts) if parts else None
 
 
-def format_condition_metric_line(metric: StatusConditionMetric | StatusStepMetric) -> str:
+def format_condition_metric_line(metric: MetricResult) -> str:
     """One-line gate result: name/stat, observed values, criteria, verdict."""
     name = escape_rich_markup(metric.name or "metric")
     if metric.stat == "METRIC_STAT_TYPE_PERCENTILE" and metric.percentile is not None:

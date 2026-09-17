@@ -6,7 +6,9 @@ from typing import Literal, cast, overload
 from together.types.beta import DeploymentAutoscalingParam
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
-from together.types.beta.deployment_autoscaling_param import ScalingMetric
+from together.types.beta.scaling_rules_param import ScalingRulesParam
+from together.types.beta.scaling_metric_param import ScalingMetricParam
+from together.types.beta.scaling_policy_param import ScalingPolicyParam
 
 # Wire format is protobuf Duration JSON, seconds only (e.g. "30s", "600s").
 # CLI also accepts bare seconds (`30`) and Go-style units (`10m`, `1h`, `10m30s`).
@@ -43,6 +45,15 @@ ScalingMetricName = Literal[
 ]
 
 ScalingPercentile = Literal["p50", "p90", "p95", "p99"]
+ScalingPolicyKind = Literal["pods", "percent"]
+ScalingPolicySelect = Literal["max", "min", "disabled"]
+
+ScalingPolicyApiType = Literal["SCALING_POLICY_TYPE_PODS", "SCALING_POLICY_TYPE_PERCENT"]
+ScalingPolicySelectApi = Literal[
+    "SCALING_POLICY_SELECT_MAX",
+    "SCALING_POLICY_SELECT_MIN",
+    "SCALING_POLICY_SELECT_DISABLED",
+]
 
 # Fixed type per metric name (see examples/internal-team-guides/autoscaling.md).
 _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
@@ -59,6 +70,17 @@ _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
 
 _VALID_PERCENTILES: frozenset[ScalingPercentile] = frozenset({"p50", "p90", "p95", "p99"})
 SCALING_METRIC_NAMES = tuple(_METRIC_TYPES)
+SCALING_POLICY_KINDS = ("pods", "percent")
+SCALING_POLICY_SELECTS = ("max", "min", "disabled")
+_POLICY_TYPES: dict[ScalingPolicyKind, ScalingPolicyApiType] = {
+    "pods": "SCALING_POLICY_TYPE_PODS",
+    "percent": "SCALING_POLICY_TYPE_PERCENT",
+}
+_POLICY_SELECTS: dict[ScalingPolicySelect, ScalingPolicySelectApi] = {
+    "max": "SCALING_POLICY_SELECT_MAX",
+    "min": "SCALING_POLICY_SELECT_MIN",
+    "disabled": "SCALING_POLICY_SELECT_DISABLED",
+}
 
 
 def _token_to_nanos(amount: str, unit: str) -> int:
@@ -130,7 +152,7 @@ def build_scaling_metrics(
     scaling_metric: ScalingMetricName | None,
     scaling_target: float | None,
     scaling_percentile: ScalingPercentile | None = None,
-) -> list[ScalingMetric] | None:
+) -> list[ScalingMetricParam] | None:
     """Build a single-element scalingMetrics array from simple CLI flags."""
     if scaling_metric is None and scaling_target is None and scaling_percentile is None:
         return None
@@ -145,7 +167,7 @@ def build_scaling_metrics(
         console.print(f"Error: unknown --scaling-metric {scaling_metric!r}. Choose one of: {known}.")
         raise CliDiagnosticExit("Unknown autoscaling metric")
 
-    metric: ScalingMetric = {
+    metric: ScalingMetricParam = {
         "name": scaling_metric,
         "type": metric_type,
         "target": scaling_target,
@@ -169,6 +191,94 @@ def build_scaling_metrics(
     return [metric]
 
 
+def build_scaling_policies(
+    policy_specs: list[str] | None,
+    *,
+    option_name: str,
+) -> list[ScalingPolicyParam] | None:
+    """Parse repeatable policy specs like ``pods:2:60`` into SDK params."""
+    if not policy_specs:
+        return None
+
+    policies: list[ScalingPolicyParam] = []
+    for raw_spec in policy_specs:
+        specs = raw_spec.split(",")
+        for spec in specs:
+            spec = spec.strip()
+            parts = spec.split(":")
+            if len(parts) != 3 or not all(parts):
+                console.print(
+                    f"Error: {option_name} must be KIND:VALUE:PERIOD_SECONDS, "
+                    f"e.g. pods:2:60 or percent:50:300 (got {raw_spec!r})."
+                )
+                raise CliDiagnosticExit(f"Invalid scaling policy for {option_name}")
+
+            kind_raw, value_raw, period_raw = parts
+            policy_type = _POLICY_TYPES.get(cast(ScalingPolicyKind, kind_raw))
+            if policy_type is None:
+                console.print(
+                    f"Error: {option_name} kind must be one of {', '.join(SCALING_POLICY_KINDS)} "
+                    f"(got {kind_raw!r})."
+                )
+                raise CliDiagnosticExit(f"Invalid scaling policy kind for {option_name}")
+
+            try:
+                value = int(value_raw)
+                period_seconds = int(period_raw)
+            except ValueError as exc:
+                console.print(
+                    f"Error: {option_name} value and period must be integers "
+                    f"(got {value_raw!r} and {period_raw!r})."
+                )
+                raise CliDiagnosticExit(f"Invalid scaling policy numbers for {option_name}") from exc
+
+            if value <= 0:
+                console.print(f"Error: {option_name} value must be positive (got {value}).")
+                raise CliDiagnosticExit(f"Invalid scaling policy value for {option_name}")
+            if not 1 <= period_seconds <= 1800:
+                console.print(f"Error: {option_name} period must be from 1 to 1800 seconds (got {period_seconds}).")
+                raise CliDiagnosticExit(f"Invalid scaling policy period for {option_name}")
+
+            policies.append(
+                {
+                    "type": policy_type,
+                    "value": value,
+                    "period_seconds": period_seconds,
+                }
+            )
+
+    return policies
+
+
+def build_scaling_rules(
+    *,
+    policies: list[ScalingPolicyParam] | None,
+    select_policy: ScalingPolicySelect | None,
+    clear_policies: bool = False,
+    reset_select_policy: bool = False,
+    option_name: str,
+) -> ScalingRulesParam | None:
+    if clear_policies and policies is not None:
+        console.print(f"Error: {option_name} cannot be combined with the matching --clear-* flag.")
+        raise CliDiagnosticExit(f"Conflicting scaling policy options for {option_name}")
+    if reset_select_policy and select_policy is not None:
+        console.print(f"Error: {option_name}-select-policy cannot be combined with the matching --reset-* flag.")
+        raise CliDiagnosticExit(f"Conflicting scaling select policy options for {option_name}")
+
+    rules: ScalingRulesParam = {}
+    if clear_policies:
+        rules["policies"] = []
+    elif policies is not None:
+        rules["policies"] = policies
+
+    if select_policy is not None:
+        rules["select_policy"] = _POLICY_SELECTS[select_policy]
+
+    if rules or reset_select_policy:
+        return rules
+    return None
+
+
 @overload
 def build_autoscaling(
     *,
@@ -176,7 +286,10 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None = ...,
+    scale_to_zero_window: str | None = ...,
+    scale_up: ScalingRulesParam | None = ...,
+    scale_down: ScalingRulesParam | None = ...,
+    scaling_metrics: list[ScalingMetricParam] | None = ...,
     required: Literal[True],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam: ...
@@ -189,7 +302,10 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None = ...,
+    scale_to_zero_window: str | None = ...,
+    scale_up: ScalingRulesParam | None = ...,
+    scale_down: ScalingRulesParam | None = ...,
+    scaling_metrics: list[ScalingMetricParam] | None = ...,
     required: Literal[False],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam | None: ...
@@ -201,7 +317,10 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None = None,
+    scale_to_zero_window: str | None = None,
+    scale_up: ScalingRulesParam | None = None,
+    scale_down: ScalingRulesParam | None = None,
+    scaling_metrics: list[ScalingMetricParam] | None = None,
     required: bool = False,
     infer_replica_defaults: bool = True,
 ) -> DeploymentAutoscalingParam | None:
@@ -237,8 +356,13 @@ def build_autoscaling(
         for key, value in {
             "min_replicas": min_replicas,
             "max_replicas": max_replicas,
+            "scale_up": scale_up,
+            "scale_down": scale_down,
             "scale_up_window": normalize_duration(scale_up_window, option_name="--scale-up-window"),
             "scale_down_window": normalize_duration(scale_down_window, option_name="--scale-down-window"),
+            "scale_to_zero_window": normalize_duration(
+                scale_to_zero_window, option_name="--scale-to-zero-window"
+            ),
             "scaling_metrics": scaling_metrics,
         }.items()
         if value is not None

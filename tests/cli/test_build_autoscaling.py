@@ -5,7 +5,9 @@ import pytest
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     build_autoscaling,
     normalize_duration,
+    build_scaling_rules,
     build_scaling_metrics,
+    build_scaling_policies,
 )
 
 
@@ -205,12 +207,13 @@ def test_build_autoscaling_accepts_stopped_deployment() -> None:
     assert autoscaling == {"min_replicas": 0, "max_replicas": 0}
 
 
-def test_build_autoscaling_omits_scale_to_zero_window() -> None:
+def test_build_autoscaling_includes_scale_to_zero_window() -> None:
     autoscaling = build_autoscaling(
         min_replicas=1,
         max_replicas=2,
         scale_up_window="30s",
         scale_down_window="60s",
+        scale_to_zero_window="5m",
         required=True,
     )
 
@@ -219,8 +222,60 @@ def test_build_autoscaling_omits_scale_to_zero_window() -> None:
         "max_replicas": 2,
         "scale_up_window": "30s",
         "scale_down_window": "60s",
+        "scale_to_zero_window": "300s",
     }
-    assert "scale_to_zero_window" not in autoscaling
+
+
+def test_build_scaling_policies() -> None:
+    assert build_scaling_policies(["pods:2:60", "percent:50:300"], option_name="--scale-up-policy") == [
+        {
+            "type": "SCALING_POLICY_TYPE_PODS",
+            "value": 2,
+            "period_seconds": 60,
+        },
+        {
+            "type": "SCALING_POLICY_TYPE_PERCENT",
+            "value": 50,
+            "period_seconds": 300,
+        },
+    ]
+
+
+def test_build_scaling_policies_rejects_bad_shape(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        build_scaling_policies(["pods:2"], option_name="--scale-up-policy")
+    assert "KIND:VALUE:PERIOD_SECONDS" in capsys.readouterr().out
+
+
+def test_build_scaling_rules_maps_selector() -> None:
+    assert build_scaling_rules(
+        policies=build_scaling_policies(["pods:2:60"], option_name="--scale-up-policy"),
+        select_policy="min",
+        option_name="--scale-up",
+    ) == {
+        "policies": [{"type": "SCALING_POLICY_TYPE_PODS", "value": 2, "period_seconds": 60}],
+        "select_policy": "SCALING_POLICY_SELECT_MIN",
+    }
+
+
+def test_build_scaling_rules_reset_selector_returns_empty_rules() -> None:
+    assert build_scaling_rules(
+        policies=None,
+        select_policy=None,
+        reset_select_policy=True,
+        option_name="--scale-up",
+    ) == {}
+
+
+def test_build_scaling_rules_rejects_clear_with_replacement(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        build_scaling_rules(
+            policies=build_scaling_policies(["pods:2:60"], option_name="--scale-up-policy"),
+            select_policy=None,
+            clear_policies=True,
+            option_name="--scale-up",
+        )
+    assert "cannot be combined" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(

@@ -11,7 +11,7 @@ from respx.models import Call
 
 from tests.cli.utils import CliRunner
 from together.types.beta.endpoint import Endpoint
-from together.types.beta.endpoints.rollout import Rollout, StatusStep, StatusCondition, StatusConditionMetric
+from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.rollout import (
     build_canary,
     parse_canary_steps,
@@ -19,6 +19,7 @@ from together.lib.cli.api.beta.endpoints.rollout import (
     _verify_rollout_pair,
     resolve_rollout_strategy,
 )
+from together.types.beta.endpoints.metric_result import MetricResult
 from together.lib.cli.api.beta.endpoints.retrieve import (
     rollout_reason_rows,
     format_rollout_progress,
@@ -26,6 +27,8 @@ from together.lib.cli.api.beta.endpoints.retrieve import (
     format_condition_metric_line,
     format_rollout_condition_summary,
 )
+from together.types.beta.endpoints.rollout_condition import RolloutCondition
+from together.types.beta.endpoints.rollout_step_status import RolloutStepStatus
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -367,7 +370,7 @@ class TestFormatRolloutProgress:
 
 class TestRolloutReasonDisplay:
     def test_condition_summary_includes_category_message_and_step(self) -> None:
-        condition = StatusCondition.construct(
+        condition = RolloutCondition.construct(
             category="ROLLOUT_FAILURE_CATEGORY_METRIC_REGRESSION",
             message="latency p99 breached",
             atStep=1,
@@ -375,7 +378,7 @@ class TestRolloutReasonDisplay:
         assert format_rollout_condition_summary(condition) == "Metric Regression — latency p99 breached (step 2)"
 
     def test_regression_metric_line(self) -> None:
-        metric = StatusConditionMetric.construct(
+        metric = MetricResult.construct(
             name="request_latency",
             stat="METRIC_STAT_TYPE_PERCENTILE",
             percentile=99,
@@ -390,7 +393,7 @@ class TestRolloutReasonDisplay:
         )
 
     def test_threshold_metric_line(self) -> None:
-        metric = StatusConditionMetric.construct(
+        metric = MetricResult.construct(
             name="error_rate",
             stat="METRIC_STAT_TYPE_AVG",
             check="METRIC_CHECK_TYPE_THRESHOLD",
@@ -404,7 +407,7 @@ class TestRolloutReasonDisplay:
         )
 
     def test_metric_line_appends_rule_failure_reason(self) -> None:
-        metric = StatusConditionMetric.construct(
+        metric = MetricResult.construct(
             name="router_latency",
             stat="METRIC_STAT_TYPE_PERCENTILE",
             percentile=99,
@@ -420,7 +423,7 @@ class TestRolloutReasonDisplay:
         )
 
     def test_metric_line_omits_stat_when_unmeasured(self) -> None:
-        metric = StatusConditionMetric.construct(
+        metric = MetricResult.construct(
             name="router_error_rate",
             check="METRIC_CHECK_TYPE_THRESHOLD",
             verdict="METRIC_VERDICT_UNAVAILABLE",
@@ -428,13 +431,15 @@ class TestRolloutReasonDisplay:
         assert format_condition_metric_line(metric) == "router_error_rate  [yellow]Unavailable[/yellow]"
 
     def test_status_step_line_skipped_paused_canceled(self) -> None:
-        skipped = StatusStep.construct(
+        skipped = RolloutStepStatus.construct(
             stepIndex=2,
             state="ROLLOUT_STEP_STATE_SKIPPED",
             targetTrafficPercent=100,
         )
-        paused = StatusStep.construct(stepIndex=1, state="ROLLOUT_STEP_STATE_PAUSED", targetTrafficPercent=50)
-        canceled = StatusStep.construct(stepIndex=1, state="ROLLOUT_STEP_STATE_CANCELED", targetTrafficPercent=50)
+        paused = RolloutStepStatus.construct(stepIndex=1, state="ROLLOUT_STEP_STATE_PAUSED", targetTrafficPercent=50)
+        canceled = RolloutStepStatus.construct(
+            stepIndex=1, state="ROLLOUT_STEP_STATE_CANCELED", targetTrafficPercent=50
+        )
         assert format_status_step_line(skipped) == "3 100% [dim]Skipped[/dim]"
         assert format_status_step_line(paused) == "2 50% [yellow]Paused[/yellow]"
         assert format_status_step_line(canceled) == "2 50% [red]Canceled[/red]"

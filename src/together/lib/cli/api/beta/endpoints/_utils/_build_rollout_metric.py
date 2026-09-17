@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from typing import Literal
 
-from together.types.beta.endpoints.rollout_create_params import (
-    Metric,
-    MetricThresholdCheck,
-    MetricRegressionCheck,
-)
+from together.types.beta.endpoints.metric_rule_param import MetricRuleParam
+from together.types.beta.endpoints.threshold_check_param import ThresholdCheckParam
+from together.types.beta.endpoints.regression_check_param import RegressionCheckParam
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import normalize_duration
 
 # Matches Metric.name; serving_latency is retired.
@@ -60,7 +58,7 @@ def build_rollout_metrics(
     metric_max_regression: float | None = None,
     metric_direction: MetricDirectionCli | None = None,
     metric_window: str | None = None,
-) -> list[Metric] | None:
+) -> list[MetricRuleParam] | None:
     """Build a single-element metrics array from simple CLI flags.
 
     Returns ``None`` when no metric flags are set. Canary-only enforcement belongs
@@ -91,7 +89,7 @@ def build_rollout_metrics(
             "or --metric-direction (optional --metric-max-regression)."
         )
 
-    payload: Metric = {"name": metric}
+    payload: MetricRuleParam = {"name": metric}
     if metric_stat is not None:
         if metric_stat not in _STAT_MAP:
             known = ", ".join(METRIC_STAT_CHOICES)
@@ -107,7 +105,7 @@ def build_rollout_metrics(
         if metric_operator not in _OPERATOR_MAP:
             known = ", ".join(METRIC_OPERATOR_CHOICES)
             raise ValueError(f"Unknown --metric-operator {metric_operator!r}. Choose one of: {known}.")
-        threshold_check: MetricThresholdCheck = {"operator": _OPERATOR_MAP[metric_operator]}
+        threshold_check: ThresholdCheckParam = {"operator": _OPERATOR_MAP[metric_operator]}
         if metric_threshold is not None:
             threshold_check["value"] = metric_threshold
         payload["threshold_check"] = threshold_check
@@ -117,7 +115,7 @@ def build_rollout_metrics(
         if metric_direction not in _DIRECTION_MAP:
             known = ", ".join(METRIC_DIRECTION_CHOICES)
             raise ValueError(f"Unknown --metric-direction {metric_direction!r}. Choose one of: {known}.")
-        regression_check: MetricRegressionCheck = {"direction": _DIRECTION_MAP[metric_direction]}
+        regression_check: RegressionCheckParam = {"direction": _DIRECTION_MAP[metric_direction]}
         if metric_max_regression is not None:
             regression_check["max_regression_percent"] = metric_max_regression
         payload["regression_check"] = regression_check

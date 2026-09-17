@@ -402,6 +402,11 @@ BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --config cr_xxxxxxxxxxxx --min-replicas 1 --max-replicas 4 \\
     --scaling-metric inflight_requests --scaling-target 10[/primary]
 
+[dim]-[/dim] Limit scale-up/down rate and stop after an idle window:
+  [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint \\
+    --scale-up-policy pods:2:60 --scale-down-policy percent:25:300 \\
+    --scale-to-zero-window 5m[/primary]
+
 [dim]-[/dim] Deploy with LoRA support and no live traffic yet:
   [primary]tg beta endpoints deploy ml_xxxxxxxxxxxx --endpoint my-endpoint \\
     --enable-lora --traffic-weight 0[/primary]
@@ -421,6 +426,12 @@ BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Set autoscaling on TTFT p95:
   [primary]tg beta endpoints update <deployment-id> \\
     --scaling-metric ttft --scaling-target 200 --scaling-percentile p95[/primary]
+
+[dim]-[/dim] Update scale policy limits or reset them to platform defaults:
+  [primary]tg beta endpoints update <deployment-id> \\
+    --scale-up-policy pods:2:60 --scale-up-select-policy max[/primary]
+  [primary]tg beta endpoints update <deployment-id> \\
+    --clear-scale-up-policies --reset-scale-up-select-policy[/primary]
 
 [dim]-[/dim] Shift live traffic weight (relative to other deployments):
   [primary]tg beta endpoints update <deployment-id> --traffic-weight 2[/primary]

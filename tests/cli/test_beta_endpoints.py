@@ -179,22 +179,19 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Do not pass --model-revision when --model already includes a revision" in result.output
 
-    def test_deploy_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
+    def test_deploy_help_includes_new_autoscaling_options(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
 
         output = " ".join(result.output.replace("│", " ").split())
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
+        assert "--scale-to-zero-window" in output
+        assert "--scale-up-policy" in output
+        assert "--scale-down-policy" in output
+        assert "--scale-up-select-policy" in output
+        assert "--scale-down-select-policy" in output
         assert "--placement.hipaa" in output
-        assert "--scale-to-zero-window" not in output
-
-    def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "endpoints", "deploy", "--scale-to-zero-window"])
-
-        assert result.exit_code != 0
-        assert "Unknown option" in result.output
-        assert "--scale-to-zero-window" in result.output
 
     def test_deploy_rejects_placement_profile_with_inline_options(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(
@@ -218,7 +215,7 @@ class TestBetaEndpointsDeploy:
         assert "Use either --placement or inline placement options" in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_deploy_ignores_leftover_scale_to_zero_window(
+    def test_deploy_sends_new_autoscaling_options(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
@@ -245,15 +242,46 @@ class TestBetaEndpointsDeploy:
                 "--deployment-name",
                 "my-dep",
                 "--scale-to-zero-window",
-                "300s",
+                "5m",
+                "--scale-up-policy",
+                "pods:2:60",
+                "--scale-down-policy",
+                "percent:25:300",
+                "--scale-up-select-policy",
+                "max",
+                "--scale-down-select-policy",
+                "min",
                 "--json",
             ]
         )
 
         assert result.exit_code == 0, result.output
         deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
-        assert "scaleToZeroWindow" not in deployment_body.get("autoscaling", {})
-        assert "scale_to_zero_window" not in deployment_body.get("autoscaling", {})
+        assert deployment_body["autoscaling"] == {
+            "minReplicas": 1,
+            "maxReplicas": 1,
+            "scaleToZeroWindow": "300s",
+            "scaleUp": {
+                "policies": [
+                    {
+                        "type": "SCALING_POLICY_TYPE_PODS",
+                        "value": 2,
+                        "periodSeconds": 60,
+                    }
+                ],
+                "selectPolicy": "SCALING_POLICY_SELECT_MAX",
+            },
+            "scaleDown": {
+                "policies": [
+                    {
+                        "type": "SCALING_POLICY_TYPE_PERCENT",
+                        "value": 25,
+                        "periodSeconds": 300,
+                    }
+                ],
+                "selectPolicy": "SCALING_POLICY_SELECT_MIN",
+            },
+        }
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_creates_endpoint_deployment_and_traffic_split(
