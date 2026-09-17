@@ -3,10 +3,9 @@ from __future__ import annotations
 import re
 from typing import Literal, cast, overload
 
-from together.types.beta import DeploymentAutoscalingParam
+from together.types.beta import ScalingMetricParam, DeploymentAutoscalingParam
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
-from together.types.beta.deployment_autoscaling_param import ScalingMetric
 
 # Wire format is protobuf Duration JSON, seconds only (e.g. "30s", "600s").
 # CLI also accepts bare seconds (`30`) and Go-style units (`10m`, `1h`, `10m30s`).
@@ -130,7 +129,7 @@ def build_scaling_metrics(
     scaling_metric: ScalingMetricName | None,
     scaling_target: float | None,
     scaling_percentile: ScalingPercentile | None = None,
-) -> list[ScalingMetric] | None:
+) -> list[ScalingMetricParam] | None:
     """Build a single-element scalingMetrics array from simple CLI flags."""
     if scaling_metric is None and scaling_target is None and scaling_percentile is None:
         return None
@@ -145,7 +144,7 @@ def build_scaling_metrics(
         console.print(f"Error: unknown --scaling-metric {scaling_metric!r}. Choose one of: {known}.")
         raise CliDiagnosticExit("Unknown autoscaling metric")
 
-    metric: ScalingMetric = {
+    metric: ScalingMetricParam = {
         "name": scaling_metric,
         "type": metric_type,
         "target": scaling_target,
@@ -176,7 +175,7 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None = ...,
+    scaling_metrics: list[ScalingMetricParam] | None = ...,
     required: Literal[True],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam: ...
@@ -189,7 +188,7 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None = ...,
+    scaling_metrics: list[ScalingMetricParam] | None = ...,
     required: Literal[False],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam | None: ...
@@ -201,7 +200,7 @@ def build_autoscaling(
     max_replicas: int | None,
     scale_up_window: str | None,
     scale_down_window: str | None,
-    scaling_metrics: list[ScalingMetric] | None = None,
+    scaling_metrics: list[ScalingMetricParam] | None = None,
     required: bool = False,
     infer_replica_defaults: bool = True,
 ) -> DeploymentAutoscalingParam | None:

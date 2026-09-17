@@ -18,6 +18,11 @@ from together.types.beta.endpoints import (
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
+# Prism still generates retired `serving_latency` in preview-defaults examples.
+_SKIP_PRISM_SERVING_LATENCY = pytest.mark.skip(
+    reason="Prism mock still emits retired serving_latency in preview-defaults examples"
+)
+
 
 class TestRollouts:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
@@ -466,6 +471,7 @@ class TestRollouts:
             )
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     def test_method_preview_defaults(self, client: Together) -> None:
         rollout = client.beta.endpoints.rollouts.preview_defaults(
             endpoint_id="endpointId",
@@ -476,6 +482,7 @@ class TestRollouts:
         assert_matches_type(RolloutDefaultsPreview, rollout, path=["response"])
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     def test_method_preview_defaults_with_all_params(self, client: Together) -> None:
         rollout = client.beta.endpoints.rollouts.preview_defaults(
             endpoint_id="endpointId",
@@ -523,6 +530,7 @@ class TestRollouts:
         assert_matches_type(RolloutDefaultsPreview, rollout, path=["response"])
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     def test_raw_response_preview_defaults(self, client: Together) -> None:
         response = client.beta.endpoints.rollouts.with_raw_response.preview_defaults(
             endpoint_id="endpointId",
@@ -537,6 +545,7 @@ class TestRollouts:
         assert_matches_type(RolloutDefaultsPreview, rollout, path=["response"])
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     def test_streaming_response_preview_defaults(self, client: Together) -> None:
         with client.beta.endpoints.rollouts.with_streaming_response.preview_defaults(
             endpoint_id="endpointId",
@@ -1220,6 +1229,7 @@ class TestAsyncRollouts:
             )
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     async def test_method_preview_defaults(self, async_client: AsyncTogether) -> None:
         rollout = await async_client.beta.endpoints.rollouts.preview_defaults(
             endpoint_id="endpointId",
@@ -1230,6 +1240,7 @@ class TestAsyncRollouts:
         assert_matches_type(RolloutDefaultsPreview, rollout, path=["response"])
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     async def test_method_preview_defaults_with_all_params(self, async_client: AsyncTogether) -> None:
         rollout = await async_client.beta.endpoints.rollouts.preview_defaults(
             endpoint_id="endpointId",
@@ -1277,6 +1288,7 @@ class TestAsyncRollouts:
         assert_matches_type(RolloutDefaultsPreview, rollout, path=["response"])
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     async def test_raw_response_preview_defaults(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.endpoints.rollouts.with_raw_response.preview_defaults(
             endpoint_id="endpointId",
@@ -1291,6 +1303,7 @@ class TestAsyncRollouts:
         assert_matches_type(RolloutDefaultsPreview, rollout, path=["response"])
 
     @parametrize
+    @_SKIP_PRISM_SERVING_LATENCY
     async def test_streaming_response_preview_defaults(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.endpoints.rollouts.with_streaming_response.preview_defaults(
             endpoint_id="endpointId",
