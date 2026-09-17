@@ -25,7 +25,6 @@ from together.types.beta.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
-from together.lib.cli.api.beta.endpoints._utils._rollouts import fallback_active_rollout_from_list
 from together.lib.cli.api.beta.endpoints._utils._parameters import ModelPromptParameter, EndpointPromptParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
@@ -455,15 +454,12 @@ async def create_or_find_shadow_target(
             experiment_id=experiment_id,
         ):
             targets.append(target)
-        try:
-            return match_existing_shadow_target(
-                targets,
-                name=name,
-                target_deployment_id=target_deployment_id,
-                experiment_id=experiment_id,
-            )
-        except ValueError as err:
-            raise err from None
+        return match_existing_shadow_target(
+            targets,
+            name=name,
+            target_deployment_id=target_deployment_id,
+            experiment_id=experiment_id,
+        )
 
 
 def match_existing_shadow_target(
@@ -512,6 +508,12 @@ async def verify_shadow_target_not_receiving_live_traffic(
     endpoint: Endpoint,
     deployment_id: str,
 ) -> None:
+    # List stubs from resolve_deployment_id can omit trafficSplit / activeRolloutId
+    # (Stainless construct() leaves missing fields as None). Retrieve for the
+    # canonical values before either check. Do not list rollout history here —
+    # that fallback is for rollout.py, where a rollout is expected to exist.
+    endpoint = await client.beta.endpoints.retrieve(endpoint.id)
+
     traffic_split = endpoint.traffic_split or []
     live = next(
         (entry for entry in traffic_split if entry.deployment_id == deployment_id and entry.weight > 0),
@@ -523,26 +525,16 @@ async def verify_shadow_target_not_receiving_live_traffic(
             "Set its traffic weight to 0 (or remove it from the split) before using it as a shadow target."
         )
 
-    # List stubs from resolve_deployment_id can omit active_rollout_id. Re-fetch
-    # the endpoint for the canonical value, matching rollout.py. If retrieve still
-    # has no id, the server sometimes omits it for an in-flight rollout — list
-    # non-terminal rollouts the same way rollout.py does.
-    if endpoint.active_rollout_id is None:
-        endpoint = await client.beta.endpoints.retrieve(endpoint.id)
+    if not endpoint.active_rollout_id:
+        return
 
-    rollout = None
-    if endpoint.active_rollout_id:
-        try:
-            rollout = await client.beta.endpoints.rollouts.retrieve(
-                endpoint.active_rollout_id,
-                endpoint_id=endpoint.id,
-            )
-        except NotFoundError:
-            return
-    else:
-        rollout = await fallback_active_rollout_from_list(client, endpoint.id)
-        if rollout is None:
-            return
+    try:
+        rollout = await client.beta.endpoints.rollouts.retrieve(
+            endpoint.active_rollout_id,
+            endpoint_id=endpoint.id,
+        )
+    except NotFoundError:
+        return
 
     if deployment_id in {rollout.source_deployment_id, rollout.target_deployment_id}:
         raise ValueError(

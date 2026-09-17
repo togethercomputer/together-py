@@ -14,7 +14,6 @@ from together import APIError
 from tests.cli.utils import CliRunner
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfig
-from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.shadow import (
     build_shadow_name,
     resolve_model_for_create,
@@ -181,28 +180,6 @@ def _mock_endpoint(respx_mock: MockRouter) -> None:
     respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
 
 
-def _mock_rollouts_list(
-    respx_mock: MockRouter,
-    *,
-    endpoint_id: str = "ep_1",
-    data: list[dict[str, Any]] | None = None,
-) -> None:
-    respx_mock.get(f"/projects/proj/endpoints/{endpoint_id}/rollouts").mock(
-        return_value=httpx.Response(
-            200,
-            json={"object": "list", "data": data if data is not None else [], "next_cursor": None},
-        )
-    )
-
-
-def _async_iter(items: list[Any]):
-    async def _gen():
-        for item in items:
-            yield item
-
-    return _gen()
-
-
 def _rollout_body(
     *,
     rollout_id: str = "rol_1",
@@ -324,12 +301,11 @@ def _mock_existing_deployment_lookup(
         )
     # List stubs omit active_rollout_id; verify re-fetches the endpoint in that case.
     if mock_endpoint_retrieve is None:
-        mock_endpoint_retrieve = retrieve and active_rollout_id is None
+        mock_endpoint_retrieve = retrieve or traffic_split is not None or active_rollout_id is not None
     if mock_endpoint_retrieve:
         respx_mock.get(f"/projects/proj/endpoints/{endpoint_id}").mock(
             return_value=httpx.Response(200, json=_endpoint_body(**endpoint_overrides))
         )
-        _mock_rollouts_list(respx_mock, endpoint_id=endpoint_id)
 
 
 def _two_candidate_endpoints() -> list[dict[str, Any]]:
@@ -705,14 +681,12 @@ class TestDefaultShadowTargetName:
 
 
 class TestVerifyShadowTargetNotReceivingLiveTraffic:
-    def _client(self, *, retrieved: Endpoint | None = None, listed_rollouts: list[Any] | None = None) -> MagicMock:
+    def _client(self, *, retrieved: Endpoint | None = None) -> MagicMock:
         client = MagicMock()
         client.beta.endpoints.rollouts.retrieve = AsyncMock()
         client.beta.endpoints.retrieve = AsyncMock(
             return_value=retrieved if retrieved is not None else Endpoint.construct(**_endpoint_body())
         )
-        rollouts = listed_rollouts if listed_rollouts is not None else []
-        client.beta.endpoints.rollouts.list = MagicMock(side_effect=lambda **_kwargs: _async_iter(rollouts))
         return client
 
     @pytest.mark.asyncio
@@ -722,50 +696,57 @@ class TestVerifyShadowTargetNotReceivingLiveTraffic:
             client, Endpoint.construct(**_endpoint_body()), "dep_existing"
         )
         client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
-        client.beta.endpoints.rollouts.list.assert_called_once()
         client.beta.endpoints.rollouts.retrieve.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_allows_zero_weight(self) -> None:
-        client = self._client()
         endpoint = Endpoint.construct(**_endpoint_body(trafficSplit=[{"deploymentId": "dep_existing", "weight": 0}]))
+        client = self._client(retrieved=endpoint)
         await verify_shadow_target_not_receiving_live_traffic(client, endpoint, "dep_existing")
         client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
-        client.beta.endpoints.rollouts.list.assert_called_once()
         client.beta.endpoints.rollouts.retrieve.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_rejects_live_member(self) -> None:
-        client = self._client()
         endpoint = Endpoint.construct(**_endpoint_body(trafficSplit=[{"deploymentId": "dep_existing", "weight": 1.0}]))
+        client = self._client(retrieved=endpoint)
         with pytest.raises(ValueError, match="live traffic-split member"):
             await verify_shadow_target_not_receiving_live_traffic(client, endpoint, "dep_existing")
-        client.beta.endpoints.retrieve.assert_not_called()
+        client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
         client.beta.endpoints.rollouts.retrieve.assert_not_called()
-        client.beta.endpoints.rollouts.list.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_rejects_live_member_when_list_stub_omits_traffic_split(self) -> None:
+        stub_body = _endpoint_body()
+        del stub_body["trafficSplit"]
+        retrieved = Endpoint.construct(**_endpoint_body(trafficSplit=[{"deploymentId": "dep_existing", "weight": 1.0}]))
+        client = self._client(retrieved=retrieved)
+        with pytest.raises(ValueError, match="live traffic-split member"):
+            await verify_shadow_target_not_receiving_live_traffic(
+                client, Endpoint.construct(**stub_body), "dep_existing"
+            )
+        client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
 
     @pytest.mark.asyncio
     async def test_rejects_rollout_participant(self) -> None:
-        client = self._client()
+        endpoint = Endpoint.construct(**_endpoint_body(activeRolloutId="rol_1"))
+        client = self._client(retrieved=endpoint)
         client.beta.endpoints.rollouts.retrieve = AsyncMock(
             return_value=MagicMock(id="rol_1", source_deployment_id="dep_existing", target_deployment_id="dep_target")
         )
-        endpoint = Endpoint.construct(**_endpoint_body(activeRolloutId="rol_1"))
         with pytest.raises(ValueError, match="participant in active rollout"):
             await verify_shadow_target_not_receiving_live_traffic(client, endpoint, "dep_existing")
-        client.beta.endpoints.retrieve.assert_not_called()
-        client.beta.endpoints.rollouts.list.assert_not_called()
+        client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
 
     @pytest.mark.asyncio
     async def test_allows_non_participant_when_rollout_active(self) -> None:
-        client = self._client()
+        endpoint = Endpoint.construct(**_endpoint_body(activeRolloutId="rol_1"))
+        client = self._client(retrieved=endpoint)
         client.beta.endpoints.rollouts.retrieve = AsyncMock(
             return_value=MagicMock(id="rol_1", source_deployment_id="dep_control", target_deployment_id="dep_target")
         )
-        endpoint = Endpoint.construct(**_endpoint_body(activeRolloutId="rol_1"))
         await verify_shadow_target_not_receiving_live_traffic(client, endpoint, "dep_existing")
-        client.beta.endpoints.retrieve.assert_not_called()
-        client.beta.endpoints.rollouts.list.assert_not_called()
+        client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
 
     @pytest.mark.asyncio
     async def test_refetches_endpoint_when_list_stub_omits_active_rollout_id(self) -> None:
@@ -779,21 +760,6 @@ class TestVerifyShadowTargetNotReceivingLiveTraffic:
                 client, Endpoint.construct(**_endpoint_body()), "dep_existing"
             )
         client.beta.endpoints.retrieve.assert_awaited_once_with("ep_1")
-        client.beta.endpoints.rollouts.list.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_falls_back_to_listed_rollout_when_retrieve_omits_active_rollout_id(self) -> None:
-        client = self._client(
-            listed_rollouts=[
-                Rollout.construct(**_rollout_body(source_deployment_id="dep_existing")),
-            ]
-        )
-        with pytest.raises(ValueError, match="participant in active rollout rol_1"):
-            await verify_shadow_target_not_receiving_live_traffic(
-                client, Endpoint.construct(**_endpoint_body()), "dep_existing"
-            )
-        client.beta.endpoints.rollouts.retrieve.assert_not_called()
-        client.beta.endpoints.rollouts.list.assert_called_once()
 
 
 class TestMatchExistingShadowTarget:
@@ -1463,7 +1429,6 @@ class TestBetaEndpointShadow:
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(200, json=_two_candidate_endpoints()[0])
         )
-        _mock_rollouts_list(respx_mock)
         respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_a").mock(
             return_value=httpx.Response(
                 200,
@@ -1502,7 +1467,6 @@ class TestBetaEndpointShadow:
         respx_mock.get("/projects/proj/endpoints/ep_2").mock(
             return_value=httpx.Response(200, json=_two_candidate_endpoints()[1])
         )
-        _mock_rollouts_list(respx_mock, endpoint_id="ep_2")
         respx_mock.get("/projects/proj/endpoints/ep_2/deployments/dep_b").mock(
             return_value=httpx.Response(
                 200,
@@ -1545,7 +1509,6 @@ class TestBetaEndpointShadow:
             )
         )
         respx_mock.get("/projects/proj/endpoints/ep_2").mock(return_value=httpx.Response(200, json=intended))
-        _mock_rollouts_list(respx_mock, endpoint_id="ep_2")
         respx_mock.get("/projects/proj/endpoints/ep_2/deployments/dep_b").mock(
             return_value=httpx.Response(
                 200,
@@ -1916,24 +1879,30 @@ class TestBetaEndpointShadow:
         assert "participant in active rollout" in result.output
 
     @pytest.mark.respx(base_url=base_url)
-    def test_shadow_rejects_rollout_participant_when_retrieve_omits_active_rollout_id(
+    def test_shadow_rejects_live_traffic_when_list_omits_traffic_split(
         self,
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
-        _mock_existing_deployment_lookup(respx_mock, retrieve=False, mock_endpoint_retrieve=False)
+        list_body = _endpoint_body(deployments=[_deployment_summary()])
+        del list_body["trafficSplit"]
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [list_body], "next_cursor": None},
+            )
+        )
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(
             return_value=httpx.Response(
                 200,
-                json=_endpoint_body(deployments=[_deployment_summary()]),
+                json=_endpoint_body(
+                    deployments=[_deployment_summary()],
+                    trafficSplit=[{"deploymentId": "dep_existing", "weight": 1.0}],
+                ),
             )
-        )
-        _mock_rollouts_list(
-            respx_mock,
-            data=[_rollout_body(source_deployment_id="dep_existing")],
         )
 
         result = cli_runner.invoke(_shadow_existing_deployment_cli_args())
 
         assert result.exit_code != 0
-        assert "participant in active rollout" in result.output
+        assert "live traffic-split member" in result.output
