@@ -16,8 +16,10 @@ from together.lib.cli.utils._console import console, error_console
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
-from together.types.beta.endpoints.rollout_create_params import Canary, Rolling, BlueGreen
+from together.types.beta.endpoints.canary_config_param import CanaryConfigParam as Canary
+from together.types.beta.endpoints.rolling_config_param import RollingConfigParam as Rolling
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
+from together.types.beta.endpoints.blue_green_config_param import BlueGreenConfigParam as BlueGreen
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import normalize_duration
 from together.lib.cli.api.beta.endpoints._utils._build_rollout_metric import (

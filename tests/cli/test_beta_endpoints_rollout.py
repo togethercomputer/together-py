@@ -11,7 +11,7 @@ from respx.models import Call
 
 from tests.cli.utils import CliRunner
 from together.types.beta.endpoint import Endpoint
-from together.types.beta.endpoints.rollout import Rollout, StatusStep, StatusCondition, StatusConditionMetric
+from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.rollout import (
     build_canary,
     parse_canary_steps,
@@ -19,6 +19,7 @@ from together.lib.cli.api.beta.endpoints.rollout import (
     _verify_rollout_pair,
     resolve_rollout_strategy,
 )
+from together.types.beta.endpoints.metric_result import MetricResult as StatusConditionMetric
 from together.lib.cli.api.beta.endpoints.retrieve import (
     rollout_reason_rows,
     format_rollout_progress,
@@ -26,6 +27,8 @@ from together.lib.cli.api.beta.endpoints.retrieve import (
     format_condition_metric_line,
     format_rollout_condition_summary,
 )
+from together.types.beta.endpoints.rollout_condition import RolloutCondition as StatusCondition
+from together.types.beta.endpoints.rollout_step_status import RolloutStepStatus as StatusStep
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
