@@ -24,6 +24,8 @@ the full API reference remains in [api.md](api.md).
 
 ## Quickstart: SFT-style loop
 
+Every `loss_fn_inputs` array is indexed by **target** position and shifted alongside `target_tokens`.
+
 ```python
 import os
 from together.lib.beta.rl import (
@@ -46,13 +48,20 @@ resources = ModelResourcesClient.create(
 )
 session = resources.create_session(lora_config=LoraConfig(rank=32, alpha=64))
 
-tokens = [101, 102, 103]  # your tokenizer output
-weights = [0.0, 1.0, 1.0]
-target_tokens = [102, 103, 0]
+# Token space: one entry per token of the full sequence.
+prompt_tokens = [101, 102, 103]  # your tokenizer output
+completion_tokens = [104, 105]
+full = prompt_tokens + completion_tokens  # N tokens
+full_weights = [0.0] * len(prompt_tokens) + [1.0] * len(completion_tokens)
+
+# Target-aligned: trim the input, shift the arrays alongside the targets.
+input_tokens = full[:-1]          # N-1
+target_tokens = full[1:]          # N-1
+weights = full_weights[1:]        # N-1, zero prefix of length P-1 == 2
 
 chunk = ModelInputChunk(
     encoded_text=EncodedTextChunk(
-        tokens=tokens,
+        tokens=input_tokens,
     ),
 )
 
@@ -83,6 +92,9 @@ session.trainer.optim_step(
 ```
 
 ## Quickstart: GRPO-style loop (sync)
+
+Every `loss_fn_inputs` array is indexed by **target** position and shifted alongside
+`target_tokens` — see [Target alignment](#target-alignment) before adapting this.
 
 ```python
 import os
@@ -126,15 +138,22 @@ samples = []
 for seq in sample_result.sequences:
     response_tokens = [int(t) for t in seq.tokens]
     response_logprobs = [float(v) for v in (seq.logprobs or [])]
-    model_tokens = prompt_tokens + response_tokens
-    weights = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
-    target_tokens = model_tokens[1:] + [0]
-    advantages = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
-    logprobs = [0.0] * len(prompt_tokens) + response_logprobs
+    # Token space: one entry per token of the full sequence, as the sampler hands it back.
+    full = prompt_tokens + response_tokens
+    full_weights = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
+    full_advantages = [0.0] * len(prompt_tokens) + [1.0] * len(response_tokens)
+    full_logprobs = [0.0] * len(prompt_tokens) + response_logprobs
+
+    # Target-aligned: trim the input, shift every array alongside the targets.
+    input_tokens = full[:-1]
+    target_tokens = full[1:]
+    weights = full_weights[1:]
+    advantages = full_advantages[1:]
+    logprobs = full_logprobs[1:]
 
     chunk = ModelInputChunk(
         encoded_text=EncodedTextChunk(
-            tokens=model_tokens,
+            tokens=input_tokens,
         ),
     )
     samples.append(Sample(
@@ -1199,20 +1218,21 @@ A training sample has the shape:
 ```python
 from together.lib.beta.rl import TensorData
 
+# full = [1, 2, 3, 4, 5], prompt = [1, 2, 3] (P=3), response = [4, 5]
 chunk = ModelInputChunk(
     encoded_text=EncodedTextChunk(
-        tokens=[1, 2, 3],
+        tokens=[1, 2, 3, 4],  # full[:-1]
     ),
 )
 Sample(
     model_input=ModelInput(chunks=[chunk]),
     loss_fn_inputs={
         "weights": TensorData(
-            data=[0.0, 1.0, 1.0],
+            data=[0.0, 0.0, 1.0, 1.0],  # zero prefix of length P-1 == 2
             dtype="float32",
         ),
         "target_tokens": TensorData(
-            data=[2, 3, 0],
+            data=[2, 3, 4, 5],  # full[1:]
             dtype="int64",
         ),
     },
@@ -1223,9 +1243,9 @@ Sample(
 
 | Field             | Type                          | When to use                                                                 |
 | ----------------- | ----------------------------- | --------------------------------------------------------------------------- |
-| `model_input` | `ModelInput` | Always required. The full token sequence (prompt + response) to train on. |
-| `loss_fn_inputs` | `Mapping[str, TensorData]` | Always required. Per-token tensors keyed by the input names accepted by the selected loss. |
-| `routed_experts` | `RoutedExperts` | Optional. Per-token expert routing for MoE models. |
+| `model_input` | `ModelInput` | Always required. The token sequence to predict *from*: `(prompt + response)[:-1]`. |
+| `loss_fn_inputs` | `Mapping[str, TensorData]` | Always required. Per-target tensors, each with one slot per `model_input` token, keyed by the input names accepted by the selected loss. |
+| `routed_experts` | `RoutedExperts` | Optional. Expert routing for MoE models. The one buffer indexed by **input** position, not target position (see [Target alignment](#target-alignment)). |
 
 Construct each `loss_fn_inputs` value with the exported `TensorData` TypedDict. Dtypes are lowercase: `{"data": [...], "dtype":
 "int64"}` or `{"data": [...], "dtype": "float32"}`. Only one-dimensional dense
@@ -1241,12 +1261,12 @@ clients convert them to the wire shape at submit time, so no `.tolist()` is need
 
 ```python
 Sample(
-    model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=prompt_ids))]),
+    model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=input_tokens))]),
     loss_fn_inputs={
-        "target_tokens": torch.tensor(targets, dtype=torch.int64),
+        "target_tokens": torch.tensor(target_tokens, dtype=torch.int64),
         "logprobs": sampled_logprobs,       # torch tensor, autograd graph and device are fine
         "advantages": np.asarray(advantages, dtype=np.float32),
-        "weights": [0.0, 1.0, 1.0],         # plain list
+        "weights": [0.0, 0.0, 1.0, 1.0],    # plain list
     },
 )
 ```
@@ -1282,12 +1302,12 @@ numpy stay optional dependencies; nothing imports them unless you pass their typ
 
 | Key | Tensor type | Required by | Description |
 | --- | --- | --- | --- |
-| `target_tokens` | `TensorData` (`int64`) | Every loss | Next-token targets, shifted by one position. |
-| `weights` | `TensorData` (`int64` or `float32`) | Cross-entropy; optional for policy losses | Per-token non-negative weights. Cross-entropy honors fractional values; policy losses treat values as a 0/1 mask. Omission for a policy loss includes all tokens. |
-| `mask` | `TensorData` (`int64` or `float32`) | Optional for every loss | Per-token inclusion mask. |
-| `advantages` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | Per-token advantage values. |
-| `logprobs` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | Per-token log probabilities from the generator policy. |
-| `reference_logprobs` | `TensorData` (`float32`) | GRPO when `beta > 0` | Per-token reference-model log probabilities used for the KL penalty. |
+| `target_tokens` | `TensorData` (`int64`) | Every loss | Next-token targets: `target_tokens[i]` is the token the model must predict at `model_input` position `i`, i.e. `full_sequence[i + 1]`. |
+| `weights` | `TensorData` (`int64` or `float32`) | Cross-entropy; optional for policy losses | Non-negative weight on each **target** position, shifted alongside `target_tokens`. Cross-entropy honors fractional values; policy losses treat values as a 0/1 mask. Omission for a policy loss includes all tokens. |
+| `mask` | `TensorData` (`int64` or `float32`) | Optional for every loss | Inclusion mask over target slots: `mask[i]` includes or drops the target at slot `i`. |
+| `advantages` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | Advantage of each **target** position, i.e. of the token `target_tokens[i]`. |
+| `logprobs` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | The generator policy's log probability of `target_tokens[i]`, at slot `i`. |
+| `reference_logprobs` | `TensorData` (`float32`) | GRPO when `beta > 0` | The reference model's log probability of `target_tokens[i]`, at slot `i`, used for the KL penalty. |
 
 Every training operation validates `loss_fn_inputs` client-side, before any upload or
 submission:

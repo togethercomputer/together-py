@@ -42,13 +42,17 @@ class Sample(TypedDict, total=False):
     """One training sample in a forward or forward-backward request.
 
     Attributes:
-        model_input: The tokens the sample is scored against.
-        loss_fn_inputs: Per-token loss tensors keyed by their public input names. At runtime
-            each value may also be a one-dimensional torch tensor, numpy array, or numeric
-            list; the clients coerce it to a ``TensorData`` before submitting. The annotation
-            stays narrow, as tinker's own ``LossFnInputs`` does, so a type-checked caller
-            passing an array needs a ``cast``.
-        routed_experts: Optional per-token expert routing for MoE models.
+        model_input: The tokens the sample predicts *from*: ``(prompt + response)[:-1]``.
+        loss_fn_inputs: Per-target loss tensors, each with one slot per token of
+            ``model_input``, keyed by their public input names. Slot ``i`` describes the
+            token predicted at ``model_input`` position ``i``, i.e.
+            ``(prompt + response)[i + 1]``. At runtime each value may also be a
+            one-dimensional torch tensor, numpy array, or numeric list; the clients coerce
+            it to a ``TensorData`` before submitting. The annotation stays narrow, as
+            tinker's own ``LossFnInputs`` does, so a type-checked caller passing an array
+            needs a ``cast``.
+        routed_experts: Optional expert routing for MoE models. Unlike ``loss_fn_inputs``,
+            it is indexed by input position rather than by target.
     """
 
     model_input: Required[ModelInput]

@@ -113,7 +113,12 @@ def _model_input(tokens: Any) -> ModelInput:
     return ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=tokens))])
 
 
-def _sample(loss_fn_inputs: Any, tokens: Any = (1, 2, 3)) -> Sample:
+def _sample(loss_fn_inputs: Any, tokens: Any = (1, 2)) -> Sample:
+    """Builds a ``Sample`` whose ``model_input`` has one token per ``loss_fn_inputs`` slot.
+
+    Nothing in the coercion path compares the two, so pass ``tokens`` explicitly when the
+    arrays under test are not two-valued.
+    """
     return Sample(model_input=_model_input(list(tokens)), loss_fn_inputs=loss_fn_inputs)
 
 
@@ -123,7 +128,7 @@ def _last_kwargs(client: FakeClient) -> dict[str, Any]:
 
 
 def test_numpy_array_value_takes_the_array_dtype(np: Any) -> None:
-    coerced = coerce_sample(_sample({"target_tokens": np.array([1, 2, 3], dtype=np.int32)}))
+    coerced = coerce_sample(_sample({"target_tokens": np.array([1, 2, 3], dtype=np.int32)}, tokens=(1, 2, 3)))
 
     assert coerced["loss_fn_inputs"] == {"target_tokens": {"data": [1, 2, 3], "dtype": "int64"}}
 
@@ -178,7 +183,7 @@ def test_tensor_values_reach_the_wire_shape(
 def test_array_data_keeps_its_declared_dtype(np: Any) -> None:
     tensor = TensorData(data=np.array([1, 2, 3], dtype=np.int64), dtype="int64")
 
-    coerced = coerce_sample(_sample({"target_tokens": tensor}))
+    coerced = coerce_sample(_sample({"target_tokens": tensor}, tokens=(1, 2, 3)))
 
     assert coerced["loss_fn_inputs"]["target_tokens"] == {"data": [1, 2, 3], "dtype": "int64"}
 
@@ -194,7 +199,7 @@ def test_lists_infer_the_dtype_their_key_pins() -> None:
 
 
 def test_list_under_an_unknown_key_infers_from_its_values() -> None:
-    coerced = coerce_sample(_sample({"target_tokens": [1], "future_input": [0.5]}))
+    coerced = coerce_sample(_sample({"target_tokens": [1], "future_input": [0.5]}, tokens=(1,)))
 
     assert coerced["loss_fn_inputs"]["future_input"] == {"data": [0.5], "dtype": "float32"}
 
@@ -417,7 +422,7 @@ def test_complex_array_under_a_declared_dtype_is_rejected(np: Any) -> None:
     tensor = TensorData(data=np.array([1 + 2j], dtype=np.complex128), dtype="float32")
 
     with pytest.raises(ValueError, match="unsupported dtype"):
-        coerce_sample(_sample({"target_tokens": tensor}))
+        coerce_sample(_sample({"target_tokens": tensor}, tokens=(1,)))
 
 
 def test_sparse_tensor_is_rejected(np: Any) -> None:
@@ -434,7 +439,7 @@ def test_errors_name_the_offending_sample(np: Any) -> None:
 
 def test_complex_bare_array_is_rejected(np: Any) -> None:
     with pytest.raises(ValueError, match="unsupported dtype"):
-        coerce_sample(_sample({"target_tokens": np.array([1 + 2j], dtype=np.complex128)}))
+        coerce_sample(_sample({"target_tokens": np.array([1 + 2j], dtype=np.complex128)}, tokens=(1,)))
 
 
 def test_wide_float_tensor_keeps_its_precision(np: Any) -> None:
@@ -461,12 +466,12 @@ def test_declared_int64_over_a_float_list_is_rejected() -> None:
 
 def test_uint64_values_outside_signed_int64_are_rejected(np: Any) -> None:
     with pytest.raises(ValueError, match="outside signed int64"):
-        coerce_sample(_sample({"target_tokens": np.array([2**63], dtype=np.uint64)}))
+        coerce_sample(_sample({"target_tokens": np.array([2**63], dtype=np.uint64)}, tokens=(1,)))
 
 
 def test_list_values_outside_signed_int64_are_rejected() -> None:
     with pytest.raises(ValueError, match="outside signed int64"):
-        coerce_sample(_sample({"target_tokens": [2**63]}))
+        coerce_sample(_sample({"target_tokens": [2**63]}, tokens=(1,)))
 
 
 def test_uint64_token_values_outside_signed_int64_are_rejected(np: Any) -> None:
@@ -476,17 +481,17 @@ def test_uint64_token_values_outside_signed_int64_are_rejected(np: Any) -> None:
 
 def test_float64_values_outside_float32_are_rejected(np: Any) -> None:
     with pytest.raises(ValueError, match="outside float32"):
-        coerce_sample(_sample({"advantages": np.array([6.805646932770577e38], dtype=np.float64)}))
+        coerce_sample(_sample({"advantages": np.array([6.805646932770577e38], dtype=np.float64)}, tokens=(1,)))
 
 
 def test_list_values_outside_float32_are_rejected() -> None:
     with pytest.raises(ValueError, match="outside float32"):
-        coerce_sample(_sample({"advantages": [6.805646932770577e38]}))
+        coerce_sample(_sample({"advantages": [6.805646932770577e38]}, tokens=(1,)))
 
 
 def test_integer_list_outside_float32_is_rejected() -> None:
     with pytest.raises(ValueError, match="outside float32"):
-        coerce_sample(_sample({"advantages": [10**100]}))
+        coerce_sample(_sample({"advantages": [10**100]}, tokens=(1,)))
 
 
 def test_string_tokens_are_preserved() -> None:

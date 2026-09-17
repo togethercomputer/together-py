@@ -151,22 +151,25 @@ class TestRLRequestBody:
         trainer = SessionClient("sess", _client=async_client)
         samples = [
             Sample(
-                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
+                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3, 4]))]),
+                # full = [1, 2, 3, 4, 5], prompt = [1, 2, 3] (P=3), response = [4, 5]: every
+                # array below is indexed by target position, so each carries a zero prefix of
+                # length P-1 == 2.
                 loss_fn_inputs={
                     "weights": TensorData(
-                        data=[0.0, 1.0, 1.0],
+                        data=[0.0, 0.0, 1.0, 1.0],
                         dtype="float32",
                     ),
                     "target_tokens": TensorData(
-                        data=[2, 3, 0],
+                        data=[2, 3, 4, 5],  # full[1:]
                         dtype="int64",
                     ),
                     "advantages": TensorData(
-                        data=[1.0, 1.0, 1.0],
+                        data=[0.0, 0.0, 1.0, 1.0],
                         dtype="float32",
                     ),
                     "logprobs": TensorData(
-                        data=[-0.1, -0.2, -0.3],
+                        data=[0.0, 0.0, -0.2, -0.3],
                         dtype="float32",
                     ),
                 },
@@ -221,12 +224,13 @@ class TestRLRequestBody:
         session = SessionClient("sess", _client=async_client)
         samples = [
             Sample(
-                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3]))]),
+                model_input=ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[1, 2, 3, 4]))]),
+                # full = [1, 2, 3, 4, 5], prompt = [1, 2, 3] (P=3); target-indexed, zero prefix P-1 == 2.
                 loss_fn_inputs={
-                    "weights": TensorData(data=[0.0, 1.0, 1.0], dtype="float32"),
-                    "target_tokens": TensorData(data=[2, 3, 0], dtype="int64"),
-                    "advantages": TensorData(data=[1.0, 1.0, 1.0], dtype="float32"),
-                    "logprobs": TensorData(data=[-0.1, -0.2, -0.3], dtype="float32"),
+                    "weights": TensorData(data=[0.0, 0.0, 1.0, 1.0], dtype="float32"),
+                    "target_tokens": TensorData(data=[2, 3, 4, 5], dtype="int64"),
+                    "advantages": TensorData(data=[0.0, 0.0, 1.0, 1.0], dtype="float32"),
+                    "logprobs": TensorData(data=[0.0, 0.0, -0.2, -0.3], dtype="float32"),
                 },
             )
         ]
