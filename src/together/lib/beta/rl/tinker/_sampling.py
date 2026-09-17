@@ -68,13 +68,19 @@ class SamplingClient:
     _session: SessionClient
     _published_weights: _PublishedWeights = field(default_factory=_PublishedWeights)
     _version: int = 0
+    _allow_stale: bool = True
 
     def _check_fresh(self) -> None:
+        """Reject a client whose weights have been superseded, unless the caller opted out."""
+        if self._allow_stale:
+            return
         if self._version != self._published_weights.version:
             raise RuntimeError(
                 "This sampling client is stale because newer weights were published. "
                 "Together's sampler serves the most recently published weights and snapshot "
-                "checkpoints are not supported yet. Re-create the sampling client after each publish."
+                "checkpoints are not supported yet. Re-create the sampling client after each "
+                "publish, or pass allow_stale=True to save_weights_and_get_sampling_client to "
+                "sample from whatever weights are live."
             )
 
     def sample(

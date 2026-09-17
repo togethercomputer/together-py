@@ -164,17 +164,71 @@ def test_sampling_rejects_bad_arguments_before_touching_the_session(collect: str
     _close(session)
 
 
-@pytest.mark.parametrize("collect", ["sync", "async"])
-def test_stale_sampling_client_is_rejected_by_both_twins(collect: str) -> None:
+_ENTRY_POINTS = ["sample", "sample_async", "compute_logprobs", "compute_logprobs_async"]
+
+_GATE_OUTPUT = SimpleNamespace(
+    results=[
+        SampleResult(
+            policy_segments=[],
+            sequences=[
+                SampledSequence(
+                    prompt_cache_hit_tokens=0,
+                    stop_reason="STOP_REASON_STOP",
+                    tokens=[1],
+                    logprobs=[-0.5],
+                )
+            ],
+            prompt_logprobs=[0.0, -0.25],
+        )
+    ]
+)
+
+
+def _invoke(client: tinker_compat.SamplingClient, entry: str) -> None:
+    prompt = types.ModelInput.from_ints([1])
+    sample_args = (prompt, 1, types.SamplingParams(max_tokens=1))
+    if entry == "sample":
+        client.sample(*sample_args)
+    elif entry == "sample_async":
+        asyncio.run(client.sample_async(*sample_args))
+    elif entry == "compute_logprobs":
+        client.compute_logprobs(prompt)
+    else:
+        asyncio.run(client.compute_logprobs_async(prompt))
+
+
+@pytest.mark.parametrize("entry", _ENTRY_POINTS)
+def test_stale_sampling_client_is_rejected_at_every_entry_point(entry: str) -> None:
     published = _sampling._PublishedWeights(version=2)
-    stale = tinker_compat.SamplingClient(_session_with_operations(), published, 1)
-    args = (types.ModelInput.from_ints([1]), 1, types.SamplingParams(max_tokens=1))
+    stale = tinker_compat.SamplingClient(_session_with_operations(), published, 1, _allow_stale=False)
 
     with pytest.raises(RuntimeError, match="stale"):
-        if collect == "sync":
-            stale.sample(*args)
-        else:
-            asyncio.run(stale.sample_async(*args))
+        _invoke(stale, entry)
+    _close(stale._session)
+
+
+@pytest.mark.parametrize("entry", _ENTRY_POINTS)
+def test_allow_stale_sampling_client_passes_the_gate(entry: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """allow_stale must reach submission at every gated entry point, not just ``sample``."""
+    patch_wait(monkeypatch, _GATE_OUTPUT)
+
+    async def fake_resolve(_client: Any, *, session_id: str, result: Any) -> Any:  # noqa: ARG001
+        return result
+
+    monkeypatch.setattr(_payloads, "resolve_result_payload", fake_resolve)
+    submitted: list[dict[str, Any]] = []
+
+    async def submit(_session: SessionClient, **kwargs: Any) -> Any:
+        submitted.append(kwargs)
+        return _OPERATION
+
+    monkeypatch.setattr(_sampling, "_submit_sample_batch", submit)
+    published = _sampling._PublishedWeights(version=2)
+    stale = tinker_compat.SamplingClient(_session_with_operations(), published, 1, _allow_stale=True)
+
+    _invoke(stale, entry)
+
+    assert len(submitted) == 1
     _close(stale._session)
 
 

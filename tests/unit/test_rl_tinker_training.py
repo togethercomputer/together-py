@@ -13,7 +13,7 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from tests.unit.rl_wait import patch_wait
-from together.lib.beta.rl import tinker as tinker_compat, _operations as rl_ops
+from together.lib.beta.rl import WeightSyncType, tinker as tinker_compat, _operations as rl_ops
 from tests.unit._rl_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
@@ -35,9 +35,9 @@ def _scored_output(*logprobs: list[float]) -> dict[str, Any]:
     }
 
 
-def test_save_weights_publishes_synchronously(monkeypatch: pytest.MonkeyPatch) -> None:
-    """SYNCHRONOUS so the returned SamplingClient sees the updated policy;
-    BACKGROUND_PUBLISH would silently turn the loop off-policy."""
+def test_save_weights_publishes_synchronously_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SYNCHRONOUS stays the default so the returned SamplingClient sees the updated policy;
+    BACKGROUND_PUBLISH would silently turn the loop off-policy unless the caller asks for it."""
     timeouts = patch_wait(monkeypatch, _WEIGHTS_SYNC_OUTPUT)
     weights_sync = AsyncMock(return_value=_OPERATION)
     session = _session_with_operations(weights_sync=weights_sync)
@@ -47,6 +47,51 @@ def test_save_weights_publishes_synchronously(monkeypatch: pytest.MonkeyPatch) -
     weights_sync.assert_awaited_once_with("sess", weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
     assert timeouts == [None]
     assert isinstance(sampling, tinker_compat.SamplingClient)
+    assert sampling._allow_stale is False
+
+
+@pytest.mark.parametrize(
+    "weight_sync_type",
+    ["WEIGHT_SYNC_TYPE_SYNCHRONOUS", "WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH", "WEIGHT_SYNC_TYPE_PIPELINE"],
+)
+def test_save_weights_forwards_the_requested_sync_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    weight_sync_type: WeightSyncType,
+) -> None:
+    """The shim must not rewrite the caller's mode; PIPELINE on LoRA is the server's call to reject."""
+    timeouts = patch_wait(monkeypatch, _WEIGHTS_SYNC_OUTPUT)
+    weights_sync = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(weights_sync=weights_sync)
+
+    _training_client(session).save_weights_and_get_sampling_client(weight_sync_type=weight_sync_type)
+
+    weights_sync.assert_awaited_once_with("sess", weight_sync_type=weight_sync_type)
+    # timeout=None survives the new keyword: a publish outlives the 300 s operation default.
+    assert timeouts == [None]
+
+
+def test_allow_stale_reaches_the_returned_sampling_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """allow_stale must survive to the client, and the client must outlive a later publish."""
+    patch_wait(monkeypatch, _WEIGHTS_SYNC_OUTPUT)
+    session = _session_with_operations(weights_sync=AsyncMock(return_value=_OPERATION))
+    client = _training_client(session)
+
+    sampling = client.save_weights_and_get_sampling_client(allow_stale=True)
+    assert sampling._allow_stale is True
+
+    client.save_weights_and_get_sampling_client()
+    assert sampling._version != sampling._published_weights.version
+    sampling._check_fresh()  # would raise without the opt-out
+
+
+async def test_allow_stale_reaches_the_returned_sampling_client_async(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_wait(monkeypatch, _WEIGHTS_SYNC_OUTPUT)
+    session = _session_with_operations(weights_sync=AsyncMock(return_value=_OPERATION))
+
+    sampling = await _training_client(session).save_weights_and_get_sampling_client_async(allow_stale=True)
+
+    assert sampling._allow_stale is True
+    await session.detach_async()
 
 
 @pytest.mark.parametrize(

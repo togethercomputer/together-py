@@ -22,7 +22,7 @@ the full API reference remains in [api.md](api.md).
 - Use `session.retrieve()` to fetch the full session state from the API (status, checkpoints, step).
 - All request data uses typed constructors exported from `together.lib.beta.rl`. Every one of them (`Sample`, `ModelInput`, `LossConfig`, `TensorData`, `LoraConfig`, `OptimizerConfig`, etc.) is a `TypedDict`, so plain dicts also work at runtime.
 
-## Quickstart: SFT-style loop (sync)
+## Quickstart: SFT-style loop
 
 ```python
 import os
@@ -31,6 +31,7 @@ from together.lib.beta.rl import (
     AdamParams,
     EncodedTextChunk,
     TensorData,
+    LoraConfig,
     LossConfig,
     ModelInput,
     ModelInputChunk,
@@ -38,12 +39,12 @@ from together.lib.beta.rl import (
 )
 
 resources = ModelResourcesClient.create(
-    base_model="Qwen/Qwen3-0.6B",
+    base_model="Qwen/Qwen3.5-4B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
     num_generator_replicas=0,  # SFT does not need a generator; provisions a trainer-only resource.
 )
-session = resources.create_session()
+session = resources.create_session(lora_config=LoraConfig(rank=32, alpha=64))
 
 tokens = [101, 102, 103]  # your tokenizer output
 weights = [0.0, 1.0, 1.0]
@@ -76,7 +77,7 @@ session.trainer.forward_backward(samples=samples, loss=loss)
 
 session.trainer.optim_step(
     adam_params=AdamParams(
-        beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
+        beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-4,
     ),
 )
 ```
@@ -91,6 +92,7 @@ from together.lib.beta.rl import (
     EncodedTextChunk,
     TensorData,
     GrpoLossParams,
+    LoraConfig,
     LossConfig,
     ModelInput,
     ModelInputChunk,
@@ -99,11 +101,11 @@ from together.lib.beta.rl import (
 )
 
 resources = ModelResourcesClient.create(
-    base_model="Qwen/Qwen3-0.6B",
+    base_model="Qwen/Qwen3.5-4B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
 )
-session = resources.create_session()
+session = resources.create_session(lora_config=LoraConfig(rank=32, alpha=64))
 
 prompt_tokens = [101, 102, 103]  # your tokenizer output
 prompt_chunk = ModelInputChunk(
@@ -168,12 +170,101 @@ session.trainer.forward_backward(samples=samples, loss=loss)
 
 optim = session.trainer.optim_step(
     adam_params=AdamParams(
-        beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=1e-6,
+        beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=4e-5,
     ),
 )
 sync = session.trainer.weights_sync()
 print("step", optim.step, "weights_version", int(sync.weights_version))
 ```
+
+The quickstarts train a LoRA adapter, which is the usual shape on Together and what their
+learning rates are scaled for. To fully fine-tune the base weights instead, omit `lora_config`.
+
+## Quickstart: GRPO-style loop (async, one step off-policy)
+
+The trainer and generator are separate reserved GPUs, billed whether they are working or
+waiting, so the sync loop above leaves one of them idle at every step. `sample_batch_async` and
+`forward_backward_async` take disjoint server-side locks, so `asyncio.gather` runs a rollout
+and a trainer step at the same time: block N+1 samples while block N trains.
+
+```python
+import asyncio
+import os
+
+from together.lib.beta.rl import (
+    ModelResourcesClient,
+    AdamParams,
+    GrpoLossParams,
+    LoraConfig,
+    LossConfig,
+    ModelInput,
+    Sample,
+    SampleResult,
+    SamplingParams,
+)
+
+SAMPLING = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
+LOSS = LossConfig(
+    type="LOSS_TYPE_GRPO",
+    grpo_params=GrpoLossParams(
+        agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
+        beta=0.0,
+        clip_low_threshold=0.8,
+        clip_high_threshold=1.2,
+    ),
+)
+ADAM = AdamParams(beta1=0.9, beta2=0.95, weight_decay=0.1, learning_rate=4e-5)
+
+
+def build_samples(prompts: list[ModelInput], results: list[SampleResult]) -> list[Sample]:
+    """Score the rollouts and build one Sample per sequence, as in the sync loop above."""
+    ...
+
+
+async def main() -> None:
+    resources = await ModelResourcesClient.create_async(
+        base_model="Qwen/Qwen3.5-4B",
+        api_key=os.environ.get("TOGETHER_API_KEY"),
+        base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
+    )
+    session = await resources.create_session_async(lora_config=LoraConfig(rank=32, alpha=64))
+
+    prompt_blocks: list[list[ModelInput]] = [...]  # your tokenized prompts, one list per step
+
+    # Block 0 has nothing to train against yet, so it is the one serial rollout.
+    # timeout=None: a long rollout outlives the 300s operation default.
+    results = await session.generator.sample_batch_async(
+        prompt_blocks[0], sampling_params=SAMPLING, timeout=None
+    )
+
+    for trained_block, next_block in zip(prompt_blocks, prompt_blocks[1:]):
+        samples = build_samples(trained_block, results)
+        # gather, not two awaits: the next block samples on the generator while this
+        # block's update runs on the trainer, so neither GPU waits on the other.
+        results, _ = await asyncio.gather(
+            session.generator.sample_batch_async(next_block, sampling_params=SAMPLING, timeout=None),
+            session.trainer.forward_backward_async(samples=samples, loss=LOSS, timeout=None),
+        )
+        await session.trainer.optim_step_async(adam_params=ADAM)
+        await session.trainer.weights_sync_async()
+
+    # Flush the last block, which was sampled but never trained on.
+    await session.trainer.forward_backward_async(
+        samples=build_samples(prompt_blocks[-1], results), loss=LOSS, timeout=None
+    )
+    await session.trainer.optim_step_async(adam_params=ADAM)
+    await resources.stop_async()
+
+
+asyncio.run(main())
+```
+
+Each update now trains on rollouts generated one policy version behind — the *one step
+off-policy* arrangement, also called asynchronous RL. GRPO already corrects for that: the
+`logprobs` you pass in `loss_fn_inputs` are the sampling policy's own, and the importance
+ratio against them is what `clip_low_threshold` / `clip_high_threshold` bound. To measure
+the staleness rather than assume it, read `SampleResult.policy_segments`, which carries the
+policy version of each token span.
 
 ## Multi-LoRA: shared model resources (sync)
 
@@ -185,7 +276,7 @@ import os
 from together.lib.beta.rl import ModelResourcesClient, LoraConfig
 
 resources = ModelResourcesClient.create(
-    base_model="Qwen/Qwen3-0.6B",
+    base_model="Qwen/Qwen3.5-4B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
 )
@@ -203,7 +294,7 @@ resources.stop()
 `ModelResourcesClient` also works as a context manager; on exit it stops the resources:
 
 ```python
-with ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...") as resources:
+with ModelResourcesClient.create(base_model="Qwen/Qwen3.5-4B", api_key="...", base_url="...") as resources:
     with resources.create_session() as session:
         ...
 ```
@@ -225,7 +316,7 @@ Saved checkpoints also appear on `session.retrieve().training_checkpoints`.
 ```python
 from together.lib.beta.rl import ModelResourcesClient, SessionClient
 
-resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
+resources = ModelResourcesClient.create(base_model="Qwen/Qwen3.5-4B", api_key="...", base_url="...")
 session = resources.create_session()
 # ... train ...
 
@@ -339,7 +430,7 @@ from together.lib.beta.rl import (
 
 async def main() -> None:
     resources = await ModelResourcesClient.create_async(
-        base_model="Qwen/Qwen3-0.6B",
+        base_model="Qwen/Qwen3.5-4B",
         api_key=os.environ.get("TOGETHER_API_KEY"),
         base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
     )
@@ -393,11 +484,11 @@ That makes one handle safe to share:
 [Configuration notes](#configuration-notes)) are the knobs for how wide that concurrency goes.
 
 Polling is bounded by the connection pool, not by a poll scheduler: every waiting operation polls on its own
-fixed `interval` (default 0.5s, no backoff), and once a session's client has `TOGETHER_RL_MAX_CONNECTIONS`
-requests in flight the rest queue there instead of reaching the service. On that client a `429` is retried up
-to 7 times, honouring `Retry-After` and backing off exponentially otherwise. With many operations waiting at
-once, raise `interval` rather than the connection cap. `ModelResourcesClient` polls for provisioning and
-stop, and keeps the SDK connection defaults.
+schedule, starting at `interval` (default 0.5s) and backing off exponentially to a cap, so a short
+operation stays responsive while a long wait gets cheaper. Once a session's client has
+`TOGETHER_RL_MAX_CONNECTIONS` requests in flight the rest queue there instead of reaching the service. On
+that client a `429` is retried up to 7 times, honouring `Retry-After` and backing off exponentially
+otherwise. `ModelResourcesClient` polls for provisioning and stop, and keeps the SDK connection defaults.
 
 ## Tinker-compatible entry point
 
@@ -468,9 +559,14 @@ Training and sampling methods:
 - `TrainingClient.forward_backward_custom(data, loss_fn, *, loss_type_input="logprobs")` —
   two-pass custom loss (forward logprobs → client loss → custom gradients). Requires PyTorch.
 - `TrainingClient.optim_step(adam_params)` — Adam fields are forwarded as-is (including `grad_clip_norm`).
-- `TrainingClient.save_weights_and_get_sampling_client(name=None, retry_config=None)` — publishes weights
-  synchronously and returns a `SamplingClient`. Non-`None` `name` / `retry_config` warn and are
+- `TrainingClient.save_weights_and_get_sampling_client(name=None, retry_config=None, *, allow_stale=False, weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")` —
+  publishes weights and returns a `SamplingClient`. Non-`None` `name` / `retry_config` warn and are
   ignored (no named checkpoints or caller-controlled retries).
+  - `allow_stale=True` keeps the returned client usable after a later publish, which is what an
+    off-policy loop needs. It does not pin a policy version: a stale client samples whatever weights
+    are live. Left `False`, sampling on a superseded client raises.
+  - `weight_sync_type` selects the publish mode — see
+    [`weights_sync`](#sessiontrainerweights_sync) for what each one costs.
 - `SamplingClient.sample(prompt, num_samples, sampling_params, include_prompt_logprobs=False, topk_prompt_logprobs=0)` —
   both prompt-logprob flags are honored; `topk_prompt_logprobs` must be in `0..20` or a `ValueError` is raised.
 - `SamplingClient.compute_logprobs(prompt)` — returns a future of `list[float | None]` with index 0 as `None`.
@@ -541,9 +637,13 @@ generated from the spec, so a key outside it is always a caller error.
   so scripts that only read `.metrics` keep working.
 - **Sampling clients are not weight snapshots.** Together's sampler serves the most recently published
   weights. After a later `save_weights_and_get_sampling_client()`, sampling on an earlier client raises
-  `RuntimeError` rather than silently using the wrong policy. This breaks DPO-style frozen reference
-  clients held across training steps, and pipelined/off-policy loops that keep sampling from an older
-  client while training advances. Re-create the sampling client after each publish.
+  `RuntimeError` by default, rather than silently using the wrong policy. Loops that hold a client
+  across publishes — DPO-style frozen reference clients, off-policy and pipelined loops — pass
+  `allow_stale=True` to opt out of that check (a Together-only keyword, so an unmodified tinker script
+  needs this one edit). It is not a snapshot: the client keeps working but samples whatever weights
+  are live at each request, and the tinker surface cannot report which those were, since the shim's
+  `SampleResponse` carries no policy metadata. Use the native `session.generator.sample*` and read
+  `SampleResult.policy_segments` when you need to know what served a request.
 - **Token-id stop sequences are dropped.** Together's wire `stop` field is strings only. Integer stops
   are ignored with a warning; generation then relies on the model's own end token, so trajectories can
   differ from tinker when a dropped token is not that end token. Cookbook renderers often emit non-EOS
@@ -815,7 +915,8 @@ value on the wire. `optim_step` now only applies gradients — it does not publi
 weights for sampling. Every loop that samples after an optim step must add
 `session.trainer.weights_sync(...)`. The client defaults
 `weight_sync_type` to `WEIGHT_SYNC_TYPE_SYNCHRONOUS`; pass
-`BACKGROUND_PUBLISH` or `PIPELINE` when you want a different mode. Without
+`BACKGROUND_PUBLISH` (or `PIPELINE`, which LoRA sessions reject) when you want a
+different mode. Without
 that call, subsequent samples keep using a stale policy with no client-side
 error.
 
@@ -878,8 +979,29 @@ def weights_sync(
 | ------------------ | ---------------- | --------------------------------- | --------------------------------------------------------------------------- |
 | `weight_sync_type` | `WeightSyncType` | `WEIGHT_SYNC_TYPE_SYNCHRONOUS`    | How updated parameters are made available for sampling. See values below. |
 
-Accepted `WeightSyncType` values: `"WEIGHT_SYNC_TYPE_SYNCHRONOUS"`,
-`"WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH"`, `"WEIGHT_SYNC_TYPE_PIPELINE"`.
+`weight_sync_type` selects how the publish is performed:
+
+| Value                                   | Returns                        | `.weights_version` | Rollouts already in flight                                | LoRA sessions |
+| --------------------------------------- | ------------------------------ | ------------------ | --------------------------------------------------------- | ------------- |
+| `"WEIGHT_SYNC_TYPE_SYNCHRONOUS"`        | once the new weights are live  | live               | finish under the old weights; the publish waits for them  | supported     |
+| `"WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH"` | once the sync is queued        | queued             | finish under the old weights; the publish waits for them  | supported     |
+| `"WEIGHT_SYNC_TYPE_PIPELINE"`           | once the sync is queued        | queued             | keep decoding and finish under the *new* weights          | **rejected**  |
+
+The two deferred modes move *when* the publish is paid rather than whether it is paid. They
+do not hold the trainer through the broadcast, but a sample that arrives before the publish
+has landed blocks until it does — performing the sync itself if the background publisher has
+not caught up — and the next trainer step can still wait on the broadcast, since both
+contend for the same trainer lock.
+
+Under `PIPELINE` a single rollout can be served partly by the old weights and partly by the
+new ones. `SampleResult.policy_segments` reports the policy version of each token span, so
+a result that spans versions is visible to the caller; the server does not gate on staleness
+or report it as an error.
+
+`PIPELINE` is not supported on LoRA sessions — the server rejects it, and the client passes
+the mode through unchanged rather than silently substituting another. On the LoRA path,
+which is what the quickstarts above use, `BACKGROUND_PUBLISH` is the deferred mode
+available.
 
 **Returns:** `WeightsSyncResult`. The policy version now available (or queued) for
 sampling is at `.weights_version` (`str | int` — coerce with `int(...)` before
@@ -955,7 +1077,7 @@ from together.lib.beta.rl import (
 )
 
 with ModelResourcesClient.create(
-    base_model="Qwen/Qwen3-0.6B",
+    base_model="Qwen/Qwen3.5-4B",
     api_key="...",
     base_url="...",
 ) as resources:
@@ -996,7 +1118,7 @@ ModelResourcesClient.create(
 
 | Parameter       | Type            | Default      | Description                                                     |
 | --------------- | --------------- | ------------ | --------------------------------------------------------------- |
-| `base_model`    | `str`           | _(required)_ | Base model name (e.g. `"Qwen/Qwen3-0.6B"`).                     |
+| `base_model`    | `str`           | _(required)_ | Base model name (e.g. `"Qwen/Qwen3.5-4B"`).                     |
 | `api_key`       | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`      | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `lora_enabled`  | `bool`          | `True`       | Enable LoRA adapters on the provisioned resources.              |
@@ -1274,7 +1396,7 @@ When creating a session with a LoRA adapter, pass `LoraConfig` to `lora_config`:
 ```python
 from together.lib.beta.rl import ModelResourcesClient, LoraConfig
 
-resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
+resources = ModelResourcesClient.create(base_model="Qwen/Qwen3.5-4B", api_key="...", base_url="...")
 session = resources.create_session(
     lora_config=LoraConfig(alpha=16, dropout=0.05, rank=8),
 )
@@ -1352,7 +1474,7 @@ deployment](#deploying-a-checkpoint-as-a-dedicated-endpoint) consumes.
 ```python
 from together.lib.beta.rl import ModelResourcesClient, SessionMetadata, WandbMetadata
 
-resources = ModelResourcesClient.create(base_model="Qwen/Qwen3-0.6B", api_key="...", base_url="...")
+resources = ModelResourcesClient.create(base_model="Qwen/Qwen3.5-4B", api_key="...", base_url="...")
 session = resources.create_session(
     display_name="grpo-run-7",
     metadata=SessionMetadata(wandb=WandbMetadata(entity="my-team", project="rl", run_id="abc123")),

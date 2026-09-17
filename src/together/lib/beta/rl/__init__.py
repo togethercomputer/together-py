@@ -13,6 +13,7 @@
 # is package-internal but shared across modules.
 
 from .clients import Trainer, Generator, SessionClient, ModelResourcesClient
+from ._futures import OperationFuture
 from .checkpoints import download_checkpoint, download_checkpoint_async
 from ._request_types import Sample, LossConfig, TensorData
 from ....types.beta.rl.session import Session
@@ -65,6 +66,7 @@ __all__ = [
     "SessionClient",
     "Trainer",
     "Generator",
+    "OperationFuture",
     "download_checkpoint",
     "download_checkpoint_async",
     "ModelResources",

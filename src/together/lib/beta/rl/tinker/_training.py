@@ -9,7 +9,7 @@ from functools import partial
 from dataclasses import field, dataclass
 from collections.abc import Callable
 
-from .. import Sample as WireSample, LossConfig as WireLossConfig
+from .. import Sample as WireSample, LossConfig as WireLossConfig, WeightSyncType
 from ._compat import types
 from .._futures import OperationFuture
 from ._sampling import SamplingClient, _PublishedWeights
@@ -68,8 +68,7 @@ def _warn_ignored_publish_args(name: str | None, retry_config: Any) -> None:
     ignored = [arg for arg, value in (("name", name), ("retry_config", retry_config)) if value is not None]
     if ignored:
         warnings.warn(
-            f"Together ignores {ignored}: weight publish is a synchronous sync with "
-            "no named checkpoints or caller-controlled retries",
+            f"Together ignores {ignored}: weight publish has no named checkpoints and no caller-controlled retries",
             stacklevel=2,
         )
 
@@ -346,21 +345,53 @@ class TrainingClient:
         self,
         name: str | None = None,
         retry_config: Any = None,
+        *,
+        allow_stale: bool = False,
+        weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_SYNCHRONOUS",
     ) -> SamplingClient:
+        """Publish the current weights and return a client that samples from them.
+
+        Args:
+            name: Ignored, with a warning. Together has no named checkpoints.
+            retry_config: Ignored, with a warning. Retries are not caller-controlled.
+            allow_stale: Keep the returned client usable after a later publish.
+                This does *not* pin a policy version, because Together has no snapshot checkpoints:
+                a stale client samples whatever weights are live at the time of each request.
+            weight_sync_type: How the publish is performed; see the sync-modes table in
+                ``RL_README.md``. ``WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH`` returns once the
+                sync is queued rather than once it is live, which frees the trainer sooner
+                but leaves the publish to be paid by whatever samples next.
+
+        Returns:
+            SamplingClient: Samples from the weights this call published.
+        """
         _warn_ignored_publish_args(name, retry_config)
-        return self._session.run(self._publish_weights_async())
+        return self._session.run(
+            self._publish_weights_async(allow_stale=allow_stale, weight_sync_type=weight_sync_type)
+        )
 
     async def save_weights_and_get_sampling_client_async(
         self,
         name: str | None = None,
         retry_config: Any = None,
+        *,
+        allow_stale: bool = False,
+        weight_sync_type: WeightSyncType = "WEIGHT_SYNC_TYPE_SYNCHRONOUS",
     ) -> SamplingClient:
+        """See :meth:`save_weights_and_get_sampling_client`."""
         _warn_ignored_publish_args(name, retry_config)
-        return await self._publish_weights_async()
+        return await self._publish_weights_async(allow_stale=allow_stale, weight_sync_type=weight_sync_type)
 
-    async def _publish_weights_async(self) -> SamplingClient:
+    async def _publish_weights_async(
+        self,
+        *,
+        allow_stale: bool,
+        weight_sync_type: WeightSyncType,
+    ) -> SamplingClient:
         session = self._session
         # timeout=None: publish waits as long as the sync takes, unlike Trainer's 300s default.
-        await session.trainer.weights_sync_async(weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS", timeout=None)
+        await session.trainer.weights_sync_async(weight_sync_type=weight_sync_type, timeout=None)
         self._published_weights.version += 1
-        return SamplingClient(session, self._published_weights, self._published_weights.version)
+        return SamplingClient(
+            session, self._published_weights, self._published_weights.version, _allow_stale=allow_stale
+        )

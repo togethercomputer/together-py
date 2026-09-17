@@ -86,6 +86,82 @@ async def test_poll_retrieves_before_sleep(monkeypatch: pytest.MonkeyPatch) -> N
     assert events == ["retrieve", "sleep", "retrieve"]
 
 
+@pytest.mark.parametrize(
+    ("interval", "expected"),
+    [
+        # Default: grows from the caller's interval and flattens at the module cap.
+        (0.5, [0.5, 1.0, 2.0, 4.0, 5.0, 5.0, 5.0]),
+        # An interval wider than the cap is the caller asking to poll *less* often. The
+        # ceiling must not pull it back down to 5.0 — that would multiply the request rate
+        # of exactly the callers who already told us to back off.
+        (30.0, [30.0] * 7),
+    ],
+)
+async def test_poll_backs_off_geometrically_without_outpacing_the_caller(
+    monkeypatch: pytest.MonkeyPatch,
+    interval: float,
+    expected: list[float],
+) -> None:
+    """Concurrency multiplies poll cost, so a long wait must get cheaper — but the first
+    poll still lands at `interval`, keeping a fast operation exactly as responsive."""
+    delays: list[float] = []
+    polls = 0
+
+    async def fake_retrieve(_client: Any, *, session_id: str, operation: Any) -> Any:  # noqa: ARG001
+        nonlocal polls
+        polls += 1
+        status = "TRAINING_OPERATION_STATUS_COMPLETED" if polls > 7 else "TRAINING_OPERATION_STATUS_PENDING"
+        return SampleOperation(id=operation.id, status=status)
+
+    async def fake_sleep(delay: float) -> None:
+        delays.append(delay)
+
+    monkeypatch.setattr(rl_ops, "async_retrieve_operation", fake_retrieve)
+
+    await rl_ops.async_wait_for_operation(
+        cast(Any, None),
+        session_id="sess",
+        operation=_operation(),
+        timeout=None,
+        interval=interval,
+        sleep=fake_sleep,
+    )
+
+    assert delays == expected
+    assert min(delays) >= interval
+
+
+async def test_backoff_never_sleeps_past_the_caller_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An unclamped sleep would run past `timeout` and report it late, so the last sleep is
+    trimmed to the remaining budget and the deadline is honoured when it actually expires."""
+    clock = 0.0
+    delays: list[float] = []
+
+    async def fake_retrieve(_client: Any, *, session_id: str, operation: Any) -> Any:  # noqa: ARG001
+        return SampleOperation(id=operation.id, status="TRAINING_OPERATION_STATUS_PENDING")
+
+    async def fake_sleep(delay: float) -> None:
+        nonlocal clock
+        delays.append(delay)
+        clock += delay
+
+    monkeypatch.setattr(rl_ops, "async_retrieve_operation", fake_retrieve)
+
+    with pytest.raises(TimeoutError):
+        await rl_ops.async_wait_for_operation(
+            cast(Any, None),
+            session_id="sess",
+            operation=_operation(),
+            timeout=10.0,
+            interval=1.0,
+            sleep=fake_sleep,
+            now=lambda: clock,
+        )
+
+    assert delays == [1.0, 2.0, 4.0, 3.0]
+    assert sum(delays) == pytest.approx(10.0)  # pyright: ignore[reportUnknownMemberType]
+
+
 async def test_poll_raises_operation_failed(monkeypatch: pytest.MonkeyPatch) -> None:
     """OperationFuture caches this error and nothing else, so the narrower type is the contract."""
 
