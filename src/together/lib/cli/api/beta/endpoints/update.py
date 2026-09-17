@@ -101,6 +101,13 @@ async def update(
             validator=Number(gte=1, lte=99),
         ),
     ] = None,
+    inactive_timeout: Annotated[
+        Optional[int],
+        Parameter(
+            help="Updated inactive timeout in minutes (0 to disable; otherwise 30-1440).",
+            validator=Number(gte=0, lte=1440),
+        ),
+    ] = None,
     etag: Annotated[
         Optional[str],
         Parameter(
@@ -131,6 +138,9 @@ async def update(
     if autoscaling is not None:
         kwargs["autoscaling"] = autoscaling
         update_mask.append("autoscaling")
+    if inactive_timeout is not None:
+        kwargs["inactive_timeout"] = inactive_timeout
+        update_mask.append("inactiveTimeout")
     if etag is not None:
         kwargs["etag"] = etag
 

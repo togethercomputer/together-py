@@ -186,6 +186,7 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
+        assert "--inactive-timeout" in output
         assert "--placement.hipaa" in output
         assert "--scale-to-zero-window" not in output
 
@@ -307,6 +308,8 @@ class TestBetaEndpointsDeploy:
                 "cr_1",
                 "--deployment-name",
                 "my-dep",
+                "--inactive-timeout",
+                "30",
                 "--traffic-weight",
                 "1",
                 "--json",
@@ -320,6 +323,7 @@ class TestBetaEndpointsDeploy:
         assert deployment_body["model"] == "projects/proj/models/ml_1"
         assert deployment_body["config"] == "projects/proj/configs/cr_1"
         assert deployment_body["autoscaling"] == {"minReplicas": 1, "maxReplicas": 1}
+        assert deployment_body["inactiveTimeout"] == 30
         update_body = json.loads(cast(Call, update_endpoint_route.calls[0]).request.content.decode())
         assert update_body["trafficSplit"] == [{"deploymentId": "dep_1", "weight": 1.0}]
 
