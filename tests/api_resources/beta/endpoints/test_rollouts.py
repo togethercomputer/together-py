@@ -511,7 +511,7 @@ class TestRollouts:
             final_target_replicas=0,
             metrics=[
                 {
-                    "name": "inflight_requests",
+                    "name": "router_latency",
                     "percentile": 95,
                     "regression_check": {
                         "direction": "REGRESSION_DIRECTION_HIGHER_IS_WORSE",
@@ -1269,7 +1269,7 @@ class TestAsyncRollouts:
             final_target_replicas=0,
             metrics=[
                 {
-                    "name": "inflight_requests",
+                    "name": "router_latency",
                     "percentile": 95,
                     "regression_check": {
                         "direction": "REGRESSION_DIRECTION_HIGHER_IS_WORSE",
