@@ -289,7 +289,7 @@ When omitted, infers the sole other deployment with traffic weight > 0.""",
                 "Aggregation for --metric. Choices: avg, p50, p90, p95, p99. "
                 "Optional for router_error_rate and inflight_requests (server default: avg). "
                 "Required for router_latency (avg or a percentile). "
-                "Percentile choices set stat=PERCENTILE automatically."
+                "Percentile choices are only valid for router_latency and set stat=PERCENTILE automatically."
             ),
         ),
     ] = None,

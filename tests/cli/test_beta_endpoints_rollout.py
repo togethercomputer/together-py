@@ -1443,6 +1443,24 @@ class TestBetaEndpointsRollout:
         assert "requires either --metric-operator" in result.output.replace("\n", " ")
 
     @pytest.mark.respx(base_url=base_url)
+    def test_rejects_percentile_stat_for_non_latency_metric(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            _rollout_args(
+                "dep_target",
+                "--canary",
+                "--metric",
+                "inflight_requests",
+                "--metric-stat",
+                "p99",
+                "--metric-operator",
+                "lte",
+            )
+        )
+        assert result.exit_code != 0
+        output = result.output.replace("\n", " ")
+        assert "--metric-stat p99 is only valid with --metric router_latency" in output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_rejects_reason_without_cancel_or_pause(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(_rollout_args("dep_target", "--reason", "nope"))
         assert result.exit_code != 0

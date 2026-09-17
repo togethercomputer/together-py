@@ -77,6 +77,8 @@ def build_rollout_metrics(
 
     if metric == "router_latency" and metric_stat is None:
         raise ValueError("--metric-stat is required for --metric router_latency (avg, p50, p90, p95, or p99).")
+    if metric != "router_latency" and metric_stat is not None and metric_stat != "avg":
+        raise ValueError(f"--metric-stat {metric_stat} is only valid with --metric router_latency.")
 
     if threshold_set and regression_set:
         raise ValueError(
