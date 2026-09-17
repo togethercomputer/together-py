@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.35.0](https://github.com/togethercomputer/together-py/compare/v2.34.0...v2.35.0) (2026-09-17)
+
+
+### Features
+
+* **cli:** expose beta deployment inactive timeout ([#582](https://github.com/togethercomputer/together-py/issues/582)) ([113f6d7](https://github.com/togethercomputer/together-py/commit/113f6d7d0e851d4468f7c3ec1d2eb06cdff074b1))
+* **deployments:** Add inactiveTimeout to deployments ([#644](https://github.com/togethercomputer/together-py/issues/644)) ([3214971](https://github.com/togethercomputer/together-py/commit/3214971fb1bb39b8076da674deda7b16e3c2bf40))
+* **deployments:** expose autoscaling policies and reset semantics (MLE-7727) ([00ff4e8](https://github.com/togethercomputer/together-py/commit/00ff4e8627f624f780fd19ca491796a0b6f0f812))
+* **Rollouts CLI:** take optional disposition when cancelling a rollout ([#577](https://github.com/togethercomputer/together-py/issues/577)) ([d50b06d](https://github.com/togethercomputer/together-py/commit/d50b06d482d935d486961ebb090f5eed5f80f048))
+
+
+### Bug Fixes
+
+* **cli:** preserve rollout JSON failure telemetry ([#579](https://github.com/togethercomputer/together-py/issues/579)) ([edad445](https://github.com/togethercomputer/together-py/commit/edad44530eb2d392f563fedc83d9fda9a82e861a))
+* use valid metric in rollout preview examples ([c3bc21f](https://github.com/togethercomputer/together-py/commit/c3bc21f585619ffd63a2ca1a69e8ff03796784ec))
+
 ## [2.34.0](https://github.com/togethercomputer/together-py/compare/v2.33.2...v2.34.0) (2026-09-15)
 
 
