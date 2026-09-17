@@ -46,8 +46,12 @@ from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import (
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     ScalingMetricName,
     ScalingPercentile,
+    ScalingPolicySelect,
     build_autoscaling,
+    build_scaling_rules,
     build_scaling_metrics,
+    format_scaling_policy,
+    format_scaling_select_policy,
 )
 
 EndpointParameter = Annotated[
@@ -156,6 +160,32 @@ async def deploy(
             ),
         ),
     ] = None,
+    scale_up_policy: Annotated[
+        list[str] | None,
+        Parameter(
+            help=(
+                "Scale-up rate limit as TYPE:VALUE:PERIOD_SECONDS; repeat to set multiple. "
+                "TYPE is pods or percent, e.g. pods:2:60 or percent:100:300."
+            ),
+        ),
+    ] = None,
+    scale_up_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(help="How to choose among scale-up policies: max, min, or disabled."),
+    ] = None,
+    scale_down_policy: Annotated[
+        list[str] | None,
+        Parameter(
+            help=(
+                "Scale-down rate limit as TYPE:VALUE:PERIOD_SECONDS; repeat to set multiple. "
+                "TYPE is pods or percent, e.g. pods:1:300."
+            ),
+        ),
+    ] = None,
+    scale_down_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(help="How to choose among scale-down policies: max, min, or disabled."),
+    ] = None,
     deployment_name: DeploymentNameParameter = None,
     model_revision: Annotated[
         Optional[str],
@@ -222,6 +252,16 @@ async def deploy(
             scaling_metric=scaling_metric,
             scaling_target=scaling_target,
             scaling_percentile=scaling_percentile,
+        ),
+        scale_up=build_scaling_rules(
+            policies=scale_up_policy,
+            select_policy=scale_up_select_policy,
+            option_prefix="scale-up",
+        ),
+        scale_down=build_scaling_rules(
+            policies=scale_down_policy,
+            select_policy=scale_down_select_policy,
+            option_prefix="scale-down",
         ),
         required=True,
     )
@@ -354,6 +394,16 @@ def _print_deployment_preview(
         add_row("--scaling-target", str(metric["target"]))
         if percentile := metric.get("percentile"):
             add_row("--scaling-percentile", percentile)
+    if scale_up := autoscaling.get("scale_up"):
+        for policy in scale_up.get("policies") or []:
+            add_row("--scale-up-policy", format_scaling_policy(policy))
+        if select_policy := scale_up.get("select_policy"):
+            add_row("--scale-up-select-policy", format_scaling_select_policy(select_policy))
+    if scale_down := autoscaling.get("scale_down"):
+        for policy in scale_down.get("policies") or []:
+            add_row("--scale-down-policy", format_scaling_policy(policy))
+        if select_policy := scale_down.get("select_policy"):
+            add_row("--scale-down-select-policy", format_scaling_select_policy(select_policy))
 
     if placement is not None:
         if "profile" in placement:
