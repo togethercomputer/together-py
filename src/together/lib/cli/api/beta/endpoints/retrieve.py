@@ -21,7 +21,10 @@ from together.types.beta.endpoints import Rollout, AbExperiment, ShadowExperimen
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.endpoints.rollout import StatusStep, StatusCondition, StatusStepMetric, StatusConditionMetric
+from together.types.beta.endpoints.metric_result import MetricResult as StatusConditionMetric
+from together.types.beta.endpoints.metric_result import MetricResult as StatusStepMetric
+from together.types.beta.endpoints.rollout_condition import RolloutCondition as StatusCondition
+from together.types.beta.endpoints.rollout_step_status import RolloutStepStatus as StatusStep
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
