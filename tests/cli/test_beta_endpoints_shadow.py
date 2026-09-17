@@ -14,6 +14,7 @@ from together import APIError
 from tests.cli.utils import CliRunner
 from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfig
+from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.shadow import (
     build_shadow_name,
     resolve_model_for_create,
@@ -23,7 +24,6 @@ from together.lib.cli.api.beta.endpoints.shadow import (
     maybe_resolve_existing_deployment,
     verify_shadow_target_not_receiving_live_traffic,
 )
-from together.types.beta.endpoints.rollout import Rollout
 from together.types.beta.endpoints.shadow_experiments import ShadowExperimentTarget
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import AmbiguousDeploymentError
 
@@ -571,7 +571,8 @@ class TestMaybeResolveExistingDeployment:
 
     @pytest.mark.asyncio
     async def test_two_segment_ref_does_not_take_last_segment_endpoint(self) -> None:
-        colliding = MagicMock(id="ep_candidate", name="my-project/candidate")
+        colliding = MagicMock(id="ep_candidate")
+        colliding.name = "my-project/candidate"
         intended = MagicMock(id="ep_2")
         with patch(
             "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",
@@ -592,7 +593,8 @@ class TestMaybeResolveExistingDeployment:
 
     @pytest.mark.asyncio
     async def test_two_segment_false_positive_endpoint_without_deployment_is_not_found(self) -> None:
-        colliding = MagicMock(id="ep_candidate", name="my-project/candidate")
+        colliding = MagicMock(id="ep_candidate")
+        colliding.name = "my-project/candidate"
         with patch(
             "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",
             AsyncMock(return_value=colliding),
@@ -612,7 +614,8 @@ class TestMaybeResolveExistingDeployment:
 
     @pytest.mark.asyncio
     async def test_two_segment_ref_with_model_does_not_skip_to_create(self) -> None:
-        colliding = MagicMock(id="ep_candidate", name="my-project/candidate")
+        colliding = MagicMock(id="ep_candidate")
+        colliding.name = "my-project/candidate"
         intended = MagicMock(id="ep_2")
         with patch(
             "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",
@@ -633,7 +636,8 @@ class TestMaybeResolveExistingDeployment:
 
     @pytest.mark.asyncio
     async def test_qualified_endpoint_name_with_model_is_create_path(self) -> None:
-        endpoint = MagicMock(id="ep_1", name="my-project/my-endpoint")
+        endpoint = MagicMock(id="ep_1")
+        endpoint.name = "my-project/my-endpoint"
         resolve_deployment = AsyncMock()
         with patch(
             "together.lib.cli.api.beta.endpoints.shadow.resolve_endpoint",

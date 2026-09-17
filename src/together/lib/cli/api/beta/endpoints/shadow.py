@@ -25,6 +25,7 @@ from together.types.beta.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
+from together.lib.cli.api.beta.endpoints._utils._rollouts import fallback_active_rollout_from_list
 from together.lib.cli.api.beta.endpoints._utils._parameters import ModelPromptParameter, EndpointPromptParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
@@ -35,7 +36,6 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_autoscaling
-from together.lib.cli.api.beta.endpoints._utils._rollouts import fallback_active_rollout_from_list
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import (
     AmbiguousDeploymentError,
     resolve_deployment_id,
@@ -253,7 +253,7 @@ def _is_explicit_deployment_ref(value: str) -> bool:
 
 
 def _endpoint_name_matches_ref(endpoint_name: str | None, ref: str) -> bool:
-    if not endpoint_name:
+    if not isinstance(endpoint_name, str):
         return False
     if endpoint_name == ref:
         return True
@@ -310,7 +310,7 @@ async def maybe_resolve_existing_deployment(
         _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
         return endpoint, deployment_id
 
-    if not _endpoint_name_matches_ref(endpoint.name, endpoint_or_deployment):
+    if "/" in endpoint_or_deployment and not _endpoint_name_matches_ref(endpoint.name, endpoint_or_deployment):
         # resolve_endpoint last-segment-matches, so `other-endpoint/candidate` can hit an
         # endpoint named `candidate`. That is a false positive — try the deployment.
         try:
