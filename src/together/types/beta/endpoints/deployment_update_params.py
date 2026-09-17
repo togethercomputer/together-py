@@ -29,5 +29,12 @@ class DeploymentUpdateParams(TypedDict, total=False):
     The update is rejected if this value no longer matches.
     """
 
+    inactive_timeout: Annotated[int, PropertyInfo(alias="inactiveTimeout")]
+    """Updated inactive timeout in minutes.
+
+    Use 0 to disable automatic stopping; otherwise accepted values are 30
+    through 1440.
+    """
+
     name: str
     """Updated endpoint string."""

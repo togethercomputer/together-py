@@ -60,6 +60,7 @@ class DeploymentsResource(SyncAPIResource):
         config: str | Omit = omit,
         config_id: str | Omit = omit,
         enable_lora: bool | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         model: str | Omit = omit,
         model_id: str | Omit = omit,
         model_revision_id: str | Omit = omit,
@@ -96,6 +97,9 @@ class DeploymentsResource(SyncAPIResource):
               `config` is unset.
 
           enable_lora: Enables dynamic loading of LoRA adapters on the deployment.
+
+          inactive_timeout: Inactive timeout in minutes. Use 0 or omit to disable automatic stopping;
+              otherwise accepted values are 30 through 1440.
 
           model: Model resource name in the form
               `projects/{projectId}/models/{modelId}[/revisions/{revisionId}]`. Omit the
@@ -137,6 +141,7 @@ class DeploymentsResource(SyncAPIResource):
                     "config": config,
                     "config_id": config_id,
                     "enable_lora": enable_lora,
+                    "inactive_timeout": inactive_timeout,
                     "model": model,
                     "model_id": model_id,
                     "model_revision_id": model_revision_id,
@@ -219,6 +224,7 @@ class DeploymentsResource(SyncAPIResource):
         update_mask: str | Omit = omit,
         autoscaling: DeploymentAutoscalingParam | Omit = omit,
         etag: str | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         name: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -245,6 +251,9 @@ class DeploymentsResource(SyncAPIResource):
 
           etag: Current deployment version. The update is rejected if this value no longer
               matches.
+
+          inactive_timeout: Updated inactive timeout in minutes. Use 0 to disable automatic stopping;
+              otherwise accepted values are 30 through 1440.
 
           name: Updated endpoint string.
 
@@ -276,6 +285,7 @@ class DeploymentsResource(SyncAPIResource):
                 {
                     "autoscaling": autoscaling,
                     "etag": etag,
+                    "inactive_timeout": inactive_timeout,
                     "name": name,
                 },
                 deployment_update_params.DeploymentUpdateParams,
@@ -464,6 +474,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
         config: str | Omit = omit,
         config_id: str | Omit = omit,
         enable_lora: bool | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         model: str | Omit = omit,
         model_id: str | Omit = omit,
         model_revision_id: str | Omit = omit,
@@ -500,6 +511,9 @@ class AsyncDeploymentsResource(AsyncAPIResource):
               `config` is unset.
 
           enable_lora: Enables dynamic loading of LoRA adapters on the deployment.
+
+          inactive_timeout: Inactive timeout in minutes. Use 0 or omit to disable automatic stopping;
+              otherwise accepted values are 30 through 1440.
 
           model: Model resource name in the form
               `projects/{projectId}/models/{modelId}[/revisions/{revisionId}]`. Omit the
@@ -541,6 +555,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
                     "config": config,
                     "config_id": config_id,
                     "enable_lora": enable_lora,
+                    "inactive_timeout": inactive_timeout,
                     "model": model,
                     "model_id": model_id,
                     "model_revision_id": model_revision_id,
@@ -623,6 +638,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
         update_mask: str | Omit = omit,
         autoscaling: DeploymentAutoscalingParam | Omit = omit,
         etag: str | Omit = omit,
+        inactive_timeout: int | Omit = omit,
         name: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -649,6 +665,9 @@ class AsyncDeploymentsResource(AsyncAPIResource):
 
           etag: Current deployment version. The update is rejected if this value no longer
               matches.
+
+          inactive_timeout: Updated inactive timeout in minutes. Use 0 to disable automatic stopping;
+              otherwise accepted values are 30 through 1440.
 
           name: Updated endpoint string.
 
@@ -680,6 +699,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
                 {
                     "autoscaling": autoscaling,
                     "etag": etag,
+                    "inactive_timeout": inactive_timeout,
                     "name": name,
                 },
                 deployment_update_params.DeploymentUpdateParams,

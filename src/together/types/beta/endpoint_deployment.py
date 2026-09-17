@@ -127,6 +127,12 @@ class EndpointDeployment(BaseModel):
     under the current routing configuration. Absent or unrouted deployments are 0.
     """
 
+    inactive_timeout: Optional[int] = FieldInfo(alias="inactiveTimeout", default=None)
+    """Minutes without an inference request before the deployment stops automatically.
+
+    Omitted or 0 means automatic stopping is disabled.
+    """
+
     placement: Optional[Placement] = None
     """Placement controls where a deployment is scheduled."""
 

@@ -86,6 +86,7 @@ class TestDeployments:
             config="config",
             config_id="configId",
             enable_lora=True,
+            inactive_timeout=0,
             model="model",
             model_id="modelId",
             model_revision_id="modelRevisionId",
@@ -269,6 +270,7 @@ class TestDeployments:
                 ],
             },
             etag="etag",
+            inactive_timeout=0,
             name="name",
         )
         assert_matches_type(EndpointDeployment, deployment, path=["response"])
@@ -525,6 +527,7 @@ class TestAsyncDeployments:
             config="config",
             config_id="configId",
             enable_lora=True,
+            inactive_timeout=0,
             model="model",
             model_id="modelId",
             model_revision_id="modelRevisionId",
@@ -708,6 +711,7 @@ class TestAsyncDeployments:
                 ],
             },
             etag="etag",
+            inactive_timeout=0,
             name="name",
         )
         assert_matches_type(EndpointDeployment, deployment, path=["response"])

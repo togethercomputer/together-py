@@ -45,6 +45,13 @@ class DeploymentCreateParams(TypedDict, total=False):
     enable_lora: Annotated[bool, PropertyInfo(alias="enableLora")]
     """Enables dynamic loading of LoRA adapters on the deployment."""
 
+    inactive_timeout: Annotated[int, PropertyInfo(alias="inactiveTimeout")]
+    """Inactive timeout in minutes.
+
+    Use 0 or omit to disable automatic stopping; otherwise accepted values are 30
+    through 1440.
+    """
+
     model: str
     """
     Model resource name in the form
