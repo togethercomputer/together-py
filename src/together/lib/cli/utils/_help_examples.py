@@ -348,7 +348,7 @@ BETA_ENDPOINTS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints ab Qwen/Qwen2.5-7B --control <deployment-id> --percent 10[/primary]
 
 [dim]-[/dim] Mirror live traffic to a shadow deployment:
-  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> --rate 0.1[/primary]
+  [primary]tg beta endpoints shadow <endpoint-name-or-id> Qwen/Qwen2.5-7B --rate 0.1[/primary]
 
 [dim]-[/dim] Delete a deployment, experiment, rollout, or entire endpoint:
   [primary]tg beta endpoints rm <ep_|dep_|abx_|exp_|rol_...>[/primary]
@@ -444,22 +444,25 @@ BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Mirror 10% of live requests to a shadow deployment:
-  [primary]tg beta endpoints shadow Qwen/Qwen2.5-7B --endpoint <endpoint-name-or-id> \\
-    --rate 0.1[/primary]
+  [primary]tg beta endpoints shadow <endpoint-name-or-id> Qwen/Qwen2.5-7B --rate 0.1[/primary]
 
 [dim]-[/dim] Adaptive sampling to a target QPS:
-  [primary]tg beta endpoints shadow zai-org/GLM-5.1 --endpoint <endpoint-name-or-id> \\
-    --target-qps 5[/primary]
+  [primary]tg beta endpoints shadow <endpoint-name-or-id> zai-org/GLM-5.1 --target-qps 5[/primary]
 
 [dim]-[/dim] Sticky key-based sampling on a request field:
-  [primary]tg beta endpoints shadow deepseek-ai/DeepSeek-V4-Flash --endpoint <endpoint-name-or-id> \\
+  [primary]tg beta endpoints shadow <endpoint-name-or-id> deepseek-ai/DeepSeek-V4-Flash \\
     --rate 0.2 --key user_id[/primary]
 
 [dim]-[/dim] Shadow a private model with an explicit config:
-  [primary]tg beta endpoints shadow ml_xxxxxxxxxxxx --endpoint <endpoint-name-or-id> \\
+  [primary]tg beta endpoints shadow <endpoint-name-or-id> ml_xxxxxxxxxxxx \\
     --config cr_yyyyyyyyyyyy --rate 0.05 --name my-shadow[/primary]
 
-[dim]Note:[/dim] Shadow targets cannot be live traffic-split members or active rollout participants.
+[dim]-[/dim] Mirror traffic to an existing deployment:
+  [primary]tg beta endpoints shadow dep_xxxxxxxxxxxx --rate 0.1[/primary]
+
+[dim]Note:[/dim] ENDPOINT is the first positional (`shadow <ENDPOINT> <MODEL>`). The 2.34.0 form
+`shadow <MODEL> --endpoint <ENDPOINT>` is no longer accepted. Shadow targets cannot be
+live traffic-split members or active rollout participants.
 """
 
 BETA_ENDPOINTS_RM_HELP_EXAMPLES = """[dim]Examples:[/dim]

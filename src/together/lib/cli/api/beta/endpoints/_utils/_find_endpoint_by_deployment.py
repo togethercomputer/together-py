@@ -20,7 +20,12 @@ def _deployment_matches(deployment_id_or_name: str, deployment_id: str, deployme
         return False
     if deployment_name == deployment_id_or_name:
         return True
-    return deployment_name.rsplit("/", 1)[-1] == deployment_id_or_name.rsplit("/", 1)[-1]
+    if "/" in deployment_id_or_name:
+        # Qualified refs must not collapse to the last segment — that makes
+        # `project/endpoint/canary` collide with another endpoint's `canary`,
+        # and `other-endpoint/canary` silently attach the wrong endpoint.
+        return deployment_name.endswith("/" + deployment_id_or_name)
+    return deployment_name.rsplit("/", 1)[-1] == deployment_id_or_name
 
 
 async def _collect_deployment_matches(

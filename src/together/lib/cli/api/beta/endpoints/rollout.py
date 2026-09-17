@@ -17,7 +17,10 @@ from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.rollout import Rollout
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
 from together.types.beta.endpoints.rollout_create_params import Canary, Rolling, BlueGreen
-from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
+from together.lib.cli.api.beta.endpoints._utils._rollouts import (
+    resolve_rollout_by_id,
+    fallback_active_rollout_from_list,
+)
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_endpoint
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import normalize_duration
 from together.lib.cli.api.beta.endpoints._utils._build_rollout_metric import (
@@ -775,39 +778,6 @@ async def _resolve_active_rollout(config: CLIConfigParameter, ref: str) -> Rollo
             ) from None
 
 
-_TERMINAL_ROLLOUT_STATES = frozenset(
-    {
-        "ROLLOUT_STATE_COMPLETED",
-        "ROLLOUT_STATE_CANCELED",
-        "ROLLOUT_STATE_CANCELLING",
-    }
-)
-
-
-async def _fallback_active_rollout_from_list(client: AsyncClient, endpoint_id: str) -> Rollout | None:
-    """Pick a controllable rollout when ``activeRolloutId`` is missing.
-
-    HACK / workaround: the server should always set ``endpoint.activeRolloutId``
-    for the in-progress rollout. It sometimes fails to, which breaks control
-    flags (--cancel/--pause/--resume/--promote). Until that is fixed, list
-    rollouts and use the newest non-terminal one if present.
-
-    Intentionally omits ``filter=ROLLOUT_FILTER_ACTIVE``: that server filter can
-    exclude paused / system-paused rollouts, which ``--resume`` still needs.
-    Non-terminal is enforced client-side so we never hand a completed/canceled
-    rollout to pause/resume/etc.
-    """
-    candidates: list[Rollout] = []
-    async for rollout in client.beta.endpoints.rollouts.list(endpoint_id=endpoint_id, limit=50):
-        if rollout.state not in _TERMINAL_ROLLOUT_STATES:
-            candidates.append(rollout)
-
-    if not candidates:
-        return None
-
-    return max(candidates, key=lambda r: r.created_at)
-
-
 async def _active_rollout_for_endpoint(config: CLIConfigParameter, endpoint_ref: str) -> Rollout:
     endpoint = await resolve_endpoint(config, endpoint_ref)
     # List stubs (name lookup) can omit active_rollout_id — re-fetch for the
@@ -821,8 +791,8 @@ async def _active_rollout_for_endpoint(config: CLIConfigParameter, endpoint_ref:
         )
         return rollout
 
-    # See _fallback_active_rollout_from_list — server should have set activeRolloutId.
-    rollout_lazy_loaded = await _fallback_active_rollout_from_list(config.client, endpoint.id)
+    # See fallback_active_rollout_from_list — server should have set activeRolloutId.
+    rollout_lazy_loaded = await fallback_active_rollout_from_list(config.client, endpoint.id)
     if rollout_lazy_loaded is None:
         raise NoActiveRolloutError(f"No active rollout on endpoint {endpoint.id}.")
     return rollout_lazy_loaded
@@ -839,8 +809,8 @@ async def _active_rollout_for_deployment(client: AsyncClient, deployment_ref: st
         )
         return rollout
 
-    # See _fallback_active_rollout_from_list — server should have set activeRolloutId.
-    rollout_lazy_loaded = await _fallback_active_rollout_from_list(client, endpoint.id)
+    # See fallback_active_rollout_from_list — server should have set activeRolloutId.
+    rollout_lazy_loaded = await fallback_active_rollout_from_list(client, endpoint.id)
     if rollout_lazy_loaded is None:
         raise NoActiveRolloutError(f"No active rollout on endpoint {endpoint.id} (via deployment {deployment_ref!r}).")
     return rollout_lazy_loaded

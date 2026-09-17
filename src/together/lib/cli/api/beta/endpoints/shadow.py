@@ -8,8 +8,8 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from cyclopts.validators import Number as CycloptsNumberValidator
 
-from together import APIError, AsyncClient
-from together.types.beta import ShadowSourceParam, ShadowEndpointSourceParam
+from together import APIError, AsyncClient, NotFoundError
+from together.types.beta import Endpoint, ShadowSourceParam, ShadowEndpointSourceParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.endpoints import ShadowExperiment
@@ -17,6 +17,7 @@ from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
+from together.types.beta.endpoints.shadow_experiments import ShadowExperimentTarget
 from together.types.beta.shadow_endpoint_source_param import (
     Sampling,
     SamplingUniform,
@@ -24,7 +25,8 @@ from together.types.beta.shadow_endpoint_source_param import (
     SamplingAdaptiveUniform,
     SamplingAdaptiveKeyBased,
 )
-from together.lib.cli.api.beta.endpoints._utils._parameters import ModelParameter, EndpointPromptParameter
+from together.lib.cli.api.beta.endpoints._utils._rollouts import fallback_active_rollout_from_list
+from together.lib.cli.api.beta.endpoints._utils._parameters import ModelPromptParameter, EndpointPromptParameter
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_endpoint,
     construct_model_path,
@@ -34,32 +36,57 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_autoscaling
+from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import (
+    AmbiguousDeploymentError,
+    resolve_deployment_id,
+)
 
 
 async def shadow(
-    model: ModelParameter,
-    *,
-    endpoint_id_or_name: Annotated[
+    endpoint_or_deployment: Annotated[
         str,
         Parameter(
             name="endpoint",
-            help="Source endpoint whose live requests will be mirrored; accepts an endpoint ID (ep_...) or name",
+            help=(
+                "Source endpoint (ep_... or name) when creating a new shadow deployment, or an existing "
+                "deployment (dep_... or name) to attach as the shadow target"
+            ),
         ),
         EndpointPromptParameter(),
     ],
+    model: Annotated[
+        Optional[str],
+        Parameter(
+            help="""Model to deploy as the shadow target. Required when ENDPOINT is an endpoint ID/name; omit when
+ENDPOINT is an existing deployment. Accepted forms:
+
+- Public model name (for example, zai-org/GLM-5.2).
+- Private model name, with or without the project slug.
+- Private model ID (ml_...).
+- Fully qualified model resource path returned by the API."""
+        ),
+        ModelPromptParameter(instructions="What model would you like to shadow traffic to?", message="Model"),
+    ] = None,
+    *,
     config_id: Annotated[
         Optional[str],
         Parameter(
             help=(
                 "Config revision ID (cr_...) for the shadow deployment. Automatically selected only when one "
-                "compatible config exists."
+                "compatible config exists. Not used when shadowing an existing deployment."
             ),
             name="config",
         ),
     ] = None,
     name: Annotated[
         Optional[str],
-        Parameter(help="Shadow deployment name; defaults to the model name with a short suffix"),
+        Parameter(
+            help=(
+                "Shadow deployment name when creating a new deployment (defaults to the model name with a short "
+                "suffix); when shadowing an existing deployment, names the shadow target (defaults to "
+                "<deployment-name>-target)"
+            )
+        ),
     ] = None,
     rate: Annotated[
         Optional[float],
@@ -88,14 +115,72 @@ async def shadow(
     ] = False,
     config: CLIConfigParameter,
 ) -> None:
-    """Create a shadow deployment and mirror sampled live traffic without serving its responses.
+    """Mirror sampled live traffic to a shadow deployment without serving its responses.
 
-    The target deployment stays out of live traffic and active rollouts; weight-0
-    traffic-split warm-up deployments are valid shadow targets.
+    Pass an endpoint and MODEL to create a fresh shadow deployment, or pass an existing
+    deployment ID (dep_...) as ENDPOINT to attach it as the shadow target. The target stays
+    out of live traffic and active rollouts; weight-0 traffic-split warm-up deployments are
+    valid shadow targets.
     """
     rate, target_qps = await resolve_rate_or_target_qps(rate, target_qps, config=config)
 
-    endpoint_id = (await resolve_endpoint(config, endpoint_id_or_name)).id
+    sampling = build_sampling(rate=rate, key=key, target_qps=target_qps, window=window)
+    source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
+    shadow_name = build_shadow_name(rate, key, target_qps, window)
+
+    existing_deployment = await maybe_resolve_existing_deployment(
+        config,
+        endpoint_or_deployment,
+        model=model,
+        config_id=config_id,
+        enable_lora=enable_lora,
+    )
+    if existing_deployment is not None:
+        endpoint, resolved_deployment_id = existing_deployment
+        if resolved_deployment_id is not None:
+            endpoint_id = endpoint.id
+
+            await verify_shadow_target_not_receiving_live_traffic(config.client, endpoint, resolved_deployment_id)
+
+            deployment = await show_loading_status(
+                "Loading shadow deployment...",
+                config.client.beta.endpoints.deployments.retrieve(
+                    id=resolved_deployment_id,
+                    endpoint_id=endpoint_id,
+                ),
+            )
+            assert deployment.id is not None
+            target_name = name if name is not None else default_shadow_target_name(deployment.name)
+
+            experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
+            assert experiment.id is not None
+
+            await create_or_find_shadow_target(
+                config.client,
+                endpoint_id=endpoint_id,
+                experiment_id=experiment.id,
+                name=target_name,
+                target_deployment_id=deployment.id,
+            )
+
+            if config.json:
+                payload: dict[str, Any] = {"deployment": deployment, "shadow_experiment": experiment}
+                console.print_json(openapi_dumps(payload).decode("utf-8"))
+                return
+
+            console.print("[green]√[/green] Existing deployment added as shadow target; traffic mirroring started.")
+            await retrieve(endpoint_id, config=config)
+            return
+
+        # Bare endpoint name already resolved during the attach-vs-create probe.
+        model = await resolve_model_for_create(model, config=config)
+        endpoint_id = endpoint.id
+    else:
+        try:
+            endpoint_id = (await resolve_endpoint(config, endpoint_or_deployment)).id
+        except NotFoundError:
+            raise ValueError(f"Endpoint {endpoint_or_deployment} not found.") from None
+        model = await resolve_model_for_create(model, config=config)
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
 
@@ -112,13 +197,10 @@ async def shadow(
         short_uuid = str(uuid.uuid4())[:8]
         name = f"{resolved_model.name}-{short_uuid}".replace("/", "-")
 
-    sampling = build_sampling(rate=rate, key=key, target_qps=target_qps, window=window)
-    source = ShadowSourceParam(endpoint=ShadowEndpointSourceParam(sampling=sampling))
-    shadow_name = build_shadow_name(rate, key, target_qps, window)
-
     # If the shadow experiment already exists, we then just want to add the target to the existing experiment
     # This logic is turned on if the create fails with an error about the experiment already existing
     experiment = await create_or_find_shadow_experiment(config.client, endpoint_id, shadow_name, source)
+    assert experiment.id is not None
 
     deployment = await show_loading_status(
         "Creating shadow deployment...",
@@ -133,25 +215,140 @@ async def shadow(
     )
 
     assert deployment.id is not None
-    assert experiment.id is not None
 
-    await show_loading_status(
-        "Adding shadow experiment to deployment...",
-        config.client.beta.endpoints.shadow_experiments.targets.create(
-            endpoint_id=endpoint_id,
-            experiment_id=experiment.id,
-            name=name + "-target",
-            target_deployment_id=deployment.id,
-        ),
+    await create_or_find_shadow_target(
+        config.client,
+        endpoint_id=endpoint_id,
+        experiment_id=experiment.id,
+        name=name + "-target",
+        target_deployment_id=deployment.id,
     )
 
     if config.json:
-        payload: dict[str, Any] = {"deployment": deployment, "shadow_experiment": experiment}
+        payload = {"deployment": deployment, "shadow_experiment": experiment}
         console.print_json(openapi_dumps(payload).decode("utf-8"))
         return
 
     console.print("[green]√[/green] Shadow deployment created and traffic mirroring started.")
     await retrieve(endpoint_id, config=config)
+
+
+def _reject_create_args_for_existing_deployment(
+    *,
+    model: str | None,
+    config_id: str | None,
+    enable_lora: bool,
+) -> None:
+    if model is not None:
+        raise ValueError("Do not pass MODEL when ENDPOINT is an existing deployment.")
+    if config_id is not None:
+        raise ValueError("Do not pass --config when ENDPOINT is an existing deployment.")
+    if enable_lora:
+        raise ValueError("Do not pass --enable-lora when ENDPOINT is an existing deployment.")
+
+
+def _is_explicit_deployment_ref(value: str) -> bool:
+    # dep_... or fully qualified <project_slug>/<endpoint_name>/<deployment_name>
+    return value.startswith("dep_") or value.count("/") >= 2
+
+
+def _endpoint_name_matches_ref(endpoint_name: str | None, ref: str) -> bool:
+    if not isinstance(endpoint_name, str):
+        return False
+    if endpoint_name == ref:
+        return True
+    if "/" in ref:
+        return endpoint_name.endswith("/" + ref)
+    return endpoint_name.rsplit("/", 1)[-1] == ref
+
+
+async def maybe_resolve_existing_deployment(
+    config: CLIConfig,
+    endpoint_or_deployment: str,
+    *,
+    model: str | None,
+    config_id: str | None,
+    enable_lora: bool,
+) -> tuple[Endpoint, str | None] | None:
+    """Resolve the first positional as an existing deployment or a known endpoint.
+
+    Returns:
+    - ``(endpoint, deployment_id)`` when attaching an existing deployment
+    - ``(endpoint, None)`` when the name is an endpoint (create path; caller already
+      has the endpoint, so it should not re-resolve)
+    - ``None`` when the caller should resolve the endpoint itself (``ep_...`` or
+      ENDPOINT + MODEL)
+    """
+    if endpoint_or_deployment.startswith("ep_"):
+        return None
+
+    explicitly_deployment = _is_explicit_deployment_ref(endpoint_or_deployment)
+
+    if not explicitly_deployment and model is not None and "/" not in endpoint_or_deployment:
+        # Create path: bare ENDPOINT + MODEL. Slash-containing refs can be 2-segment
+        # deployment names (`other-endpoint/candidate`); those must not skip to create.
+        return None
+
+    if explicitly_deployment:
+        # Reject conflicting create-only flags before the paginated endpoints.list walk.
+        _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
+        return await resolve_deployment_id(config.client, endpoint_or_deployment)
+
+    # Bare / endpoint-style name with no MODEL: prefer an endpoint match so a deployment
+    # that shares the last path segment does not silently switch this to attach-existing.
+    try:
+        endpoint = await resolve_endpoint(config, endpoint_or_deployment)
+    except ValueError as endpoint_error:
+        try:
+            endpoint, deployment_id = await resolve_deployment_id(config.client, endpoint_or_deployment)
+        except AmbiguousDeploymentError:
+            raise
+        except ValueError:
+            # Neither an endpoint nor a deployment — surface the endpoint miss rather than
+            # rewriting it as "MODEL is required".
+            raise endpoint_error from None
+        _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
+        return endpoint, deployment_id
+
+    if "/" in endpoint_or_deployment and not _endpoint_name_matches_ref(endpoint.name, endpoint_or_deployment):
+        # resolve_endpoint last-segment-matches, so `other-endpoint/candidate` can hit an
+        # endpoint named `candidate`. That is a false positive — try the deployment.
+        try:
+            endpoint, deployment_id = await resolve_deployment_id(config.client, endpoint_or_deployment)
+        except AmbiguousDeploymentError:
+            raise
+        except ValueError:
+            raise ValueError(f"Endpoint {endpoint_or_deployment} not found.") from None
+        _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
+        return endpoint, deployment_id
+
+    return endpoint, None
+
+
+async def resolve_model_for_create(
+    model: str | None,
+    *,
+    config: CLIConfig,
+) -> str:
+    if model is not None:
+        return model
+
+    if config.non_interactive:
+        raise ValueError("MODEL is required when ENDPOINT is an endpoint ID or name.")
+
+    try:
+        prompt = ModelPromptParameter(
+            instructions="What model would you like to shadow traffic to?",
+            message="Model",
+        )
+        await prompt.preprompt(config)
+        value = await prompt.prompt("model")
+        console.print("")
+        return cast(str, value)
+    except (ImportError, EOFError) as e:
+        # questionary missing / non-TTY — same hard error as non-interactive.
+        # API failures from preprompt (auth, 5xx, timeout) must propagate unchanged.
+        raise ValueError("MODEL is required when ENDPOINT is an endpoint ID or name.") from e
 
 
 async def resolve_rate_or_target_qps(
@@ -228,6 +425,130 @@ async def create_or_find_shadow_experiment(
             ) from None
         else:
             raise e from e
+
+
+async def create_or_find_shadow_target(
+    client: AsyncClient,
+    *,
+    endpoint_id: str,
+    experiment_id: str,
+    name: str,
+    target_deployment_id: str,
+) -> ShadowExperimentTarget:
+    try:
+        return await show_loading_status(
+            "Adding shadow experiment to deployment...",
+            client.beta.endpoints.shadow_experiments.targets.create(
+                endpoint_id=endpoint_id,
+                experiment_id=experiment_id,
+                name=name,
+                target_deployment_id=target_deployment_id,
+            ),
+        )
+    except APIError as e:
+        if "already exists" not in e.message.lower():
+            raise
+
+        targets: list[ShadowExperimentTarget] = []
+        async for target in client.beta.endpoints.shadow_experiments.targets.list(
+            endpoint_id=endpoint_id,
+            experiment_id=experiment_id,
+        ):
+            targets.append(target)
+        try:
+            return match_existing_shadow_target(
+                targets,
+                name=name,
+                target_deployment_id=target_deployment_id,
+                experiment_id=experiment_id,
+            )
+        except ValueError as err:
+            raise err from None
+
+
+def match_existing_shadow_target(
+    targets: list[ShadowExperimentTarget],
+    *,
+    name: str,
+    target_deployment_id: str,
+    experiment_id: str,
+) -> ShadowExperimentTarget:
+    """Pick a 409 fallback target after scanning the full list.
+
+    Name conflicts with a different deployment always win, regardless of list order,
+    so a same-deployment match cannot swallow ``--name``.
+    """
+    name_match: ShadowExperimentTarget | None = None
+    deployment_match: ShadowExperimentTarget | None = None
+    for target in targets:
+        if target.name == name:
+            name_match = target
+        if target.target_deployment_id == target_deployment_id:
+            deployment_match = target
+
+    if name_match is not None:
+        if name_match.target_deployment_id == target_deployment_id:
+            return name_match
+        raise ValueError(f"Shadow target {name} already exists on this experiment for a different deployment.")
+
+    if deployment_match is not None:
+        raise ValueError(
+            f"Deployment {target_deployment_id} is already a shadow target on this experiment "
+            f"as {deployment_match.name!r}."
+        )
+
+    raise ValueError(
+        f"Shadow target {name} already exists on experiment {experiment_id} but could not be loaded. "
+        "This is likely a bug in the CLI. Please report it to the Together team."
+    )
+
+
+def default_shadow_target_name(deployment_name: str) -> str:
+    return f"{deployment_name.rsplit('/', 1)[-1]}-target"
+
+
+async def verify_shadow_target_not_receiving_live_traffic(
+    client: AsyncClient,
+    endpoint: Endpoint,
+    deployment_id: str,
+) -> None:
+    traffic_split = endpoint.traffic_split or []
+    live = next(
+        (entry for entry in traffic_split if entry.deployment_id == deployment_id and entry.weight > 0),
+        None,
+    )
+    if live is not None:
+        raise ValueError(
+            f"Deployment {deployment_id} is a live traffic-split member. "
+            "Set its traffic weight to 0 (or remove it from the split) before using it as a shadow target."
+        )
+
+    # List stubs from resolve_deployment_id can omit active_rollout_id. Re-fetch
+    # the endpoint for the canonical value, matching rollout.py. If retrieve still
+    # has no id, the server sometimes omits it for an in-flight rollout — list
+    # non-terminal rollouts the same way rollout.py does.
+    if endpoint.active_rollout_id is None:
+        endpoint = await client.beta.endpoints.retrieve(endpoint.id)
+
+    rollout = None
+    if endpoint.active_rollout_id:
+        try:
+            rollout = await client.beta.endpoints.rollouts.retrieve(
+                endpoint.active_rollout_id,
+                endpoint_id=endpoint.id,
+            )
+        except NotFoundError:
+            return
+    else:
+        rollout = await fallback_active_rollout_from_list(client, endpoint.id)
+        if rollout is None:
+            return
+
+    if deployment_id in {rollout.source_deployment_id, rollout.target_deployment_id}:
+        raise ValueError(
+            f"Deployment {deployment_id} is a participant in active rollout {rollout.id}. "
+            "Finish or cancel the rollout before using it as a shadow target."
+        )
 
 
 def build_sampling(
