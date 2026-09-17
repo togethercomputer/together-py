@@ -35,6 +35,7 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_autoscaling
+from together.lib.cli.api.beta.endpoints._utils._rollouts import fallback_active_rollout_from_list
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import (
     AmbiguousDeploymentError,
     resolve_deployment_id,
@@ -175,8 +176,11 @@ ENDPOINT is an existing deployment. Accepted forms:
         model = await resolve_model_for_create(model, config=config)
         endpoint_id = endpoint.id
     else:
+        try:
+            endpoint_id = (await resolve_endpoint(config, endpoint_or_deployment)).id
+        except NotFoundError:
+            raise ValueError(f"Endpoint {endpoint_or_deployment} not found.") from None
         model = await resolve_model_for_create(model, config=config)
-        endpoint_id = (await resolve_endpoint(config, endpoint_or_deployment)).id
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
 
@@ -248,6 +252,16 @@ def _is_explicit_deployment_ref(value: str) -> bool:
     return value.startswith("dep_") or value.count("/") >= 2
 
 
+def _endpoint_name_matches_ref(endpoint_name: str | None, ref: str) -> bool:
+    if not endpoint_name:
+        return False
+    if endpoint_name == ref:
+        return True
+    if "/" in ref:
+        return endpoint_name.endswith("/" + ref)
+    return endpoint_name.rsplit("/", 1)[-1] == ref
+
+
 async def maybe_resolve_existing_deployment(
     config: CLIConfig,
     endpoint_or_deployment: str,
@@ -270,8 +284,9 @@ async def maybe_resolve_existing_deployment(
 
     explicitly_deployment = _is_explicit_deployment_ref(endpoint_or_deployment)
 
-    if not explicitly_deployment and model is not None:
-        # Create path: ENDPOINT + MODEL
+    if not explicitly_deployment and model is not None and "/" not in endpoint_or_deployment:
+        # Create path: bare ENDPOINT + MODEL. Slash-containing refs can be 2-segment
+        # deployment names (`other-endpoint/candidate`); those must not skip to create.
         return None
 
     if explicitly_deployment:
@@ -292,6 +307,18 @@ async def maybe_resolve_existing_deployment(
             # Neither an endpoint nor a deployment — surface the endpoint miss rather than
             # rewriting it as "MODEL is required".
             raise endpoint_error from None
+        _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
+        return endpoint, deployment_id
+
+    if not _endpoint_name_matches_ref(endpoint.name, endpoint_or_deployment):
+        # resolve_endpoint last-segment-matches, so `other-endpoint/candidate` can hit an
+        # endpoint named `candidate`. That is a false positive — try the deployment.
+        try:
+            endpoint, deployment_id = await resolve_deployment_id(config.client, endpoint_or_deployment)
+        except AmbiguousDeploymentError:
+            raise
+        except ValueError:
+            raise ValueError(f"Endpoint {endpoint_or_deployment} not found.") from None
         _reject_create_args_for_existing_deployment(model=model, config_id=config_id, enable_lora=enable_lora)
         return endpoint, deployment_id
 
@@ -497,24 +524,29 @@ async def verify_shadow_target_not_receiving_live_traffic(
         )
 
     # List stubs from resolve_deployment_id can omit active_rollout_id. Re-fetch
-    # the endpoint for the canonical value, matching rollout.py.
+    # the endpoint for the canonical value, matching rollout.py. If retrieve still
+    # has no id, the server sometimes omits it for an in-flight rollout — list
+    # non-terminal rollouts the same way rollout.py does.
     if endpoint.active_rollout_id is None:
         endpoint = await client.beta.endpoints.retrieve(endpoint.id)
 
-    if not endpoint.active_rollout_id:
-        return
-
-    try:
-        rollout = await client.beta.endpoints.rollouts.retrieve(
-            endpoint.active_rollout_id,
-            endpoint_id=endpoint.id,
-        )
-    except NotFoundError:
-        return
+    rollout = None
+    if endpoint.active_rollout_id:
+        try:
+            rollout = await client.beta.endpoints.rollouts.retrieve(
+                endpoint.active_rollout_id,
+                endpoint_id=endpoint.id,
+            )
+        except NotFoundError:
+            return
+    else:
+        rollout = await fallback_active_rollout_from_list(client, endpoint.id)
+        if rollout is None:
+            return
 
     if deployment_id in {rollout.source_deployment_id, rollout.target_deployment_id}:
         raise ValueError(
-            f"Deployment {deployment_id} is a participant in active rollout {endpoint.active_rollout_id}. "
+            f"Deployment {deployment_id} is a participant in active rollout {rollout.id}. "
             "Finish or cancel the rollout before using it as a shadow target."
         )
 

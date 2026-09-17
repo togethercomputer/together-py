@@ -3,6 +3,36 @@ from __future__ import annotations
 from together import AsyncClient, omit
 from together.types.beta.endpoints.rollout import Rollout
 
+_TERMINAL_ROLLOUT_STATES = frozenset(
+    {
+        "ROLLOUT_STATE_COMPLETED",
+        "ROLLOUT_STATE_CANCELED",
+        "ROLLOUT_STATE_CANCELLING",
+    }
+)
+
+
+async def fallback_active_rollout_from_list(client: AsyncClient, endpoint_id: str) -> Rollout | None:
+    """Pick a controllable rollout when ``activeRolloutId`` is missing.
+
+    HACK / workaround: the server should always set ``endpoint.activeRolloutId``
+    for the in-progress rollout. It sometimes fails to. Until that is fixed, list
+    rollouts and use the newest non-terminal one if present.
+
+    Intentionally omits ``filter=ROLLOUT_FILTER_ACTIVE``: that server filter can
+    exclude paused / system-paused rollouts. Non-terminal is enforced client-side
+    so we never treat a completed/canceled rollout as active.
+    """
+    candidates: list[Rollout] = []
+    async for rollout in client.beta.endpoints.rollouts.list(endpoint_id=endpoint_id, limit=50):
+        if rollout.state not in _TERMINAL_ROLLOUT_STATES:
+            candidates.append(rollout)
+
+    if not candidates:
+        return None
+
+    return max(candidates, key=lambda r: r.created_at)
+
 
 async def resolve_rollout_by_id(
     client: AsyncClient,
