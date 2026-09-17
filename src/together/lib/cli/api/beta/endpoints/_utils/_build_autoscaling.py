@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Literal, cast, overload
 
-from together.types.beta import DeploymentAutoscalingParam, ScalingMetricParam
+from together.types.beta import ScalingMetricParam, DeploymentAutoscalingParam
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 
