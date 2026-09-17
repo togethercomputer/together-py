@@ -496,6 +496,11 @@ async def verify_shadow_target_not_receiving_live_traffic(
             "Set its traffic weight to 0 (or remove it from the split) before using it as a shadow target."
         )
 
+    # List stubs from resolve_deployment_id can omit active_rollout_id. Re-fetch
+    # the endpoint for the canonical value, matching rollout.py.
+    if endpoint.active_rollout_id is None:
+        endpoint = await client.beta.endpoints.retrieve(endpoint.id)
+
     if not endpoint.active_rollout_id:
         return
 
