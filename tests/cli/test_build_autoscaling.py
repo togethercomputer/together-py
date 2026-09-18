@@ -5,7 +5,9 @@ import pytest
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     build_autoscaling,
     normalize_duration,
+    build_scaling_rules,
     build_scaling_metrics,
+    build_autoscaling_update_mask,
 )
 
 
@@ -64,6 +66,58 @@ def test_build_scaling_metrics_rejects_percentile_on_utilization(capsys: pytest.
     assert "--scaling-percentile only applies to latency metrics" in capsys.readouterr().out
 
 
+def test_build_scaling_rules_includes_policies_and_select_policy() -> None:
+    rules = build_scaling_rules(
+        policies=["pods:2:60", "percent:100:300"],
+        select_policy="min",
+        option_prefix="scale-up",
+    )
+
+    assert rules == {
+        "policies": [
+            {
+                "type": "SCALING_POLICY_TYPE_PODS",
+                "value": 2,
+                "period_seconds": 60,
+            },
+            {
+                "type": "SCALING_POLICY_TYPE_PERCENT",
+                "value": 100,
+                "period_seconds": 300,
+            },
+        ],
+        "select_policy": "SCALING_POLICY_SELECT_MIN",
+    }
+
+
+def test_build_scaling_rules_can_clear_policies_and_reset_selector() -> None:
+    assert build_scaling_rules(
+        policies=None,
+        select_policy=None,
+        clear_policies=True,
+        reset_select_policy=True,
+        option_prefix="scale-down",
+    ) == {"policies": []}
+
+
+@pytest.mark.parametrize("policy", ["pods:2", "workers:2:60", "pods:0:60", "pods:2:1801"])
+def test_build_scaling_rules_rejects_invalid_policy(policy: str, capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        build_scaling_rules(policies=[policy], select_policy=None, option_prefix="scale-up")
+    assert "--scale-up-policy" in capsys.readouterr().out
+
+
+def test_build_scaling_rules_rejects_conflicting_clear(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        build_scaling_rules(
+            policies=["pods:2:60"],
+            select_policy=None,
+            clear_policies=True,
+            option_prefix="scale-up",
+        )
+    assert "use either --scale-up-policy or --clear-scale-up-policies" in capsys.readouterr().out
+
+
 def test_build_autoscaling_includes_single_metric() -> None:
     autoscaling = build_autoscaling(
         min_replicas=1,
@@ -84,6 +138,74 @@ def test_build_autoscaling_includes_single_metric() -> None:
             }
         ],
     }
+
+
+def test_build_autoscaling_includes_scaling_rules() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=3,
+        scale_up_window=None,
+        scale_down_window=None,
+        scale_up=build_scaling_rules(
+            policies=["pods:2:60"],
+            select_policy="max",
+            option_prefix="scale-up",
+        ),
+        scale_down=build_scaling_rules(
+            policies=["percent:50:300"],
+            select_policy="disabled",
+            option_prefix="scale-down",
+        ),
+        required=True,
+    )
+
+    assert autoscaling == {
+        "min_replicas": 1,
+        "max_replicas": 3,
+        "scale_up": {
+            "policies": [{"type": "SCALING_POLICY_TYPE_PODS", "value": 2, "period_seconds": 60}],
+            "select_policy": "SCALING_POLICY_SELECT_MAX",
+        },
+        "scale_down": {
+            "policies": [{"type": "SCALING_POLICY_TYPE_PERCENT", "value": 50, "period_seconds": 300}],
+            "select_policy": "SCALING_POLICY_SELECT_DISABLED",
+        },
+    }
+
+
+def test_build_autoscaling_update_mask_uses_nested_policy_paths() -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=1,
+        max_replicas=None,
+        scale_up_window=None,
+        scale_down_window=None,
+        scale_up=build_scaling_rules(
+            policies=["pods:2:60"],
+            select_policy=None,
+            option_prefix="scale-up",
+        ),
+        scale_down=build_scaling_rules(
+            policies=None,
+            select_policy=None,
+            clear_policies=True,
+            reset_select_policy=True,
+            option_prefix="scale-down",
+        ),
+        required=False,
+        infer_replica_defaults=False,
+    )
+
+    assert autoscaling == {
+        "min_replicas": 1,
+        "scale_up": {"policies": [{"type": "SCALING_POLICY_TYPE_PODS", "value": 2, "period_seconds": 60}]},
+        "scale_down": {"policies": []},
+    }
+    assert build_autoscaling_update_mask(autoscaling, reset_scale_down_select_policy=True) == [
+        "autoscaling.minReplicas",
+        "autoscaling.scaleUp.policies",
+        "autoscaling.scaleDown.policies",
+        "autoscaling.scaleDown.selectPolicy",
+    ]
 
 
 def test_build_autoscaling_defaults_both_bounds_when_required() -> None:

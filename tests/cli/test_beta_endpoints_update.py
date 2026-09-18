@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 from typing import Any, cast
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
@@ -143,6 +144,10 @@ def _update_args(*extra: str) -> list[str]:
     return ["beta", "endpoints", "update", "--project", "proj", *extra, "--json"]
 
 
+def _update_mask(request: httpx.Request) -> list[str]:
+    return parse_qs(urlparse(str(request.url)).query)["updateMask"][0].split(",")
+
+
 def _mock_endpoint_list(respx_mock: MockRouter) -> None:
     respx_mock.get("/projects/proj/endpoints").mock(
         return_value=httpx.Response(
@@ -164,7 +169,7 @@ class TestBetaEndpointsUpdate:
 
         assert result.exit_code == 0, result.output
         req = cast(Call, route.calls[0]).request
-        assert "updateMask=autoscaling" in str(req.url)
+        assert _update_mask(req) == ["autoscaling.minReplicas", "autoscaling.maxReplicas"]
         assert json.loads(req.content.decode()) == {
             "autoscaling": {"minReplicas": 1, "maxReplicas": 2},
         }
@@ -182,7 +187,7 @@ class TestBetaEndpointsUpdate:
 
         assert result.exit_code == 0, result.output
         req = cast(Call, route.calls[0]).request
-        assert "updateMask=autoscaling" in str(req.url)
+        assert _update_mask(req) == ["autoscaling.scalingMetrics"]
         assert json.loads(req.content.decode()) == {
             "autoscaling": {
                 "scalingMetrics": [
@@ -210,6 +215,82 @@ class TestBetaEndpointsUpdate:
         assert json.loads(req.content.decode()) == {"inactiveTimeout": 0}
 
     @pytest.mark.respx(base_url=base_url)
+    def test_update_scaling_policies(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            _update_args(
+                "dep_control",
+                "--scale-up-policy",
+                "pods:2:60",
+                "--scale-up-select-policy",
+                "max",
+                "--scale-down-policy",
+                "percent:50:300",
+                "--scale-down-select-policy",
+                "disabled",
+            )
+        )
+
+        assert result.exit_code == 0, result.output
+        req = cast(Call, route.calls[0]).request
+        assert _update_mask(req) == [
+            "autoscaling.scaleUp.policies",
+            "autoscaling.scaleUp.selectPolicy",
+            "autoscaling.scaleDown.policies",
+            "autoscaling.scaleDown.selectPolicy",
+        ]
+        assert json.loads(req.content.decode()) == {
+            "autoscaling": {
+                "scaleUp": {
+                    "policies": [{"type": "SCALING_POLICY_TYPE_PODS", "value": 2, "periodSeconds": 60}],
+                    "selectPolicy": "SCALING_POLICY_SELECT_MAX",
+                },
+                "scaleDown": {
+                    "policies": [{"type": "SCALING_POLICY_TYPE_PERCENT", "value": 50, "periodSeconds": 300}],
+                    "selectPolicy": "SCALING_POLICY_SELECT_DISABLED",
+                },
+            },
+        }
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_clears_scaling_policies_and_resets_selector(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            _update_args(
+                "dep_control",
+                "--clear-scale-up-policies",
+                "--reset-scale-up-select-policy",
+                "--clear-scale-down-policies",
+                "--reset-scale-down-select-policy",
+            )
+        )
+
+        assert result.exit_code == 0, result.output
+        req = cast(Call, route.calls[0]).request
+        assert _update_mask(req) == [
+            "autoscaling.scaleUp.policies",
+            "autoscaling.scaleUp.selectPolicy",
+            "autoscaling.scaleDown.policies",
+            "autoscaling.scaleDown.selectPolicy",
+        ]
+        assert json.loads(req.content.decode()) == {
+            "autoscaling": {
+                "scaleUp": {"policies": []},
+                "scaleDown": {"policies": []},
+            },
+        }
+
+    @pytest.mark.respx(base_url=base_url)
     def test_update_idle_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
         route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_idle").mock(
@@ -219,6 +300,10 @@ class TestBetaEndpointsUpdate:
         result = cli_runner.invoke(_update_args("dep_idle", "--min-replicas", "0", "--max-replicas", "0"))
 
         assert result.exit_code == 0, result.output
+        assert _update_mask(cast(Call, route.calls[0]).request) == [
+            "autoscaling.minReplicas",
+            "autoscaling.maxReplicas",
+        ]
         assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {
             "autoscaling": {"minReplicas": 0, "maxReplicas": 0},
         }
@@ -237,6 +322,14 @@ class TestBetaEndpointsUpdate:
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
+        assert "--scale-up-policy" in output
+        assert "--scale-up-select-policy" in output
+        assert "--clear-scale-up-policies" in output
+        assert "--reset-scale-up-select-policy" in output
+        assert "--scale-down-policy" in output
+        assert "--scale-down-select-policy" in output
+        assert "--clear-scale-down-policies" in output
+        assert "--reset-scale-down-select-policy" in output
         assert "--inactive-timeout" in output
         assert "--scale-to-zero-window" not in output
 
