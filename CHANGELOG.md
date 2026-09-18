@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.36.0](https://github.com/togethercomputer/together-py/compare/v2.35.0...v2.36.0) (2026-09-18)
+
+
+### Features
+
+* **supported-models:** expose serverless pricing ([b0c7f91](https://github.com/togethercomputer/together-py/commit/b0c7f91e283a4b674c82be7558e69ddcadc46487))
+
 ## [2.35.0](https://github.com/togethercomputer/together-py/compare/v2.34.0...v2.35.0) (2026-09-17)
 
 
