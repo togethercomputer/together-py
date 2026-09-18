@@ -61,6 +61,20 @@ def _file_response(**kwargs: Any) -> FileResponse:
     return FileResponse.parse_obj(defaults)  # pyright: ignore[reportDeprecated]
 
 
+def _write_valid_parquet(file: Path) -> None:
+    pyarrow = pytest.importorskip("pyarrow")
+    parquet = pytest.importorskip("pyarrow.parquet")
+    table = pyarrow.table(
+        {
+            "input_ids": [[1]],
+            "attention_mask": [[1]],
+            "labels": [[1]],
+            "position_ids": [[0]],
+        }
+    )
+    parquet.write_table(table, file)
+
+
 class TestFilesCheck:
     def test_check(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         sample = tmp_path / "ok.jsonl"
@@ -85,6 +99,20 @@ class TestFilesCheck:
         assert "Checks passed" not in result.output
         assert "Unknown extension" in result.output
         assert result.output.startswith("X ")
+        result.output.encode("cp1252")
+
+    def test_check_rejects_oversized_parquet(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        file = tmp_path / "oversized.parquet"
+        _write_valid_parquet(file)
+        monkeypatch.setattr("together.lib.utils.files.MAX_FILE_SIZE_GB", 0)
+
+        result = cli_runner.invoke(["files", "check", str(file)])
+
+        assert result.exit_code == 1
+        assert result.output.startswith("X ")
+        assert "Maximum supported file size" in result.output
         result.output.encode("cp1252")
 
 
@@ -253,6 +281,20 @@ class TestFilesUpload:
         assert "X failed validation" in result.output
         result.output.encode("cp1252")
         check_mock.assert_called_once()
+        upload_mock.assert_not_called()
+
+    def test_upload_rejects_oversized_parquet_before_upload(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        file = tmp_path / "oversized.parquet"
+        _write_valid_parquet(file)
+        monkeypatch.setattr("together.lib.utils.files.MAX_FILE_SIZE_GB", 0)
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            result = cli_runner.invoke(["files", "upload", str(file)])
+
+        assert result.exit_code == 1
+        assert "X Maximum supported file size" in result.output
+        result.output.encode("cp1252")
         upload_mock.assert_not_called()
 
     def test_upload_eval_jsonl_trailing_blank_passes_check(self, tmp_path: Path, cli_runner: CliRunner) -> None:
