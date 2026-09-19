@@ -7,7 +7,7 @@ from typing import Any, cast
 import httpx
 import pytest
 from respx import MockRouter
-from respx.models import Call
+from respx.models import Call, Route
 
 from tests.cli.utils import CliRunner
 from together.types.beta import AbMember
@@ -229,6 +229,84 @@ class TestBetaEndpointsRm:
         assert payload["id"] == "ep_1"
         assert {d["id"] for d in payload["deployments"]} == {"dep_control", "dep_variant", "dep_shadow"}
         assert all(d["command"].startswith("tg beta endpoints rm dep_") for d in payload["deployments"])
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_endpoint_force_defers_until_all_deployments_stop(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        events = _capture_cli_events(monkeypatch)
+        endpoint = _endpoint_body()
+        endpoint_delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(
+                400,
+                json={"error": {"message": "endpoint has running deployments", "type": "invalid_request_error"}},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=endpoint))
+        respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(200, json=_endpoint_body(trafficSplit=[]))
+        )
+
+        update_routes: list[Route] = []
+        delete_routes: list[Route] = []
+        for deployment in endpoint["deployments"]:
+            deployment_id = deployment["id"]
+            update_routes.append(
+                respx_mock.patch(f"/projects/proj/endpoints/ep_1/deployments/{deployment_id}").mock(
+                    return_value=httpx.Response(
+                        200,
+                        json={
+                            "id": deployment_id,
+                            "projectId": "proj",
+                            "endpointId": "ep_1",
+                            "name": deployment["name"],
+                            "modelId": deployment["modelId"],
+                            "configId": "config-1",
+                            "autoscaling": {"minReplicas": 0, "maxReplicas": 0},
+                            "createdAt": "2026-01-01T00:00:00Z",
+                            "status": {
+                                "state": "DEPLOYMENT_STATE_STOPPING",
+                                "readyReplicas": 1,
+                                "message": "scaling down",
+                            },
+                        },
+                    )
+                )
+            )
+            delete_routes.append(
+                respx_mock.delete(f"/projects/proj/endpoints/ep_1/deployments/{deployment_id}").mock(
+                    return_value=httpx.Response(
+                        409,
+                        json={
+                            "error": {
+                                "message": "deployment must be stopped before it can be deleted",
+                                "type": "conflict_error",
+                            }
+                        },
+                    )
+                )
+            )
+
+        result = cli_runner.invoke(_rm_args("ep_1", "--force"))
+
+        assert result.exit_code == 1, result.output
+        assert endpoint_delete_route.call_count == 1
+        assert all(route.called for route in update_routes)
+        assert all(route.called for route in delete_routes)
+        payload = json.loads(result.out_out)
+        assert payload["id"] == "ep_1"
+        assert payload["status"] == "scaling_down"
+        assert {deployment["id"] for deployment in payload["deployments"]} == {
+            "dep_control",
+            "dep_variant",
+            "dep_shadow",
+        }
+        assert payload["command"] == "tg beta endpoints rm ep_1 --force"
+        failure = next(payload for event, payload in events if event is CliTrackingEvents.CommandFailed)
+        assert failure["error"] == "Endpoint force deletion deferred while child deployments scale down"
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_ab_experiment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:

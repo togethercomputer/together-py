@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
-from together import APIError, AsyncClient, omit
+from together import APIError, AsyncClient, ConflictError, omit
 from together.types.beta import DeploymentAutoscalingParam, EndpointTrafficSplitEntryParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
@@ -69,15 +69,25 @@ async def _delete_endpoint(endpoint_id: str, *, force: bool, config: CLIConfigPa
             endpoint = await config.client.beta.endpoints.retrieve(endpoint_id)
             await config.client.beta.endpoints.update(endpoint_id, traffic_split=[], update_mask="trafficSplit")
 
-            for deployment in endpoint.deployments or []:
-                assert deployment.id is not None
+            deployment_ids = [deployment.id for deployment in endpoint.deployments or []]
+            for deployment_id in deployment_ids:
                 await config.client.beta.endpoints.deployments.update(
-                    deployment.id,
+                    deployment_id,
                     endpoint_id=endpoint_id,
                     autoscaling=DeploymentAutoscalingParam(min_replicas=0, max_replicas=0),
                     update_mask="autoscaling",
                 )
-                await config.client.beta.endpoints.deployments.delete(deployment.id, endpoint_id=endpoint_id)
+
+            deferred_deployment_ids: list[str] = []
+            for deployment_id in deployment_ids:
+                try:
+                    await config.client.beta.endpoints.deployments.delete(deployment_id, endpoint_id=endpoint_id)
+                except ConflictError:
+                    deferred_deployment_ids.append(deployment_id)
+
+            if deferred_deployment_ids:
+                _print_endpoint_force_delete_deferred(endpoint_id, deferred_deployment_ids, config=config)
+                raise CliDiagnosticExit("Endpoint force deletion deferred while child deployments scale down") from None
 
             await show_loading_status(
                 "Deleting endpoint...",
@@ -88,6 +98,37 @@ async def _delete_endpoint(endpoint_id: str, *, force: bool, config: CLIConfigPa
             raise CliDiagnosticExit("Endpoint deletion blocked by child deployments") from None
 
     return {"message": f"Deleted endpoint {endpoint_id}", "id": endpoint_id, "type": "endpoint"}
+
+
+def _print_endpoint_force_delete_deferred(
+    endpoint_id: str,
+    deployment_ids: list[str],
+    *,
+    config: CLIConfigParameter,
+) -> None:
+    command = f"tg beta endpoints rm {endpoint_id} --force"
+    message = "Child deployments are scaling down. Retry the force deletion once they have stopped."
+
+    if config.json:
+        console.print_json(
+            openapi_dumps(
+                {
+                    "error": message,
+                    "id": endpoint_id,
+                    "type": "endpoint",
+                    "status": "scaling_down",
+                    "deployments": [{"id": deployment_id} for deployment_id in deployment_ids],
+                    "command": command,
+                }
+            ).decode("utf-8")
+        )
+        return
+
+    console.print(
+        f"[yellow]![/yellow] Endpoint [primary]{escape_rich_markup(endpoint_id)}[/primary] has child deployments "
+        "that are still scaling down."
+    )
+    console.print(f"  Once they have stopped, retry: [primary]{escape_rich_markup(command)}[/primary]")
 
 
 async def _print_endpoint_delete_blocked(
