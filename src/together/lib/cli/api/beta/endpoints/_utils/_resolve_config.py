@@ -11,7 +11,15 @@ _CONFIG_PATH_RE = re.compile(r"^projects/([^/]+)/configs/([^/]+)$")
 
 async def resolve_configs(config: CLIConfigParameter, model_id: str) -> list[Config]:
     configs = await config.client.beta.models.configs.list(reference_model_id=model_id)
-    return configs.data
+    return list(configs.data or [])
+
+
+def find_config(configs: list[Config], config_id: str) -> Config | None:
+    """Return the config matching ``config_id``, if any."""
+    for candidate in configs:
+        if _config_id_matches(candidate, config_id):
+            return candidate
+    return None
 
 
 def resolve_config(configs: list[Config], config_id: str | None, *, model: str) -> Config:
@@ -29,9 +37,9 @@ def resolve_config(configs: list[Config], config_id: str | None, *, model: str) 
             raise ValueError(f"No configs found for model {model}.")
         return configs[0]
 
-    for candidate in configs:
-        if _config_id_matches(candidate, config_id):
-            return candidate
+    selected = find_config(configs, config_id)
+    if selected is not None:
+        return selected
     raise ValueError(
         f"Config {config_id} is not valid for model {model}. Use `tg beta models configs <model-id>` to list configs."
     )

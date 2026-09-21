@@ -15,7 +15,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model_display_name
 
 
 async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParameter) -> dict[str, str]:
@@ -27,15 +27,8 @@ async def _resolve_model_names(endpoints: List[Endpoint], config: CLIConfigParam
     }
 
     async def fetch_model_name(model_resource_path: str, model_id: str) -> tuple[str, str]:
-        try:
-            match = MODEL_PATH_RE.match(model_resource_path)
-            if match is None:
-                return model_id, model_id
-            project_id, model_id = match.group(1), match.group(2)
-            model = await config.client.beta.models.retrieve(model_id, project_id=project_id)
-            return model_id, model.name
-        except Exception:
-            return model_id, model_id
+        name = await resolve_model_display_name(config, model_resource_path, fallback=model_id)
+        return model_id, name
 
     return dict(
         await asyncio.gather(

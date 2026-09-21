@@ -28,7 +28,10 @@ from together.types.beta.endpoints.metric_result import (
 from together.types.beta.endpoints.rollout_condition import RolloutCondition as StatusCondition
 from together.types.beta.endpoints.rollout_step_status import RolloutStepStatus as StatusStep
 from together.lib.cli.api.beta.endpoints._utils._rollouts import resolve_rollout_by_id
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model, resolve_endpoint
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
+    resolve_endpoint,
+    resolve_model_display_name,
+)
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
 
 
@@ -198,10 +201,14 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
     deployments_table.add_column("Model")
     deployments_table.add_column("Estimated Traffic")
     deployments_table.add_column("")
-    for i, deployment in enumerate(deployments):
+    model_names = await asyncio.gather(
+        *(
+            resolve_model_display_name(config, deployment.model, fallback=deployment.api_model_id)
+            for deployment in deployments
+        )
+    )
+    for i, (deployment, model) in enumerate(zip(deployments, model_names)):
         name = deployment.name.split("/")[-1]
-
-        model = (await resolve_model(config, deployment.model)).name
 
         replicas = f"{deployment.ready_replicas or 0} / {deployment.desired_replicas or 0}"
         estimated_traffic = format_estimated_traffic(deployment.estimated_effective_traffic_share)
