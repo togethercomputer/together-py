@@ -189,6 +189,7 @@ class TestBetaEndpointsDeploy:
         assert "--inactive-timeout" in output
         assert "--placement.hipaa" in output
         assert "--scale-to-zero-window" not in output
+        assert "--enable-lora" not in output
 
     def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "deploy", "--scale-to-zero-window"])

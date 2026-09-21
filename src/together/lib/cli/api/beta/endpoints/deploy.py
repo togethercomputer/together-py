@@ -170,13 +170,6 @@ async def deploy(
         Optional[str], Parameter(name="placement", help="Placement profile ID to use", group=PlacementGroup)
     ] = None,
     placement: Annotated[PlacementModel, Parameter(group=PlacementGroup)] = placement_model,
-    enable_lora: Annotated[
-        Optional[bool],
-        Parameter(
-            negative=(),
-            help="Runs the multi-LoRA kernel so adapters hot-load after deploy. Toggling later needs a redeploy.",
-        ),
-    ] = None,
     inactive_timeout: Annotated[
         Optional[int],
         Parameter(
@@ -258,7 +251,6 @@ async def deploy(
             config_value=config_value,
             autoscaling=autoscaling,
             placement=placement_value,
-            enable_lora=enable_lora,
             inactive_timeout=inactive_timeout,
             traffic_weight=traffic_weight,
             hardware_pricing=hardware_pricing,
@@ -276,7 +268,6 @@ async def deploy(
                 model=model_path,
                 config=construct_config_path(config_value),
                 autoscaling=autoscaling,
-                enable_lora=enable_lora if enable_lora is not None else omit,
                 inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
                 # Revision is already embedded in model_path when present.
                 model_revision_id=omit,
@@ -324,7 +315,6 @@ def _print_deployment_preview(
     config_value: Config,
     autoscaling: DeploymentAutoscalingParam,
     placement: Placement | None,
-    enable_lora: bool | None,
     inactive_timeout: int | None,
     traffic_weight: float | None,
     hardware_pricing: HardwarePricing | None = None,
@@ -372,8 +362,6 @@ def _print_deployment_preview(
             ) is not None:
                 add_row("--placement.hipaa", "true" if hipaa else "false")
 
-    if enable_lora is not None:
-        add_row("--enable-lora", "true" if enable_lora else "false")
     if inactive_timeout is not None:
         add_row("--inactive-timeout", str(inactive_timeout))
     if traffic_weight is not None:

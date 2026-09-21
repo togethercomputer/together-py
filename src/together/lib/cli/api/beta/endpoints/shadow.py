@@ -82,10 +82,6 @@ async def shadow(
         Optional[str],
         Parameter(help="Observation window for adaptive sampling; applies with --target-qps (default: 60s)"),
     ] = None,
-    enable_lora: Annotated[
-        bool,
-        Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment", negative=()),
-    ] = False,
     config: CLIConfigParameter,
 ) -> None:
     """Create a shadow deployment and mirror sampled live traffic without serving its responses.
@@ -125,7 +121,6 @@ async def shadow(
         config.client.beta.endpoints.deployments.create(
             endpoint_id=endpoint_id,
             name=name,
-            enable_lora=enable_lora,
             model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,
