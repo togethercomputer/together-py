@@ -402,9 +402,9 @@ BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --config cr_xxxxxxxxxxxx --min-replicas 1 --max-replicas 4 \\
     --scaling-metric inflight_requests --scaling-target 10[/primary]
 
-[dim]-[/dim] Deploy with LoRA support and no live traffic yet:
+[dim]-[/dim] Deploy with no live traffic yet:
   [primary]tg beta endpoints deploy ml_xxxxxxxxxxxx --endpoint my-endpoint \\
-    --enable-lora --traffic-weight 0[/primary]
+    --traffic-weight 0[/primary]
 
 [dim]-[/dim] Create the endpoint stopped (scale later with update):
   [primary]tg beta endpoints deploy Qwen/Qwen2.5-7B --endpoint my-endpoint \\
@@ -437,9 +437,9 @@ BETA_ENDPOINTS_AB_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
     --percent 25 --config cr_yyyyyyyyyyyy[/primary]
 
-[dim]-[/dim] Variant with LoRA kernel enabled:
+[dim]-[/dim] Name the variant deployment:
   [primary]tg beta endpoints ab ml_xxxxxxxxxxxx --control <deployment-id> \\
-    --percent 5 --enable-lora --name my-variant[/primary]
+    --percent 5 --name my-variant[/primary]
 """
 
 BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES = """[dim]Examples:[/dim]
