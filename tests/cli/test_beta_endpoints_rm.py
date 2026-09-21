@@ -400,9 +400,6 @@ class TestBetaEndpointsRm:
                 ),
             )
         )
-        update_endpoint = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body())
-        )
         delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_variant").mock(
             return_value=httpx.Response(200, json={"id": "dep_variant"})
         )
@@ -411,7 +408,6 @@ class TestBetaEndpointsRm:
 
         assert result.exit_code == 0, result.output
         assert update_ab.called
-        assert not update_endpoint.called
         assert delete_deployment.called
         body = json.loads(cast(Call, update_ab.calls[0]).request.content.decode())
         assert body["members"] == [
@@ -475,9 +471,6 @@ class TestBetaEndpointsRm:
         respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
-        update_endpoint = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body())
-        )
         delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(200, json={"id": "dep_control"})
         )
@@ -486,7 +479,6 @@ class TestBetaEndpointsRm:
 
         assert result.exit_code == 0, result.output
         assert delete_deployment.called
-        assert not update_endpoint.called
         payload = json.loads(result.out_out)
         assert payload["id"] == "dep_control"
         assert payload["type"] == "deployment"
