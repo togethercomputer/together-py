@@ -14,7 +14,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.types.beta.model_list_files_response import ModelListFilesResponse
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import resolve_model_display_name
 
 _DETAIL_LABEL_WIDTH = 17
 
@@ -108,12 +108,8 @@ async def print_model_detail(
         _print_detail_line("ID", model.id)
     if model.base_model_id:
         base_model = model.base_model_id
-        try:
-            base_model = (
-                (await resolve_model(config, model.base_model_id)).name if config is not None else model.base_model_id
-            )
-        except Exception:
-            pass
+        if config is not None:
+            base_model = await resolve_model_display_name(config, model.base_model, fallback=model.base_model_id)
         _print_detail_line("Base model", base_model)
     if model.description:
         _print_detail_line("Description", model.description)
