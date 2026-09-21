@@ -118,9 +118,6 @@ class EndpointDeployment(BaseModel):
     desired_replicas: Optional[int] = FieldInfo(alias="desiredReplicas", default=None)
     """Number of replicas the autoscaler currently wants across all regions."""
 
-    enable_lora: Optional[bool] = FieldInfo(alias="enableLora", default=None)
-    """Whether the deployment can dynamically load LoRA adapters."""
-
     estimated_effective_traffic_share: Optional[float] = FieldInfo(alias="estimatedEffectiveTrafficShare", default=None)
     """
     Estimated fraction in [0, 1] of endpoint traffic that reaches this deployment

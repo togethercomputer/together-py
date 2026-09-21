@@ -59,7 +59,6 @@ class DeploymentsResource(SyncAPIResource):
         validate_only: bool | Omit = omit,
         config: str | Omit = omit,
         config_id: str | Omit = omit,
-        enable_lora: bool | Omit = omit,
         inactive_timeout: int | Omit = omit,
         model: str | Omit = omit,
         model_id: str | Omit = omit,
@@ -95,8 +94,6 @@ class DeploymentsResource(SyncAPIResource):
 
           config_id: Deprecated. Use `config`. Config revision identifier to deploy, accepted when
               `config` is unset.
-
-          enable_lora: Enables dynamic loading of LoRA adapters on the deployment.
 
           inactive_timeout: Inactive timeout in minutes. Use 0 or omit to disable automatic stopping;
               otherwise accepted values are 30 through 1440.
@@ -140,7 +137,6 @@ class DeploymentsResource(SyncAPIResource):
                     "name": name,
                     "config": config,
                     "config_id": config_id,
-                    "enable_lora": enable_lora,
                     "inactive_timeout": inactive_timeout,
                     "model": model,
                     "model_id": model_id,
@@ -473,7 +469,6 @@ class AsyncDeploymentsResource(AsyncAPIResource):
         validate_only: bool | Omit = omit,
         config: str | Omit = omit,
         config_id: str | Omit = omit,
-        enable_lora: bool | Omit = omit,
         inactive_timeout: int | Omit = omit,
         model: str | Omit = omit,
         model_id: str | Omit = omit,
@@ -509,8 +504,6 @@ class AsyncDeploymentsResource(AsyncAPIResource):
 
           config_id: Deprecated. Use `config`. Config revision identifier to deploy, accepted when
               `config` is unset.
-
-          enable_lora: Enables dynamic loading of LoRA adapters on the deployment.
 
           inactive_timeout: Inactive timeout in minutes. Use 0 or omit to disable automatic stopping;
               otherwise accepted values are 30 through 1440.
@@ -554,7 +547,6 @@ class AsyncDeploymentsResource(AsyncAPIResource):
                     "name": name,
                     "config": config,
                     "config_id": config_id,
-                    "enable_lora": enable_lora,
                     "inactive_timeout": inactive_timeout,
                     "model": model,
                     "model_id": model_id,
