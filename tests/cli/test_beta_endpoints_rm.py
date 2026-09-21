@@ -411,7 +411,7 @@ class TestBetaEndpointsRm:
 
         assert result.exit_code == 0, result.output
         assert update_ab.called
-        assert update_endpoint.called
+        assert not update_endpoint.called
         assert delete_deployment.called
         body = json.loads(cast(Call, update_ab.calls[0]).request.content.decode())
         assert body["members"] == [
@@ -458,6 +458,40 @@ class TestBetaEndpointsRm:
         assert any("deleted A/B experiment" in action for action in payload["actions"])
 
     @pytest.mark.respx(base_url=base_url)
+    def test_rm_deployment_does_not_zero_traffic_weight(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+        update_endpoint = respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
+            return_value=httpx.Response(200, json=_endpoint_body())
+        )
+        delete_deployment = respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json={"id": "dep_control"})
+        )
+
+        result = cli_runner.invoke(_rm_args("dep_control"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_deployment.called
+        assert not update_endpoint.called
+        payload = json.loads(result.out_out)
+        assert payload["id"] == "dep_control"
+        assert payload["type"] == "deployment"
+
+    @pytest.mark.respx(base_url=base_url)
     def test_rm_deployment_scales_down_when_delete_requires_stop(
         self,
         respx_mock: MockRouter,
@@ -476,9 +510,6 @@ class TestBetaEndpointsRm:
         )
         respx_mock.get("/projects/proj/endpoints/ep_1/abExperiments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
-        )
-        respx_mock.patch("/projects/proj/endpoints/ep_1").mock(
-            return_value=httpx.Response(200, json=_endpoint_body(trafficSplit=[]))
         )
         respx_mock.delete("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
             return_value=httpx.Response(
