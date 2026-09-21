@@ -102,3 +102,44 @@ class TestMainGlobalOptions:
         assert json.loads(result.out_out)["telemetry"] in {"enabled", "disabled"}
         assert "1.0.0 → 1.1.0" not in result.out_out
         assert "1.0.0 → 1.1.0" in result.err_out
+
+    def test_cli_extras_tip_runs_after_command(self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner) -> None:
+        calls: list[bool] = []
+
+        def fake_inform(*, non_interactive: bool) -> None:
+            calls.append(non_interactive)
+
+        monkeypatch.setattr("together.lib.cli.inform_cli_extras_tip", fake_inform)
+
+        result = cli_runner.invoke(["--non-interactive", "telemetry", "status"])
+
+        assert result.exit_code == 0
+        assert calls == [True]
+
+    def test_cli_extras_tip_runs_after_command_failure(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        calls: list[bool] = []
+
+        def fake_inform(*, non_interactive: bool) -> None:
+            calls.append(non_interactive)
+
+        monkeypatch.setattr("together.lib.cli.inform_cli_extras_tip", fake_inform)
+
+        result = cli_runner.invoke(["unknown-command"])
+
+        assert result.exit_code == 1
+        assert calls == [True]
+
+    def test_cli_extras_tip_does_not_corrupt_json_output(
+        self, monkeypatch: pytest.MonkeyPatch, cli_runner: CliRunner
+    ) -> None:
+        monkeypatch.setattr("together.lib.cli.utils._cli_extras.has_cli_extras", lambda: False)
+
+        result = cli_runner.invoke(["--json", "telemetry", "status"])
+
+        assert result.exit_code == 0
+        assert json.loads(result.out_out)["telemetry"] in {"enabled", "disabled"}
+        assert "together[cli]" not in result.out_out
+        assert "CLI extras" not in result.out_out
+        assert "CLI extras" not in result.err_out
