@@ -274,7 +274,7 @@ async def create(
     elif lora:
         # Cyclopts has no Click-style ctx/ParameterSource; use CLI defaults as heuristic for "unset".
         if lora_r == DEFAULT_LORA_R:
-            training_args["lora_r"] = model_limits.lora_training.max_rank
+            training_args["lora_r"] = model_limits.lora_training.default_rank
         if learning_rate == DEFAULT_LEARNING_RATE:
             training_args["learning_rate"] = 1e-3
         if lora_alpha == DEFAULT_LORA_ALPHA:

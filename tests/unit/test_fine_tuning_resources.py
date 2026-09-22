@@ -20,6 +20,7 @@ _VALIDATION_FILE = "file-7dbce5e9-7553-4520-9f3e-a7ece6c39d84"
 _FROM_CHECKPOINT = "ft-12345678-1234-1234-1234-1234567890ab"
 
 _DEFAULT_LORA_TRAINING = LoraTraining(
+    default_rank=16,
     max_batch_size=128,
     max_batch_size_dpo=64,
     min_batch_size=8,
@@ -122,8 +123,8 @@ def test_lora_request():
 
     assert isinstance(request.training_type, LoRATrainingType)
     assert request.training_type.type == "Lora"
-    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
-    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
+    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.default_rank
+    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.default_rank * 2
     assert request.training_type.lora_dropout == 0.0
     assert request.training_type.lora_trainable_modules == "all-linear"
     assert request.batch_size == "max"
@@ -166,8 +167,8 @@ def test_dpo_request_lora():
 
     assert isinstance(request.training_type, LoRATrainingType)
     assert request.training_type.type == "Lora"
-    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
-    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
+    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.default_rank
+    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.default_rank * 2
     assert request.training_type.lora_dropout == 0.0
     assert request.training_type.lora_trainable_modules == "all-linear"
     assert request.batch_size == "max"
