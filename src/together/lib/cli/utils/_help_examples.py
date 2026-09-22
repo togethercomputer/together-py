@@ -815,6 +815,10 @@ JIG_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Start deploy and return immediately without waiting:
   [primary]tg beta jig deploy --detach[/primary]
+
+[dim]-[/dim] Use preemptible capacity above reserved replicas:
+  [dim]Set `capacity_type = "preemptible"` under `[tool.jig.deploy]`, then run:[/dim]
+  [primary]tg beta jig deploy[/primary]
 """
 
 JIG_DESTROY_HELP_EXAMPLES = """[dim]Examples:[/dim]

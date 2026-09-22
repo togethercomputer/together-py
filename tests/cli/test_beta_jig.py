@@ -133,6 +133,37 @@ def _volume_api_body(name: str, **extra: object) -> dict[str, object]:
     return body
 
 
+def _deployment_api_body(**extra: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "id": "dep-1",
+        "name": _DEPLOY_NAME,
+        "object": "deployment",
+        "image": "ghcr.io/acme/model:latest",
+        "status": "Ready",
+        "min_replicas": 1,
+        "max_replicas": 1,
+        "desired_replicas": 1,
+        "ready_replicas": 1,
+        "gpu_type": "h100-80gb",
+        "gpu_count": 1,
+        "cpu": 1,
+        "memory": 8,
+        "storage": 100,
+        "port": 8000,
+        "environment_variables": [{"name": "TOGETHER_DEPLOYMENT_REVISION_ID", "value": "rev-1"}],
+        "volumes": [],
+    }
+    body.update(extra)
+    return body
+
+
+def _write_jig_state(path: Path) -> None:
+    path.joinpath(".jig.json").write_text(
+        json.dumps({_DEPLOY_NAME: {"secrets": {"TOGETHER_API_KEY": f"{_DEPLOY_NAME}-api-key"}}}),
+        encoding="utf-8",
+    )
+
+
 class TestBetaJigSecretsSet:
     @pytest.mark.respx(base_url=base_url)
     def test_set_creates_when_update_returns_not_found(
@@ -279,6 +310,63 @@ class TestBetaJigBuild:
         assert "deploy.image is set" in result.output
 
 
+class TestBetaJigDeploy:
+    @pytest.mark.respx(base_url=base_url)
+    def test_forwards_capacity_type_from_config(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        with (tmp_path / "pyproject.toml").open("a", encoding="utf-8") as f:
+            f.write('capacity_type = "preemptible"\n')
+        _write_jig_state(tmp_path)
+        route = respx_mock.patch(f"/deployments/{_DEPLOY_NAME}").mock(
+            return_value=httpx.Response(200, json=_deployment_api_body(capacity_type="preemptible"))
+        )
+
+        with patch.object(_jig_mod.Jig, "registry", lambda _self: "registry.together.ai/test/"):
+            with _chdir(tmp_path):
+                result = cli_runner.invoke(
+                    ["beta", "jig", "deploy", "--image", "ghcr.io/acme/model:latest", "--detach"]
+                )
+
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body["capacity_type"] == "preemptible"
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_omits_capacity_type_when_unset(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        _write_jig_state(tmp_path)
+        route = respx_mock.patch(f"/deployments/{_DEPLOY_NAME}").mock(
+            return_value=httpx.Response(200, json=_deployment_api_body())
+        )
+
+        with patch.object(_jig_mod.Jig, "registry", lambda _self: "registry.together.ai/test/"):
+            with _chdir(tmp_path):
+                result = cli_runner.invoke(
+                    ["beta", "jig", "deploy", "--image", "ghcr.io/acme/model:latest", "--detach"]
+                )
+
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert "capacity_type" not in body
+        assert result.exit_code == 0
+
+    def test_rejects_unknown_capacity_type(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        with (tmp_path / "pyproject.toml").open("a", encoding="utf-8") as f:
+            f.write('capacity_type = "spot"\n')
+
+        with patch.object(_jig_mod.Jig, "registry", lambda _self: "registry.together.ai/test/"):
+            with _chdir(tmp_path):
+                result = cli_runner.invoke(["beta", "jig", "deploy", "--image", "ghcr.io/acme/model:latest"])
+
+        assert "deploy.capacity_type: expected one of" in result.output
+        assert "'stable', 'preemptible'" in result.output
+        assert result.exit_code == 1
+
+
 class TestBetaJigLogs:
     @pytest.mark.respx(base_url=base_url)
     def test_logs_forwards_sdk_filters(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
@@ -308,6 +396,22 @@ class TestBetaJigLogs:
         assert request.url.params["replica_id"] == "replica-1"
         assert request.url.params["revision"] == "revision-1"
         assert request.url.params["version"] == "v2"
+        assert result.exit_code == 0
+
+
+class TestBetaJigStatus:
+    @pytest.mark.respx(base_url=base_url)
+    def test_status_prints_capacity_type(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}").mock(
+            return_value=httpx.Response(200, json=_deployment_api_body(capacity_type="stable"))
+        )
+
+        with patch.object(_jig_mod.Jig, "registry", lambda _self: "registry.together.ai/test/"):
+            with _chdir(tmp_path):
+                result = cli_runner.invoke(["beta", "jig", "status"])
+
+        assert "Capacity Type: stable" in result.output
         assert result.exit_code == 0
 
 

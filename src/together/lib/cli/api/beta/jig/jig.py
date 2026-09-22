@@ -19,7 +19,7 @@ import asyncio
 import tempfile
 import subprocess
 import concurrent.futures
-from typing import TYPE_CHECKING, Any, Union, Callable, Optional, Annotated
+from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated
 from pathlib import Path
 from datetime import datetime as dt
 from functools import cached_property
@@ -124,6 +124,7 @@ class DeployConfig:
     environment_variables: dict[str, str] = field(default_factory=dict[str, str])
     command: list[str] = field(default_factory=list[str])
     autoscaling: dict[str, Union[str, float, int]] = field(default_factory=dict[str, Union[str, float, int]])
+    capacity_type: Optional[Literal["stable", "preemptible"]] = None
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
@@ -142,6 +143,12 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
         return None
     origin = typing.get_origin(value_type)
     args = typing.get_args(value_type)
+
+    if origin is Literal:
+        if value not in args:
+            allowed = ", ".join(repr(arg) for arg in args)
+            return f"{path}: expected one of {allowed}, got {value!r}"
+        return None
 
     if origin is list:
         if not isinstance(value, list):
@@ -855,6 +862,8 @@ class Jig:
             "volumes": [{**asdict(vm), "version": vm.version or 0} for vm in self.config.deploy.volume_mounts],
         }
 
+        if self.config.deploy.capacity_type is not None:
+            deploy_data["capacity_type"] = self.config.deploy.capacity_type
         if self.config.deploy.health_check_path:
             deploy_data["health_check_path"] = self.config.deploy.health_check_path
         if self.config.deploy.command:
@@ -1081,6 +1090,8 @@ Configuration:""")
         lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
         storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
         lines.append(f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory{storage}")
+        if d.capacity_type:
+            lines.append(f"  Capacity Type: {d.capacity_type}")
 
         if d.command:
             lines.append(f"  Command: {d.command}")
