@@ -108,6 +108,41 @@ class VolumeMount:
             # raise click.UsageError(f"Invalid volume mount {data}: {e}") from None
 
 
+def _parse_model_ref(model: str) -> tuple[str, str | None]:
+    """Split a ``ml_...[@rv_...]`` reference into (model_id, revision_id)."""
+    model_id, _, revision_id = model.partition("@")
+    if not model_id.startswith("ml_"):
+        raise JigError(f"Invalid model reference {model!r}: expected a model id like ml_abc123, optionally @rv_...")
+    if revision_id and not revision_id.startswith("rv_"):
+        raise JigError(f"Invalid model reference {model!r}: revision must be a weights revision id like rv_abc123")
+    return model_id, revision_id or None
+
+
+@dataclass
+class ModelMount:
+    """Weights from Together's model registry mounted into the container.
+
+    ``model`` is ``ml_...`` or ``ml_...@rv_...``; without a revision the server
+    pins the latest validated one at deploy time and the deployment revision
+    records it. A LoRA adapter lands at ``<mount_path>/adapter`` with its base
+    model at ``<mount_path>/base``.
+    """
+
+    model: str
+    mount_path: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ModelMount:
+        return cls(**{k: v for k, v in data.items() if k in cls.__annotations__})
+
+    def to_api(self) -> dict[str, str]:
+        model_id, revision_id = _parse_model_ref(self.model)
+        body = {"model_id": model_id, "mount_path": self.mount_path}
+        if revision_id:
+            body["revision_id"] = revision_id
+        return body
+
+
 @dataclass
 class DeployConfig:
     """Deployment configuration"""
@@ -127,6 +162,7 @@ class DeployConfig:
     health_check_path: str = "/health"
     termination_grace_period_seconds: int = 300
     volume_mounts: list[VolumeMount] = field(default_factory=list[VolumeMount])
+    model_mounts: list[ModelMount] = field(default_factory=list[ModelMount])
     image: Optional[str] = None
 
     @classmethod
@@ -134,6 +170,8 @@ class DeployConfig:
         cfg = {k: v for k, v in data.items() if k in cls.__annotations__}
         if isinstance((mounts := cfg.get("volume_mounts")), list):
             cfg["volume_mounts"] = [VolumeMount.from_dict(vm) for vm in mounts]  # pyright: ignore
+        if isinstance((model_mounts := cfg.get("model_mounts")), list):
+            cfg["model_mounts"] = [ModelMount.from_dict(mm) for mm in model_mounts]  # pyright: ignore
         return cls(**cfg)
 
 
@@ -253,7 +291,7 @@ class JigConfig:
 
         # support volume_mounts, autoscaling at jig level (merge into deploy config)
         deploy_config = jig_config.setdefault("deploy", {})
-        allow_top_level = ["volume_mounts", "autoscaling"]
+        allow_top_level = ["volume_mounts", "model_mounts", "autoscaling"]
         for key in allow_top_level:
             if key in jig_config:
                 console.print(
@@ -648,6 +686,22 @@ class Jig:
                     f"The following versions are available: {', '.join(str(v) for v in sorted(versions))}"
                 )
 
+    def validate_model_mounts(self) -> None:
+        """Fail fast on model mount mistakes the server would reject anyway.
+
+        A deployment has a single preload sidecar, so it mounts either one volume
+        or one model. Malformed ``ml_...@rv_...`` references are caught here too.
+        """
+        mounts = self.config.deploy.model_mounts
+        if not mounts:
+            return
+        if self.config.deploy.volume_mounts:
+            raise JigError("Configure either volume_mounts or model_mounts, not both: a deployment has one preload")
+        if len(mounts) > 1:
+            raise JigError("Only one model mount is supported per deployment")
+        for mm in mounts:
+            _parse_model_ref(mm.model)
+
     def prewarm(self, volume: str | None = None, images: list[str] | None = None) -> None:
         """Silent best-effort cache prewarm in the target fleet; never blocks the flow."""
         body: dict[str, Any] = {}
@@ -837,6 +891,7 @@ class Jig:
             return
 
         self.validate_volumes()
+        self.validate_model_mounts()
 
         deploy_data: dict[str, Any] = {
             "name": self.name,
@@ -853,6 +908,7 @@ class Jig:
             "autoscaling": self.config.deploy.autoscaling,
             "termination_grace_period_seconds": self.config.deploy.termination_grace_period_seconds,
             "volumes": [{**asdict(vm), "version": vm.version or 0} for vm in self.config.deploy.volume_mounts],
+            "model_mounts": [mm.to_api() for mm in self.config.deploy.model_mounts],
         }
 
         if self.config.deploy.health_check_path:
@@ -1079,6 +1135,10 @@ Configuration:""")
             lines.append(f"  GPU: {d.gpu_count}x {d.gpu_type}")
         vol = d.volumes[0] if d.volumes else None
         lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
+        for mm in d.model_mounts or []:
+            pinned = f"{mm.model_id}@{mm.revision_id}" if mm.revision_id else mm.model_id
+            layout = " (adapter under /adapter, base under /base)" if mm.weights_type == "adapter" else ""
+            lines.append(f"  Model: {pinned} \N{RIGHTWARDS ARROW} {mm.mount_path}{layout}")
         storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
         lines.append(f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory{storage}")
 
