@@ -155,7 +155,7 @@ class FineTuningResource(SyncAPIResource):
             max_grad_norm (float, optional): Max gradient norm. Defaults to 1.0, set to 0 to disable.
             weight_decay (float, optional): Weight decay. Defaults to 0.0.
             lora (bool, optional): Whether to use LoRA adapters. Defaults to True.
-            lora_r (int, optional): Rank of LoRA adapters. Defaults to 8.
+            lora_r (int, optional): Rank of LoRA adapters. Defaults to the model limits default rank.
             lora_dropout (float, optional): Dropout rate for LoRA adapters. Defaults to 0.
             lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to 8.
             lora_trainable_modules (str, optional): Trainable modules for LoRA adapters. Defaults to "all-linear".
@@ -940,7 +940,7 @@ class AsyncFineTuningResource(AsyncAPIResource):
             max_grad_norm (float, optional): Max gradient norm. Defaults to 1.0, set to 0 to disable.
             weight_decay (float, optional): Weight decay. Defaults to 0.0.
             lora (bool, optional): Whether to use LoRA adapters. Defaults to True.
-            lora_r (int, optional): Rank of LoRA adapters. Defaults to 8.
+            lora_r (int, optional): Rank of LoRA adapters. Defaults to the model limits default rank.
             lora_dropout (float, optional): Dropout rate for LoRA adapters. Defaults to 0.
             lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to 8.
             lora_trainable_modules (str, optional): Trainable modules for LoRA adapters. Defaults to "all-linear".
