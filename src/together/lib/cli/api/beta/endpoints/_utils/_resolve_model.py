@@ -8,6 +8,7 @@ from together.types.beta import Model, Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.beta.models.config import Config
+from together.types.beta.supported_model import SupportedModel
 from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
@@ -308,6 +309,31 @@ def _profile_model_id(profile: SupportedModelDeploymentProfile) -> str:
     return profile.model or ""
 
 
+def _config_reference_ids(
+    public_model: SupportedModel,
+    profiles: list[SupportedModelDeploymentProfile],
+) -> list[str]:
+    """Model ids to list configs against. Base first, then each distinct profile model.
+
+    Per-quantization profiles can point at different model resources (BF16 → ml_pub,
+    FP8 → ml_fp8). A project config is filtered by whichever of those it references,
+    so searching only ``base_model_id`` or ``profiles[0]`` misses a valid LoRA.
+    """
+    ids: list[str] = []
+
+    def add(model_id: str | None) -> None:
+        if model_id and model_id not in ids:
+            ids.append(model_id)
+
+    add(public_model.base_model_id)
+    match = MODEL_PATH_RE.match(public_model.base_model or "")
+    if match:
+        add(match.group(2))
+    for profile in profiles:
+        add(_profile_model_id(profile))
+    return ids
+
+
 def _profile_cli_model(profile: SupportedModelDeploymentProfile) -> str:
     return getattr(profile, "api_model_name", None) or _profile_model_id(profile)
 
@@ -423,7 +449,7 @@ Please specify a more specific model ID. To find a more specific model variant t
         fallback = await _resolve_explicit_config_for_public_model(
             config,
             public_model_name=public_model.name,
-            reference_model_id=public_model.base_model_id or _profile_model_id(candidate_profiles[0]),
+            reference_model_ids=_config_reference_ids(public_model, candidate_profiles),
             config_id=config_id,
             model_input=model_input,
             profiles=candidate_profiles,
@@ -457,13 +483,20 @@ async def _resolve_explicit_config_for_public_model(
     config: CLIConfigParameter,
     *,
     public_model_name: str | None,
-    reference_model_id: str,
+    reference_model_ids: list[str],
     config_id: str,
     model_input: str,
     profiles: list[SupportedModelDeploymentProfile],
 ) -> ResolvedModelAndConfig | None:
-    """Resolve ``--config`` via the configs API when it isn't a public profile id."""
-    selected = find_config(await resolve_configs(config, reference_model_id), config_id)
+    """Resolve ``--config`` via the configs API when it isn't a public profile id.
+
+    Lists configs for each reference model id, base first, and stops on the first hit.
+    """
+    selected: Config | None = None
+    for reference_model_id in reference_model_ids:
+        selected = find_config(await resolve_configs(config, reference_model_id), config_id)
+        if selected is not None:
+            break
     if selected is None:
         return None
     selected = validate_requested_config(selected, config_id, model=model_input)

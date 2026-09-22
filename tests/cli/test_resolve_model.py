@@ -510,6 +510,170 @@ async def test_public_profile_name_accepts_non_profile_config() -> None:
     )
 
 
+def _bf16_fp8_profiles() -> list[SupportedModelDeploymentProfile]:
+    return [
+        _profile(
+            certifiedConfigRevisionId="cr_bf16",
+            config="projects/proj_public/configs/cr_bf16",
+            profileId="cr_bf16",
+            quantization="BF16",
+            model="projects/proj_public/models/ml_pub/revisions/rv_1",
+            modelName="Qwen/Qwen3.5-9B-BF16",
+        ),
+        _profile(
+            certifiedConfigRevisionId="cr_fp8",
+            config="projects/proj_public/configs/cr_fp8",
+            profileId="cr_fp8",
+            quantization="FP8",
+            model="projects/proj_public/models/ml_fp8/revisions/rv_2",
+            modelName="Qwen/Qwen3.5-9B-FP8",
+        ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_public_model_finds_config_referenced_by_non_base_profile() -> None:
+    """A LoRA on the FP8 weights is listed under ml_fp8, not the catalog base."""
+    lora = _config(
+        id="cr_lora",
+        projectId="proj_mine",
+        referenceModelId="ml_fp8",
+        referenceModel="projects/proj_public/models/ml_fp8",
+    )
+    retrieved = _private_model(id="ml_fp8", projectId="proj_public", name="Qwen/Qwen3.5-9B-FP8", baseModelId=None)
+
+    async def _list_configs(*, reference_model_id: str) -> MagicMock:
+        if reference_model_id == "ml_fp8":
+            return MagicMock(data=[lora])
+        return MagicMock(data=[])
+
+    client = MagicMock()
+    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.beta.models.list_supported = AsyncMock(
+        return_value=MagicMock(
+            data=[
+                _supported_model(
+                    name="Qwen/Qwen3.5-9B",
+                    baseModel="projects/proj_public/models/ml_pub",
+                    baseModelId="ml_pub",
+                    deploymentProfiles=_bf16_fp8_profiles(),
+                )
+            ]
+        ),
+    )
+    client.beta.models.configs.list = AsyncMock(side_effect=_list_configs)
+    client.beta.models.retrieve = AsyncMock(return_value=retrieved)
+
+    resolved = await resolve_model_and_config(
+        _cli_config(client),
+        "Qwen/Qwen3.5-9B",
+        config_id="cr_lora",
+    )
+
+    assert [call.kwargs["reference_model_id"] for call in client.beta.models.configs.list.await_args_list] == [
+        "ml_pub",
+        "ml_fp8",
+    ]
+    assert resolved.config.id == "cr_lora"
+    assert (
+        construct_model_path(resolved.model, resolved.revision_id)
+        == "projects/proj_public/models/ml_fp8/revisions/rv_2"
+    )
+    assert resolved.model.name == "Qwen/Qwen3.5-9B-FP8"
+
+
+@pytest.mark.asyncio
+async def test_public_model_searches_later_profile_when_base_model_unset() -> None:
+    """With no base model, profile[0] must not be the only reference id we list."""
+    profiles = list(reversed(_bf16_fp8_profiles()))
+    lora = _config(
+        id="cr_lora",
+        projectId="proj_mine",
+        referenceModelId="ml_pub",
+        referenceModel="projects/proj_public/models/ml_pub",
+    )
+    retrieved = _private_model(id="ml_pub", projectId="proj_public", name="Qwen/Qwen3.5-9B-BF16", baseModelId=None)
+
+    async def _list_configs(*, reference_model_id: str) -> MagicMock:
+        if reference_model_id == "ml_pub":
+            return MagicMock(data=[lora])
+        return MagicMock(data=[])
+
+    client = MagicMock()
+    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.beta.models.list_supported = AsyncMock(
+        return_value=MagicMock(
+            data=[
+                _supported_model(
+                    name="Qwen/Qwen3.5-9B",
+                    baseModel="",
+                    baseModelId="",
+                    deploymentProfiles=profiles,
+                )
+            ]
+        ),
+    )
+    client.beta.models.configs.list = AsyncMock(side_effect=_list_configs)
+    client.beta.models.retrieve = AsyncMock(return_value=retrieved)
+
+    resolved = await resolve_model_and_config(
+        _cli_config(client),
+        "Qwen/Qwen3.5-9B",
+        config_id="cr_lora",
+    )
+
+    assert [call.kwargs["reference_model_id"] for call in client.beta.models.configs.list.await_args_list] == [
+        "ml_fp8",
+        "ml_pub",
+    ]
+    assert resolved.config.id == "cr_lora"
+    assert (
+        construct_model_path(resolved.model, resolved.revision_id)
+        == "projects/proj_public/models/ml_pub/revisions/rv_1"
+    )
+
+
+@pytest.mark.asyncio
+async def test_public_model_prefers_base_model_path_over_profile_order() -> None:
+    """baseModel set and baseModelId empty still searches the path's model id first."""
+    lora = _config(
+        id="cr_lora",
+        projectId="proj_mine",
+        referenceModelId="ml_pub",
+        referenceModel="projects/proj_public/models/ml_pub",
+    )
+    retrieved = _private_model(id="ml_pub", projectId="proj_public", name="Qwen/Qwen3.5-9B-BF16", baseModelId=None)
+    client = MagicMock()
+    client.whoami = AsyncMock(return_value=MagicMock(project_slug="my-slug"))
+    client.beta.models.list_supported = AsyncMock(
+        return_value=MagicMock(
+            data=[
+                _supported_model(
+                    name="Qwen/Qwen3.5-9B",
+                    baseModel="projects/proj_public/models/ml_pub",
+                    baseModelId="",
+                    deploymentProfiles=list(reversed(_bf16_fp8_profiles())),
+                )
+            ]
+        ),
+    )
+    client.beta.models.configs.list = AsyncMock(return_value=MagicMock(data=[lora]))
+    client.beta.models.retrieve = AsyncMock(return_value=retrieved)
+
+    resolved = await resolve_model_and_config(
+        _cli_config(client),
+        "Qwen/Qwen3.5-9B",
+        config_id="cr_lora",
+    )
+
+    client.beta.models.configs.list.assert_awaited_once_with(reference_model_id="ml_pub")
+    assert resolved.config.id == "cr_lora"
+    assert (
+        construct_model_path(resolved.model, resolved.revision_id)
+        == "projects/proj_public/models/ml_pub/revisions/rv_1"
+    )
+
+
 @pytest.mark.asyncio
 async def test_resolve_model_display_name_skips_config_lookup() -> None:
     retrieved = _private_model(
