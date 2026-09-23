@@ -19,11 +19,20 @@ _TRAINING_FILE = "file-7dbce5e9-7993-4520-9f3e-a7ece6c39d84"
 _VALIDATION_FILE = "file-7dbce5e9-7553-4520-9f3e-a7ece6c39d84"
 _FROM_CHECKPOINT = "ft-12345678-1234-1234-1234-1234567890ab"
 
-_DEFAULT_LORA_TRAINING = LoraTraining(
+_DEFAULT_LORA_TRAINING = LoraTraining.construct(
     max_batch_size=128,
     max_batch_size_dpo=64,
     min_batch_size=8,
     max_rank=64,
+    default_rank=64,
+    target_modules=["q", "k", "v", "o", "mlp"],
+)
+_PINNED_DEFAULT_LORA_TRAINING = LoraTraining.construct(
+    max_batch_size=128,
+    max_batch_size_dpo=64,
+    min_batch_size=8,
+    max_rank=128,
+    default_rank=64,
     target_modules=["q", "k", "v", "o", "mlp"],
 )
 _DEFAULT_FULL_TRAINING = FullTraining(
@@ -122,11 +131,30 @@ def test_lora_request():
 
     assert isinstance(request.training_type, LoRATrainingType)
     assert request.training_type.type == "Lora"
-    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.max_rank
-    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.max_rank * 2
+    assert request.training_type.lora_r == _MODEL_LIMITS.lora_training.default_rank
+    assert request.training_type.lora_alpha == _MODEL_LIMITS.lora_training.default_rank * 2
     assert request.training_type.lora_dropout == 0.0
     assert request.training_type.lora_trainable_modules == "all-linear"
     assert request.batch_size == "max"
+
+
+@pytest.mark.parametrize(
+    ("lora_r", "expected_rank", "expected_alpha"),
+    [(None, 64, 128), (128, 128, 256)],
+)
+def test_lora_rank_from_limits(lora_r: Optional[int], expected_rank: int, expected_alpha: int):
+    """An omitted rank follows the model's pinned default; an explicit one still wins."""
+    request, _, _ = create_finetune_request(
+        model_limits=_make_model_limits(lora_training=_PINNED_DEFAULT_LORA_TRAINING),
+        model=_MODEL_NAME,
+        training_file=_TRAINING_FILE,
+        lora=True,
+        lora_r=lora_r,
+    )
+
+    assert isinstance(request.training_type, LoRATrainingType)
+    assert request.training_type.lora_r == expected_rank
+    assert request.training_type.lora_alpha == expected_alpha
 
 
 @pytest.mark.parametrize("lora_dropout", [-1, 0, 0.5, 1.0, 10.0])
