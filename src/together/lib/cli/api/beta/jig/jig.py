@@ -19,7 +19,7 @@ import asyncio
 import tempfile
 import subprocess
 import concurrent.futures
-from typing import TYPE_CHECKING, Any, Union, Callable, Optional, Annotated
+from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated
 from pathlib import Path
 from datetime import datetime as dt
 from functools import cached_property
@@ -143,6 +143,9 @@ def validate(value: Any, value_type: type, path: str = "") -> str | None:
     origin = typing.get_origin(value_type)
     args = typing.get_args(value_type)
 
+    if origin is Literal:
+        return None if value in args else f"{path}: expected one of {args}, got {value!r}"
+
     if origin is list:
         if not isinstance(value, list):
             return f"{path}: expected list, got {value!r}"
@@ -186,6 +189,7 @@ class ExperimentalConfig:
     """Opt-in experimental features. Off by default; may change or be removed."""
 
     auto_optimize: bool = False
+    capacity_type: Optional[Literal["stable", "preemptible"]] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ExperimentalConfig:
@@ -862,6 +866,8 @@ class Jig:
 
         # Opt-in experimental features are in extra_body
         experimental = {k: v for k, v in asdict(self.config.experimental).items() if v}
+        if capacity_type := experimental.pop("capacity_type", None):
+            deploy_data["capacity_type"] = capacity_type
         extra_kwargs: dict[str, Any] = {}
         if experimental:
             extra_kwargs["extra_body"] = {"experimental": experimental}
@@ -1077,6 +1083,8 @@ Run 'jig status' to check current state.""")
 Configuration:""")
         if d.gpu_count and d.gpu_type:
             lines.append(f"  GPU: {d.gpu_count}x {d.gpu_type}")
+        if d.capacity_type:
+            lines.append(f"  Capacity Type: {d.capacity_type}")
         vol = d.volumes[0] if d.volumes else None
         lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
         storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
