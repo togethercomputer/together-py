@@ -37,6 +37,8 @@ from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_
 
 
 async def shadow(
+    model: ModelParameter,
+    *,
     endpoint_id_or_name: Annotated[
         str,
         Parameter(
@@ -45,7 +47,6 @@ async def shadow(
         ),
         EndpointPromptParameter(),
     ],
-    model: ModelParameter,
     config_id: Annotated[
         Optional[str],
         Parameter(
@@ -81,11 +82,6 @@ async def shadow(
         Optional[str],
         Parameter(help="Observation window for adaptive sampling; applies with --target-qps (default: 60s)"),
     ] = None,
-    enable_lora: Annotated[
-        bool,
-        Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment"),
-    ] = False,
-    *,
     config: CLIConfigParameter,
 ) -> None:
     """Create a shadow deployment and mirror sampled live traffic without serving its responses.
@@ -125,7 +121,6 @@ async def shadow(
         config.client.beta.endpoints.deployments.create(
             endpoint_id=endpoint_id,
             name=name,
-            enable_lora=enable_lora,
             model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),
             autoscaling=autoscaling,

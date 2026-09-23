@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Any, Literal, Optional, Annotated, cast
 
 from cyclopts import Parameter
@@ -8,6 +7,7 @@ from rich.markup import escape as escape_rich_markup
 
 from together import omit
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
@@ -70,7 +70,7 @@ async def upload(
     if cast(Any, response).data is None:
         console.print(f"[red]X[/red] [bold]Error[/bold]")
         console.print(f"  [white]{escape_rich_markup(response.message)}[/white]")
-        sys.exit(1)
+        raise CliDiagnosticExit("Model upload request was rejected")
 
     console.print("[bold green]Model upload job created successfully![/bold green]")
     table = ListTable("Upload Job")

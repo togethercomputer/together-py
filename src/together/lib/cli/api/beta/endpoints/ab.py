@@ -54,10 +54,6 @@ async def ab(
             name="config",
         ),
     ] = None,
-    enable_lora: Annotated[
-        bool,
-        Parameter(help="Run the multi-LoRA kernel so adapters can be loaded after deployment", negative=()),
-    ] = False,
     name: Annotated[
         Optional[str],
         Parameter(help="Variant deployment name; defaults to the model name with a short suffix"),
@@ -103,7 +99,6 @@ async def ab(
         "Creating variant deployment...",
         config.client.beta.endpoints.deployments.create(
             endpoint_id=endpoint.id,
-            enable_lora=enable_lora,
             name=name,
             model=construct_model_path(resolved_model, resolved.revision_id),
             config=construct_config_path(config_value),

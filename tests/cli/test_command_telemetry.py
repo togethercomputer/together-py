@@ -12,6 +12,7 @@ from cyclopts.command_spec import CommandSpec
 from tests.cli.utils import CliRunner
 from together.lib.cli import app as tg_app
 from together.lib.cli._track_cli import CliTrackingEvents
+from together.lib.cli.utils._console import CliBrokenPipeError
 
 
 def _reset_telemetry_command_specs() -> None:
@@ -93,6 +94,30 @@ def test_command_system_exit_failure_emits_started_then_failed(
 
 @pytest.mark.usefixtures("isolated_cli_config")
 @pytest.mark.asyncio
+async def test_missing_api_key_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher("endpoints", "list", project_id="project")
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "endpoints list"
+    assert failed["error"] == "Together API key missing"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
 async def test_interactive_missing_required_argument_preserves_diagnostic(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     monkeypatch: pytest.MonkeyPatch,
@@ -123,6 +148,144 @@ async def test_interactive_missing_required_argument_preserves_diagnostic(
     assert failed["command"] == "models configs"
     assert failed["is_beta_command"] is True
     assert failed["error"] == "Missing required argument: --model"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_invalid_autoscaling_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "endpoints",
+            "update",
+            "dep_example",
+            "--min-replicas",
+            "0",
+            "--max-replicas",
+            "1",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "endpoints update"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "Scaling to zero requires both replica bounds"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_missing_endpoint_update_option_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "endpoints",
+            "update",
+            "dep_example",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "endpoints update"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "At least one endpoint update option must be specified"
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_model_upload_failure_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+    private_path = tmp_path / "private-customer-model"
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "models",
+            "upload",
+            "ml_example",
+            str(private_path),
+            "--non-interactive",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "models upload"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "Model file upload failed"
+    assert str(private_path) not in failed["error"]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
+async def test_model_download_validation_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "beta",
+            "models",
+            "download",
+            "ml_example@rev-a",
+            str(tmp_path),
+            "--revision",
+            "rev-b",
+            "--json",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "models download"
+    assert failed["is_beta_command"] is True
+    assert failed["error"] == "Invalid model download request"
 
 
 @pytest.mark.usefixtures("isolated_cli_config")
@@ -207,6 +370,24 @@ def test_command_keyboard_interrupt_emits_started_then_user_aborted(
     monkeypatch.setattr("together.lib.cli.api.telemetry.status.status", _interrupt)
     r = cli_runner.invoke(["telemetry", "status"])
     assert r.exit_code == 0
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandUserAborted.value,
+    ]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+def test_command_broken_pipe_emits_started_then_user_aborted(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    cli_runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _broken_pipe() -> None:
+        raise CliBrokenPipeError
+
+    monkeypatch.setattr("together.lib.cli.api.telemetry.status.status", _broken_pipe)
+    r = cli_runner.invoke(["telemetry", "status"])
+    assert r.exit_code == 1
     assert _event_kinds(track_cli_capture) == [
         CliTrackingEvents.CommandStarted.value,
         CliTrackingEvents.CommandUserAborted.value,

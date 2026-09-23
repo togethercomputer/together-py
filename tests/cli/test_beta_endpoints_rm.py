@@ -12,7 +12,7 @@ from respx.models import Call
 from tests.cli.utils import CliRunner
 from together.types.beta import AbMember
 from together.lib.cli._track_cli import CliTrackingEvents
-from together.lib.cli.api.beta.endpoints.rm import _members_without_deployment
+from together.lib.cli.api.beta.endpoints._utils._ab_experiments import members_without_deployment
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -34,6 +34,7 @@ def _endpoint_body(**overrides: Any) -> dict[str, Any]:
                 "readyReplicas": 1,
                 "desiredReplicas": 1,
                 "trafficMode": "TRAFFIC_MODE_LIVE",
+                "estimatedEffectiveTrafficShare": 1.0,
                 "createdAt": "2026-01-01T00:00:00Z",
                 "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
             },
@@ -47,6 +48,7 @@ def _endpoint_body(**overrides: Any) -> dict[str, Any]:
                 "readyReplicas": 1,
                 "desiredReplicas": 1,
                 "trafficMode": "TRAFFIC_MODE_LIVE",
+                "estimatedEffectiveTrafficShare": 0.1,
                 "createdAt": "2026-01-01T00:00:00Z",
                 "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
             },
@@ -60,6 +62,7 @@ def _endpoint_body(**overrides: Any) -> dict[str, Any]:
                 "readyReplicas": 1,
                 "desiredReplicas": 1,
                 "trafficMode": "TRAFFIC_MODE_SHADOW",
+                "estimatedEffectiveTrafficShare": 0.0,
                 "createdAt": "2026-01-01T00:00:00Z",
                 "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
             },
@@ -159,7 +162,7 @@ class TestMembersWithoutDeployment:
                 percent=10,
             ),
         ]
-        assert _members_without_deployment(members, "dep_variant") == [
+        assert members_without_deployment(members, "dep_variant") == [
             {"deployment_id": "dep_control", "role": "AB_EXPERIMENT_MEMBER_ROLE_CONTROL", "percent": 100},
         ]
 
@@ -324,19 +327,23 @@ class TestBetaEndpointsRm:
         respx_mock: MockRouter,
         cli_runner: CliRunner,
     ) -> None:
+        # Zero effective share + zero traffic-split weight, still an A/B member —
+        # membership is authoritative; detach must not skip the A/B lookup.
+        endpoint = _endpoint_body(
+            trafficSplit=[
+                {"deploymentId": "dep_control", "weight": 1.0},
+                {"deploymentId": "dep_variant", "weight": 0.0},
+            ]
+        )
+        for deployment in endpoint["deployments"]:
+            if deployment["id"] == "dep_variant":
+                deployment["estimatedEffectiveTrafficShare"] = 0.0
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(
                 200,
                 json={
                     "object": "list",
-                    "data": [
-                        _endpoint_body(
-                            trafficSplit=[
-                                {"deploymentId": "dep_control", "weight": 1.0},
-                                {"deploymentId": "dep_variant", "weight": 0.0},
-                            ]
-                        )
-                    ],
+                    "data": [endpoint],
                     "next_cursor": None,
                 },
             )
@@ -515,6 +522,91 @@ class TestBetaEndpointsRm:
         assert "tg beta endpoints rm dep_control" in result.output
         failure = next(payload for event, payload in events if event is CliTrackingEvents.CommandFailed)
         assert failure["error"] == "Deployment deletion deferred while the deployment scales down"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_rollout_via_active_rollout_id(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        rollout: dict[str, Any] = {
+            "id": "rol_1",
+            "projectId": "proj",
+            "endpointId": "ep_1",
+            "sourceDeploymentId": "dep_control",
+            "targetDeploymentId": "dep_variant",
+            "state": "ROLLOUT_STATE_COMPLETED",
+            "strategy": "ROLLOUT_STRATEGY_TYPE_BLUE_GREEN",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "etag": "etag-rol",
+            "status": {"totalSteps": 1, "steps": []},
+        }
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_endpoint_body(activeRolloutId="rol_1")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
+            return_value=httpx.Response(200, json=rollout)
+        )
+        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/rollouts/rol_1").mock(
+            return_value=httpx.Response(200, json={"id": "rol_1"})
+        )
+
+        result = cli_runner.invoke(_rm_args("rol_1"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_route.called
+        payload = json.loads(result.out_out)
+        assert payload["type"] == "rollout"
+        assert payload["id"] == "rol_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rm_rollout_falls_back_to_find_rollout(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        # No activeRolloutId match → resolve_rollout_by_id falls through to find_rollout scan.
+        rollout: dict[str, Any] = {
+            "id": "rol_stale",
+            "projectId": "proj",
+            "endpointId": "ep_1",
+            "sourceDeploymentId": "dep_control",
+            "targetDeploymentId": "dep_variant",
+            "state": "ROLLOUT_STATE_COMPLETED",
+            "strategy": "ROLLOUT_STRATEGY_TYPE_BLUE_GREEN",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "etag": "etag-rol",
+            "status": {"totalSteps": 1, "steps": []},
+        }
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/rollouts").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [rollout], "next_cursor": None},
+            )
+        )
+        delete_route = respx_mock.delete("/projects/proj/endpoints/ep_1/rollouts/rol_stale").mock(
+            return_value=httpx.Response(200, json={"id": "rol_stale"})
+        )
+
+        result = cli_runner.invoke(_rm_args("rol_stale"))
+
+        assert result.exit_code == 0, result.output
+        assert delete_route.called
+        payload = json.loads(result.out_out)
+        assert payload["id"] == "rol_stale"
 
     @pytest.mark.respx(base_url=base_url)
     def test_rm_rejects_unknown_prefix(self, cli_runner: CliRunner) -> None:

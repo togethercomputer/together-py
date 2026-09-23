@@ -39,8 +39,38 @@ class TestDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -55,7 +85,7 @@ class TestDeployments:
             validate_only=True,
             config="config",
             config_id="configId",
-            enable_lora=True,
+            inactive_timeout=0,
             model="model",
             model_id="modelId",
             model_revision_id="modelRevisionId",
@@ -196,8 +226,38 @@ class TestDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -209,6 +269,7 @@ class TestDeployments:
                 ],
             },
             etag="etag",
+            inactive_timeout=0,
             name="name",
         )
         assert_matches_type(EndpointDeployment, deployment, path=["response"])
@@ -418,8 +479,38 @@ class TestAsyncDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -434,7 +525,7 @@ class TestAsyncDeployments:
             validate_only=True,
             config="config",
             config_id="configId",
-            enable_lora=True,
+            inactive_timeout=0,
             model="model",
             model_id="modelId",
             model_revision_id="modelRevisionId",
@@ -575,8 +666,38 @@ class TestAsyncDeployments:
             autoscaling={
                 "max_replicas": 0,
                 "min_replicas": 0,
+                "scale_down": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_down_window": "-160513s",
                 "scale_to_zero_window": "-160513s",
+                "scale_up": {
+                    "policies": [
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PERCENT",
+                            "value": 25,
+                        },
+                        {
+                            "period_seconds": 60,
+                            "type": "SCALING_POLICY_TYPE_PODS",
+                            "value": 10,
+                        },
+                    ],
+                    "select_policy": "SCALING_POLICY_SELECT_MIN",
+                },
                 "scale_up_window": "-160513s",
                 "scaling_metrics": [
                     {
@@ -588,6 +709,7 @@ class TestAsyncDeployments:
                 ],
             },
             etag="etag",
+            inactive_timeout=0,
             name="name",
         )
         assert_matches_type(EndpointDeployment, deployment, path=["response"])

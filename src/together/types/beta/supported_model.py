@@ -9,7 +9,20 @@ from pydantic import Field as FieldInfo
 from ..._models import BaseModel
 from .supported_model_deployment_profile import SupportedModelDeploymentProfile
 
-__all__ = ["SupportedModel"]
+__all__ = ["SupportedModel", "Pricing"]
+
+
+class Pricing(BaseModel):
+    """Serverless pricing in USD per one million tokens, if available."""
+
+    cached_input: Optional[float] = FieldInfo(alias="cachedInput", default=None)
+    """Price in USD per one million cached input tokens."""
+
+    input: Optional[float] = None
+    """Price in USD per one million input tokens."""
+
+    output: Optional[float] = None
+    """Price in USD per one million output tokens."""
 
 
 class SupportedModel(BaseModel):
@@ -106,6 +119,9 @@ class SupportedModel(BaseModel):
 
     output_format: Optional[str] = FieldInfo(alias="outputFormat", default=None)
     """Preferred output format for the model."""
+
+    pricing: Optional[Pricing] = None
+    """Serverless pricing in USD per one million tokens, if available."""
 
     serverless_endpoint: Optional[str] = FieldInfo(alias="serverlessEndpoint", default=None)
     """Serverless endpoint name for inference, if available."""

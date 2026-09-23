@@ -170,6 +170,13 @@ class Deployment(BaseModel):
     Omitted when autoscaling is disabled (nil)
     """
 
+    capacity_type: Optional[Literal["stable", "preemptible"]] = None
+    """Controls how replicas above reserved capacity behave.
+
+    `stable` replicas stay running after scale-up; `preemptible` replicas may be
+    evicted during capacity contention.
+    """
+
     command: Optional[List[str]] = None
     """Command is the entrypoint command run in the container"""
 

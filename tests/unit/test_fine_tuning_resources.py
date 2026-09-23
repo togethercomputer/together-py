@@ -24,6 +24,7 @@ _DEFAULT_LORA_TRAINING = LoraTraining(
     max_batch_size_dpo=64,
     min_batch_size=8,
     max_rank=64,
+    default_rank=16,
     target_modules=["q", "k", "v", "o", "mlp"],
 )
 _DEFAULT_FULL_TRAINING = FullTraining(

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import shutil
 import asyncio
 import tempfile
@@ -15,6 +14,7 @@ from cyclopts import Parameter
 
 from together import omit
 from together._utils import path_template
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.api.beta.models.upload import (
@@ -56,6 +56,21 @@ def _parse_object_and_revision(model_id: str, revision: str | None) -> tuple[str
             raise ValueError("conflicting revisions from model id (@…) and --revision")
         return object_id, revision or embedded or None
     return model_id, revision
+
+
+def _download_failure_diagnostic(exc: ValueError) -> str:
+    message = str(exc)
+    if message.startswith("HuggingFace layout requires project/name"):
+        return "Hugging Face model download requires a project-qualified model name"
+    if message == "download response missing file path":
+        return "Model download response is missing a file path"
+    if message.startswith("insufficient disk space"):
+        return "Insufficient disk space for model download"
+    if message == "could not resolve latest revision":
+        return "Could not resolve latest model revision"
+    if message.startswith("download after retries"):
+        return "Model download failed after retries"
+    return "Model download failed"
 
 
 def _normalize_files(files: list[str] | None) -> list[str]:
@@ -338,7 +353,7 @@ async def download(
         object_id, resolved_revision = _parse_object_and_revision(model_id, revision)
     except ValueError as exc:
         console.print(f"[red]Error:[/red] {exc}")
-        sys.exit(1)
+        raise CliDiagnosticExit("Invalid model download request") from exc
 
     # Ensure we use the v2 apis for this
     config.client.base_url = "https://api.together.ai/v2"
@@ -355,7 +370,7 @@ async def download(
             )
         except ValueError as exc:
             console.print(f"[red]Error:[/red] {exc}")
-            sys.exit(1)
+            raise CliDiagnosticExit(_download_failure_diagnostic(exc)) from exc
         console.print_json(data=result)
         return
 
@@ -372,5 +387,5 @@ async def download(
         )
     except ValueError as exc:
         console.print(f"[red]Error:[/red] {exc}")
-        sys.exit(1)
+        raise CliDiagnosticExit(_download_failure_diagnostic(exc)) from exc
     console.print("Download complete")

@@ -275,9 +275,12 @@ def format_cli_error_for_telemetry(exc: BaseException, *, command: str = "") -> 
             return sanitize_cli_error_message(msg)
 
     if isinstance(exc, CycloptsError):
-        return sanitize_cli_error_message(_stringify_cyclopts_error(exc))
+        message = _stringify_cyclopts_error(exc)
+    else:
+        message = str(exc)
 
-    return sanitize_cli_error_message(str(exc))
+    sanitized = sanitize_cli_error_message(message)
+    return sanitized or type(exc).__name__
 
 
 def _env_telemetry_disabled() -> bool:

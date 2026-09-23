@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.35.0](https://github.com/togethercomputer/together-py/compare/v2.34.0...v2.35.0) (2026-09-17)
+
+
+### Features
+
+* **cli:** expose beta deployment inactive timeout ([#582](https://github.com/togethercomputer/together-py/issues/582)) ([113f6d7](https://github.com/togethercomputer/together-py/commit/113f6d7d0e851d4468f7c3ec1d2eb06cdff074b1))
+* **deployments:** Add inactiveTimeout to deployments ([#644](https://github.com/togethercomputer/together-py/issues/644)) ([3214971](https://github.com/togethercomputer/together-py/commit/3214971fb1bb39b8076da674deda7b16e3c2bf40))
+* **deployments:** expose autoscaling policies and reset semantics (MLE-7727) ([00ff4e8](https://github.com/togethercomputer/together-py/commit/00ff4e8627f624f780fd19ca491796a0b6f0f812))
+* **Rollouts CLI:** take optional disposition when cancelling a rollout ([#577](https://github.com/togethercomputer/together-py/issues/577)) ([d50b06d](https://github.com/togethercomputer/together-py/commit/d50b06d482d935d486961ebb090f5eed5f80f048))
+
+
+### Bug Fixes
+
+* **cli:** preserve rollout JSON failure telemetry ([#579](https://github.com/togethercomputer/together-py/issues/579)) ([edad445](https://github.com/togethercomputer/together-py/commit/edad44530eb2d392f563fedc83d9fda9a82e861a))
+* use valid metric in rollout preview examples ([c3bc21f](https://github.com/togethercomputer/together-py/commit/c3bc21f585619ffd63a2ca1a69e8ff03796784ec))
+
+## [2.34.0](https://github.com/togethercomputer/together-py/compare/v2.33.2...v2.34.0) (2026-09-15)
+
+
+### Features
+
+* **Rollouts:** Add SDK code for endpoint rollouts ([54b6b70](https://github.com/togethercomputer/together-py/commit/54b6b701f4e9db6e618f9813982a4cc99afef00b))
+* **Rollouts CLI:** Add `beta endpoints rollout` command ([#77](https://github.com/togethercomputer/together-py/issues/77)) ([537859e](https://github.com/togethercomputer/together-py/commit/537859e9a5aacd7c427bc13a4e1662c02ac7efb8))
+* **Deployments CLI:** add deployment compliance policy for hipaa requirements ([c5865fa](https://github.com/togethercomputer/together-py/commit/c5865fa53f83c87444cff05fc8bc1815c31c49d4))
+* **Endpoints CLI:** add HIPAA placement flag for beta endpoints ([#568](https://github.com/togethercomputer/together-py/issues/568)) ([cc00709](https://github.com/togethercomputer/together-py/commit/cc00709c8bbf7f4507623cc0c8133db11679b3b8))
+
+
+
+### Bug Fixes
+
+* **CLI:** preserve beta command failure diagnostics ([#571](https://github.com/togethercomputer/together-py/issues/571)) ([b1ef04a](https://github.com/togethercomputer/together-py/commit/b1ef04acfd0f6371425cf0afebad0e78cbbc8ba7))
+* **Files:** Fail parquet file validation when it is larger than the max file size validation ([#558](https://github.com/togethercomputer/together-py/issues/558)) ([0623132](https://github.com/togethercomputer/together-py/commit/06231321be3bf91e769733f34d8b199d6952ac79))
+
+
 ## [2.33.2](https://github.com/togethercomputer/together-py/compare/v2.32.0...v2.33.2) (2026-09-10)
 
 

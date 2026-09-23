@@ -24,7 +24,7 @@ from together.lib.cli._track_cli import (
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
@@ -80,6 +80,7 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
@@ -169,7 +170,7 @@ def _create_client(
                     "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
                 )
                 console.print("You can find your api key at https://api.together.ai/settings/api-keys")
-                sys.exit(1)
+                raise CliDiagnosticExit("Together API key missing")
 
             client._client.event_hooks["request"].append(block_requests_for_api_key)
         else:
@@ -357,6 +358,12 @@ async def launcher(
             {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
         )
         command_succeeded = True
+    except CliBrokenPipeError:
+        track_cli(
+            CliTrackingEvents.CommandUserAborted,
+            {"command": parsed_command, "arguments": explicit_args, "is_beta_command": is_beta_command},
+        )
+        sys.exit(1)
     except KeyboardInterrupt:
         track_cli(
             CliTrackingEvents.CommandUserAborted,
@@ -719,7 +726,7 @@ beta_endpoints_app.command(
     name="rm",
     alias="-d",
     sort_key=5,
-    help="Delete an endpoint, deployment, A/B experiment, or shadow experiment by ID",
+    help="Delete an endpoint, deployment, A/B experiment, shadow experiment, or rollout by ID",
     help_epilogue=BETA_ENDPOINTS_RM_HELP_EXAMPLES,
 )
 # Hidden `delete` alias for `tg beta endpoints delete …` (visible command is `rm`).
@@ -732,6 +739,12 @@ beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.events:events"),
     help="List endpoint audit and lifecycle events",
     sort_key=6,
+)
+beta_endpoints_app.command(
+    (f"{_CLI}.beta.endpoints.rollout:rollout"),
+    help="Roll out a model to receive traffic over another model",
+    help_epilogue=BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
+    sort_key=9999,
 )
 beta_endpoints_app.command(
     (f"{_CLI}.beta.endpoints.shadow:shadow"),

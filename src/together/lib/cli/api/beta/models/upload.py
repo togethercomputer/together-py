@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import math
 import asyncio
 import hashlib
@@ -12,6 +11,7 @@ import httpx
 from cyclopts import Parameter
 
 from together._utils import path_template
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.upload_progress import UploadProgressTracker, format_bytes
@@ -381,5 +381,5 @@ async def upload(
         )
     except ValueError as exc:
         console.print(f"[red]Error:[/red] {exc}")
-        sys.exit(1)
+        raise CliDiagnosticExit("Model file upload failed") from exc
     console.print(f"Upload complete. Revision: {revision_id}")

@@ -125,6 +125,7 @@ async def deploy(
             help=(
                 """Autoscaling metric. Must be set with --scaling-target; --scaling-percentile is optional and only applies to latency metrics.
 
+- active_sessions: Active sessions across the deployment.
 - inflight_requests: Concurrent in-flight requests per replica.
 - gpu_utilization: GPU compute utilization (%).
 - token_utilization: KV-cache utilization (%).
@@ -169,11 +170,11 @@ async def deploy(
         Optional[str], Parameter(name="placement", help="Placement profile ID to use", group=PlacementGroup)
     ] = None,
     placement: Annotated[PlacementModel, Parameter(group=PlacementGroup)] = placement_model,
-    enable_lora: Annotated[
-        Optional[bool],
+    inactive_timeout: Annotated[
+        Optional[int],
         Parameter(
-            negative=(),
-            help="Runs the multi-LoRA kernel so adapters hot-load after deploy. Toggling later needs a redeploy.",
+            help="Minutes of inactivity before the deployment auto-stops (0 to disable; otherwise 30-1440).",
+            validator=Number(gte=0, lte=1440),
         ),
     ] = None,
     traffic_weight: Annotated[
@@ -195,6 +196,9 @@ async def deploy(
             "Do not pass --model-revision when --model already includes a revision. "
             "Specify the revision only in the fully qualified --model path."
         )
+    inline_placement_value = placement.to_json()
+    if placement_id and inline_placement_value is not None:
+        raise ValueError("Use either --placement or inline placement options, not both.")
 
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
@@ -223,7 +227,7 @@ async def deploy(
     if placement_id:
         placement_value = PlacementProfile(profile=placement_id)
     else:
-        placement_value = placement.to_json()
+        placement_value = inline_placement_value
 
     model_path = construct_model_path(resolved_model, resolved_revision)
 
@@ -247,7 +251,7 @@ async def deploy(
             config_value=config_value,
             autoscaling=autoscaling,
             placement=placement_value,
-            enable_lora=enable_lora,
+            inactive_timeout=inactive_timeout,
             traffic_weight=traffic_weight,
             hardware_pricing=hardware_pricing,
         )
@@ -264,7 +268,7 @@ async def deploy(
                 model=model_path,
                 config=construct_config_path(config_value),
                 autoscaling=autoscaling,
-                enable_lora=enable_lora if enable_lora is not None else omit,
+                inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
                 # Revision is already embedded in model_path when present.
                 model_revision_id=omit,
                 placement=placement_value or omit,
@@ -311,7 +315,7 @@ def _print_deployment_preview(
     config_value: Config,
     autoscaling: DeploymentAutoscalingParam,
     placement: Placement | None,
-    enable_lora: bool | None,
+    inactive_timeout: int | None,
     traffic_weight: float | None,
     hardware_pricing: HardwarePricing | None = None,
 ) -> None:
@@ -353,11 +357,13 @@ def _print_deployment_preview(
                     "--constraint",
                     "required" if constraint == "ENFORCEMENT_REQUIRED" else "preferred",
                 )
-            if inline.get("hipaa"):
-                add_row("--hipaa", "true")
+            if (compliance_policy := inline.get("compliance_policy")) and (
+                hipaa := compliance_policy.get("hipaa")
+            ) is not None:
+                add_row("--placement.hipaa", "true" if hipaa else "false")
 
-    if enable_lora is not None:
-        add_row("--enable-lora", "true" if enable_lora else "false")
+    if inactive_timeout is not None:
+        add_row("--inactive-timeout", str(inactive_timeout))
     if traffic_weight is not None:
         add_row("--traffic-weight", str(traffic_weight))
     add_row("--model", f"{model.name} ({model_path})")

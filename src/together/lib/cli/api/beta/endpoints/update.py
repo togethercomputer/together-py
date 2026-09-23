@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Any, Optional
 from typing_extensions import Annotated
 
@@ -9,6 +8,7 @@ from cyclopts.validators import Number
 
 from together import omit
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
@@ -101,6 +101,13 @@ async def update(
             validator=Number(gte=1, lte=99),
         ),
     ] = None,
+    inactive_timeout: Annotated[
+        Optional[int],
+        Parameter(
+            help="Updated inactive timeout in minutes (0 to disable; otherwise 30-1440).",
+            validator=Number(gte=0, lte=1440),
+        ),
+    ] = None,
     etag: Annotated[
         Optional[str],
         Parameter(
@@ -131,12 +138,15 @@ async def update(
     if autoscaling is not None:
         kwargs["autoscaling"] = autoscaling
         update_mask.append("autoscaling")
+    if inactive_timeout is not None:
+        kwargs["inactive_timeout"] = inactive_timeout
+        update_mask.append("inactiveTimeout")
     if etag is not None:
         kwargs["etag"] = etag
 
     if not update_mask and traffic_weight is None and ab_percent is None:
         console.print("Error: At least one update option must be specified.")
-        sys.exit(1)
+        raise CliDiagnosticExit("At least one endpoint update option must be specified")
 
     endpoint = await find_endpoint_by_deployment(config.client, id)
 

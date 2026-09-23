@@ -12,6 +12,9 @@ __all__ = ["FinetuneModelLimits", "LoraTraining", "FullTraining"]
 class LoraTraining(BaseModel):
     """Limits for LoRA training."""
 
+    default_rank: int
+    """Default LoRA rank applied when a fine-tune request omits training_type."""
+
     max_batch_size: int
     """Maximum batch size for SFT LoRA training."""
 

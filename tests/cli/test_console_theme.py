@@ -9,6 +9,7 @@ from rich.console import Console
 from together.lib.cli.utils._console import (
     _DARK_STYLES,
     _LIGHT_STYLES,
+    CliBrokenPipeError,
     build_theme,
     create_console,
     resolve_cli_theme,
@@ -127,3 +128,13 @@ def test_console_replaces_characters_unsupported_by_stream_encoding(monkeypatch:
     cp1252_output.flush()
 
     assert raw_output.getvalue().decode("cp1252") == "? ? café\n"
+
+
+def test_console_exposes_rich_broken_pipe_as_distinct_exception(monkeypatch: pytest.MonkeyPatch) -> None:
+    def raise_system_exit(_console: Console) -> None:
+        raise SystemExit(1)
+
+    monkeypatch.setattr(Console, "on_broken_pipe", raise_system_exit)
+
+    with pytest.raises(CliBrokenPipeError):
+        create_console().on_broken_pipe()

@@ -7,11 +7,12 @@ from typing_extensions import Literal, TypeAlias
 from pydantic import Field as FieldInfo
 
 from ..._models import BaseModel
+from .runtime_info import RuntimeInfo
 from .deployment_status import DeploymentStatus
 from .deployment_autoscaling import DeploymentAutoscaling
 from .deployment_placement_config import DeploymentPlacementConfig
 
-__all__ = ["EndpointDeployment", "Autoscaling", "Placement", "PlacementInline", "PlacementProfile", "RuntimeInfo"]
+__all__ = ["EndpointDeployment", "Autoscaling", "Placement", "PlacementInline", "PlacementProfile"]
 
 
 class Autoscaling(DeploymentAutoscaling):
@@ -31,22 +32,6 @@ class PlacementProfile(BaseModel):
 
 
 Placement: TypeAlias = Union[PlacementInline, PlacementProfile]
-
-
-class RuntimeInfo(BaseModel):
-    """Runtime information derived from the deployment's configuration."""
-
-    engine_type: Optional[str] = FieldInfo(alias="engineType", default=None)
-    """Serving engine, such as `vllm`, `trtllm`, or `sglang`."""
-
-    engine_version: Optional[str] = FieldInfo(alias="engineVersion", default=None)
-    """Version of the serving engine."""
-
-    function_calling_supported: Optional[bool] = FieldInfo(alias="functionCallingSupported", default=None)
-    """Whether the runtime accepts tool and function-calling requests."""
-
-    structured_output_supported: Optional[bool] = FieldInfo(alias="structuredOutputSupported", default=None)
-    """Whether the runtime can constrain generation to a structured output schema."""
 
 
 class EndpointDeployment(BaseModel):
@@ -133,13 +118,16 @@ class EndpointDeployment(BaseModel):
     desired_replicas: Optional[int] = FieldInfo(alias="desiredReplicas", default=None)
     """Number of replicas the autoscaler currently wants across all regions."""
 
-    enable_lora: Optional[bool] = FieldInfo(alias="enableLora", default=None)
-    """Whether the deployment can dynamically load LoRA adapters."""
-
     estimated_effective_traffic_share: Optional[float] = FieldInfo(alias="estimatedEffectiveTrafficShare", default=None)
     """
     Estimated fraction in [0, 1] of endpoint traffic that reaches this deployment
     under the current routing configuration. Absent or unrouted deployments are 0.
+    """
+
+    inactive_timeout: Optional[int] = FieldInfo(alias="inactiveTimeout", default=None)
+    """Minutes without an inference request before the deployment stops automatically.
+
+    Omitted or 0 means automatic stopping is disabled.
     """
 
     placement: Optional[Placement] = None

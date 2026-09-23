@@ -7,8 +7,8 @@ from rich.table import Table
 from rich.padding import Padding
 
 from together.lib.utils import convert_bytes
+from together.types.beta import Model, ModelWeights
 from together.lib.utils.tools import format_datetime
-from together.types.beta.model import Model, Weights
 from together.types.beta.models import Config
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._console import console
@@ -67,7 +67,7 @@ def _format_count(count: str | None) -> str:
         return count
 
 
-def _print_model_weights(weights: Weights) -> None:
+def _print_model_weights(weights: ModelWeights) -> None:
     weights_table = ListTable(show_lines=False)
     weights_table.add_primary_column("Property", ratio=1)
     weights_table.add_column("Value", ratio=2)

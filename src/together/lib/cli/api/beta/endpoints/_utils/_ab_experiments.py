@@ -167,3 +167,19 @@ def format_member_role(role: str) -> str:
     if role.endswith("_VARIANT"):
         return "VARIANT"
     return role
+
+
+def members_without_deployment(members: list[AbMember], deployment_id: str) -> list[AbMemberParam]:
+    """Build AB member params with ``deployment_id`` removed; its percent goes to control."""
+    removed = next((m for m in members if m.deployment_id == deployment_id), None)
+    if removed is None:
+        raise ValueError(f"Deployment {deployment_id} is not a member of the A/B experiment.")
+
+    remaining = [m for m in members if m.deployment_id != deployment_id]
+    result: list[AbMemberParam] = []
+    for member in remaining:
+        percent = member.percent
+        if member.role == "AB_EXPERIMENT_MEMBER_ROLE_CONTROL":
+            percent = member.percent + removed.percent
+        result.append(AbMemberParam(deployment_id=member.deployment_id, role=member.role, percent=percent))
+    return result

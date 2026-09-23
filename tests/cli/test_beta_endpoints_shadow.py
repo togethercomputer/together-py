@@ -219,6 +219,13 @@ class TestResolveRateOrTargetQps:
 
 
 class TestBetaEndpointShadow:
+    def test_shadow_help_omits_enable_lora(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "endpoints", "shadow", "--help"])
+
+        output = " ".join(result.output.replace("│", " ").split())
+        assert result.exit_code == 0
+        assert "--enable-lora" not in output
+
     @pytest.mark.respx(base_url=base_url)
     def test_shadow_creates_experiment_deployment_and_target(
         self,
@@ -254,7 +261,6 @@ class TestBetaEndpointShadow:
             "model": "projects/proj/models/ml_1",
             "config": "projects/proj/configs/cr_1",
             "autoscaling": {"minReplicas": 1, "maxReplicas": 1},
-            "enableLora": False,
         }
 
         target_body = json.loads(cast(Call, create_target_route.calls[0]).request.content.decode())
