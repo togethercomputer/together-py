@@ -30,6 +30,7 @@ Every `loss_fn_inputs` array is indexed by **target** position and shifted along
 import os
 from together.lib.beta.rl import (
     ModelResourcesClient,
+    ComputeConfig,
     AdamParams,
     EncodedTextChunk,
     TensorData,
@@ -44,7 +45,7 @@ resources = ModelResourcesClient.create(
     base_model="Qwen/Qwen3.5-4B",
     api_key=os.environ.get("TOGETHER_API_KEY"),
     base_url=os.environ.get("TOGETHER_RL_BASE_URL"),
-    num_generator_replicas=0,  # SFT does not need a generator; provisions a trainer-only resource.
+    compute_config=ComputeConfig(num_generator_replicas=0),  # SFT needs only a trainer.
 )
 session = resources.create_session(lora_config=LoraConfig(rank=32, alpha=64))
 
@@ -1119,7 +1120,8 @@ from together.lib.beta.rl import ModelResourcesClient
 ```
 
 Provisions shared GPU model resources and polls until they reach `READY` status. Multiple LoRA training
-sessions can then be created via `create_session`.
+sessions can then be created via `create_session`. `await ModelResourcesClient.create_async(...)` accepts
+the same arguments. Import `ComputeConfig` from `together.lib.beta.rl` to specify the compute layout.
 
 ```python
 ModelResourcesClient.create(
@@ -1128,7 +1130,7 @@ ModelResourcesClient.create(
     api_key: str | None = None,
     base_url: str | httpx.URL | None = None,
     lora_enabled: bool = True,
-    num_generator_replicas: int = 1,
+    compute_config: ComputeConfig | None = None,
     optimizer_config: OptimizerConfig | None = None,
     timeout: float | None = 3600.0,
     interval: float = 10.0,
@@ -1141,7 +1143,7 @@ ModelResourcesClient.create(
 | `api_key`       | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`      | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `lora_enabled`  | `bool`          | `True`       | Enable LoRA adapters on the provisioned resources.              |
-| `num_generator_replicas` | `int`  | `1`          | Number of generator replicas to provision. `0` runs the trainer only, with no generator. |
+| `compute_config` | `ComputeConfig \| None` | `None` | Compute layout. Use `ComputeConfig(num_generator_replicas=0)` for a trainer-only resource. Omit it to use the server-selected layout. |
 | `optimizer_config` | `OptimizerConfig \| None` | `None` | Optimizer selection and hyperparameters for sessions on these resources, e.g. `OptimizerConfig(muon=...)`. Defaults to Adam, which can also be selected explicitly with `OptimizerConfig(adam={})`. |
 | `timeout`       | `float \| None` | `3600.0`     | Max seconds to wait. `None` waits indefinitely.                 |
 | `interval`      | `float`         | `10.0`       | Polling interval in seconds.                                    |
