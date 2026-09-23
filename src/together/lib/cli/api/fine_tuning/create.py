@@ -75,8 +75,6 @@ model_group = Group(
 )
 
 DEFAULT_LEARNING_RATE = 1e-5
-DEFAULT_LORA_R = 8
-DEFAULT_LORA_ALPHA = 8
 
 
 async def create(
@@ -131,11 +129,15 @@ async def create(
     max_grad_norm: Annotated[float, Parameter(help="Max gradient norm for clipping (0 to disable)")] = 1.0,
     weight_decay: Annotated[float, Parameter(help="Weight decay")] = 0.0,
     lora: Annotated[Optional[bool], Parameter(help="Whether to use LoRA adapters for fine-tuning")] = None,
-    lora_r: Annotated[int, Parameter(help="Rank of the LoRA adapter matrices")] = DEFAULT_LORA_R,
+    lora_r: Annotated[
+        Optional[int],
+        Parameter(help="Rank of the LoRA adapter matrices. Defaults to the model's own default rank"),
+    ] = None,
     lora_dropout: Annotated[float, Parameter(help="Dropout probability applied to LoRA adapter inputs")] = 0,
     lora_alpha: Annotated[
-        float, Parameter(help="Scaling factor applied to the LoRA adapter weights")
-    ] = DEFAULT_LORA_ALPHA,
+        Optional[float],
+        Parameter(help="Scaling factor applied to the LoRA adapter weights. Defaults to twice the rank"),
+    ] = None,
     lora_trainable_modules: Annotated[
         str,
         Parameter(
@@ -272,17 +274,24 @@ async def create(
     if lora is None:
         pass
     elif lora:
-        # Cyclopts has no Click-style ctx/ParameterSource; use CLI defaults as heuristic for "unset".
-        if lora_r == DEFAULT_LORA_R:
-            training_args["lora_r"] = model_limits.lora_training.max_rank
+        if lora_r is None:
+            training_args["lora_r"] = model_limits.lora_training.default_rank
+        # Cyclopts has no Click-style ctx/ParameterSource; use the CLI default as heuristic for "unset".
         if learning_rate == DEFAULT_LEARNING_RATE:
             training_args["learning_rate"] = 1e-3
-        if lora_alpha == DEFAULT_LORA_ALPHA:
+        if lora_alpha is None:
             training_args["lora_alpha"] = training_args["lora_r"] * 2
     else:
         if model_limits.full_training is None:
             raise ValueError(f"Full fine-tuning is not supported for the model `{model}`")
-        if any([lora_r != 8, lora_dropout != 0, lora_alpha != 8, lora_trainable_modules != "all-linear"]):
+        if any(
+            [
+                lora_r is not None,
+                lora_dropout != 0,
+                lora_alpha is not None,
+                lora_trainable_modules != "all-linear",
+            ]
+        ):
             raise ValueError(
                 "You set LoRA parameters for a full fine-tuning job. Please use --lora or remove LoRA parameters."
             )

@@ -150,7 +150,8 @@ _MODEL_LIMITS_BODY = {
     "lora_training": {
         "max_batch_size": 128,
         "max_batch_size_dpo": 64,
-        "max_rank": 64,
+        "max_rank": 128,
+        "default_rank": 64,
         "min_batch_size": 1,
         "target_modules": ["q_proj", "v_proj"],
     },
@@ -276,6 +277,33 @@ class TestFineTuningCreate:
         assert "The estimated price of this job is $123.45." in output
         assert "insufficient funds" in result.output
         assert create.calls
+
+    @pytest.mark.respx(base_url=base_url, assert_all_called=False)
+    def test_create_lora_uses_default_rank(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/fine-tunes/models/limits").mock(return_value=httpx.Response(200, json=_MODEL_LIMITS_BODY))
+        respx_mock.post("/fine-tunes/estimate-price").mock(
+            return_value=httpx.Response(200, json={"estimated_total_price": 1.0, "allowed_to_proceed": True})
+        )
+        create = respx_mock.post("/fine-tunes").mock(return_value=httpx.Response(200, json=_FT_CREATE_BODY))
+
+        result = cli_runner.invoke(
+            [
+                "fine-tuning",
+                "create",
+                "--training-file",
+                "file-train",
+                "--model",
+                "meta-llama/Llama-3-8b",
+                "--lora",
+            ],
+            input="y\n",
+        )
+
+        assert result.exit_code == 0
+        assert create.calls
+        body = json.loads(create.calls.last.request.content)
+        assert body["training_type"]["lora_r"] == 64
+        assert body["training_type"]["lora_alpha"] == 128
 
     @pytest.mark.respx(base_url=base_url, assert_all_called=False)
     def test_create_early_stopping_sends_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -645,7 +673,8 @@ class TestFineTuningModelLimits:
         assert params["model_name"] == "meta-llama/Llama-3-8b"
         body = json.loads(result.output)
         assert body["model_name"] == "meta-llama/Llama-3-8b"
-        assert body["lora_training"]["max_rank"] == 64
+        assert body["lora_training"]["max_rank"] == 128
+        assert body["lora_training"]["default_rank"] == 64
 
     @pytest.mark.respx(base_url=base_url)
     def test_model_limits_ft_alias_table(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
