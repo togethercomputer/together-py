@@ -26,7 +26,7 @@ from together.lib.beta.rl import (
     EncodedTextChunk,
     _loop as loop_module,
 )
-from together.lib.beta.rl._loop import _ProcessLoop, run_untracked
+from together.lib.beta.rl._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
 from together.lib.beta.rl.clients import (
     session as session_client_module,
     model_resources as model_resources_client_module,
@@ -547,12 +547,20 @@ def _interrupt_the_first_submitted_wait(monkeypatch: pytest.MonkeyPatch, entered
     submitted: list[Future[Any]] = []
     interrupted: list[Future[Any]] = []
     real_submit = loop_module._process_loop.submit
+    real_claim = LoopGate._claim_teardown
     real_result = cast(Any, Future).result
 
     def submit(coro: Any) -> Future[Any]:
         fut = real_submit(coro)
         submitted.append(fut)
         return fut
+
+    def claim(self: LoopGate, stops_remote: bool) -> tuple[bool, Future[Any] | None]:
+        claimed, outcome = real_claim(self, stops_remote)
+        if claimed:
+            assert outcome is not None
+            submitted.append(outcome)
+        return claimed, outcome
 
     def result(self: Future[Any], timeout: float | None = None) -> Any:
         # One-shot, so the reaping wait _blocking_result does after cancelling still runs for real.
@@ -564,6 +572,7 @@ def _interrupt_the_first_submitted_wait(monkeypatch: pytest.MonkeyPatch, entered
 
     monkeypatch.setattr(loop_module._process_loop, "submit", submit)
     monkeypatch.setattr(Future, "result", result)
+    monkeypatch.setattr(LoopGate, "_claim_teardown", claim)
 
 
 def test_interrupt_cancels_untracked_work(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -731,3 +740,92 @@ def test_fork_child_is_not_wedged_by_an_inherited_teardown() -> None:
 
     assert outcome == b"\x00", "fork child wedged waiting on a teardown the parent was driving"
     session._loop._abort_teardown(RuntimeError("no teardown was really driven"))
+
+
+class _PausedTeardown:
+    def __init__(self) -> None:
+        self.entered = threading.Event()
+        self.cleaning_up = threading.Event()
+        self.release_cleanup = threading.Event()
+        self.finished_cleanup = threading.Event()
+        self.attempts = 0
+
+    async def stop(self) -> str:
+        self.attempts += 1
+        if self.attempts > 1:
+            return "stopped"
+        self.entered.set()
+        try:
+            await asyncio.sleep(60)
+            raise AssertionError("teardown was not cancelled")
+        finally:
+            self.cleaning_up.set()
+            assert await asyncio.to_thread(self.release_cleanup.wait, 10)
+            self.finished_cleanup.set()
+
+
+async def _check_gate_during_cleanup(session: SessionClient, teardown: _PausedTeardown) -> None:
+    assert await asyncio.to_thread(teardown.cleaning_up.wait, 10)
+    assert not teardown.finished_cleanup.is_set()
+    with pytest.raises(RuntimeError, match="stopped or stopping"):
+        await session.retrieve_async()
+
+    joined = asyncio.Event()
+
+    async def join() -> Any:
+        joined.set()
+        return await session.stop_async()
+
+    duplicate = asyncio.create_task(join())
+    try:
+        await joined.wait()
+        assert not duplicate.done()
+        assert teardown.attempts == 1
+        teardown.release_cleanup.set()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(duplicate, 10)
+    finally:
+        teardown.release_cleanup.set()
+        if not duplicate.done():
+            duplicate.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await duplicate
+    assert teardown.finished_cleanup.is_set()
+    assert not session._loop.closed
+    assert await session.stop_async() == "stopped"
+    assert session._loop.closed
+    assert teardown.attempts == 2
+
+
+@pytest.mark.parametrize("process_loop", [False, True], ids=["foreign-loop", "process-loop"])
+async def test_cancelled_teardown_holds_gate(monkeypatch: pytest.MonkeyPatch, process_loop: bool) -> None:
+    session = _make_session()
+    teardown = _PausedTeardown()
+    monkeypatch.setattr(session, "_stop_remote", teardown.stop)
+    stop = session.stop_async()
+    winner = asyncio.create_task(run_untracked_async(stop) if process_loop else stop)
+    try:
+        assert await asyncio.to_thread(teardown.entered.wait, 10)
+        winner.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await winner
+        await _check_gate_during_cleanup(session, teardown)
+    finally:
+        teardown.release_cleanup.set()
+        if not winner.done():
+            winner.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await winner
+
+
+def test_interrupted_teardown_holds_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = _make_session()
+    teardown = _PausedTeardown()
+    monkeypatch.setattr(session, "_stop_remote", teardown.stop)
+    _interrupt_the_first_submitted_wait(monkeypatch, teardown.entered)
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            session.stop()
+        asyncio.run(_check_gate_during_cleanup(session, teardown))
+    finally:
+        teardown.release_cleanup.set()
