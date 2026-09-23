@@ -14,6 +14,10 @@ async def create(
     region: Annotated[str, Parameter(help="Region to create the storage volume in")],
     size_tib: Annotated[int, Parameter(help="Size of the storage volume in TiB")],
     volume_name: Annotated[str, Parameter(help="Name of the storage volume")],
+    instance_cluster_id: Annotated[
+        Optional[str],
+        Parameter(help="Cluster ID to pin the volume to the same substrate as that GPU cluster"),
+    ] = None,
     is_lifecycle_independent: Annotated[
         Optional[bool],
         Parameter(help="Keep the storage volume after cluster decommissioning"),
@@ -26,6 +30,7 @@ async def create(
         region=region,
         size_tib=size_tib,
         volume_name=volume_name,
+        instance_cluster_id=instance_cluster_id if instance_cluster_id is not None else omit,
         is_lifecycle_independent=is_lifecycle_independent if is_lifecycle_independent is not None else omit,
     )
 

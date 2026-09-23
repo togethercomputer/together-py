@@ -854,6 +854,7 @@ class TestBetaClustersCreate:
         result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
 
         assert "B300_SXM" in result.output
+        assert "--shared-volume-instance-cluster-id" in result.output
         assert result.exit_code == 0
 
     def test_invalid_nvidia_selector_is_json_in_json_mode(self, cli_runner: CliRunner) -> None:
@@ -1211,6 +1212,8 @@ class TestBetaClustersStorage:
                 "1",
                 "--volume-name",
                 "test-volume",
+                "--instance-cluster-id",
+                "cluster-pin",
                 "--is-lifecycle-independent",
                 "--json",
             ],
@@ -1222,6 +1225,7 @@ class TestBetaClustersStorage:
             "region": "us-east-1",
             "size_tib": 1,
             "volume_name": "test-volume",
+            "instance_cluster_id": "cluster-pin",
             "is_lifecycle_independent": True,
         }
         assert result.exit_code == 0
