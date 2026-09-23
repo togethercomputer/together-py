@@ -120,11 +120,14 @@ async def async_wait_for_operation(
         if deadline is not None and now() >= deadline:
             raise TimeoutError("Timed out waiting for operation to complete")
 
-        current = await async_retrieve_operation(
-            client,
-            session_id=session_id,
-            operation=current,
-        )
+        retrieval = async_retrieve_operation(client, session_id=session_id, operation=current)
+        if deadline is None:
+            current = await retrieval
+        else:
+            try:
+                current = await asyncio.wait_for(retrieval, timeout=max(0.0, deadline - now()))
+            except asyncio.TimeoutError as exc:
+                raise TimeoutError(str(exc) or "Timed out waiting for operation to complete") from exc
         if current.status in (_COMPLETED, _FAILED):
             continue
         # Clamp to the remaining budget so a long sleep does not overshoot the caller's

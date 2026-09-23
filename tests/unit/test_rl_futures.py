@@ -392,12 +392,7 @@ async def test_timeout_includes_lock_wait(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(rl_ops, "async_wait_for_operation", fake_wait)
     future = OperationFuture(_session(), _operation(), _identity)
     first = asyncio.create_task(future.result_async())
-    for _ in range(500):
-        if polling.is_set():
-            break
-        await asyncio.sleep(0)
-    else:
-        raise AssertionError("in-flight collector never started polling")
+    assert await asyncio.to_thread(polling.wait, 5), "in-flight collector never started polling"
 
     with pytest.raises(TimeoutError):
         await future.result_async(timeout=0.1)
@@ -414,3 +409,85 @@ async def test_timeout_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
     future = OperationFuture(_session(), _operation(), _identity)
     with pytest.raises(TimeoutError, match="timed out after"):
         await future.result_async(1.5)
+
+
+@pytest.mark.parametrize("stage", ["retrieve", "resolve"])
+@pytest.mark.parametrize("sync", [False, True])
+async def test_collection_deadline_cancels_and_retries(monkeypatch: pytest.MonkeyPatch, stage: str, sync: bool) -> None:
+    cancelled = threading.Event()
+    slow = True
+
+    async def pause() -> None:
+        try:
+            await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+
+    async def retrieve(_client: Any, *, session_id: str, operation: Any) -> Any:  # noqa: ARG001
+        if slow and stage == "retrieve":
+            await pause()
+        return SampleOperation(id=operation.id, status="TRAINING_OPERATION_STATUS_COMPLETED")
+
+    async def resolve(_completed: Any) -> str:
+        if slow and stage == "resolve":
+            await pause()
+        return "ok"
+
+    monkeypatch.setattr(rl_ops, "async_retrieve_operation", retrieve)
+    session = _session()
+    future = OperationFuture(session, _operation(), resolve)
+    try:
+        with pytest.raises(TimeoutError, match="Timed out waiting for operation"):
+            if sync:
+                await asyncio.to_thread(future.result, timeout=0.05)
+            else:
+                await future.result_async(timeout=0.05)
+        assert cancelled.is_set()
+        slow = False
+        if sync:
+            assert await asyncio.to_thread(future.result) == "ok"
+        else:
+            assert await future.result_async() == "ok"
+    finally:
+        await session.detach_async()
+
+
+async def test_collection_shares_one_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def retrieve(_client: Any, *, session_id: str, operation: Any) -> Any:  # noqa: ARG001
+        await asyncio.sleep(0.1)
+        return SampleOperation(id=operation.id, status="TRAINING_OPERATION_STATUS_COMPLETED")
+
+    async def resolve(_completed: Any) -> str:
+        await asyncio.sleep(0.1)
+        return "ok"
+
+    monkeypatch.setattr(rl_ops, "async_retrieve_operation", retrieve)
+    session = _session()
+    future = OperationFuture(session, _operation(), resolve)
+    try:
+        with pytest.raises(TimeoutError):
+            await future.result_async(timeout=0.15)
+        assert await future.result_async() == "ok"
+    finally:
+        await session.detach_async()
+
+
+async def test_poll_deadline_bounds_retrieval(monkeypatch: pytest.MonkeyPatch) -> None:
+    cancelled = False
+
+    async def retrieve(_client: Any, *, session_id: str, operation: Any) -> Any:  # noqa: ARG001
+        nonlocal cancelled
+        try:
+            await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
+        return SampleOperation(id=operation.id, status="TRAINING_OPERATION_STATUS_COMPLETED")
+
+    monkeypatch.setattr(rl_ops, "async_retrieve_operation", retrieve)
+    with pytest.raises(TimeoutError, match="Timed out waiting for operation"):
+        await rl_ops.async_wait_for_operation(
+            cast(Any, None), session_id="sess", operation=_operation(), timeout=0.05, interval=0.5
+        )
+    assert cancelled

@@ -57,21 +57,21 @@ class OperationFuture(Generic[T]):
         return await self._session.run_async(self._collect(timeout=timeout))
 
     async def _collect(self, timeout: float | None = None) -> T:
-        deadline = None if timeout is None else time.monotonic() + timeout
-        if deadline is None:
-            await self._lock.acquire()
-        else:
-            try:
-                await asyncio.wait_for(self._lock.acquire(), timeout=timeout)
-            except asyncio.TimeoutError as exc:
-                raise TimeoutError("Timed out waiting for operation to complete") from exc
+        if timeout is None:
+            return await self._collect_result(deadline=None)
         try:
+            return await asyncio.wait_for(self._collect_result(deadline=time.monotonic() + timeout), timeout=timeout)
+        except asyncio.TimeoutError as exc:
+            # asyncio.TimeoutError is distinct from TimeoutError on Python 3.10.
+            raise TimeoutError(str(exc) or "Timed out waiting for operation to complete") from exc
+
+    async def _collect_result(self, *, deadline: float | None) -> T:
+        async with self._lock:
             if self._resolved:
                 if self._error is not None:
                     raise self._error
                 return cast(T, self._value)
 
-            remaining = None if deadline is None else max(0.0, deadline - time.monotonic())
             # Cancel/timeout/transport errors say nothing about the operation itself, so
             # they stay uncached. Only a failed status is terminal.
             try:
@@ -79,7 +79,7 @@ class OperationFuture(Generic[T]):
                     client=self._session._client,
                     session_id=self._session._session_id,
                     operation=self._operation,
-                    timeout=remaining,
+                    timeout=None if deadline is None else max(0.0, deadline - time.monotonic()),
                     interval=_operations.DEFAULT_OPERATION_INTERVAL,
                 )
             except _operations.OperationFailedError as exc:
@@ -92,8 +92,6 @@ class OperationFuture(Generic[T]):
             self._value = value
             self._resolved = True
             return value
-        finally:
-            self._lock.release()
 
     def __await__(self) -> Generator[Any, None, T]:
         return self.result_async().__await__()
