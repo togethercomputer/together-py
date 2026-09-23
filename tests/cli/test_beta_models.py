@@ -384,6 +384,63 @@ class TestBetaModelsPublic:
         assert "TP1" in result.output
         assert "cr_1" not in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_public_table_shows_serverless_pricing(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _supported_model_body(
+                            products=["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED"],
+                            pricing={"input": 0.15, "cachedInput": 0.05, "output": 0.60},
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "public", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Pricing" in result.output
+        assert "input" in result.output
+        assert "$0.15" in result.output
+        assert "cached" in result.output
+        assert "$0.05" in result.output
+        assert "output" in result.output
+        assert "$0.60" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_public_table_shows_serverless_pricing_without_profiles(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _supported_model_body(
+                            products=["PRODUCT_SERVERLESS"],
+                            deploymentProfiles=[],
+                            pricing={"input": 0.15, "output": 0.60},
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "public", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "meta-llama/Llama-3-8B" in result.output
+        assert "$0.15" in result.output
+        assert "$0.60" in result.output
+
 
 class TestBetaModelsOrg:
     @pytest.mark.respx(base_url=base_url)
