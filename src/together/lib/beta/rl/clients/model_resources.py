@@ -282,30 +282,28 @@ class ModelResourcesClient:
         output = await self._client.beta.rl.model_resources.stop(
             self._model_resources_id, force=force if force else omit
         )
-        try:
-            if output.status not in _TERMINAL_STATUSES:
-                start = time.monotonic()
-                while True:
-                    try:
-                        current = await self._client.beta.rl.model_resources.retrieve(self._model_resources_id)
-                    except NotFoundError:
-                        # Already gone. Transient retrieve failures are retried by the
-                        # HTTP client; remaining errors still raise.
-                        break
-                    if current.status in _TERMINAL_STATUSES:
-                        break
-                    if (
-                        DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT is not None
-                        and time.monotonic() - start >= DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT
-                    ):
-                        warnings.warn(
-                            f"Timed out waiting for model resources {self._model_resources_id} to stop billing",
-                            stacklevel=2,
-                        )
-                        break
-                    await asyncio.sleep(DEFAULT_MODEL_RESOURCES_STOP_INTERVAL)
-        finally:
-            await self._client.close()
+        if output.status not in _TERMINAL_STATUSES:
+            start = time.monotonic()
+            while True:
+                try:
+                    current = await self._client.beta.rl.model_resources.retrieve(self._model_resources_id)
+                except NotFoundError:
+                    # Already gone. Transient retrieve failures are retried by the
+                    # HTTP client; remaining errors still raise.
+                    break
+                if current.status in _TERMINAL_STATUSES:
+                    break
+                if (
+                    DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT is not None
+                    and time.monotonic() - start >= DEFAULT_MODEL_RESOURCES_STOP_TIMEOUT
+                ):
+                    warnings.warn(
+                        f"Timed out waiting for model resources {self._model_resources_id} to stop billing",
+                        stacklevel=2,
+                    )
+                    break
+                await asyncio.sleep(DEFAULT_MODEL_RESOURCES_STOP_INTERVAL)
+        await self._client.close()
         return output
 
     def detach(self) -> None:
