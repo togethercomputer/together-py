@@ -143,7 +143,8 @@ async def create(
         Parameter(
             help=(
                 "LoRA target modules (e.g. 'all-linear', 'q_proj,v_proj'). "
-                "Fine-tunes targeting MoE expert modules (w_up, w_gate, w_down) produce adapter-only output."
+                "Fine-tuning jobs that target expert modules produce adapter-only output unless the selected "
+                "model supports merged expert LoRA output."
             )
         ),
     ] = "all-linear",
