@@ -77,7 +77,7 @@ dev = [
     "pyright==1.1.399",
     "mypy==1.17",
     "respx",
-    "pytest",
+    "pytest>=9.0.3",
     "pytest-asyncio",
     "ruff",
     "time-machine",
