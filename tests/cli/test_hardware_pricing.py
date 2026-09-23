@@ -7,11 +7,18 @@ import pytest
 
 from together.lib.cli.utils.config import CLIConfig
 from together.types.beta.models.config import Config
-from together.types.beta.endpoints.inference_instance_type import InferenceInstanceType
+from together.types.beta.endpoints.inference_instance_type import (
+    Region,
+    RegionCompliance,
+    InferenceInstanceType,
+    RegionCompliancePolicy,
+    RegionComplianceHeadroom,
+)
 from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import (
     format_gpu_label,
     prettify_hardware,
     find_instance_type,
+    format_hipaa_headroom,
     format_estimated_price,
     hardware_from_selectors,
     resolve_hardware_pricing,
@@ -49,6 +56,24 @@ def _instance(**overrides: Any) -> InferenceInstanceType:
     return InferenceInstanceType.construct(**body)
 
 
+def _region(
+    name: str,
+    *,
+    hipaa: bool,
+    relation: str = "RELATION_EQ",
+    value: int | None = 2,
+) -> Region:
+    return Region.construct(
+        name=name,
+        compliance=[
+            RegionCompliance.construct(
+                policy=RegionCompliancePolicy.construct(hipaa=hipaa),
+                headroom=RegionComplianceHeadroom.construct(relation=relation, value=value),
+            )
+        ],
+    )
+
+
 def test_hardware_from_selectors() -> None:
     assert hardware_from_selectors(_config()) == "1xnvidia-h100-80gb"
     assert hardware_from_selectors(_config(selectors=[])) is None
@@ -68,6 +93,22 @@ def test_format_estimated_price_single_and_range() -> None:
     assert format_estimated_price(2400, min_replicas=1, max_replicas=1) == "$24.00/hr"
     assert format_estimated_price(2400, min_replicas=1, max_replicas=2) == "$24.00/hr - $48.00/hr"
     assert format_estimated_price(2400, min_replicas=0, max_replicas=1) == "$0.00/hr - $24.00/hr"
+
+
+def test_format_hipaa_headroom() -> None:
+    instance = _instance(
+        regions=[
+            _region("us-east-1", hipaa=True),
+            _region("us-west-2", hipaa=True, relation="RELATION_GTE", value=4),
+            _region("eu-central-1", hipaa=False),
+        ]
+    )
+
+    assert format_hipaa_headroom(instance) == "us-east-1: 2 replicas, us-west-2: >=4 replicas"
+    assert (
+        format_hipaa_headroom(instance, regions=["us-west-2", "ap-south-1"])
+        == "us-west-2: >=4 replicas, ap-south-1: unavailable"
+    )
 
 
 def test_find_instance_type_exact_and_normalized() -> None:
@@ -91,7 +132,29 @@ async def test_resolve_hardware_pricing_happy_path() -> None:
     assert pricing.hardware_id == "1xnvidia-h100-80gb"
     assert pricing.gpu_label == "1x H100 80GB"
     assert pricing.estimated_price_label == "$24.00/hr - $48.00/hr"
+    assert pricing.hipaa_headroom_label is None
     client.beta.endpoints.hardware.list.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_resolve_hardware_pricing_includes_hipaa_headroom() -> None:
+    client = MagicMock()
+    client.beta.endpoints.hardware.list = AsyncMock(
+        return_value=MagicMock(data=[_instance(regions=[_region("us-east-1", hipaa=True)])]),
+    )
+    cli = CLIConfig(client=client, non_interactive=True, json=False, project_id="proj")
+
+    pricing = await resolve_hardware_pricing(
+        cli,
+        _config(),
+        min_replicas=1,
+        max_replicas=1,
+        hipaa_required=True,
+        placement_regions=["us-east-1"],
+    )
+
+    assert pricing is not None
+    assert pricing.hipaa_headroom_label == "us-east-1: 2 replicas"
 
 
 @pytest.mark.asyncio

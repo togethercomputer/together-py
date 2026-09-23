@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
+from typing import Optional, Sequence
 from dataclasses import dataclass
 
 from together.lib.cli.utils.config import CLIConfigParameter
@@ -17,6 +17,7 @@ class HardwarePricing:
     estimated_price_label: str
     hardware_id: str
     price_cents_per_hour: int
+    hipaa_headroom_label: Optional[str] = None
 
 
 def selector_value(config: Config, key: str) -> Optional[str]:
@@ -82,6 +83,43 @@ def format_estimated_price(
     return f"${min_dollars:.2f}/hr"
 
 
+def format_headroom_value(relation: str, value: Optional[int]) -> str:
+    if value is None:
+        return "unknown"
+    if relation == "RELATION_GTE":
+        return f">={value}"
+    return str(value)
+
+
+def format_hipaa_headroom(
+    instance: InferenceInstanceType,
+    *,
+    regions: Optional[Sequence[str]] = None,
+) -> str:
+    """Summarize HIPAA-specific regional headroom from the hardware catalog."""
+    requested_regions = list(regions or [])
+    catalog_regions = {region.name: region for region in instance.regions}
+    region_names = requested_regions or [region.name for region in instance.regions]
+    labels: list[str] = []
+
+    for region_name in region_names:
+        region = catalog_regions.get(region_name)
+        compliance_entries = region.compliance if region is not None else None
+        hipaa_entry = next(
+            (entry for entry in compliance_entries or [] if entry.policy.hipaa is True),
+            None,
+        )
+        if hipaa_entry is None:
+            if requested_regions:
+                labels.append(f"{region_name}: unavailable")
+            continue
+        labels.append(
+            f"{region_name}: {format_headroom_value(hipaa_entry.headroom.relation, hipaa_entry.headroom.value)} replicas"
+        )
+
+    return ", ".join(labels) or "unavailable"
+
+
 def find_instance_type(
     instance_types: list[InferenceInstanceType],
     *,
@@ -121,6 +159,8 @@ async def resolve_hardware_pricing(
     *,
     min_replicas: int,
     max_replicas: int,
+    hipaa_required: bool = False,
+    placement_regions: Optional[Sequence[str]] = None,
 ) -> Optional[HardwarePricing]:
     """Look up GPU info and estimated hourly price for a deployment config."""
     model_config = await ensure_config_with_selectors(config, model_config)
@@ -157,4 +197,7 @@ async def resolve_hardware_pricing(
         ),
         hardware_id=instance.name or hardware_id,
         price_cents_per_hour=instance.price_cents_per_hour,
+        hipaa_headroom_label=(
+            format_hipaa_headroom(instance, regions=placement_regions) if hipaa_required else None
+        ),
     )

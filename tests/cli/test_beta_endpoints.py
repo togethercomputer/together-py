@@ -101,12 +101,12 @@ def _hardware_body(**overrides: Any) -> dict[str, Any]:
     return body
 
 
-def _mock_hardware_catalog(respx_mock: MockRouter) -> None:
+def _mock_hardware_catalog(respx_mock: MockRouter, *, hardware: dict[str, Any] | None = None) -> None:
     # Tests override TOGETHER_BASE_URL, so the SDK hits the relative public path.
     respx_mock.get("/public/inference-instance-types").mock(
         return_value=httpx.Response(
             200,
-            json={"object": "list", "data": [_hardware_body()], "next_cursor": None},
+            json={"object": "list", "data": [hardware or _hardware_body()], "next_cursor": None},
         )
     )
 
@@ -417,6 +417,70 @@ class TestBetaEndpointsDeploy:
         assert "This deployment will utilize 1x H100" in output
         assert "estimated to cost approximately" in output
         assert "$24.00/hr - $48.00/hr" in output
+        assert "Project argument is required" in output
+        assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_preview_shows_hipaa_headroom(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        # Interactive project confirm only runs when --project / env are omitted.
+        cli_runner.env.pop("TOGETHER_PROJECT_ID", None)
+        _mock_model_and_config(respx_mock)
+        _mock_hardware_catalog(
+            respx_mock,
+            hardware=_hardware_body(
+                regions=[
+                    {
+                        "name": "us-east-1",
+                        "compliance": [
+                            {
+                                "policy": {"hipaa": True},
+                                "headroom": {"relation": "RELATION_EQ", "value": 2},
+                            }
+                        ],
+                    },
+                    {
+                        "name": "us-west-2",
+                        "compliance": [
+                            {
+                                "policy": {"hipaa": True},
+                                "headroom": {"relation": "RELATION_GTE", "value": 4},
+                            }
+                        ],
+                    },
+                ]
+            ),
+        )
+        respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--endpoint",
+                "fresh-endpoint",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--placement.regions",
+                "us-east-1,us-west-2",
+                "--placement.hipaa",
+                "--non-interactive",
+            ]
+        )
+
+        output = " ".join(result.output.split())
+        assert result.exit_code != 0
+        assert "HIPAA regional headroom for this hardware" in output
+        assert "us-east-1: 2 replicas" in output
+        assert "us-west-2: >=4 replicas" in output
         assert "Project argument is required" in output
         assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
