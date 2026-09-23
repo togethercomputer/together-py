@@ -626,7 +626,7 @@ async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytes
     with pytest.raises(KeyboardInterrupt):
         await trainer._stop_remote()
 
-    client.close.assert_awaited_once()
+    client.close.assert_not_awaited()
 
 
 def test_stop_marks_the_handle_closed() -> None:

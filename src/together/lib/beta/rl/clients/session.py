@@ -396,30 +396,28 @@ class SessionClient:
 
     async def _stop_remote(self) -> Session:
         output = await self._client.beta.rl.sessions.stop(self._session_id)
-        try:
-            if output.status not in _INACTIVE_STATUSES:
-                start = time.monotonic()
-                while True:
-                    try:
-                        current = await self._client.beta.rl.sessions.retrieve(self._session_id)
-                    except NotFoundError:
-                        # Already gone. Transient retrieve failures are retried by the
-                        # HTTP client (max_retries); remaining errors still raise.
-                        break
-                    if current.status in _INACTIVE_STATUSES:
-                        break
-                    if (
-                        DEFAULT_SESSION_STOP_TIMEOUT is not None
-                        and time.monotonic() - start >= DEFAULT_SESSION_STOP_TIMEOUT
-                    ):
-                        warnings.warn(
-                            f"Timed out waiting for session {self._session_id} to become inactive; "
-                            "it may still block model resource stop. Call "
-                            "model_resources.stop(force=True) to stop the resource anyway",
-                            stacklevel=2,
-                        )
-                        break
-                    await asyncio.sleep(DEFAULT_SESSION_STOP_INTERVAL)
-        finally:
-            await self._client.close()
+        if output.status not in _INACTIVE_STATUSES:
+            start = time.monotonic()
+            while True:
+                try:
+                    current = await self._client.beta.rl.sessions.retrieve(self._session_id)
+                except NotFoundError:
+                    # Already gone. Transient retrieve failures are retried by the
+                    # HTTP client (max_retries); remaining errors still raise.
+                    break
+                if current.status in _INACTIVE_STATUSES:
+                    break
+                if (
+                    DEFAULT_SESSION_STOP_TIMEOUT is not None
+                    and time.monotonic() - start >= DEFAULT_SESSION_STOP_TIMEOUT
+                ):
+                    warnings.warn(
+                        f"Timed out waiting for session {self._session_id} to become inactive; "
+                        "it may still block model resource stop. Call "
+                        "model_resources.stop(force=True) to stop the resource anyway",
+                        stacklevel=2,
+                    )
+                    break
+                await asyncio.sleep(DEFAULT_SESSION_STOP_INTERVAL)
+        await self._client.close()
         return output
