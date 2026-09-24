@@ -120,13 +120,7 @@ def _parse_model_ref(model: str) -> tuple[str, str | None]:
 
 @dataclass
 class ModelMount:
-    """Weights from Together's model registry mounted into the container.
-
-    ``model`` is ``ml_...`` or ``ml_...@rv_...``; without a revision the server
-    pins the latest validated one at deploy time and the deployment revision
-    records it. A LoRA adapter lands at ``<mount_path>/adapter`` with its base
-    model at ``<mount_path>/base``.
-    """
+    """Model mount configuration"""
 
     model: str
     mount_path: str
