@@ -696,7 +696,7 @@ class Jig:
         if not mounts:
             return
         if self.config.deploy.volume_mounts:
-            raise JigError("Configure either volume_mounts or model_mounts, not both: a deployment has one preload")
+            raise JigError("Configure either volume_mounts or model_mounts, not both")
         if len(mounts) > 1:
             raise JigError("Only one model mount is supported per deployment")
         for mm in mounts:
