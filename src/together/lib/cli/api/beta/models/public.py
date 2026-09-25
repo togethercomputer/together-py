@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Optional, cast
+from typing import Any, Literal, Optional, cast
 from typing_extensions import Annotated
 
 from cyclopts import Parameter
@@ -16,6 +16,23 @@ from together.lib.cli.utils._mock_pagination import AfterParameter
 
 ModalityFilter = Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "MODALITY_VIDEO"]
 ProductFilter = Literal["PRODUCT_SERVERLESS", "PRODUCT_DEDICATED", "PRODUCT_FINE_TUNING"]
+
+
+def _serverless_pricing_cell(model: Any) -> str:
+    pricing = getattr(model, "pricing", None)
+    if pricing is None:
+        return ""
+
+    rows = [
+        ("input", getattr(pricing, "input", None)),
+        ("cached input", getattr(pricing, "cached_input", None)),
+        ("output", getattr(pricing, "output", None)),
+    ]
+    rows = [(label, value) for label, value in rows if value is not None and value > 0]
+    if not rows:
+        return ""
+
+    return "\n".join(f"{label} ${value:.2f}" for label, value in rows)
 
 
 async def public(
@@ -55,11 +72,18 @@ async def public(
     table.add_primary_column("Model", ratio=3)
     table.add_column("GPUs")
     table.add_column("Parallelism")
+    show_pricing = any(_serverless_pricing_cell(model) for model in response.data)
+    if show_pricing:
+        table.add_column("Pricing", width=18)
 
     for model in response.data:
+        pricing = _serverless_pricing_cell(model)
         profiles = model.deployment_profiles or []
         if not profiles:
-            table.add_row(model.name or model.id or "", "", "", "", "")
+            row = [model.name or model.id or "", "", ""]
+            if show_pricing:
+                row.append(pricing)
+            table.add_row(*row)
             continue
 
         for profile in profiles:
@@ -69,11 +93,10 @@ async def public(
                 gpu_type = " ".join([part.capitalize() for part in gpu_type.split("-") if part.strip()])
                 gpu = f"{profile.gpu_count or '?'}x {gpu_type}"
             profile_model = _profile_cli_model(profile, model.id)
-            table.add_row(
-                profile_model,
-                gpu,
-                profile.parallelism or "",
-            )
+            row = [profile_model, gpu, profile.parallelism or ""]
+            if show_pricing:
+                row.append(pricing)
+            table.add_row(*row)
     console.print(table)
 
     if response.next_cursor:
