@@ -7,7 +7,41 @@ from pydantic import Field as FieldInfo
 
 from ...._models import BaseModel
 
-__all__ = ["InferenceInstanceType", "Region", "RegionHeadroom"]
+__all__ = [
+    "InferenceInstanceType",
+    "Region",
+    "RegionCompliance",
+    "RegionComplianceHeadroom",
+    "RegionCompliancePolicy",
+    "RegionHeadroom",
+]
+
+
+class RegionComplianceHeadroom(BaseModel):
+    """Best-effort estimate of how many additional replicas currently fit in a region."""
+
+    relation: Literal["RELATION_EQ", "RELATION_GTE"]
+    """Whether the value is exact or a lower bound."""
+
+    value: Optional[int] = None
+    """Capped count of replicas that currently fit."""
+
+
+class RegionCompliancePolicy(BaseModel):
+    """Compliance regimes required by a deployment placement policy."""
+
+    hipaa: Optional[bool] = None
+    """Restrict placement to HIPAA-attested clusters."""
+
+
+class RegionCompliance(BaseModel):
+    """Compliance-specific regional availability for one instance type policy."""
+
+    headroom: RegionComplianceHeadroom
+    """Best-effort estimate of how many additional replicas currently fit in a region."""
+
+    policy: RegionCompliancePolicy
+    """Compliance regimes required by a deployment placement policy."""
 
 
 class RegionHeadroom(BaseModel):
@@ -25,6 +59,13 @@ class Region(BaseModel):
 
     name: str
     """Region name where an instance type is offered."""
+
+    compliance: Optional[List[RegionCompliance]] = None
+    """
+    Compliance regimes certified in this region with best-effort headroom for each
+    policy. Entries can overlap; read the entry matching the deployment policy
+    instead of summing entries.
+    """
 
     headroom: Optional[RegionHeadroom] = None
     """Best-effort estimate of how many additional replicas currently fit in a region."""

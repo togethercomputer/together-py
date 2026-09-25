@@ -28,6 +28,13 @@ class JigUpdateParams(TypedDict, total=False):
     autoscaling: Autoscaling
     """Autoscaling configuration for the deployment. Set to {} to disable autoscaling"""
 
+    capacity_type: Literal["stable", "preemptible"]
+    """Controls how replicas above reserved capacity behave.
+
+    `stable` replicas stay running after scale-up; `preemptible` replicas may be
+    evicted during capacity contention.
+    """
+
     command: SequenceNotStr[str]
     """Command overrides the container's ENTRYPOINT.
 

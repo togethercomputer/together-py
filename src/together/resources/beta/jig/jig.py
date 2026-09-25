@@ -123,6 +123,7 @@ class JigResource(SyncAPIResource):
         *,
         args: SequenceNotStr[str] | Omit = omit,
         autoscaling: jig_update_params.Autoscaling | Omit = omit,
+        capacity_type: Literal["stable", "preemptible"] | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -156,6 +157,10 @@ class JigResource(SyncAPIResource):
               ["python", "app.py"])
 
           autoscaling: Autoscaling configuration for the deployment. Set to {} to disable autoscaling
+
+          capacity_type: Controls how replicas above reserved capacity behave. `stable` replicas stay
+              running after scale-up; `preemptible` replicas may be evicted during capacity
+              contention.
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -215,6 +220,7 @@ class JigResource(SyncAPIResource):
                 {
                     "args": args,
                     "autoscaling": autoscaling,
+                    "capacity_type": capacity_type,
                     "command": command,
                     "cpu": cpu,
                     "description": description,
@@ -267,6 +273,7 @@ class JigResource(SyncAPIResource):
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
         autoscaling: jig_deploy_params.Autoscaling | Omit = omit,
+        capacity_type: Literal["stable", "preemptible"] | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -305,6 +312,10 @@ class JigResource(SyncAPIResource):
           autoscaling: Autoscaling configuration. Example: {"metric": "QueueBacklogPerWorker",
               "target": 1.01} to scale based on queue backlog. Omit or set to null to disable
               autoscaling
+
+          capacity_type: Controls how replicas above reserved capacity behave. `stable` replicas stay
+              running after scale-up; `preemptible` replicas may be evicted during capacity
+              contention.
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -361,6 +372,7 @@ class JigResource(SyncAPIResource):
                     "name": name,
                     "args": args,
                     "autoscaling": autoscaling,
+                    "capacity_type": capacity_type,
                     "command": command,
                     "cpu": cpu,
                     "description": description,
@@ -548,6 +560,7 @@ class AsyncJigResource(AsyncAPIResource):
         *,
         args: SequenceNotStr[str] | Omit = omit,
         autoscaling: jig_update_params.Autoscaling | Omit = omit,
+        capacity_type: Literal["stable", "preemptible"] | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -581,6 +594,10 @@ class AsyncJigResource(AsyncAPIResource):
               ["python", "app.py"])
 
           autoscaling: Autoscaling configuration for the deployment. Set to {} to disable autoscaling
+
+          capacity_type: Controls how replicas above reserved capacity behave. `stable` replicas stay
+              running after scale-up; `preemptible` replicas may be evicted during capacity
+              contention.
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -640,6 +657,7 @@ class AsyncJigResource(AsyncAPIResource):
                 {
                     "args": args,
                     "autoscaling": autoscaling,
+                    "capacity_type": capacity_type,
                     "command": command,
                     "cpu": cpu,
                     "description": description,
@@ -692,6 +710,7 @@ class AsyncJigResource(AsyncAPIResource):
         name: str,
         args: SequenceNotStr[str] | Omit = omit,
         autoscaling: jig_deploy_params.Autoscaling | Omit = omit,
+        capacity_type: Literal["stable", "preemptible"] | Omit = omit,
         command: SequenceNotStr[str] | Omit = omit,
         cpu: float | Omit = omit,
         description: str | Omit = omit,
@@ -730,6 +749,10 @@ class AsyncJigResource(AsyncAPIResource):
           autoscaling: Autoscaling configuration. Example: {"metric": "QueueBacklogPerWorker",
               "target": 1.01} to scale based on queue backlog. Omit or set to null to disable
               autoscaling
+
+          capacity_type: Controls how replicas above reserved capacity behave. `stable` replicas stay
+              running after scale-up; `preemptible` replicas may be evicted during capacity
+              contention.
 
           command: Command overrides the container's ENTRYPOINT. Provide as an array (e.g.,
               ["/bin/sh", "-c"])
@@ -786,6 +809,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "name": name,
                     "args": args,
                     "autoscaling": autoscaling,
+                    "capacity_type": capacity_type,
                     "command": command,
                     "cpu": cpu,
                     "description": description,

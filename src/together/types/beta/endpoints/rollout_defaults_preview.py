@@ -75,13 +75,15 @@ class Spec(BaseModel):
 
 
 class Warning(BaseModel):
-    """A non-blocking finding attached to a rollout defaults preview."""
+    """
+    A non-blocking finding attached to a rollout defaults preview; expected end-state facts are structured fields on RolloutDefaultsPreview.
+    """
 
     code: str
-    """
-    Machine-readable warning code, such as START_WILL_REJECT,
-    ROLLOUT_WILL_RAISE_TARGET_MAX, FINAL_BELOW_INHERITED_MIN, or
-    FINAL_BELOW_SOURCE_MIN. Render message for unrecognized codes.
+    """Machine-readable warning code.
+
+    Current vocabulary is START_WILL_REJECT, FINAL_BELOW_SOURCE_MIN, and
+    FIRST_STEP_AT_SEED; render message for unrecognized codes.
     """
 
     message: str
@@ -118,9 +120,10 @@ class RolloutDefaultsPreview(BaseModel):
     """
 
     warnings: List[Warning]
-    """Non-blocking findings to surface next to the form.
-
-    An empty list means the shown values are safe to submit as-is.
+    """
+    Findings to surface next to the form when a later gate will refuse the spec or a
+    standing guarantee is lost. An empty list means the shown values are safe to
+    submit as-is; render message for unrecognized codes.
     """
 
     estimated_effective_steps: Optional[List[RolloutStep]] = FieldInfo(alias="estimatedEffectiveSteps", default=None)
@@ -141,4 +144,16 @@ class RolloutDefaultsPreview(BaseModel):
     True when both deployments stand in the endpoint traffic split, so the rollout
     resumes from the current split rather than from zero. See warnings for standing
     split shapes that StartRollout will still reject.
+    """
+
+    landing_max_replicas: Optional[int] = FieldInfo(alias="landingMaxReplicas", default=None)
+    """
+    Expected autoscaling maximum replicas for the completed target; unset while the
+    final target replicas cannot be resolved.
+    """
+
+    landing_min_replicas: Optional[int] = FieldInfo(alias="landingMinReplicas", default=None)
+    """
+    Expected autoscaling minimum replicas for the completed target; unset while the
+    final target replicas cannot be resolved.
     """

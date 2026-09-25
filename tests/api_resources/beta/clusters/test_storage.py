@@ -36,6 +36,7 @@ class TestStorage:
             region="region",
             size_tib=0,
             volume_name="volume_name",
+            instance_cluster_id="instance_cluster_id",
             is_lifecycle_independent=True,
             project_id="project_id",
         )
@@ -237,6 +238,7 @@ class TestAsyncStorage:
             region="region",
             size_tib=0,
             volume_name="volume_name",
+            instance_cluster_id="instance_cluster_id",
             is_lifecycle_independent=True,
             project_id="project_id",
         )
