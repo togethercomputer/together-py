@@ -50,6 +50,10 @@ GpuTypeParameter = Annotated[
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
+SharedVolumeInstanceClusterIDParameter = Annotated[
+    Optional[str],
+    Parameter(help="Cluster ID to pin a newly created shared volume to the same substrate as that GPU cluster"),
+]
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
@@ -215,6 +219,7 @@ async def create(
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
+    shared_volume_instance_cluster_id: SharedVolumeInstanceClusterIDParameter = None,
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
@@ -291,6 +296,10 @@ async def create(
 
     # JSON Mode skips hand holding through the argument setup
     interactive = not config.json and not config.non_interactive
+    if shared_volume_instance_cluster_id and (volume or not interactive):
+        raise TogetherError(
+            "--shared-volume-instance-cluster-id only applies when interactively creating a new storage volume."
+        )
     catalog: ClusterListRegionsResponse | None = None
     if interactive:
         if not name:
@@ -337,12 +346,22 @@ async def create(
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
                 size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
-                params["shared_volume"] = SharedVolume(
+                pin_cluster_id = shared_volume_instance_cluster_id
+                if pin_cluster_id is None:
+                    pin_cluster_id = input("Clusters: Pin storage volume to cluster ID (optional): ").strip() or None
+                shared_volume = SharedVolume(
                     region=params["region"],
                     size_tib=int(size) if size else 1,
                     volume_name=vol_name,
                 )
+                if pin_cluster_id:
+                    shared_volume["instance_cluster_id"] = pin_cluster_id
+                params["shared_volume"] = shared_volume
             else:
+                if shared_volume_instance_cluster_id:
+                    raise TogetherError(
+                        "--shared-volume-instance-cluster-id only applies when creating a new storage volume."
+                    )
                 volumes = await config.client.beta.clusters.storage.list()
                 if volumes.volumes:
                     params["volume_id"] = input(
