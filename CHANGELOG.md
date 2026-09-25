@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.37.0](https://github.com/togethercomputer/together-py/compare/v2.36.0...v2.37.0) (2026-09-25)
+
+
+### Features
+
+* **clusters:** Add shared volume cluster pinning ([ed00cae](https://github.com/togethercomputer/together-py/commit/ed00cae2c177ea27f009064cacf95a54e983d9cd))
+
+
+### Chores
+
+* Pin dependencies ot major versions ([#604](https://github.com/togethercomputer/together-py/issues/604)) ([d9f0eb3](https://github.com/togethercomputer/together-py/commit/d9f0eb3ed37b86203a757476fea6910d43ec9566))
+
+
 ## [2.36.0](https://github.com/togethercomputer/together-py/compare/v2.35.0...v2.36.0) (2026-09-23)
 
 
