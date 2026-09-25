@@ -5,18 +5,13 @@
 
 ### Features
 
-* add DPPO loss to RL OpenAPI ([7f75667](https://github.com/togethercomputer/together-py/commit/7f756672684f5ffa3da5b0b4843f99c02ff1ab77))
-* sync shared volume cluster pinning ([ed00cae](https://github.com/togethercomputer/together-py/commit/ed00cae2c177ea27f009064cacf95a54e983d9cd))
+* **clusters:** Add shared volume cluster pinning ([ed00cae](https://github.com/togethercomputer/together-py/commit/ed00cae2c177ea27f009064cacf95a54e983d9cd))
 
 
 ### Chores
 
 * Pin dependencies ot major versions ([#604](https://github.com/togethercomputer/together-py/issues/604)) ([d9f0eb3](https://github.com/togethercomputer/together-py/commit/d9f0eb3ed37b86203a757476fea6910d43ec9566))
 
-
-### Documentation
-
-* **openapi:** clarify expert LoRA merge output ([af7d7e5](https://github.com/togethercomputer/together-py/commit/af7d7e5222c427400976ec49d6c7b826b5204819))
 
 ## [2.36.0](https://github.com/togethercomputer/together-py/compare/v2.35.0...v2.36.0) (2026-09-23)
 
