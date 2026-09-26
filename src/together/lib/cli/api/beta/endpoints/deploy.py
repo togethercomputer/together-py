@@ -241,6 +241,8 @@ async def deploy(
                 config_value,
                 min_replicas=min_replicas_value,
                 max_replicas=max_replicas_value,
+                hipaa_required=_requires_hipaa_placement(placement_value),
+                placement_regions=_placement_regions(placement_value),
             ),
         )
         _print_deployment_preview(
@@ -384,6 +386,11 @@ def _print_deployment_preview(
             f"[dim][/dim][yellow]This deployment will utilize {hardware_pricing.gpu_label}, "
             f"which is estimated to cost approximately {hardware_pricing.estimated_price_label}.[/yellow]\n"
         )
+        if hardware_pricing.hipaa_headroom_label is not None:
+            console.print(
+                "[dim][/dim][yellow]HIPAA regional headroom for this hardware: "
+                f"{hardware_pricing.hipaa_headroom_label}.[/yellow]\n"
+            )
 
 
 # Helper method to enable the users to use this command to either create a new endpoint+deployment
@@ -400,3 +407,21 @@ async def _find_or_create_endpoint(config: CLIConfigParameter, endpoint_input: s
         return endpoint, True
     except ConflictError:
         return await resolve_endpoint(config, endpoint_input), False
+
+
+def _inline_placement(placement: Placement | None) -> dict[str, Any] | None:
+    if placement is None or "inline" not in placement:
+        return None
+    return placement.get("inline")
+
+
+def _requires_hipaa_placement(placement: Placement | None) -> bool:
+    inline = _inline_placement(placement)
+    compliance_policy = (inline or {}).get("compliance_policy") or {}
+    return compliance_policy.get("hipaa") is True
+
+
+def _placement_regions(placement: Placement | None) -> list[str] | None:
+    inline = _inline_placement(placement)
+    regions = (inline or {}).get("regions")
+    return list(regions) if regions else None
