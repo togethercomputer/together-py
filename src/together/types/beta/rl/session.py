@@ -58,10 +58,7 @@ class Session(BaseModel):
     """Auxiliary metadata associated with the training session"""
 
     resources_id: str = FieldInfo(alias="model_resources_id")
-    """Model resource this session is attached to.
-
-    The session runs on that resource's GPU pods.
-    """
+    """ID of the model resource used by this training session."""
 
     policy_state: PolicyState
     """Session-scoped policy and weight versions for this session"""

@@ -7,6 +7,7 @@ from typing_extensions import Required, TypedDict
 from .loss_type import LossType
 from .dro_loss_params import DroLossParams
 from .ppo_loss_params import PpoLossParams
+from .dppo_loss_params import DppoLossParams
 from .grpo_loss_params import GrpoLossParams
 from .cispo_loss_params import CispoLossParams
 from .cross_entropy_loss_params import CrossEntropyLossParams
@@ -22,6 +23,9 @@ class LossConfig(TypedDict, total=False):
 
     cross_entropy_params: CrossEntropyLossParams
     """Cross-entropy loss parameters (currently empty)."""
+
+    dppo_params: DppoLossParams
+    """Parameters for DPPO loss. Only valid when `type` is `LOSS_TYPE_DPPO`."""
 
     dro_params: DroLossParams
 

@@ -24,13 +24,7 @@ class TensorData(BaseModel):
     """
 
     sparse_col_indices: Optional[List[int]] = None
-    """
-    Reserved for Tinker schema compatibility; current training operations reject
-    sparse tensors.
-    """
+    """Unsupported for training operations. Omit this field."""
 
     sparse_crow_indices: Optional[List[int]] = None
-    """
-    Reserved for Tinker schema compatibility; current training operations reject
-    sparse tensors.
-    """
+    """Unsupported for training operations. Omit this field."""

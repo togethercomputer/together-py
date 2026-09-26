@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from typing import Dict, Iterable
-from typing_extensions import Required, TypedDict
+from typing_extensions import Required, Annotated, TypedDict
 
 from .d_type import DType
+from ...._utils import PropertyInfo
 from .model_input_param import ModelInput
 from .tensor_data_param import TensorDataParam
 from .routed_experts_param import RoutedExpertsParam
@@ -19,6 +20,12 @@ class OperationCustomForwardBackwardParams(TypedDict, total=False):
 
     samples: Required[Iterable[Sample]]
     """Batch of training samples"""
+
+    idempotency_key: Required[Annotated[str, PropertyInfo(alias="Idempotency-Key")]]
+    """
+    Required key that makes retries return the original operation; use a new key for
+    changed request bodies.
+    """
 
 
 class Gradient(TypedDict, total=False):

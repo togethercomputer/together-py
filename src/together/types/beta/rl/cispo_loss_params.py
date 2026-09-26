@@ -9,13 +9,7 @@ __all__ = ["CispoLossParams"]
 
 class CispoLossParams(TypedDict, total=False):
     clip_high_threshold: float
-    """
-    Upper absolute bound for the importance ratio; the clipped ratio is applied as a
-    detached coefficient
-    """
+    """Upper bound for clipping the importance-sampling ratio."""
 
     clip_low_threshold: float
-    """
-    Lower absolute bound for the importance ratio; the clipped ratio is applied as a
-    detached coefficient
-    """
+    """Lower bound for clipping the importance-sampling ratio."""

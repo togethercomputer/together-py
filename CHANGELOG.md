@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.37.0](https://github.com/togethercomputer/together-py/compare/v2.36.0...v2.37.0) (2026-09-25)
+
+
+### Features
+
+* **clusters:** Add shared volume cluster pinning ([ed00cae](https://github.com/togethercomputer/together-py/commit/ed00cae2c177ea27f009064cacf95a54e983d9cd))
+
+
+### Chores
+
+* Pin dependencies ot major versions ([#604](https://github.com/togethercomputer/together-py/issues/604)) ([d9f0eb3](https://github.com/togethercomputer/together-py/commit/d9f0eb3ed37b86203a757476fea6910d43ec9566))
+
+
+## [2.36.0](https://github.com/togethercomputer/together-py/compare/v2.35.0...v2.36.0) (2026-09-23)
+
+
+### Features
+
+* add deployment capacity type ([fed8a64](https://github.com/togethercomputer/together-py/commit/fed8a64a01b6d39687130273c1ec80b655d01806))
+* **supported-models:** expose serverless pricing ([b0c7f91](https://github.com/togethercomputer/together-py/commit/b0c7f91e283a4b674c82be7558e69ddcadc46487))
+* sync rollout preview landing band fields ([c44d1fe](https://github.com/togethercomputer/together-py/commit/c44d1fecddae0a6f214dd1a357206ec0719f8b8e))
+
+
+### Bug Fixes
+
+* **cli:** remove unsupported endpoint LoRA flag ([#592](https://github.com/togethercomputer/together-py/issues/592)) ([de6c2df](https://github.com/togethercomputer/together-py/commit/de6c2dff410dc364cf03a380c7fd381bff6c17a4))
+* **endpoints:** Drop unsupported `enableLora` parameter from deployment schemas ([ea12a13](https://github.com/togethercomputer/together-py/commit/ea12a1354254225a6ece522a37271637598e5b48))
+
 ## [2.35.0](https://github.com/togethercomputer/together-py/compare/v2.34.0...v2.35.0) (2026-09-17)
 
 

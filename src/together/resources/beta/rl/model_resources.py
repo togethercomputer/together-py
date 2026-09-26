@@ -70,7 +70,7 @@ class ModelResourcesResource(SyncAPIResource):
         Provisions a standalone model resource that training sessions can attach to.
 
         Args:
-          base_model: Base model to provision the resource for
+          base_model: Base model to provision the resource for, selected from /rl/supported-models
 
           compute_config: Compute layout to provision.
 
@@ -221,7 +221,7 @@ class ModelResourcesResource(SyncAPIResource):
         Estimates a model resource's on-demand hourly price without creating it.
 
         Args:
-          base_model: Base model to provision the resource for
+          base_model: Base model to provision the resource for, selected from /rl/supported-models
 
           compute_config: Compute layout to provision.
 
@@ -266,13 +266,17 @@ class ModelResourcesResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ModelResources:
-        """
-        Stops every session attached to the resource and tears down its GPU pods.
+        """Stops the model resource and releases its allocated compute.
+
+        If active training
+        sessions are attached, the request fails unless `force=true`. A forced stop also
+        stops all attached training sessions.
 
         Args:
           model_resources_id: ID of the model resource
 
-          force: Stop the resource even if active training sessions are attached
+          force: When true, also stop all attached training sessions. When false, the request
+              fails if any training sessions are active.
 
           extra_headers: Send extra headers
 
@@ -335,7 +339,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         Provisions a standalone model resource that training sessions can attach to.
 
         Args:
-          base_model: Base model to provision the resource for
+          base_model: Base model to provision the resource for, selected from /rl/supported-models
 
           compute_config: Compute layout to provision.
 
@@ -486,7 +490,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         Estimates a model resource's on-demand hourly price without creating it.
 
         Args:
-          base_model: Base model to provision the resource for
+          base_model: Base model to provision the resource for, selected from /rl/supported-models
 
           compute_config: Compute layout to provision.
 
@@ -531,13 +535,17 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> ModelResources:
-        """
-        Stops every session attached to the resource and tears down its GPU pods.
+        """Stops the model resource and releases its allocated compute.
+
+        If active training
+        sessions are attached, the request fails unless `force=true`. A forced stop also
+        stops all attached training sessions.
 
         Args:
           model_resources_id: ID of the model resource
 
-          force: Stop the resource even if active training sessions are attached
+          force: When true, also stop all attached training sessions. When false, the request
+              fails if any training sessions are active.
 
           extra_headers: Send extra headers
 

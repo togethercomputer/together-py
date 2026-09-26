@@ -325,6 +325,7 @@ Methods:
 
 - <code title="post /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">create</a>(\*\*<a href="src/together/types/beta/rl/session_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
 - <code title="get /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">retrieve</a>(session_id) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
+- <code title="patch /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">update</a>(session_id, \*\*<a href="src/together/types/beta/rl/session_update_params.py">params</a>) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
 - <code title="get /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">list</a>(\*\*<a href="src/together/types/beta/rl/session_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/sessions_list_response.py">SessionsListResponse</a></code>
 - <code title="post /rl/training-sessions/{session_id}/stop">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">stop</a>(session_id) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
 
@@ -340,6 +341,7 @@ from together.types.beta.rl import (
     CustomForwardBackwardOperation,
     CustomForwardBackwardResult,
     DType,
+    DppoLossParams,
     DroLossParams,
     EncodedTextChunk,
     ForwardBackwardOperation,

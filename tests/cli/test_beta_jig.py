@@ -468,3 +468,88 @@ class TestBetaJigVolumes:
         patch_body = json.loads(cast(Call, patch_r.calls[0]).request.content.decode())
         assert patch_body["content"] == {"type": "files", "source_prefix": "shared/4"}
         assert result.exit_code == 0
+
+
+_MODEL_MOUNT_PYPROJECT = f"""[project]
+name = "{_DEPLOY_NAME}"
+version = "0.1.0"
+
+[tool.jig.image]
+python_version = "3.11"
+cmd = "python app.py"
+
+[tool.jig.deploy]
+description = "test"
+gpu_type = "h100-80gb"
+gpu_count = 1
+
+[[tool.jig.deploy.model_mounts]]
+model = "ml_abc123@rv_xyz789"
+mount_path = "/models"
+"""
+
+
+class TestBetaJigModelMounts:
+    def test_deploy_config_parses_model_mounts(self) -> None:
+        cfg = _jig_mod.DeployConfig.from_dict(
+            {"model_mounts": [{"model": "ml_abc123@rv_xyz789", "mount_path": "/models"}]}
+        )
+        assert cfg.model_mounts == [_jig_mod.ModelMount(model="ml_abc123@rv_xyz789", mount_path="/models")]
+        assert cfg.model_mounts[0].to_api() == {
+            "model_id": "ml_abc123",
+            "revision_id": "rv_xyz789",
+            "mount_path": "/models",
+        }
+
+    def test_model_mount_without_revision_omits_revision_id(self) -> None:
+        mount = _jig_mod.ModelMount(model="ml_abc123", mount_path="/models")
+        assert mount.to_api() == {"model_id": "ml_abc123", "mount_path": "/models"}
+
+    @pytest.mark.parametrize("ref", ["llama-3", "ml_abc123@latest", "@rv_1"])
+    def test_model_mount_rejects_malformed_reference(self, ref: str) -> None:
+        with pytest.raises(_jig_mod.JigError, match="Invalid model reference"):
+            _jig_mod.ModelMount(model=ref, mount_path="/models").to_api()
+
+    def test_config_load_reads_model_mounts_from_pyproject(self, tmp_path: Path) -> None:
+        # Same parser jig itself uses (tomllib, or tomli on Python < 3.11).
+        data: dict[str, Any] = _jig_mod.tomllib.loads(_MODEL_MOUNT_PYPROJECT)
+        with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+            cfg = _jig_mod.Config.load(data, tmp_path / "pyproject.toml")
+        assert [mm.to_api() for mm in cfg.deploy.model_mounts] == [
+            {"model_id": "ml_abc123", "revision_id": "rv_xyz789", "mount_path": "/models"}
+        ]
+        assert cfg.deploy.volume_mounts == []
+
+    def test_config_load_accepts_deprecated_top_level_model_mounts(self, tmp_path: Path) -> None:
+        data = {
+            "project": {"name": _DEPLOY_NAME},
+            "tool": {"jig": {"model_mounts": [{"model": "ml_abc123", "mount_path": "/models"}]}},
+        }
+        with patch.object(_jig_mod.Config, "__post_init__", _noop_config_post_init):
+            cfg = _jig_mod.Config.load(data, tmp_path / "pyproject.toml")
+        assert [mm.model for mm in cfg.deploy.model_mounts] == ["ml_abc123"]
+
+    def test_validate_model_mounts_rejects_volume_and_model_together(self) -> None:
+        deploy = _jig_mod.DeployConfig(
+            volume_mounts=[_jig_mod.VolumeMount(name="weights", mount_path="/data")],
+            model_mounts=[_jig_mod.ModelMount(model="ml_abc123", mount_path="/models")],
+        )
+        jig = SimpleNamespace(config=SimpleNamespace(deploy=deploy))
+        with pytest.raises(_jig_mod.JigError, match="either volume_mounts or model_mounts"):
+            _jig_mod.Jig.validate_model_mounts(cast(Any, jig))
+
+    def test_validate_model_mounts_rejects_more_than_one(self) -> None:
+        deploy = _jig_mod.DeployConfig(
+            model_mounts=[
+                _jig_mod.ModelMount(model="ml_a", mount_path="/a"),
+                _jig_mod.ModelMount(model="ml_b", mount_path="/b"),
+            ]
+        )
+        jig = SimpleNamespace(config=SimpleNamespace(deploy=deploy))
+        with pytest.raises(_jig_mod.JigError, match="Only one model mount"):
+            _jig_mod.Jig.validate_model_mounts(cast(Any, jig))
+
+    def test_validate_model_mounts_accepts_single_model_mount(self) -> None:
+        deploy = _jig_mod.DeployConfig(model_mounts=[_jig_mod.ModelMount(model="ml_abc123", mount_path="/models")])
+        jig = SimpleNamespace(config=SimpleNamespace(deploy=deploy))
+        _jig_mod.Jig.validate_model_mounts(cast(Any, jig))

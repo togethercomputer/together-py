@@ -11,7 +11,7 @@ __all__ = ["ModelResourceCreateParams", "ComputeConfig"]
 
 class ModelResourceCreateParams(TypedDict, total=False):
     base_model: Required[str]
-    """Base model to provision the resource for"""
+    """Base model to provision the resource for, selected from /rl/supported-models"""
 
     compute_config: ComputeConfig
     """Compute layout to provision."""

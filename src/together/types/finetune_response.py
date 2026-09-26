@@ -119,7 +119,8 @@ class TrainingTypeLoRaTrainingType(BaseModel):
 
     Use `all-linear` for model defaults; MoE expert modules (`w_up`, `w_gate`,
     `w_down`) can be combined with attention modules on compatible models.
-    Fine-tunes that target any expert module produce adapter-only output.
+    Fine-tuning jobs that target expert modules produce adapter-only output unless
+    the selected model supports merged expert LoRA output.
     """
 
 

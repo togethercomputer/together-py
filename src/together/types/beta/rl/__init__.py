@@ -26,6 +26,7 @@ from .model_resources import ModelResources as ModelResources
 from .operation_error import OperationError as OperationError
 from .ppo_loss_params import PpoLossParams as PpoLossParams
 from .sampling_params import SamplingParams as SamplingParams
+from .dppo_loss_params import DppoLossParams as DppoLossParams
 from .grpo_loss_params import GrpoLossParams as GrpoLossParams
 from .operation_status import OperationStatus as OperationStatus
 from .optimizer_config import OptimizerConfig as OptimizerConfig
@@ -58,6 +59,7 @@ from .wandb_metadata_param import WandbMetadataParam as WandbMetadataParam
 from .model_resources_error import ModelResourcesError as ModelResourcesError
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy
 from .session_create_params import SessionCreateParams as SessionCreateParams
+from .session_update_params import SessionUpdateParams as SessionUpdateParams
 from .checkpoint_list_params import CheckpointListParams as CheckpointListParams
 from .model_resources_status import ModelResourcesStatus as ModelResourcesStatus
 from .optimizer_config_param import OptimizerConfigParam as OptimizerConfigParam

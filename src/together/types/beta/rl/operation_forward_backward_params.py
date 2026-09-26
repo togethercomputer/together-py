@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Dict, Iterable
-from typing_extensions import Required, TypedDict
+from typing_extensions import Required, Annotated, TypedDict
 
+from ...._utils import PropertyInfo
 from .loss_config_param import LossConfig
 from .model_input_param import ModelInput
 from .tensor_data_param import TensorDataParam
@@ -19,6 +20,12 @@ class OperationForwardBackwardParams(TypedDict, total=False):
 
     samples: Required[Iterable[Sample]]
     """Batch of training samples to process"""
+
+    idempotency_key: Required[Annotated[str, PropertyInfo(alias="Idempotency-Key")]]
+    """
+    Required key that makes retries return the original operation; use a new key for
+    changed request bodies.
+    """
 
     forward_only: bool
     """

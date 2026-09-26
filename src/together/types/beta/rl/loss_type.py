@@ -12,4 +12,5 @@ LossType: TypeAlias = Literal[
     "LOSS_TYPE_PPO",
     "LOSS_TYPE_CISPO",
     "LOSS_TYPE_DRO",
+    "LOSS_TYPE_DPPO",
 ]

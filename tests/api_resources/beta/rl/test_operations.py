@@ -28,14 +28,16 @@ class TestOperations:
     @parametrize
     def test_method_create_inference_checkpoint(self, client: Together) -> None:
         operation = client.beta.rl.operations.create_inference_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(InferenceCheckpointOperation, operation, path=["response"])
 
     @parametrize
     def test_raw_response_create_inference_checkpoint(self, client: Together) -> None:
         response = client.beta.rl.operations.with_raw_response.create_inference_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -46,7 +48,8 @@ class TestOperations:
     @parametrize
     def test_streaming_response_create_inference_checkpoint(self, client: Together) -> None:
         with client.beta.rl.operations.with_streaming_response.create_inference_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -60,20 +63,23 @@ class TestOperations:
     def test_path_params_create_inference_checkpoint(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             client.beta.rl.operations.with_raw_response.create_inference_checkpoint(
-                "",
+                session_id="",
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
     def test_method_create_training_checkpoint(self, client: Together) -> None:
         operation = client.beta.rl.operations.create_training_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(TrainingCheckpointOperation, operation, path=["response"])
 
     @parametrize
     def test_raw_response_create_training_checkpoint(self, client: Together) -> None:
         response = client.beta.rl.operations.with_raw_response.create_training_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -84,7 +90,8 @@ class TestOperations:
     @parametrize
     def test_streaming_response_create_training_checkpoint(self, client: Together) -> None:
         with client.beta.rl.operations.with_streaming_response.create_training_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -98,7 +105,8 @@ class TestOperations:
     def test_path_params_create_training_checkpoint(self, client: Together) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             client.beta.rl.operations.with_raw_response.create_training_checkpoint(
-                "",
+                session_id="",
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -117,6 +125,7 @@ class TestOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(CustomForwardBackwardOperation, operation, path=["response"])
 
@@ -136,6 +145,7 @@ class TestOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -159,6 +169,7 @@ class TestOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -185,6 +196,7 @@ class TestOperations:
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -203,6 +215,7 @@ class TestOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(ForwardBackwardOperation, operation, path=["response"])
 
@@ -217,6 +230,10 @@ class TestOperations:
                     "clip_low_threshold": 0,
                 },
                 "cross_entropy_params": {},
+                "dppo_params": {
+                    "delta_high": 0.15,
+                    "delta_low": 0.15,
+                },
                 "dro_params": {"beta": 0.05},
                 "grpo_params": {
                     "agg_type": "GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON",
@@ -249,6 +266,7 @@ class TestOperations:
                     },
                 }
             ],
+            idempotency_key="Idempotency-Key",
             forward_only=True,
             return_loss_fn_outputs=True,
         )
@@ -270,6 +288,7 @@ class TestOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -293,6 +312,7 @@ class TestOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -319,12 +339,14 @@ class TestOperations:
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
     def test_method_optim_step(self, client: Together) -> None:
         operation = client.beta.rl.operations.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(OptimStepOperation, operation, path=["response"])
 
@@ -332,6 +354,7 @@ class TestOperations:
     def test_method_optim_step_with_all_params(self, client: Together) -> None:
         operation = client.beta.rl.operations.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
             adam_params={
                 "beta1": 0.9,
                 "beta2": 0.95,
@@ -362,6 +385,7 @@ class TestOperations:
     def test_raw_response_optim_step(self, client: Together) -> None:
         response = client.beta.rl.operations.with_raw_response.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -373,6 +397,7 @@ class TestOperations:
     def test_streaming_response_optim_step(self, client: Together) -> None:
         with client.beta.rl.operations.with_streaming_response.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -387,6 +412,7 @@ class TestOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             client.beta.rl.operations.with_raw_response.optim_step(
                 session_id="",
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -730,6 +756,7 @@ class TestOperations:
         operation = client.beta.rl.operations.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -738,6 +765,7 @@ class TestOperations:
         operation = client.beta.rl.operations.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
@@ -759,6 +787,7 @@ class TestOperations:
         response = client.beta.rl.operations.with_raw_response.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -771,6 +800,7 @@ class TestOperations:
         with client.beta.rl.operations.with_streaming_response.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -786,6 +816,7 @@ class TestOperations:
             client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
                 model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -793,6 +824,7 @@ class TestOperations:
         operation = client.beta.rl.operations.weights_sync(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(WeightsSyncOperation, operation, path=["response"])
 
@@ -801,6 +833,7 @@ class TestOperations:
         response = client.beta.rl.operations.with_raw_response.weights_sync(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -813,6 +846,7 @@ class TestOperations:
         with client.beta.rl.operations.with_streaming_response.weights_sync(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -828,6 +862,7 @@ class TestOperations:
             client.beta.rl.operations.with_raw_response.weights_sync(
                 session_id="",
                 weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+                idempotency_key="Idempotency-Key",
             )
 
 
@@ -839,14 +874,16 @@ class TestAsyncOperations:
     @parametrize
     async def test_method_create_inference_checkpoint(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.create_inference_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(InferenceCheckpointOperation, operation, path=["response"])
 
     @parametrize
     async def test_raw_response_create_inference_checkpoint(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.operations.with_raw_response.create_inference_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -857,7 +894,8 @@ class TestAsyncOperations:
     @parametrize
     async def test_streaming_response_create_inference_checkpoint(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.operations.with_streaming_response.create_inference_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -871,20 +909,23 @@ class TestAsyncOperations:
     async def test_path_params_create_inference_checkpoint(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.create_inference_checkpoint(
-                "",
+                session_id="",
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
     async def test_method_create_training_checkpoint(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.create_training_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(TrainingCheckpointOperation, operation, path=["response"])
 
     @parametrize
     async def test_raw_response_create_training_checkpoint(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.operations.with_raw_response.create_training_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -895,7 +936,8 @@ class TestAsyncOperations:
     @parametrize
     async def test_streaming_response_create_training_checkpoint(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.operations.with_streaming_response.create_training_checkpoint(
-            "session_id",
+            session_id="session_id",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -909,7 +951,8 @@ class TestAsyncOperations:
     async def test_path_params_create_training_checkpoint(self, async_client: AsyncTogether) -> None:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.create_training_checkpoint(
-                "",
+                session_id="",
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -928,6 +971,7 @@ class TestAsyncOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(CustomForwardBackwardOperation, operation, path=["response"])
 
@@ -947,6 +991,7 @@ class TestAsyncOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -970,6 +1015,7 @@ class TestAsyncOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -996,6 +1042,7 @@ class TestAsyncOperations:
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -1014,6 +1061,7 @@ class TestAsyncOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(ForwardBackwardOperation, operation, path=["response"])
 
@@ -1028,6 +1076,10 @@ class TestAsyncOperations:
                     "clip_low_threshold": 0,
                 },
                 "cross_entropy_params": {},
+                "dppo_params": {
+                    "delta_high": 0.15,
+                    "delta_low": 0.15,
+                },
                 "dro_params": {"beta": 0.05},
                 "grpo_params": {
                     "agg_type": "GRPO_LOSS_AGGREGATION_TYPE_FIXED_HORIZON",
@@ -1060,6 +1112,7 @@ class TestAsyncOperations:
                     },
                 }
             ],
+            idempotency_key="Idempotency-Key",
             forward_only=True,
             return_loss_fn_outputs=True,
         )
@@ -1081,6 +1134,7 @@ class TestAsyncOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -1104,6 +1158,7 @@ class TestAsyncOperations:
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                 }
             ],
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1130,12 +1185,14 @@ class TestAsyncOperations:
                         "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
                     }
                 ],
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
     async def test_method_optim_step(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(OptimStepOperation, operation, path=["response"])
 
@@ -1143,6 +1200,7 @@ class TestAsyncOperations:
     async def test_method_optim_step_with_all_params(self, async_client: AsyncTogether) -> None:
         operation = await async_client.beta.rl.operations.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
             adam_params={
                 "beta1": 0.9,
                 "beta2": 0.95,
@@ -1173,6 +1231,7 @@ class TestAsyncOperations:
     async def test_raw_response_optim_step(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.operations.with_raw_response.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -1184,6 +1243,7 @@ class TestAsyncOperations:
     async def test_streaming_response_optim_step(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.operations.with_streaming_response.optim_step(
             session_id="session_id",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1198,6 +1258,7 @@ class TestAsyncOperations:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.operations.with_raw_response.optim_step(
                 session_id="",
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -1541,6 +1602,7 @@ class TestAsyncOperations:
         operation = await async_client.beta.rl.operations.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(SampleOperation, operation, path=["response"])
 
@@ -1549,6 +1611,7 @@ class TestAsyncOperations:
         operation = await async_client.beta.rl.operations.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
@@ -1570,6 +1633,7 @@ class TestAsyncOperations:
         response = await async_client.beta.rl.operations.with_raw_response.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -1582,6 +1646,7 @@ class TestAsyncOperations:
         async with async_client.beta.rl.operations.with_streaming_response.sample(
             session_id="session_id",
             model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1597,6 +1662,7 @@ class TestAsyncOperations:
             await async_client.beta.rl.operations.with_raw_response.sample(
                 session_id="",
                 model_inputs=[{"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]}],
+                idempotency_key="Idempotency-Key",
             )
 
     @parametrize
@@ -1604,6 +1670,7 @@ class TestAsyncOperations:
         operation = await async_client.beta.rl.operations.weights_sync(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            idempotency_key="Idempotency-Key",
         )
         assert_matches_type(WeightsSyncOperation, operation, path=["response"])
 
@@ -1612,6 +1679,7 @@ class TestAsyncOperations:
         response = await async_client.beta.rl.operations.with_raw_response.weights_sync(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            idempotency_key="Idempotency-Key",
         )
 
         assert response.is_closed is True
@@ -1624,6 +1692,7 @@ class TestAsyncOperations:
         async with async_client.beta.rl.operations.with_streaming_response.weights_sync(
             session_id="session_id",
             weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+            idempotency_key="Idempotency-Key",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -1639,4 +1708,5 @@ class TestAsyncOperations:
             await async_client.beta.rl.operations.with_raw_response.weights_sync(
                 session_id="",
                 weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS",
+                idempotency_key="Idempotency-Key",
             )

@@ -49,6 +49,7 @@ class StorageResource(SyncAPIResource):
         region: str,
         size_tib: int,
         volume_name: str,
+        instance_cluster_id: str | Omit = omit,
         is_lifecycle_independent: bool | Omit = omit,
         project_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -72,6 +73,8 @@ class StorageResource(SyncAPIResource):
 
           volume_name: User provided name of the volume.
 
+          instance_cluster_id: Cluster ID to pin the volume to the same substrate as that GPU cluster.
+
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
           project_id: Project ID that will own the volume. When omitted, the caller's default project
@@ -92,6 +95,7 @@ class StorageResource(SyncAPIResource):
                     "region": region,
                     "size_tib": size_tib,
                     "volume_name": volume_name,
+                    "instance_cluster_id": instance_cluster_id,
                     "is_lifecycle_independent": is_lifecycle_independent,
                     "project_id": project_id,
                 },
@@ -284,6 +288,7 @@ class AsyncStorageResource(AsyncAPIResource):
         region: str,
         size_tib: int,
         volume_name: str,
+        instance_cluster_id: str | Omit = omit,
         is_lifecycle_independent: bool | Omit = omit,
         project_id: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -307,6 +312,8 @@ class AsyncStorageResource(AsyncAPIResource):
 
           volume_name: User provided name of the volume.
 
+          instance_cluster_id: Cluster ID to pin the volume to the same substrate as that GPU cluster.
+
           is_lifecycle_independent: When true, the shared volume is not deleted when the cluster is decommissioned.
 
           project_id: Project ID that will own the volume. When omitted, the caller's default project
@@ -327,6 +334,7 @@ class AsyncStorageResource(AsyncAPIResource):
                     "region": region,
                     "size_tib": size_tib,
                     "volume_name": volume_name,
+                    "instance_cluster_id": instance_cluster_id,
                     "is_lifecycle_independent": is_lifecycle_independent,
                     "project_id": project_id,
                 },

@@ -18,7 +18,11 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.rl import session_list_params, session_create_params
+from ....types.beta.rl import (
+    session_list_params,
+    session_create_params,
+    session_update_params,
+)
 from ....types.beta.rl.session import Session
 from ....types.beta.rl.lora_config_param import LoraConfigParam
 from ....types.beta.rl.session_metadata_param import SessionMetadataParam
@@ -68,8 +72,7 @@ class SessionsResource(SyncAPIResource):
         Creates a training session and returns its details.
 
         Args:
-          model_resources_id: Model resource to attach the session to. The session runs on that resource's GPU
-              pods.
+          model_resources_id: ID of the model resource to use for this training session.
 
           display_name: Optional display name used to identify the training session
 
@@ -82,7 +85,9 @@ class SessionsResource(SyncAPIResource):
 
           metadata: Optional auxiliary metadata to associate with the training session
 
-          resume_from_checkpoint_id: Checkpoint ID to resume from
+          resume_from_checkpoint_id: Checkpoint ID to resume from. LoRA training checkpoints may resume on another
+              model resource with compatible base-model weights. Full-weight training
+              checkpoints require the original base model.
 
           resume_from_hf_checkpoint: HuggingFace repo (or hf://) to resume model weights from. Accepts either a full
               model or a PEFT adapter directory. Mutually exclusive with
@@ -145,6 +150,57 @@ class SessionsResource(SyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return self._get(
             path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Session,
+        )
+
+    def update(
+        self,
+        session_id: str,
+        *,
+        display_name: str | Omit = omit,
+        metadata: SessionMetadataParam | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Session:
+        """Updates the display name or metadata associated with a training session.
+
+        Omitted
+        fields remain unchanged, and empty strings clear existing values.
+
+        Args:
+          session_id: ID of the training session
+
+          display_name: Display name to update. An empty string clears the existing display name.
+
+          metadata: Metadata fields to update. Omitted fields remain unchanged, and empty strings
+              clear existing values.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        return self._patch(
+            path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            body=maybe_transform(
+                {
+                    "display_name": display_name,
+                    "metadata": metadata,
+                },
+                session_update_params.SessionUpdateParams,
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -297,8 +353,7 @@ class AsyncSessionsResource(AsyncAPIResource):
         Creates a training session and returns its details.
 
         Args:
-          model_resources_id: Model resource to attach the session to. The session runs on that resource's GPU
-              pods.
+          model_resources_id: ID of the model resource to use for this training session.
 
           display_name: Optional display name used to identify the training session
 
@@ -311,7 +366,9 @@ class AsyncSessionsResource(AsyncAPIResource):
 
           metadata: Optional auxiliary metadata to associate with the training session
 
-          resume_from_checkpoint_id: Checkpoint ID to resume from
+          resume_from_checkpoint_id: Checkpoint ID to resume from. LoRA training checkpoints may resume on another
+              model resource with compatible base-model weights. Full-weight training
+              checkpoints require the original base model.
 
           resume_from_hf_checkpoint: HuggingFace repo (or hf://) to resume model weights from. Accepts either a full
               model or a PEFT adapter directory. Mutually exclusive with
@@ -374,6 +431,57 @@ class AsyncSessionsResource(AsyncAPIResource):
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
         return await self._get(
             path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Session,
+        )
+
+    async def update(
+        self,
+        session_id: str,
+        *,
+        display_name: str | Omit = omit,
+        metadata: SessionMetadataParam | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Session:
+        """Updates the display name or metadata associated with a training session.
+
+        Omitted
+        fields remain unchanged, and empty strings clear existing values.
+
+        Args:
+          session_id: ID of the training session
+
+          display_name: Display name to update. An empty string clears the existing display name.
+
+          metadata: Metadata fields to update. Omitted fields remain unchanged, and empty strings
+              clear existing values.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not session_id:
+            raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
+        return await self._patch(
+            path_template("/rl/training-sessions/{session_id}", session_id=session_id),
+            body=await async_maybe_transform(
+                {
+                    "display_name": display_name,
+                    "metadata": metadata,
+                },
+                session_update_params.SessionUpdateParams,
+            ),
             options=make_request_options(
                 extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
             ),
@@ -495,6 +603,9 @@ class SessionsResourceWithRawResponse:
         self.retrieve = to_raw_response_wrapper(
             sessions.retrieve,
         )
+        self.update = to_raw_response_wrapper(
+            sessions.update,
+        )
         self.list = to_raw_response_wrapper(
             sessions.list,
         )
@@ -512,6 +623,9 @@ class AsyncSessionsResourceWithRawResponse:
         )
         self.retrieve = async_to_raw_response_wrapper(
             sessions.retrieve,
+        )
+        self.update = async_to_raw_response_wrapper(
+            sessions.update,
         )
         self.list = async_to_raw_response_wrapper(
             sessions.list,
@@ -531,6 +645,9 @@ class SessionsResourceWithStreamingResponse:
         self.retrieve = to_streamed_response_wrapper(
             sessions.retrieve,
         )
+        self.update = to_streamed_response_wrapper(
+            sessions.update,
+        )
         self.list = to_streamed_response_wrapper(
             sessions.list,
         )
@@ -548,6 +665,9 @@ class AsyncSessionsResourceWithStreamingResponse:
         )
         self.retrieve = async_to_streamed_response_wrapper(
             sessions.retrieve,
+        )
+        self.update = async_to_streamed_response_wrapper(
+            sessions.update,
         )
         self.list = async_to_streamed_response_wrapper(
             sessions.list,

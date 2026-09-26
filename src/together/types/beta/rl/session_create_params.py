@@ -12,10 +12,7 @@ __all__ = ["SessionCreateParams"]
 
 class SessionCreateParams(TypedDict, total=False):
     model_resources_id: Required[str]
-    """Model resource to attach the session to.
-
-    The session runs on that resource's GPU pods.
-    """
+    """ID of the model resource to use for this training session."""
 
     display_name: str
     """Optional display name used to identify the training session"""
@@ -35,7 +32,12 @@ class SessionCreateParams(TypedDict, total=False):
     """Optional auxiliary metadata to associate with the training session"""
 
     resume_from_checkpoint_id: str
-    """Checkpoint ID to resume from"""
+    """Checkpoint ID to resume from.
+
+    LoRA training checkpoints may resume on another model resource with compatible
+    base-model weights. Full-weight training checkpoints require the original base
+    model.
+    """
 
     resume_from_hf_checkpoint: str
     """HuggingFace repo (or hf://) to resume model weights from.

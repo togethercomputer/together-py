@@ -118,6 +118,62 @@ class TestSessions:
             )
 
     @parametrize
+    def test_method_update(self, client: Together) -> None:
+        session = client.beta.rl.sessions.update(
+            session_id="session_id",
+        )
+        assert_matches_type(Session, session, path=["response"])
+
+    @parametrize
+    def test_method_update_with_all_params(self, client: Together) -> None:
+        session = client.beta.rl.sessions.update(
+            session_id="session_id",
+            display_name="display_name",
+            metadata={
+                "wandb": {
+                    "entity": "example-org",
+                    "group": "gsm8k-35b-sweep",
+                    "project": "grpo-gsm8k",
+                    "run_id": "abc123",
+                    "run_name": "exp2-thinking-4k-ctx",
+                    "url": "https://wandb.ai/example-org/example-project/runs/run-id",
+                }
+            },
+        )
+        assert_matches_type(Session, session, path=["response"])
+
+    @parametrize
+    def test_raw_response_update(self, client: Together) -> None:
+        response = client.beta.rl.sessions.with_raw_response.update(
+            session_id="session_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        session = response.parse()
+        assert_matches_type(Session, session, path=["response"])
+
+    @parametrize
+    def test_streaming_response_update(self, client: Together) -> None:
+        with client.beta.rl.sessions.with_streaming_response.update(
+            session_id="session_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            session = response.parse()
+            assert_matches_type(Session, session, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_update(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
+            client.beta.rl.sessions.with_raw_response.update(
+                session_id="",
+            )
+
+    @parametrize
     def test_method_list(self, client: Together) -> None:
         session = client.beta.rl.sessions.list()
         assert_matches_type(SessionsListResponse, session, path=["response"])
@@ -292,6 +348,62 @@ class TestAsyncSessions:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
             await async_client.beta.rl.sessions.with_raw_response.retrieve(
                 "",
+            )
+
+    @parametrize
+    async def test_method_update(self, async_client: AsyncTogether) -> None:
+        session = await async_client.beta.rl.sessions.update(
+            session_id="session_id",
+        )
+        assert_matches_type(Session, session, path=["response"])
+
+    @parametrize
+    async def test_method_update_with_all_params(self, async_client: AsyncTogether) -> None:
+        session = await async_client.beta.rl.sessions.update(
+            session_id="session_id",
+            display_name="display_name",
+            metadata={
+                "wandb": {
+                    "entity": "example-org",
+                    "group": "gsm8k-35b-sweep",
+                    "project": "grpo-gsm8k",
+                    "run_id": "abc123",
+                    "run_name": "exp2-thinking-4k-ctx",
+                    "url": "https://wandb.ai/example-org/example-project/runs/run-id",
+                }
+            },
+        )
+        assert_matches_type(Session, session, path=["response"])
+
+    @parametrize
+    async def test_raw_response_update(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.rl.sessions.with_raw_response.update(
+            session_id="session_id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        session = await response.parse()
+        assert_matches_type(Session, session, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_update(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.rl.sessions.with_streaming_response.update(
+            session_id="session_id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            session = await response.parse()
+            assert_matches_type(Session, session, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_update(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `session_id` but received ''"):
+            await async_client.beta.rl.sessions.with_raw_response.update(
+                session_id="",
             )
 
     @parametrize

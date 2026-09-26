@@ -15,11 +15,7 @@ class SamplingParams(TypedDict, total=False):
     """Maximum number of tokens to generate per completion"""
 
     seed: Union[str, int]
-    """Random seed for reproducible sampling for the same prompt and model state.
-
-    Per-completion seeds remain stable if the request is split across generator
-    replicas.
-    """
+    """Random seed for reproducible sampling for the same prompt and model state."""
 
     stop: SequenceNotStr[str]
     """Generation stops when any of these strings is produced"""

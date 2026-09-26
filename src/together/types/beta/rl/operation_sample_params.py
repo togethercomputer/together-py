@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Iterable
-from typing_extensions import Required, TypedDict
+from typing_extensions import Required, Annotated, TypedDict
 
+from ...._utils import PropertyInfo
 from .sampling_params import SamplingParams
 from .model_input_param import ModelInput
 
@@ -14,6 +15,12 @@ __all__ = ["OperationSampleParams"]
 class OperationSampleParams(TypedDict, total=False):
     model_inputs: Required[Iterable[ModelInput]]
     """Model inputs to sample from"""
+
+    idempotency_key: Required[Annotated[str, PropertyInfo(alias="Idempotency-Key")]]
+    """
+    Required key that makes retries return the original operation; use a new key for
+    changed request bodies.
+    """
 
     num_samples: int
     """Number of completions to generate per prompt"""

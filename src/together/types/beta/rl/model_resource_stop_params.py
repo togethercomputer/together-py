@@ -9,4 +9,7 @@ __all__ = ["ModelResourceStopParams"]
 
 class ModelResourceStopParams(TypedDict, total=False):
     force: bool
-    """Stop the resource even if active training sessions are attached"""
+    """When true, also stop all attached training sessions.
+
+    When false, the request fails if any training sessions are active.
+    """

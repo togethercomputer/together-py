@@ -24,13 +24,7 @@ class TensorDataParam(TypedDict, total=False):
     """
 
     sparse_col_indices: Iterable[int]
-    """
-    Reserved for Tinker schema compatibility; current training operations reject
-    sparse tensors.
-    """
+    """Unsupported for training operations. Omit this field."""
 
     sparse_crow_indices: Iterable[int]
-    """
-    Reserved for Tinker schema compatibility; current training operations reject
-    sparse tensors.
-    """
+    """Unsupported for training operations. Omit this field."""

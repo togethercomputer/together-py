@@ -24,14 +24,14 @@ class TestModelResources:
     @parametrize
     def test_method_create(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
         assert_matches_type(ModelResources, model_resource, path=["response"])
 
     @parametrize
     def test_method_create_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -47,7 +47,7 @@ class TestModelResources:
     @parametrize
     def test_raw_response_create(self, client: Together) -> None:
         response = client.beta.rl.model_resources.with_raw_response.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
 
         assert response.is_closed is True
@@ -58,7 +58,7 @@ class TestModelResources:
     @parametrize
     def test_streaming_response_create(self, client: Together) -> None:
         with client.beta.rl.model_resources.with_streaming_response.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -144,14 +144,14 @@ class TestModelResources:
     @parametrize
     def test_method_estimate_cost(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
         assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
 
     @parametrize
     def test_method_estimate_cost_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -167,7 +167,7 @@ class TestModelResources:
     @parametrize
     def test_raw_response_estimate_cost(self, client: Together) -> None:
         response = client.beta.rl.model_resources.with_raw_response.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
 
         assert response.is_closed is True
@@ -178,7 +178,7 @@ class TestModelResources:
     @parametrize
     def test_streaming_response_estimate_cost(self, client: Together) -> None:
         with client.beta.rl.model_resources.with_streaming_response.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -243,14 +243,14 @@ class TestAsyncModelResources:
     @parametrize
     async def test_method_create(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
         assert_matches_type(ModelResources, model_resource, path=["response"])
 
     @parametrize
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -266,7 +266,7 @@ class TestAsyncModelResources:
     @parametrize
     async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.model_resources.with_raw_response.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
 
         assert response.is_closed is True
@@ -277,7 +277,7 @@ class TestAsyncModelResources:
     @parametrize
     async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.model_resources.with_streaming_response.create(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
@@ -363,14 +363,14 @@ class TestAsyncModelResources:
     @parametrize
     async def test_method_estimate_cost(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
         assert_matches_type(ModelResourcesEstimateCostResponse, model_resource, path=["response"])
 
     @parametrize
     async def test_method_estimate_cost_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -386,7 +386,7 @@ class TestAsyncModelResources:
     @parametrize
     async def test_raw_response_estimate_cost(self, async_client: AsyncTogether) -> None:
         response = await async_client.beta.rl.model_resources.with_raw_response.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         )
 
         assert response.is_closed is True
@@ -397,7 +397,7 @@ class TestAsyncModelResources:
     @parametrize
     async def test_streaming_response_estimate_cost(self, async_client: AsyncTogether) -> None:
         async with async_client.beta.rl.model_resources.with_streaming_response.estimate_cost(
-            base_model="Qwen/Qwen3-0.6B",
+            base_model="Qwen/Qwen3.5-4B",
         ) as response:
             assert not response.is_closed
             assert response.http_request.headers.get("X-Stainless-Lang") == "python"
