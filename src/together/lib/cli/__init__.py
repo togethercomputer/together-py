@@ -26,6 +26,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
+from together.lib.cli.utils._cli_extras import inform_cli_extras_tip
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
     JIG_HELP_EXAMPLES,
@@ -421,6 +422,7 @@ async def launcher(
             flush_pending_events()
             await client.close()
         finally:
+            inform_cli_extras_tip(non_interactive=config.non_interactive)
             await version_check.inform(
                 non_interactive=config.non_interactive,
                 allow_prompt=command_succeeded,
