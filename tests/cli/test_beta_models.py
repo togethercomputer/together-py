@@ -421,6 +421,35 @@ class TestBetaModelsRetrieve:
         assert payload["revisionId"] == "rev-1"
         assert payload["files"][0]["path"] == "weights.bin"
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_human_output_does_not_require_unique_base_config(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/models/ml_1").mock(
+            return_value=httpx.Response(
+                200,
+                json=_model_body(baseModel="projects/proj_public/models/ml_base"),
+            )
+        )
+        respx_mock.get("/projects/proj/models/ml_1/files").mock(return_value=httpx.Response(200, json=_files_body()))
+        respx_mock.get("/projects/proj_public/models/ml_base").mock(
+            return_value=httpx.Response(
+                200,
+                json=_model_body(
+                    model_id="ml_base", name="Qwen/Qwen3.5-9B-BF16", projectId="proj_public", baseModelId=None
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "get", "ml_1", "--project", "proj"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0, result.output
+        assert "Multiple configs" not in output
+        assert "Qwen/Qwen3.5-9B-BF16" in output
+
 
 class TestBetaModelsRm:
     @pytest.mark.respx(base_url=base_url)

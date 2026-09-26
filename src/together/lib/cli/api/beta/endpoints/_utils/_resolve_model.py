@@ -8,8 +8,10 @@ from together.types.beta import Model, Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.beta.models.config import Config
+from together.types.beta.supported_model import SupportedModel
 from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
+    find_config,
     resolve_config,
     resolve_configs,
     config_from_profile,
@@ -96,6 +98,29 @@ async def resolve_model(
 ) -> Model:
     resolved = await resolve_model_and_config(config, model_input, config_id=config_id)
     return resolved.model
+
+
+async def resolve_model_display_name(
+    config: CLIConfigParameter,
+    model_path: str | None,
+    *,
+    fallback: str | None = None,
+) -> str:
+    """Look up a friendly model name without pairing a deploy config.
+
+    GET/list only need the display name. Going through ``resolve_model_and_config``
+    fails when the model has multiple configs, even though the deployment already
+    has one pinned.
+    """
+    fallback_name = fallback or model_path or ""
+    match = MODEL_PATH_RE.match(model_path or "")
+    if match is None:
+        return fallback_name
+    try:
+        model = await config.client.beta.models.retrieve(id=match.group(2), project_id=match.group(1))
+    except Exception:
+        return fallback_name
+    return model.name or fallback_name
 
 
 async def resolve_model_and_config(
@@ -284,6 +309,31 @@ def _profile_model_id(profile: SupportedModelDeploymentProfile) -> str:
     return profile.model or ""
 
 
+def _config_reference_ids(
+    public_model: SupportedModel,
+    profiles: list[SupportedModelDeploymentProfile],
+) -> list[str]:
+    """Model ids to list configs against. Base first, then each distinct profile model.
+
+    Per-quantization profiles can point at different model resources (BF16 → ml_pub,
+    FP8 → ml_fp8). A project config is filtered by whichever of those it references,
+    so searching only ``base_model_id`` or ``profiles[0]`` misses a valid LoRA.
+    """
+    ids: list[str] = []
+
+    def add(model_id: str | None) -> None:
+        if model_id and model_id not in ids:
+            ids.append(model_id)
+
+    add(public_model.base_model_id)
+    match = MODEL_PATH_RE.match(public_model.base_model or "")
+    if match:
+        add(match.group(2))
+    for profile in profiles:
+        add(_profile_model_id(profile))
+    return ids
+
+
 def _profile_cli_model(profile: SupportedModelDeploymentProfile) -> str:
     return getattr(profile, "api_model_name", None) or _profile_model_id(profile)
 
@@ -337,12 +387,16 @@ def _select_deployment_profile(
     *,
     model_input: str,
     config_id: str | None,
-) -> SupportedModelDeploymentProfile:
+) -> SupportedModelDeploymentProfile | None:
+    """Return a uniquely matching public profile, or ``None`` to try the configs API.
+
+    ``None`` means ``--config`` was given but matched no public profile. The caller
+    should look up project-specific configs (LoRA / custom hardware) before erroring.
+    """
     if len(profiles) == 1:
         profile = profiles[0]
         if config_id is not None and not _profile_matches_config(profile, config_id):
-            expected = _profile_config_id(profile)
-            raise ValueError(f"Config {config_id} is not valid for model {model_input}. Expected {expected}.")
+            return None
         return profile
 
     if config_id is None:
@@ -351,10 +405,7 @@ def _select_deployment_profile(
 
     matching = [profile for profile in profiles if _profile_matches_config(profile, config_id)]
     if len(matching) == 0:
-        _print_deployment_profiles(profiles, model_input=model_input)
-        raise ValueError(
-            f"Config {config_id} is not valid for model {model_input}. Use a --config from the table above."
-        )
+        return None
     if len(matching) > 1:
         _print_deployment_profiles(matching, model_input=model_input)
         raise ValueError(
@@ -385,11 +436,31 @@ Please specify a more specific model ID. To find a more specific model variant t
         raise ValueError(f"Model {model_input} has no deployment profiles.")
 
     matching_profile_names = [profile for profile in profiles if _profile_matches_model_name(profile, model_input)]
+    candidate_profiles = matching_profile_names or profiles
     profile = _select_deployment_profile(
-        matching_profile_names or profiles,
+        candidate_profiles,
         model_input=model_input,
         config_id=config_id,
     )
+    if profile is None:
+        # --config didn't match a public profile (LoRA / project-specific configs live
+        # on the configs API, not in deploymentProfiles).
+        assert config_id is not None
+        fallback = await _resolve_explicit_config_for_public_model(
+            config,
+            public_model_name=public_model.name,
+            reference_model_ids=_config_reference_ids(public_model, candidate_profiles),
+            config_id=config_id,
+            model_input=model_input,
+            profiles=candidate_profiles,
+        )
+        if fallback is not None:
+            return fallback
+        _print_deployment_profiles(candidate_profiles, model_input=model_input)
+        raise ValueError(
+            f"Config {config_id} is not valid for model {model_input}. Use a --config from the table above."
+        )
+
     match = MODEL_PATH_RE.match(profile.model or "")
     if not match:
         raise ValueError(f"Invalid model path: {profile.model}")
@@ -406,6 +477,50 @@ Please specify a more specific model ID. To find a more specific model variant t
         name=_profile_cli_model(profile) or public_model.name or model_id,
     )
     return ResolvedModelAndConfig(model=model, config=selected_config, revision_id=revision_id)
+
+
+async def _resolve_explicit_config_for_public_model(
+    config: CLIConfigParameter,
+    *,
+    public_model_name: str | None,
+    reference_model_ids: list[str],
+    config_id: str,
+    model_input: str,
+    profiles: list[SupportedModelDeploymentProfile],
+) -> ResolvedModelAndConfig | None:
+    """Resolve ``--config`` via the configs API when it isn't a public profile id.
+
+    Lists configs for each reference model id, base first, and stops on the first hit.
+    """
+    selected: Config | None = None
+    for reference_model_id in reference_model_ids:
+        selected = find_config(await resolve_configs(config, reference_model_id), config_id)
+        if selected is not None:
+            break
+    if selected is None:
+        return None
+    selected = validate_requested_config(selected, config_id, model=model_input)
+    model = await _retrieve_model_from_reference(config, selected, model_input=model_input)
+    revision_id: str | None = None
+    for profile in profiles:
+        match = MODEL_PATH_RE.match(profile.model or "")
+        if match and match.group(2) == model.id:
+            revision_id = match.group(3)
+            profile_name = _profile_cli_model(profile)
+            if profile_name:
+                model = Model.construct(
+                    id=model.id,
+                    projectId=model.project_id,
+                    name=profile_name,
+                )
+            break
+    if not model.name:
+        model = Model.construct(
+            id=model.id,
+            projectId=model.project_id,
+            name=public_model_name or model.id,
+        )
+    return ResolvedModelAndConfig(model=model, config=selected, revision_id=revision_id)
 
 
 def construct_model_path(model: Model, revision_id: str | None = None) -> str:

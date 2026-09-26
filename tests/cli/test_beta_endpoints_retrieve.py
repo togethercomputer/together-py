@@ -161,6 +161,35 @@ class TestBetaEndpointsRetrieve:
         assert payload["name"] == "my-project/my-endpoint"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_endpoint_human_output_ignores_multiple_configs(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        """GET only needs the model display name — it must not fail when the model has multiple configs."""
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        _mock_endpoint_get_side_resources(respx_mock)
+        respx_mock.get("/projects/proj/models/ml_control").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "ml_control",
+                    "projectId": "proj",
+                    "organizationId": "org-1",
+                    "name": "Qwen/Qwen3.5-9B-BF16",
+                    "visibility": "VISIBILITY_PRIVATE",
+                    "weights": {},
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "ep_1", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Multiple configs" not in result.output
+        assert "control" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_endpoint_by_name(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/whoami").mock(return_value=httpx.Response(200, json=_whoami_body()))
         respx_mock.get("/projects/proj/endpoints").mock(
