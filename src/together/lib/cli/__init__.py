@@ -786,7 +786,10 @@ beta_models_app.command(
     (f"{_CLI}.beta.models.list_files:list_files"), name="ls-files", help="List files in a model or adapter"
 )
 beta_models_app.command(
-    (f"{_CLI}.beta.models.list_revisions:list_revisions"), name="ls-revisions", help="List revisions for a model"
+    (f"{_CLI}.beta.models.list_revisions:list_revisions"),
+    name="ls-revisions",
+    alias="list-revisions",
+    help="List revisions for a model",
 )
 beta_models_app.command((f"{_CLI}.beta.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
 beta_models_app.command(

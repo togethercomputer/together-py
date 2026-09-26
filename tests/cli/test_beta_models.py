@@ -451,8 +451,9 @@ class TestBetaModelsListFiles:
 
 
 class TestBetaModelsListRevisions:
+    @pytest.mark.parametrize("command", ["ls-revisions", "list-revisions"])
     @pytest.mark.respx(base_url=base_url)
-    def test_ls_revisions(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    def test_list_revisions_aliases(self, command: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/projects/proj/models/ml_1/revisions").mock(
             return_value=httpx.Response(
                 200,
@@ -470,7 +471,7 @@ class TestBetaModelsListRevisions:
             )
         )
 
-        result = cli_runner.invoke(["beta", "models", "ls-revisions", "ml_1", "--project", "proj", "--json"])
+        result = cli_runner.invoke(["beta", "models", command, "ml_1", "--project", "proj", "--json"])
 
         assert result.exit_code == 0, result.output
         row = json.loads(result.output)["data"][0]
