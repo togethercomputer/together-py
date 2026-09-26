@@ -36,6 +36,13 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_model_and_config,
 )
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
+from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
+    load_base_model,
+    list_model_configs,
+    load_adapter_model,
+    select_lora_config,
+    find_compatible_deployment,
+)
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
@@ -189,7 +196,13 @@ async def deploy(
     ] = None,
     config: CLIConfigParameter,
 ) -> None:
-    """Create a deployment on a new or existing dedicated inference endpoint."""
+    """Create a deployment on a new or existing dedicated inference endpoint.
+
+    When the model is a LoRA adapter (`weights.type` is `WEIGHTS_TYPE_ADAPTER`), attach it to an
+    existing deployment of its base model whose config has `adapter_mode` fixed or dynamic. If the
+    endpoint has no such deployment, create one from a fixed or dynamic config and then attach the
+    adapter. The command fails when no fixed or dynamic config exists.
+    """
     model_path_match = MODEL_PATH_RE.match(model)
     if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
         raise ValueError(
@@ -199,6 +212,30 @@ async def deploy(
     inline_placement_value = placement.to_json()
     if placement_id and inline_placement_value is not None:
         raise ValueError("Use either --placement or inline placement options, not both.")
+
+    adapter_model = await load_adapter_model(config, model)
+    if adapter_model is not None:
+        adapter_revision = model_path_match.group(3) if model_path_match is not None else None
+        await _deploy_adapter(
+            config,
+            adapter=adapter_model,
+            adapter_revision=adapter_revision or model_revision,
+            endpoint_name_or_id=endpoint_name_or_id,
+            config_id=config_id,
+            min_replicas=min_replicas,
+            max_replicas=max_replicas,
+            scale_up_window=scale_up_window,
+            scale_down_window=scale_down_window,
+            scaling_metric=scaling_metric,
+            scaling_target=scaling_target,
+            scaling_percentile=scaling_percentile,
+            deployment_name=deployment_name,
+            placement_id=placement_id,
+            placement_value=inline_placement_value if not placement_id else PlacementProfile(profile=placement_id),
+            inactive_timeout=inactive_timeout,
+            traffic_weight=traffic_weight,
+        )
+        return
 
     resolved = await resolve_model_and_config(config, model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
@@ -306,18 +343,262 @@ async def deploy(
     await retrieve(endpoint.id, config=config)
 
 
+async def _deploy_adapter(
+    config: CLIConfigParameter,
+    *,
+    adapter: Model,
+    adapter_revision: str | None,
+    endpoint_name_or_id: str,
+    config_id: str | None,
+    min_replicas: int | None,
+    max_replicas: int | None,
+    scale_up_window: str | None,
+    scale_down_window: str | None,
+    scaling_metric: ScalingMetricName | None,
+    scaling_target: float | None,
+    scaling_percentile: ScalingPercentile | None,
+    deployment_name: str | None,
+    placement_id: str | None,
+    placement_value: Placement | None,
+    inactive_timeout: int | None,
+    traffic_weight: float | None,
+) -> None:
+    autoscaling = build_autoscaling(
+        min_replicas=min_replicas,
+        max_replicas=max_replicas,
+        scale_up_window=scale_up_window,
+        scale_down_window=scale_down_window,
+        scaling_metrics=build_scaling_metrics(
+            scaling_metric=scaling_metric,
+            scaling_target=scaling_target,
+            scaling_percentile=scaling_percentile,
+        ),
+        required=True,
+    )
+    base = await show_loading_status("Loading adapter base model...", load_base_model(config, adapter))
+    configs = await show_loading_status(
+        "Loading base model configs...",
+        list_model_configs(config, base.id),
+    )
+    endpoint = await _peek_endpoint(config, endpoint_name_or_id)
+    existing = None
+    if endpoint is not None:
+        existing = await show_loading_status(
+            "Checking endpoint deployments...",
+            find_compatible_deployment(
+                config,
+                endpoint.id,
+                base=base,
+                configs=configs,
+                config_id=config_id,
+            ),
+        )
+
+    config_value = None if existing is not None else select_lora_config(configs, config_id, model=base.name or base.id)
+    if existing is None and deployment_name is None:
+        short_uuid = str(uuid.uuid4())[:8]
+        deployment_name = f"{base.name}-{short_uuid}".replace("/", "-")
+
+    adapter_label = f"{adapter.name} ({construct_model_path(adapter, adapter_revision)})"
+    if not config.json:
+        hardware_pricing = None
+        if existing is None and config_value is not None:
+            min_replicas_value = int(autoscaling.get("min_replicas") or 1)
+            max_replicas_value = int(autoscaling.get("max_replicas") or min_replicas_value)
+            hardware_pricing = await show_loading_status(
+                "Looking up GPU pricing...",
+                resolve_hardware_pricing(
+                    config,
+                    config_value,
+                    min_replicas=min_replicas_value,
+                    max_replicas=max_replicas_value,
+                ),
+            )
+        preview_name = existing.name if existing is not None else deployment_name
+        assert preview_name is not None
+        _print_deployment_preview(
+            endpoint=endpoint_name_or_id,
+            deployment_name=preview_name,
+            model=base,
+            model_path=construct_model_path(base),
+            config_value=config_value,
+            config_label=existing.config_id if existing is not None else None,
+            adapter_label=adapter_label,
+            autoscaling=autoscaling if existing is None else {},
+            placement=None if existing is not None else placement_value,
+            inactive_timeout=None if existing is not None else inactive_timeout,
+            traffic_weight=traffic_weight,
+            hardware_pricing=hardware_pricing,
+        )
+        if existing is not None:
+            console.print("[dim]Attaching the adapter to the existing deployment.[/dim]\n")
+            if _adapter_create_flags_ignored(
+                min_replicas=min_replicas,
+                max_replicas=max_replicas,
+                scale_up_window=scale_up_window,
+                scale_down_window=scale_down_window,
+                scaling_metric=scaling_metric,
+                scaling_target=scaling_target,
+                scaling_percentile=scaling_percentile,
+                deployment_name_set=deployment_name is not None,
+                placement_id=placement_id,
+                placement_value=placement_value,
+                inactive_timeout=inactive_timeout,
+            ):
+                console.print(
+                    "[yellow]Replica, placement, timeout, and deployment-name flags apply only when a new deployment is created.[/yellow]\n"
+                )
+        else:
+            console.print(
+                "[dim]No compatible deployment found. Creating a base-model deployment, then attaching the adapter.[/dim]\n"
+            )
+
+    await assert_explicit_project_id(config)
+
+    is_new_endpoint = False
+    if endpoint is None:
+        endpoint, is_new_endpoint = await _find_or_create_endpoint(config, endpoint_name_or_id)
+        if not is_new_endpoint:
+            existing = await find_compatible_deployment(
+                config,
+                endpoint.id,
+                base=base,
+                configs=configs,
+                config_id=config_id,
+            )
+
+    created_deployment = False
+    if existing is None:
+        assert config_value is not None
+        assert deployment_name is not None
+        try:
+            deployment = await show_loading_status(
+                "Creating beta endpoint deployment...",
+                config.client.beta.endpoints.deployments.create(
+                    endpoint.id,
+                    name=deployment_name,
+                    model=construct_model_path(base),
+                    config=construct_config_path(config_value),
+                    autoscaling=autoscaling,
+                    inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
+                    model_revision_id=omit,
+                    placement=placement_value or omit,
+                ),
+            )
+            created_deployment = True
+        except Exception as e:
+            if is_new_endpoint:
+                await config.client.beta.endpoints.delete(endpoint.id)
+                console.print("Error creating deployment. Rolling back.")
+            raise e
+    else:
+        deployment = existing
+
+    try:
+        attached = await show_loading_status(
+            "Attaching adapter...",
+            config.client.beta.endpoints.adapters.create(
+                endpoint_id=endpoint.id,
+                deployment_id=deployment.id,
+                adapter_model_id=adapter.id,
+                adapter_revision_id=adapter_revision if adapter_revision is not None else omit,
+            ),
+        )
+    except Exception as e:
+        if created_deployment or is_new_endpoint:
+            console.print("Error attaching adapter. Rolling back.")
+        if created_deployment:
+            await config.client.beta.endpoints.deployments.delete(
+                deployment.id,
+                endpoint_id=endpoint.id,
+                etag=deployment.etag or omit,
+            )
+        if is_new_endpoint:
+            await config.client.beta.endpoints.delete(endpoint.id)
+        raise e
+
+    if traffic_weight is not None:
+        assert deployment.id is not None
+        traffic_split = upsert_traffic_weight(
+            endpoint.traffic_split,
+            deployment_id=deployment.id,
+            weight=traffic_weight,
+        )
+        endpoint = await show_loading_status(
+            "Updating endpoint traffic split...",
+            config.client.beta.endpoints.update(
+                endpoint.id,
+                traffic_split=traffic_split,
+                update_mask="trafficSplit",
+                etag=endpoint.etag or omit,
+            ),
+        )
+
+    if config.json:
+        payload: dict[str, Any] = {"endpoint": endpoint, "deployment": deployment, "adapter": attached}
+        console.print_json(openapi_dumps(payload).decode("utf-8"))
+        return
+
+    console.print(
+        f"\n[green]√[/green] Adapter {adapter.name} attached to deployment {deployment.name} on endpoint {endpoint.name}.\n\n"
+    )
+    await retrieve(endpoint.id, config=config)
+
+
+def _adapter_create_flags_ignored(
+    *,
+    min_replicas: int | None,
+    max_replicas: int | None,
+    scale_up_window: str | None,
+    scale_down_window: str | None,
+    scaling_metric: ScalingMetricName | None,
+    scaling_target: float | None,
+    scaling_percentile: ScalingPercentile | None,
+    deployment_name_set: bool,
+    placement_id: str | None,
+    placement_value: Placement | None,
+    inactive_timeout: int | None,
+) -> bool:
+    return any(
+        (
+            min_replicas is not None,
+            max_replicas is not None,
+            scale_up_window is not None,
+            scale_down_window is not None,
+            scaling_metric is not None,
+            scaling_target is not None,
+            scaling_percentile is not None,
+            deployment_name_set,
+            placement_id is not None,
+            placement_value is not None,
+            inactive_timeout is not None,
+        )
+    )
+
+
+async def _peek_endpoint(config: CLIConfigParameter, endpoint_input: str) -> Endpoint | None:
+    if endpoint_input.startswith("ep_"):
+        return await config.client.beta.endpoints.retrieve(id=endpoint_input)
+    try:
+        return await resolve_endpoint(config, endpoint_input)
+    except ValueError:
+        return None
+
+
 def _print_deployment_preview(
     *,
     endpoint: str,
     deployment_name: str,
     model: Model,
     model_path: str,
-    config_value: Config,
+    config_value: Config | None,
     autoscaling: DeploymentAutoscalingParam,
     placement: Placement | None,
     inactive_timeout: int | None,
     traffic_weight: float | None,
     hardware_pricing: HardwarePricing | None = None,
+    adapter_label: str | None = None,
+    config_label: str | None = None,
 ) -> None:
     table = Table(expand=True, show_header=False, show_edge=False, show_lines=False, box=None, pad_edge=False)
     table.add_column("Arg", justify="left", no_wrap=True, ratio=1)
@@ -367,7 +648,11 @@ def _print_deployment_preview(
     if traffic_weight is not None:
         add_row("--traffic-weight", str(traffic_weight))
     add_row("--model", f"{model.name} ({model_path})")
-    add_row("--config", config_value.id)  # type: ignore
+    if adapter_label is not None:
+        add_row("--adapter", adapter_label)
+    shown_config = config_value.id if config_value is not None and config_value.id else config_label
+    if shown_config:
+        add_row("--config", shown_config)
 
     table.add_row("\n".join(args))
 
