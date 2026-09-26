@@ -7,10 +7,9 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together import APIError, AsyncClient, omit
-from together.types.beta import DeploymentAutoscalingParam, EndpointTrafficSplitEntryParam
+from together.types.beta import DeploymentAutoscalingParam
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
-from together.types.beta.endpoint import Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
@@ -138,8 +137,6 @@ async def _delete_deployment(deployment_id: str, *, config: CLIConfigParameter) 
         deployment_id=deployment_id,
     )
 
-    await _detach_from_traffic_split(config.client, endpoint, deployment_id)
-
     try:
         await show_loading_status(
             "Deleting deployment...",
@@ -243,24 +240,6 @@ async def _delete_rollout(rollout_id: str, *, config: CLIConfigParameter) -> dic
         ),
     )
     return {"message": f"Deleted rollout {rollout_id}", "id": rollout_id, "type": "rollout"}
-
-
-async def _detach_from_traffic_split(client: AsyncClient, endpoint: Endpoint, deployment_id: str) -> None:
-    traffic_split = endpoint.traffic_split or []
-    if not any(t.deployment_id == deployment_id for t in traffic_split):
-        return
-
-    updated: list[EndpointTrafficSplitEntryParam] = [
-        EndpointTrafficSplitEntryParam(deployment_id=t.deployment_id, weight=t.weight)
-        for t in traffic_split
-        if t.deployment_id != deployment_id
-    ]
-    await client.beta.endpoints.update(
-        endpoint.id,
-        traffic_split=updated,
-        update_mask="trafficSplit",
-        etag=endpoint.etag or omit,
-    )
 
 
 async def _find_ab_experiment(
