@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.38.0](https://github.com/togethercomputer/together-py/compare/v2.37.0...v2.38.0) (2026-09-26)
+
+
+### Features
+
+* **cli:** show [cli] extras install tip after commands ([#590](https://github.com/togethercomputer/together-py/issues/590)) ([4ddbbbe](https://github.com/togethercomputer/together-py/commit/4ddbbbe472ebfe1da190295fb50459a092bf746c))
+* **rl:** Add SDK methods for the new Reinforcement Learning product ([02ff914](https://github.com/togethercomputer/together-py/commit/02ff9141d392919818e3b7f00109809760b4210c))
+
+
+### Bug Fixes
+
+* **Endpoints CLI:** Ensure compatibility when deploying with specific model configs ([#591](https://github.com/togethercomputer/together-py/issues/591)) ([f86e209](https://github.com/togethercomputer/together-py/commit/f86e2090c238954abb503a99e9191e999ad44ccf))
+* **Endpoints CLI:** Simplified the logic when deleting deployments ([#589](https://github.com/togethercomputer/together-py/issues/589)) ([c82b2c4](https://github.com/togethercomputer/together-py/commit/c82b2c484a37bb6ca7a7588e06a6fa64e7cb997f))
+
 ## [2.37.0](https://github.com/togethercomputer/together-py/compare/v2.36.0...v2.37.0) (2026-09-25)
 
 
