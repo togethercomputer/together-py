@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 from collections.abc import Sequence
 
-from tests.cli.utils import CliRunner
+from tests.cli.utils import API_KEY, CliRunner
 from tests.cli.test_files import _file_response
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -42,17 +42,26 @@ class JSONValidator:
             return
 
         def run_command(command: str) -> subprocess.CompletedProcess[str]:
+            run_kwargs = dict(kwargs)
+            env = {**os.environ, **(run_kwargs.pop("env", None) or {})}
+            # These hit the local mock server. A blank CI secret must not fail auth first.
+            if not env.get("TOGETHER_API_KEY"):
+                env["TOGETHER_API_KEY"] = API_KEY
             return subprocess.run(
                 ["together", *self.namespace_parts, *command.split(" "), "--json", "--base-url", base_url],
                 capture_output=True,
                 text=True,
-                **kwargs,
+                env=env,
+                **run_kwargs,
             )
 
         command_result = run_command(command)
         if command_result.returncode != 0 and not allow_nonzero:
             ns = " ".join(self.namespace_parts)
-            raise AssertionError(f"{ns} {command} exited {command_result.returncode}: stderr={command_result.stderr!r}")
+            raise AssertionError(
+                f"{ns} {command} exited {command_result.returncode}: "
+                f"stderr={command_result.stderr!r} stdout={command_result.stdout!r}"
+            )
         try:
             _assert_stdout_json_pipes_to_jq(command_result.stdout)
         except AssertionError as e:
