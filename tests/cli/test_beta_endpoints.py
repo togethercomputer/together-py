@@ -827,6 +827,136 @@ class TestBetaEndpointsDeployAdapter:
         assert update_body["trafficSplit"] == [{"deploymentId": "dep_1", "weight": 1.0}]
 
     @pytest.mark.respx(base_url=base_url)
+    def test_deploy_adapter_uses_named_existing_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        _mock_adapter_models(respx_mock)
+        respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_lora_config_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        lora_deployment = {
+            "model": "projects/proj/models/ml_base/revisions/rv_base",
+            "modelId": "ml_base",
+            "config": "projects/proj/configs/cr_lora",
+            "configId": "cr_lora",
+            "trafficMode": "TRAFFIC_MODE_LIVE",
+        }
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _deployment_body(id="dep_preferred", name="preferred", **lora_deployment),
+                        _deployment_body(
+                            id="dep_named",
+                            name="my-project/my-endpoint/base-dep",
+                            **{**lora_deployment, "status": {"state": "DEPLOYMENT_STATE_STOPPED"}},
+                        ),
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        attach_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments/dep_named/adapters").mock(
+            return_value=httpx.Response(200, json=_adapter_entry_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_adapter",
+                "--deployment-name",
+                "base-dep",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert attach_route.call_count == 1
+        assert not any(
+            call.request.method == "POST" and call.request.url.path.endswith("/deployments")
+            for call in cast(list[Call], respx_mock.calls)
+        )
+        assert json.loads(result.output)["deployment"]["id"] == "dep_named"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_adapter_attaches_to_named_deployment_without_validating_config(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_adapter_models(respx_mock)
+        respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_lora_config_body(), _lora_config_body("cr_disabled", "disabled")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _deployment_body(
+                            name="base-dep",
+                            model="projects/proj/models/ml_base/revisions/rv_base",
+                            modelId="ml_base",
+                            config="projects/proj/configs/cr_disabled",
+                            configId="cr_disabled",
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        attach_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters").mock(
+            return_value=httpx.Response(
+                400,
+                json={"error": {"message": "deployment does not serve adapters", "type": "invalid_request_error"}},
+            )
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_adapter",
+                "--deployment-name",
+                "base-dep",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert attach_route.call_count == 1
+        assert "deployment does not serve adapters" in result.output
+        assert not any(
+            call.request.method == "POST" and call.request.url.path.endswith("/deployments")
+            for call in cast(list[Call], respx_mock.calls)
+        )
+        assert not any(call.request.method == "DELETE" for call in cast(list[Call], respx_mock.calls))
+
+    @pytest.mark.respx(base_url=base_url)
     def test_deploy_adapter_fails_when_no_lora_config(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_adapter_models(respx_mock)
         respx_mock.get("/projects/proj/configs").mock(

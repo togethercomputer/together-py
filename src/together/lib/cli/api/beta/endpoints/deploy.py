@@ -199,9 +199,10 @@ async def deploy(
     """Create a deployment on a new or existing dedicated inference endpoint.
 
     When the model is a LoRA adapter (`weights.type` is `WEIGHTS_TYPE_ADAPTER`), attach it to an
-    existing deployment of its base model whose config has `adapter_mode` fixed or dynamic. If the
-    endpoint has no such deployment, create one from a fixed or dynamic config and then attach the
-    adapter. The command fails when no fixed or dynamic config exists.
+    existing deployment of its base model whose config has `adapter_mode` fixed or dynamic. With
+    `--deployment-name`, use the deployment of that name when it exists. If the endpoint has no
+    such deployment, create one from a fixed or dynamic config and then attach the adapter. The
+    command fails when no fixed or dynamic config exists.
     """
     model_path_match = MODEL_PATH_RE.match(model)
     if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
@@ -391,6 +392,7 @@ async def _deploy_adapter(
                 base=base,
                 configs=configs,
                 config_id=config_id,
+                deployment_name=deployment_name,
             ),
         )
 
@@ -440,13 +442,12 @@ async def _deploy_adapter(
                 scaling_metric=scaling_metric,
                 scaling_target=scaling_target,
                 scaling_percentile=scaling_percentile,
-                deployment_name_set=deployment_name is not None,
                 placement_id=placement_id,
                 placement_value=placement_value,
                 inactive_timeout=inactive_timeout,
             ):
                 console.print(
-                    "[yellow]Replica, placement, timeout, and deployment-name flags apply only when a new deployment is created.[/yellow]\n"
+                    "[yellow]Replica, placement, and timeout flags apply only when a new deployment is created.[/yellow]\n"
                 )
         else:
             console.print(
@@ -465,6 +466,7 @@ async def _deploy_adapter(
                 base=base,
                 configs=configs,
                 config_id=config_id,
+                deployment_name=deployment_name,
             )
 
     created_deployment = False
@@ -554,7 +556,6 @@ def _adapter_create_flags_ignored(
     scaling_metric: ScalingMetricName | None,
     scaling_target: float | None,
     scaling_percentile: ScalingPercentile | None,
-    deployment_name_set: bool,
     placement_id: str | None,
     placement_value: Placement | None,
     inactive_timeout: int | None,
@@ -568,7 +569,6 @@ def _adapter_create_flags_ignored(
             scaling_metric is not None,
             scaling_target is not None,
             scaling_percentile is not None,
-            deployment_name_set,
             placement_id is not None,
             placement_value is not None,
             inactive_timeout is not None,

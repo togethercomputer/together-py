@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import asyncio
 from typing import List, Literal
 from typing_extensions import Annotated
@@ -16,6 +17,7 @@ from together.types.beta import Endpoint, EndpointDeployment
 from together._exceptions import APIError
 from together._utils._json import openapi_dumps
 from together.lib.utils.tools import format_datetime
+from together.types.beta.models import Config
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.types.beta.endpoints import Rollout, AbExperiment, ShadowExperiment
 from together.lib.cli.utils._console import console
@@ -33,6 +35,8 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     resolve_model_display_name,
 )
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import resolve_deployment_id
+
+_CONFIG_PATH_RE = re.compile(r"^projects/([^/]+)/configs/([^/]+)$")
 
 
 async def retrieve(
@@ -88,7 +92,23 @@ async def _retrieve_deployment(deployment_id_or_name: str, *, config: CLIConfigP
         console.print_json(openapi_dumps(deployment).decode("utf-8"))
         return
 
-    print_deployment_detail(deployment)
+    model_config = await show_loading_status("Loading config...", _load_deployment_config(config, deployment))
+    print_deployment_detail(deployment, model_config=model_config)
+
+
+async def _load_deployment_config(config: CLIConfigParameter, deployment: EndpointDeployment) -> Config | None:
+    """Fetch the deployment's config revision; None when it cannot be loaded."""
+    match = _CONFIG_PATH_RE.match(deployment.config or "")
+    config_id = match.group(2) if match is not None else deployment.config_id
+    if not config_id:
+        return None
+    try:
+        return await config.client.beta.models.configs.retrieve(
+            id=config_id,
+            project_id=match.group(1) if match is not None else None,
+        )
+    except APIError:
+        return None
 
 
 async def _retrieve_rollout(rollout_id: str, *, config: CLIConfigParameter) -> None:
@@ -201,20 +221,24 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
     deployments_table.add_column("Model")
     deployments_table.add_column("Estimated Traffic")
     deployments_table.add_column("")
-    model_names = await asyncio.gather(
-        *(
-            resolve_model_display_name(config, deployment.model, fallback=deployment.api_model_id)
-            for deployment in deployments
-        )
+    model_names, adapter_names = await asyncio.gather(
+        asyncio.gather(
+            *(
+                resolve_model_display_name(config, deployment.model, fallback=deployment.api_model_id)
+                for deployment in deployments
+            )
+        ),
+        asyncio.gather(*(_load_adapter_names(config, endpoint.id, deployment.id) for deployment in deployments)),
     )
-    for i, (deployment, model) in enumerate(zip(deployments, model_names)):
+    for i, (deployment, model, adapters) in enumerate(zip(deployments, model_names, adapter_names)):
         name = deployment.name.split("/")[-1]
 
         replicas = f"{deployment.ready_replicas or 0} / {deployment.desired_replicas or 0}"
         estimated_traffic = format_estimated_traffic(deployment.estimated_effective_traffic_share)
+        adapter_lines = "".join(f"\n[dim]  Adapter: {escape_rich_markup(adapter)}[/dim]" for adapter in adapters)
 
         deployments_table.add_row(
-            f"Name: {name}\n[dim]  ID: {deployment.id}[/dim]",
+            f"Name: {name}\n[dim]  ID: {deployment.id}[/dim]{adapter_lines}",
             model,
             estimated_traffic,
             f"  Status: {format_deployment_state(deployment.state)}\nReplicas: {replicas}",
@@ -222,6 +246,22 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
         if i < len(deployments) - 1:
             deployments_table.add_row()
     console.print(Padding(deployments_table, (0, 0)))
+
+
+async def _load_adapter_names(config: CLIConfigParameter, endpoint_id: str, deployment_id: str) -> list[str]:
+    """Display names of adapters attached to a deployment; empty when they cannot be listed."""
+    try:
+        adapters = [adapter async for adapter in config.client.beta.endpoints.adapters.list(endpoint_id, deployment_id)]
+    except APIError:
+        return []
+    return list(
+        await asyncio.gather(
+            *(
+                resolve_model_display_name(config, adapter.adapter_model, fallback=adapter.adapter_model_id)
+                for adapter in adapters
+            )
+        )
+    )
 
 
 traffic_split_colors = [
@@ -552,7 +592,7 @@ def format_estimated_traffic(share: float | None) -> str:
     return f"{round(share * 100)}%"
 
 
-def print_deployment_detail(deployment: EndpointDeployment | None) -> None:
+def print_deployment_detail(deployment: EndpointDeployment | None, *, model_config: Config | None = None) -> None:
     if deployment is None:
         console.print("Deployment not found.")
         return
@@ -562,6 +602,11 @@ def print_deployment_detail(deployment: EndpointDeployment | None) -> None:
     console.print(f"[dim][primary]Project:[/primary][/dim]\t{deployment.project_id or ''}")
     console.print(f"[dim][primary]Model:[/primary][/dim]\t\t{deployment.api_model_id}")
     console.print(f"[dim][primary]Config:[/primary][/dim]\t{deployment.config_id}")
+    if model_config is not None:
+        for selector in model_config.selectors or []:
+            console.print(f"\t\t[dim]{escape_rich_markup(selector.key)}:[/dim] {escape_rich_markup(selector.value)}")
+        if model_config.draft_model:
+            console.print(f"\t\t[dim]draft_model:[/dim] {model_config.draft_model}")
     console.print(f"[dim][primary]Hardware:[/primary][/dim]\t{deployment.hardware}")
     console.print(f"[dim][primary]State:[/primary][/dim]\t\t{deployment.status.state}")
     console.print(f"[dim][primary]Message:[/primary][/dim]\t{deployment.status.message}")

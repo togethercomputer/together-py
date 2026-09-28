@@ -150,11 +150,20 @@ async def find_compatible_deployment(
     base: Model,
     configs: list[Config],
     config_id: str | None,
+    deployment_name: str | None = None,
 ) -> EndpointDeployment | None:
-    """Pick a base-model deployment whose config is fixed or dynamic LoRA mode."""
+    """Pick a base-model deployment whose config is fixed or dynamic LoRA mode.
+
+    When ``deployment_name`` is set, the deployment with that name is returned as-is when it
+    exists; the API reports any incompatibility when the adapter is attached. Returns None when no
+    such deployment exists, so the caller creates it.
+    """
     deployments: list[EndpointDeployment] = []
     async for deployment in config.client.beta.endpoints.deployments.list(endpoint_id):
         deployments.append(deployment)
+
+    if deployment_name is not None:
+        return _find_deployment_by_name(deployments, deployment_name)
 
     by_id = {item.id: item for item in configs if item.id}
     matches: list[EndpointDeployment] = []
@@ -170,6 +179,14 @@ async def find_compatible_deployment(
     if not matches:
         return None
     return min(matches, key=_deployment_preference)
+
+
+def _find_deployment_by_name(deployments: list[EndpointDeployment], name: str) -> EndpointDeployment | None:
+    bare = name.rsplit("/", 1)[-1]
+    for deployment in deployments:
+        if deployment.name == name or (deployment.name or "").rsplit("/", 1)[-1] == bare:
+            return deployment
+    return None
 
 
 async def _load_model(config: CLIConfigParameter, model_input: str) -> Model | None:
