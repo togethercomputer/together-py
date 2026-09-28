@@ -214,7 +214,11 @@ async def resolve_result_payload(
 
     Returns:
         The original result when no payload ID is present, otherwise a new result
-        parsed from the downloaded payload using the same model type.
+        of the same model type built from the inline fields merged with the
+        downloaded payload.
+
+    Raises:
+        ValueError: If the downloaded payload is not a JSON object.
     """
     payload_id = getattr(result, "payload_id", None)
     if not payload_id:
@@ -222,7 +226,13 @@ async def resolve_result_payload(
 
     raw = await _download_payload(client, session_id=session_id, payload_id=payload_id)
     data = json.loads(raw)
-    return model_parse(type(result), data)
+    if not isinstance(data, dict):
+        raise ValueError(f"Result payload {payload_id} must be a JSON object, got {type(data).__name__}")
+    # The service keeps the small members (`loss`, `metrics`) inline and offloads only
+    # the large ones, so the payload alone does not validate as the result model.
+    inline = result.to_dict(use_api_names=True, exclude_unset=True)
+    inline.pop("payload_id")
+    return model_parse(type(result), {**inline, **data})
 
 
 async def resolve_operation_payload(completed: OperationResponse, *, session: SessionClient) -> Any:
