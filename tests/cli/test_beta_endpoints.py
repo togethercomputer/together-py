@@ -836,12 +836,16 @@ class TestBetaEndpointsDeployAdapter:
             )
         )
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
-        lora_deployment = {
+        lora_deployment: dict[str, Any] = {
             "model": "projects/proj/models/ml_base/revisions/rv_base",
             "modelId": "ml_base",
             "config": "projects/proj/configs/cr_lora",
             "configId": "cr_lora",
             "trafficMode": "TRAFFIC_MODE_LIVE",
+        }
+        stopped_lora_deployment: dict[str, Any] = {
+            **lora_deployment,
+            "status": {"state": "DEPLOYMENT_STATE_STOPPED"},
         }
         respx_mock.get("/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(
@@ -853,7 +857,7 @@ class TestBetaEndpointsDeployAdapter:
                         _deployment_body(
                             id="dep_named",
                             name="my-project/my-endpoint/base-dep",
-                            **{**lora_deployment, "status": {"state": "DEPLOYMENT_STATE_STOPPED"}},
+                            **stopped_lora_deployment,
                         ),
                     ],
                     "next_cursor": None,
