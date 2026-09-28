@@ -604,8 +604,11 @@ def test_interrupt_during_stop_cancels_before_reopening_the_gate(
     session = _make_session()
     entered = threading.Event()
     cancelled = threading.Event()
+    teardown_done: Future[Any] | None = None
 
     async def slow_stop() -> Any:
+        nonlocal teardown_done
+        teardown_done = session._loop._teardown_done
         entered.set()
         try:
             await asyncio.sleep(60)
@@ -622,6 +625,10 @@ def test_interrupt_during_stop_cancels_before_reopening_the_gate(
         session.stop()
 
     assert cancelled.wait(timeout=10)
+    assert teardown_done is not None
+    # Cancellation is observed before the task-done callback releases the teardown claim.
+    with pytest.raises(asyncio.CancelledError):
+        teardown_done.result(timeout=10)
     assert not session._loop.closed
 
     async def finish_stop() -> Any:
