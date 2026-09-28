@@ -210,6 +210,24 @@ class TestBetaEndpointsUpdate:
         assert json.loads(req.content.decode()) == {"inactiveTimeout": 0}
 
     @pytest.mark.respx(base_url=base_url)
+    def test_update_max_concurrent_requests_per_replica(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint_list(respx_mock)
+        route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(_update_args("dep_control", "--max-concurrent-requests-per-replica", "16"))
+
+        assert result.exit_code == 0, result.output
+        req = cast(Call, route.calls[0]).request
+        assert "updateMask=maxConcurrentRequestsPerReplica" in str(req.url)
+        assert json.loads(req.content.decode()) == {"maxConcurrentRequestsPerReplica": "16"}
+
+    @pytest.mark.respx(base_url=base_url)
     def test_update_idle_deployment(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_endpoint_list(respx_mock)
         route = respx_mock.patch("/projects/proj/endpoints/ep_1/deployments/dep_idle").mock(
@@ -238,6 +256,7 @@ class TestBetaEndpointsUpdate:
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
         assert "--inactive-timeout" in output
+        assert "--max-concurrent-requests-per-replica" in output
         assert "--scale-to-zero-window" not in output
 
     def test_update_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:

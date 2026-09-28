@@ -187,6 +187,7 @@ class TestBetaEndpointsDeploy:
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
         assert "--inactive-timeout" in output
+        assert "--max-concurrent-requests-per-replica" in output
         assert "--placement.hipaa" in output
         assert "--scale-to-zero-window" not in output
         assert "--enable-lora" not in output
@@ -311,6 +312,8 @@ class TestBetaEndpointsDeploy:
                 "my-dep",
                 "--inactive-timeout",
                 "30",
+                "--max-concurrent-requests-per-replica",
+                "16",
                 "--traffic-weight",
                 "1",
                 "--json",
@@ -325,6 +328,7 @@ class TestBetaEndpointsDeploy:
         assert deployment_body["config"] == "projects/proj/configs/cr_1"
         assert deployment_body["autoscaling"] == {"minReplicas": 1, "maxReplicas": 1}
         assert deployment_body["inactiveTimeout"] == 30
+        assert deployment_body["maxConcurrentRequestsPerReplica"] == "16"
         update_body = json.loads(cast(Call, update_endpoint_route.calls[0]).request.content.decode())
         assert update_body["trafficSplit"] == [{"deploymentId": "dep_1", "weight": 1.0}]
 

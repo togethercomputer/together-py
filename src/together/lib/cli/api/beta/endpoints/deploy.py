@@ -177,6 +177,15 @@ async def deploy(
             validator=Number(gte=0, lte=1440),
         ),
     ] = None,
+    max_concurrent_requests_per_replica: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Maximum in-flight inference requests per replica. Omit for the platform default; "
+                "0 means unlimited when the config limit is 1 or less."
+            )
+        ),
+    ] = None,
     traffic_weight: Annotated[
         Optional[float],
         Parameter(
@@ -252,6 +261,7 @@ async def deploy(
             autoscaling=autoscaling,
             placement=placement_value,
             inactive_timeout=inactive_timeout,
+            max_concurrent_requests_per_replica=max_concurrent_requests_per_replica,
             traffic_weight=traffic_weight,
             hardware_pricing=hardware_pricing,
         )
@@ -269,6 +279,9 @@ async def deploy(
                 config=construct_config_path(config_value),
                 autoscaling=autoscaling,
                 inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
+                max_concurrent_requests_per_replica=(
+                    max_concurrent_requests_per_replica if max_concurrent_requests_per_replica is not None else omit
+                ),
                 # Revision is already embedded in model_path when present.
                 model_revision_id=omit,
                 placement=placement_value or omit,
@@ -316,6 +329,7 @@ def _print_deployment_preview(
     autoscaling: DeploymentAutoscalingParam,
     placement: Placement | None,
     inactive_timeout: int | None,
+    max_concurrent_requests_per_replica: str | None,
     traffic_weight: float | None,
     hardware_pricing: HardwarePricing | None = None,
 ) -> None:
@@ -364,6 +378,8 @@ def _print_deployment_preview(
 
     if inactive_timeout is not None:
         add_row("--inactive-timeout", str(inactive_timeout))
+    if max_concurrent_requests_per_replica is not None:
+        add_row("--max-concurrent-requests-per-replica", max_concurrent_requests_per_replica)
     if traffic_weight is not None:
         add_row("--traffic-weight", str(traffic_weight))
     add_row("--model", f"{model.name} ({model_path})")
