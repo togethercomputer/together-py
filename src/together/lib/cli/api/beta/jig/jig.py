@@ -19,7 +19,7 @@ import asyncio
 import tempfile
 import subprocess
 import concurrent.futures
-from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated, cast
+from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated
 from pathlib import Path
 from datetime import datetime as dt
 from functools import cached_property
@@ -906,6 +906,7 @@ class Jig:
             "autoscaling": self.config.deploy.autoscaling,
             "termination_grace_period_seconds": self.config.deploy.termination_grace_period_seconds,
             "volumes": [{**asdict(vm), "version": vm.version or 0} for vm in self.config.deploy.volume_mounts],
+            "model_mounts": [mm.to_api() for mm in self.config.deploy.model_mounts],
         }
 
         if self.config.deploy.health_check_path:
@@ -913,19 +914,13 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
-        # Fields the generated SDK does not know yet travel in extra_body: opt-in
-        # experimental features, and model_mounts until the SDK is regenerated
-        # from tdep's OpenAPI. model_mounts is always sent (possibly empty) so a
-        # redeploy without it clears the mounts, mirroring volumes.
+        # Fields the generated SDK does not know yet travel in extra_body.
         experimental = {k: v for k, v in asdict(self.config.experimental).items() if v}
         if capacity_type := experimental.pop("capacity_type", None):
             deploy_data["capacity_type"] = capacity_type
-        extra_body: dict[str, Any] = {
-            "model_mounts": [mm.to_api() for mm in self.config.deploy.model_mounts],
-        }
+        extra_kwargs: dict[str, Any] = {}
         if experimental:
-            extra_body["experimental"] = experimental
-        extra_kwargs: dict[str, Any] = {"extra_body": extra_body}
+            extra_kwargs["extra_body"] = {"experimental": experimental}
 
         self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
@@ -1142,11 +1137,9 @@ Configuration:""")
             lines.append(f"  Capacity Type: {d.capacity_type}")
         vol = d.volumes[0] if d.volumes else None
         lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
-        # model_mounts is not in the generated Deployment model yet; the response
-        # keeps unknown fields, so read it as plain data.
-        for mm in cast(list[dict[str, Any]], getattr(d, "model_mounts", None) or []):
-            pinned = f"{mm.get('model_id')}@{mm['revision_id']}" if mm.get("revision_id") else str(mm.get("model_id"))
-            lines.append(f"  Model: {pinned} \N{RIGHTWARDS ARROW} {mm.get('mount_path')}")
+        for mm in d.api_model_mounts or []:
+            pinned = f"{mm.api_model_id}@{mm.revision_id}" if mm.revision_id else mm.api_model_id
+            lines.append(f"  Model: {pinned} \N{RIGHTWARDS ARROW} {mm.mount_path}")
         storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
         lines.append(f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory{storage}")
 
