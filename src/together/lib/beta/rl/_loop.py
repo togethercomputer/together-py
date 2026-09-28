@@ -89,11 +89,17 @@ def _blocking_result(fut: Future[_T]) -> _T:
         raise
 
 
+def _consume_exception(future: asyncio.Future[Any]) -> None:
+    """Retrieve a shielded wait's exception even if its caller was cancelled."""
+    if not future.cancelled():
+        future.exception()
+
+
 class _ProcessLoop:
     """The one daemon loop, and the only way onto it.
 
-    Started lazily, never closed during normal use. :meth:`submit` is the only place that names
-    the loop; everything else names work instead, by handing over a coroutine. The two
+    Started lazily, never closed during normal use. Submission methods keep the loop
+    private; everything else names work instead, by handing over a coroutine. The two
     predicates are part of that interface — a caller deciding whether it may block, or whether
     it is already on this loop, must ask rather than compare loops itself.
     """
@@ -110,6 +116,38 @@ class _ProcessLoop:
             coro.close()
             raise
         return asyncio.run_coroutine_threadsafe(coro, loop)
+
+    def submit_teardown(
+        self,
+        coro: Coroutine[Any, Any, Any],
+        on_done: Callable[[asyncio.Task[Any]], None],
+    ) -> Callable[[], None]:
+        """Start teardown and return a cancellation request, independent of completion.
+
+        Register the completion callback before the task can start, so cancellation
+        before its first step still settles the gate. Only this callback releases the
+        claim; cancelling a caller's wait cannot stand in for task completion.
+        """
+        try:
+            loop = self._start()
+        except BaseException:
+            coro.close()
+            raise
+        started: Future[asyncio.Task[Any]] = Future()
+
+        def start() -> None:
+            task = loop.create_task(coro)
+            task.add_done_callback(on_done)
+            started.set_result(task)
+
+        def cancel_task(future: Future[asyncio.Task[Any]]) -> None:
+            loop.call_soon_threadsafe(future.result().cancel)
+
+        def cancel() -> None:
+            started.add_done_callback(cancel_task)
+
+        loop.call_soon_threadsafe(start)
+        return cancel
 
     def owns_running_loop(self) -> bool:
         """True when the calling thread is running on the process loop itself.
@@ -211,11 +249,11 @@ class LoopGate:
         Tracked, so this handle's teardown cancels it — and refused from the moment that
         teardown begins. Ordinary work can never ask for teardown's exemption from that.
         """
-        return self._drive(coro, during_teardown=False)
+        return self._drive(coro)
 
     async def run_async(self, coro: Coroutine[Any, Any, _T]) -> _T:
         """Await coro on the process loop, hopping from a foreign loop when needed. Tracked."""
-        return await self._drive_async(coro, during_teardown=False)
+        return await self._drive_async(coro)
 
     def run_teardown(self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True) -> _T | None:
         """Run coro then close. Runs at most once; on failure leaves the gate retryable.
@@ -226,47 +264,58 @@ class LoopGate:
         ``stops_remote`` is False for a teardown that releases the handle but leaves the
         remote resource running, so a later teardown can report what it can no longer do.
         """
-        # Before the claim, because both endings block: the winner inside _drive, the loser on
-        # the winner's future. Refusing after claiming would also strand every peer behind a
-        # teardown this call never runs.
         _process_loop.refuse_nested_blocking(coro)
-        claimed, in_flight = self._claim_teardown(stops_remote)
-        if not claimed:
-            coro.close()
-            # Waited on rather than cancelled: an interrupt here belongs to this caller and
-            # must not abort a teardown someone else is driving.
-            return None if in_flight is None else in_flight.result()
+        in_flight, cancel = self._start_teardown(coro, stops_remote)
         try:
-            # Cancel-and-wait happens inside _drive before this except does, so abort never
-            # reopens the gate while a remote stop is still in flight on the daemon loop.
-            output = self._drive(coro, during_teardown=True)
-        except BaseException as exc:
-            self._abort_teardown(exc)
+            return None if in_flight is None else in_flight.result()
+        except BaseException:
+            if cancel is not None:
+                cancel()
             raise
-        self._close(output)
-        return output
 
     async def run_teardown_async(self, coro: Coroutine[Any, Any, _T], *, stops_remote: bool = True) -> _T | None:
         """Async twin of :meth:`run_teardown`."""
+        in_flight, cancel = self._start_teardown(coro, stops_remote)
+        if in_flight is None:
+            return None
+        waiter = asyncio.wrap_future(in_flight)
+        waiter.add_done_callback(_consume_exception)
+        try:
+            # A cancelled caller may request task cancellation, but the shared outcome
+            # remains pending until the actual task completes its cleanup.
+            return await asyncio.shield(waiter)
+        except BaseException:
+            if cancel is not None:
+                cancel()
+            raise
+
+    def _start_teardown(
+        self, coro: Coroutine[Any, Any, _T], stops_remote: bool
+    ) -> tuple[Future[Any] | None, Callable[[], None] | None]:
         claimed, in_flight = self._claim_teardown(stops_remote)
         if not claimed:
             coro.close()
-            # Shielded for the same reason the sync twin does not cancel: cancelling this wait
-            # must not cancel the teardown someone else is driving.
-            return None if in_flight is None else await asyncio.shield(asyncio.wrap_future(in_flight))
+            return in_flight, None
         try:
-            output = await self._drive_async(coro, during_teardown=True)
+            cancel = _process_loop.submit_teardown(coro, self._finish_teardown)
         except BaseException as exc:
             self._abort_teardown(exc)
             raise
-        self._close(output)
-        return output
+        return in_flight, cancel
 
-    def _drive(self, coro: Coroutine[Any, Any, _T], *, during_teardown: bool) -> _T:
+    def _finish_teardown(self, task: asyncio.Task[Any]) -> None:
+        try:
+            output = task.result()
+        except BaseException as exc:
+            self._abort_teardown(exc)
+        else:
+            self._close(output)
+
+    def _drive(self, coro: Coroutine[Any, Any, _T]) -> _T:
         _process_loop.refuse_nested_blocking(coro)
-        return _blocking_result(self._submit_and_track(coro, during_teardown=during_teardown))
+        return _blocking_result(self._submit_and_track(coro))
 
-    async def _drive_async(self, coro: Coroutine[Any, Any, _T], *, during_teardown: bool) -> _T:
+    async def _drive_async(self, coro: Coroutine[Any, Any, _T]) -> _T:
         """Await coro on the process loop, hopping from a foreign loop when needed.
 
         A caller already on the process loop awaits coro in place, which leaves that work
@@ -274,21 +323,21 @@ class LoopGate:
         gated, so teardown refuses it like any other.
         """
         if _process_loop.owns_running_loop():
-            self._refuse_if_stopped(coro, during_teardown=during_teardown)
+            self._refuse_if_stopped(coro)
             return await coro
-        return await asyncio.wrap_future(self._submit_and_track(coro, during_teardown=during_teardown))
+        return await asyncio.wrap_future(self._submit_and_track(coro))
 
-    def _refusing(self, during_teardown: bool) -> bool:
-        """True when ordinary work must be refused; teardown itself is allowed while tearing down.
+    def _refusing(self) -> bool:
+        """True when ordinary work must be refused.
 
         The one copy of the rule. Callers hold ``_state_lock``, which is not reentrant.
         """
-        return self._closed or (self._tearing_down and not during_teardown)
+        return self._closed or self._tearing_down
 
-    def _refuse_if_stopped(self, coro: Coroutine[Any, Any, Any], *, during_teardown: bool) -> None:
+    def _refuse_if_stopped(self, coro: Coroutine[Any, Any, Any]) -> None:
         """Reject ordinary work from the moment teardown begins, not once it finishes."""
         with self._state_lock:
-            refused = self._refusing(during_teardown)
+            refused = self._refusing()
         if refused:
             coro.close()
             raise RuntimeError(_ALREADY_STOPPED)
@@ -296,7 +345,7 @@ class LoopGate:
     def _claim_teardown(self, stops_remote: bool) -> tuple[bool, Future[Any] | None]:
         """Claim exclusive teardown, or say what a caller that lost the race should wait for.
 
-        ``(True, None)`` — the caller drives teardown; the gate settles the outcome for
+        ``(True, future)`` — the caller drives teardown; the gate settles the outcome for
         everyone else. ``(False, future)`` — a teardown is in flight, and that future carries
         its outcome. ``(False, None)`` — teardown already finished, so there is nothing left
         to observe. The in-flight future is captured under the same lock as the claim, so a
@@ -307,7 +356,7 @@ class LoopGate:
                 self._tearing_down = True
                 self._teardown_stops_remote = stops_remote
                 self._teardown_done = Future()
-                return True, None
+                return True, self._teardown_done
             # Cleared by both endings, so this is set only while a teardown is in flight.
             joinable = self._teardown_done
             stranded = stops_remote and not self._teardown_stops_remote
@@ -344,14 +393,14 @@ class LoopGate:
         for fut in pending:
             fut.cancel()
 
-    def _submit_and_track(self, coro: Coroutine[Any, Any, _T], *, during_teardown: bool) -> Future[_T]:
-        self._refuse_if_stopped(coro, during_teardown=during_teardown)
+    def _submit_and_track(self, coro: Coroutine[Any, Any, _T]) -> Future[_T]:
+        self._refuse_if_stopped(coro)
         fut = _process_loop.submit(coro)
         with self._state_lock:
             # Load-bearing: _close() may have drained _futures since the check above, and a
             # future added after that drain would never be cancelled.
             self._futures.add(fut)
-            refused = self._refusing(during_teardown)
+            refused = self._refusing()
         fut.add_done_callback(self._forget)
         if refused:
             # Work already reached the loop: cancel it and let the waiter see that,
