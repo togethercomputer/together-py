@@ -15,6 +15,7 @@ from respx.models import Call
 
 import together.lib.cli.api.beta.jig.jig as _jig_mod
 from tests.cli.utils import CliRunner
+from together.types.beta.deployment import ModelMount as DeploymentModelMount
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -557,6 +558,9 @@ class TestBetaJigModelMounts:
     def test_deploy_sends_model_mounts_as_sdk_param(self) -> None:
         calls: list[dict[str, Any]] = []
 
+        def _noop_track(_response: Any) -> None:
+            return None
+
         class _Api:
             def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
                 calls.append(kwargs)
@@ -574,7 +578,7 @@ class TestBetaJigModelMounts:
             sync_secrets_from_deployment=lambda: None,
             validate_model_mounts=lambda: None,
             validate_volumes=lambda: None,
-            track=lambda _response: None,
+            track=_noop_track,
             together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
         )
 
@@ -598,12 +602,16 @@ class TestBetaJigModelMounts:
             volumes=[],
             environment_variables=[],
             model_mounts=[
-                {"model_id": "ml_abc123", "revision_id": "rv_xyz789", "mount_path": "/models"},
+                DeploymentModelMount(model_id="ml_abc123", revision_id="rv_xyz789", mount_path="/models"),
             ],
         )
+
+        def _short_image(image: str) -> str:
+            return image.removeprefix("registry.together.ai/test/")
+
         jig = SimpleNamespace(
             registry=lambda: "registry.together.ai/test/",
-            short_image=lambda image: image.removeprefix("registry.together.ai/test/"),
+            short_image=_short_image,
         )
 
         output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
