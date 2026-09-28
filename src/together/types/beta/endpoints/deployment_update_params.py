@@ -36,5 +36,13 @@ class DeploymentUpdateParams(TypedDict, total=False):
     through 1440.
     """
 
+    max_concurrent_requests_per_replica: Annotated[str, PropertyInfo(alias="maxConcurrentRequestsPerReplica")]
+    """
+    Updated maximum number of inference requests that may be in flight to a single
+    replica. Values above the deployment config's per-replica concurrency limit
+    minus one are reduced on update; 0 means unlimited when the config limit is 1 or
+    less. Changes take effect without restarting replicas.
+    """
+
     name: str
     """Updated endpoint string."""

@@ -86,6 +86,7 @@ class TestDeployments:
             config="config",
             config_id="configId",
             inactive_timeout=0,
+            max_concurrent_requests_per_replica="maxConcurrentRequestsPerReplica",
             model="model",
             model_id="modelId",
             model_revision_id="modelRevisionId",
@@ -270,6 +271,7 @@ class TestDeployments:
             },
             etag="etag",
             inactive_timeout=0,
+            max_concurrent_requests_per_replica="maxConcurrentRequestsPerReplica",
             name="name",
         )
         assert_matches_type(EndpointDeployment, deployment, path=["response"])
@@ -526,6 +528,7 @@ class TestAsyncDeployments:
             config="config",
             config_id="configId",
             inactive_timeout=0,
+            max_concurrent_requests_per_replica="maxConcurrentRequestsPerReplica",
             model="model",
             model_id="modelId",
             model_revision_id="modelRevisionId",
@@ -710,6 +713,7 @@ class TestAsyncDeployments:
             },
             etag="etag",
             inactive_timeout=0,
+            max_concurrent_requests_per_replica="maxConcurrentRequestsPerReplica",
             name="name",
         )
         assert_matches_type(EndpointDeployment, deployment, path=["response"])
