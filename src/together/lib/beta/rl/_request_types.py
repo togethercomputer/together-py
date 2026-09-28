@@ -8,6 +8,7 @@ from typing_extensions import Required, TypedDict
 from ....types.beta.rl.loss_type import LossType
 from ....types.beta.rl.dro_loss_params import DroLossParams
 from ....types.beta.rl.ppo_loss_params import PpoLossParams
+from ....types.beta.rl.dppo_loss_params import DppoLossParams
 from ....types.beta.rl.grpo_loss_params import GrpoLossParams
 from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.model_input_param import ModelInput
@@ -28,6 +29,7 @@ class LossConfig(TypedDict, total=False):
         ppo_params: Read when ``type`` is ``LOSS_TYPE_PPO``.
         cispo_params: Read when ``type`` is ``LOSS_TYPE_CISPO``.
         dro_params: Read when ``type`` is ``LOSS_TYPE_DRO``.
+        dppo_params: Read when ``type`` is ``LOSS_TYPE_DPPO``.
     """
 
     type: Required[LossType]
@@ -36,6 +38,7 @@ class LossConfig(TypedDict, total=False):
     ppo_params: PpoLossParams
     cispo_params: CispoLossParams
     dro_params: DroLossParams
+    dppo_params: DppoLossParams
 
 
 class Sample(TypedDict, total=False):

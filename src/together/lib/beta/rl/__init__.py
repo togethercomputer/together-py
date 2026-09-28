@@ -30,6 +30,7 @@ from ....types.beta.rl.dro_loss_params import DroLossParams
 from ....types.beta.rl.model_resources import ModelResources
 from ....types.beta.rl.ppo_loss_params import PpoLossParams
 from ....types.beta.rl.sampling_params import SamplingParams
+from ....types.beta.rl.dppo_loss_params import DppoLossParams
 from ....types.beta.rl.grpo_loss_params import GrpoLossParams
 from ....types.beta.rl.sampled_sequence import SampledSequence
 from ....types.beta.rl.weight_sync_type import WeightSyncType
@@ -94,6 +95,7 @@ __all__ = [
     "EncodedTextChunk",
     "GrpoLossParams",
     "PpoLossParams",
+    "DppoLossParams",
     "CispoLossParams",
     "DroLossParams",
     "CrossEntropyLossParams",

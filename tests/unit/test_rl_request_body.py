@@ -24,6 +24,7 @@ from together.lib.beta.rl import (
     MuonParams,
     TensorData,
     SessionClient,
+    DppoLossParams,
     GrpoLossParams,
     SamplingParams,
     ModelInputChunk,
@@ -133,7 +134,20 @@ class TestRLRequestBody:
 
     @parametrize
     @pytest.mark.respx(base_url=base_url)
-    async def test_forward_backward_request_body(self, async_client: AsyncTogether, respx_mock: MockRouter) -> None:
+    @pytest.mark.parametrize(
+        "loss",
+        [
+            LossConfig(
+                type="LOSS_TYPE_GRPO",
+                grpo_params=GrpoLossParams(agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN", beta=0.1),
+            ),
+            LossConfig(type="LOSS_TYPE_DPPO"),
+            LossConfig(type="LOSS_TYPE_DPPO", dppo_params=DppoLossParams(delta_low=0.1, delta_high=0.2)),
+        ],
+    )
+    async def test_forward_backward_request_body(
+        self, async_client: AsyncTogether, respx_mock: MockRouter, loss: LossConfig
+    ) -> None:
         respx_mock.post("/rl/training-sessions/sess/operations/forward-backward").mock(
             return_value=httpx.Response(200, json={"id": "op-1"})
         )
@@ -175,14 +189,6 @@ class TestRLRequestBody:
                 },
             )
         ]
-        loss = LossConfig(
-            type="LOSS_TYPE_GRPO",
-            grpo_params=GrpoLossParams(
-                agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN",
-                beta=0.1,
-            ),
-        )
-
         await trainer.trainer.forward_backward_async(samples=samples, loss=loss)
 
         call = cast(Any, respx_mock.calls[0])

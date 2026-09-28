@@ -820,6 +820,7 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
     ("given", "expected"),
     [
         ("ppo", "LOSS_TYPE_PPO"),
+        ("dppo", "LOSS_TYPE_DPPO"),
         ("cross_entropy", "LOSS_TYPE_CROSS_ENTROPY"),
         ("LOSS_TYPE_PPO", "LOSS_TYPE_PPO"),
     ],
@@ -866,6 +867,9 @@ def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch)
         ({"type": "LOSS_TYPE_PPO", "ppo_params": {"clip_low_threshold": 0.8}}, _policy_sample()),
         ({"type": "LOSS_TYPE_CISPO", "cispo_params": {"clip_high_threshold": 1.2}}, _policy_sample()),
         ({"type": "LOSS_TYPE_DRO", "dro_params": {"beta": 0.1}}, _policy_sample()),
+        ({"type": "LOSS_TYPE_DPPO"}, _policy_sample()),
+        ({"type": "LOSS_TYPE_DPPO", "dppo_params": {}}, _policy_sample()),
+        ({"type": "LOSS_TYPE_DPPO", "dppo_params": {"delta_low": 0.1, "delta_high": 0.2}}, _policy_sample()),
     ],
 )
 def test_forward_backward_accepts_each_generated_loss(
@@ -892,6 +896,9 @@ def test_forward_backward_accepts_each_generated_loss(
         ({"type": "LOSS_TYPE_DRO", "dro_params": {}}, "beta"),
         ({"type": "LOSS_TYPE_PPO", "ppo_params": {"beta": 0.1}}, "Unsupported keys"),
         ({"type": "LOSS_TYPE_PPO", "grpo_params": {}}, "Unsupported keys"),
+        ({"type": "LOSS_TYPE_DPPO", "dppo_params": {"beta": 0.1}}, "Unsupported keys"),
+        ({"type": "LOSS_TYPE_DPPO", "ppo_params": {}}, "Unsupported keys"),
+        ({"type": "LOSS_TYPE_PPO", "dppo_params": {}}, "Unsupported keys"),
     ],
 )
 def test_forward_backward_rejects_invalid_loss_config_before_submission(

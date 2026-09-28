@@ -330,7 +330,7 @@ def test_tinker_loss_specs_share_native_contracts() -> None:
 def test_loss_specs_cover_every_mappable_loss() -> None:
     assert set(_losses.LOSS_SPECS) == set(get_args(types.LossFnType))
     mapped = {spec.wire_type for spec in _losses.LOSS_SPECS.values()}
-    assert set(rl_losses.LOSS_SPECS) - mapped == {"LOSS_TYPE_GRPO"}
+    assert set(rl_losses.LOSS_SPECS) - mapped == {"LOSS_TYPE_GRPO", "LOSS_TYPE_DPPO"}
 
 
 @pytest.mark.parametrize(

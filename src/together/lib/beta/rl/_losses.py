@@ -132,6 +132,10 @@ LOSS_SPECS: Mapping[LossType, LossSpec] = types.MappingProxyType(
             "LOSS_TYPE_CISPO",
             params_key="cispo_params",
         ),
+        "LOSS_TYPE_DPPO": _make_spec(
+            "LOSS_TYPE_DPPO",
+            params_key="dppo_params",
+        ),
         "LOSS_TYPE_DRO": _make_spec(
             "LOSS_TYPE_DRO",
             params_key="dro_params",

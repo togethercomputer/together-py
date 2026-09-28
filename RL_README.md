@@ -1307,8 +1307,8 @@ numpy stay optional dependencies; nothing imports them unless you pass their typ
 | `target_tokens` | `TensorData` (`int64`) | Every loss | Next-token targets: `target_tokens[i]` is the token the model must predict at `model_input` position `i`, i.e. `full_sequence[i + 1]`. |
 | `weights` | `TensorData` (`int64` or `float32`) | Cross-entropy; optional for policy losses | Non-negative weight on each **target** position, shifted alongside `target_tokens`. Cross-entropy honors fractional values; policy losses treat values as a 0/1 mask. Omission for a policy loss includes all tokens. |
 | `mask` | `TensorData` (`int64` or `float32`) | Optional for every loss | Inclusion mask over target slots: `mask[i]` includes or drops the target at slot `i`. |
-| `advantages` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | Advantage of each **target** position, i.e. of the token `target_tokens[i]`. |
-| `logprobs` | `TensorData` (`float32`) | GRPO, PPO, CISPO, DRO, importance sampling | The generator policy's log probability of `target_tokens[i]`, at slot `i`. |
+| `advantages` | `TensorData` (`float32`) | GRPO, PPO, DPPO, CISPO, DRO, importance sampling | Advantage of each **target** position, i.e. of the token `target_tokens[i]`. |
+| `logprobs` | `TensorData` (`float32`) | GRPO, PPO, DPPO, CISPO, DRO, importance sampling | The generator policy's log probability of `target_tokens[i]`, at slot `i`. |
 | `reference_logprobs` | `TensorData` (`float32`) | GRPO when `beta > 0` | The reference model's log probability of `target_tokens[i]`, at slot `i`, used for the KL penalty. |
 
 Every training operation validates `loss_fn_inputs` client-side, before any upload or
@@ -1359,6 +1359,7 @@ The `LossConfig` TypedDict passed to `forward_backward` controls the loss functi
 | `LOSS_TYPE_CROSS_ENTROPY`       | `cross_entropy_params` | Standard next-token prediction (SFT). |
 | `LOSS_TYPE_GRPO`                | `grpo_params`          | Group Relative Policy Optimization.   |
 | `LOSS_TYPE_PPO`                 | `ppo_params`           | Proximal Policy Optimization.         |
+| `LOSS_TYPE_DPPO`                | `dppo_params`          | Policy optimization with probability-change limits (`delta_low`, `delta_high`). |
 | `LOSS_TYPE_CISPO`               | `cispo_params`         | Clipped importance-sampling policy optimization. |
 | `LOSS_TYPE_DRO`                 | `dro_params`           | Direct Reward Optimization.           |
 | `LOSS_TYPE_IMPORTANCE_SAMPLING` | --                     | Plain importance-sampling loss.       |
