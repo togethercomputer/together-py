@@ -1,4 +1,3 @@
-# Aligning with stainless-generated SDK in main, can skip review
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import List, Union, Optional
