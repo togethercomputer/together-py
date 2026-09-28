@@ -68,8 +68,10 @@ class _RLTransport:
         if request.url.host == "payload.example":
             self.uploads.append(json.loads(request.content))
             assert "Authorization" not in request.headers
+            assert "Idempotency-Key" not in request.headers
             return httpx.Response(200)
         if request.url.path.endswith("/payloads/upload-url"):
+            assert "Idempotency-Key" not in request.headers
             return httpx.Response(200, json={"payload_id": "payload-1", "upload_url": "https://payload.example/body"})
         operation = request.url.path.split("/operations/")[1].split("/")[0]
         output: dict[str, Any]

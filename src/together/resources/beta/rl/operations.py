@@ -70,7 +70,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -98,8 +98,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template("/rl/training-sessions/{session_id}/operations/inference-checkpoint", session_id=session_id),
             options=make_request_options(
@@ -112,7 +111,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -140,8 +139,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template("/rl/training-sessions/{session_id}/operations/training-checkpoint", session_id=session_id),
             options=make_request_options(
@@ -156,7 +154,7 @@ class OperationsResource(SyncAPIResource):
         *,
         gradients: Iterable[operation_custom_forward_backward_params.Gradient],
         samples: Iterable[operation_custom_forward_backward_params.Sample],
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -188,8 +186,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template(
                 "/rl/training-sessions/{session_id}/operations/custom-forward-backward", session_id=session_id
@@ -213,7 +210,7 @@ class OperationsResource(SyncAPIResource):
         *,
         loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         forward_only: bool | Omit = omit,
         return_loss_fn_outputs: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -257,8 +254,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template("/rl/training-sessions/{session_id}/operations/forward-backward", session_id=session_id),
             body=maybe_transform(
@@ -280,7 +276,7 @@ class OperationsResource(SyncAPIResource):
         self,
         session_id: str,
         *,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         adam_params: AdamParams | Omit = omit,
         muon_params: MuonParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -316,8 +312,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template("/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
             body=maybe_transform(
@@ -646,7 +641,7 @@ class OperationsResource(SyncAPIResource):
         session_id: str,
         *,
         model_inputs: Iterable[ModelInput],
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
         return_routed_experts: bool | Omit = omit,
@@ -696,8 +691,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=maybe_transform(
@@ -722,7 +716,7 @@ class OperationsResource(SyncAPIResource):
         session_id: str,
         *,
         weight_sync_type: WeightSyncType,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -754,8 +748,7 @@ class OperationsResource(SyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return self._post(
             path_template("/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
             body=maybe_transform(
@@ -792,7 +785,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -820,8 +813,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template("/rl/training-sessions/{session_id}/operations/inference-checkpoint", session_id=session_id),
             options=make_request_options(
@@ -834,7 +826,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -862,8 +854,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template("/rl/training-sessions/{session_id}/operations/training-checkpoint", session_id=session_id),
             options=make_request_options(
@@ -878,7 +869,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         *,
         gradients: Iterable[operation_custom_forward_backward_params.Gradient],
         samples: Iterable[operation_custom_forward_backward_params.Sample],
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -910,8 +901,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template(
                 "/rl/training-sessions/{session_id}/operations/custom-forward-backward", session_id=session_id
@@ -935,7 +925,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         *,
         loss: LossConfig,
         samples: Iterable[operation_forward_backward_params.Sample],
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         forward_only: bool | Omit = omit,
         return_loss_fn_outputs: bool | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -979,8 +969,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template("/rl/training-sessions/{session_id}/operations/forward-backward", session_id=session_id),
             body=await async_maybe_transform(
@@ -1002,7 +991,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         self,
         session_id: str,
         *,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         adam_params: AdamParams | Omit = omit,
         muon_params: MuonParams | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -1038,8 +1027,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template("/rl/training-sessions/{session_id}/operations/optim-step", session_id=session_id),
             body=await async_maybe_transform(
@@ -1368,7 +1356,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         session_id: str,
         *,
         model_inputs: Iterable[ModelInput],
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
         return_routed_experts: bool | Omit = omit,
@@ -1418,8 +1406,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template("/rl/training-sessions/{session_id}/operations/sample", session_id=session_id),
             body=await async_maybe_transform(
@@ -1444,7 +1431,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         session_id: str,
         *,
         weight_sync_type: WeightSyncType,
-        idempotency_key: str | Omit = omit,
+        idempotency_key: str,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1476,8 +1463,7 @@ class AsyncOperationsResource(AsyncAPIResource):
         """
         if not session_id:
             raise ValueError(f"Expected a non-empty value for `session_id` but received {session_id!r}")
-        if not isinstance(idempotency_key, Omit):
-            extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
+        extra_headers = {"Idempotency-Key": idempotency_key, **(extra_headers or {})}
         return await self._post(
             path_template("/rl/training-sessions/{session_id}/operations/weights-sync", session_id=session_id),
             body=await async_maybe_transform(

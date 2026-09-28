@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from uuid import uuid4
 from typing import Any, Iterable, cast
 from dataclasses import dataclass
 
@@ -52,6 +53,7 @@ async def _submit_sample_batch(
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
     return await session._client.beta.rl.operations.sample(
         session._session_id,
+        idempotency_key=str(uuid4()),
         model_inputs=cast("list[ModelInput]", body["model_inputs"]),
         num_samples=body.get("num_samples", omit),
         sampling_params=body.get("sampling_params", omit),

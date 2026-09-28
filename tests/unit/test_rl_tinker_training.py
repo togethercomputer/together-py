@@ -4,7 +4,7 @@ import asyncio
 import warnings
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 
 import pytest
 
@@ -44,7 +44,7 @@ def test_save_weights_publishes_synchronously_by_default(monkeypatch: pytest.Mon
 
     sampling = _training_client(session).save_weights_and_get_sampling_client()
 
-    weights_sync.assert_awaited_once_with("sess", weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
+    weights_sync.assert_awaited_once_with("sess", idempotency_key=ANY, weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
     assert timeouts == [None]
     assert isinstance(sampling, tinker_compat.SamplingClient)
     assert sampling._allow_stale is False
@@ -65,7 +65,7 @@ def test_save_weights_forwards_the_requested_sync_mode(
 
     _training_client(session).save_weights_and_get_sampling_client(weight_sync_type=weight_sync_type)
 
-    weights_sync.assert_awaited_once_with("sess", weight_sync_type=weight_sync_type)
+    weights_sync.assert_awaited_once_with("sess", idempotency_key=ANY, weight_sync_type=weight_sync_type)
     # timeout=None survives the new keyword: a publish outlives the 300 s operation default.
     assert timeouts == [None]
 
@@ -129,7 +129,7 @@ async def test_save_weights_async_returns_sampling_client(monkeypatch: pytest.Mo
 
     sampling = await _training_client(session).save_weights_and_get_sampling_client_async()
 
-    weights_sync.assert_awaited_once_with("sess", weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
+    weights_sync.assert_awaited_once_with("sess", idempotency_key=ANY, weight_sync_type="WEIGHT_SYNC_TYPE_SYNCHRONOUS")
     assert isinstance(sampling, tinker_compat.SamplingClient)
     await session.detach_async()
 
@@ -620,3 +620,24 @@ def test_forward_backward_custom_rejects_logprob_count_mismatch(monkeypatch: pyt
     with pytest.raises(RuntimeError, match="1 logprob arrays for 2 samples"):
         _training_client(session).forward_backward_custom([datum, datum], loss_fn)
     _close(session)
+
+
+@pytest.mark.parametrize("async_mode", [False, True], ids=["sync", "async"])
+async def test_optim_step_generates_fresh_keys(async_mode: bool) -> None:
+    optim_step = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(optim_step=optim_step)
+    training = _training_client(session)
+    params = types.AdamParams(learning_rate=1e-4)
+    try:
+        for _ in range(2):
+            if async_mode:
+                await training.optim_step_async(params)
+            else:
+                await asyncio.to_thread(training.optim_step, params)
+    finally:
+        await session.detach_async()
+
+    keys = [call.kwargs["idempotency_key"] for call in optim_step.await_args_list]
+    assert len(keys) == 2
+    assert all(isinstance(key, str) and key for key in keys)
+    assert keys[0] != keys[1]

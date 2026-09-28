@@ -4,6 +4,7 @@ import os
 import time
 import asyncio
 import warnings
+from uuid import uuid4
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from dataclasses import field, dataclass
@@ -367,7 +368,9 @@ class SessionClient:
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> InferenceCheckpointResult:
-        operation = await self._client.beta.rl.operations.create_inference_checkpoint(self._session_id)
+        operation = await self._client.beta.rl.operations.create_inference_checkpoint(
+            self._session_id, idempotency_key=str(uuid4())
+        )
         result = await self._submit_and_wait(
             operation,
             timeout=timeout,
@@ -382,7 +385,9 @@ class SessionClient:
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> TrainingCheckpointResult:
-        operation = await self._client.beta.rl.operations.create_training_checkpoint(self._session_id)
+        operation = await self._client.beta.rl.operations.create_training_checkpoint(
+            self._session_id, idempotency_key=str(uuid4())
+        )
         result = await self._submit_and_wait(
             operation,
             timeout=timeout,

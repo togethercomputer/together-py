@@ -510,6 +510,20 @@ operation stays responsive while a long wait gets cheaper. Once a session's clie
 that client a `429` is retried up to 7 times, honouring `Retry-After` and backing off exponentially
 otherwise. `ModelResourcesClient` polls for provisioning and stop, and keeps the SDK connection defaults.
 
+### Operation retries
+
+Native RL and Tinker wrappers automatically send a fresh `Idempotency-Key` when submitting
+forward/backward passes, optimizer steps, weight syncs, sampling, and checkpoint creation.
+Automatic HTTP retries reuse that key so the service returns the existing operation instead
+of submitting it again. Polling, session management, and payload uploads do not automatically
+receive this header.
+
+When calling the low-level `client.beta.rl.operations` creation methods directly, pass
+`idempotency_key=str(uuid.uuid4())` explicitly (after `import uuid`). Reuse that key only when
+retrying the same operation: within the same session and operation type, the service returns
+the original operation even if the request body changes. Calling a high-level wrapper again
+creates a new operation with a fresh key.
+
 ## Tinker-compatible entry point
 
 For the RL training-loop subset described below, a script written against the `tinker` SDK runs on
