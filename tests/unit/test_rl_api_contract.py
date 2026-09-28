@@ -3,15 +3,16 @@ from __future__ import annotations
 import json
 import asyncio
 import inspect
-from typing import Any, get_type_hints
+from typing import Any, Optional, get_origin, get_type_hints
 from pathlib import Path
 from dataclasses import field, dataclass
+from typing_extensions import Required
 
 import httpx
 import pytest
 
 from together import AsyncTogether
-from together._compat import get_model_fields
+from together._compat import get_model_fields, field_is_required
 from together.lib.beta.rl import Sample, Gradient, LossConfig, ModelInput, SessionClient, _payloads
 from together.types.beta.rl import (
     operation_sample_params,
@@ -29,10 +30,22 @@ def test_routing_matches_public_schema() -> None:
     """Pin external API shapes independently of the SDK's generated declarations."""
     fixture = Path(__file__).parents[1] / "fixtures" / "rl_public_contract.json"
     schemas = json.loads(fixture.read_text())["schemas"]
-    sample_fields = set(schemas["RL.TrainingSample"]["properties"])
+    sample_schema = schemas["RL.TrainingSample"]
+    sample_fields = set(sample_schema["properties"])
+    assert sample_schema["properties"]["routed_experts_key"]["type"] == "string"
     for shape in (Sample, operation_forward_backward_params.Sample, operation_custom_forward_backward_params.Sample):
-        assert set(get_type_hints(shape)) == sample_fields
-    assert set(get_model_fields(SampledSequence)) == set(schemas["RL.SampledSequence"]["properties"])
+        hints = get_type_hints(shape, include_extras=True)
+        assert set(hints) == sample_fields
+        assert hints["routed_experts_key"] is str
+        assert {name for name, hint in hints.items() if get_origin(hint) is Required} == set(sample_schema["required"])
+    sequence_schema = schemas["RL.SampledSequence"]
+    sequence_fields = get_model_fields(SampledSequence)
+    assert set(sequence_fields) == set(sequence_schema["properties"])
+    assert sequence_schema["properties"]["routed_experts_key"]["type"] == "string"
+    assert sequence_fields["routed_experts_key"].annotation == Optional[str]
+    assert {name for name, field in sequence_fields.items() if field_is_required(field)} == set(
+        sequence_schema["required"]
+    )
     sampling_fields = set(schemas["RL.SampleBody"]["properties"])
     assert set(get_type_hints(operation_sample_params.OperationSampleParams)) - {"idempotency_key"} == sampling_fields
     for resource in (OperationsResource, AsyncOperationsResource):
