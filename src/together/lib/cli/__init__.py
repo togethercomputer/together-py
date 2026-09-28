@@ -239,7 +239,7 @@ async def launcher(
         Parameter(
             group=global_options,
             negative=(),
-            help="Print HTTP request/response details to stderr",
+            help="Print HTTP request/response details to stderr and write a full log, including bodies, to a temp file",
         ),
     ] = False,
     non_interactive: Annotated[

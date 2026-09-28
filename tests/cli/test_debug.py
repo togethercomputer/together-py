@@ -149,3 +149,62 @@ class TestCliDebug:
         second = cli_runner.invoke(["whoami"])
         assert second.exit_code == 0, second.output
         assert "→" not in second.err_out
+
+
+def _debug_log_path(err: str) -> str:
+    for line in err.splitlines():
+        if "full log written to " in line:
+            return line.split("full log written to ", 1)[1].strip()
+    raise AssertionError(f"debug log path not printed:\n{err}")
+
+
+class TestCliDebugLogFile:
+    @pytest.fixture(autouse=True)
+    def _tmp_tempdir(self, tmp_path: object, monkeypatch: pytest.MonkeyPatch) -> None:
+        import tempfile
+
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_debug_writes_full_log_file_with_bodies(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(
+            return_value=httpx.Response(200, json=_whoami_body(), headers={"x-request-id": "req_file_1"})
+        )
+
+        result = cli_runner.invoke(["whoami", "--debug"])
+
+        assert result.exit_code == 0, result.output
+        path = _debug_log_path(result.err_out)
+        assert "writing full log" in result.err_out
+        # Terminal still omits bodies.
+        assert "organization_id" not in result.err_out
+
+        with open(path, encoding="utf-8") as f:
+            log = f.read()
+        assert oct(os.stat(path).st_mode & 0o777) == "0o600"
+        assert "tg whoami" in log
+        assert "← 200" in log
+        assert "req_file_1" in log
+        assert "response headers:" in log
+        assert '"organization_id": "org-1"' in log
+        assert "authorization: <redacted>" in log.lower()
+        assert API_KEY not in log
+        assert "[muted]" not in log
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_debug_log_file_includes_error_body(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/whoami").mock(
+            return_value=httpx.Response(
+                401, json={"error": {"message": "Invalid API key", "type": "invalid_request_error"}}
+            )
+        )
+
+        with pytest.raises(APIError):
+            cli_runner.invoke(["whoami", "--debug"])
+        err = cli_runner.capsys.readouterr().err
+        assert "invalid_request_error" not in err
+
+        with open(_debug_log_path(err), encoding="utf-8") as f:
+            log = f.read()
+        assert "invalid_request_error" in log
+        assert API_KEY not in log

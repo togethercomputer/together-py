@@ -2,15 +2,20 @@ from __future__ import annotations
 
 import os
 import re
+import json
 import time
 import logging
 import platform
+import tempfile
+import threading
 import traceback
-from typing import Union, Mapping
+from typing import IO, Union, Mapping, AsyncIterator
+from datetime import datetime
 from collections.abc import Sequence
 from typing_extensions import override
 
 import httpx
+from rich.text import Text
 from rich.markup import escape as escape_rich_markup
 
 from together import __version__
@@ -52,8 +57,37 @@ _NOISY_LOG_PATTERNS = (
     re.compile(r"^Re-raising status error$"),
 )
 
+# Bodies larger than this are truncated in the debug log file.
+_MAX_LOGGED_BODY_BYTES = 1024 * 1024
+
+_SENSITIVE_HEADERS = frozenset(
+    {
+        "authorization",
+        "proxy-authorization",
+        "cookie",
+        "set-cookie",
+        "x-api-key",
+        "api-key",
+        "x-amz-security-token",
+    }
+)
+
+# Presigned-URL signing params (S3, GCS, Azure SAS, CloudFront). Values are
+# short-lived credentials, so redact them even in the on-disk log.
+_SIGNED_URL_PARAM_RE = re.compile(
+    r"(?i)([?&])(x-amz-(?:signature|credential|security-token)|x-goog-(?:signature|credential)|"
+    r"sig|signature|policy|key-pair-id)=([^&#\s\"']+)"
+)
+
+_TEXT_CONTENT_TYPE_RE = re.compile(
+    r"(?i)^(text/|application/(?:[\w.+-]*\+)?(?:json|xml|x-ndjson|x-www-form-urlencoded))"
+)
+
 _enabled = False
 _base_url = ""
+_log_file: IO[str] | None = None
+_log_file_path: str | None = None
+_log_lock = threading.Lock()
 _saved_httpx_level: int | None = None
 _saved_together_level: int | None = None
 _saved_together_propagate: bool | None = None
@@ -63,6 +97,10 @@ _saved_together_log_env: tuple[bool, str] | None = None
 
 def is_enabled() -> bool:
     return _enabled
+
+
+def debug_log_path() -> str | None:
+    return _log_file_path
 
 
 def mask_secret(value: str, *, visible: int = 4) -> str:
@@ -97,6 +135,11 @@ def sanitize_debug_log_message(message: str) -> str:
     """Redact secrets and drop URL query strings (presigned S3, SigV4, tokens)."""
     stripped = _URL_WITH_QUERY_RE.sub(r"\1", message)
     return _redact_secrets_in_error_text(stripped)
+
+
+def redact_for_log_file(text: str) -> str:
+    """Redact secrets but keep URL query strings (minus presigned signing params)."""
+    return _redact_secrets_in_error_text(_SIGNED_URL_PARAM_RE.sub(r"\1\2=<redacted>", text))
 
 
 def _safe_url(url: httpx.URL, *, base_url: str = "") -> str:
@@ -199,10 +242,168 @@ def render_response_lines(response: httpx.Response, *, elapsed: float | None = N
     return [f"[{style}]← {escape_rich_markup(status)}[/{style}]{suffix}"]
 
 
+def _write_log_file(text: str) -> None:
+    if _log_file is None:
+        return
+    with _log_lock:
+        try:
+            _log_file.write(text if text.endswith("\n") else f"{text}\n")
+            _log_file.flush()
+        except (OSError, ValueError):
+            pass
+
+
 def _debug_print(markup: str = "") -> None:
     # stderr-to-file is not a TTY, so Rich would otherwise wrap at 80 columns
     # and split paths / traceback lines mid-token.
     error_console.print(markup, soft_wrap=True)
+    _write_log_file(Text.from_markup(markup).plain)
+
+
+def _open_log_file() -> None:
+    global _log_file, _log_file_path
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    try:
+        # mkstemp creates the file with 0600 permissions.
+        fd, path = tempfile.mkstemp(prefix=f"tg-debug-{stamp}-", suffix=".log")
+        _log_file = os.fdopen(fd, "w", encoding="utf-8", errors="replace")
+        _log_file_path = path
+    except OSError as e:
+        _log_file = None
+        _log_file_path = None
+        error_console.print(
+            f"[muted]debug[/muted] [warning]could not create debug log file: {escape_rich_markup(str(e))}[/warning]",
+            soft_wrap=True,
+        )
+
+
+def _close_log_file() -> None:
+    global _log_file, _log_file_path
+    if _log_file is not None:
+        with _log_lock:
+            try:
+                _log_file.close()
+            except OSError:
+                pass
+        _log_file = None
+    _log_file_path = None
+
+
+def _format_headers(headers: httpx.Headers) -> list[str]:
+    lines: list[str] = []
+    for key, value in headers.multi_items():
+        shown = "<redacted>" if key.lower() in _SENSITIVE_HEADERS else redact_for_log_file(value)
+        lines.append(f"    {key}: {shown}")
+    return lines
+
+
+def _is_text_content_type(content_type: str | None) -> bool:
+    return bool(content_type) and bool(_TEXT_CONTENT_TYPE_RE.match(content_type or ""))
+
+
+def _format_body(content: bytes, *, content_type: str | None, truncated: bool = False) -> list[str]:
+    if not content:
+        return ["    <empty>"]
+    if not _is_text_content_type(content_type):
+        try:
+            text = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return [f"    <{len(content)} bytes of {content_type or 'binary'} data omitted>"]
+    else:
+        text = content.decode("utf-8", errors="replace")
+
+    if not truncated and "json" in (content_type or "").lower():
+        try:
+            text = json.dumps(json.loads(text), indent=2, ensure_ascii=False)
+        except ValueError:
+            pass
+
+    lines = [f"    {line}" for line in redact_for_log_file(text).splitlines()]
+    if truncated:
+        lines.append(f"    <truncated after {_MAX_LOGGED_BODY_BYTES} bytes>")
+    return lines
+
+
+def _request_label(request: httpx.Request) -> str:
+    return f"{request.method.upper()} {redact_for_log_file(str(request.url))}"
+
+
+def _log_request_details(request: httpx.Request) -> None:
+    if _log_file is None:
+        return
+    lines = [f"  request {_request_label(request)}", "  request headers:", *_format_headers(request.headers)]
+    try:
+        content = request.content
+    except httpx.RequestNotRead:
+        lines += ["  request body:", "    <streaming body not captured>"]
+    else:
+        if content:
+            lines += ["  request body:", *_format_body(content, content_type=request.headers.get("content-type"))]
+    _write_log_file("\n".join(lines))
+
+
+class _TeeResponseStream(httpx.AsyncByteStream):
+    """Pass response bytes through untouched and log the body once the stream closes.
+
+    Buffering in the response hook would break streaming responses (SSE, log
+    follow, file downloads), so we capture raw bytes as the caller reads them.
+    """
+
+    def __init__(self, response: httpx.Response, inner: httpx.AsyncByteStream) -> None:
+        self._response = response
+        self._inner = inner
+        self._chunks: list[bytes] = []
+        self._captured = 0
+        self._total = 0
+        self._logged = False
+
+    @override
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        async for chunk in self._inner:
+            self._total += len(chunk)
+            if self._captured < _MAX_LOGGED_BODY_BYTES:
+                piece = chunk[: _MAX_LOGGED_BODY_BYTES - self._captured]
+                self._chunks.append(piece)
+                self._captured += len(piece)
+            yield chunk
+
+    @override
+    async def aclose(self) -> None:
+        try:
+            await self._inner.aclose()
+        finally:
+            self._log_body()
+
+    def _log_body(self) -> None:
+        if self._logged:
+            return
+        self._logged = True
+        raw = b"".join(self._chunks)
+        truncated = self._total > self._captured
+        headers = self._response.headers
+        content = raw
+        if raw and headers.get("content-encoding") and not truncated:
+            try:
+                content = httpx.Response(200, headers=headers, content=raw).content
+            except Exception:
+                content = raw
+        elif truncated and headers.get("content-encoding"):
+            _write_log_file(
+                f"  response body for {_request_label(self._response.request)}:\n"
+                f"    <{self._total} bytes of encoded data, too large to log>"
+            )
+            return
+        body = _format_body(content, content_type=headers.get("content-type"), truncated=truncated)
+        _write_log_file("\n".join([f"  response body for {_request_label(self._response.request)}:", *body]))
+
+
+def _log_response_details(response: httpx.Response) -> None:
+    if _log_file is None:
+        return
+    _write_log_file("\n".join(["  response headers:", *_format_headers(response.headers)]))
+    stream = response.stream
+    if isinstance(stream, httpx.AsyncByteStream):
+        response.stream = _TeeResponseStream(response, stream)
 
 
 def _print_lines(lines: Sequence[str]) -> None:
@@ -233,6 +434,8 @@ def log_debug_session(
             max_retries=max_retries,
         )
     )
+    if _log_file_path:
+        log_debug_note(f"writing full log (headers + bodies) to {_log_file_path}")
 
 
 def log_debug_note(message: str) -> None:
@@ -244,6 +447,7 @@ async def _on_request(request: httpx.Request) -> None:
         return
     request.extensions[_START_EXTENSION] = time.perf_counter()
     _print_lines(render_request_lines(request, base_url=_base_url))
+    _log_request_details(request)
 
 
 async def _on_response(response: httpx.Response) -> None:
@@ -256,6 +460,7 @@ async def _on_response(response: httpx.Response) -> None:
     else:
         elapsed = None
     _print_lines(render_response_lines(response, elapsed=elapsed))
+    _log_response_details(response)
     _debug_print()
 
 
@@ -319,6 +524,8 @@ def setup_cli_debug_logging() -> None:
         _saved_together_log_env = ("TOGETHER_LOG" in os.environ, env_value or "")
     os.environ.setdefault("TOGETHER_LOG", "debug")
     _enabled = True
+    if _log_file is None:
+        _open_log_file()
     set_cli_debug_console_redirect(True)
 
     httpx_logger = logging.getLogger("httpx")
@@ -346,9 +553,13 @@ def teardown_cli_debug() -> None:
         _saved_together_level, \
         _saved_together_propagate, \
         _saved_together_log_env
+    log_path = _log_file_path
     _enabled = False
     _base_url = ""
     set_cli_debug_console_redirect(False)
+    _close_log_file()
+    if log_path:
+        error_console.print(f"[muted]debug[/muted] full log written to {escape_rich_markup(log_path)}", soft_wrap=True)
 
     together_logger = logging.getLogger("together")
     together_logger.handlers = [

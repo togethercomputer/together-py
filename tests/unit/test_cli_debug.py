@@ -295,3 +295,55 @@ def test_debug_output_does_not_hard_wrap_at_80_columns(
     finally:
         error_console.width = previous_width
         teardown_cli_debug()
+
+
+def test_redact_for_log_file_keeps_query_but_hides_signatures() -> None:
+    from together.lib.cli.utils._debug import redact_for_log_file
+
+    out = redact_for_log_file(
+        "https://s3.amazonaws.com/b/k?X-Amz-Credential=AKIAEXAMPLE&X-Amz-Signature=deadbeef&partNumber=2"
+        " https://api.together.ai/v1/files?limit=10 Bearer supersecretvalue"
+    )
+    assert "AKIAEXAMPLE" not in out
+    assert "deadbeef" not in out
+    assert "partNumber=2" in out
+    assert "limit=10" in out
+    assert "supersecretvalue" not in out
+
+
+async def test_tee_stream_logs_decoded_body_without_buffering(
+    tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import gzip
+    import tempfile
+
+    from together.lib.cli.utils import _debug
+
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    setup_cli_debug_logging()
+    try:
+        path = _debug.debug_log_path()
+        assert path is not None
+        payload = gzip.compress(b'{"id": "file-1", "secret": "Bearer abcdefghijkl"}')
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                headers={"content-type": "application/json", "content-encoding": "gzip"},
+                stream=httpx.ByteStream(payload),
+                request=request,
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            _debug.install_http_debug_hooks(client)
+            async with client.stream("GET", "https://api.together.ai/v1/files/file-1") as response:
+                chunks = [chunk async for chunk in response.aiter_bytes()]
+            assert b"".join(chunks) == gzip.decompress(payload)
+    finally:
+        teardown_cli_debug()
+
+    with open(path, encoding="utf-8") as f:
+        log = f.read()
+    assert "response body for GET https://api.together.ai/v1/files/file-1:" in log
+    assert '"id": "file-1"' in log
+    assert "abcdefghijkl" not in log
