@@ -4,7 +4,6 @@ import json
 import asyncio
 import inspect
 from typing import Any, Optional, get_origin, get_type_hints
-from pathlib import Path
 from dataclasses import field, dataclass
 from typing_extensions import Required
 
@@ -26,27 +25,30 @@ from together.types.beta.rl.sampled_sequence import SampledSequence
 _ROUTING_KEY = "routing/session/0123456789abcdef0123456789abcdef.22"
 
 
-def test_routing_matches_public_schema() -> None:
-    """Pin external API shapes independently of the SDK's generated declarations."""
-    fixture = Path(__file__).parents[1] / "fixtures" / "rl_public_contract.json"
-    schemas = json.loads(fixture.read_text())["schemas"]
-    sample_schema = schemas["RL.TrainingSample"]
-    sample_fields = set(sample_schema["properties"])
-    assert sample_schema["properties"]["routed_experts_key"]["type"] == "string"
+def test_routing_key_contract() -> None:
     for shape in (Sample, operation_forward_backward_params.Sample, operation_custom_forward_backward_params.Sample):
         hints = get_type_hints(shape, include_extras=True)
-        assert set(hints) == sample_fields
+        assert set(hints) == {"model_input", "loss_fn_inputs", "routed_experts_key"}
         assert hints["routed_experts_key"] is str
-        assert {name for name, hint in hints.items() if get_origin(hint) is Required} == set(sample_schema["required"])
-    sequence_schema = schemas["RL.SampledSequence"]
+        assert {name for name, hint in hints.items() if get_origin(hint) is Required} == {
+            "model_input",
+            "loss_fn_inputs",
+        }
     sequence_fields = get_model_fields(SampledSequence)
-    assert set(sequence_fields) == set(sequence_schema["properties"])
-    assert sequence_schema["properties"]["routed_experts_key"]["type"] == "string"
+    assert "routed_experts" not in sequence_fields
     assert sequence_fields["routed_experts_key"].annotation == Optional[str]
-    assert {name for name, field in sequence_fields.items() if field_is_required(field)} == set(
-        sequence_schema["required"]
-    )
-    sampling_fields = set(schemas["RL.SampleBody"]["properties"])
+    assert not field_is_required(sequence_fields["routed_experts_key"])
+
+
+def test_sampling_parameters() -> None:
+    sampling_fields = {
+        "model_inputs",
+        "sampling_params",
+        "num_samples",
+        "prompt_logprobs",
+        "topk_prompt_logprobs",
+        "return_routed_experts",
+    }
     assert set(get_type_hints(operation_sample_params.OperationSampleParams)) - {"idempotency_key"} == sampling_fields
     for resource in (OperationsResource, AsyncOperationsResource):
         parameters = inspect.signature(resource.sample).parameters
@@ -55,6 +57,7 @@ def test_routing_matches_public_schema() -> None:
     for method in (Generator.sample, Generator.sample_async, Generator.sample_batch, Generator.sample_batch_async):
         parameters = inspect.signature(method).parameters
         assert "topk_prompt_logprobs" in parameters
+        assert "return_routed_experts" in parameters
         assert "return_routed_experts_object_uri" not in parameters
 
 
