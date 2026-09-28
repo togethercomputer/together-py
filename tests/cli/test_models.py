@@ -203,5 +203,4 @@ class TestModelsListInvalid:
     def test_list_invalid_type_choice(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["models", "list", "--type", "serverless"])
         assert result.exit_code == 1
-        assert 'Invalid value for "--type"' in result.output
-        assert "serverless" in result.output
+        assert 'Invalid value "serverless" for --type' in result.output

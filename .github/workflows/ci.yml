@@ -89,3 +89,36 @@ jobs:
         env:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: './scripts/test'
+
+  # The tinker extra resolves to nothing below 3.11, so the wrapper's tests importorskip
+  # themselves away on test-others' min-version (3.10) pass. Its max-version pass does
+  # reach 3.11+, but only once the min-version pass succeeds, so an unrelated failure
+  # there takes this package's coverage with it.
+  test-tinker:
+    timeout-minutes: 10
+    name: test-tinker
+    runs-on: ubuntu-latest
+    env:
+      # tinker requires Python >= 3.11; the rest of CI runs on 3.10.
+      PYTHON_VERSION: '3.11'
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork) && (github.event_name != 'push' || github.event.head_commit.message != 'codegen metadata')
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          version: '0.10.2'
+
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        run: uv python install "$PYTHON_VERSION"
+
+      # Each test file importorskips one of these, so without this the job would pass green
+      # if the extra ever stops resolving on this interpreter, or stops pulling numpy in.
+      - name: Check tinker and numpy are installed
+        run: uv run --python "$PYTHON_VERSION" --extra tinker python -c "import tinker, numpy"
+
+      - name: Run tests that need numpy or tinker
+        run: uv run --python "$PYTHON_VERSION" --extra tinker pytest -n 0 tests/unit/test_rl_tinker_*.py tests/unit/test_rl_native_arrays.py
