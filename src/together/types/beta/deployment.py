@@ -4,6 +4,8 @@ from typing import Dict, List, Union, Optional
 from datetime import datetime
 from typing_extensions import Literal, TypeAlias
 
+from pydantic import Field as FieldInfo
+
 from ..._models import BaseModel
 from .container_deployment_status import ContainerDeploymentStatus
 
@@ -14,6 +16,7 @@ __all__ = [
     "AutoscalingQueueAutoscalingConfig",
     "AutoscalingCustomMetricAutoscalingConfig",
     "EnvironmentVariable",
+    "ModelMount",
     "ReplicaEvents",
     "Volume",
 ]
@@ -92,6 +95,20 @@ class EnvironmentVariable(BaseModel):
 
     Use this for sensitive values like API keys or passwords. Either Value or
     ValueFromSecret must be set, but not both
+    """
+
+
+class ModelMount(BaseModel):
+    api_model_id: str = FieldInfo(alias="model_id")
+    """Model registry identifier (`ml_...`) whose weights are mounted."""
+
+    mount_path: str
+    """Container path where model weights are mounted, such as `/models`."""
+
+    revision_id: Optional[str] = None
+    """
+    Optional validated revision identifier (`rv_...`) to pin; defaults to the latest
+    validated revision.
     """
 
 
@@ -224,6 +241,9 @@ class Deployment(BaseModel):
 
     min_replicas: Optional[int] = None
     """MinReplicas is the minimum number of replicas to run for this deployment"""
+
+    api_model_mounts: Optional[List[ModelMount]] = FieldInfo(alias="model_mounts", default=None)
+    """Model weights mounted into this deployment, including the pinned revisions."""
 
     name: Optional[str] = None
     """Name is the name of the deployment"""

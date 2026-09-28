@@ -135,6 +135,7 @@ class JigResource(SyncAPIResource):
         max_replicas: int | Omit = omit,
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
+        model_mounts: Iterable[jig_update_params.ModelMount] | Omit = omit,
         name: str | Omit = omit,
         port: int | Omit = omit,
         storage: int | Omit = omit,
@@ -189,6 +190,9 @@ class JigResource(SyncAPIResource):
 
           min_replicas: MinReplicas is the minimum number of replicas to run
 
+          model_mounts: Replacement model weights to mount into the deployment. At most one mount is
+              supported, and it cannot be used with volumes.
+
           name: Name is the new unique identifier for your deployment. Must contain only
               alphanumeric characters, underscores, or hyphens (1-100 characters)
 
@@ -232,6 +236,7 @@ class JigResource(SyncAPIResource):
                     "max_replicas": max_replicas,
                     "memory": memory,
                     "min_replicas": min_replicas,
+                    "model_mounts": model_mounts,
                     "name": name,
                     "port": port,
                     "storage": storage,
@@ -283,6 +288,7 @@ class JigResource(SyncAPIResource):
         max_replicas: int | Omit = omit,
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
+        model_mounts: Iterable[jig_deploy_params.ModelMount] | Omit = omit,
         port: int | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
@@ -343,6 +349,9 @@ class JigResource(SyncAPIResource):
           min_replicas: MinReplicas is the minimum number of container instances to run. Defaults to 1
               if not specified
 
+          model_mounts: Model weights to preload from Together's model registry into the container. At
+              most one mount is supported, and it cannot be used with volumes.
+
           port: Port is the container port your application listens on (e.g., 8080 for web
               servers). Required if your application serves traffic
 
@@ -382,6 +391,7 @@ class JigResource(SyncAPIResource):
                     "max_replicas": max_replicas,
                     "memory": memory,
                     "min_replicas": min_replicas,
+                    "model_mounts": model_mounts,
                     "port": port,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,
@@ -572,6 +582,7 @@ class AsyncJigResource(AsyncAPIResource):
         max_replicas: int | Omit = omit,
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
+        model_mounts: Iterable[jig_update_params.ModelMount] | Omit = omit,
         name: str | Omit = omit,
         port: int | Omit = omit,
         storage: int | Omit = omit,
@@ -626,6 +637,9 @@ class AsyncJigResource(AsyncAPIResource):
 
           min_replicas: MinReplicas is the minimum number of replicas to run
 
+          model_mounts: Replacement model weights to mount into the deployment. At most one mount is
+              supported, and it cannot be used with volumes.
+
           name: Name is the new unique identifier for your deployment. Must contain only
               alphanumeric characters, underscores, or hyphens (1-100 characters)
 
@@ -669,6 +683,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "max_replicas": max_replicas,
                     "memory": memory,
                     "min_replicas": min_replicas,
+                    "model_mounts": model_mounts,
                     "name": name,
                     "port": port,
                     "storage": storage,
@@ -720,6 +735,7 @@ class AsyncJigResource(AsyncAPIResource):
         max_replicas: int | Omit = omit,
         memory: float | Omit = omit,
         min_replicas: int | Omit = omit,
+        model_mounts: Iterable[jig_deploy_params.ModelMount] | Omit = omit,
         port: int | Omit = omit,
         storage: int | Omit = omit,
         termination_grace_period_seconds: int | Omit = omit,
@@ -780,6 +796,9 @@ class AsyncJigResource(AsyncAPIResource):
           min_replicas: MinReplicas is the minimum number of container instances to run. Defaults to 1
               if not specified
 
+          model_mounts: Model weights to preload from Together's model registry into the container. At
+              most one mount is supported, and it cannot be used with volumes.
+
           port: Port is the container port your application listens on (e.g., 8080 for web
               servers). Required if your application serves traffic
 
@@ -819,6 +838,7 @@ class AsyncJigResource(AsyncAPIResource):
                     "max_replicas": max_replicas,
                     "memory": memory,
                     "min_replicas": min_replicas,
+                    "model_mounts": model_mounts,
                     "port": port,
                     "storage": storage,
                     "termination_grace_period_seconds": termination_grace_period_seconds,

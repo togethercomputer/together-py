@@ -14,6 +14,7 @@ __all__ = [
     "AutoscalingQueueAutoscalingConfig",
     "AutoscalingCustomMetricAutoscalingConfig",
     "EnvironmentVariable",
+    "ModelMount",
     "Volume",
 ]
 
@@ -101,6 +102,12 @@ class JigDeployParams(TypedDict, total=False):
     """MinReplicas is the minimum number of container instances to run.
 
     Defaults to 1 if not specified
+    """
+
+    model_mounts: Iterable[ModelMount]
+    """Model weights to preload from Together's model registry into the container.
+
+    At most one mount is supported, and it cannot be used with volumes.
     """
 
     port: int
@@ -201,6 +208,20 @@ class EnvironmentVariable(TypedDict, total=False):
 
     Use this for sensitive values like API keys or passwords. Either Value or
     ValueFromSecret must be set, but not both
+    """
+
+
+class ModelMount(TypedDict, total=False):
+    model_id: Required[str]
+    """Model registry identifier (`ml_...`) whose weights are mounted."""
+
+    mount_path: Required[str]
+    """Container path where model weights are mounted, such as `/models`."""
+
+    revision_id: str
+    """
+    Optional validated revision identifier (`rv_...`) to pin; defaults to the latest
+    validated revision.
     """
 
 
