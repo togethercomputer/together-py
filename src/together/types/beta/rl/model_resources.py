@@ -55,6 +55,13 @@ class ModelResources(BaseModel):
     updated_at: datetime
     """Timestamp when the model resource was last updated"""
 
+    base_weights_ref: Optional[str] = None
+    """
+    Model-registry model whose weights the resource trains in place of the base
+    model's own, pinned to the revision resolved when the resource was created.
+    Absent when the resource trains the base model's own weights.
+    """
+
     error: Optional[ModelResourcesError] = None
     """Structured detail for the model resource's current error.
 

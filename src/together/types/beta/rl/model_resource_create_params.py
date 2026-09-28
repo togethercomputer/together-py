@@ -13,6 +13,12 @@ class ModelResourceCreateParams(TypedDict, total=False):
     base_model: Required[str]
     """Base model to provision the resource for, selected from /rl/supported-models"""
 
+    base_weights_ref: str
+    """
+    Model in this project's model registry whose weights the resource trains in
+    place of the base model's own. It must be a full-weight model.
+    """
+
     compute_config: ComputeConfig
     """Compute layout to provision."""
 

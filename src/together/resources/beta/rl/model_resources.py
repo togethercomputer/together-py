@@ -56,6 +56,7 @@ class ModelResourcesResource(SyncAPIResource):
         self,
         *,
         base_model: str,
+        base_weights_ref: str | Omit = omit,
         compute_config: model_resource_create_params.ComputeConfig | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
@@ -71,6 +72,9 @@ class ModelResourcesResource(SyncAPIResource):
 
         Args:
           base_model: Base model to provision the resource for, selected from /rl/supported-models
+
+          base_weights_ref: Model in this project's model registry whose weights the resource trains in
+              place of the base model's own. It must be a full-weight model.
 
           compute_config: Compute layout to provision.
 
@@ -91,6 +95,7 @@ class ModelResourcesResource(SyncAPIResource):
             body=maybe_transform(
                 {
                     "base_model": base_model,
+                    "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
@@ -207,6 +212,7 @@ class ModelResourcesResource(SyncAPIResource):
         self,
         *,
         base_model: str,
+        base_weights_ref: str | Omit = omit,
         compute_config: model_resource_estimate_cost_params.ComputeConfig | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
@@ -222,6 +228,9 @@ class ModelResourcesResource(SyncAPIResource):
 
         Args:
           base_model: Base model to provision the resource for, selected from /rl/supported-models
+
+          base_weights_ref: Model in this project's model registry whose weights the resource trains in
+              place of the base model's own. It must be a full-weight model.
 
           compute_config: Compute layout to provision.
 
@@ -242,6 +251,7 @@ class ModelResourcesResource(SyncAPIResource):
             body=maybe_transform(
                 {
                     "base_model": base_model,
+                    "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
@@ -325,6 +335,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         self,
         *,
         base_model: str,
+        base_weights_ref: str | Omit = omit,
         compute_config: model_resource_create_params.ComputeConfig | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
@@ -340,6 +351,9 @@ class AsyncModelResourcesResource(AsyncAPIResource):
 
         Args:
           base_model: Base model to provision the resource for, selected from /rl/supported-models
+
+          base_weights_ref: Model in this project's model registry whose weights the resource trains in
+              place of the base model's own. It must be a full-weight model.
 
           compute_config: Compute layout to provision.
 
@@ -360,6 +374,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
             body=await async_maybe_transform(
                 {
                     "base_model": base_model,
+                    "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,
@@ -476,6 +491,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
         self,
         *,
         base_model: str,
+        base_weights_ref: str | Omit = omit,
         compute_config: model_resource_estimate_cost_params.ComputeConfig | Omit = omit,
         lora_enabled: bool | Omit = omit,
         optimizer_config: OptimizerConfigParam | Omit = omit,
@@ -491,6 +507,9 @@ class AsyncModelResourcesResource(AsyncAPIResource):
 
         Args:
           base_model: Base model to provision the resource for, selected from /rl/supported-models
+
+          base_weights_ref: Model in this project's model registry whose weights the resource trains in
+              place of the base model's own. It must be a full-weight model.
 
           compute_config: Compute layout to provision.
 
@@ -511,6 +530,7 @@ class AsyncModelResourcesResource(AsyncAPIResource):
             body=await async_maybe_transform(
                 {
                     "base_model": base_model,
+                    "base_weights_ref": base_weights_ref,
                     "compute_config": compute_config,
                     "lora_enabled": lora_enabled,
                     "optimizer_config": optimizer_config,

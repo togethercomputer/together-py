@@ -32,6 +32,7 @@ class TestModelResources:
     def test_method_create_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.create(
             base_model="Qwen/Qwen3.5-4B",
+            base_weights_ref="together://ml_A1b2C3d4E5f6G7h8I9j0K",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -152,6 +153,7 @@ class TestModelResources:
     def test_method_estimate_cost_with_all_params(self, client: Together) -> None:
         model_resource = client.beta.rl.model_resources.estimate_cost(
             base_model="Qwen/Qwen3.5-4B",
+            base_weights_ref="together://ml_A1b2C3d4E5f6G7h8I9j0K",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -251,6 +253,7 @@ class TestAsyncModelResources:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.create(
             base_model="Qwen/Qwen3.5-4B",
+            base_weights_ref="together://ml_A1b2C3d4E5f6G7h8I9j0K",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
@@ -371,6 +374,7 @@ class TestAsyncModelResources:
     async def test_method_estimate_cost_with_all_params(self, async_client: AsyncTogether) -> None:
         model_resource = await async_client.beta.rl.model_resources.estimate_cost(
             base_model="Qwen/Qwen3.5-4B",
+            base_weights_ref="together://ml_A1b2C3d4E5f6G7h8I9j0K",
             compute_config={
                 "gpu_type": "B200-SXM",
                 "num_generator_replicas": 2,
