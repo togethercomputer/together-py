@@ -179,10 +179,11 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code != 0
         assert "Do not pass --model-revision when --model already includes a revision" in result.output
 
+    @pytest.mark.usefixtures("plain_cli_help")
     def test_deploy_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
 
-        output = " ".join(result.output.replace("│", " ").split())
+        output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output

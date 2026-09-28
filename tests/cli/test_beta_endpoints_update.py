@@ -248,10 +248,11 @@ class TestBetaEndpointsUpdate:
         assert result.exit_code != 0
         assert "pass both --min-replicas 0 and --max-replicas 0" in result.output.replace("\n", " ")
 
+    @pytest.mark.usefixtures("plain_cli_help")
     def test_update_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "update", "--help"])
 
-        output = " ".join(result.output.replace("│", " ").split())
+        output = " ".join(result.output.split())
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
