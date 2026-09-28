@@ -1,3 +1,4 @@
+<!-- Aligning with stainless-generated SDK in main, can skip review -->
 # Together
 
 Types:
