@@ -36,6 +36,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
+from together.types.beta.jig.volume import Volume
 from together.lib.cli.utils._console import console
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.components.list import ListTable
@@ -669,14 +670,24 @@ class Jig:
             self.state.save()
 
     def validate_volumes(self) -> None:
-        """Warn when a mounted volume has multiple versions but no version is set in the config."""
+        """Fail on mounted volume versions that aren't ready, and warn when a volume has multiple
+        versions but no version is set in the config."""
         for vm in self.config.deploy.volume_mounts:
-            if vm.version is not None:
-                continue
             try:
                 volume = self.api.volumes.retrieve(vm.name)
             except APIError:
                 continue  # missing/inaccessible volumes are surfaced by the deployment call itself
+            version = vm.version or 0
+            status, message = _volume_version_status(volume, version)
+            if status == "syncing":
+                raise JigError(
+                    f"Volume '{vm.name}' version {version} is still syncing. "
+                    f"Check status with: jig volumes describe --name {vm.name}"
+                )
+            if status == "failed":
+                raise JigError(f"Volume '{vm.name}' version {version} failed to sync: {message}")
+            if vm.version is not None:
+                continue
             versions = {int(v) for v in volume.version_history or {}} | {volume.current_version or 0}
             if len(versions) > 1:
                 console.print(
@@ -1472,6 +1483,83 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     jig.prewarm(volume=name)
 
 
+def _s3_origin_content(uri: str, role_arn: str) -> Any:
+    # `origin` and the volume status fields aren't in the generated SDK types yet. Unknown request keys
+    # are sent as-is and unknown response fields are kept as model extras, hence the untyped access.
+    return {"type": "files", "origin": {"s3": {"uri": uri, "role_arn": role_arn}}}
+
+
+def _status_of(model: object) -> tuple[str, str | None]:
+    return getattr(model, "status", None) or "ready", getattr(model, "status_message", None)
+
+
+def volumes_create_from_s3(jig: Jig, name: str, uri: str, role_arn: str, watch: bool) -> None:
+    """Create a volume whose files Together syncs from S3"""
+    try:
+        volume = jig.api.volumes.create(name=name, type="readOnly", content=_s3_origin_content(uri, role_arn))
+    except APIError as e:
+        if "already exists" in e.message:
+            raise JigError(f"Volume {name} already exists, use 'jig volumes update' instead") from None
+        raise
+    console.print(f"\N{CHECK MARK} Created volume {name}")
+    _follow_s3_sync(jig, name, volume.current_version or 0, watch)
+
+
+def volumes_update_from_s3(jig: Jig, name: str, uri: str, role_arn: str, watch: bool) -> None:
+    """Snapshot S3 into a new volume version"""
+    try:
+        volume = jig.api.volumes.update(name, content=_s3_origin_content(uri, role_arn))
+    except NotFoundError:
+        raise JigError(f"Volume {name} not found") from None
+    console.print(f"\N{CHECK MARK} Updated volume {name} to version {volume.current_version}")
+    _follow_s3_sync(jig, name, volume.current_version or 0, watch)
+
+
+def _follow_s3_sync(jig: Jig, name: str, version: int, watch: bool) -> None:
+    if not watch:
+        console.print(
+            f"\N{WARNING SIGN}  Files are syncing from S3. The volume can be mounted once it's ready.\n"
+            f"   Check status with: [primary]jig volumes describe --name {name}[/primary]"
+        )
+        return
+
+    started = time.monotonic()
+    label = f"Syncing {name} v{version} from S3"
+    try:
+        with console.status(f"{label}...") as spinner:
+            while True:
+                volume = jig.api.volumes.retrieve(name, version=version)
+                status, message = _status_of(volume)
+                if status == "ready":
+                    break
+                if status == "failed":
+                    raise JigError(f"Sync of volume {name} v{version} failed: {message}")
+                files = (volume.content.files if volume.content else None) or []
+                copied = sum(f.size or 0 for f in files) / 1e9
+                spinner.update(f"{label}... {len(files)} files, {copied:.1f} GB ({_elapsed(started)})")
+                time.sleep(10)
+    except KeyboardInterrupt:
+        console.print(f"\nStopped watching, the sync continues. Check status with: jig volumes describe --name {name}")
+        sys.exit(130)
+    console.print(f"\N{CHECK MARK} Volume {name} v{version} is ready ({_elapsed(started)})")
+    jig.prewarm(volume=name)
+
+
+def _elapsed(since: float) -> str:
+    minutes, seconds = divmod(int(time.monotonic() - since), 60)
+    return f"{minutes}m{seconds:02d}s" if minutes else f"{seconds}s"
+
+
+def _volume_version_status(volume: Volume, version: int) -> tuple[str, str | None]:
+    """Status of a volume version; versions from before statuses existed are ready."""
+    if version == (volume.current_version or 0):
+        return _status_of(volume)
+    item = (volume.version_history or {}).get(str(version))
+    if item is None:
+        return "ready", None  # unknown versions are rejected by the deployment call itself
+    return _status_of(item)
+
+
 def volumes_delete(jig: Jig, name: str) -> None:
     """Delete a volume"""
     try:
@@ -1512,11 +1600,20 @@ async def jig_volumes_list(
 
     table.add_primary_column("ID")
     table.add_column("Name")
+    table.add_column("Version")
+    table.add_column("Status")
     table.add_column("Created At")
     table.add_column("Updated At")
 
     for volume in data:
-        table.add_row(volume.id, volume.name, volume.created_at, volume.updated_at)
+        table.add_row(
+            volume.id,
+            volume.name,
+            str(volume.current_version or 0),
+            _status_of(volume)[0],
+            volume.created_at,
+            volume.updated_at,
+        )
 
     console.print(table)
     if next_cursor:
@@ -1735,30 +1832,62 @@ def secrets_list_cli(
     _run_jig_cmd(config, toml_config, inner)
 
 
+_VolumeSourceParameter = Annotated[
+    str, Parameter(name="--source", help="Local directory to upload, or s3://bucket/prefix to sync from")
+]
+_RoleArnParameter = Annotated[
+    Optional[str],
+    Parameter(name="--aws-oidc-role-arn", help="IAM role Together assumes via OIDC to read an s3:// source"),
+]
+_WatchParameter = Annotated[bool, Parameter(help="Wait until an s3:// source has finished syncing", negative=())]
+
+
+def _local_volume_source(source: str, role_arn: str | None, watch: bool) -> Path | None:
+    """The local directory to upload, or None for an s3:// source."""
+    if source.startswith("s3://"):
+        if not role_arn:
+            _jig_fail("--aws-oidc-role-arn is required for s3:// sources")
+        return None
+    if role_arn or watch:
+        _jig_fail("--aws-oidc-role-arn and --watch only apply to s3:// sources")
+    path = Path(source)
+    if not path.is_dir():
+        _jig_fail(f"Not a directory: {source}")
+    return path
+
+
 def jig_volumes_create_cli(
     name: Annotated[str, Parameter(name="--name", help="Volume name")],
-    source: Annotated[Path, Parameter(name="--source", help="Source directory path")],
+    source: _VolumeSourceParameter,
+    aws_oidc_role_arn: _RoleArnParameter = None,
+    watch: _WatchParameter = False,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
-    """Create a volume and upload files."""
-    if not source.is_dir():
-        _jig_fail(f"Not a directory: {source}")
-    _run_jig_cmd(config, toml_config, lambda jig: volumes_create(jig, name, source))
+    """Create a volume from a local directory or S3."""
+    if path := _local_volume_source(source, aws_oidc_role_arn, watch):
+        _run_jig_cmd(config, toml_config, lambda jig: volumes_create(jig, name, path))
+    else:
+        role_arn = aws_oidc_role_arn or ""
+        _run_jig_cmd(config, toml_config, lambda jig: volumes_create_from_s3(jig, name, source, role_arn, watch))
 
 
 def jig_volumes_update_cli(
     name: Annotated[str, Parameter(name="--name", help="Volume name")],
-    source: Annotated[Path, Parameter(name="--source", help="New source directory path")],
+    source: _VolumeSourceParameter,
+    aws_oidc_role_arn: _RoleArnParameter = None,
+    watch: _WatchParameter = False,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
-    """Update a volume and re-upload files."""
-    if not source.is_dir():
-        _jig_fail(f"Not a directory: {source}")
-    _run_jig_cmd(config, toml_config, lambda jig: volumes_update(jig, name, source))
+    """Create a new volume version from a local directory or S3."""
+    if path := _local_volume_source(source, aws_oidc_role_arn, watch):
+        _run_jig_cmd(config, toml_config, lambda jig: volumes_update(jig, name, path))
+    else:
+        role_arn = aws_oidc_role_arn or ""
+        _run_jig_cmd(config, toml_config, lambda jig: volumes_update_from_s3(jig, name, source, role_arn, watch))
 
 
 def jig_volumes_delete_cli(

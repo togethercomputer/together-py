@@ -777,6 +777,9 @@ JIG_VOLUMES_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Create a volume and upload a directory:
   [primary]tg beta jig volumes create --name model-weights --source ./weights[/primary]
 
+[dim]-[/dim] Create a volume from your S3 bucket:
+  [primary]tg beta jig volumes create --name model-weights --source s3://my-bucket/weights --aws-oidc-role-arn arn:aws:iam::123456789012:role/together[/primary]
+
 [dim]-[/dim] List volumes for the deployment:
   [primary]tg beta jig volumes list[/primary]
 
@@ -876,6 +879,9 @@ JIG_VOLUMES_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Same using positional arguments:
   [primary]tg beta jig volumes create model-weights ./weights[/primary]
+
+[dim]-[/dim] Sync files from your S3 bucket and wait until the volume is ready:
+  [primary]tg beta jig volumes create --name model-weights --source s3://my-bucket/weights --aws-oidc-role-arn arn:aws:iam::123456789012:role/together --watch[/primary]
 """
 
 JIG_VOLUMES_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
@@ -884,4 +890,7 @@ JIG_VOLUMES_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Positional form:
   [primary]tg beta jig volumes update model-weights ./weights[/primary]
+
+[dim]-[/dim] Snapshot your S3 bucket again as the next volume version:
+  [primary]tg beta jig volumes update --name model-weights --source s3://my-bucket/weights --aws-oidc-role-arn arn:aws:iam::123456789012:role/together[/primary]
 """
