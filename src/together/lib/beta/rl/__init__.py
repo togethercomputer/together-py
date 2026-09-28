@@ -45,7 +45,6 @@ from ....types.beta.rl.session_error_code import SessionErrorCode
 from ....types.beta.rl.training_checkpoint import TrainingCheckpoint
 from ....types.beta.rl.weights_sync_result import WeightsSyncResult
 from ....types.beta.rl.inference_checkpoint import InferenceCheckpoint
-from ....types.beta.rl.routed_experts_param import RoutedExpertsParam as RoutedExperts
 from ....types.beta.rl.wandb_metadata_param import WandbMetadataParam as WandbMetadata
 from ....types.beta.rl.muon_scaling_strategy import MuonScalingStrategy
 from ....types.beta.rl.model_resources_status import ModelResourcesStatus
@@ -99,7 +98,6 @@ __all__ = [
     "CispoLossParams",
     "DroLossParams",
     "CrossEntropyLossParams",
-    "RoutedExperts",
     "TensorData",
     "Session",
     "SessionStatus",

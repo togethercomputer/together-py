@@ -365,7 +365,6 @@ from together.types.beta.rl import (
     PolicyVersionSegment,
     PpoLossParams,
     PromptTopLogprobs,
-    RoutedExperts,
     SampleOperation,
     SampleResult,
     SampledSequence,

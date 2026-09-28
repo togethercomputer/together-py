@@ -650,7 +650,6 @@ class OperationsResource(SyncAPIResource):
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
         return_routed_experts: bool | Omit = omit,
-        return_routed_experts_object_uri: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
         topk_prompt_logprobs: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -677,15 +676,9 @@ class OperationsResource(SyncAPIResource):
           prompt_logprobs: When true, also compute teacher-forced log-probabilities for the model input
               tokens and return them in `SampleResult.prompt_logprobs`.
 
-          return_routed_experts: When true, capture the mixture-of-experts routing decisions made while
-              generating and return them in `SampledSequence.routed_experts`, so training can
-              reuse the same expert selection. Only available on mixture-of-experts models;
-              ignored otherwise. The captured buffer scales with sequence length, so leave it
-              off unless you replay routing during training.
-
-          return_routed_experts_object_uri: When true together with `return_routed_experts`, return each routing capture as
-              a backend-owned `object_uri` plus shape instead of inline base64 data. Clients
-              that do not opt in keep the legacy inline response.
+          return_routed_experts: When true, enable reuse of the expert selections from sampled sequences during
+              training. Only supported for mixture-of-experts models; ignored for other
+              models.
 
           sampling_params: Optional sampling parameters
 
@@ -713,7 +706,6 @@ class OperationsResource(SyncAPIResource):
                     "num_samples": num_samples,
                     "prompt_logprobs": prompt_logprobs,
                     "return_routed_experts": return_routed_experts,
-                    "return_routed_experts_object_uri": return_routed_experts_object_uri,
                     "sampling_params": sampling_params,
                     "topk_prompt_logprobs": topk_prompt_logprobs,
                 },
@@ -1380,7 +1372,6 @@ class AsyncOperationsResource(AsyncAPIResource):
         num_samples: int | Omit = omit,
         prompt_logprobs: bool | Omit = omit,
         return_routed_experts: bool | Omit = omit,
-        return_routed_experts_object_uri: bool | Omit = omit,
         sampling_params: SamplingParams | Omit = omit,
         topk_prompt_logprobs: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
@@ -1407,15 +1398,9 @@ class AsyncOperationsResource(AsyncAPIResource):
           prompt_logprobs: When true, also compute teacher-forced log-probabilities for the model input
               tokens and return them in `SampleResult.prompt_logprobs`.
 
-          return_routed_experts: When true, capture the mixture-of-experts routing decisions made while
-              generating and return them in `SampledSequence.routed_experts`, so training can
-              reuse the same expert selection. Only available on mixture-of-experts models;
-              ignored otherwise. The captured buffer scales with sequence length, so leave it
-              off unless you replay routing during training.
-
-          return_routed_experts_object_uri: When true together with `return_routed_experts`, return each routing capture as
-              a backend-owned `object_uri` plus shape instead of inline base64 data. Clients
-              that do not opt in keep the legacy inline response.
+          return_routed_experts: When true, enable reuse of the expert selections from sampled sequences during
+              training. Only supported for mixture-of-experts models; ignored for other
+              models.
 
           sampling_params: Optional sampling parameters
 
@@ -1443,7 +1428,6 @@ class AsyncOperationsResource(AsyncAPIResource):
                     "num_samples": num_samples,
                     "prompt_logprobs": prompt_logprobs,
                     "return_routed_experts": return_routed_experts,
-                    "return_routed_experts_object_uri": return_routed_experts_object_uri,
                     "sampling_params": sampling_params,
                     "topk_prompt_logprobs": topk_prompt_logprobs,
                 },

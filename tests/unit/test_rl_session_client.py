@@ -23,7 +23,6 @@ from together.lib.beta.rl import (
     MuonParams,
     TensorData,
     SampleResult,
-    RoutedExperts,
     SessionClient,
     WandbMetadata,
     ModelInputChunk,
@@ -92,15 +91,6 @@ def test_lora_config_has_clean_public_name() -> None:
     assert LoraConfig(rank=8) == {"rank": 8}
 
 
-def test_routed_experts_supports_object_uri_without_inline_data() -> None:
-    routing = RoutedExperts(object_uri="s3://bucket/routing.bin", shape=[4, 2, 8])
-
-    assert routing == {
-        "object_uri": "s3://bucket/routing.bin",
-        "shape": [4, 2, 8],
-    }
-
-
 def test_trainer_only_session_rejects_generator_access() -> None:
     session = SessionClient("sess", _client=cast(Any, FakeClient()), _has_generator=False)
 
@@ -149,7 +139,7 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
     trainer.stop()
 
 
-def test_sample_requests_object_backed_routing(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sample_requests_routing_capture(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = SampleResult(policy_segments=[], sequences=[])
     patch_wait(monkeypatch, SimpleNamespace(results=[expected]))
     client = FakeClient()
@@ -159,14 +149,14 @@ def test_sample_requests_object_backed_routing(monkeypatch: pytest.MonkeyPatch) 
     result = _generator(trainer).sample(
         prompt=model_input,
         return_routed_experts=True,
-        return_routed_experts_object_uri=True,
+        topk_prompt_logprobs=5,
     )
 
     assert result is expected
     assert client.beta.rl.operations.last_call is not None
     _, _, kwargs = client.beta.rl.operations.last_call
     assert kwargs["return_routed_experts"] is True
-    assert kwargs["return_routed_experts_object_uri"] is True
+    assert kwargs["topk_prompt_logprobs"] == 5
     trainer.stop()
 
 
@@ -1100,3 +1090,48 @@ def test_forward_backward_rejects_payload_above_max(monkeypatch: pytest.MonkeyPa
 
     assert client.captured_put_body is None
     trainer.stop()
+
+
+@pytest.mark.parametrize("method", ["forward", "forward_backward", "custom_forward_backward"])
+def test_weights_mask_conflict_before_upload(monkeypatch: pytest.MonkeyPatch, method: str) -> None:
+    monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 1)
+    client = FakeClient()
+    session = _make_session(client)
+    sample = _small_sample()
+    sample["loss_fn_inputs"] = {**sample["loss_fn_inputs"], "mask": TensorData(data=[1, 1, 1], dtype="int64")}
+    kwargs: dict[str, Any] = {"samples": [sample]}
+    if method == "custom_forward_backward":
+        kwargs["gradients"] = [Gradient(data=[0.1, 0.2, 0.3], dtype="D_TYPE_FLOAT32")]
+    else:
+        kwargs["loss"] = _CROSS_ENTROPY
+    try:
+        with pytest.raises(ValueError, match="cannot contain both weights and mask"):
+            getattr(session.trainer, method)(**kwargs)
+        assert client.beta.rl.operations.last_call is None
+        assert client.captured_put_body is None
+    finally:
+        session.stop()
+
+
+@pytest.mark.parametrize("method", ["forward", "forward_backward"])
+@pytest.mark.parametrize("beta", [0.0, 0.1])
+@pytest.mark.parametrize("reference", [False, True])
+def test_grpo_reference_requirement(monkeypatch: pytest.MonkeyPatch, method: str, beta: float, reference: bool) -> None:
+    monkeypatch.setattr(rl_payloads_module, "_LARGE_PAYLOAD_THRESHOLD", 1)
+    patch_wait(monkeypatch, _scored_result([-1.0, -2.0, -3.0]))
+    client = FakeClient()
+    session = _make_session(client)
+    sample = _policy_sample(reference_logprobs=reference)
+    loss = LossConfig(type="LOSS_TYPE_GRPO", grpo_params={"beta": beta})
+    try:
+        if beta > 0 and not reference:
+            with pytest.raises(ValueError, match="reference_logprobs"):
+                getattr(session.trainer, method)(samples=[sample], loss=loss)
+            assert client.beta.rl.operations.last_call is None
+            assert client.captured_put_body is None
+        else:
+            getattr(session.trainer, method)(samples=[sample], loss=loss)
+            assert client.beta.rl.operations.last_call is not None
+            assert client.captured_put_body is not None
+    finally:
+        session.stop()

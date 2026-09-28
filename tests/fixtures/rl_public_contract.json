@@ -1,0 +1,135 @@
+{
+  "source": "https://github.com/togethercomputer/openapi/blob/b411909662ad98b867badd9d5580b20f886e41b7/openapi.yaml",
+  "schemas": {
+    "RL.TrainingSample": {
+      "type": "object",
+      "required": [
+        "model_input",
+        "loss_fn_inputs"
+      ],
+      "properties": {
+        "model_input": {
+          "description": "Model input",
+          "$ref": "#/components/schemas/RL.ModelInput"
+        },
+        "loss_fn_inputs": {
+          "type": "object",
+          "description": "Per-token loss tensors keyed by name. Include `target_tokens` and the inputs required by the selected loss. Each tensor must declare `int64` or `float32`, be one-dimensional, and have the same length.",
+          "additionalProperties": {
+            "$ref": "#/components/schemas/RL.TensorData"
+          }
+        },
+        "routed_experts_key": {
+          "type": "string",
+          "description": "Opaque key returned with a sampled sequence. Pass it unchanged with the corresponding training sample to reuse the same expert selections. The selections must cover the entire training sample or all but its final token. Training fails if the key is no longer available.",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^routing/[A-Za-z0-9._-]+/[0-9a-f]{32}\\.[1-9][0-9]*$"
+        }
+      }
+    },
+    "RL.SampledSequence": {
+      "type": "object",
+      "description": "A single generated completion sequence with tokens and logprobs",
+      "required": [
+        "tokens",
+        "stop_reason",
+        "prompt_cache_hit_tokens"
+      ],
+      "properties": {
+        "tokens": {
+          "type": "array",
+          "example": [
+            "123",
+            "456",
+            "789"
+          ],
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "description": "Generated token IDs"
+        },
+        "logprobs": {
+          "type": "array",
+          "example": [
+            -0.5,
+            -1.2,
+            -0.3
+          ],
+          "items": {
+            "type": "number"
+          },
+          "description": "Log probabilities for each generated token"
+        },
+        "stop_reason": {
+          "$ref": "#/components/schemas/RL.StopReason",
+          "example": "STOP_REASON_LENGTH",
+          "description": "Reason for stopping generation"
+        },
+        "prompt_cache_hit_tokens": {
+          "type": "integer",
+          "format": "int32",
+          "example": 1024,
+          "description": "Number of model input tokens served from the prefix cache while generating this sequence."
+        },
+        "routed_experts_key": {
+          "type": "string",
+          "description": "Opaque key for reusing this sequence's expert selections during training. Pass it unchanged with the corresponding training sample. Absent for non-mixture-of-experts models or when `return_routed_experts` is disabled."
+        }
+      }
+    },
+    "RL.SampleBody": {
+      "type": "object",
+      "required": [
+        "model_inputs"
+      ],
+      "properties": {
+        "model_inputs": {
+          "description": "Model inputs to sample from",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/components/schemas/RL.ModelInput"
+          }
+        },
+        "sampling_params": {
+          "$ref": "#/components/schemas/RL.SamplingParams",
+          "description": "Optional sampling parameters"
+        },
+        "num_samples": {
+          "type": "integer",
+          "example": 1,
+          "default": 1,
+          "description": "Number of completions to generate per prompt"
+        },
+        "prompt_logprobs": {
+          "type": "boolean",
+          "example": false,
+          "default": false,
+          "description": "When true, also compute teacher-forced log-probabilities for the model input tokens and return them in `SampleResult.prompt_logprobs`."
+        },
+        "topk_prompt_logprobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20,
+          "example": 0,
+          "default": 0,
+          "description": "Number of most likely alternative tokens to return per model input token in `SampleResult.topk_prompt_logprobs`. 0 disables top-k prompt log-probabilities. Maximum 20."
+        },
+        "return_routed_experts": {
+          "type": "boolean",
+          "example": false,
+          "default": false,
+          "description": "When true, enable reuse of the expert selections from sampled sequences during training. Only supported for mixture-of-experts models; ignored for other models."
+        }
+      }
+    }
+  }
+}

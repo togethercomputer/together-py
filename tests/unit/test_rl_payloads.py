@@ -41,25 +41,6 @@ def test_shrink_for_validation(data: Any, max_len: int, expected: Any) -> None:
     assert _shrink_for_validation(data, max_len) == expected
 
 
-def test_validation_body_drops_routed_experts() -> None:
-    """The inline body stands in for a payload already uploaded to R2, so it must not
-    carry the routed-experts buffer that made the payload large in the first place."""
-    body = {
-        "samples": [
-            {
-                "model_input": {"chunks": [{"encoded_text": {"tokens": [1, 2, 3]}}]},
-                "routed_experts": {"data": "A" * 5000, "shape": [3, 4, 2]},
-            }
-        ]
-    }
-
-    validation_body = cast("dict[str, Any]", _shrink_for_validation(dict(body)))
-
-    sample = validation_body["samples"][0]
-    assert "routed_experts" not in sample
-    assert sample["model_input"] == {"chunks": [{"encoded_text": {"tokens": [1, 2, 3]}}]}
-
-
 def test_validation_body_shares_budget_across_model_input_chunks() -> None:
     body = {
         "samples": [

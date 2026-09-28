@@ -33,18 +33,9 @@ class OperationSampleParams(TypedDict, total=False):
 
     return_routed_experts: bool
     """
-    When true, capture the mixture-of-experts routing decisions made while
-    generating and return them in `SampledSequence.routed_experts`, so training can
-    reuse the same expert selection. Only available on mixture-of-experts models;
-    ignored otherwise. The captured buffer scales with sequence length, so leave it
-    off unless you replay routing during training.
-    """
-
-    return_routed_experts_object_uri: bool
-    """
-    When true together with `return_routed_experts`, return each routing capture as
-    a backend-owned `object_uri` plus shape instead of inline base64 data. Clients
-    that do not opt in keep the legacy inline response.
+    When true, enable reuse of the expert selections from sampled sequences during
+    training. Only supported for mixture-of-experts models; ignored for other
+    models.
     """
 
     sampling_params: SamplingParams

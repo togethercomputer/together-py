@@ -189,6 +189,11 @@ class TestRLRequestBody:
                 },
             )
         ]
+        if loss["type"] == "LOSS_TYPE_GRPO":
+            samples[0]["loss_fn_inputs"] = {
+                **samples[0]["loss_fn_inputs"],
+                "reference_logprobs": TensorData(data=[0.0, 0.0, -0.3, -0.4], dtype="float32"),
+            }
         await trainer.trainer.forward_backward_async(samples=samples, loss=loss)
 
         call = cast(Any, respx_mock.calls[0])
@@ -245,6 +250,10 @@ class TestRLRequestBody:
             grpo_params=GrpoLossParams(agg_type="GRPO_LOSS_AGGREGATION_TYPE_TOKEN_MEAN", beta=0.1),
         )
 
+        samples[0]["loss_fn_inputs"] = {
+            **samples[0]["loss_fn_inputs"],
+            "reference_logprobs": TensorData(data=[0.0, 0.0, -0.3, -0.4], dtype="float32"),
+        }
         await call(session.trainer, samples, loss)
 
         request = cast(httpx.Request, cast(Any, respx_mock.calls[0]).request)
@@ -597,11 +606,7 @@ def test_validation_omitted_keys_stay_optional() -> None:
     would start failing server-side validation with nothing failing locally.
     """
     # The pinned set keeps a new _VALIDATION_OMITTED_KEYS entry from skipping this test.
-    assert _VALIDATION_OMITTED_KEYS == {"routed_experts", "shape", "sparse_crow_indices", "sparse_col_indices"}
-
-    for shape in _generated_sample_shapes():
-        hints = get_type_hints(shape, include_extras=True)
-        assert get_origin(hints["routed_experts"]) is not Required, shape.__name__
+    assert _VALIDATION_OMITTED_KEYS == {"shape", "sparse_crow_indices", "sparse_col_indices"}
 
     tensor_hints = get_type_hints(tensor_data_param.TensorDataParam, include_extras=True)
     for key in ("shape", "sparse_crow_indices", "sparse_col_indices"):

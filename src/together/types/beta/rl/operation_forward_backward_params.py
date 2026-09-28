@@ -9,7 +9,6 @@ from ...._utils import PropertyInfo
 from .loss_config_param import LossConfig
 from .model_input_param import ModelInput
 from .tensor_data_param import TensorDataParam
-from .routed_experts_param import RoutedExpertsParam
 
 __all__ = ["OperationForwardBackwardParams", "Sample"]
 
@@ -56,9 +55,10 @@ class Sample(TypedDict, total=False):
     model_input: Required[ModelInput]
     """Model input"""
 
-    routed_experts: RoutedExpertsParam
-    """Optional MoE per-token routing captured at sample time.
+    routed_experts_key: str
+    """Opaque key returned with a sampled sequence.
 
-    Replayed on every training operation, so expert selection matches the one used
-    at sample time. Must cover the whole sample, or all but its last token.
+    Pass it unchanged with the corresponding training sample to reuse the same
+    expert selections. The selections must cover the entire training sample or all
+    but its final token. Training fails if the key is no longer available.
     """

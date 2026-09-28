@@ -5,7 +5,7 @@ from __future__ import annotations
 import types
 import warnings
 from typing import Any, cast, get_args, get_origin, get_type_hints
-from dataclasses import dataclass
+from dataclasses import replace, dataclass
 from collections.abc import Set as AbstractSet, Mapping
 from typing_extensions import Required
 
@@ -116,7 +116,7 @@ LOSS_SPECS: Mapping[LossType, LossSpec] = types.MappingProxyType(
             "LOSS_TYPE_CROSS_ENTROPY",
             params_key="cross_entropy_params",
             required_inputs=frozenset({"target_tokens", "weights"}),
-            optional_inputs=frozenset({"mask"}),
+            optional_inputs=_NO_KEYS,
         ),
         "LOSS_TYPE_GRPO": _make_spec(
             "LOSS_TYPE_GRPO",
@@ -181,6 +181,8 @@ def validate_input_keys(label: str, keys: AbstractSet[str], inputs: InputSpec) -
         ValueError: If a key ``inputs`` requires is missing. ``label`` names the
             offending sample or datum in the message.
     """
+    if "weights" in keys and "mask" in keys:
+        raise ValueError(f"{label} cannot contain both weights and mask")
     accepted = inputs.required_inputs | inputs.optional_inputs
     unknown = sorted(keys - accepted)
     if unknown:
@@ -231,6 +233,12 @@ def validate_loss_config(loss: LossConfig) -> LossSpec:
             params.keys(),
             required=spec.required_params,
             optional=spec.optional_params,
+        )
+    if wire_type == "LOSS_TYPE_GRPO" and loss.get("grpo_params", {}).get("beta", 0) > 0:
+        spec = replace(
+            spec,
+            required_inputs=spec.required_inputs | {"reference_logprobs"},
+            optional_inputs=spec.optional_inputs - {"reference_logprobs"},
         )
     return spec
 

@@ -23,12 +23,9 @@ logger = logging.getLogger("together")
 _LARGE_PAYLOAD_THRESHOLD = 0.5 * 1024 * 1024  # 0.5 MiB
 _MAX_PAYLOAD_SIZE = 5 * 1024**3 - 5 * 1024**2  # 4.995 GiB, R2's single-PUT upload limit
 _VALIDATION_MAX_SEQ_LEN = 8
-# Metadata that would contradict the truncated `data` it describes, so the inline body
-# drops it rather than shipping a self-inconsistent pair: `routed_experts` is a base64
-# buffer sequence truncation cannot shrink, and a tensor's shape/CSR indices describe
-# the full array. All are optional wherever they survive shrinking (asserted by
-# tests/unit/test_rl_request_body.py::test_validation_omitted_keys_stay_optional).
-_VALIDATION_OMITTED_KEYS = frozenset({"routed_experts", "shape", "sparse_crow_indices", "sparse_col_indices"})
+# Shape/CSR metadata describes the full tensor, not the truncated validation body.
+# Opaque routing keys stay unchanged in both the validation body and uploaded payload.
+_VALIDATION_OMITTED_KEYS = frozenset({"shape", "sparse_crow_indices", "sparse_col_indices"})
 _MAX_RETRIES = 5
 
 JsonValue: TypeAlias = Union[str, int, float, bool, None, Mapping[str, Any], list[Any]]
