@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from uuid import uuid4
 from typing import Any, cast, get_args
 from dataclasses import dataclass
 from collections.abc import Iterable
@@ -81,6 +82,7 @@ async def _submit_forward_backward(
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
     return await session._client.beta.rl.operations.forward_backward(
         session._session_id,
+        idempotency_key=str(uuid4()),
         loss=proto_loss,
         samples=cast("list[Any]", body["samples"]),
         forward_only=forward_only,
@@ -109,6 +111,7 @@ async def _submit_custom_forward_backward(
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
     return await session._client.beta.rl.operations.custom_forward_backward(
         session._session_id,
+        idempotency_key=str(uuid4()),
         samples=cast("list[Any]", body["samples"]),
         gradients=cast("list[Any]", body["gradients"]),
         extra_body=extra_body,
@@ -291,6 +294,7 @@ class Trainer:
     ) -> OptimStepResult:
         operation = await self._session._client.beta.rl.operations.optim_step(
             self._session._session_id,
+            idempotency_key=str(uuid4()),
             adam_params=adam_params if adam_params is not None else omit,
             muon_params=muon_params if muon_params is not None else omit,
         )
@@ -326,6 +330,7 @@ class Trainer:
     ) -> WeightsSyncResult:
         operation = await self._session._client.beta.rl.operations.weights_sync(
             self._session._session_id,
+            idempotency_key=str(uuid4()),
             weight_sync_type=weight_sync_type,
         )
         result = await self._session._submit_and_wait(

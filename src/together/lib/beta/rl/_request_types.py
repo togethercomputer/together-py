@@ -13,7 +13,6 @@ from ....types.beta.rl.grpo_loss_params import GrpoLossParams
 from ....types.beta.rl.cispo_loss_params import CispoLossParams
 from ....types.beta.rl.model_input_param import ModelInput
 from ....types.beta.rl.tensor_data_param import TensorDataParam as TensorData
-from ....types.beta.rl.routed_experts_param import RoutedExpertsParam
 from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
 
 
@@ -54,10 +53,10 @@ class Sample(TypedDict, total=False):
             it to a ``TensorData`` before submitting. The annotation stays narrow, as
             tinker's own ``LossFnInputs`` does, so a type-checked caller passing an array
             needs a ``cast``.
-        routed_experts: Optional expert routing for MoE models. Unlike ``loss_fn_inputs``,
-            it is indexed by input position rather than by target.
+        routed_experts_key: Opaque routing key returned with the sampled sequence.
+            Relay it unchanged to replay the same expert selections during training.
     """
 
     model_input: Required[ModelInput]
     loss_fn_inputs: Required[Mapping[str, TensorData]]
-    routed_experts: RoutedExpertsParam
+    routed_experts_key: str

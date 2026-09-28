@@ -510,6 +510,20 @@ operation stays responsive while a long wait gets cheaper. Once a session's clie
 that client a `429` is retried up to 7 times, honouring `Retry-After` and backing off exponentially
 otherwise. `ModelResourcesClient` polls for provisioning and stop, and keeps the SDK connection defaults.
 
+### Operation retries
+
+Native RL and Tinker wrappers automatically send a fresh `Idempotency-Key` when submitting
+forward/backward passes, optimizer steps, weight syncs, sampling, and checkpoint creation.
+Automatic HTTP retries reuse that key so the service returns the existing operation instead
+of submitting it again. Polling, session management, and payload uploads do not automatically
+receive this header.
+
+When calling the low-level `client.beta.rl.operations` creation methods directly, pass
+`idempotency_key=str(uuid.uuid4())` explicitly (after `import uuid`). Reuse that key only when
+retrying the same operation: within the same session and operation type, the service returns
+the original operation even if the request body changes. Calling a high-level wrapper again
+creates a new operation with a fresh key.
+
 ## Tinker-compatible entry point
 
 For the RL training-loop subset described below, a script written against the `tinker` SDK runs on
@@ -818,6 +832,8 @@ def sample(
     sampling_params: SamplingParams | None = None,
     *,
     prompt_logprobs: bool | None = None,
+    topk_prompt_logprobs: int | None = None,
+    return_routed_experts: bool | None = None,
 ) -> SampleResult
 
 def sample_batch(
@@ -826,6 +842,8 @@ def sample_batch(
     sampling_params: SamplingParams | None = None,
     *,
     prompt_logprobs: bool | None = None,
+    topk_prompt_logprobs: int | None = None,
+    return_routed_experts: bool | None = None,
 ) -> list[SampleResult]
 ```
 
@@ -835,6 +853,8 @@ def sample_batch(
 | `num_samples`     | `int \| None`                 | `None`       | Number of completions to generate per prompt (server default: 1). |
 | `sampling_params` | `SamplingParams \| None`      | `None`       | Sampling configuration dict.                               |
 | `prompt_logprobs` | `bool \| None`                | `None`       | Also teacher-force score the prompt tokens and return them in `SampleResult.prompt_logprobs`. |
+| `topk_prompt_logprobs` | `int \| None` | `None` | Return up to this many alternative tokens per prompt position (0–20; 0 disables it). |
+| `return_routed_experts` | `bool \| None` | `None` | Capture MoE expert selections and return a key to replay them during training. |
 
 Use `sample_batch` with `Iterable[ModelInput]` to sample multiple prompts in one operation; it returns one
 `SampleResult` per prompt, in input order.
@@ -865,6 +885,7 @@ Each `SampledSequence` has:
 | `tokens`      | `list[str \| int]`      | Generated token IDs.                                                 |
 | `logprobs`    | `list[float] \| None`   | Log probability for each generated token.                            |
 | `stop_reason` | `StopReason`            | `"STOP_REASON_LENGTH"` or `"STOP_REASON_STOP"`.                      |
+| `routed_experts_key` | `str \| None` | Opaque capture key to relay with the corresponding training sample; absent when routing capture is disabled or unsupported. |
 
 #### `session.generator.compute_logprobs(...)`
 
@@ -968,7 +989,10 @@ def optim_step(
 | `eps`            | `float` | `1e-8`         | Epsilon for numerical stability.   |
 | `grad_clip_norm` | `float` | `1.0`          | Gradients across all model parameters are clipped to this value; `0` disables clipping. |
 | `learning_rate`  | `float` | —              | Learning rate for the Adam-tuned parameters. |
-| `weight_decay`   | `float` | `0.1`          | Weight decay coefficient.          |
+| `weight_decay`   | `float` | `0.0`          | Weight decay coefficient.          |
+
+Omitted per-step overrides retain the service/session optimizer settings. The table
+above lists the baseline defaults.
 
 `muon_params` fields:
 
@@ -1247,7 +1271,7 @@ Sample(
 | ----------------- | ----------------------------- | --------------------------------------------------------------------------- |
 | `model_input` | `ModelInput` | Always required. The token sequence to predict *from*: `(prompt + response)[:-1]`. |
 | `loss_fn_inputs` | `Mapping[str, TensorData]` | Always required. Per-target tensors, each with one slot per `model_input` token, keyed by the input names accepted by the selected loss. |
-| `routed_experts` | `RoutedExperts` | Optional. Expert routing for MoE models. The one buffer indexed by **input** position, not target position (see [Target alignment](#target-alignment)). |
+| `routed_experts_key` | `str` | Optional. Relay the sampled sequence's opaque key unchanged to reuse its expert selections. The capture must cover the whole training input or all but its final token. |
 
 Construct each `loss_fn_inputs` value with the exported `TensorData` TypedDict. Dtypes are lowercase: `{"data": [...], "dtype":
 "int64"}` or `{"data": [...], "dtype": "float32"}`. Only one-dimensional dense
@@ -1306,7 +1330,7 @@ numpy stay optional dependencies; nothing imports them unless you pass their typ
 | --- | --- | --- | --- |
 | `target_tokens` | `TensorData` (`int64`) | Every loss | Next-token targets: `target_tokens[i]` is the token the model must predict at `model_input` position `i`, i.e. `full_sequence[i + 1]`. |
 | `weights` | `TensorData` (`int64` or `float32`) | Cross-entropy; optional for policy losses | Non-negative weight on each **target** position, shifted alongside `target_tokens`. Cross-entropy honors fractional values; policy losses treat values as a 0/1 mask. Omission for a policy loss includes all tokens. |
-| `mask` | `TensorData` (`int64` or `float32`) | Optional for every loss | Inclusion mask over target slots: `mask[i]` includes or drops the target at slot `i`. |
+| `mask` | `TensorData` (`int64` or `float32`) | Optional for policy losses and custom gradients | Inclusion mask over target slots. Mutually exclusive with `weights`; cross-entropy requires `weights`. |
 | `advantages` | `TensorData` (`float32`) | GRPO, PPO, DPPO, CISPO, DRO, importance sampling | Advantage of each **target** position, i.e. of the token `target_tokens[i]`. |
 | `logprobs` | `TensorData` (`float32`) | GRPO, PPO, DPPO, CISPO, DRO, importance sampling | The generator policy's log probability of `target_tokens[i]`, at slot `i`. |
 | `reference_logprobs` | `TensorData` (`float32`) | GRPO when `beta > 0` | The reference model's log probability of `target_tokens[i]`, at slot `i`, used for the KL penalty. |
@@ -1320,7 +1344,11 @@ submission:
   shape is an open `map<string, TensorData>`, so an unrecognized key may be a server
   input newer than this SDK; rejecting it would put an SDK release on the critical path
   of every new server input.
+- **Both `weights` and `mask`** raises `ValueError`; choose one.
+- **GRPO with `beta > 0` and no `reference_logprobs`** raises `ValueError`.
 - **A dtype other than the one the table pins** raises `ValueError`.
+
+The service remains authoritative for tensor lengths, numeric ranges, and other API constraints.
 
 `forward()` scores under a real loss, so it validates `loss_fn_inputs` against that loss just
 as `forward_backward()` does: `cross_entropy` requires `weights`, and the policy losses require
@@ -1328,8 +1356,15 @@ as `forward_backward()` does: `cross_entropy` requires `weights`, and the policy
 requires just `target_tokens` and recognizes `weights` and `mask`; reusing a policy-loss batch
 there warns about `advantages` and `logprobs` and still submits.
 
-A `RoutedExperts` value carries exactly one source — an inline `data` buffer or an `object_uri` —
-alongside `shape`; see the `RoutedExperts` entry in [`api.md`](api.md) for the field-level contract.
+To replay MoE routing, sample with `return_routed_experts=True`, then pass
+`result.sequences[i].routed_experts_key` unchanged as the training `Sample`'s
+`routed_experts_key`. Omit the field when the response has no key (for example, on a
+dense model). The backend stores the capture; training fails if it is no longer
+available, rather than silently selecting different experts.
+
+The beta SDK no longer accepts `RoutedExperts` buffers or the
+`return_routed_experts_object_uri` option. Replace `Sample.routed_experts` with
+`Sample.routed_experts_key`; no object download or upload is needed for routing.
 
 ### Sampling params
 
@@ -1341,7 +1376,7 @@ SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
 
 | Field         | Type    | Server default  | Description                                            |
 | ------------- | ------- | --------------- | ------------------------------------------------------ |
-| `max_tokens`  | `int`   | `100`           | Maximum tokens to generate per completion.             |
+| `max_tokens`  | `int`   | `512`           | Maximum tokens to generate per completion.             |
 | `temperature` | `float` | `1.0`           | Sampling temperature.                                  |
 | `top_p`       | `float` | `1.0`           | Nucleus sampling probability threshold.                |
 | `top_k`       | `int`   | `-1` (disabled) | Top-k sampling limit.                                  |

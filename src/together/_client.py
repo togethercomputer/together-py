@@ -82,8 +82,6 @@ if TYPE_CHECKING:
     from .resources.endpoints.endpoints import EndpointsResource, AsyncEndpointsResource
     from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
-_IDEMPOTENCY_HEADER = "Idempotency-Key"
-
 __all__ = [
     "Timeout",
     "Transport",
@@ -171,7 +169,6 @@ class Together(SyncAPIClient):
             _strict_response_validation=_strict_response_validation,
         )
 
-        self._idempotency_header = _IDEMPOTENCY_HEADER
         self._default_stream_cls = Stream
 
     @cached_property
@@ -492,7 +489,6 @@ class AsyncTogether(AsyncAPIClient):
             _strict_response_validation=_strict_response_validation,
         )
 
-        self._idempotency_header = _IDEMPOTENCY_HEADER
         self._default_stream_cls = AsyncStream
 
     @cached_property

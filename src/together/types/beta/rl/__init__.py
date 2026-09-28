@@ -16,7 +16,6 @@ from .tensor_data import TensorData as TensorData
 from .sample_result import SampleResult as SampleResult
 from .session_error import SessionError as SessionError
 from .loss_fn_output import LossFnOutput as LossFnOutput
-from .routed_experts import RoutedExperts as RoutedExperts
 from .session_status import SessionStatus as SessionStatus
 from .wandb_metadata import WandbMetadata as WandbMetadata
 from .checkpoint_file import CheckpointFile as CheckpointFile
@@ -54,7 +53,6 @@ from .grpo_loss_ratio_type import GrpoLossRatioType as GrpoLossRatioType
 from .inference_checkpoint import InferenceCheckpoint as InferenceCheckpoint
 from .operation_error_code import OperationErrorCode as OperationErrorCode
 from .optim_step_operation import OptimStepOperation as OptimStepOperation
-from .routed_experts_param import RoutedExpertsParam as RoutedExpertsParam
 from .wandb_metadata_param import WandbMetadataParam as WandbMetadataParam
 from .model_resources_error import ModelResourcesError as ModelResourcesError
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy

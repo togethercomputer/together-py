@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from uuid import uuid4
 from types import TracebackType
 from typing import Any, Literal
 from functools import partial
@@ -336,6 +337,7 @@ class TrainingClient:
         operation = await session.run_async(
             session._client.beta.rl.operations.optim_step(
                 session.session_id,
+                idempotency_key=str(uuid4()),
                 adam_params=_to_adam_params(adam_params),
             )
         )

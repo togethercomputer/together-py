@@ -259,11 +259,7 @@ class TestOperations:
                         }
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "routed_experts": {
-                        "shape": ["512", "64", "8"],
-                        "data": "U3RhaW5sZXNzIHJvY2tz",
-                        "object_uri": "https://example.com",
-                    },
+                    "routed_experts_key": "routing/._.K--w2k.1v/fe91bd231a9ad9bd2aada37aa7ccc3d3.8840",
                 }
             ],
             idempotency_key="Idempotency-Key",
@@ -769,7 +765,6 @@ class TestOperations:
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
-            return_routed_experts_object_uri=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
@@ -1105,11 +1100,7 @@ class TestAsyncOperations:
                         }
                     },
                     "model_input": {"chunks": [{"encoded_text": {"tokens": [123, 456, 789]}}]},
-                    "routed_experts": {
-                        "shape": ["512", "64", "8"],
-                        "data": "U3RhaW5sZXNzIHJvY2tz",
-                        "object_uri": "https://example.com",
-                    },
+                    "routed_experts_key": "routing/._.K--w2k.1v/fe91bd231a9ad9bd2aada37aa7ccc3d3.8840",
                 }
             ],
             idempotency_key="Idempotency-Key",
@@ -1615,7 +1606,6 @@ class TestAsyncOperations:
             num_samples=1,
             prompt_logprobs=False,
             return_routed_experts=False,
-            return_routed_experts_object_uri=False,
             sampling_params={
                 "max_tokens": 512,
                 "seed": "42",
