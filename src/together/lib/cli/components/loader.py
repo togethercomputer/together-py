@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from together.lib.cli.utils._debug import is_enabled, log_debug_note
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import is_json_mode
 
 T = TypeVar("T")
 
@@ -16,8 +17,9 @@ def loading_status(message: str) -> Iterator[None]:
     Rich Live (stdout) and debug logs (stderr) share the terminal cursor, so a
     spinner would overwrite HTTP debug lines. Skip Live UI in debug mode.
     """
-    if is_enabled():
-        if message:
+    # Spinners write to stdout and would sit in front of a JSON document.
+    if is_enabled() or is_json_mode():
+        if message and is_enabled():
             log_debug_note(message)
         yield
         return

@@ -11,6 +11,7 @@ from together import AsyncTogether
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 
 
@@ -107,12 +108,18 @@ async def retrieve_content(
 ) -> None:
     """Retrieve file content and output to file."""
     if stdout is False and output is None:
-        console.print(f"[red]Invalid usage: Either --output <directory> or --stdout must be specified[/red]")
-        sys.exit(1)
+        exit_with_message(
+            "[red]Invalid usage: Either --output <directory> or --stdout must be specified[/red]",
+            error="Either --output <directory> or --stdout must be specified",
+            diagnostic="File content output destination is required",
+        )
 
     if stdout is True and output is not None:
-        console.print(f"[red]Invalid usage: --stdout and --output cannot be used together[/red]")
-        sys.exit(1)
+        exit_with_message(
+            "[red]Invalid usage: --stdout and --output cannot be used together[/red]",
+            error="--stdout and --output cannot be used together",
+            diagnostic="File content output flags conflict",
+        )
 
     result = await download_file_content(config.client, id, output=output, stdout=bool(stdout))
 

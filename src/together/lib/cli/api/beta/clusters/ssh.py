@@ -43,6 +43,7 @@ from filelock import FileLock
 
 from together import TogetherError
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import emit_json, is_json_mode
 
 _CERT_ALGO = {
     "ecdsa": "ecdsa-sha2-nistp256-cert-v01@openssh.com",
@@ -251,9 +252,15 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
         "code_challenge_method": "S256",
     }
     auth_url = authorization_endpoint + "?" + urllib.parse.urlencode(params)
-    console.print(f"[dim]Opening browser for login: {issuer}[/dim]")
+    if not is_json_mode():
+        console.print(f"[dim]Opening browser for login: {issuer}[/dim]")
     if not webbrowser.open(auth_url):
-        console.print(f"Open this URL to log in:\n{auth_url}")
+        if is_json_mode():
+            emit_json(
+                {"action": "login", "url": auth_url, "message": "Open this URL to log in, then return to this command."}
+            )
+        else:
+            console.print(f"Open this URL to log in:\n{auth_url}")
     server.handle_request()
     server.server_close()
 
@@ -677,10 +684,11 @@ async def ssh(
     )
     with cache_lock:
         if cache and not refresh and os.path.exists(key_path) and _cert_is_valid(cert_path):
-            console.print(f"[dim]Using cached SSH certificate: {cert_path}[/dim]")
+            if not is_json_mode():
+                console.print(f"[dim]Using cached SSH certificate: {cert_path}[/dim]")
         else:
             pub_blob = _get_or_create_keypair(key_path, key_type)
-            if cache:
+            if cache and not is_json_mode():
                 console.print(
                     "[yellow]No valid cached SSH certificate found. Opening browser for Together login.[/yellow]"
                 )
@@ -704,14 +712,34 @@ async def ssh(
         )
         if write_ssh_config:
             managed_config, main_config = _write_ssh_config(ssh_config_alias, entry, cache_root)
+            if is_json_mode():
+                emit_json(
+                    {
+                        "ok": True,
+                        "alias": ssh_config_alias,
+                        "managed_config": managed_config,
+                        "main_config": main_config,
+                        "ssh_config": entry,
+                        "command": f"ssh {shlex.quote(ssh_config_alias)}",
+                    }
+                )
+                return
             console.print(f"[green]Wrote SSH alias '{ssh_config_alias}' to {managed_config}[/green]")
             console.print(f"[dim]Ensured {main_config} includes {managed_config}[/dim]")
             console.print(f"Use it with: ssh {shlex.quote(ssh_config_alias)}")
         else:
+            if is_json_mode():
+                emit_json({"alias": ssh_config_alias, "ssh_config": entry})
+                return
             console.print(entry)
         return
     if print_ssh_command:
-        console.print(_shell_command(cmd))
+        rendered = _shell_command(cmd)
+        if is_json_mode():
+            emit_json({"command": rendered, "argv": cmd})
+            return
+        console.print(rendered)
         return
-    console.print(f"[dim]Connecting to {host} via {bastion} as {login}...[/dim]")
+    if not is_json_mode():
+        console.print(f"[dim]Connecting to {host} via {bastion} as {login}...[/dim]")
     os.execvp("ssh", cmd)

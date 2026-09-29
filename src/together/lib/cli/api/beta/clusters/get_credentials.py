@@ -12,6 +12,7 @@ from together import TogetherError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._cli_extras import CLI_EXTRAS_INSTALL_COMMAND
 
@@ -91,8 +92,10 @@ async def get_credentials(
         try:
             from yaml import safe_load
         except ImportError:
-            console.print(f"Together CLI extras are missing. Install with: {CLI_EXTRAS_INSTALL_COMMAND}")
-            return
+            exit_with_message(
+                f"Together CLI extras are missing. Install with: {CLI_EXTRAS_INSTALL_COMMAND}",
+                diagnostic="Together CLI extras are missing",
+            )
         incoming_preview: dict[str, Any] | None = safe_load(kube_config)
         if incoming_preview is None:
             console.print_json(

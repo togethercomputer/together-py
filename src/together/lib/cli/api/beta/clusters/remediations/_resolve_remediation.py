@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import sys
-
 from together import omit
 from together._types import Omit
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.types.beta.clusters.remediation import Remediation
 
 
@@ -29,5 +27,8 @@ async def resolve_remediation(config: CLIConfigParameter, remediation_id: str) -
                 break
             page_token = response.next_page_token
 
-    console.print(f"[red]Error:[/red] Remediation not found: {remediation_id}")
-    sys.exit(1)
+    exit_with_message(
+        f"[red]Error:[/red] Remediation not found: {remediation_id}",
+        error=f"Remediation not found: {remediation_id}",
+        diagnostic=f"Remediation not found: {remediation_id}",
+    )
