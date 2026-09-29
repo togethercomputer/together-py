@@ -91,7 +91,7 @@ def cli_runner(capsys: pytest.CaptureFixture[str]) -> CliRunner:
 
 
 @pytest.fixture(autouse=True)
-def _cli_json_mode_defaults_off(monkeypatch: pytest.MonkeyPatch) -> None:
+def cli_json_mode_defaults_off(monkeypatch: pytest.MonkeyPatch) -> None:
     """Command JSON output must not follow the developer shell's agent detection.
 
     ``--json`` / ``CliRunner(agent=True)`` opt in. Help formatting is separate and

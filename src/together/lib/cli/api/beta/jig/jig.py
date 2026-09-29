@@ -1222,11 +1222,14 @@ def _print_json_cli_result(result: Any) -> None:
         emit_json({"ok": True, "message": result})
         return
     if isinstance(result, dict):
-        emit_json(result)
+        emit_json(typing.cast("dict[str, Any]", result))
         return
     if hasattr(result, "json") and callable(result.json):
-        body = result.json()
-        emit_json(body if isinstance(body, (dict, list)) else {"ok": True, "result": body})
+        body: Any = result.json()
+        if isinstance(body, (dict, list)):
+            emit_json(typing.cast(Any, body))
+        else:
+            emit_json({"ok": True, "result": body})
         return
     try:
         emit_json(json.loads(openapi_dumps(result)))
