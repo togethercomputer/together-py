@@ -186,6 +186,10 @@ class TestBetaEndpointsDeploy:
         assert result.exit_code == 0
         assert "--scale-up-window" in output
         assert "--scale-down-window" in output
+        assert "--scale-up-policy" in output
+        assert "--scale-up-select-policy" in output
+        assert "--scale-down-policy" in output
+        assert "--scale-down-select-policy" in output
         assert "--inactive-timeout" in output
         assert "--placement.hipaa" in output
         assert "--scale-to-zero-window" not in output
@@ -536,6 +540,57 @@ class TestBetaEndpointsDeploy:
                 "target": 25.0,
             }
         ]
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_sends_scaling_policies(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        _mock_model_and_config(respx_mock)
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_1",
+                "--config",
+                "cr_1",
+                "--deployment-name",
+                "my-dep",
+                "--scale-up-policy",
+                "pods:2:60",
+                "--scale-up-policy",
+                "percent:100:300",
+                "--scale-up-select-policy",
+                "min",
+                "--scale-down-policy",
+                "pods:1:300",
+                "--scale-down-select-policy",
+                "disabled",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["autoscaling"]["scaleUp"] == {
+            "policies": [
+                {"type": "SCALING_POLICY_TYPE_PODS", "value": 2, "periodSeconds": 60},
+                {"type": "SCALING_POLICY_TYPE_PERCENT", "value": 100, "periodSeconds": 300},
+            ],
+            "selectPolicy": "SCALING_POLICY_SELECT_MIN",
+        }
+        assert deployment_body["autoscaling"]["scaleDown"] == {
+            "policies": [{"type": "SCALING_POLICY_TYPE_PODS", "value": 1, "periodSeconds": 300}],
+            "selectPolicy": "SCALING_POLICY_SELECT_DISABLED",
+        }
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_reuses_endpoint_when_name_already_exists(

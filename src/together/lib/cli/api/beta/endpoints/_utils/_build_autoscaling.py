@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, cast, overload
+from typing import Literal, Iterable, cast, overload
 
-from together.types.beta import ScalingMetricParam, DeploymentAutoscalingParam
+from together.types.beta import ScalingRulesParam, ScalingMetricParam, ScalingPolicyParam, DeploymentAutoscalingParam
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
 
@@ -42,6 +42,8 @@ ScalingMetricName = Literal[
 ]
 
 ScalingPercentile = Literal["p50", "p90", "p95", "p99"]
+ScalingPolicyType = Literal["pods", "percent"]
+ScalingPolicySelect = Literal["max", "min", "disabled"]
 
 # Fixed type per metric name (see examples/internal-team-guides/autoscaling.md).
 _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
@@ -58,6 +60,21 @@ _METRIC_TYPES: dict[ScalingMetricName, MetricType] = {
 
 _VALID_PERCENTILES: frozenset[ScalingPercentile] = frozenset({"p50", "p90", "p95", "p99"})
 SCALING_METRIC_NAMES = tuple(_METRIC_TYPES)
+
+_POLICY_TYPE_MAP: dict[ScalingPolicyType, Literal["SCALING_POLICY_TYPE_PODS", "SCALING_POLICY_TYPE_PERCENT"]] = {
+    "pods": "SCALING_POLICY_TYPE_PODS",
+    "percent": "SCALING_POLICY_TYPE_PERCENT",
+}
+_SELECT_POLICY_MAP: dict[
+    ScalingPolicySelect,
+    Literal["SCALING_POLICY_SELECT_MAX", "SCALING_POLICY_SELECT_MIN", "SCALING_POLICY_SELECT_DISABLED"],
+] = {
+    "max": "SCALING_POLICY_SELECT_MAX",
+    "min": "SCALING_POLICY_SELECT_MIN",
+    "disabled": "SCALING_POLICY_SELECT_DISABLED",
+}
+_POLICY_TYPE_DISPLAY = {value: key for key, value in _POLICY_TYPE_MAP.items()}
+_SELECT_POLICY_DISPLAY = {value: key for key, value in _SELECT_POLICY_MAP.items()}
 
 
 def _token_to_nanos(amount: str, unit: str) -> int:
@@ -168,6 +185,100 @@ def build_scaling_metrics(
     return [metric]
 
 
+def _parse_policy_int(
+    value: str,
+    *,
+    field: str,
+    option_name: str,
+    min_value: int,
+    max_value: int | None = None,
+) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        console.print(f"Error: {field} in {option_name} must be an integer (got {value!r}).")
+        raise CliDiagnosticExit(f"Invalid integer for {option_name}") from exc
+
+    if parsed < min_value or (max_value is not None and parsed > max_value):
+        range_label = f"{min_value}-{max_value}" if max_value is not None else f">= {min_value}"
+        console.print(f"Error: {field} in {option_name} must be {range_label} (got {parsed}).")
+        raise CliDiagnosticExit(f"Invalid range for {option_name}")
+    return parsed
+
+
+def build_scaling_policy(raw: str, *, option_name: str) -> ScalingPolicyParam:
+    """Parse a compact CLI policy as `pods:2:60` or `percent:100:300`."""
+    parts = raw.split(":")
+    if len(parts) != 3:
+        console.print(
+            f"Error: {option_name} must be TYPE:VALUE:PERIOD_SECONDS, "
+            "for example pods:2:60 or percent:100:300."
+        )
+        raise CliDiagnosticExit(f"Invalid scaling policy for {option_name}")
+
+    policy_type_raw, value_raw, period_raw = parts
+    policy_type = _POLICY_TYPE_MAP.get(cast(ScalingPolicyType, policy_type_raw))
+    if policy_type is None:
+        known = ", ".join(_POLICY_TYPE_MAP)
+        console.print(f"Error: policy TYPE in {option_name} must be one of: {known} (got {policy_type_raw!r}).")
+        raise CliDiagnosticExit(f"Invalid scaling policy type for {option_name}")
+
+    return {
+        "type": policy_type,
+        "value": _parse_policy_int(value_raw, field="VALUE", option_name=option_name, min_value=1),
+        "period_seconds": _parse_policy_int(
+            period_raw,
+            field="PERIOD_SECONDS",
+            option_name=option_name,
+            min_value=1,
+            max_value=1800,
+        ),
+    }
+
+
+def build_scaling_rules(
+    *,
+    policies: Iterable[str] | None,
+    select_policy: ScalingPolicySelect | None,
+    clear_policies: bool = False,
+    reset_select_policy: bool = False,
+    option_prefix: Literal["scale-up", "scale-down"],
+) -> ScalingRulesParam | None:
+    parsed_policies = list(policies or [])
+    if parsed_policies and clear_policies:
+        console.print(f"Error: use either --{option_prefix}-policy or --clear-{option_prefix}-policies, not both.")
+        raise CliDiagnosticExit(f"Conflicting scaling policy options for {option_prefix}")
+    if select_policy is not None and reset_select_policy:
+        console.print(
+            f"Error: use either --{option_prefix}-select-policy or --reset-{option_prefix}-select-policy, not both."
+        )
+        raise CliDiagnosticExit(f"Conflicting scaling select-policy options for {option_prefix}")
+    if not parsed_policies and select_policy is None and not clear_policies and not reset_select_policy:
+        return None
+
+    rules: dict[str, object] = {}
+    if parsed_policies:
+        rules["policies"] = [
+            build_scaling_policy(policy, option_name=f"--{option_prefix}-policy") for policy in parsed_policies
+        ]
+    elif clear_policies:
+        rules["policies"] = []
+
+    if select_policy is not None:
+        rules["select_policy"] = _SELECT_POLICY_MAP[select_policy]
+
+    return cast(ScalingRulesParam, rules)
+
+
+def format_scaling_policy(policy: ScalingPolicyParam) -> str:
+    policy_type = _POLICY_TYPE_DISPLAY.get(policy["type"], policy["type"])
+    return f"{policy_type}:{policy['value']}:{policy['period_seconds']}"
+
+
+def format_scaling_select_policy(value: str) -> str:
+    return _SELECT_POLICY_DISPLAY.get(value, value)
+
+
 @overload
 def build_autoscaling(
     *,
@@ -176,6 +287,8 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scaling_metrics: list[ScalingMetricParam] | None = ...,
+    scale_up: ScalingRulesParam | None = ...,
+    scale_down: ScalingRulesParam | None = ...,
     required: Literal[True],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam: ...
@@ -189,6 +302,8 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scaling_metrics: list[ScalingMetricParam] | None = ...,
+    scale_up: ScalingRulesParam | None = ...,
+    scale_down: ScalingRulesParam | None = ...,
     required: Literal[False],
     infer_replica_defaults: bool = ...,
 ) -> DeploymentAutoscalingParam | None: ...
@@ -201,6 +316,8 @@ def build_autoscaling(
     scale_up_window: str | None,
     scale_down_window: str | None,
     scaling_metrics: list[ScalingMetricParam] | None = None,
+    scale_up: ScalingRulesParam | None = None,
+    scale_down: ScalingRulesParam | None = None,
     required: bool = False,
     infer_replica_defaults: bool = True,
 ) -> DeploymentAutoscalingParam | None:
@@ -239,6 +356,8 @@ def build_autoscaling(
             "scale_up_window": normalize_duration(scale_up_window, option_name="--scale-up-window"),
             "scale_down_window": normalize_duration(scale_down_window, option_name="--scale-down-window"),
             "scaling_metrics": scaling_metrics,
+            "scale_up": scale_up,
+            "scale_down": scale_down,
         }.items()
         if value is not None
     }
@@ -248,3 +367,40 @@ def build_autoscaling(
         console.print("Error: deployment create requires autoscaling. Pass --min-replicas and/or --max-replicas.")
         raise CliDiagnosticExit("Deployment creation requires autoscaling")
     return cast(DeploymentAutoscalingParam, autoscaling)
+
+
+def build_autoscaling_update_mask(
+    autoscaling: DeploymentAutoscalingParam | None,
+    *,
+    reset_scale_up_select_policy: bool = False,
+    reset_scale_down_select_policy: bool = False,
+) -> list[str]:
+    """Return field-mask paths for the populated CLI autoscaling patch."""
+    if autoscaling is None:
+        return []
+
+    update_mask: list[str] = []
+    scalar_paths = {
+        "min_replicas": "autoscaling.minReplicas",
+        "max_replicas": "autoscaling.maxReplicas",
+        "scale_up_window": "autoscaling.scaleUpWindow",
+        "scale_down_window": "autoscaling.scaleDownWindow",
+        "scaling_metrics": "autoscaling.scalingMetrics",
+    }
+    for key, path in scalar_paths.items():
+        if key in autoscaling:
+            update_mask.append(path)
+
+    for key, api_name, reset_select_policy in (
+        ("scale_up", "scaleUp", reset_scale_up_select_policy),
+        ("scale_down", "scaleDown", reset_scale_down_select_policy),
+    ):
+        rules = autoscaling.get(key)  # type: ignore[literal-required]
+        if rules is None:
+            continue
+        if "policies" in rules:
+            update_mask.append(f"autoscaling.{api_name}.policies")
+        if "select_policy" in rules or reset_select_policy:
+            update_mask.append(f"autoscaling.{api_name}.selectPolicy")
+
+    return update_mask

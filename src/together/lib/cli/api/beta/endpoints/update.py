@@ -23,8 +23,11 @@ from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import (
     SCALING_METRIC_NAMES,
     ScalingMetricName,
     ScalingPercentile,
+    ScalingPolicySelect,
     build_autoscaling,
+    build_scaling_rules,
     build_scaling_metrics,
+    build_autoscaling_update_mask,
 )
 from together.lib.cli.api.beta.endpoints._utils._find_endpoint_by_deployment import find_endpoint_by_deployment
 
@@ -81,6 +84,48 @@ async def update(
             ),
         ),
     ] = None,
+    scale_up_policy: Annotated[
+        list[str] | None,
+        Parameter(
+            help=(
+                "Set scale-up rate limits as TYPE:VALUE:PERIOD_SECONDS; repeat for multiple. "
+                "TYPE is pods or percent, e.g. pods:2:60."
+            ),
+        ),
+    ] = None,
+    scale_up_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(help="Set scale-up policy selector: max, min, or disabled."),
+    ] = None,
+    clear_scale_up_policies: Annotated[
+        bool,
+        Parameter(negative=(), help="Clear all configured scale-up rate-limit policies."),
+    ] = False,
+    reset_scale_up_select_policy: Annotated[
+        bool,
+        Parameter(negative=(), help="Reset the scale-up policy selector to the inherited default."),
+    ] = False,
+    scale_down_policy: Annotated[
+        list[str] | None,
+        Parameter(
+            help=(
+                "Set scale-down rate limits as TYPE:VALUE:PERIOD_SECONDS; repeat for multiple. "
+                "TYPE is pods or percent, e.g. pods:1:300."
+            ),
+        ),
+    ] = None,
+    scale_down_select_policy: Annotated[
+        Optional[ScalingPolicySelect],
+        Parameter(help="Set scale-down policy selector: max, min, or disabled."),
+    ] = None,
+    clear_scale_down_policies: Annotated[
+        bool,
+        Parameter(negative=(), help="Clear all configured scale-down rate-limit policies."),
+    ] = False,
+    reset_scale_down_select_policy: Annotated[
+        bool,
+        Parameter(negative=(), help="Reset the scale-down policy selector to the inherited default."),
+    ] = False,
     traffic_weight: Annotated[
         Optional[float],
         Parameter(
@@ -128,6 +173,20 @@ async def update(
             scaling_target=scaling_target,
             scaling_percentile=scaling_percentile,
         ),
+        scale_up=build_scaling_rules(
+            policies=scale_up_policy,
+            select_policy=scale_up_select_policy,
+            clear_policies=clear_scale_up_policies,
+            reset_select_policy=reset_scale_up_select_policy,
+            option_prefix="scale-up",
+        ),
+        scale_down=build_scaling_rules(
+            policies=scale_down_policy,
+            select_policy=scale_down_select_policy,
+            clear_policies=clear_scale_down_policies,
+            reset_select_policy=reset_scale_down_select_policy,
+            option_prefix="scale-down",
+        ),
         required=False,
         infer_replica_defaults=False,
     )
@@ -137,7 +196,13 @@ async def update(
 
     if autoscaling is not None:
         kwargs["autoscaling"] = autoscaling
-        update_mask.append("autoscaling")
+        update_mask.extend(
+            build_autoscaling_update_mask(
+                autoscaling,
+                reset_scale_up_select_policy=reset_scale_up_select_policy,
+                reset_scale_down_select_policy=reset_scale_down_select_policy,
+            )
+        )
     if inactive_timeout is not None:
         kwargs["inactive_timeout"] = inactive_timeout
         update_mask.append("inactiveTimeout")
