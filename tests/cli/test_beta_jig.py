@@ -15,6 +15,7 @@ from respx.models import Call
 
 import together.lib.cli.api.beta.jig.jig as _jig_mod
 from tests.cli.utils import CliRunner
+from together.types.beta.deployment import ModelMount as DeploymentModelMount
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -553,3 +554,67 @@ class TestBetaJigModelMounts:
         deploy = _jig_mod.DeployConfig(model_mounts=[_jig_mod.ModelMount(model="ml_abc123", mount_path="/models")])
         jig = SimpleNamespace(config=SimpleNamespace(deploy=deploy))
         _jig_mod.Jig.validate_model_mounts(cast(Any, jig))
+
+    def test_deploy_sends_model_mounts_as_sdk_param(self) -> None:
+        calls: list[dict[str, Any]] = []
+
+        def _noop_track(_response: Any) -> None:
+            return None
+
+        class _Api:
+            def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
+                calls.append(kwargs)
+                return SimpleNamespace(status="Updating")
+
+        deploy = _jig_mod.DeployConfig(
+            model_mounts=[_jig_mod.ModelMount(model="ml_abc123@rv_xyz789", mount_path="/models")]
+        )
+        jig = SimpleNamespace(
+            api=_Api(),
+            config=SimpleNamespace(deploy=deploy, experimental=_jig_mod.ExperimentalConfig()),
+            name=_DEPLOY_NAME,
+            registry=lambda: "registry.together.ai/test/",
+            state=SimpleNamespace(secrets={"TOGETHER_API_KEY": f"{_DEPLOY_NAME}-TOGETHER_API_KEY"}),
+            sync_secrets_from_deployment=lambda: None,
+            validate_model_mounts=lambda: None,
+            validate_volumes=lambda: None,
+            track=_noop_track,
+            together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+        )
+
+        _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+
+        assert calls[0]["model_mounts"] == [
+            {"model_id": "ml_abc123", "revision_id": "rv_xyz789", "mount_path": "/models"}
+        ]
+        assert "extra_body" not in calls[0]
+
+    def test_status_formats_generated_model_mounts(self) -> None:
+        deployment = _jig_mod.Deployment(
+            name=_DEPLOY_NAME,
+            image="registry.together.ai/test/app@sha256:abcdef123456",
+            status="Ready",
+            gpu_count=1,
+            gpu_type="h100-80gb",
+            cpu=1,
+            memory=8,
+            storage=100,
+            volumes=[],
+            environment_variables=[],
+            model_mounts=[
+                DeploymentModelMount(model_id="ml_abc123", revision_id="rv_xyz789", mount_path="/models"),
+            ],
+        )
+
+        def _short_image(image: str) -> str:
+            return image.removeprefix("registry.together.ai/test/")
+
+        jig = SimpleNamespace(
+            registry=lambda: "registry.together.ai/test/",
+            short_image=_short_image,
+        )
+
+        output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
+
+        assert "Model: ml_abc123@rv_xyz789" in output
+        assert "/models" in output
