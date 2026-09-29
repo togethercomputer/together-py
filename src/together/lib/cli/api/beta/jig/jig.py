@@ -679,7 +679,7 @@ class Jig:
                 continue  # missing/inaccessible volumes are surfaced by the deployment call itself
             version = vm.version or 0
             status, message = _volume_version_status(volume, version)
-            if status == "syncing":
+            if status in ("pending", "syncing"):
                 raise JigError(
                     f"Volume '{vm.name}' version {version} is still syncing. "
                     f"Check status with: jig volumes describe --name {vm.name}"

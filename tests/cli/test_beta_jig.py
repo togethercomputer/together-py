@@ -738,6 +738,7 @@ class TestBetaJigS3Volumes:
     @pytest.mark.parametrize(
         "volume,expected_error",
         [
+            (_volume_api_body("w", status="pending"), "still syncing"),
             (_volume_api_body("w", status="syncing"), "still syncing"),
             (
                 _volume_api_body(
