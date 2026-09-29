@@ -108,6 +108,15 @@ async def update(
             validator=Number(gte=0, lte=1440),
         ),
     ] = None,
+    max_concurrent_requests_per_replica: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Updated maximum in-flight inference requests per replica. "
+                "0 means unlimited when the config limit is 1 or less."
+            )
+        ),
+    ] = None,
     etag: Annotated[
         Optional[str],
         Parameter(
@@ -141,6 +150,9 @@ async def update(
     if inactive_timeout is not None:
         kwargs["inactive_timeout"] = inactive_timeout
         update_mask.append("inactiveTimeout")
+    if max_concurrent_requests_per_replica is not None:
+        kwargs["max_concurrent_requests_per_replica"] = max_concurrent_requests_per_replica
+        update_mask.append("maxConcurrentRequestsPerReplica")
     if etag is not None:
         kwargs["etag"] = etag
 
