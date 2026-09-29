@@ -604,43 +604,43 @@ BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
     --from "https://bucket.s3.amazonaws.com/model.tar.gz?X-Amz-Signature=..."[/primary]
 """
 
-## Beta clusters API commands
+## Clusters API commands
 
 BETA_CLUSTERS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List clusters and regions:
-  [primary]tg beta clusters list[/primary]
-  [primary]tg beta clusters list-regions[/primary]
+  [primary]tg clusters list[/primary]
+  [primary]tg clusters list-regions[/primary]
 
 [dim]-[/dim] Write kubeconfig for a cluster (default ~/.kube/config):
-  [primary]tg beta clusters get-credentials <cluster-id>[/primary]
+  [primary]tg clusters get-credentials <cluster-id>[/primary]
 
 [dim]-[/dim] Print kubeconfig to stdout:
-  [primary]tg beta clusters get-credentials <cluster-id> --file -[/primary]
+  [primary]tg clusters get-credentials <cluster-id> --file -[/primary]
 
-[dim]-[/dim] Non-interactive cluster create (see [primary]tg beta clusters create --help[/primary] for flags):
-  [primary]tg beta clusters create --non-interactive \\
+[dim]-[/dim] Non-interactive cluster create (see [primary]tg clusters create --help[/primary] for flags):
+  [primary]tg clusters create --non-interactive \\
     --name my-cluster --cluster-type KUBERNETES --gpu-type H100_SXM \\
     --region us-central-8 --num-gpus 8 --billing-type ON_DEMAND \\
     --nvidia-version-id <nvidia-version-id> --volume <volume-id>[/primary]
 
 [dim]-[/dim] Update or delete a cluster:
-  [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
-  [primary]tg beta clusters delete <cluster-id>[/primary]
+  [primary]tg clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
+  [primary]tg clusters delete <cluster-id>[/primary]
 
 [dim]-[/dim] Manage node remediations:
-  [primary]tg beta clusters remediations ls <cluster-id>[/primary]
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
+  [primary]tg clusters remediations ls <cluster-id>[/primary]
+  [primary]tg clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
 
-[dim]-[/dim] SSH into a cluster (OIDC-signed certificate; see [primary]tg beta clusters ssh --help[/primary]):
-  [primary]tg beta clusters ssh https://dex.<base>/<cluster-id> --login <username>[/primary]
+[dim]-[/dim] SSH into a cluster (OIDC-signed certificate; see [primary]tg clusters ssh --help[/primary]):
+  [primary]tg clusters ssh https://dex.<base>/<cluster-id> --login <username>[/primary]
 """
 
 BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Create interactively (prompts for region, GPUs, drivers, etc.):
-  [primary]tg beta clusters create[/primary]
+  [primary]tg clusters create[/primary]
 
 [dim]-[/dim] Create without prompts (supply every required field):
-  [primary]tg beta clusters create --non-interactive \\
+  [primary]tg clusters create --non-interactive \\
     --name my-cluster \\
     --cluster-type KUBERNETES \\
     --gpu-type H100_SXM \\
@@ -653,97 +653,97 @@ BETA_CLUSTERS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Merge cluster kubeconfig into the default file ([primary]~/.kube/config[/primary]):
-  [primary]tg beta clusters get-credentials <cluster-id>[/primary]
+  [primary]tg clusters get-credentials <cluster-id>[/primary]
 
 [dim]-[/dim] Write to a specific path:
-  [primary]tg beta clusters get-credentials <cluster-id> --file ./my-kubeconfig[/primary]
+  [primary]tg clusters get-credentials <cluster-id> --file ./my-kubeconfig[/primary]
 
 [dim]-[/dim] Print kubeconfig to stdout (no file write):
-  [primary]tg beta clusters get-credentials <cluster-id> --file -[/primary]
+  [primary]tg clusters get-credentials <cluster-id> --file -[/primary]
 
 [dim]-[/dim] Use a custom context name in the merged kubeconfig:
-  [primary]tg beta clusters get-credentials <cluster-id> --context-name my-prod-k8s[/primary]
+  [primary]tg clusters get-credentials <cluster-id> --context-name my-prod-k8s[/primary]
 
 [dim]-[/dim] On name conflicts with an existing kubeconfig, replace the entry:
-  [primary]tg beta clusters get-credentials <cluster-id> --overwrite-existing[/primary]
+  [primary]tg clusters get-credentials <cluster-id> --overwrite-existing[/primary]
 
 [dim]-[/dim] Set this cluster as the default kube context after merge:
-  [primary]tg beta clusters get-credentials <cluster-id> --set-default-context[/primary]
+  [primary]tg clusters get-credentials <cluster-id> --set-default-context[/primary]
 """
 
 BETA_CLUSTERS_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Change GPU count:
-  [primary]tg beta clusters update <cluster-id> --num-gpus 16[/primary]
+  [primary]tg clusters update <cluster-id> --num-gpus 16[/primary]
 
 [dim]-[/dim] Change cluster type:
-  [primary]tg beta clusters update <cluster-id> --cluster-type KUBERNETES[/primary]
+  [primary]tg clusters update <cluster-id> --cluster-type KUBERNETES[/primary]
 
 [dim]-[/dim] Update both:
-  [primary]tg beta clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
+  [primary]tg clusters update <cluster-id> --num-gpus 16 --cluster-type KUBERNETES[/primary]
 """
 
 BETA_CLUSTERS_STORAGE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List storage volumes:
-  [primary]tg beta clusters storage list[/primary]
+  [primary]tg clusters storage list[/primary]
 
 [dim]-[/dim] Create or resize a volume (see subcommand help for options):
-  [primary]tg beta clusters storage create --region us-east-1 --size-tib 1 --volume-name my-data[/primary]
-  [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
+  [primary]tg clusters storage create --region us-east-1 --size-tib 1 --volume-name my-data[/primary]
+  [primary]tg clusters storage update <volume-id> --size-tib 4[/primary]
 
 [dim]-[/dim] Use a volume when creating a cluster:
-  [primary]tg beta clusters create --non-interactive ... --volume <volume-id>[/primary]
+  [primary]tg clusters create --non-interactive ... --volume <volume-id>[/primary]
 """
 
 BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] Create a 1 TiB volume in a region ([primary]tg beta clusters list-regions[/primary] lists regions):
-  [primary]tg beta clusters storage create \\
+[dim]-[/dim] Create a 1 TiB volume in a region ([primary]tg clusters list-regions[/primary] lists regions):
+  [primary]tg clusters storage create \\
     --region us-east-1 \\
     --size-tib 1 \\
     --volume-name my-training-data[/primary]
 
 [dim]-[/dim] Attach the volume when creating a cluster:
-  [primary]tg beta clusters create --non-interactive ... --volume <volume-id>[/primary]
+  [primary]tg clusters create --non-interactive ... --volume <volume-id>[/primary]
 """
 
 BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Grow a volume to 4 TiB:
-  [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
+  [primary]tg clusters storage update <volume-id> --size-tib 4[/primary]
 """
 
 BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List all remediations for a cluster:
-  [primary]tg beta clusters remediations ls <cluster-id>[/primary]
+  [primary]tg clusters remediations ls <cluster-id>[/primary]
 
 [dim]-[/dim] List remediations for one instance:
-  [primary]tg beta clusters remediations ls <cluster-id> <instance-id>[/primary]
+  [primary]tg clusters remediations ls <cluster-id> <instance-id>[/primary]
 
 [dim]-[/dim] List automated remediations by mode:
-  [primary]tg beta clusters remediations ls <cluster-id> --mode VM_ONLY --mode REBOOT_VM --trigger AUTOMATED[/primary]
+  [primary]tg clusters remediations ls <cluster-id> --mode VM_ONLY --mode REBOOT_VM --trigger AUTOMATED[/primary]
 
 [dim]-[/dim] Create a remediation:
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY --reason "node unhealthy"[/primary]
+  [primary]tg clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY --reason "node unhealthy"[/primary]
 
 [dim]-[/dim] Get remediation details:
-  [primary]tg beta clusters remediations <remediation-id>[/primary]
+  [primary]tg clusters remediations <remediation-id>[/primary]
 
 [dim]-[/dim] Review automated remediations:
-  [primary]tg beta clusters remediations approve <remediation-id>[/primary]
-  [primary]tg beta clusters remediations reject <remediation-id> --comment "already handled"[/primary]
-  [primary]tg beta clusters remediations cancel <remediation-id>[/primary]
+  [primary]tg clusters remediations approve <remediation-id>[/primary]
+  [primary]tg clusters remediations reject <remediation-id> --comment "already handled"[/primary]
+  [primary]tg clusters remediations cancel <remediation-id>[/primary]
 """
 
 BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Create a VM-only remediation:
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
+  [primary]tg clusters remediations create <cluster-id> <instance-id> --mode VM_ONLY[/primary]
 
 [dim]-[/dim] Create a host-aware remediation:
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode HOST_AWARE[/primary]
+  [primary]tg clusters remediations create <cluster-id> <instance-id> --mode HOST_AWARE[/primary]
 
 [dim]-[/dim] Create a eviction-without-replacement remediation:
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode EVICT_WITHOUT_REPLACEMENT[/primary]
+  [primary]tg clusters remediations create <cluster-id> <instance-id> --mode EVICT_WITHOUT_REPLACEMENT[/primary]
 
 [dim]-[/dim] Create a reboot-vm remediation:
-  [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
+  [primary]tg clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
 ## Beta > Jig commands

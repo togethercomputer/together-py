@@ -1504,3 +1504,40 @@ def test_ssh_second_hop_host_key_checking_disabled() -> None:
     assert "StrictHostKeyChecking no" in entry
     assert "UserKnownHostsFile /dev/null" in entry
     assert "StrictHostKeyChecking=ask" in entry  # first hop in ProxyCommand
+
+
+class TestClustersCommandNamespace:
+    def test_beta_clusters_is_a_hidden_symlink(self) -> None:
+        from together.lib.cli import app
+
+        clusters = app["clusters"]
+        beta_clusters = app["beta"]["clusters"]
+
+        assert clusters.show is True
+        assert beta_clusters.show is False
+        assert beta_clusters is not clusters
+        assert beta_clusters._commands is clusters._commands
+        assert beta_clusters["list"] is clusters["list"]
+        assert beta_clusters["storage"]["create"] is clusters["storage"]["create"]
+        assert beta_clusters["remediations"]["approve"] is clusters["remediations"]["approve"]
+
+    def test_clusters_is_top_level_and_beta_alias_is_hidden_from_help(self, cli_runner: CliRunner) -> None:
+        root = cli_runner.invoke(["--help"])
+        beta = cli_runner.invoke(["beta", "--help"])
+        direct = cli_runner.invoke(["clusters", "--help"])
+        forwarded = cli_runner.invoke(["beta", "clusters", "--help"])
+
+        assert root.exit_code == 0
+        assert "Create and manage GPU clusters" in root.output
+        assert beta.exit_code == 0
+        assert "Create and manage GPU clusters" not in beta.output
+        assert direct.exit_code == 0
+        assert forwarded.exit_code == 0
+        assert "List your clusters" in direct.output
+        assert "List your clusters" in forwarded.output
+        assert "tg clusters list" in direct.output
+        assert "tg clusters list" in forwarded.output
+        assert "tg beta clusters" not in direct.output
+        # Usage reflects the path that was typed; examples still point at `tg clusters`.
+        assert "Usage: tg beta clusters" in forwarded.output
+        assert "tg beta clusters list" not in forwarded.output

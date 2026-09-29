@@ -18,6 +18,10 @@ _COMMAND_ID_IDENTIFIERS = {
     # `beta endpoints` uses App.default(retrieve) instead of token rewriting.
     "beta models": re.compile(r"^ml_"),
     "beta endpoints deployments": re.compile(r"^dep_"),
+    "clusters": _UUID_RE,
+    "clusters storage": _UUID_RE,
+    "clusters remediations": _UUID_RE,
+    # Hidden `beta clusters` symlink; parse_commands still reports the beta prefix.
     "beta clusters": _UUID_RE,
     "beta clusters storage": _UUID_RE,
     "beta clusters remediations": _UUID_RE,

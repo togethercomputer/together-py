@@ -12,7 +12,7 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 
-EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg beta clusters storage create[/primary]"
+EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg clusters storage create[/primary]"
 
 
 def _print_storage(storage: ClusterStorage) -> None:

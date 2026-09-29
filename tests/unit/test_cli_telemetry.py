@@ -324,6 +324,33 @@ def test_parse_command_and_flags_strips_beta_prefix() -> None:
     assert is_beta is True
 
 
+def test_parse_command_and_flags_clusters_is_not_beta() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, _ = preparse_tokens(app, ["clusters", "list"])
+    assert cmd == "clusters list"
+    assert flags == []
+    assert is_beta is False
+
+
+def test_parse_command_and_flags_implicit_retrieve_for_cluster_id() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cluster_id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+
+    cmd, _flags, is_beta, argv = preparse_tokens(app, ["clusters", cluster_id])
+    assert cmd == "clusters retrieve"
+    assert is_beta is False
+    assert argv == ["clusters", "retrieve", cluster_id]
+
+    cmd, _flags, is_beta, argv = preparse_tokens(app, ["beta", "clusters", cluster_id])
+    assert cmd == "clusters retrieve"
+    assert is_beta is True
+    assert argv == ["beta", "clusters", "retrieve", cluster_id]
+
+
 def test_parse_command_and_flags_normalizes_ft_to_fine_tuning() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens

@@ -198,8 +198,9 @@ class TestJSONMode:
         models.run_and_assert("list --type dedicated")
         models.run_and_assert("upload --model-name model-123/version-123 --model-source s3://model-123/version-123")
 
-    def test_beta_clusters_json_mode(self, cli_runner: CliRunner) -> None:
-        beta_clusters = JSONValidator(("beta", "clusters"), cli_runner)
+    @pytest.mark.parametrize("namespace", ["clusters", ("beta", "clusters")])
+    def test_clusters_json_mode(self, namespace: str | tuple[str, ...], cli_runner: CliRunner) -> None:
+        beta_clusters = JSONValidator(namespace, cli_runner)
         beta_clusters.run_and_assert(
             "create --non-interactive --cluster-type KUBERNETES --gpu-type H100_SXM "
             "--nvidia-driver-version 565 --cuda-version 12.6 --region us-central-8 --num-gpus 8 "
@@ -212,8 +213,9 @@ class TestJSONMode:
         beta_clusters.run_and_assert("retrieve cluster-123")
         beta_clusters.run_and_assert("update cluster-123 --num-gpus 16 --cluster-type KUBERNETES")
 
-    def test_beta_clusters_storage_json_mode(self, cli_runner: CliRunner) -> None:
-        beta_clusters_storage = JSONValidator(("beta", "clusters", "storage"), cli_runner)
+    @pytest.mark.parametrize("namespace", [("clusters", "storage"), ("beta", "clusters", "storage")])
+    def test_clusters_storage_json_mode(self, namespace: tuple[str, ...], cli_runner: CliRunner) -> None:
+        beta_clusters_storage = JSONValidator(namespace, cli_runner)
         beta_clusters_storage.run_and_assert("create --region us-east-1 --size-tib 1 --volume-name test-volume")
         beta_clusters_storage.run_and_assert("update storage-123 --size-tib 4")
         beta_clusters_storage.run_and_assert("delete storage-123")

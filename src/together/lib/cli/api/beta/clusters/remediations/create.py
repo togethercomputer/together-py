@@ -61,4 +61,4 @@ async def create(
     console.print(f"[green]√ Remediation created[/green] [dim]({response.id})[/dim]")
     console.print(f"  Remediations may take some time to complete.\n")
     console.print(f"  To retrieve the status:")
-    console.print(f"    [dim]-[/dim] [primary]tg beta clusters remediations {response.id}[/primary]")
+    console.print(f"    [dim]-[/dim] [primary]tg clusters remediations {response.id}[/primary]")

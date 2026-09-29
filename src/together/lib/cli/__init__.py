@@ -121,7 +121,8 @@ _GLOBAL_PARAM_HELP = {
 # Commands that authenticate out-of-band (OIDC / step-ca) and make no Together
 # API calls, so the launcher must not require an API key or run the up-front
 # whoami() for them. Values match preparse_tokens() command paths (beta prefix
-# stripped; reported separately via is_beta_command).
+# stripped; reported separately via is_beta_command). `clusters ssh` covers both
+# `tg clusters ssh` and the hidden `tg beta clusters ssh` forwarder.
 _NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
 
 
@@ -209,7 +210,7 @@ def _create_client(
 
     client._client.event_hooks["request"].append(track_request)
 
-    # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
+    # Out-of-band-auth commands (e.g. `clusters ssh`) make no Together API
     # calls, so a missing key is not fatal for them. The block hook installed
     # above still errors clearly if such a command ever does hit the API.
     if require_api_key and client.api_key == "":
@@ -299,12 +300,13 @@ async def _run_launcher(
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
     # and never call the Together API. They must not be gated on an API key or the
-    # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
+    # up-front whoami() used for project resolution. `tg clusters ssh` is one
+    # (the hidden `tg beta clusters ssh` forwarder resolves to the same command):
     # its auth is entirely the cluster's Dex OIDC flow (see
     # together.lib.cli.api.beta.clusters.ssh). Before the whoami() was added for
     # project resolution these commands worked with no key; skip client setup so
     # they stay keyless.
-    no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+    no_auth_command = parsed_command in _NO_AUTH_COMMANDS
 
     client, missing_api_key = _create_client(
         api_key,
@@ -329,7 +331,7 @@ async def _run_launcher(
 
     # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
     # Together API call and would reintroduce the API-key dependency for keyless
-    # commands like `beta clusters ssh`.
+    # commands like `clusters ssh`.
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
         if debug and client.project_id:
@@ -658,8 +660,31 @@ telemetry_app.command((f"{_CLI}.telemetry.disable:disable"), help="Disable telem
 beta_root_app = App(name="beta", help="Experimental and beta features")
 beta_app = app.command(beta_root_app)
 
+
+def _register_hidden_command_symlink(parent: App, target: App) -> App:
+    """Register ``target`` under ``parent`` without listing it in help.
+
+    Cyclopts stores ``show`` on the :class:`App`, so one object cannot be visible in
+    one place and hidden in another. A second app that reuses ``target._commands``
+    is a symlink: every subcommand resolves to the canonical handler, and ``show=False``
+    keeps the alias out of help. ``main`` briefly flips ``show`` so shell completion
+    still learns the legacy path.
+    """
+    link = App(
+        name=target.name[0],
+        show=False,
+        help=target.help,
+        help_epilogue=target.help_epilogue,
+    )
+    # Discard the link's own --help/--version entries and share the canonical table,
+    # including commands registered on ``target`` after this call.
+    link._commands = target._commands
+    parent.command(link)
+    return link
+
+
 ### Clusters API commands
-clusters_app = beta_app.command(
+clusters_app = app.command(
     App(name="clusters", help="Create and manage GPU clusters", help_epilogue=BETA_CLUSTERS_HELP_EXAMPLES)
 )
 clusters_app.command((f"{_CLI}.beta.clusters.list:list"), alias="ls", help="List your clusters")
@@ -752,6 +777,9 @@ remediations_app.command(
     (f"{_CLI}.beta.clusters.remediations.reject:reject"),
     help="Reject a pending remediation",
 )
+
+# `tg beta clusters …` keeps working and is omitted from help. Same command table as `tg clusters`.
+_beta_clusters_link = _register_hidden_command_symlink(beta_app, clusters_app)
 
 ### Beta Endpoints API commands
 
@@ -1043,11 +1071,13 @@ endpoints_app.help_epilogue = ENDPOINTS_HELP_EXAMPLES
 
 
 def main() -> None:
+    # Visible only while completion is generated, then hidden again (same pattern as `beta`).
+    _beta_clusters_link.show = True
     install_completion(app)
+    _beta_clusters_link.show = False
 
     # Shown in the root help page, but not a functional command
     BETA_GROUP_TITLE = "Beta Commands"
-    app.command(App(name="beta clusters", help="Create and manage GPU clusters", group=BETA_GROUP_TITLE))
     app.command(
         App(name="beta endpoints", help="Deploy and manage dedicated inference endpoints", group=BETA_GROUP_TITLE)
     )

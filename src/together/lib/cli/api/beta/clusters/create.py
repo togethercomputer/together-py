@@ -85,7 +85,7 @@ def _region_nvidia_versions(
         if catalog_region.name == region:
             return catalog_region.driver_versions
 
-    raise TogetherError(f"No NVIDIA versions are available in region '{region}'. Run `tg beta clusters list-regions`.")
+    raise TogetherError(f"No NVIDIA versions are available in region '{region}'. Run `tg clusters list-regions`.")
 
 
 def _resolve_nvidia_version(
@@ -115,7 +115,7 @@ def _resolve_nvidia_version(
 
     if not matches:
         raise TogetherError(
-            f"No NVIDIA version matches {requested} in region '{region}'. Run `tg beta clusters list-regions`."
+            f"No NVIDIA version matches {requested} in region '{region}'. Run `tg clusters list-regions`."
         )
     if len(matches) > 1:
         choices = "; ".join(_format_nvidia_version(version) for version in matches)

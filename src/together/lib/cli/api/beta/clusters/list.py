@@ -25,4 +25,4 @@ async def list(
     print_clusters(clusters)
     if next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta clusters list --after {next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg clusters list --after {next_cursor}[/white]")

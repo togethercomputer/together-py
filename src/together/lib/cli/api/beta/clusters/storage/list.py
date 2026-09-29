@@ -7,7 +7,7 @@ from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
-EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg beta clusters storage create[/primary]"
+EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg clusters storage create[/primary]"
 
 
 async def list(
@@ -33,4 +33,4 @@ async def list(
     console.print(table)
     if next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta clusters storage list --after {next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg clusters storage list --after {next_cursor}[/white]")
