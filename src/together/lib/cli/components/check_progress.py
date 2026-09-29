@@ -57,7 +57,9 @@ class CheckProgressTracker:
         self._total = 1
 
     def __enter__(self) -> CheckProgressTracker:
-        if not self.enabled:
+        from together.lib.cli.utils._debug import is_enabled
+
+        if not self.enabled or is_enabled():
             return self
         total = _expected_check_work_bytes(self.file)
         self._total = total
