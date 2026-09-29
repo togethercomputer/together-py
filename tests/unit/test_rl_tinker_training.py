@@ -94,6 +94,56 @@ async def test_allow_stale_reaches_the_returned_sampling_client_async(monkeypatc
     await session.detach_async()
 
 
+_CHECKPOINT_UUID = "123e4567-e89b-12d3-a456-426614174000"
+_REGISTERED_MODEL = "user/Qwen3.5-4B-adapter-rl-step-42-20260827-123e4567"
+
+
+def test_save_state_returns_bare_uuid(monkeypatch: pytest.MonkeyPatch) -> None:
+    timeouts = patch_wait(monkeypatch, {"checkpoint_id": _CHECKPOINT_UUID})
+    create = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(create_training_checkpoint=create)
+
+    saved = _training_client(session).save_state("checkpoint-001").result()
+
+    create.assert_awaited_once_with("sess", idempotency_key=ANY)
+    assert timeouts == [None]
+    assert saved.path == _CHECKPOINT_UUID
+    assert "://" not in saved.path
+    assert "?" not in saved.path
+
+
+def test_save_state_warns_on_ttl_and_overwrite(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_wait(monkeypatch, {"checkpoint_id": _CHECKPOINT_UUID})
+    session = _session_with_operations(create_training_checkpoint=AsyncMock(return_value=_OPERATION))
+    client = _training_client(session)
+
+    with pytest.warns(UserWarning, match="ttl_seconds"):
+        client.save_state("checkpoint-001", ttl_seconds=60).result()
+    with pytest.warns(UserWarning, match="overwrite"):
+        client.save_state("checkpoint-001", overwrite=True).result()
+
+
+def test_save_weights_for_sampler_returns_registered_model_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    timeouts = patch_wait(monkeypatch, {"model_name": _REGISTERED_MODEL})
+    create = AsyncMock(return_value=_OPERATION)
+    session = _session_with_operations(create_inference_checkpoint=create)
+
+    saved = _training_client(session).save_weights_for_sampler("final").result()
+
+    create.assert_awaited_once_with("sess", idempotency_key=ANY)
+    assert timeouts == [None]
+    assert saved.path == _REGISTERED_MODEL
+
+
+def test_save_weights_for_sampler_warns_on_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
+    patch_wait(monkeypatch, {"model_name": _REGISTERED_MODEL})
+    session = _session_with_operations(create_inference_checkpoint=AsyncMock(return_value=_OPERATION))
+    client = _training_client(session)
+
+    with pytest.warns(UserWarning, match="ttl_seconds"):
+        client.save_weights_for_sampler("final", ttl_seconds=3600).result()
+
+
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [

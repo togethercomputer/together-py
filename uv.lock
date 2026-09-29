@@ -2013,7 +2013,7 @@ wheels = [
 
 [[package]]
 name = "tinker"
-version = "0.23.0"
+version = "0.23.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio", marker = "python_full_version >= '3.11' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
@@ -2033,9 +2033,9 @@ dependencies = [
     { name = "typing-extensions", marker = "python_full_version >= '3.11' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
     { name = "zstandard", marker = "python_full_version >= '3.11' or (extra == 'group-8-together-pydantic-v1' and extra == 'group-8-together-pydantic-v2')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/33/ce/0d30f80d7234ea88e8310b91d4ef58e9d27a96be5c579553407f831bba6b/tinker-0.23.0.tar.gz", hash = "sha256:b48f3e74128e56ad34bee18124f9b3a109a502bfa602853e999679eaf128aa49", size = 247551, upload-time = "2026-07-15T17:16:40.621Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2d/d8/e0010831d81292ab1e6eb4bf15127fa890b24a7934994759c4cdd97a1a64/tinker-0.23.1.tar.gz", hash = "sha256:34395c99d1a90cb1f95d7c89c5597b3fbdc2ac8e9b0aeafbb72c169865310a90", size = 247623, upload-time = "2026-07-18T05:24:54.784Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/a6/17932357c145c6dbe988832613b36bc7630a661148e17db1f6017ddca01a/tinker-0.23.0-py3-none-any.whl", hash = "sha256:416a20f2cc62fc83cc92c5b69de7f6aa8736bceee0156fda07fbe2fef1b00936", size = 237099, upload-time = "2026-07-15T17:16:39.183Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/b5/02e3d0e5470672e581f986dfabdbf3c1e4bbb25c9e9a850e3666354d2a78/tinker-0.23.1-py3-none-any.whl", hash = "sha256:158363f4270a47f210b7018f1ccd6d53049ca6e7ddb4d922f80d8570a2da8e8f", size = 237185, upload-time = "2026-07-18T05:24:55.878Z" },
 ]
 
 [[package]]
@@ -2123,7 +2123,7 @@ requires-dist = [
     { name = "questionary", marker = "extra == 'cli'", specifier = ">=2.1.1,<3" },
     { name = "rich", specifier = ">=14.2.0,<15" },
     { name = "sniffio" },
-    { name = "tinker", marker = "python_full_version >= '3.11' and extra == 'tinker'", specifier = "==0.23.0" },
+    { name = "tinker", marker = "python_full_version >= '3.11' and extra == 'tinker'", specifier = "==0.23.1" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3" },
     { name = "types-aiofiles", marker = "extra == 'aiofiles'" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },

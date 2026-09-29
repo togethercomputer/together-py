@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any
+from typing import Any, NoReturn
 
-from .. import ModelResources, ModelResourcesClient
+from .. import LoraConfig, ModelResources, ModelResourcesClient
 from .._loop import run_untracked
+from ._compat import tinker
 from ._teardown import _Lifecycle, _stop_on_exit, _exit_on_sigterm
 from ._training import TrainingClient
+from ....._client import Together
 from ..clients.session import SessionClient
-from .....types.beta.rl.lora_config_param import LoraConfigParam
+from .....types.beta.rl.checkpoint import Checkpoint
 
 # Tinker HTTP-client options that Together's resource client does not honor.
 _KNOWN_IGNORED_KWARGS = frozenset(
@@ -37,8 +39,8 @@ def _check_attached(attached: ModelResources, base_model: str) -> None:
         raise ValueError("Attached model resources do not support LoRA training sessions")
 
 
-def _build_lora_config(rank: int, seed: int | None, train_unembed: bool) -> LoraConfigParam:
-    lora_config = LoraConfigParam(rank=rank)
+def _build_lora_config(rank: int, seed: int | None, train_unembed: bool) -> LoraConfig:
+    lora_config = LoraConfig(rank=rank)
     if seed is not None:
         lora_config["seed"] = seed
     if not train_unembed:
@@ -133,7 +135,66 @@ class ServiceClient:
         # Before handing the work off: signals can only be installed from the main thread,
         # and _provision_async runs on the process loop.
         _exit_on_sigterm()
-        return run_untracked(self._provision_async(base_model, rank, seed, train_unembed))
+        return run_untracked(self._provision_async(base_model, _build_lora_config(rank, seed, train_unembed)))
+
+    def create_training_client_from_state(
+        self,
+        path: str,
+        user_metadata: dict[str, str] | None = None,
+        weights_access_token: str | None = None,
+    ) -> TrainingClient:
+        """Resume a LoRA session from a training checkpoint (weights only)."""
+        return self._resume_from_checkpoint(path, user_metadata, weights_access_token, load_optimizer=False)
+
+    def create_training_client_from_state_with_optimizer(
+        self,
+        path: str,
+        user_metadata: dict[str, str] | None = None,
+        weights_access_token: str | None = None,
+    ) -> TrainingClient:
+        """Resume a LoRA session from a training checkpoint, including optimizer state."""
+        return self._resume_from_checkpoint(path, user_metadata, weights_access_token, load_optimizer=True)
+
+    def create_rest_client(self) -> NoReturn:
+        raise tinker.TinkerError("Together's Tinker-compatible client does not support RestClient")
+
+    def _resume_from_checkpoint(
+        self,
+        path: str,
+        user_metadata: dict[str, str] | None,
+        weights_access_token: str | None,
+        *,
+        load_optimizer: bool,
+    ) -> TrainingClient:
+        del user_metadata
+        if weights_access_token is not None:
+            raise NotImplementedError("Together's Tinker-compatible client does not support weights_access_token")
+        checkpoint = _describe_training_checkpoint(path, api_key=self._api_key, base_url=self._base_url)
+        rank = checkpoint.lora_rank
+        return self._open_lora_training_client(
+            checkpoint.base_model,
+            LoraConfig(rank=rank),
+            resume_from_checkpoint_id=checkpoint.id,
+            load_optimizer=load_optimizer,
+        )
+
+    def _open_lora_training_client(
+        self,
+        base_model: str,
+        lora_config: LoraConfig,
+        *,
+        resume_from_checkpoint_id: str | None = None,
+        load_optimizer: bool = True,
+    ) -> TrainingClient:
+        _exit_on_sigterm()
+        return run_untracked(
+            self._provision_async(
+                base_model,
+                lora_config,
+                resume_from_checkpoint_id=resume_from_checkpoint_id,
+                load_optimizer=load_optimizer,
+            )
+        )
 
     async def create_lora_training_client_async(
         self,
@@ -149,10 +210,15 @@ class ServiceClient:
         del user_metadata
         _warn_ignored_train_options(train_mlp, train_attn)
         _exit_on_sigterm()
-        return await self._provision_async(base_model, rank, seed, train_unembed)
+        return await self._provision_async(base_model, _build_lora_config(rank, seed, train_unembed))
 
     async def _provision_async(
-        self, base_model: str, rank: int, seed: int | None, train_unembed: bool
+        self,
+        base_model: str,
+        lora_config: LoraConfig,
+        *,
+        resume_from_checkpoint_id: str | None = None,
+        load_optimizer: bool = True,
     ) -> TrainingClient:
         model_resources_id = self._model_resources_id
         owns_model_resources = model_resources_id is None
@@ -169,15 +235,33 @@ class ServiceClient:
                 base_url=self._base_url,
             )
 
+        session_kwargs: dict[str, Any] = {"lora_config": lora_config}
+        if resume_from_checkpoint_id is not None:
+            session_kwargs["resume_from_checkpoint_id"] = resume_from_checkpoint_id
+            session_kwargs["load_optimizer"] = load_optimizer
         # One release path: everything from here on holds resources that must be given back.
         try:
             if not owns_model_resources:
                 _check_attached(await model_resources.retrieve_async(), base_model)
-            session = await model_resources.create_session_async(
-                lora_config=_build_lora_config(rank, seed, train_unembed)
-            )
+            session = await model_resources.create_session_async(**session_kwargs)
         except BaseException:
             await _Lifecycle(None, model_resources, owns_model_resources=owns_model_resources).aclose(automatic=True)
             raise
 
         return _start_training_client(session, model_resources, owns_model_resources=owns_model_resources)
+
+
+def _describe_training_checkpoint(
+    checkpoint_id: str,
+    *,
+    api_key: str | None,
+    base_url: str | None,
+) -> Checkpoint:
+    with Together(api_key=api_key, base_url=base_url) as client:
+        checkpoint = client.beta.rl.checkpoints.retrieve(checkpoint_id)
+    if checkpoint.type != "CHECKPOINT_TYPE_TRAINING":
+        raise ValueError(
+            f"Checkpoint {checkpoint_id!r} has type {checkpoint.type!r}; "
+            "create_training_client_from_state requires CHECKPOINT_TYPE_TRAINING"
+        )
+    return checkpoint

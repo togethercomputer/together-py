@@ -6,7 +6,7 @@ import warnings
 import threading
 from types import SimpleNamespace
 from typing import Any, Callable, cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -400,3 +400,71 @@ def test_exit_hook_releases_an_await_built_client() -> None:
 
     assert lifecycle.closed is True
     client.beta.rl.sessions.stop.assert_awaited()
+
+
+_CHECKPOINT_UUID = "123e4567-e89b-12d3-a456-426614174000"
+
+
+def test_create_rest_client_raises_tinker_error() -> None:
+    with pytest.raises(__import__("tinker").TinkerError, match="RestClient"):
+        tinker_compat.ServiceClient().create_rest_client()
+
+
+def _training_checkpoint(*, lora_rank: int | None = 16, kind: str = "CHECKPOINT_TYPE_TRAINING") -> SimpleNamespace:
+    return SimpleNamespace(
+        id=_CHECKPOINT_UUID,
+        base_model="Qwen/Qwen3.5-4B",
+        lora_rank=lora_rank,
+        type=kind,
+    )
+
+
+@pytest.mark.parametrize("lora_rank", [16, None])
+@pytest.mark.parametrize(
+    ("method", "load_optimizer"),
+    [
+        ("create_training_client_from_state", False),
+        ("create_training_client_from_state_with_optimizer", True),
+    ],
+)
+def test_create_training_client_from_state_describes_then_starts(
+    monkeypatch: pytest.MonkeyPatch,
+    method: str,
+    load_optimizer: bool,
+    lora_rank: int | None,
+) -> None:
+    monkeypatch.setattr(
+        _service, "_describe_training_checkpoint", lambda *_, **__: _training_checkpoint(lora_rank=lora_rank)
+    )
+    session = _session_mock()
+    resources = _model_resources_mock("mr-1")
+    resources.create_session_async.return_value = session
+    monkeypatch.setattr(_service.ModelResourcesClient, "create_async", AsyncMock(return_value=resources))
+    monkeypatch.setattr(_service, "_exit_on_sigterm", _noop)
+    monkeypatch.setattr(_service, "_stop_on_exit", _ignore)
+
+    training = getattr(tinker_compat.ServiceClient(), method)(_CHECKPOINT_UUID)
+
+    assert isinstance(training, tinker_compat.TrainingClient)
+    resources.create_session_async.assert_awaited_once_with(
+        lora_config={"rank": lora_rank},
+        resume_from_checkpoint_id=_CHECKPOINT_UUID,
+        load_optimizer=load_optimizer,
+    )
+    resources.stop.assert_not_called()
+
+
+def test_describe_rejects_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = MagicMock()
+    client.beta.rl.checkpoints.retrieve.return_value = _training_checkpoint(kind="CHECKPOINT_TYPE_INFERENCE")
+    client.__enter__.return_value = client
+    monkeypatch.setattr(_service, "Together", lambda **_: client)
+
+    with pytest.raises(ValueError, match="CHECKPOINT_TYPE_INFERENCE"):
+        _service._describe_training_checkpoint(_CHECKPOINT_UUID, api_key=None, base_url=None)
+    client.__exit__.assert_called_once()
+
+
+def test_resume_rejects_weights_access_token() -> None:
+    with pytest.raises(NotImplementedError, match="weights_access_token"):
+        tinker_compat.ServiceClient().create_training_client_from_state(_CHECKPOINT_UUID, weights_access_token="tok")

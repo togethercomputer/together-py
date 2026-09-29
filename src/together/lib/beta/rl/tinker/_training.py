@@ -30,6 +30,8 @@ from .._operations import OperationResponse
 from ..clients.session import SessionClient
 from ..clients.trainer import _submit_forward_backward, _submit_custom_forward_backward
 from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
+from .....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
+from .....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
 from .....types.beta.rl.operation_custom_forward_backward_params import Gradient
 
 # The client-side loss for forward_backward_custom: (data, autograd leaves) -> (scalar loss
@@ -74,6 +76,29 @@ def _warn_ignored_publish_args(name: str | None, retry_config: Any) -> None:
         )
 
 
+def _warn_ignored_save_state_args(ttl_seconds: int | None, overwrite: bool) -> None:
+    ignored: list[str] = []
+    if ttl_seconds is not None:
+        ignored.append("ttl_seconds")
+    if overwrite:
+        ignored.append("overwrite")
+    if ignored:
+        warnings.warn(
+            f"Together ignores {ignored}: training checkpoints are server-assigned UUIDs "
+            "with no caller-controlled TTL or overwrite",
+            stacklevel=2,
+        )
+
+
+def _warn_ignored_sampler_ttl(ttl_seconds: int | None) -> None:
+    if ttl_seconds is not None:
+        warnings.warn(
+            "Together ignores ttl_seconds: inference checkpoints are registered under a "
+            "server-assigned model_name with no caller-controlled TTL",
+            stacklevel=2,
+        )
+
+
 async def _resolve_forward_backward(
     completed: OperationResponse, *, session: SessionClient
 ) -> types.ForwardBackwardOutput:
@@ -85,6 +110,20 @@ async def _resolve_optim_step(completed: OperationResponse) -> types.OptimStepRe
     # optim_step legitimately completes with no output; there is nothing to read back.
     del completed
     return types.OptimStepResponse()
+
+
+async def _resolve_save_state(completed: OperationResponse, *, session: SessionClient) -> types.SaveWeightsResponse:
+    resolved = await resolve_operation_payload(completed, session=session)
+    saved = TrainingCheckpointResult.model_validate(resolved)
+    return types.SaveWeightsResponse(path=saved.checkpoint_id)
+
+
+async def _resolve_save_weights_for_sampler(
+    completed: OperationResponse, *, session: SessionClient
+) -> types.SaveWeightsForSamplerResponse:
+    resolved = await resolve_operation_payload(completed, session=session)
+    saved = InferenceCheckpointResult.model_validate(resolved)
+    return types.SaveWeightsForSamplerResponse(path=saved.registered_model_name)
 
 
 async def _resolve_custom_forward_backward(
@@ -342,6 +381,62 @@ class TrainingClient:
             )
         )
         return OperationFuture(session, operation, _resolve_optim_step)
+
+    def save_state(
+        self,
+        name: str,
+        ttl_seconds: int | None = None,
+        overwrite: bool = False,
+    ) -> OperationFuture[types.SaveWeightsResponse]:
+        del name
+        _warn_ignored_save_state_args(ttl_seconds, overwrite)
+        return self._session.run(self._submit_save_state_async())
+
+    async def save_state_async(
+        self,
+        name: str,
+        ttl_seconds: int | None = None,
+        overwrite: bool = False,
+    ) -> OperationFuture[types.SaveWeightsResponse]:
+        del name
+        _warn_ignored_save_state_args(ttl_seconds, overwrite)
+        return await self._submit_save_state_async()
+
+    async def _submit_save_state_async(self) -> OperationFuture[types.SaveWeightsResponse]:
+        session = self._session
+        operation = await session.run_async(
+            session._client.beta.rl.operations.create_training_checkpoint(
+                session.session_id, idempotency_key=str(uuid4())
+            )
+        )
+        return OperationFuture(session, operation, partial(_resolve_save_state, session=session))
+
+    def save_weights_for_sampler(
+        self,
+        name: str,
+        ttl_seconds: int | None = None,
+    ) -> OperationFuture[types.SaveWeightsForSamplerResponse]:
+        del name
+        _warn_ignored_sampler_ttl(ttl_seconds)
+        return self._session.run(self._submit_save_weights_for_sampler_async())
+
+    async def save_weights_for_sampler_async(
+        self,
+        name: str,
+        ttl_seconds: int | None = None,
+    ) -> OperationFuture[types.SaveWeightsForSamplerResponse]:
+        del name
+        _warn_ignored_sampler_ttl(ttl_seconds)
+        return await self._submit_save_weights_for_sampler_async()
+
+    async def _submit_save_weights_for_sampler_async(self) -> OperationFuture[types.SaveWeightsForSamplerResponse]:
+        session = self._session
+        operation = await session.run_async(
+            session._client.beta.rl.operations.create_inference_checkpoint(
+                session.session_id, idempotency_key=str(uuid4())
+            )
+        )
+        return OperationFuture(session, operation, partial(_resolve_save_weights_for_sampler, session=session))
 
     def save_weights_and_get_sampling_client(
         self,
