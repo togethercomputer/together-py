@@ -353,6 +353,30 @@ session = SessionClient.create(
 # ... continue training ...
 ```
 
+## Training on custom base weights
+
+`base_weights_ref` trains a model from your project's model registry, such as a fine-tuning job's
+output, in place of the base model's own weights. Pass `together://<model_object_id>` for its current
+revision, or `together://<model_object_id>@<model_object_revision_id>` for a specific one.
+
+```python
+from together import Together
+from together.lib.beta.rl import ModelResourcesClient
+
+job = Together().fine_tuning.retrieve("ft-...")
+resources = ModelResourcesClient.create(
+    base_model="Qwen/Qwen3.8-27B",
+    base_weights_ref=f"together://{job.api_model_object_id}",
+    api_key="...",
+    base_url="...",
+)
+print(resources.retrieve().base_weights_ref)  # together://ml_...@rv_..., the revision the resource pinned
+```
+
+- Set `base_model` to the model the weights were trained from.
+- The Tinker-compatible `ServiceClient` uses custom base weights by attaching to such a resource:
+  `ServiceClient(model_resources_id=resources.model_resources_id)`.
+
 ## Checkpointing & downloading weights
 
 After training, create an inference checkpoint and download the model weights:
@@ -1151,6 +1175,7 @@ the same arguments. Import `ComputeConfig` from `together.lib.beta.rl` to specif
 ModelResourcesClient.create(
     *,
     base_model: str,
+    base_weights_ref: str | None = None,
     api_key: str | None = None,
     base_url: str | httpx.URL | None = None,
     lora_enabled: bool = True,
@@ -1164,6 +1189,7 @@ ModelResourcesClient.create(
 | Parameter       | Type            | Default      | Description                                                     |
 | --------------- | --------------- | ------------ | --------------------------------------------------------------- |
 | `base_model`    | `str`           | _(required)_ | Base model name (e.g. `"Qwen/Qwen3.5-4B"`).                     |
+| `base_weights_ref` | `str \| None` | `None` | Model-registry model to train in place of the base model's weights, as `together://<model_object_id>` or `together://<model_object_id>@<model_object_revision_id>`. See [Training on custom base weights](#training-on-custom-base-weights). |
 | `api_key`       | `str \| None`   | `None`       | API key; defaults to `TOGETHER_API_KEY` if omitted.             |
 | `base_url`      | `str \| httpx.URL \| None` | `None` | Base URL; defaults to Together default or `TOGETHER_BASE_URL`. |
 | `lora_enabled`  | `bool`          | `True`       | Enable LoRA adapters on the provisioned resources.              |

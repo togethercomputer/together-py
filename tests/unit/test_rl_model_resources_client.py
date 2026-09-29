@@ -105,6 +105,31 @@ async def test_create_async_omits_optimizer_config_by_default(monkeypatch: pytes
     assert create_kwargs["optimizer_config"] is model_resources_client_module.omit
 
 
+def test_create_forwards_base_weights_ref(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _fake_client()
+    _patch_together(monkeypatch, client)
+
+    ModelResourcesClient.create(
+        base_model="Qwen/Qwen3.5-9B",
+        base_weights_ref="together://ml_abc@rv_def",
+        timeout=0.1,
+        interval=0.0,
+    )
+
+    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    assert create_kwargs["base_weights_ref"] == "together://ml_abc@rv_def"
+
+
+async def test_create_async_omits_base_weights_ref_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _fake_client()
+    _patch_together(monkeypatch, client)
+
+    await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
+
+    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    assert create_kwargs["base_weights_ref"] is omit
+
+
 async def test_create_async_stops_and_closes_on_terminal_status(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _fake_client(status="MODEL_RESOURCES_STATUS_ERROR")
     _patch_together(monkeypatch, client)
