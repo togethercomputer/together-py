@@ -89,6 +89,7 @@ class ModelResourcesClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         base_model: str,
+        base_weights_ref: str | None = None,
         lora_enabled: bool = True,
         compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
@@ -100,6 +101,7 @@ class ModelResourcesClient:
                 api_key=api_key,
                 base_url=base_url,
                 base_model=base_model,
+                base_weights_ref=base_weights_ref,
                 lora_enabled=lora_enabled,
                 compute_config=compute_config,
                 optimizer_config=optimizer_config,
@@ -156,6 +158,7 @@ class ModelResourcesClient:
         api_key: str | None = None,
         base_url: str | httpx.URL | None = None,
         base_model: str,
+        base_weights_ref: str | None = None,
         lora_enabled: bool = True,
         compute_config: ComputeConfig | None = None,
         optimizer_config: OptimizerConfig | None = None,
@@ -168,6 +171,7 @@ class ModelResourcesClient:
             try:
                 model_resources = await client.beta.rl.model_resources.create(
                     base_model=base_model,
+                    base_weights_ref=base_weights_ref if base_weights_ref is not None else omit,
                     lora_enabled=lora_enabled,
                     compute_config=compute_config if compute_config is not None else omit,
                     optimizer_config=optimizer_config if optimizer_config is not None else omit,
