@@ -217,7 +217,7 @@ async def render_deployments(endpoint: Endpoint, *, config: CLIConfigParameter) 
             f"Name: {name}\n[dim]  ID: {deployment.id}[/dim]",
             model,
             estimated_traffic,
-            f"  Status: {format_deployment_state(deployment.state)}\nReplicas: {replicas}",
+            f"  Status: {format_deployment_state(deployment.state)}\nReady / autoscaler target: {replicas}",
         )
         if i < len(deployments) - 1:
             deployments_table.add_row()
@@ -566,8 +566,10 @@ def print_deployment_detail(deployment: EndpointDeployment | None) -> None:
     console.print(f"[dim][primary]State:[/primary][/dim]\t\t{deployment.status.state}")
     console.print(f"[dim][primary]Message:[/primary][/dim]\t{deployment.status.message}")
     console.print(f"[dim][primary]Ready:[/primary][/dim]\t\t{deployment.status.ready_replicas}")
+    if deployment.desired_replicas is not None:
+        console.print(f"[dim][primary]Autoscaler target:[/primary][/dim]\t{deployment.desired_replicas}")
     console.print(
-        "[dim][primary]Replicas:[/primary][/dim]\t"
+        "[dim][primary]Autoscaling:[/primary][/dim]\t"
         f"min: {deployment.autoscaling.min_replicas} "
         f"max: {deployment.autoscaling.max_replicas}"
     )

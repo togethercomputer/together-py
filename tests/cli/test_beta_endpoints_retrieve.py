@@ -47,6 +47,7 @@ def _deployment_body(**overrides: Any) -> dict[str, Any]:
         "name": "control",
         "modelId": "ml_control",
         "configId": "cr_1",
+        "desiredReplicas": 2,
         "autoscaling": {"minReplicas": 1, "maxReplicas": 2},
         "createdAt": "2026-01-01T00:00:00Z",
         "status": {
@@ -121,6 +122,27 @@ class TestBetaEndpointsRetrieve:
         payload = json.loads(result.output)
         assert payload["id"] == "dep_control"
         assert payload["endpointId"] == "ep_1"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_deployment_shows_autoscaler_target(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "retrieve", "dep_control", "--project", "proj"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0, result.output
+        assert "Autoscaler target" in output
+        assert "min: 1 max: 2" in output
 
     @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_deployment_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
