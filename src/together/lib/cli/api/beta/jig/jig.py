@@ -1537,7 +1537,7 @@ def _follow_s3_sync(jig: Jig, name: str, version: int, watch: bool) -> None:
                 files = (volume.content.files if volume.content else None) or []
                 copied = sum(f.size or 0 for f in files) / 1e9
                 spinner.update(f"{label}... {len(files)} files, {copied:.1f} GB ({_elapsed(started)})")
-                time.sleep(10)
+                time.sleep(2)
     except KeyboardInterrupt:
         console.print(f"\nStopped watching, the sync continues. Check status with: jig volumes describe --name {name}")
         sys.exit(130)
@@ -1609,7 +1609,7 @@ async def jig_volumes_list(
         table.add_row(
             volume.id,
             volume.name,
-            str(volume.current_version or 0),
+            str(volume.current_version),
             _status_of(volume)[0],
             volume.created_at,
             volume.updated_at,
