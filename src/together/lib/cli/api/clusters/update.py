@@ -10,7 +10,7 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.types.beta.cluster_update_params import AddOn
+from together.types.cluster_update_params import AddOn
 
 
 async def update(
@@ -56,7 +56,7 @@ async def update(
 
     await show_loading_status(
         "Updating cluster...",
-        config.client.beta.clusters.update(
+        config.client.clusters.update(
             cluster_id,
             add_ons=add_ons if add_ons else omit,
             num_gpus=num_gpus if num_gpus is not None else omit,
@@ -69,7 +69,7 @@ async def update(
     )
 
     if config.json:
-        cluster = await config.client.beta.clusters.retrieve(cluster_id)
+        cluster = await config.client.clusters.retrieve(cluster_id)
         console.print_json(openapi_dumps(cluster).decode("utf-8"))
     else:
         console.print("Cluster updated successfully")

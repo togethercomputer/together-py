@@ -4,8 +4,8 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.api.clusters._util import print_clusters
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
-from together.lib.cli.api.beta.clusters._util import print_clusters
 
 
 async def list(
@@ -14,7 +14,7 @@ async def list(
     config: CLIConfigParameter,
 ) -> None:
     """List clusters."""
-    response = await show_loading_status("Loading clusters...", config.client.beta.clusters.list())
+    response = await show_loading_status("Loading clusters...", config.client.clusters.list())
 
     if config.json:
         console.print_json(openapi_dumps(response).decode())
@@ -25,4 +25,4 @@ async def list(
     print_clusters(clusters)
     if next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta clusters list --after {next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg clusters list --after {next_cursor}[/white]")

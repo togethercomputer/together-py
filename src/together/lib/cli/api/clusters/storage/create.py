@@ -22,7 +22,7 @@ async def create(
     config: CLIConfigParameter,
 ) -> None:
     """Create a storage volume."""
-    response = await config.client.beta.clusters.storage.create(
+    response = await config.client.clusters.storage.create(
         region=region,
         size_tib=size_tib,
         volume_name=volume_name,

@@ -13,7 +13,7 @@ async def retrieve(
 ) -> None:
     """Retrieve a cluster by ID."""
 
-    response = await show_loading_status("Retrieving cluster...", config.client.beta.clusters.retrieve(cluster_id))
+    response = await show_loading_status("Retrieving cluster...", config.client.clusters.retrieve(cluster_id))
 
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))

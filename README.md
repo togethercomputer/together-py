@@ -723,41 +723,41 @@ tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face
 
 ```bash
 # Help
-tg beta clusters --help
+tg clusters --help
 
 # Create a cluster
-tg beta clusters create
+tg clusters create
 
 # List clusters
-tg beta clusters list
+tg clusters list
 
 # Retrieve cluster details
-tg beta clusters retrieve [cluster-id]
+tg clusters retrieve [cluster-id]
 
 # Update a cluster
-tg beta clusters update [cluster-id]
+tg clusters update [cluster-id]
 
 # Retrieve Together cluster configuration options such as regions, gpu types and drivers available
-tg beta clusters list-regions
+tg clusters list-regions
 ```
 
 ##### Cluster Storage
 
 ```bash
 # Help
-tg beta clusters storage --help
+tg clusters storage --help
 
 # Create cluster storage volume
-tg beta clusters storage create
+tg clusters storage create
 
 # List storage volumes
-tg beta clusters storage list
+tg clusters storage list
 
 # Retrieve storage volume
-tg beta clusters storage retrieve [storage-id]
+tg clusters storage retrieve [storage-id]
 
 # Delete storage volume
-tg beta clusters storage delete [storage-id]
+tg clusters storage delete [storage-id]
 ```
 
 ### Jig (Container Deployments)
