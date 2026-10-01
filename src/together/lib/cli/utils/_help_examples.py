@@ -687,7 +687,7 @@ BETA_CLUSTERS_STORAGE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta clusters storage list[/primary]
 
 [dim]-[/dim] Create or resize a volume (see subcommand help for options):
-  [primary]tg beta clusters storage create --region us-east-1 --size-tib 1 --volume-name my-data[/primary]
+  [primary]tg beta clusters storage create --region us-east-1 --size-tib 1 --volume-name my-data --instance-cluster-id <cluster-id>[/primary]
   [primary]tg beta clusters storage update <volume-id> --size-tib 4[/primary]
 
 [dim]-[/dim] Use a volume when creating a cluster:
@@ -699,7 +699,8 @@ BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta clusters storage create \\
     --region us-east-1 \\
     --size-tib 1 \\
-    --volume-name my-training-data[/primary]
+    --volume-name my-training-data \\
+    --instance-cluster-id <cluster-id>[/primary]
 
 [dim]-[/dim] Attach the volume when creating a cluster:
   [primary]tg beta clusters create --non-interactive ... --volume <volume-id>[/primary]
