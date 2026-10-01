@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing_extensions import Literal, TypedDict
 
+from .volume_origin_param import VolumeOriginParam
+
 __all__ = ["VolumeUpdateParams", "Content"]
 
 
@@ -21,10 +23,16 @@ class VolumeUpdateParams(TypedDict, total=False):
 class Content(TypedDict, total=False):
     """Content specifies the new content to preload to this volume."""
 
+    origin: VolumeOriginParam
+    """
+    External source Together copies into a new volume version; mutually exclusive
+    with source_prefix.
+    """
+
     source_prefix: str
     """
     SourcePrefix is the file path prefix for the content to be preloaded into the
-    volume
+    volume. Mutually exclusive with Origin
     """
 
     type: Literal["files"]

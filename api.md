@@ -505,7 +505,7 @@ Methods:
 Types:
 
 ```python
-from together.types.beta.jig import Volume, VolumeListResponse
+from together.types.beta.jig import S3Origin, Volume, VolumeOrigin, VolumeStatus, VolumeListResponse
 ```
 
 Methods:
