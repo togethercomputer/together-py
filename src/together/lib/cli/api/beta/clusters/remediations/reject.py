@@ -22,7 +22,7 @@ async def reject(
     remediation = await show_loading_status("Finding remediation...", resolve_remediation(config, remediation_id))
     response = await show_loading_status(
         "Rejecting remediation...",
-        config.client.beta.clusters.remediations.reject(
+        config.client.clusters.remediations.reject(
             remediation_id,
             cluster_id=remediation.cluster_id,
             instance_id=remediation.instance_id,

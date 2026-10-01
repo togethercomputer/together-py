@@ -746,6 +746,26 @@ BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
+CLUSTERS_HELP_EXAMPLES = BETA_CLUSTERS_HELP_EXAMPLES.replace("tg beta clusters", "tg clusters")
+CLUSTERS_CREATE_HELP_EXAMPLES = BETA_CLUSTERS_CREATE_HELP_EXAMPLES.replace("tg beta clusters", "tg clusters")
+CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES = BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES.replace(
+    "tg beta clusters", "tg clusters"
+)
+CLUSTERS_UPDATE_HELP_EXAMPLES = BETA_CLUSTERS_UPDATE_HELP_EXAMPLES.replace("tg beta clusters", "tg clusters")
+CLUSTERS_STORAGE_HELP_EXAMPLES = BETA_CLUSTERS_STORAGE_HELP_EXAMPLES.replace("tg beta clusters", "tg clusters")
+CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES = BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES.replace(
+    "tg beta clusters", "tg clusters"
+)
+CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES = BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES.replace(
+    "tg beta clusters", "tg clusters"
+)
+CLUSTERS_REMEDIATIONS_HELP_EXAMPLES = BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES.replace(
+    "tg beta clusters", "tg clusters"
+)
+CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES.replace(
+    "tg beta clusters", "tg clusters"
+)
+
 ## Beta > Jig commands
 
 JIG_HELP_EXAMPLES = """[dim]Examples:[/dim]

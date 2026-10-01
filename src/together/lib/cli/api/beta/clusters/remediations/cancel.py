@@ -16,7 +16,7 @@ async def cancel(
     remediation = await show_loading_status("Finding remediation...", resolve_remediation(config, remediation_id))
     response = await show_loading_status(
         "Cancelling remediation...",
-        config.client.beta.clusters.remediations.cancel(
+        config.client.clusters.remediations.cancel(
             remediation_id,
             cluster_id=remediation.cluster_id,
             instance_id=remediation.instance_id,

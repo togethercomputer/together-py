@@ -21,19 +21,19 @@ async def delete(
     """Delete a cluster by ID."""
 
     if config.json:
-        response = await config.client.beta.clusters.delete(cluster_id=cluster_id)
+        response = await config.client.clusters.delete(cluster_id=cluster_id)
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
     cluster_name: str | None = None
     if not config.non_interactive and not force:
-        cluster = await show_loading_status("", config.client.beta.clusters.retrieve(cluster_id=cluster_id))
+        cluster = await show_loading_status("", config.client.clusters.retrieve(cluster_id=cluster_id))
         cluster_name = cluster.cluster_name
         print_clusters([cluster])
         if not await confirm(f"Are you sure you want to delete cluster {cluster.cluster_name}?"):
             return
 
-    await show_loading_status("Deleting cluster...", config.client.beta.clusters.delete(cluster_id))
+    await show_loading_status("Deleting cluster...", config.client.clusters.delete(cluster_id))
     if cluster_name:
         console.print(f"Deleted {cluster_name} ({cluster_id})")
     else:

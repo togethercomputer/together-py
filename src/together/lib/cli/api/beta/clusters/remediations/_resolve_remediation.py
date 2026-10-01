@@ -6,16 +6,16 @@ from together import omit
 from together._types import Omit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.types.beta.clusters.remediation import Remediation
+from together.types.clusters.remediation import Remediation
 
 
 async def resolve_remediation(config: CLIConfigParameter, remediation_id: str) -> Remediation:
-    clusters = await config.client.beta.clusters.list()
+    clusters = await config.client.clusters.list()
 
     for cluster in clusters.clusters:
         page_token: str | Omit = omit
         while True:
-            response = await config.client.beta.clusters.remediations.list(
+            response = await config.client.clusters.remediations.list(
                 "-",
                 cluster_id=cluster.cluster_id,
                 page_size=100,

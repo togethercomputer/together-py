@@ -14,7 +14,7 @@ async def list(
     config: CLIConfigParameter,
 ) -> None:
     """List clusters."""
-    response = await show_loading_status("Loading clusters...", config.client.beta.clusters.list())
+    response = await show_loading_status("Loading clusters...", config.client.clusters.list())
 
     if config.json:
         console.print_json(openapi_dumps(response).decode())
@@ -25,4 +25,4 @@ async def list(
     print_clusters(clusters)
     if next_cursor:
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")
-        console.print(f"  [dim]-[/dim] [white]tg beta clusters list --after {next_cursor}[/white]")
+        console.print(f"  [dim]-[/dim] [white]tg clusters list --after {next_cursor}[/white]")

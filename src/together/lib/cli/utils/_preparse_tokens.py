@@ -14,6 +14,9 @@ _COMMAND_ID_IDENTIFIERS = {
     "evals": re.compile(r"^eval-"),
     "batches": re.compile(r"^batch"),
     "endpoints": re.compile(r"^endpoint-"),
+    "clusters": _UUID_RE,
+    "clusters storage": _UUID_RE,
+    "clusters remediations": _UUID_RE,
     "beta models configs": re.compile(r"^ep_"),
     # `beta endpoints` uses App.default(retrieve) instead of token rewriting.
     "beta models": re.compile(r"^ml_"),

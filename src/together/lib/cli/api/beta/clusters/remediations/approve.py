@@ -49,7 +49,7 @@ async def approve(
     remediation = await show_loading_status("Finding remediation...", resolve_remediation(config, remediation_id))
     response = await show_loading_status(
         "Approving remediation...",
-        config.client.beta.clusters.remediations.approve(
+        config.client.clusters.remediations.approve(
             remediation_id,
             cluster_id=remediation.cluster_id,
             instance_id=remediation.instance_id,

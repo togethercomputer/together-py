@@ -79,7 +79,7 @@ async def list(
     )
     response = await show_loading_status(
         "Loading remediations...",
-        config.client.beta.clusters.remediations.list(
+        config.client.clusters.remediations.list(
             instance_id or "-",
             cluster_id=cluster_id,
             mode=safe_modes or omit,
@@ -113,7 +113,7 @@ async def list(
 
     console.print(table)
     if response.has_next and response.next_page_token:
-        command = f"tg beta clusters remediations ls {cluster_id}"
+        command = f"tg clusters remediations ls {cluster_id}"
         if instance_id:
             command += f" {instance_id}"
         console.print("\n[blue dim]To display the next page, run:[/blue dim]")

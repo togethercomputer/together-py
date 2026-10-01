@@ -51,7 +51,7 @@ async def get_credentials(
         file = os.path.join(os.path.expanduser("~"), ".kube", "config")
 
     cluster = await show_loading_status(
-        "Loading cluster credentials...", config.client.beta.clusters.retrieve(cluster_id)
+        "Loading cluster credentials...", config.client.clusters.retrieve(cluster_id)
     )
     raw_kc = cluster.kube_config
     if not raw_kc:

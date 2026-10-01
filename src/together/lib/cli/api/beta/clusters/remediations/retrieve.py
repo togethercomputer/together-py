@@ -17,7 +17,7 @@ async def retrieve(
     remediation = await show_loading_status("Finding remediation...", resolve_remediation(config, remediation_id))
     response = await show_loading_status(
         "Retrieving remediation...",
-        config.client.beta.clusters.remediations.retrieve(
+        config.client.clusters.remediations.retrieve(
             remediation_id,
             cluster_id=remediation.cluster_id,
             instance_id=remediation.instance_id,

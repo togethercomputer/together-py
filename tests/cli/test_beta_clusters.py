@@ -19,8 +19,8 @@ from respx import MockRouter
 from respx.models import Call
 
 from together import TogetherError
+from together.types import ClusterListRegionsResponse
 from tests.cli.utils import CliRunner
-from together.types.beta import ClusterListRegionsResponse
 from together.lib.cli.api.beta.clusters import ssh as ssh_cli, create as create_cli
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -609,17 +609,26 @@ class TestBetaClustersList:
                 json={"clusters": [_cluster_body("a", "alpha"), _cluster_body("b", "beta")]},
             )
         )
-        result = cli_runner.invoke(["beta", "clusters", "list"])
+        result = cli_runner.invoke(["clusters", "list"])
         assert "a" in result.output
         assert "alpha" in result.output
         assert "b" in result.output
         assert result.exit_code == 0
 
     @pytest.mark.respx(base_url=base_url)
+    def test_beta_list_alias_still_works(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/compute/clusters").mock(
+            return_value=httpx.Response(200, json={"clusters": [_cluster_body("a", "alpha")]})
+        )
+        result = cli_runner.invoke(["beta", "clusters", "list"])
+        assert "alpha" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
     def test_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = {"clusters": [_cluster_body()]}
         respx_mock.get("/compute/clusters").mock(return_value=httpx.Response(200, json=payload))
-        result = cli_runner.invoke(["beta", "clusters", "list", "--json"])
+        result = cli_runner.invoke(["clusters", "list", "--json"])
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
@@ -628,7 +637,7 @@ class TestBetaClustersListRegions:
     @pytest.mark.respx(base_url=base_url)
     def test_list_regions_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
-        result = cli_runner.invoke(["beta", "clusters", "list-regions", "--json"])
+        result = cli_runner.invoke(["clusters", "list-regions", "--json"])
         assert json.loads(result.output) == _REGIONS_BODY
         assert result.exit_code == 0
 
@@ -648,7 +657,7 @@ class TestBetaClustersListRegions:
         )
         respx_mock.get("/compute/regions").mock(return_value=httpx.Response(200, json=_REGIONS_BODY))
 
-        result = cli_runner.invoke(["beta", "clusters", "list-regions"])
+        result = cli_runner.invoke(["clusters", "list-regions"])
 
         assert result.exit_code == 0
         assert "ID" in result.output
@@ -844,14 +853,14 @@ class TestBetaClustersRetrieve:
     def test_retrieve_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         c = _cluster_body()
         respx_mock.get("/compute/clusters/cluster-1").mock(return_value=httpx.Response(200, json=c))
-        result = cli_runner.invoke(["beta", "clusters", "retrieve", "cluster-1", "--json"])
+        result = cli_runner.invoke(["clusters", "retrieve", "cluster-1", "--json"])
         assert json.loads(result.output) == c
         assert result.exit_code == 0
 
 
 class TestBetaClustersCreate:
     def test_create_help_mentions_b300_gpu_type(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "clusters", "create", "--help"])
+        result = cli_runner.invoke(["clusters", "create", "--help"])
 
         assert "B300_SXM" in result.output
         assert result.exit_code == 0
@@ -1097,7 +1106,7 @@ class TestBetaClustersUpdate:
         put = respx_mock.put("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
         get = respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=updated))
         result = cli_runner.invoke(
-            ["beta", "clusters", "update", "c1", "--num-gpus", "16", "--cluster-type", "SLURM", "--json"],
+            ["clusters", "update", "c1", "--num-gpus", "16", "--cluster-type", "SLURM", "--json"],
         )
         assert put.calls
         assert get.calls
@@ -1148,7 +1157,7 @@ class TestBetaClustersDelete:
         respx_mock.delete("/compute/clusters/c-del").mock(
             return_value=httpx.Response(200, json={"cluster_id": "c-del"})
         )
-        result = cli_runner.invoke(["beta", "clusters", "delete", "c-del", "--json"])
+        result = cli_runner.invoke(["clusters", "delete", "c-del", "--json"])
         assert json.loads(result.output) == {"cluster_id": "c-del"}
         assert result.exit_code == 0
 
@@ -1156,7 +1165,7 @@ class TestBetaClustersDelete:
     def test_delete_force_skips_confirmation(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.delete("/compute/clusters/c1").mock(return_value=httpx.Response(200, json={"cluster_id": "c1"}))
 
-        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--force"])
+        result = cli_runner.invoke(["clusters", "delete", "c1", "--force"])
 
         assert "Deleted cluster (c1)" in result.output
         assert result.exit_code == 0
@@ -1167,7 +1176,7 @@ class TestBetaClustersDelete:
             return_value=httpx.Response(200, json={"cluster_id": "c1"})
         )
 
-        result = cli_runner.invoke(["beta", "clusters", "delete", "c1", "--non-interactive"])
+        result = cli_runner.invoke(["clusters", "delete", "c1", "--non-interactive"])
 
         assert route.called
         assert "Deleted cluster (c1)" in result.output
@@ -1180,7 +1189,7 @@ class TestBetaClustersGetCredentials:
         cfg = "apiVersion: v1\nkind: Config\n"
         c = _cluster_body(kube_config=base64.b64encode(cfg.encode()).decode("ascii"))
         respx_mock.get("/compute/clusters/c1").mock(return_value=httpx.Response(200, json=c))
-        result = cli_runner.invoke(["beta", "clusters", "get-credentials", "c1", "--file", "-"])
+        result = cli_runner.invoke(["clusters", "get-credentials", "c1", "--file", "-"])
         assert result.output.strip() == cfg.strip()
         assert result.exit_code == 0
 
@@ -1190,7 +1199,7 @@ class TestBetaClustersStorage:
     def test_storage_list_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         payload = {"volumes": [_VOLUME_BODY]}
         respx_mock.get("/compute/clusters/storage/volumes").mock(return_value=httpx.Response(200, json=payload))
-        result = cli_runner.invoke(["beta", "clusters", "storage", "list", "--json"])
+        result = cli_runner.invoke(["clusters", "storage", "list", "--json"])
         assert json.loads(result.output) == payload
         assert result.exit_code == 0
 
@@ -1231,7 +1240,7 @@ class TestBetaClustersStorage:
         route = respx_mock.put("/compute/clusters/storage/volumes").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
         )
-        result = cli_runner.invoke(["beta", "clusters", "storage", "update", "vol-1", "--json"])
+        result = cli_runner.invoke(["clusters", "storage", "update", "vol-1", "--json"])
 
         assert json.loads(cast(Call, route.calls[0]).request.content.decode()) == {"volume_id": "vol-1"}
         assert result.exit_code == 0
@@ -1241,7 +1250,7 @@ class TestBetaClustersStorage:
         respx_mock.get("/compute/clusters/storage/volumes/vol-1").mock(
             return_value=httpx.Response(200, json=_VOLUME_BODY)
         )
-        result = cli_runner.invoke(["beta", "clusters", "storage", "retrieve", "vol-1", "--json"])
+        result = cli_runner.invoke(["clusters", "storage", "retrieve", "vol-1", "--json"])
         assert json.loads(result.output) == _VOLUME_BODY
         assert result.exit_code == 0
 
@@ -1250,7 +1259,7 @@ class TestBetaClustersStorage:
         respx_mock.delete("/compute/clusters/storage/volumes/vol-1").mock(
             return_value=httpx.Response(200, json={"success": True})
         )
-        result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--json"])
+        result = cli_runner.invoke(["clusters", "storage", "delete", "vol-1", "--json"])
         assert json.loads(result.output) == {"success": True}
         assert result.exit_code == 0
 
@@ -1262,7 +1271,7 @@ class TestBetaClustersStorage:
             return_value=httpx.Response(200, json={"success": True})
         )
 
-        result = cli_runner.invoke(["beta", "clusters", "storage", "delete", "vol-1", "--non-interactive"])
+        result = cli_runner.invoke(["clusters", "storage", "delete", "vol-1", "--non-interactive"])
 
         assert route.called
         assert "Deleted. (vol-1)" in result.output
@@ -1310,7 +1319,7 @@ class TestBetaClustersRemediations:
         route = respx_mock.get("/compute/clusters/c1/instances/-/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
-        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1", "--json"])
+        result = cli_runner.invoke(["clusters", "remediations", "list", "c1", "--json"])
 
         assert json.loads(result.output) == payload
         assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/-/remediations"
@@ -1322,7 +1331,7 @@ class TestBetaClustersRemediations:
         route = respx_mock.get("/compute/clusters/c1/instances/i1/remediations").mock(
             return_value=httpx.Response(200, json=payload)
         )
-        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1", "i1", "--json"])
+        result = cli_runner.invoke(["clusters", "remediations", "list", "c1", "i1", "--json"])
 
         assert json.loads(result.output) == payload
         assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/i1/remediations"
@@ -1335,7 +1344,7 @@ class TestBetaClustersRemediations:
             return_value=httpx.Response(200, json=payload)
         )
 
-        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1"])
+        result = cli_runner.invoke(["clusters", "remediations", "list", "c1"])
 
         assert "gpu-node-a (i1)" in result.output
         assert result.exit_code == 0
@@ -1349,7 +1358,7 @@ class TestBetaClustersRemediations:
             return_value=httpx.Response(200, json=payload)
         )
 
-        result = cli_runner.invoke(["beta", "clusters", "remediations", "list", "c1"])
+        result = cli_runner.invoke(["clusters", "remediations", "list", "c1"])
 
         assert "i1" in result.output
         assert result.exit_code == 0
@@ -1405,7 +1414,7 @@ class TestBetaClustersRemediations:
             return_value=httpx.Response(200, json=body)
         )
 
-        result = cli_runner.invoke(["beta", "clusters", "remediations", "get", "rem-get", "--json"])
+        result = cli_runner.invoke(["clusters", "remediations", "get", "rem-get", "--json"])
 
         assert json.loads(result.output) == body
         assert cast(Call, route.calls[0]).request.url.path == "/compute/clusters/c1/instances/i1/remediations/rem-get"
@@ -1461,7 +1470,7 @@ class TestBetaClustersRemediations:
             return_value=httpx.Response(200, json=_remediation_body("rem-cancel", state="CANCELLED"))
         )
 
-        result = cli_runner.invoke(["beta", "clusters", "remediations", "cancel", "rem-cancel", "--json"])
+        result = cli_runner.invoke(["clusters", "remediations", "cancel", "rem-cancel", "--json"])
 
         assert json.loads(result.output)["state"] == "CANCELLED"
         assert route.calls
@@ -1482,7 +1491,7 @@ class TestBetaClustersRemediations:
         )
 
         result = cli_runner.invoke(
-            ["beta", "clusters", "remediations", "reject", "rem-reject", "--comment", "skip", "--json"]
+            ["clusters", "remediations", "reject", "rem-reject", "--comment", "skip", "--json"]
         )
 
         assert json.loads(result.output)["state"] == "CANCELLED"

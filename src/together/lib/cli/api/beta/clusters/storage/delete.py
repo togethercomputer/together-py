@@ -5,14 +5,14 @@ from typing_extensions import Annotated
 from cyclopts import Parameter
 
 from together._utils._json import openapi_dumps
-from together.types.beta.clusters import ClusterStorage
+from together.types.clusters import ClusterStorage
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import confirm
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.lib.cli.components.loader import show_loading_status
 
-EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg beta clusters storage create[/primary]"
+EMPTY_MESSAGE = "You don't have any storage volumes yet. To create your first storage volume run:\n  [dim]-[/dim] [primary]tg clusters storage create[/primary]"
 
 
 def _print_storage(storage: ClusterStorage) -> None:
@@ -33,15 +33,15 @@ async def delete(
     """Delete a storage volume."""
 
     if config.json:
-        response = await config.client.beta.clusters.storage.delete(volume_id)
+        response = await config.client.clusters.storage.delete(volume_id)
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
     if not config.non_interactive and not force:
-        storage = await show_loading_status("", config.client.beta.clusters.storage.retrieve(volume_id))
+        storage = await show_loading_status("", config.client.clusters.storage.retrieve(volume_id))
         _print_storage(storage)
         if not await confirm(f"Are you sure you want to delete storage volume {storage.volume_name}?"):
             return
 
-    await show_loading_status("Deleting cluster volume...", config.client.beta.clusters.storage.delete(volume_id))
+    await show_loading_status("Deleting cluster volume...", config.client.clusters.storage.delete(volume_id))
     console.print(f"[blue]Deleted. ({volume_id})[/blue]")

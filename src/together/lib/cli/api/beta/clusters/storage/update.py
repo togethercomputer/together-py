@@ -17,7 +17,7 @@ async def update(
     config: CLIConfigParameter,
 ) -> None:
     """Update a storage volume (resize)."""
-    response = await config.client.beta.clusters.storage.update(
+    response = await config.client.clusters.storage.update(
         volume_id=volume_id,
         size_tib=size_tib if size_tib is not None else omit,
     )

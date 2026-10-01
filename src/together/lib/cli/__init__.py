@@ -39,6 +39,7 @@ from together.lib.cli.utils._help_examples import (
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
     BATCHES_HELP_EXAMPLES,
+    CLUSTERS_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
@@ -58,8 +59,11 @@ from together.lib.cli.utils._help_examples import (
     BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
+    CLUSTERS_CREATE_HELP_EXAMPLES,
+    CLUSTERS_UPDATE_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
     BATCHES_DOWNLOAD_HELP_EXAMPLES,
+    CLUSTERS_STORAGE_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     BETA_ENDPOINTS_AB_HELP_EXAMPLES,
@@ -86,14 +90,19 @@ from together.lib.cli.utils._help_examples import (
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+    CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+    CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+    CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
@@ -299,12 +308,12 @@ async def _run_launcher(
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
     # and never call the Together API. They must not be gated on an API key or the
-    # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
+    # up-front whoami() used for project resolution. `tg clusters ssh` is one:
     # its auth is entirely the cluster's Dex OIDC flow (see
     # together.lib.cli.api.beta.clusters.ssh). Before the whoami() was added for
     # project resolution these commands worked with no key; skip client setup so
     # they stay keyless.
-    no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+    no_auth_command = parsed_command in _NO_AUTH_COMMANDS
 
     client, missing_api_key = _create_client(
         api_key,
@@ -329,7 +338,7 @@ async def _run_launcher(
 
     # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
     # Together API call and would reintroduce the API-key dependency for keyless
-    # commands like `beta clusters ssh`.
+    # commands like `clusters ssh`.
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
         if debug and client.project_id:
@@ -651,6 +660,104 @@ telemetry_app = app.command(App(name="telemetry", help="Configure CLI telemetry"
 telemetry_app.command((f"{_CLI}.telemetry.status:status"), help="Show telemetry status")
 telemetry_app.command((f"{_CLI}.telemetry.enable:enable"), help="Enable telemetry")
 telemetry_app.command((f"{_CLI}.telemetry.disable:disable"), help="Disable telemetry")
+
+
+### Clusters API commands
+clusters_root_app = app.command(
+    App(name="clusters", help="Create and manage GPU clusters", help_epilogue=CLUSTERS_HELP_EXAMPLES)
+)
+clusters_root_app.command((f"{_CLI}.beta.clusters.list:list"), alias="ls", help="List your clusters")
+clusters_root_app.command(
+    (f"{_CLI}.beta.clusters.create:create"),
+    alias="-c",
+    help="Create a new cluster",
+    help_epilogue=CLUSTERS_CREATE_HELP_EXAMPLES,
+)
+clusters_root_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"), alias="get", help="Get cluster details")
+clusters_root_app.command(
+    (f"{_CLI}.beta.clusters.update:update"),
+    help="Update a cluster",
+    help_epilogue=CLUSTERS_UPDATE_HELP_EXAMPLES,
+)
+clusters_root_app.command((f"{_CLI}.beta.clusters.delete:delete"), alias="-d", help="Delete a cluster")
+clusters_root_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
+clusters_root_app.command(
+    (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
+    help="Get credentials for a cluster",
+    help_epilogue=CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+)
+clusters_root_app.command(
+    (f"{_CLI}.beta.clusters.ssh:ssh"),
+    help="SSH into a cluster via an OIDC-signed certificate",
+)
+
+### Clusters > Storage API commands
+clusters_storage_app = clusters_root_app.command(
+    App(
+        name="storage",
+        help="Manage cluster storage volumes",
+        group="Subcommands",
+        help_epilogue=CLUSTERS_STORAGE_HELP_EXAMPLES,
+    )
+)
+clusters_storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster"
+)
+clusters_storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.create:create"),
+    alias="-c",
+    help="Create a new storage volume for a cluster",
+    help_epilogue=CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+)
+clusters_storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.update:update"),
+    help="Resize a storage volume",
+    help_epilogue=CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+)
+clusters_storage_app.command(
+    (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
+    alias="get",
+    help="Get storage volume details",
+)
+clusters_storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
+
+### Clusters > Remediations API commands
+clusters_remediations_app = clusters_root_app.command(
+    App(
+        name="remediations",
+        help="Manage node remediations",
+        group="Subcommands",
+        help_epilogue=CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
+    )
+)
+clusters_remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.create:create"),
+    alias="-c",
+    help="Create a node remediation",
+    help_epilogue=CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
+)
+clusters_remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.list:list"),
+    alias="ls",
+    help="List node remediations",
+)
+clusters_remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.retrieve:retrieve"),
+    alias="get",
+    help="Get remediation details",
+)
+clusters_remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.approve:approve"),
+    help="Approve a pending remediation",
+)
+clusters_remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.cancel:cancel"),
+    help="Cancel a pending remediation",
+)
+clusters_remediations_app.command(
+    (f"{_CLI}.beta.clusters.remediations.reject:reject"),
+    help="Reject a pending remediation",
+)
 
 
 # Hidden from the help page, but the actual namespace for command resolution
