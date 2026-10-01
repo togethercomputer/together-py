@@ -30,7 +30,9 @@ from .deployment_metrics import DeploymentMetrics as DeploymentMetrics
 from .metrics_time_range import MetricsTimeRange as MetricsTimeRange
 from .throughput_metrics import ThroughputMetrics as ThroughputMetrics
 from .cluster_list_params import ClusterListParams as ClusterListParams
+from .deployment_revision import DeploymentRevision as DeploymentRevision
 from .endpoint_deployment import EndpointDeployment as EndpointDeployment
+from .jig_rollback_params import JigRollbackParams as JigRollbackParams
 from .model_create_params import ModelCreateParams as ModelCreateParams
 from .model_update_params import ModelUpdateParams as ModelUpdateParams
 from .scaling_rules_param import ScalingRulesParam as ScalingRulesParam
@@ -53,7 +55,9 @@ from .cluster_delete_response import ClusterDeleteResponse as ClusterDeleteRespo
 from .model_list_files_params import ModelListFilesParams as ModelListFilesParams
 from .endpoint_delete_response import EndpointDeleteResponse as EndpointDeleteResponse
 from .jig_retrieve_logs_params import JigRetrieveLogsParams as JigRetrieveLogsParams
+from .deployment_revision_event import DeploymentRevisionEvent as DeploymentRevisionEvent
 from .endpoint_analytics_params import EndpointAnalyticsParams as EndpointAnalyticsParams
+from .jig_list_revisions_params import JigListRevisionsParams as JigListRevisionsParams
 from .model_list_files_response import ModelListFilesResponse as ModelListFilesResponse
 from .container_deployment_status import ContainerDeploymentStatus as ContainerDeploymentStatus
 from .deployment_placement_config import DeploymentPlacementConfig as DeploymentPlacementConfig
@@ -69,6 +73,7 @@ from .cluster_list_regions_response import ClusterListRegionsResponse as Cluster
 from .endpoint_list_events_response import EndpointListEventsResponse as EndpointListEventsResponse
 from .model_list_revisions_response import ModelListRevisionsResponse as ModelListRevisionsResponse
 from .shadow_uniform_sampling_param import ShadowUniformSamplingParam as ShadowUniformSamplingParam
+from .deployment_revision_event_list import DeploymentRevisionEventList as DeploymentRevisionEventList
 from .endpoint_list_org_scoped_params import EndpointListOrgScopedParams as EndpointListOrgScopedParams
 from .shadow_endpoint_source_response import ShadowEndpointSourceResponse as ShadowEndpointSourceResponse
 from .shadow_key_based_sampling_param import ShadowKeyBasedSamplingParam as ShadowKeyBasedSamplingParam

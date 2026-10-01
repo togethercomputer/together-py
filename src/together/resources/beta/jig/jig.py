@@ -41,11 +41,19 @@ from ...._response import (
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ....types.beta import jig_deploy_params, jig_update_params, jig_retrieve_logs_params
+from ....types.beta import (
+    jig_deploy_params,
+    jig_update_params,
+    jig_rollback_params,
+    jig_retrieve_logs_params,
+    jig_list_revisions_params,
+)
 from ...._base_client import make_request_options
 from ....types.beta.deployment import Deployment
 from ....types.beta.deployment_logs import DeploymentLogs
 from ....types.beta.jig_list_response import JigListResponse
+from ....types.beta.deployment_revision import DeploymentRevision
+from ....types.beta.deployment_revision_event_list import DeploymentRevisionEventList
 
 __all__ = ["JigResource", "AsyncJigResource"]
 
@@ -440,6 +448,61 @@ class JigResource(SyncAPIResource):
             cast_to=object,
         )
 
+    def list_revisions(
+        self,
+        id: str,
+        *,
+        before: int | Omit = omit,
+        limit: int | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> DeploymentRevisionEventList:
+        """Returns the revision history of the deployment, in descending order.
+
+        Defaults to
+        the most recent events. Only the 200 most recent events are retained per
+        deployment; paginating past that returns an empty list.
+
+        Args:
+          id: Deployment ID or name.
+
+          before: Return only events with event_number strictly less than this value for
+              pagination.
+
+          limit: Maximum number of events to return (default 10, max 100).
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._get(
+            path_template("/deployments/{id}/revisions", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=maybe_transform(
+                    {
+                        "before": before,
+                        "limit": limit,
+                    },
+                    jig_list_revisions_params.JigListRevisionsParams,
+                ),
+            ),
+            cast_to=DeploymentRevisionEventList,
+        )
+
     def retrieve_logs(
         self,
         id: str,
@@ -494,6 +557,97 @@ class JigResource(SyncAPIResource):
                 ),
             ),
             cast_to=DeploymentLogs,
+        )
+
+    def retrieve_revision(
+        self,
+        revision_identifier: str,
+        *,
+        id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> DeploymentRevision:
+        """Returns the deployment configuration defined by the specified revision.
+
+        Only the
+        50 most recent revisions per deployment retain their configuration; older
+        revisions return 404 even while they still appear in the revision history. The
+        deployment's currently active revision is always available, regardless of age.
+
+        Args:
+          id: Deployment ID or name.
+
+          revision_identifier: Revision number or revision ID.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        if not revision_identifier:
+            raise ValueError(
+                f"Expected a non-empty value for `revision_identifier` but received {revision_identifier!r}"
+            )
+        return self._get(
+            path_template(
+                "/deployments/{id}/revisions/{revision_identifier}", id=id, revision_identifier=revision_identifier
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=DeploymentRevision,
+        )
+
+    def rollback(
+        self,
+        id: str,
+        *,
+        revision_identifier: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Deployment:
+        """Re-applies the spec of a previous revision.
+
+        Pods running the target revision
+        will be retained. Other pods will be drained and restarted with the target
+        revision. Only the 50 most recent revisions per deployment can be rolled back
+        to; older targets return 404.
+
+        Args:
+          id: Deployment ID or name.
+
+          revision_identifier: Revision number or revision ID to roll back to.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return self._post(
+            path_template("/deployments/{id}/rollback", id=id),
+            body=maybe_transform({"revision_identifier": revision_identifier}, jig_rollback_params.JigRollbackParams),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Deployment,
         )
 
 
@@ -887,6 +1041,61 @@ class AsyncJigResource(AsyncAPIResource):
             cast_to=object,
         )
 
+    async def list_revisions(
+        self,
+        id: str,
+        *,
+        before: int | Omit = omit,
+        limit: int | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> DeploymentRevisionEventList:
+        """Returns the revision history of the deployment, in descending order.
+
+        Defaults to
+        the most recent events. Only the 200 most recent events are retained per
+        deployment; paginating past that returns an empty list.
+
+        Args:
+          id: Deployment ID or name.
+
+          before: Return only events with event_number strictly less than this value for
+              pagination.
+
+          limit: Maximum number of events to return (default 10, max 100).
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._get(
+            path_template("/deployments/{id}/revisions", id=id),
+            options=make_request_options(
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
+                query=await async_maybe_transform(
+                    {
+                        "before": before,
+                        "limit": limit,
+                    },
+                    jig_list_revisions_params.JigListRevisionsParams,
+                ),
+            ),
+            cast_to=DeploymentRevisionEventList,
+        )
+
     async def retrieve_logs(
         self,
         id: str,
@@ -943,6 +1152,99 @@ class AsyncJigResource(AsyncAPIResource):
             cast_to=DeploymentLogs,
         )
 
+    async def retrieve_revision(
+        self,
+        revision_identifier: str,
+        *,
+        id: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> DeploymentRevision:
+        """Returns the deployment configuration defined by the specified revision.
+
+        Only the
+        50 most recent revisions per deployment retain their configuration; older
+        revisions return 404 even while they still appear in the revision history. The
+        deployment's currently active revision is always available, regardless of age.
+
+        Args:
+          id: Deployment ID or name.
+
+          revision_identifier: Revision number or revision ID.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        if not revision_identifier:
+            raise ValueError(
+                f"Expected a non-empty value for `revision_identifier` but received {revision_identifier!r}"
+            )
+        return await self._get(
+            path_template(
+                "/deployments/{id}/revisions/{revision_identifier}", id=id, revision_identifier=revision_identifier
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=DeploymentRevision,
+        )
+
+    async def rollback(
+        self,
+        id: str,
+        *,
+        revision_identifier: str,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Deployment:
+        """Re-applies the spec of a previous revision.
+
+        Pods running the target revision
+        will be retained. Other pods will be drained and restarted with the target
+        revision. Only the 50 most recent revisions per deployment can be rolled back
+        to; older targets return 404.
+
+        Args:
+          id: Deployment ID or name.
+
+          revision_identifier: Revision number or revision ID to roll back to.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        if not id:
+            raise ValueError(f"Expected a non-empty value for `id` but received {id!r}")
+        return await self._post(
+            path_template("/deployments/{id}/rollback", id=id),
+            body=await async_maybe_transform(
+                {"revision_identifier": revision_identifier}, jig_rollback_params.JigRollbackParams
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=Deployment,
+        )
+
 
 class JigResourceWithRawResponse:
     def __init__(self, jig: JigResource) -> None:
@@ -963,8 +1265,17 @@ class JigResourceWithRawResponse:
         self.destroy = to_raw_response_wrapper(
             jig.destroy,
         )
+        self.list_revisions = to_raw_response_wrapper(
+            jig.list_revisions,
+        )
         self.retrieve_logs = to_raw_response_wrapper(
             jig.retrieve_logs,
+        )
+        self.retrieve_revision = to_raw_response_wrapper(
+            jig.retrieve_revision,
+        )
+        self.rollback = to_raw_response_wrapper(
+            jig.rollback,
         )
 
     @cached_property
@@ -999,8 +1310,17 @@ class AsyncJigResourceWithRawResponse:
         self.destroy = async_to_raw_response_wrapper(
             jig.destroy,
         )
+        self.list_revisions = async_to_raw_response_wrapper(
+            jig.list_revisions,
+        )
         self.retrieve_logs = async_to_raw_response_wrapper(
             jig.retrieve_logs,
+        )
+        self.retrieve_revision = async_to_raw_response_wrapper(
+            jig.retrieve_revision,
+        )
+        self.rollback = async_to_raw_response_wrapper(
+            jig.rollback,
         )
 
     @cached_property
@@ -1035,8 +1355,17 @@ class JigResourceWithStreamingResponse:
         self.destroy = to_streamed_response_wrapper(
             jig.destroy,
         )
+        self.list_revisions = to_streamed_response_wrapper(
+            jig.list_revisions,
+        )
         self.retrieve_logs = to_streamed_response_wrapper(
             jig.retrieve_logs,
+        )
+        self.retrieve_revision = to_streamed_response_wrapper(
+            jig.retrieve_revision,
+        )
+        self.rollback = to_streamed_response_wrapper(
+            jig.rollback,
         )
 
     @cached_property
@@ -1071,8 +1400,17 @@ class AsyncJigResourceWithStreamingResponse:
         self.destroy = async_to_streamed_response_wrapper(
             jig.destroy,
         )
+        self.list_revisions = async_to_streamed_response_wrapper(
+            jig.list_revisions,
+        )
         self.retrieve_logs = async_to_streamed_response_wrapper(
             jig.retrieve_logs,
+        )
+        self.retrieve_revision = async_to_streamed_response_wrapper(
+            jig.retrieve_revision,
+        )
+        self.rollback = async_to_streamed_response_wrapper(
+            jig.rollback,
         )
 
     @cached_property

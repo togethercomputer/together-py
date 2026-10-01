@@ -465,6 +465,9 @@ from together.types.beta import (
     ContainerDeploymentStatus,
     Deployment,
     DeploymentLogs,
+    DeploymentRevision,
+    DeploymentRevisionEvent,
+    DeploymentRevisionEventList,
     JigListResponse,
 )
 ```
@@ -476,7 +479,10 @@ Methods:
 - <code title="get /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list</a>() -> <a href="./src/together/types/beta/jig_list_response.py">JigListResponse</a></code>
 - <code title="post /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">deploy</a>(\*\*<a href="src/together/types/beta/jig_deploy_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
 - <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
+- <code title="get /deployments/{id}/revisions">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list_revisions</a>(id, \*\*<a href="src/together/types/beta/jig_list_revisions_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_revision_event_list.py">DeploymentRevisionEventList</a></code>
 - <code title="get /deployments/{id}/logs">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_logs</a>(id, \*\*<a href="src/together/types/beta/jig_retrieve_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_logs.py">DeploymentLogs</a></code>
+- <code title="get /deployments/{id}/revisions/{revisionIdentifier}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_revision</a>(revision_identifier, \*, id) -> <a href="./src/together/types/beta/deployment_revision.py">DeploymentRevision</a></code>
+- <code title="post /deployments/{id}/rollback">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">rollback</a>(id, \*\*<a href="src/together/types/beta/jig_rollback_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
 
 ### Queue
 
