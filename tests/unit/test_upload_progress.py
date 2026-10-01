@@ -6,7 +6,24 @@ from pathlib import Path
 import pytest
 
 from together.lib import FileTypeError
-from together.lib.cli.components.upload_progress import upload_file_with_progress
+from together.lib.cli.components.upload_progress import _validate_upload_filename, upload_file_with_progress
+
+
+def test_validate_upload_filename_allows_128_utf8_bytes() -> None:
+    _validate_upload_filename(Path(("a" * 122) + ".jsonl"))
+
+
+@pytest.mark.parametrize(
+    ("filename", "message"),
+    [
+        (("a" * 124) + ".jsonl", "128 bytes"),
+        ("bad\x00.jsonl", "null characters"),
+        ("bad\udcff.jsonl", "valid UTF-8"),
+    ],
+)
+def test_validate_upload_filename_rejects_api_invalid_names(filename: str, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        _validate_upload_filename(Path(filename))
 
 
 async def test_upload_file_with_progress_validates_before_upload(

@@ -25,6 +25,8 @@ from together.lib.cli.components.check_progress import CheckProgressTracker, sho
 
 T = TypeVar("T")
 
+_MAX_UPLOAD_FILENAME_BYTES = 128
+
 
 def format_bytes(num: int) -> str:
     size = float(num)
@@ -35,6 +37,23 @@ def format_bytes(num: int) -> str:
             return f"{size:.1f} {unit}"
         size /= 1024
     return f"{size:.1f} PB"
+
+
+def _validate_upload_filename(file: Path) -> None:
+    filename = file.name
+    if "\x00" in filename:
+        raise ValueError("Upload file name must not contain null characters.")
+
+    try:
+        filename_bytes = filename.encode("utf-8")
+    except UnicodeEncodeError as e:
+        raise ValueError("Upload file name must be valid UTF-8.") from e
+
+    if len(filename_bytes) > _MAX_UPLOAD_FILENAME_BYTES:
+        raise ValueError(
+            "Upload file name must not exceed "
+            f"{_MAX_UPLOAD_FILENAME_BYTES} bytes when encoded as UTF-8."
+        )
 
 
 class UploadProgressTracker:
@@ -234,6 +253,8 @@ async def upload_file_with_progress(
     Validation runs *before* the upload bar starts so a multi-GB ``check_file``
     pass isn't shown as a stuck 0% upload.
     """
+
+    _validate_upload_filename(file)
 
     if check:
         with CheckProgressTracker(

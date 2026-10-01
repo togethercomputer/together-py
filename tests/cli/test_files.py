@@ -283,6 +283,15 @@ class TestFilesUpload:
         assert call_kw["progress_callback"] is not None
         assert "uploaded-id" in result.output
 
+    def test_upload_rejects_filename_over_128_utf8_bytes(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / (("a" * 124) + ".jsonl")
+        f.write_text("{}\n")
+        with patch("together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock) as upload_mock:
+            result = cli_runner.invoke(["files", "upload", str(f), "--no-check"])
+        assert result.exit_code == 1
+        assert "128 bytes" in result.output
+        upload_mock.assert_not_called()
+
     def test_upload_json_mode_disables_progress_callback(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         f = tmp_path / "data.jsonl"
         f.write_text("{}\n")

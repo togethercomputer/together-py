@@ -43,6 +43,9 @@ FILES_UPLOAD_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Skip file checks:
   [primary]tg files upload ./my-dataset.jsonl --no-check[/primary]
+
+[dim]File names must be valid UTF-8, must not contain null characters,
+and must be at most 128 bytes.[/dim]
 """
 
 FILES_RETRIEVE_CONTENT_HELP_EXAMPLES = """[dim]Examples:[/dim]
