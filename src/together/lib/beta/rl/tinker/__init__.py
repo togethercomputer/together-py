@@ -1,7 +1,7 @@
 """Tinker-compatible entry point for RL training.
 
-For the RL training-loop subset described in ``RL_README.md``, a script written
-against the ``tinker`` SDK runs on Together by changing only its import line::
+For the supported RL training-loop subset, a script written against the
+``tinker`` SDK runs on Together by changing only its import line::
 
     import together.lib.beta.rl.tinker as tinker
 
