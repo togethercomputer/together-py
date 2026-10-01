@@ -13,7 +13,7 @@ async def retrieve(
 ) -> None:
     """Retrieve a storage volume."""
 
-    request = config.client.beta.clusters.storage.retrieve(volume_id)
+    request = config.client.clusters.storage.retrieve(volume_id)
 
     if config.json:
         console.print_json(openapi_dumps(await request).decode("utf-8"))

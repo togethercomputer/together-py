@@ -11,7 +11,7 @@ async def list_regions(
     config: CLIConfigParameter,
 ) -> None:
     """List regions."""
-    response = await config.client.beta.clusters.list_regions()
+    response = await config.client.clusters.list_regions()
 
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))

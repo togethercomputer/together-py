@@ -9,8 +9,8 @@ from together import TogetherError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.types.beta.cluster_create_params import AddOn, SharedVolume, ClusterCreateParams
-from together.types.beta.cluster_list_regions_response import (
+from together.types.cluster_create_params import AddOn, SharedVolume, ClusterCreateParams
+from together.types.cluster_list_regions_response import (
     RegionDriverVersion,
     ClusterListRegionsResponse,
 )
@@ -85,7 +85,7 @@ def _region_nvidia_versions(
         if catalog_region.name == region:
             return catalog_region.driver_versions
 
-    raise TogetherError(f"No NVIDIA versions are available in region '{region}'. Run `tg beta clusters list-regions`.")
+    raise TogetherError(f"No NVIDIA versions are available in region '{region}'. Run `tg clusters list-regions`.")
 
 
 def _resolve_nvidia_version(
@@ -115,7 +115,7 @@ def _resolve_nvidia_version(
 
     if not matches:
         raise TogetherError(
-            f"No NVIDIA version matches {requested} in region '{region}'. Run `tg beta clusters list-regions`."
+            f"No NVIDIA version matches {requested} in region '{region}'. Run `tg clusters list-regions`."
         )
     if len(matches) > 1:
         choices = "; ".join(_format_nvidia_version(version) for version in matches)
@@ -185,7 +185,7 @@ async def _set_nvidia_version_params(
         raise TogetherError("--region is required when selecting an NVIDIA version.")
 
     if catalog is None:
-        catalog = await config.client.beta.clusters.list_regions()
+        catalog = await config.client.clusters.list_regions()
     if semantic_version_given:
         selected = _resolve_nvidia_version(
             catalog,
@@ -300,7 +300,7 @@ async def create(
         if not gpu_type:
             params["gpu_type"] = input(f"Clusters: Cluster GPU type ({', '.join(KNOWN_GPU_TYPES)}): ").strip()
         if not region:
-            catalog = await config.client.beta.clusters.list_regions()
+            catalog = await config.client.clusters.list_regions()
             params["region"] = (
                 input(f"Clusters: Cluster region [{catalog.regions[0].name}]: ").strip() or catalog.regions[0].name
             )
@@ -343,7 +343,7 @@ async def create(
                     volume_name=vol_name,
                 )
             else:
-                volumes = await config.client.beta.clusters.storage.list()
+                volumes = await config.client.clusters.storage.list()
                 if volumes.volumes:
                     params["volume_id"] = input(
                         f"Clusters: Which storage volume to use? ({', '.join(v.volume_id for v in volumes.volumes)}): "
@@ -351,7 +351,7 @@ async def create(
         console.print("Clusters: Creating cluster with the following parameters:")
         console.print(cast(ClusterCreateParams, params))
 
-    response = await config.client.beta.clusters.create(**params)
+    response = await config.client.clusters.create(**params)
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
     else:

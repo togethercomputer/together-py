@@ -1,5 +1,7 @@
-"""Regression: `tg beta clusters ssh` authenticates via OIDC/step-ca and must not
+"""Regression: `tg clusters ssh` authenticates via OIDC/step-ca and must not
 be gated on an API key or the launcher's up-front whoami() (project resolution).
+
+The hidden `tg beta clusters ssh` alias has to stay keyless too.
 
 Guards against reintroducing the #25 behavior where every command — including the
 keyless ssh command — triggered `_create_client` + `_resolve_project_id`.
@@ -24,7 +26,8 @@ def _run(argv: list[str]) -> None:
         pass
 
 
-def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("prefix", [[], ["beta"]])
+def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.MonkeyPatch, prefix: list[str]) -> None:
     monkeypatch.delenv("TOGETHER_API_KEY", raising=False)
 
     require_flags: list[bool] = []
@@ -46,7 +49,7 @@ def test_ssh_command_does_not_require_api_key_or_whoami(monkeypatch: pytest.Monk
 
     _run(
         [
-            "beta",
+            *prefix,
             "clusters",
             "ssh",
             "https://dex.together.ai/abc",
