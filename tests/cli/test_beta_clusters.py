@@ -1089,6 +1089,53 @@ class TestBetaClustersCreate:
         assert body["slurm_shm_size_gib"] == 32
         assert result.exit_code == 0
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_accepts_shared_volume_params(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        created = _cluster_body("new-id", "shared-volume")
+        route = respx_mock.post("/compute/clusters").mock(return_value=httpx.Response(200, json=created))
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "clusters",
+                "create",
+                "--non-interactive",
+                "--cluster-type",
+                "KUBERNETES",
+                "--gpu-type",
+                "H100_SXM",
+                "--nvidia-driver-version",
+                "565",
+                "--cuda-version",
+                "12.6",
+                "--region",
+                "us-central-8",
+                "--num-gpus",
+                "8",
+                "--billing-type",
+                "ON_DEMAND",
+                "--name",
+                "shared-volume",
+                "--shared-volume-name",
+                "data",
+                "--shared-volume-size-tib",
+                "4",
+                "--shared-volume-instance-cluster-id",
+                "cluster-pin",
+                "--shared-volume-lifecycle-independent",
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body["shared_volume"] == {
+            "region": "us-central-8",
+            "size_tib": 4,
+            "volume_name": "data",
+            "instance_cluster_id": "cluster-pin",
+            "is_lifecycle_independent": True,
+        }
+        assert "volume_id" not in body
+
 
 class TestBetaClustersUpdate:
     @pytest.mark.respx(base_url=base_url)
@@ -1211,6 +1258,8 @@ class TestBetaClustersStorage:
                 "1",
                 "--volume-name",
                 "test-volume",
+                "--instance-cluster-id",
+                "cluster-pin",
                 "--is-lifecycle-independent",
                 "--json",
             ],
@@ -1222,6 +1271,7 @@ class TestBetaClustersStorage:
             "region": "us-east-1",
             "size_tib": 1,
             "volume_name": "test-volume",
+            "instance_cluster_id": "cluster-pin",
             "is_lifecycle_independent": True,
         }
         assert result.exit_code == 0

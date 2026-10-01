@@ -50,6 +50,20 @@ GpuTypeParameter = Annotated[
 ]
 ClusterTypeParameter = Annotated[Optional[Literal["KUBERNETES", "SLURM"]], Parameter(help="Cluster type")]
 VolumeParameter = Annotated[Optional[str], Parameter(help="Storage volume ID to use for the cluster")]
+SharedVolumeNameParameter = Annotated[
+    Optional[str], Parameter(help="Name of a new shared storage volume to create with the cluster")
+]
+SharedVolumeSizeTibParameter = Annotated[
+    Optional[int], Parameter(help="Size in TiB for a new shared storage volume to create with the cluster")
+]
+SharedVolumeInstanceClusterIDParameter = Annotated[
+    Optional[str],
+    Parameter(help="Cluster ID to pin the new shared storage volume to the same substrate"),
+]
+SharedVolumeLifecycleIndependentParameter = Annotated[
+    Optional[bool],
+    Parameter(help="Keep the new shared storage volume after cluster decommissioning"),
+]
 AutoScaleParameter = Annotated[Optional[bool], Parameter(help="Enable cluster auto-scaling")]
 AutoScaleMaxGpusParameter = Annotated[Optional[int], Parameter(help="Maximum GPUs for auto-scaling")]
 CapacityPoolIDParameter = Annotated[Optional[str], Parameter(help="Capacity pool ID to use for the cluster")]
@@ -202,6 +216,52 @@ async def _set_nvidia_version_params(
     params.pop("cuda_version", None)
 
 
+def _set_shared_volume_params(
+    *,
+    params: dict[str, Any],
+    volume: str | None,
+    shared_volume_name: str | None,
+    shared_volume_size_tib: int | None,
+    shared_volume_instance_cluster_id: str | None,
+    shared_volume_lifecycle_independent: bool | None,
+) -> None:
+    shared_volume_requested = any(
+        value is not None
+        for value in (
+            shared_volume_name,
+            shared_volume_size_tib,
+            shared_volume_instance_cluster_id,
+            shared_volume_lifecycle_independent,
+        )
+    )
+    if not shared_volume_requested:
+        return
+
+    if volume:
+        raise TogetherError("Use either --volume or --shared-volume-* options, not both.")
+
+    missing = []
+    if not shared_volume_name:
+        missing.append("--shared-volume-name")
+    if shared_volume_size_tib is None:
+        missing.append("--shared-volume-size-tib")
+    if not params.get("region"):
+        missing.append("--region")
+    if missing:
+        raise TogetherError(f"Provide {', '.join(missing)} when creating a shared volume with the cluster.")
+
+    shared_volume = SharedVolume(
+        region=params["region"],
+        size_tib=shared_volume_size_tib,
+        volume_name=shared_volume_name,
+    )
+    if shared_volume_instance_cluster_id:
+        shared_volume["instance_cluster_id"] = shared_volume_instance_cluster_id
+    if shared_volume_lifecycle_independent is not None:
+        shared_volume["is_lifecycle_independent"] = shared_volume_lifecycle_independent
+    params["shared_volume"] = shared_volume
+
+
 async def create(
     name: NameParameter = None,
     num_gpus: NumGpusParameter = None,
@@ -215,6 +275,10 @@ async def create(
     gpu_type: GpuTypeParameter = None,
     cluster_type: ClusterTypeParameter = None,
     volume: VolumeParameter = None,
+    shared_volume_name: SharedVolumeNameParameter = None,
+    shared_volume_size_tib: SharedVolumeSizeTibParameter = None,
+    shared_volume_instance_cluster_id: SharedVolumeInstanceClusterIDParameter = None,
+    shared_volume_lifecycle_independent: SharedVolumeLifecycleIndependentParameter = None,
     auto_scale: AutoScaleParameter = None,
     auto_scale_max_gpus: AutoScaleMaxGpusParameter = None,
     capacity_pool_id: CapacityPoolIDParameter = None,
@@ -324,13 +388,22 @@ async def create(
         os_name=os,
     )
 
+    _set_shared_volume_params(
+        params=params,
+        volume=volume,
+        shared_volume_name=shared_volume_name,
+        shared_volume_size_tib=shared_volume_size_tib,
+        shared_volume_instance_cluster_id=shared_volume_instance_cluster_id,
+        shared_volume_lifecycle_independent=shared_volume_lifecycle_independent,
+    )
+
     if interactive:
         if duration_days is None and params.get("billing_type") == "RESERVED":
             d = input("Clusters: Cluster reserved duration (1-90 days) [3]: ").strip()
             params["duration_days"] = int(d) if d else 3
         if not cluster_type:
             params["cluster_type"] = input("Clusters: Cluster type [KUBERNETES]: ").strip() or "KUBERNETES"
-        if not volume and "qa" not in str(config.client.base_url):
+        if not volume and "shared_volume" not in params and "qa" not in str(config.client.base_url):
             if input("Clusters: Create a new storage volume? [y/N] ").strip().lower() in ("y", "yes"):
                 default_volume_name = f"{params['cluster_name']}-storage"
                 vol_name = (
