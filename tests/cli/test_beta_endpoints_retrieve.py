@@ -123,6 +123,61 @@ class TestBetaEndpointsRetrieve:
         assert payload["endpointId"] == "ep_1"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_deployment_human_output_shows_status_details(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        respx_mock.get("/projects/proj/endpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_endpoint_body()], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments/dep_control").mock(
+            return_value=httpx.Response(
+                200,
+                json=_deployment_body(
+                    config="projects/proj/configs/cr_1",
+                    hardware="1x-h100",
+                    etag="etag-1",
+                    trafficMode="TRAFFIC_MODE_LIVE",
+                    updatedAt="2026-01-01T00:00:00Z",
+                    estimatedEffectiveTrafficShare=0.5,
+                    status={
+                        "state": "DEPLOYMENT_STATE_SCALING",
+                        "readyReplicas": 1,
+                        "scheduledReplicas": 2,
+                        "message": "scaling",
+                        "details": {
+                            "region": [
+                                {
+                                    "region": "us-east-1",
+                                    "readyReplicas": 1,
+                                    "scheduledReplicas": 1,
+                                },
+                                {
+                                    "region": "us-west-2",
+                                    "readyReplicas": 0,
+                                    "scheduledReplicas": 1,
+                                },
+                            ]
+                        },
+                    },
+                ),
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "endpoints", "retrieve", "dep_control", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        output = " ".join(result.output.split())
+        assert "Scheduled: 2" in output
+        assert "Regions:" in output
+        assert "us-east-1 ready: 1 scheduled: 1" in output
+        assert "us-west-2 ready: 0 scheduled: 1" in output
+
+    @pytest.mark.respx(base_url=base_url)
     def test_implicit_retrieve_deployment_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/projects/proj/endpoints").mock(
             return_value=httpx.Response(

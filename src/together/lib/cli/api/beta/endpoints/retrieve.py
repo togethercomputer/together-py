@@ -566,6 +566,15 @@ def print_deployment_detail(deployment: EndpointDeployment | None) -> None:
     console.print(f"[dim][primary]State:[/primary][/dim]\t\t{deployment.status.state}")
     console.print(f"[dim][primary]Message:[/primary][/dim]\t{deployment.status.message}")
     console.print(f"[dim][primary]Ready:[/primary][/dim]\t\t{deployment.status.ready_replicas}")
+    if deployment.status.scheduled_replicas is not None:
+        console.print(f"[dim][primary]Scheduled:[/primary][/dim]\t{deployment.status.scheduled_replicas}")
+    if deployment.status.details and deployment.status.details.region:
+        console.print(f"[dim][primary]Regions:[/primary][/dim]")
+        for region in deployment.status.details.region:
+            console.print(
+                f"  {escape_rich_markup(region.region)}\t"
+                f"ready: {region.ready_replicas} scheduled: {region.scheduled_replicas}"
+            )
     console.print(
         "[dim][primary]Replicas:[/primary][/dim]\t"
         f"min: {deployment.autoscaling.min_replicas} "
