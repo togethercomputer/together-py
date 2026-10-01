@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from .model import Model as Model
-from .cluster import Cluster as Cluster
 from .endpoint import Endpoint as Endpoint
 from .ab_member import AbMember as AbMember
 from .deployment import Deployment as Deployment

@@ -2,8 +2,8 @@
 
 from typing import List
 
-from ...._models import BaseModel
-from ...clusters.remediation import Remediation
+from ..._models import BaseModel
+from .remediation import Remediation
 
 __all__ = ["RemediationListResponse"]
 

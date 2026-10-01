@@ -7,25 +7,25 @@ from typing_extensions import Literal
 
 import httpx
 
-from ...._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from ...._utils import path_template, maybe_transform, async_maybe_transform
-from ...._compat import cached_property
-from ...._resource import SyncAPIResource, AsyncAPIResource
-from ...._response import (
+from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from ..._utils import path_template, maybe_transform, async_maybe_transform
+from ..._compat import cached_property
+from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
     async_to_streamed_response_wrapper,
 )
-from ...._base_client import make_request_options
-from ....types.beta.clusters import (
+from ..._base_client import make_request_options
+from ...types.clusters import (
     remediation_list_params,
     remediation_create_params,
     remediation_reject_params,
     remediation_approve_params,
 )
-from ....types.clusters.remediation import Remediation
-from ....types.beta.clusters.remediation_list_response import RemediationListResponse
+from ...types.clusters.remediation import Remediation
+from ...types.clusters.remediation_list_response import RemediationListResponse
 
 __all__ = ["RemediationsResource", "AsyncRemediationsResource"]
 

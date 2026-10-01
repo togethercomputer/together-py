@@ -8,6 +8,7 @@ from typing_extensions import Literal
 
 import httpx
 
+from ...types import cluster_list_params, cluster_create_params, cluster_update_params
 from .storage import (
     StorageResource,
     AsyncStorageResource,
@@ -16,11 +17,11 @@ from .storage import (
     StorageResourceWithStreamingResponse,
     AsyncStorageResourceWithStreamingResponse,
 )
-from ...._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from ...._utils import path_template, maybe_transform, async_maybe_transform
-from ...._compat import cached_property
-from ...._resource import SyncAPIResource, AsyncAPIResource
-from ...._response import (
+from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
+from ..._utils import path_template, maybe_transform, async_maybe_transform
+from ..._compat import cached_property
+from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._response import (
     to_raw_response_wrapper,
     to_streamed_response_wrapper,
     async_to_raw_response_wrapper,
@@ -34,12 +35,11 @@ from .remediations import (
     RemediationsResourceWithStreamingResponse,
     AsyncRemediationsResourceWithStreamingResponse,
 )
-from ....types.beta import cluster_list_params, cluster_create_params, cluster_update_params
-from ...._base_client import make_request_options
-from ....types.cluster import Cluster
-from ....types.beta.cluster_list_response import ClusterListResponse
-from ....types.beta.cluster_delete_response import ClusterDeleteResponse
-from ....types.beta.cluster_list_regions_response import ClusterListRegionsResponse
+from ..._base_client import make_request_options
+from ...types.cluster import Cluster
+from ...types.cluster_list_response import ClusterListResponse
+from ...types.cluster_delete_response import ClusterDeleteResponse
+from ...types.cluster_list_regions_response import ClusterListRegionsResponse
 
 __all__ = ["ClustersResource", "AsyncClustersResource"]
 

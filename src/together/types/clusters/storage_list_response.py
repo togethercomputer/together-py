@@ -2,8 +2,8 @@
 
 from typing import List
 
-from ...._models import BaseModel
-from ...clusters.cluster_storage import ClusterStorage
+from ..._models import BaseModel
+from .cluster_storage import ClusterStorage
 
 __all__ = ["StorageListResponse"]
 

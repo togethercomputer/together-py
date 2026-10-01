@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime
 from typing_extensions import Literal
 
-from ..._models import BaseModel
+from .._models import BaseModel
 from .clusters.remediation import Remediation
 
 __all__ = [

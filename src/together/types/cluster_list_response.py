@@ -2,8 +2,8 @@
 
 from typing import List
 
-from ..cluster import Cluster
-from ..._models import BaseModel
+from .cluster import Cluster
+from .._models import BaseModel
 
 __all__ = ["ClusterListResponse"]
 
