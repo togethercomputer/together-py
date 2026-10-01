@@ -5,26 +5,18 @@
 
 ### Features
 
+* **RL:** First release of the new Together Reinforcement Learning SDK
 * **cli:** expose deployment concurrency limit ([#611](https://github.com/togethercomputer/together-py/issues/611)) ([4ea349e](https://github.com/togethercomputer/together-py/commit/4ea349ec1e6b4ed589cefc616c41e86527cc5134))
 * **cli:** make `--debug` output structured and useful (ENG-92248) ([#536](https://github.com/togethercomputer/together-py/issues/536)) ([9c9c34e](https://github.com/togethercomputer/together-py/commit/9c9c34e47686344b996eaf19a7c470f72dcdecd6))
 * **containers:** expose deployment model mounts field ([f09e80a](https://github.com/togethercomputer/together-py/commit/f09e80ac115be4813077150a944b22a5b1cad3a0))
 * **endpoints:** expose deployment concurrency limit response ([e25fdb7](https://github.com/togethercomputer/together-py/commit/e25fdb7062429721b712799a90165b1f782ae686))
-* ENG-93595 - create DCI volume from s3 origin using oidc ([#612](https://github.com/togethercomputer/together-py/issues/612)) ([205cf5f](https://github.com/togethercomputer/together-py/commit/205cf5fb3a43c5975080f8d00c8601faef5647b0))
-* **rl:** accept base_weights_ref in ModelResourcesClient.create (MOSH-5159) ([#175](https://github.com/togethercomputer/together-py/issues/175)) ([baaf54f](https://github.com/togethercomputer/together-py/commit/baaf54f736965c6faddb5d5b78aec01d6b9a8912))
-* **rl:** add base_weights_ref to model resources (MOSH-5159) ([3a77e36](https://github.com/togethercomputer/together-py/commit/3a77e36c806b9141430ad1a2b56c6da04a7a3439))
+* **cli:** Create DCI volume from s3 origin using OIDC ([#612](https://github.com/togethercomputer/together-py/issues/612)) ([205cf5f](https://github.com/togethercomputer/together-py/commit/205cf5fb3a43c5975080f8d00c8601faef5647b0))
 
 
 ### Bug Fixes
 
 * **cli:** accept list-revisions model command ([#607](https://github.com/togethercomputer/together-py/issues/607)) ([dec5e4b](https://github.com/togethercomputer/together-py/commit/dec5e4b0d414ac535f004e5c35da266fd35854ec))
 * **cli:** Update internals for jig model mounts logic ([#610](https://github.com/togethercomputer/together-py/issues/610)) ([72b18de](https://github.com/togethercomputer/together-py/commit/72b18deae064de574fb6d74f9e42b080397df2a1))
-
-
-### Documentation
-
-* clarify deployment desired replicas ownership ([84e2201](https://github.com/togethercomputer/together-py/commit/84e22019524d674e0c25704d9da4cb390aa7c5ff))
-* remove duplicate CLI usage from README ([#177](https://github.com/togethercomputer/together-py/issues/177)) ([ace4a6d](https://github.com/togethercomputer/together-py/commit/ace4a6d32f4eb0de7104045dd2429025e33ae6cb))
-* remove superseded RL_README ([#176](https://github.com/togethercomputer/together-py/issues/176)) ([cd1b2b6](https://github.com/togethercomputer/together-py/commit/cd1b2b6bd7c0ed0ce8309c0f68603be5fc5b4bed))
 
 ## [2.38.0](https://github.com/togethercomputer/together-py/compare/v2.37.0...v2.38.0) (2026-09-26)
 
