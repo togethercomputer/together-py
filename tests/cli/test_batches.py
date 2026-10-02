@@ -12,6 +12,7 @@ from respx import MockRouter
 from respx.models import Call
 
 from tests.cli.utils import CliRunner
+from together.lib.cli._track_cli import CliTrackingEvents
 from together.types.file_response import FileResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -164,11 +165,14 @@ class TestBatchesSubmit:
         respx_mock.post("/batches").mock(
             return_value=httpx.Response(200, json={"job": None, "warning": "validation failed: missing [/close] tag"})
         )
-        result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
+        with patch("together.lib.cli.track_cli") as track_cli:
+            result = cli_runner.invoke(["batches", "submit", "file-abc123", "chat.completions"])
         assert result.exit_code == 1
         assert "was not created" in result.output
         assert "MarkupError" not in result.output
         assert "[/close]" in result.output or "close" in result.output
+        failed = [call.args[1] for call in track_cli.call_args_list if call.args[0] is CliTrackingEvents.CommandFailed]
+        assert failed[0]["error"] == "Batch job was not created"
 
     @pytest.mark.respx(base_url=base_url)
     def test_submit_null_job_json_exits_nonzero(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
@@ -347,9 +351,12 @@ class TestBatchesDownload:
     @pytest.mark.respx(base_url=base_url)
     def test_download_not_ready(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
         respx_mock.get("/batches/batch_job_older").mock(return_value=httpx.Response(200, json=_BATCH_JOB_OLDER))
-        result = cli_runner.invoke(["batches", "download", "batch_job_older", "--output", str(tmp_path)])
+        with patch("together.lib.cli.track_cli") as track_cli:
+            result = cli_runner.invoke(["batches", "download", "batch_job_older", "--output", str(tmp_path)])
         assert result.exit_code == 1
         assert "not ready" in result.output.lower()
+        failed = [call.args[1] for call in track_cli.call_args_list if call.args[0] is CliTrackingEvents.CommandFailed]
+        assert failed[0]["error"] == "Batch job is not ready to download"
 
     @pytest.mark.respx(base_url=base_url)
     def test_download_output_to_directory(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
