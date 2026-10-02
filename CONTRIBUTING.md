@@ -1,3 +1,5 @@
+Please note that this project has a [Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
 ## Setting up the environment
 
 ### With `uv`
