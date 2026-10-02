@@ -9,7 +9,11 @@ from together import TogetherError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.types.cluster_create_params import AddOn, SharedVolume, ClusterCreateParams
+from together.types.cluster_create_params import (
+    ClusterCreateParams,
+    GPUClusterCreateRequestNvidiaVersionAddOn as AddOn,
+    GPUClusterCreateRequestNvidiaVersionSharedVolume as SharedVolume,
+)
 from together.types.cluster_list_regions_response import (
     RegionDriverVersion,
     ClusterListRegionsResponse,
