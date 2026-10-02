@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.40.0](https://github.com/togethercomputer/together-py/compare/v2.39.0...v2.40.0) (2026-10-02)
+
+
+### Features
+
+* **cli:** alias tg beta models deploy to endpoints deploy ([#628](https://github.com/togethercomputer/together-py/issues/628)) ([8104894](https://github.com/togethercomputer/together-py/commit/81048943603fab8810955372f34b9fb5c5322cb3))
+* **cli:** Promote clusters product out of beta ([#624](https://github.com/togethercomputer/together-py/issues/624)) ([a615aae](https://github.com/togethercomputer/together-py/commit/a615aae3a74c359d0ea2e4579626a1ff6fdf763d))
+* **clusters:** Promote GPU clusters off beta! ([e91edd4](https://github.com/togethercomputer/together-py/commit/e91edd40ab0096f4548a1f98c7ade744be03e7cc))
+* **jig:** add deployment revision and rollback APIs ([ce8a3d2](https://github.com/togethercomputer/together-py/commit/ce8a3d2bcf155cfa62dae258db5a95870aa49320))
+* **jig:** add S3 volume origins ([e8d5411](https://github.com/togethercomputer/together-py/commit/e8d54115d99a8efbe049b0eb98c78b153f6a178d))
+
+
+### Bug Fixes
+
+* **cli:** align cluster create type aliases ([#626](https://github.com/togethercomputer/together-py/issues/626)) ([525f8eb](https://github.com/togethercomputer/together-py/commit/525f8eb0c89d1c78a139cc75cfe591fcc689aca4))
+* **cli:** preserve batch and file failure diagnostics ([#617](https://github.com/togethercomputer/together-py/issues/617)) ([ee90199](https://github.com/togethercomputer/together-py/commit/ee90199cd46afb0d237b91d23b102f905b77097f))
+* **stlc:** re-anchor custom-code tracking to staging main; seal partial builds ([e410e0e](https://github.com/togethercomputer/together-py/commit/e410e0e69fb86ea22330e47b625a24e9fc31c1e2))
+
+
+### Documentation
+
+* **files:** document file upload filename limits ([66461bb](https://github.com/togethercomputer/together-py/commit/66461bb48774fcbd28ca7427a3198b379da7349c))
+* **finetuning:** document fine-tune teardown response ([b5685ef](https://github.com/togethercomputer/together-py/commit/b5685ef8480f0366075d6e2b5b0cc069996be7d7))
+
 ## [2.39.0](https://github.com/togethercomputer/together-py/compare/v2.38.0...v2.39.0) (2026-10-01)
 
 
