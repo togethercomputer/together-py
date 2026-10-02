@@ -90,6 +90,19 @@ def cli_runner(capsys: pytest.CaptureFixture[str]) -> CliRunner:
     return CliRunner(capsys)
 
 
+@pytest.fixture(autouse=True)
+def cli_json_mode_defaults_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Command JSON output must not follow the developer shell's agent detection.
+
+    ``--json`` / ``CliRunner(agent=True)`` opt in. Help formatting is separate and
+    still follows ``detect_agent`` at import time.
+    """
+    monkeypatch.setattr("together.lib.cli.utils._json_mode.agent_detected", lambda: False)
+    from together.lib.cli.utils._json_mode import use_json_mode
+
+    use_json_mode(False)
+
+
 @pytest.fixture()
 def plain_cli_help(monkeypatch: pytest.MonkeyPatch) -> None:
     """Force cyclopts' plain help formatter for deterministic `--help` assertions.

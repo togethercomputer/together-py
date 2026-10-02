@@ -12,6 +12,7 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
+from together.lib.cli.utils._json_mode import emit_json
 from together.lib.cli.components.loader import show_loading_status
 from together.types.model_upload_response import ModelUploadResponse
 
@@ -62,6 +63,9 @@ async def upload(
     )
 
     if config.json:
+        if cast(Any, response).data is None:
+            emit_json({"error": response.message or "Model upload request was rejected"})
+            raise CliDiagnosticExit("Model upload request was rejected")
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 

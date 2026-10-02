@@ -290,7 +290,8 @@ async def deploy(
     except Exception as e:
         if is_new_endpoint:
             await config.client.beta.endpoints.delete(endpoint.id)
-            console.print(f"Error creating deployment. Rolling back.")
+            if not config.json:
+                console.print("Error creating deployment. Rolling back.")
         raise e
 
     if traffic_weight is not None:

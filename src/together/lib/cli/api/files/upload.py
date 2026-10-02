@@ -14,6 +14,7 @@ from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.resources.files import FileAlreadyExistsError
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import emit_json, is_json_mode, exit_with_message
 from together.lib.cli.components.check_progress import CheckProgressTracker, should_show_check_progress
 from together.lib.cli.components.upload_progress import upload_file_with_progress
 
@@ -45,8 +46,12 @@ async def upload(
     try:
         purpose = cast(FilePurpose, purpose)
     except ValueError:
-        console.print(f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]")
-        sys.exit(1)
+        allowed = ", ".join(str(item) for item in get_args(FilePurpose))
+        exit_with_message(
+            f"[red]Invalid purpose '{purpose}'. Must be one of: {get_args(FilePurpose)}[/red]",
+            error=f"Invalid purpose '{purpose}'. Must be one of: {allowed}",
+            diagnostic="Invalid file purpose",
+        )
 
     try:
         response = await upload_file_with_progress(
@@ -58,6 +63,14 @@ async def upload(
             raise_if_already_exists=not config.json,
         )
     except FileAlreadyExistsError as e:
+        if is_json_mode():
+            emit_json(
+                {
+                    "error": "File already exists. Delete the existing file before re-uploading.",
+                    "file_id": e.file_id,
+                }
+            )
+            raise SystemExit(1) from None
         console.print(
             f"[yellow]File already exists under ID: [bold]{e.file_id}[/bold]. "
             "If you want to re-upload it, please delete the existing file first.[/yellow]"

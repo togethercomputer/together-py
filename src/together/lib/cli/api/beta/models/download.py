@@ -14,9 +14,9 @@ from cyclopts import Parameter
 
 from together import omit
 from together._utils import path_template
-from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.api.beta.models.upload import (
     PART_SIZE_BYTES,
     FILE_CONCURRENCY,
@@ -352,8 +352,11 @@ async def download(
     try:
         object_id, resolved_revision = _parse_object_and_revision(model_id, revision)
     except ValueError as exc:
-        console.print(f"[red]Error:[/red] {exc}")
-        raise CliDiagnosticExit("Invalid model download request") from exc
+        exit_with_message(
+            f"[red]Error:[/red] {exc}",
+            error=str(exc),
+            diagnostic="Invalid model download request",
+        )
 
     # Ensure we use the v2 apis for this
     config.client.base_url = "https://api.together.ai/v2"
@@ -369,8 +372,11 @@ async def download(
                 hf_format=format == "hf",
             )
         except ValueError as exc:
-            console.print(f"[red]Error:[/red] {exc}")
-            raise CliDiagnosticExit(_download_failure_diagnostic(exc)) from exc
+            exit_with_message(
+                f"[red]Error:[/red] {exc}",
+                error=str(exc),
+                diagnostic=_download_failure_diagnostic(exc),
+            )
         console.print_json(data=result)
         return
 
@@ -386,6 +392,9 @@ async def download(
             show_progress=True,
         )
     except ValueError as exc:
-        console.print(f"[red]Error:[/red] {exc}")
-        raise CliDiagnosticExit(_download_failure_diagnostic(exc)) from exc
+        exit_with_message(
+            f"[red]Error:[/red] {exc}",
+            error=str(exc),
+            diagnostic=_download_failure_diagnostic(exc),
+        )
     console.print("Download complete")
