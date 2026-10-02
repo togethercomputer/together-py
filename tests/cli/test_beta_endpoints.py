@@ -654,6 +654,57 @@ def _mock_adapter_models(respx_mock: MockRouter) -> None:
 
 class TestBetaEndpointsDeployAdapter:
     @pytest.mark.respx(base_url=base_url)
+    def test_deploy_adapter_requires_merge_or_attach_adapter(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/models/ml_adapter").mock(
+            return_value=httpx.Response(200, json=_adapter_model_body())
+        )
+
+        result = cli_runner.invoke(
+            ["beta", "endpoints", "deploy", "--project", "proj", "--endpoint", "ep_1", "--model", "ml_adapter"]
+        )
+
+        assert result.exit_code != 0
+        assert "--merge" in result.output
+        assert "--attach-adapter" in result.output
+        assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
+
+    def test_deploy_rejects_merge_with_attach_adapter(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_adapter",
+                "--merge",
+                "--attach-adapter",
+            ]
+        )
+
+        assert result.exit_code != 0
+        assert "not both" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    @pytest.mark.parametrize("flag", ["--merge", "--attach-adapter"])
+    def test_deploy_rejects_adapter_flags_for_non_adapter_model(
+        self, flag: str, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/models/ml_1").mock(return_value=httpx.Response(200, json=_model_body()))
+
+        result = cli_runner.invoke(
+            ["beta", "endpoints", "deploy", "--project", "proj", "--endpoint", "ep_1", "--model", "ml_1", flag]
+        )
+
+        assert result.exit_code != 0
+        assert "is not an adapter" in " ".join(result.output.split())
+
+    @pytest.mark.respx(base_url=base_url)
     def test_deploy_attaches_adapter_to_existing_lora_deployment(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
@@ -727,6 +778,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--json",
             ]
         )
@@ -807,6 +859,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "projects/proj/models/ml_adapter/revisions/rv_pin",
+                "--attach-adapter",
                 "--deployment-name",
                 "base-dep",
                 "--traffic-weight",
@@ -879,6 +932,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--deployment-name",
                 "base-dep",
                 "--json",
@@ -945,6 +999,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--deployment-name",
                 "base-dep",
                 "--json",
@@ -1030,6 +1085,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--json",
             ]
         )
@@ -1067,6 +1123,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--config",
                 "cr_disabled",
                 "--json",
@@ -1107,6 +1164,7 @@ class TestBetaEndpointsDeployAdapter:
                 "ep_1",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--json",
             ]
         )
@@ -1154,6 +1212,7 @@ class TestBetaEndpointsDeployAdapter:
                 "fresh-endpoint",
                 "--model",
                 "ml_adapter",
+                "--attach-adapter",
                 "--deployment-name",
                 "base-dep",
                 "--json",

@@ -200,7 +200,18 @@ async def deploy(
             negative=False,
             help=(
                 "For a LoRA adapter model, create a new deployment that serves the adapter merged into its "
-                "base model, instead of attaching the adapter to a base-model deployment."
+                "base model. Adapter models require either --merge or --attach-adapter."
+            ),
+        ),
+    ] = False,
+    attach_adapter: Annotated[
+        bool,
+        Parameter(
+            negative=False,
+            help=(
+                "For a LoRA adapter model, attach the adapter to a base-model deployment whose config has "
+                "adapter_mode fixed or dynamic, creating that deployment when none exists. "
+                "Adapter models require either --merge or --attach-adapter."
             ),
         ),
     ] = False,
@@ -208,12 +219,13 @@ async def deploy(
 ) -> None:
     """Create a deployment on a new or existing dedicated inference endpoint.
 
-    When the model is a LoRA adapter (`weights.type` is `WEIGHTS_TYPE_ADAPTER`), attach it to an
-    existing deployment of its base model whose config has `adapter_mode` fixed or dynamic. With
-    `--deployment-name`, use the deployment of that name when it exists. If the endpoint has no
-    such deployment, create one from a fixed or dynamic config and then attach the adapter. The
-    command fails when no fixed or dynamic config exists. Pass `--merge` to instead create a new
-    deployment of the adapter itself, which the API merges into its base model.
+    When the model is a LoRA adapter (`weights.type` is `WEIGHTS_TYPE_ADAPTER`), pass exactly one of:
+
+    - `--merge`: create a new deployment of the adapter itself, which the API merges into its base model.
+    - `--attach-adapter`: attach it to an existing deployment of its base model whose config has
+      `adapter_mode` fixed or dynamic. With `--deployment-name`, use the deployment of that name when
+      it exists. If the endpoint has no such deployment, create one from a fixed or dynamic config
+      and then attach the adapter. The command fails when no fixed or dynamic config exists.
     """
     model_path_match = MODEL_PATH_RE.match(model)
     if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
@@ -225,9 +237,22 @@ async def deploy(
     if placement_id and inline_placement_value is not None:
         raise ValueError("Use either --placement or inline placement options, not both.")
 
+    if merge and attach_adapter:
+        raise ValueError("Use either --merge or --attach-adapter, not both.")
+
+    adapter_model = await load_adapter_model(config, model)
+    if adapter_model is None and (merge or attach_adapter):
+        flag = "--merge" if merge else "--attach-adapter"
+        raise ValueError(f"{flag} only applies to LoRA adapter models, and {model} is not an adapter.")
+    if adapter_model is not None and not (merge or attach_adapter):
+        raise ValueError(
+            f"{model} is a LoRA adapter. Choose how to deploy it:\n"
+            "  --merge           create a new deployment with the adapter merged into its base model\n"
+            "  --attach-adapter  attach the adapter to a base-model deployment that serves LoRA adapters"
+        )
+
     # --merge deploys an adapter like any other model; the API merges it into its base model.
-    adapter_model = None if merge else await load_adapter_model(config, model)
-    if adapter_model is not None:
+    if adapter_model is not None and attach_adapter:
         adapter_revision = model_path_match.group(3) if model_path_match is not None else None
         await _deploy_adapter(
             config,
