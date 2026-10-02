@@ -133,7 +133,7 @@ class TestJSONMode:
         endpoints.run_and_assert("list --usage-type reserved")
         endpoints.run_and_assert("list --mine")
         endpoints.run_and_assert("retrieve endpoint-123")
-        endpoints.run_and_assert("start endpoint-123")
+        endpoints.run_and_assert("start endpoint-123", allow_nonzero=True)
         endpoints.run_and_assert("stop endpoint-123")
         endpoints.run_and_assert("update endpoint-123 --min-replicas 2 --max-replicas 4 --inactive-timeout 60")
 

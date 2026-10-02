@@ -218,6 +218,36 @@ async def test_missing_endpoint_update_option_preserves_diagnostic(
 
 @pytest.mark.usefixtures("isolated_cli_config")
 @pytest.mark.asyncio
+async def test_unsupported_endpoint_restart_preserves_diagnostic(
+    track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from together.lib.cli import launcher
+
+    monkeypatch.setenv("TOGETHER_DISABLE_VERSION_CHECK", "1")
+
+    with pytest.raises(SystemExit) as exc_info:
+        await launcher(
+            "endpoints",
+            "start",
+            "endpoint-private",
+            api_key="0000000000000000000000000000000000000000",
+            project_id="project",
+        )
+
+    assert exc_info.value.code == 1
+    assert _event_kinds(track_cli_capture) == [
+        CliTrackingEvents.CommandStarted.value,
+        CliTrackingEvents.CommandFailed.value,
+    ]
+    failed = track_cli_capture[1][1]
+    assert failed["command"] == "endpoints start"
+    assert failed["error"] == "Legacy endpoint restart is unsupported"
+    assert "private" not in failed["error"]
+
+
+@pytest.mark.usefixtures("isolated_cli_config")
+@pytest.mark.asyncio
 async def test_model_upload_failure_preserves_diagnostic(
     track_cli_capture: list[tuple[CliTrackingEvents, dict[str, Any]]],
     monkeypatch: pytest.MonkeyPatch,

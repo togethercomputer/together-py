@@ -208,43 +208,22 @@ class TestEndpointsHardware:
 
 
 class TestEndpointsStart:
-    # Command now loads the endpoints and lets user select the endpoint to start
-    # TODO: Add a test for this
-    # def test_start_requires_id(self, cli_runner: CliRunner) -> None:
-    #     assert cli_runner.invoke(["endpoints", "start"]).exit_code == 1
-
     @pytest.mark.respx(base_url=base_url)
-    def test_start_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.patch("/endpoints/endpoint-123").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
+    def test_start_endpoint_is_locally_rejected(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["endpoints", "start", "endpoint-123"])
-        assert result.output.strip() == "√ Endpoint is starting.\n  This may take a few minutes."
-        assert result.exit_code == 0
+        assert result.exit_code == 1
+        assert "Legacy endpoint restart is no longer supported." in result.output
+        assert "together beta endpoints update <deployment-id>" in result.output
+        assert not respx_mock.calls
 
     @pytest.mark.respx(base_url=base_url)
-    def test_start_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.patch("/endpoints/endpoint-123").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
-        result = cli_runner.invoke(["endpoints", "start", "endpoint-123", "--json"])
+    def test_start_json_is_machine_readable(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["endpoints", "start", "endpoint-123", "--wait", "--json"])
         body = json.loads(result.output)
-        assert body["id"] == "endpoint-123"
-        assert body["state"] == "STARTED"
-        assert result.exit_code == 0
-
-    @pytest.mark.respx(base_url=base_url)
-    def test_start_wait(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        from unittest.mock import patch
-
-        starting = {**DEDICATED_EP, "state": "STARTING"}
-        respx_mock.patch("/endpoints/endpoint-123").mock(return_value=httpx.Response(200, json=DEDICATED_EP))
-        respx_mock.get("/endpoints/endpoint-123").mock(
-            side_effect=[
-                httpx.Response(200, json=starting),
-                httpx.Response(200, json=DEDICATED_EP),
-            ]
-        )
-        with patch("time.sleep"):
-            result = cli_runner.invoke(["endpoints", "start", "endpoint-123", "--wait"])
-        assert "√ Endpoint started" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
+        assert body["error"] == "Legacy endpoint restart is no longer supported."
+        assert "together beta endpoints update <deployment-id>" in body["migration_guidance"]
+        assert not respx_mock.calls
 
 
 class TestEndpointsStop:

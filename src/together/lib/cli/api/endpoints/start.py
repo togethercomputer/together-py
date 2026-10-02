@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Annotated
 
 from cyclopts import Parameter
 
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import loading_status, show_loading_status
+
+_UNSUPPORTED_MESSAGE = "Legacy endpoint restart is no longer supported."
+_MIGRATION_GUIDANCE = (
+    "Create a new endpoint, or migrate to v2 and restart a chosen deployment with explicit nonzero replica bounds: "
+    "together beta endpoints update <deployment-id> --min-replicas <min> --max-replicas <max>"
+)
 
 
 async def start(
@@ -21,19 +26,17 @@ async def start(
     config: CLIConfigParameter,
 ) -> None:
     """Start a dedicated inference endpoint."""
-    response = await show_loading_status(
-        "Starting endpoint...", config.client.endpoints.update(endpoint_id, state="STARTED")
-    )
+    # Keep the command registered so existing users get actionable guidance instead
+    # of an unknown-command error. The legacy API rejects restart, while v2 restart
+    # requires a deployment choice and replica bounds that cannot be inferred safely.
+    del endpoint_id, wait
 
     if config.json:
-        console.print_json(openapi_dumps(response).decode("utf-8"))
-        return
-
-    if wait:
-        console.print("[green]√[/green] Successfully requested endpoint to start.")
-        with loading_status("Waiting for endpoint to start..."):
-            while (await config.client.endpoints.retrieve(endpoint_id)).state != "STARTED":
-                await asyncio.sleep(1)
-        console.print("[green]√[/green] Endpoint started")
+        console.print_json(
+            openapi_dumps({"error": _UNSUPPORTED_MESSAGE, "migration_guidance": _MIGRATION_GUIDANCE}).decode("utf-8")
+        )
     else:
-        console.print("[green]√[/green] Endpoint is starting.\n  This may take a few minutes.")
+        console.print(f"[red]Error:[/red] {_UNSUPPORTED_MESSAGE}")
+        console.print(_MIGRATION_GUIDANCE)
+
+    raise CliDiagnosticExit("Legacy endpoint restart is unsupported")
