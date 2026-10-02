@@ -746,6 +746,22 @@ CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
+## Beta RL commands
+
+BETA_RL_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List model resources:
+  [primary]tg beta rl ls-resources[/primary]
+
+[dim]-[/dim] List training sessions you created:
+  [primary]tg beta rl ls-sessions --created-by me[/primary]
+
+[dim]-[/dim] List inference checkpoints for one session:
+  [primary]tg beta rl ls-checkpoints --session <session-id>[/primary]
+
+[dim]-[/dim] Fetch a model resource, training session, or checkpoint by ID:
+  [primary]tg beta rl get <id>[/primary]
+"""
+
 ## Beta > Jig commands
 
 JIG_HELP_EXAMPLES = """[dim]Examples:[/dim]
