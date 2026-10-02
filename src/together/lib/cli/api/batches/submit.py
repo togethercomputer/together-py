@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Annotated
 from pathlib import Path
 
@@ -8,6 +7,7 @@ from cyclopts import Parameter
 from rich.markup import escape as escape_rich_markup
 
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
@@ -64,14 +64,14 @@ async def submit(
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
         if not created:
-            sys.exit(1)
+            raise CliDiagnosticExit("Batch job was not created")
         return
 
     if not created:
         console.print("[red]x[/red] Batch job was not created")
         if response.warning:
             console.print(escape_rich_markup(response.warning))
-        sys.exit(1)
+        raise CliDiagnosticExit("Batch job was not created")
 
     assert job is not None
     console.print(f"[green]√ Batch job submitted.[/green] [dim]({job.id})[/dim]")

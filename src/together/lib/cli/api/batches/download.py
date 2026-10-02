@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import sys
 from typing import NoReturn, Optional, Annotated
 from pathlib import Path
 
 from cyclopts import Parameter, validators
 
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console, error_console
 from together.lib.cli.components.loader import show_loading_status
@@ -25,12 +25,12 @@ def _error_output_path(output: Path) -> Path:
     return output.with_name(f"{output.stem}.errors{suffix}")
 
 
-def _fail(*, json_mode: bool, error: str, rich_message: str) -> NoReturn:
+def _fail(*, json_mode: bool, error: str, rich_message: str, diagnostic: str) -> NoReturn:
     if json_mode:
         console.print_json(openapi_dumps({"error": error}).decode("utf-8"))
     else:
         console.print(rich_message)
-    sys.exit(1)
+    raise CliDiagnosticExit(diagnostic)
 
 
 async def download(
@@ -62,6 +62,7 @@ async def download(
                 f"(status: {status or 'unknown'}). "
                 f"Check progress with [primary]tg batches get {id}[/primary]."
             ),
+            diagnostic="Batch job is not ready to download",
         )
 
     if not job.output_file_id and not job.error_file_id:
@@ -69,6 +70,7 @@ async def download(
             json_mode=config.json,
             error=f"Batch job has no output or error files to download (status: {status}).",
             rich_message=f"[red]Batch job has no output or error files to download[/red] (status: {status}).",
+            diagnostic="Batch job has no downloadable files",
         )
 
     if output is not None:
@@ -132,6 +134,7 @@ async def download(
                 "[red]Batch job has no output file[/red]. "
                 "Use [primary]--output[/primary] to download the error file instead."
             ),
+            diagnostic="Batch job has no output file",
         )
 
     if config.json:
@@ -139,6 +142,7 @@ async def download(
             json_mode=True,
             error="Pass --output to download batch result files; --json does not print file contents to stdout.",
             rich_message="",
+            diagnostic="Batch download with --json requires --output",
         )
 
     await stream_file_content_to_stdout(config.client, output_file_id)
