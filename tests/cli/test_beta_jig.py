@@ -134,6 +134,20 @@ def _volume_api_body(name: str, **extra: object) -> dict[str, object]:
     return body
 
 
+def _revision_event_body(event_number: int = 7, **extra: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "object": "revision_event",
+        "event_number": event_number,
+        "revision_number": 3,
+        "revision_id": "drev_abc123",
+        "action": "update",
+        "image": "registry.together.ai/acme/jig@sha256:abcdef123456",
+        "activated_at": "2026-01-01T00:00:00Z",
+    }
+    body.update(extra)
+    return body
+
+
 class TestBetaJigSecretsSet:
     @pytest.mark.respx(base_url=base_url)
     def test_set_creates_when_update_returns_not_found(
@@ -309,6 +323,81 @@ class TestBetaJigLogs:
         assert request.url.params["replica_id"] == "replica-1"
         assert request.url.params["revision"] == "revision-1"
         assert request.url.params["version"] == "v2"
+        assert result.exit_code == 0
+
+
+class TestBetaJigRevisions:
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_revisions_json_forwards_pagination(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        payload = {"object": "list", "data": [_revision_event_body()]}
+        route = respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revisions", "--before", "10", "--limit", "2", "--json"])
+
+        assert json.loads(result.output) == payload
+        request = cast(Call, route.calls[0]).request
+        assert request.url.params["before"] == "10"
+        assert request.url.params["limit"] == "2"
+        assert result.exit_code == 0
+
+    @pytest.mark.parametrize("command", ["revisions", "list-revisions", "ls-revisions"])
+    @pytest.mark.respx(base_url=base_url)
+    def test_list_revisions_table_aliases(
+        self, command: str, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [_revision_event_body()]})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", command])
+
+        assert "Deployment Revisions" in result.output
+        assert "drev_abc123" in result.output
+        assert "update" in result.output
+        assert "--before 7" in result.output
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_retrieve_revision_json(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        payload = {
+            "object": "revision",
+            "revision_id": "drev_abc123",
+            "image": "registry.together.ai/acme/jig@sha256:abcdef123456",
+        }
+        respx_mock.get(f"/deployments/{_DEPLOY_NAME}/revisions/drev_abc123").mock(
+            return_value=httpx.Response(200, json=payload)
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "revision", "drev_abc123", "--json"])
+
+        assert json.loads(result.output) == payload
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_rollback_json_posts_revision_identifier(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.post(f"/deployments/{_DEPLOY_NAME}/rollback").mock(
+            return_value=httpx.Response(200, json={"id": "dep_1", "name": _DEPLOY_NAME, "object": "deployment"})
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "rollback", "3", "--json"])
+
+        body = json.loads(cast(Call, route.calls[0]).request.content.decode())
+        assert body == {"revision_identifier": "3"}
+        assert json.loads(result.output)["name"] == _DEPLOY_NAME
         assert result.exit_code == 0
 
 
