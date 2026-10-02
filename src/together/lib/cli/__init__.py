@@ -859,6 +859,15 @@ beta_models_app = beta_app.command(
         help_epilogue=BETA_MODELS_HELP_EXAMPLES,
     )
 )
+# `tg beta models deploy` is the same command as `tg beta endpoints deploy`.
+beta_models_app.command(
+    (f"{_CLI}.beta.endpoints.deploy:deploy"),
+    help="Create a deployment on a new or existing endpoint",
+    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
+        "tg beta endpoints deploy",
+        "tg beta models deploy",
+    ),
+)
 beta_models_app.command((f"{_CLI}.beta.models.list:list"), alias="ls", help="List models in the caller's project")
 beta_models_app.command(
     (f"{_CLI}.beta.models.public:public"),
