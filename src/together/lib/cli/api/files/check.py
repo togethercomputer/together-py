@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Annotated
 from pathlib import Path
 
@@ -9,6 +8,7 @@ from rich.markup import escape as escape_rich_markup
 
 from together.lib.utils import check_file
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.check_progress import CheckProgressTracker, should_show_check_progress
@@ -32,5 +32,5 @@ async def check(
     else:
         status = "[green]OK[/green]" if report["is_check_passed"] else "[red]X[/red]"
         console.print(f"{status} {escape_rich_markup(str(report['message']))}")
-        if report["is_check_passed"] is False:
-            sys.exit(1)
+    if report["is_check_passed"] is False:
+        raise CliDiagnosticExit("File validation failed")

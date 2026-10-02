@@ -33,6 +33,12 @@ class TestVolumes:
     def test_method_create_with_all_params(self, client: Together) -> None:
         volume = client.beta.jig.volumes.create(
             content={
+                "origin": {
+                    "s3": {
+                        "role_arn": "arn:aws:iam::123456789012:role/together-volumes",
+                        "uri": "s3://my-bucket/models/custom-weights",
+                    }
+                },
                 "source_prefix": "models/",
                 "type": "files",
             },
@@ -127,6 +133,12 @@ class TestVolumes:
         volume = client.beta.jig.volumes.update(
             id="id",
             content={
+                "origin": {
+                    "s3": {
+                        "role_arn": "arn:aws:iam::123456789012:role/together-volumes",
+                        "uri": "s3://my-bucket/models/custom-weights",
+                    }
+                },
                 "source_prefix": "models/",
                 "type": "files",
             },
@@ -248,6 +260,12 @@ class TestAsyncVolumes:
     async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
         volume = await async_client.beta.jig.volumes.create(
             content={
+                "origin": {
+                    "s3": {
+                        "role_arn": "arn:aws:iam::123456789012:role/together-volumes",
+                        "uri": "s3://my-bucket/models/custom-weights",
+                    }
+                },
                 "source_prefix": "models/",
                 "type": "files",
             },
@@ -342,6 +360,12 @@ class TestAsyncVolumes:
         volume = await async_client.beta.jig.volumes.update(
             id="id",
             content={
+                "origin": {
+                    "s3": {
+                        "role_arn": "arn:aws:iam::123456789012:role/together-volumes",
+                        "uri": "s3://my-bucket/models/custom-weights",
+                    }
+                },
                 "source_prefix": "models/",
                 "type": "files",
             },

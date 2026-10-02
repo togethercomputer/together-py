@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from .model import Model as Model
-from .cluster import Cluster as Cluster
 from .endpoint import Endpoint as Endpoint
 from .ab_member import AbMember as AbMember
 from .deployment import Deployment as Deployment
@@ -29,8 +28,9 @@ from .model_list_params import ModelListParams as ModelListParams
 from .deployment_metrics import DeploymentMetrics as DeploymentMetrics
 from .metrics_time_range import MetricsTimeRange as MetricsTimeRange
 from .throughput_metrics import ThroughputMetrics as ThroughputMetrics
-from .cluster_list_params import ClusterListParams as ClusterListParams
+from .deployment_revision import DeploymentRevision as DeploymentRevision
 from .endpoint_deployment import EndpointDeployment as EndpointDeployment
+from .jig_rollback_params import JigRollbackParams as JigRollbackParams
 from .model_create_params import ModelCreateParams as ModelCreateParams
 from .model_update_params import ModelUpdateParams as ModelUpdateParams
 from .scaling_rules_param import ScalingRulesParam as ScalingRulesParam
@@ -39,9 +39,6 @@ from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .resource_utilization import ResourceUtilization as ResourceUtilization
 from .scaling_metric_param import ScalingMetricParam as ScalingMetricParam
 from .scaling_policy_param import ScalingPolicyParam as ScalingPolicyParam
-from .cluster_create_params import ClusterCreateParams as ClusterCreateParams
-from .cluster_list_response import ClusterListResponse as ClusterListResponse
-from .cluster_update_params import ClusterUpdateParams as ClusterUpdateParams
 from .model_delete_response import ModelDeleteResponse as ModelDeleteResponse
 from .deployment_autoscaling import DeploymentAutoscaling as DeploymentAutoscaling
 from .endpoint_create_params import EndpointCreateParams as EndpointCreateParams
@@ -49,11 +46,12 @@ from .endpoint_delete_params import EndpointDeleteParams as EndpointDeleteParams
 from .endpoint_update_params import EndpointUpdateParams as EndpointUpdateParams
 from .shadow_source_response import ShadowSourceResponse as ShadowSourceResponse
 from .time_series_data_point import TimeSeriesDataPoint as TimeSeriesDataPoint
-from .cluster_delete_response import ClusterDeleteResponse as ClusterDeleteResponse
 from .model_list_files_params import ModelListFilesParams as ModelListFilesParams
 from .endpoint_delete_response import EndpointDeleteResponse as EndpointDeleteResponse
 from .jig_retrieve_logs_params import JigRetrieveLogsParams as JigRetrieveLogsParams
+from .deployment_revision_event import DeploymentRevisionEvent as DeploymentRevisionEvent
 from .endpoint_analytics_params import EndpointAnalyticsParams as EndpointAnalyticsParams
+from .jig_list_revisions_params import JigListRevisionsParams as JigListRevisionsParams
 from .model_list_files_response import ModelListFilesResponse as ModelListFilesResponse
 from .container_deployment_status import ContainerDeploymentStatus as ContainerDeploymentStatus
 from .deployment_placement_config import DeploymentPlacementConfig as DeploymentPlacementConfig
@@ -65,10 +63,10 @@ from .deployment_autoscaling_param import DeploymentAutoscalingParam as Deployme
 from .endpoint_traffic_split_entry import EndpointTrafficSplitEntry as EndpointTrafficSplitEntry
 from .model_list_org_scoped_params import ModelListOrgScopedParams as ModelListOrgScopedParams
 from .shadow_endpoint_source_param import ShadowEndpointSourceParam as ShadowEndpointSourceParam
-from .cluster_list_regions_response import ClusterListRegionsResponse as ClusterListRegionsResponse
 from .endpoint_list_events_response import EndpointListEventsResponse as EndpointListEventsResponse
 from .model_list_revisions_response import ModelListRevisionsResponse as ModelListRevisionsResponse
 from .shadow_uniform_sampling_param import ShadowUniformSamplingParam as ShadowUniformSamplingParam
+from .deployment_revision_event_list import DeploymentRevisionEventList as DeploymentRevisionEventList
 from .endpoint_list_org_scoped_params import EndpointListOrgScopedParams as EndpointListOrgScopedParams
 from .shadow_endpoint_source_response import ShadowEndpointSourceResponse as ShadowEndpointSourceResponse
 from .shadow_key_based_sampling_param import ShadowKeyBasedSamplingParam as ShadowKeyBasedSamplingParam

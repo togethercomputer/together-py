@@ -30,7 +30,9 @@ class ModelObject(BaseModel):
     object: Literal["model"]
     """The object type, which is always `model`."""
 
-    type: Literal["chat", "language", "code", "image", "embedding", "moderation", "rerank"]
+    type: Literal[
+        "chat", "language", "code", "image", "embedding", "moderation", "rerank", "audio", "transcribe", "video"
+    ]
 
     context_length: Optional[int] = None
 

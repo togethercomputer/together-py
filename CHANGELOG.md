@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.39.0](https://github.com/togethercomputer/together-py/compare/v2.38.0...v2.39.0) (2026-10-01)
+
+
+### Features
+
+* **RL:** First release of the new Together Reinforcement Learning SDK
+* **cli:** expose deployment concurrency limit ([#611](https://github.com/togethercomputer/together-py/issues/611)) ([4ea349e](https://github.com/togethercomputer/together-py/commit/4ea349ec1e6b4ed589cefc616c41e86527cc5134))
+* **cli:** make `--debug` output structured and useful (ENG-92248) ([#536](https://github.com/togethercomputer/together-py/issues/536)) ([9c9c34e](https://github.com/togethercomputer/together-py/commit/9c9c34e47686344b996eaf19a7c470f72dcdecd6))
+* **containers:** expose deployment model mounts field ([f09e80a](https://github.com/togethercomputer/together-py/commit/f09e80ac115be4813077150a944b22a5b1cad3a0))
+* **endpoints:** expose deployment concurrency limit response ([e25fdb7](https://github.com/togethercomputer/together-py/commit/e25fdb7062429721b712799a90165b1f782ae686))
+* **cli:** Create DCI volume from s3 origin using OIDC ([#612](https://github.com/togethercomputer/together-py/issues/612)) ([205cf5f](https://github.com/togethercomputer/together-py/commit/205cf5fb3a43c5975080f8d00c8601faef5647b0))
+
+
+### Bug Fixes
+
+* **cli:** accept list-revisions model command ([#607](https://github.com/togethercomputer/together-py/issues/607)) ([dec5e4b](https://github.com/togethercomputer/together-py/commit/dec5e4b0d414ac535f004e5c35da266fd35854ec))
+* **cli:** Update internals for jig model mounts logic ([#610](https://github.com/togethercomputer/together-py/issues/610)) ([72b18de](https://github.com/togethercomputer/together-py/commit/72b18deae064de574fb6d74f9e42b080397df2a1))
+
 ## [2.38.0](https://github.com/togethercomputer/together-py/compare/v2.37.0...v2.38.0) (2026-09-26)
 
 

@@ -116,7 +116,11 @@ class EndpointDeployment(BaseModel):
     """Timestamp when the deployment was last updated."""
 
     desired_replicas: Optional[int] = FieldInfo(alias="desiredReplicas", default=None)
-    """Number of replicas the autoscaler currently wants across all regions."""
+    """Number of replicas the autoscaler currently wants across all regions.
+
+    Not settable on any request; steer it through `autoscaling.minReplicas` and
+    `autoscaling.maxReplicas`.
+    """
 
     estimated_effective_traffic_share: Optional[float] = FieldInfo(alias="estimatedEffectiveTrafficShare", default=None)
     """

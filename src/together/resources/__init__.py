@@ -80,6 +80,14 @@ from .batches import (
     BatchesResourceWithStreamingResponse,
     AsyncBatchesResourceWithStreamingResponse,
 )
+from .clusters import (
+    ClustersResource,
+    AsyncClustersResource,
+    ClustersResourceWithRawResponse,
+    AsyncClustersResourceWithRawResponse,
+    ClustersResourceWithStreamingResponse,
+    AsyncClustersResourceWithStreamingResponse,
+)
 from .endpoints import (
     EndpointsResource,
     AsyncEndpointsResource,
@@ -128,6 +136,12 @@ __all__ = [
     "AsyncBetaResourceWithRawResponse",
     "BetaResourceWithStreamingResponse",
     "AsyncBetaResourceWithStreamingResponse",
+    "ClustersResource",
+    "AsyncClustersResource",
+    "ClustersResourceWithRawResponse",
+    "AsyncClustersResourceWithRawResponse",
+    "ClustersResourceWithStreamingResponse",
+    "AsyncClustersResourceWithStreamingResponse",
     "ChatResource",
     "AsyncChatResource",
     "ChatResourceWithRawResponse",

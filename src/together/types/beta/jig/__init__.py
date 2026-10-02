@@ -4,9 +4,14 @@ from __future__ import annotations
 
 from .secret import Secret as Secret
 from .volume import Volume as Volume
+from .s3_origin import S3Origin as S3Origin
+from .volume_origin import VolumeOrigin as VolumeOrigin
+from .volume_status import VolumeStatus as VolumeStatus
+from .s3_origin_param import S3OriginParam as S3OriginParam
 from .queue_clear_params import QueueClearParams as QueueClearParams
 from .queue_cancel_params import QueueCancelParams as QueueCancelParams
 from .queue_submit_params import QueueSubmitParams as QueueSubmitParams
+from .volume_origin_param import VolumeOriginParam as VolumeOriginParam
 from .queue_clear_response import QueueClearResponse as QueueClearResponse
 from .queue_metrics_params import QueueMetricsParams as QueueMetricsParams
 from .secret_create_params import SecretCreateParams as SecretCreateParams

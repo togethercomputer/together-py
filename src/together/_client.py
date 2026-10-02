@@ -60,6 +60,7 @@ if TYPE_CHECKING:
         rerank,
         videos,
         batches,
+        clusters,
         endpoints,
         embeddings,
         completions,
@@ -79,6 +80,7 @@ if TYPE_CHECKING:
     from .resources.completions import CompletionsResource, AsyncCompletionsResource
     from .resources.fine_tuning import FineTuningResource, AsyncFineTuningResource
     from .resources.models.models import ModelsResource, AsyncModelsResource
+    from .resources.clusters.clusters import ClustersResource, AsyncClustersResource
     from .resources.endpoints.endpoints import EndpointsResource, AsyncEndpointsResource
     from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
@@ -176,6 +178,12 @@ class Together(SyncAPIClient):
         from .resources.beta import BetaResource
 
         return BetaResource(self)
+
+    @cached_property
+    def clusters(self) -> ClustersResource:
+        from .resources.clusters import ClustersResource
+
+        return ClustersResource(self)
 
     @cached_property
     def chat(self) -> ChatResource:
@@ -498,6 +506,12 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncBetaResource(self)
 
     @cached_property
+    def clusters(self) -> AsyncClustersResource:
+        from .resources.clusters import AsyncClustersResource
+
+        return AsyncClustersResource(self)
+
+    @cached_property
     def chat(self) -> AsyncChatResource:
         from .resources.chat import AsyncChatResource
 
@@ -751,6 +765,12 @@ class TogetherWithRawResponse:
         return BetaResourceWithRawResponse(self._client.beta)
 
     @cached_property
+    def clusters(self) -> clusters.ClustersResourceWithRawResponse:
+        from .resources.clusters import ClustersResourceWithRawResponse
+
+        return ClustersResourceWithRawResponse(self._client.clusters)
+
+    @cached_property
     def chat(self) -> chat.ChatResourceWithRawResponse:
         from .resources.chat import ChatResourceWithRawResponse
 
@@ -850,6 +870,12 @@ class AsyncTogetherWithRawResponse:
         from .resources.beta import AsyncBetaResourceWithRawResponse
 
         return AsyncBetaResourceWithRawResponse(self._client.beta)
+
+    @cached_property
+    def clusters(self) -> clusters.AsyncClustersResourceWithRawResponse:
+        from .resources.clusters import AsyncClustersResourceWithRawResponse
+
+        return AsyncClustersResourceWithRawResponse(self._client.clusters)
 
     @cached_property
     def chat(self) -> chat.AsyncChatResourceWithRawResponse:
@@ -953,6 +979,12 @@ class TogetherWithStreamedResponse:
         return BetaResourceWithStreamingResponse(self._client.beta)
 
     @cached_property
+    def clusters(self) -> clusters.ClustersResourceWithStreamingResponse:
+        from .resources.clusters import ClustersResourceWithStreamingResponse
+
+        return ClustersResourceWithStreamingResponse(self._client.clusters)
+
+    @cached_property
     def chat(self) -> chat.ChatResourceWithStreamingResponse:
         from .resources.chat import ChatResourceWithStreamingResponse
 
@@ -1052,6 +1084,12 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.beta import AsyncBetaResourceWithStreamingResponse
 
         return AsyncBetaResourceWithStreamingResponse(self._client.beta)
+
+    @cached_property
+    def clusters(self) -> clusters.AsyncClustersResourceWithStreamingResponse:
+        from .resources.clusters import AsyncClustersResourceWithStreamingResponse
+
+        return AsyncClustersResourceWithStreamingResponse(self._client.clusters)
 
     @cached_property
     def chat(self) -> chat.AsyncChatResourceWithStreamingResponse:

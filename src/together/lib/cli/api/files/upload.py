@@ -10,6 +10,7 @@ from rich.markup import escape as escape_rich_markup
 from together.lib import check_file
 from together.types import FilePurpose
 from together._utils._json import openapi_dumps
+from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.resources.files import FileAlreadyExistsError
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
@@ -40,8 +41,7 @@ async def upload(
             else:
                 console.print(f"[red]X {escape_rich_markup(str(report['message']))}[/red]")
 
-            # Make sure to exit
-            sys.exit(1)
+            raise CliDiagnosticExit("File validation failed")
 
     try:
         purpose = cast(FilePurpose, purpose)

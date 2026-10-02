@@ -23,6 +23,13 @@ pip install together
 uv add together
 ```
 
+The RL training SDK (`together.lib.beta.rl`) is included. Its Tinker-compatible entry point,
+`together.lib.beta.rl.tinker`, additionally requires the `tinker` extra (Python 3.11+).
+
+```sh
+pip install 'together[tinker]'
+```
+
 ## Usage
 
 The full API of this library can be found in [api.md](api.md).
@@ -610,72 +617,6 @@ with Together() as client:
 # HTTP client is now closed
 ```
 
-## Usage – CLI
-
-### Files
-
-```bash
-# Help
-tg files --help
-
-# Check file
-tg files check example.jsonl
-
-# Upload file
-tg files upload example.jsonl
-
-# List files
-tg files list
-
-# Retrieve file metadata
-tg files retrieve file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-
-# Retrieve file content
-tg files retrieve-content file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-
-# Delete remote file
-tg files delete file-6f50f9d1-5b95-416c-9040-0799b2b4b894
-```
-
-### Fine-tuning
-
-```bash
-# `tg ft` and `tg fine-tuning` are equivalent
-
-# Help
-tg ft --help
-
-# Create fine-tune job
-tg ft create \
-  --model togethercomputer/llama-2-7b-chat \
-  --training-file file-711d8724-b3e3-4ae2-b516-94841958117d
-
-# List fine-tune jobs
-tg ft list
-
-# Retrieve fine-tune job details
-tg ft retrieve ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# List fine-tune job events
-tg ft list-events ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Cancel running job
-tg ft cancel ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-
-# Download fine-tuned model weights
-tg ft download ft-c66a5c18-1d6d-43c9-94bd-32d756425b4b
-```
-
-### Models
-
-```bash
-# Help
-tg models --help
-
-# List models
-tg models list
-```
-
 ## Versioning
 
 This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
@@ -782,41 +723,41 @@ tg models upload --model-name my-org/my-model --model-source s3-or-hugging-face
 
 ```bash
 # Help
-tg beta clusters --help
+tg clusters --help
 
 # Create a cluster
-tg beta clusters create
+tg clusters create
 
 # List clusters
-tg beta clusters list
+tg clusters list
 
 # Retrieve cluster details
-tg beta clusters retrieve [cluster-id]
+tg clusters retrieve [cluster-id]
 
 # Update a cluster
-tg beta clusters update [cluster-id]
+tg clusters update [cluster-id]
 
 # Retrieve Together cluster configuration options such as regions, gpu types and drivers available
-tg beta clusters list-regions
+tg clusters list-regions
 ```
 
 ##### Cluster Storage
 
 ```bash
 # Help
-tg beta clusters storage --help
+tg clusters storage --help
 
 # Create cluster storage volume
-tg beta clusters storage create
+tg clusters storage create
 
 # List storage volumes
-tg beta clusters storage list
+tg clusters storage list
 
 # Retrieve storage volume
-tg beta clusters storage retrieve [storage-id]
+tg clusters storage retrieve [storage-id]
 
 # Delete storage volume
-tg beta clusters storage delete [storage-id]
+tg clusters storage delete [storage-id]
 ```
 
 ### Jig (Container Deployments)

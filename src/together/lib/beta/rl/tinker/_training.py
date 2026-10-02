@@ -454,10 +454,10 @@ class TrainingClient:
             allow_stale: Keep the returned client usable after a later publish.
                 This does *not* pin a policy version, because Together has no snapshot checkpoints:
                 a stale client samples whatever weights are live at the time of each request.
-            weight_sync_type: How the publish is performed; see the sync-modes table in
-                ``RL_README.md``. ``WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH`` returns once the
-                sync is queued rather than once it is live, which frees the trainer sooner
-                but leaves the publish to be paid by whatever samples next.
+            weight_sync_type: How the publish is performed. ``WEIGHT_SYNC_TYPE_SYNCHRONOUS``
+                returns once the new weights are live. ``WEIGHT_SYNC_TYPE_BACKGROUND_PUBLISH``
+                returns once the sync is queued, which frees the trainer sooner but leaves the
+                publish to be paid by whatever samples next.
 
         Returns:
             SamplingClient: Samples from the weights this call published.
