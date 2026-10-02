@@ -24,23 +24,25 @@ class TestClusters:
     parametrize = pytest.mark.parametrize("client", [False, True], indirect=True, ids=["loose", "strict"])
 
     @parametrize
-    def test_method_create(self, client: Together) -> None:
+    def test_method_create_overload_1(self, client: Together) -> None:
         cluster = client.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
-    def test_method_create_with_all_params(self, client: Together) -> None:
+    def test_method_create_with_all_params_overload_1(self, client: Together) -> None:
         cluster = client.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
             acceptance_tests_params={
                 "dcgm_diag_level": "DCGM_DIAG_LEVEL_SHORT",
@@ -96,6 +98,141 @@ class TestClusters:
             num_preemptible_gpus=0,
             num_reserved_gpus=0,
             nvidia_driver_version="nvidia_driver_version",
+            oidc_config={
+                "client_id": "client_id",
+                "group_claim": "group_claim",
+                "group_prefix": "group_prefix",
+                "issuer_url": "issuer_url",
+                "username_claim": "username_claim",
+                "username_prefix": "username_prefix",
+                "ca_cert": "ca_cert",
+            },
+            project_id="project_id",
+            reservation_end_time=parse_datetime("2019-12-27T18:11:19.117Z"),
+            reservation_start_time=parse_datetime("2019-12-27T18:11:19.117Z"),
+            shared_volume={
+                "region": "region",
+                "size_tib": 0,
+                "volume_name": "volume_name",
+                "instance_cluster_id": "instance_cluster_id",
+                "is_lifecycle_independent": True,
+                "project_id": "project_id",
+            },
+            slurm_image="slurm_image",
+            slurm_shm_size_gib=0,
+            volume_id="volume_id",
+        )
+        assert_matches_type(Cluster, cluster, path=["response"])
+
+    @parametrize
+    def test_raw_response_create_overload_1(self, client: Together) -> None:
+        response = client.clusters.with_raw_response.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
+            region="region",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        cluster = response.parse()
+        assert_matches_type(Cluster, cluster, path=["response"])
+
+    @parametrize
+    def test_streaming_response_create_overload_1(self, client: Together) -> None:
+        with client.clusters.with_streaming_response.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
+            region="region",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            cluster = response.parse()
+            assert_matches_type(Cluster, cluster, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_method_create_overload_2(self, client: Together) -> None:
+        cluster = client.clusters.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            cuda_version="cuda_version",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
+            region="region",
+        )
+        assert_matches_type(Cluster, cluster, path=["response"])
+
+    @parametrize
+    def test_method_create_with_all_params_overload_2(self, client: Together) -> None:
+        cluster = client.clusters.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            cuda_version="cuda_version",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
+            region="region",
+            acceptance_tests_params={
+                "dcgm_diag_level": "DCGM_DIAG_LEVEL_SHORT",
+                "dcgm_diag_skipped": True,
+                "enabled": True,
+                "gpu_burn_duration": 0,
+                "gpu_burn_skipped": True,
+                "nccl_multi_node_skipped": True,
+                "nccl_single_node_skipped": True,
+                "storage_skipped": True,
+            },
+            add_ons=[
+                {
+                    "add_on_type": "add_on_type",
+                    "name": "name",
+                    "config": {
+                        "dashboard": {"enabled": True},
+                        "headlamp": {"enabled": True},
+                        "ingress": {"enabled": True},
+                        "slurm_web": {"enabled": True},
+                        "torchpass": {"enabled": True},
+                    },
+                }
+            ],
+            auto_scale=True,
+            auto_scale_max_gpus=0,
+            auto_scaled=True,
+            capacity_pool_id="capacity_pool_id",
+            cluster_config={
+                "load_balancer": "NONE",
+                "gpu_operator_version": "gpu_operator_version",
+                "ingress": {"enabled": True},
+                "jumphost_enabled": True,
+                "kubernetes_dashboard_enabled": True,
+                "network_operator_version": "network_operator_version",
+                "observability": {"enabled": True},
+                "slurm_startup_scripts": {
+                    "controller_epilog": "controller_epilog",
+                    "controller_prolog": "controller_prolog",
+                    "extra_slurm_conf": "extra_slurm_conf",
+                    "login_init_script": "login_init_script",
+                    "nodeset_init_script": "nodeset_init_script",
+                    "worker_epilog": "worker_epilog",
+                    "worker_prolog": "worker_prolog",
+                },
+                "ssh_ca_enabled": True,
+            },
+            cluster_type="KUBERNETES",
+            duration_days=0,
+            install_traefik=True,
+            num_capacity_pool_gpus=0,
+            num_preemptible_gpus=0,
+            num_reserved_gpus=0,
             nvidia_version_id="nvidia_version_id",
             oidc_config={
                 "client_id": "client_id",
@@ -124,12 +261,14 @@ class TestClusters:
         assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
-    def test_raw_response_create(self, client: Together) -> None:
+    def test_raw_response_create_overload_2(self, client: Together) -> None:
         response = client.clusters.with_raw_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         )
 
@@ -139,12 +278,14 @@ class TestClusters:
         assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
-    def test_streaming_response_create(self, client: Together) -> None:
+    def test_streaming_response_create_overload_2(self, client: Together) -> None:
         with client.clusters.with_streaming_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         ) as response:
             assert not response.is_closed
@@ -377,23 +518,25 @@ class TestAsyncClusters:
     )
 
     @parametrize
-    async def test_method_create(self, async_client: AsyncTogether) -> None:
+    async def test_method_create_overload_1(self, async_client: AsyncTogether) -> None:
         cluster = await async_client.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
         )
         assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
-    async def test_method_create_with_all_params(self, async_client: AsyncTogether) -> None:
+    async def test_method_create_with_all_params_overload_1(self, async_client: AsyncTogether) -> None:
         cluster = await async_client.clusters.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
             region="region",
             acceptance_tests_params={
                 "dcgm_diag_level": "DCGM_DIAG_LEVEL_SHORT",
@@ -449,6 +592,141 @@ class TestAsyncClusters:
             num_preemptible_gpus=0,
             num_reserved_gpus=0,
             nvidia_driver_version="nvidia_driver_version",
+            oidc_config={
+                "client_id": "client_id",
+                "group_claim": "group_claim",
+                "group_prefix": "group_prefix",
+                "issuer_url": "issuer_url",
+                "username_claim": "username_claim",
+                "username_prefix": "username_prefix",
+                "ca_cert": "ca_cert",
+            },
+            project_id="project_id",
+            reservation_end_time=parse_datetime("2019-12-27T18:11:19.117Z"),
+            reservation_start_time=parse_datetime("2019-12-27T18:11:19.117Z"),
+            shared_volume={
+                "region": "region",
+                "size_tib": 0,
+                "volume_name": "volume_name",
+                "instance_cluster_id": "instance_cluster_id",
+                "is_lifecycle_independent": True,
+                "project_id": "project_id",
+            },
+            slurm_image="slurm_image",
+            slurm_shm_size_gib=0,
+            volume_id="volume_id",
+        )
+        assert_matches_type(Cluster, cluster, path=["response"])
+
+    @parametrize
+    async def test_raw_response_create_overload_1(self, async_client: AsyncTogether) -> None:
+        response = await async_client.clusters.with_raw_response.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
+            region="region",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        cluster = await response.parse()
+        assert_matches_type(Cluster, cluster, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_create_overload_1(self, async_client: AsyncTogether) -> None:
+        async with async_client.clusters.with_streaming_response.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_version_id="nvidia_version_id",
+            region="region",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            cluster = await response.parse()
+            assert_matches_type(Cluster, cluster, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_method_create_overload_2(self, async_client: AsyncTogether) -> None:
+        cluster = await async_client.clusters.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            cuda_version="cuda_version",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
+            region="region",
+        )
+        assert_matches_type(Cluster, cluster, path=["response"])
+
+    @parametrize
+    async def test_method_create_with_all_params_overload_2(self, async_client: AsyncTogether) -> None:
+        cluster = await async_client.clusters.create(
+            billing_type="RESERVED",
+            cluster_name="cluster_name",
+            cuda_version="cuda_version",
+            gpu_type="H100_SXM",
+            num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
+            region="region",
+            acceptance_tests_params={
+                "dcgm_diag_level": "DCGM_DIAG_LEVEL_SHORT",
+                "dcgm_diag_skipped": True,
+                "enabled": True,
+                "gpu_burn_duration": 0,
+                "gpu_burn_skipped": True,
+                "nccl_multi_node_skipped": True,
+                "nccl_single_node_skipped": True,
+                "storage_skipped": True,
+            },
+            add_ons=[
+                {
+                    "add_on_type": "add_on_type",
+                    "name": "name",
+                    "config": {
+                        "dashboard": {"enabled": True},
+                        "headlamp": {"enabled": True},
+                        "ingress": {"enabled": True},
+                        "slurm_web": {"enabled": True},
+                        "torchpass": {"enabled": True},
+                    },
+                }
+            ],
+            auto_scale=True,
+            auto_scale_max_gpus=0,
+            auto_scaled=True,
+            capacity_pool_id="capacity_pool_id",
+            cluster_config={
+                "load_balancer": "NONE",
+                "gpu_operator_version": "gpu_operator_version",
+                "ingress": {"enabled": True},
+                "jumphost_enabled": True,
+                "kubernetes_dashboard_enabled": True,
+                "network_operator_version": "network_operator_version",
+                "observability": {"enabled": True},
+                "slurm_startup_scripts": {
+                    "controller_epilog": "controller_epilog",
+                    "controller_prolog": "controller_prolog",
+                    "extra_slurm_conf": "extra_slurm_conf",
+                    "login_init_script": "login_init_script",
+                    "nodeset_init_script": "nodeset_init_script",
+                    "worker_epilog": "worker_epilog",
+                    "worker_prolog": "worker_prolog",
+                },
+                "ssh_ca_enabled": True,
+            },
+            cluster_type="KUBERNETES",
+            duration_days=0,
+            install_traefik=True,
+            num_capacity_pool_gpus=0,
+            num_preemptible_gpus=0,
+            num_reserved_gpus=0,
             nvidia_version_id="nvidia_version_id",
             oidc_config={
                 "client_id": "client_id",
@@ -477,12 +755,14 @@ class TestAsyncClusters:
         assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
-    async def test_raw_response_create(self, async_client: AsyncTogether) -> None:
+    async def test_raw_response_create_overload_2(self, async_client: AsyncTogether) -> None:
         response = await async_client.clusters.with_raw_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         )
 
@@ -492,12 +772,14 @@ class TestAsyncClusters:
         assert_matches_type(Cluster, cluster, path=["response"])
 
     @parametrize
-    async def test_streaming_response_create(self, async_client: AsyncTogether) -> None:
+    async def test_streaming_response_create_overload_2(self, async_client: AsyncTogether) -> None:
         async with async_client.clusters.with_streaming_response.create(
             billing_type="RESERVED",
             cluster_name="cluster_name",
+            cuda_version="cuda_version",
             gpu_type="H100_SXM",
             num_gpus=0,
+            nvidia_driver_version="nvidia_driver_version",
             region="region",
         ) as response:
             assert not response.is_closed

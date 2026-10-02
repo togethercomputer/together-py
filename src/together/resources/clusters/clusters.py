@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Union, Iterable
 from datetime import datetime
-from typing_extensions import Literal
+from typing_extensions import Literal, overload
 
 import httpx
 
@@ -18,7 +18,7 @@ from .storage import (
     AsyncStorageResourceWithStreamingResponse,
 )
 from ..._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
-from ..._utils import path_template, maybe_transform, async_maybe_transform
+from ..._utils import path_template, required_args, maybe_transform, async_maybe_transform
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
 from ..._response import (
@@ -72,6 +72,7 @@ class ClustersResource(SyncAPIResource):
         """
         return ClustersResourceWithStreamingResponse(self)
 
+    @overload
     def create(
         self,
         *,
@@ -79,14 +80,16 @@ class ClustersResource(SyncAPIResource):
         cluster_name: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
         num_gpus: int,
+        nvidia_version_id: str,
         region: str,
-        acceptance_tests_params: cluster_create_params.AcceptanceTestsParams | Omit = omit,
-        add_ons: Iterable[cluster_create_params.AddOn] | Omit = omit,
+        acceptance_tests_params: cluster_create_params.GPUClusterCreateRequestNvidiaVersionAcceptanceTestsParams
+        | Omit = omit,
+        add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestNvidiaVersionAddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
         auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
-        cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
+        cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         cuda_version: str | Omit = omit,
         duration_days: int | Omit = omit,
@@ -95,12 +98,11 @@ class ClustersResource(SyncAPIResource):
         num_preemptible_gpus: int | Omit = omit,
         num_reserved_gpus: int | Omit = omit,
         nvidia_driver_version: str | Omit = omit,
-        nvidia_version_id: str | Omit = omit,
-        oidc_config: cluster_create_params.OidcConfig | Omit = omit,
+        oidc_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionOidcConfig | Omit = omit,
         project_id: str | Omit = omit,
         reservation_end_time: Union[str, datetime] | Omit = omit,
         reservation_start_time: Union[str, datetime] | Omit = omit,
-        shared_volume: cluster_create_params.SharedVolume | Omit = omit,
+        shared_volume: cluster_create_params.GPUClusterCreateRequestNvidiaVersionSharedVolume | Omit = omit,
         slurm_image: str | Omit = omit,
         slurm_shm_size_gib: int | Omit = omit,
         volume_id: str | Omit = omit,
@@ -132,6 +134,9 @@ class ClustersResource(SyncAPIResource):
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
+
+          nvidia_version_id: Canonical region-specific NVIDIA version ID. If cuda_version and
+              nvidia_driver_version are also set, they must resolve to the same catalog entry.
 
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
@@ -180,6 +185,145 @@ class ClustersResource(SyncAPIResource):
           nvidia_driver_version: Legacy NVIDIA driver selector for this cluster. For example, 550. Must be paired
               with cuda_version. Prefer nvidia_version_id for new integrations.
 
+          project_id: Project ID for the cluster. If not set, the project from the request context is
+              used.
+
+          reservation_end_time: Reservation end time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation end time for the cluster.
+
+          reservation_start_time: Reservation start time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation start time for the cluster. If not provided,
+              the cluster provisions immediately.
+
+          shared_volume: Inline configuration to create a shared volume with the cluster creation.
+
+          slurm_image: Custom Slurm image for Slurm clusters.
+
+          slurm_shm_size_gib: Shared memory size in GiB for Slurm cluster. This field is required if
+              cluster_type is SLURM.
+
+          volume_id: ID of an existing volume to use with the cluster creation.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        ...
+
+    @overload
+    def create(
+        self,
+        *,
+        billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
+        cluster_name: str,
+        cuda_version: str,
+        gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
+        num_gpus: int,
+        nvidia_driver_version: str,
+        region: str,
+        acceptance_tests_params: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAcceptanceTestsParams
+        | Omit = omit,
+        add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAddOn] | Omit = omit,
+        auto_scale: bool | Omit = omit,
+        auto_scale_max_gpus: int | Omit = omit,
+        auto_scaled: bool | Omit = omit,
+        capacity_pool_id: str | Omit = omit,
+        cluster_config: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig | Omit = omit,
+        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        duration_days: int | Omit = omit,
+        install_traefik: bool | Omit = omit,
+        num_capacity_pool_gpus: int | Omit = omit,
+        num_preemptible_gpus: int | Omit = omit,
+        num_reserved_gpus: int | Omit = omit,
+        nvidia_version_id: str | Omit = omit,
+        oidc_config: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaOidcConfig | Omit = omit,
+        project_id: str | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
+        reservation_start_time: Union[str, datetime] | Omit = omit,
+        shared_volume: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaSharedVolume | Omit = omit,
+        slurm_image: str | Omit = omit,
+        slurm_shm_size_gib: int | Omit = omit,
+        volume_id: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Cluster:
+        """Create an Instant Cluster on Together's high-performance GPU clusters.
+
+        With
+        features like on-demand scaling, long-lived resizable high-bandwidth shared
+        DC-local storage, Kubernetes and Slurm cluster flavors, a REST API, and
+        Terraform support, you can run workloads flexibly without complex infrastructure
+        management.
+
+        Args:
+          billing_type: RESERVED billing types allow you to specify the duration of the cluster
+              reservation via the duration_days field. ON_DEMAND billing types will give you
+              ownership of the cluster until you delete it. SCHEDULED_CAPACITY billing types
+              allow you to reserve capacity for a scheduled time window. You must specify the
+              reservation_start_time and reservation_end_time with this request.
+
+          cluster_name: Name of the GPU cluster.
+
+          cuda_version: Legacy CUDA selector for this cluster. Bare semantic values such as 12.5 select
+              ubuntu-22.04; existing OS-suffixed values remain accepted for compatibility.
+              Must be paired with nvidia_driver_version. Prefer nvidia_version_id for new
+              integrations.
+
+          gpu_type: Type of GPU to use in the cluster
+
+          num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
+              example, 8, 16 or 24
+
+          nvidia_driver_version: Legacy NVIDIA driver selector for this cluster. For example, 550. Must be paired
+              with cuda_version. Prefer nvidia_version_id for new integrations.
+
+          region: Region to create the GPU cluster in. Usable regions can be found from
+              `client.clusters.list_regions()`
+
+          acceptance_tests_params: AcceptanceTestsParams groups all GPU acceptance test options when enabled is
+              true.
+
+          add_ons: Add-ons to enable on the cluster at creation time.
+
+          auto_scale: Whether to enable auto-scaling for the cluster. If true, the cluster will
+              automatically scale the number of GPU worker nodes between num_gpus and
+              auto_scale_max_gpus based on the workload.
+
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
+              required if auto_scaled is true.
+
+          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
+              is not auto-scaled.
+
+          capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
+              applicable if the cluster is created from a capacity pool.
+
+          cluster_type: Type of cluster to create.
+
+          duration_days: Duration in days to keep the cluster running.
+
+          install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
+              applicable for Kubernetes clusters and is false by default.
+
+          num_capacity_pool_gpus: Number of GPUs to allocate from the capacity pool. Must be a multiple of 8 and
+              not exceed num_gpus.
+
+          num_preemptible_gpus: Number of preemptible GPUs to request alongside on-demand capacity. Must be a
+              multiple of 8. Preemptible nodes are cheaper but may be reclaimed when on-demand
+              capacity is needed elsewhere; the system fulfills this asynchronously and
+              surfaces the actual count in allocated_preemptible_gpus.
+
+          num_reserved_gpus: Number of prepaid (PLG) reserved GPUs for this cluster. When omitted for
+              RESERVED billing on create, the server defaults this to num_gpus.
+
           nvidia_version_id: Canonical region-specific NVIDIA version ID. If cuda_version and
               nvidia_driver_version are also set, they must resolve to the same catalog entry.
 
@@ -210,6 +354,61 @@ class ClustersResource(SyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        ...
+
+    @required_args(
+        ["billing_type", "cluster_name", "gpu_type", "num_gpus", "nvidia_version_id", "region"],
+        ["billing_type", "cluster_name", "cuda_version", "gpu_type", "num_gpus", "nvidia_driver_version", "region"],
+    )
+    def create(
+        self,
+        *,
+        billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
+        cluster_name: str,
+        gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
+        num_gpus: int,
+        nvidia_version_id: str | Omit = omit,
+        region: str,
+        acceptance_tests_params: cluster_create_params.GPUClusterCreateRequestNvidiaVersionAcceptanceTestsParams
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAcceptanceTestsParams
+        | Omit = omit,
+        add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestNvidiaVersionAddOn]
+        | Iterable[cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAddOn]
+        | Omit = omit,
+        auto_scale: bool | Omit = omit,
+        auto_scale_max_gpus: int | Omit = omit,
+        auto_scaled: bool | Omit = omit,
+        capacity_pool_id: str | Omit = omit,
+        cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig
+        | Omit = omit,
+        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        cuda_version: str | Omit = omit,
+        duration_days: int | Omit = omit,
+        install_traefik: bool | Omit = omit,
+        num_capacity_pool_gpus: int | Omit = omit,
+        num_preemptible_gpus: int | Omit = omit,
+        num_reserved_gpus: int | Omit = omit,
+        nvidia_driver_version: str | Omit = omit,
+        oidc_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionOidcConfig
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaOidcConfig
+        | Omit = omit,
+        project_id: str | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
+        reservation_start_time: Union[str, datetime] | Omit = omit,
+        shared_volume: cluster_create_params.GPUClusterCreateRequestNvidiaVersionSharedVolume
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaSharedVolume
+        | Omit = omit,
+        slurm_image: str | Omit = omit,
+        slurm_shm_size_gib: int | Omit = omit,
+        volume_id: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Cluster:
         return self._post(
             "/compute/clusters",
             body=maybe_transform(
@@ -218,6 +417,7 @@ class ClustersResource(SyncAPIResource):
                     "cluster_name": cluster_name,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
+                    "nvidia_version_id": nvidia_version_id,
                     "region": region,
                     "acceptance_tests_params": acceptance_tests_params,
                     "add_ons": add_ons,
@@ -234,7 +434,6 @@ class ClustersResource(SyncAPIResource):
                     "num_preemptible_gpus": num_preemptible_gpus,
                     "num_reserved_gpus": num_reserved_gpus,
                     "nvidia_driver_version": nvidia_driver_version,
-                    "nvidia_version_id": nvidia_version_id,
                     "oidc_config": oidc_config,
                     "project_id": project_id,
                     "reservation_end_time": reservation_end_time,
@@ -487,6 +686,7 @@ class AsyncClustersResource(AsyncAPIResource):
         """
         return AsyncClustersResourceWithStreamingResponse(self)
 
+    @overload
     async def create(
         self,
         *,
@@ -494,14 +694,16 @@ class AsyncClustersResource(AsyncAPIResource):
         cluster_name: str,
         gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
         num_gpus: int,
+        nvidia_version_id: str,
         region: str,
-        acceptance_tests_params: cluster_create_params.AcceptanceTestsParams | Omit = omit,
-        add_ons: Iterable[cluster_create_params.AddOn] | Omit = omit,
+        acceptance_tests_params: cluster_create_params.GPUClusterCreateRequestNvidiaVersionAcceptanceTestsParams
+        | Omit = omit,
+        add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestNvidiaVersionAddOn] | Omit = omit,
         auto_scale: bool | Omit = omit,
         auto_scale_max_gpus: int | Omit = omit,
         auto_scaled: bool | Omit = omit,
         capacity_pool_id: str | Omit = omit,
-        cluster_config: cluster_create_params.ClusterConfig | Omit = omit,
+        cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig | Omit = omit,
         cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
         cuda_version: str | Omit = omit,
         duration_days: int | Omit = omit,
@@ -510,12 +712,11 @@ class AsyncClustersResource(AsyncAPIResource):
         num_preemptible_gpus: int | Omit = omit,
         num_reserved_gpus: int | Omit = omit,
         nvidia_driver_version: str | Omit = omit,
-        nvidia_version_id: str | Omit = omit,
-        oidc_config: cluster_create_params.OidcConfig | Omit = omit,
+        oidc_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionOidcConfig | Omit = omit,
         project_id: str | Omit = omit,
         reservation_end_time: Union[str, datetime] | Omit = omit,
         reservation_start_time: Union[str, datetime] | Omit = omit,
-        shared_volume: cluster_create_params.SharedVolume | Omit = omit,
+        shared_volume: cluster_create_params.GPUClusterCreateRequestNvidiaVersionSharedVolume | Omit = omit,
         slurm_image: str | Omit = omit,
         slurm_shm_size_gib: int | Omit = omit,
         volume_id: str | Omit = omit,
@@ -547,6 +748,9 @@ class AsyncClustersResource(AsyncAPIResource):
 
           num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
               example, 8, 16 or 24
+
+          nvidia_version_id: Canonical region-specific NVIDIA version ID. If cuda_version and
+              nvidia_driver_version are also set, they must resolve to the same catalog entry.
 
           region: Region to create the GPU cluster in. Usable regions can be found from
               `client.clusters.list_regions()`
@@ -595,6 +799,145 @@ class AsyncClustersResource(AsyncAPIResource):
           nvidia_driver_version: Legacy NVIDIA driver selector for this cluster. For example, 550. Must be paired
               with cuda_version. Prefer nvidia_version_id for new integrations.
 
+          project_id: Project ID for the cluster. If not set, the project from the request context is
+              used.
+
+          reservation_end_time: Reservation end time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation end time for the cluster.
+
+          reservation_start_time: Reservation start time of the cluster. This field is required for SCHEDULED
+              billing to specify the reservation start time for the cluster. If not provided,
+              the cluster provisions immediately.
+
+          shared_volume: Inline configuration to create a shared volume with the cluster creation.
+
+          slurm_image: Custom Slurm image for Slurm clusters.
+
+          slurm_shm_size_gib: Shared memory size in GiB for Slurm cluster. This field is required if
+              cluster_type is SLURM.
+
+          volume_id: ID of an existing volume to use with the cluster creation.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        ...
+
+    @overload
+    async def create(
+        self,
+        *,
+        billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
+        cluster_name: str,
+        cuda_version: str,
+        gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
+        num_gpus: int,
+        nvidia_driver_version: str,
+        region: str,
+        acceptance_tests_params: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAcceptanceTestsParams
+        | Omit = omit,
+        add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAddOn] | Omit = omit,
+        auto_scale: bool | Omit = omit,
+        auto_scale_max_gpus: int | Omit = omit,
+        auto_scaled: bool | Omit = omit,
+        capacity_pool_id: str | Omit = omit,
+        cluster_config: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig | Omit = omit,
+        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        duration_days: int | Omit = omit,
+        install_traefik: bool | Omit = omit,
+        num_capacity_pool_gpus: int | Omit = omit,
+        num_preemptible_gpus: int | Omit = omit,
+        num_reserved_gpus: int | Omit = omit,
+        nvidia_version_id: str | Omit = omit,
+        oidc_config: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaOidcConfig | Omit = omit,
+        project_id: str | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
+        reservation_start_time: Union[str, datetime] | Omit = omit,
+        shared_volume: cluster_create_params.GPUClusterCreateRequestLegacyNvidiaSharedVolume | Omit = omit,
+        slurm_image: str | Omit = omit,
+        slurm_shm_size_gib: int | Omit = omit,
+        volume_id: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Cluster:
+        """Create an Instant Cluster on Together's high-performance GPU clusters.
+
+        With
+        features like on-demand scaling, long-lived resizable high-bandwidth shared
+        DC-local storage, Kubernetes and Slurm cluster flavors, a REST API, and
+        Terraform support, you can run workloads flexibly without complex infrastructure
+        management.
+
+        Args:
+          billing_type: RESERVED billing types allow you to specify the duration of the cluster
+              reservation via the duration_days field. ON_DEMAND billing types will give you
+              ownership of the cluster until you delete it. SCHEDULED_CAPACITY billing types
+              allow you to reserve capacity for a scheduled time window. You must specify the
+              reservation_start_time and reservation_end_time with this request.
+
+          cluster_name: Name of the GPU cluster.
+
+          cuda_version: Legacy CUDA selector for this cluster. Bare semantic values such as 12.5 select
+              ubuntu-22.04; existing OS-suffixed values remain accepted for compatibility.
+              Must be paired with nvidia_driver_version. Prefer nvidia_version_id for new
+              integrations.
+
+          gpu_type: Type of GPU to use in the cluster
+
+          num_gpus: Number of GPUs to allocate in the cluster. This must be multiple of 8. For
+              example, 8, 16 or 24
+
+          nvidia_driver_version: Legacy NVIDIA driver selector for this cluster. For example, 550. Must be paired
+              with cuda_version. Prefer nvidia_version_id for new integrations.
+
+          region: Region to create the GPU cluster in. Usable regions can be found from
+              `client.clusters.list_regions()`
+
+          acceptance_tests_params: AcceptanceTestsParams groups all GPU acceptance test options when enabled is
+              true.
+
+          add_ons: Add-ons to enable on the cluster at creation time.
+
+          auto_scale: Whether to enable auto-scaling for the cluster. If true, the cluster will
+              automatically scale the number of GPU worker nodes between num_gpus and
+              auto_scale_max_gpus based on the workload.
+
+          auto_scale_max_gpus: Maximum number of GPUs to which the cluster can be auto-scaled up. This field is
+              required if auto_scaled is true.
+
+          auto_scaled: Whether GPU cluster should be auto-scaled based on the workload. By default, it
+              is not auto-scaled.
+
+          capacity_pool_id: ID of the capacity pool to use for the cluster. This field is optional and only
+              applicable if the cluster is created from a capacity pool.
+
+          cluster_type: Type of cluster to create.
+
+          duration_days: Duration in days to keep the cluster running.
+
+          install_traefik: Whether to install Traefik ingress controller in the cluster. This field is only
+              applicable for Kubernetes clusters and is false by default.
+
+          num_capacity_pool_gpus: Number of GPUs to allocate from the capacity pool. Must be a multiple of 8 and
+              not exceed num_gpus.
+
+          num_preemptible_gpus: Number of preemptible GPUs to request alongside on-demand capacity. Must be a
+              multiple of 8. Preemptible nodes are cheaper but may be reclaimed when on-demand
+              capacity is needed elsewhere; the system fulfills this asynchronously and
+              surfaces the actual count in allocated_preemptible_gpus.
+
+          num_reserved_gpus: Number of prepaid (PLG) reserved GPUs for this cluster. When omitted for
+              RESERVED billing on create, the server defaults this to num_gpus.
+
           nvidia_version_id: Canonical region-specific NVIDIA version ID. If cuda_version and
               nvidia_driver_version are also set, they must resolve to the same catalog entry.
 
@@ -625,6 +968,61 @@ class AsyncClustersResource(AsyncAPIResource):
 
           timeout: Override the client-level default timeout for this request, in seconds
         """
+        ...
+
+    @required_args(
+        ["billing_type", "cluster_name", "gpu_type", "num_gpus", "nvidia_version_id", "region"],
+        ["billing_type", "cluster_name", "cuda_version", "gpu_type", "num_gpus", "nvidia_driver_version", "region"],
+    )
+    async def create(
+        self,
+        *,
+        billing_type: Literal["RESERVED", "ON_DEMAND", "SCHEDULED_CAPACITY"],
+        cluster_name: str,
+        gpu_type: Literal["H100_SXM", "H200_SXM", "RTX_6000_PCI", "L40_PCIE", "B200_SXM", "H100_SXM_INF", "B300_SXM"],
+        num_gpus: int,
+        nvidia_version_id: str | Omit = omit,
+        region: str,
+        acceptance_tests_params: cluster_create_params.GPUClusterCreateRequestNvidiaVersionAcceptanceTestsParams
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAcceptanceTestsParams
+        | Omit = omit,
+        add_ons: Iterable[cluster_create_params.GPUClusterCreateRequestNvidiaVersionAddOn]
+        | Iterable[cluster_create_params.GPUClusterCreateRequestLegacyNvidiaAddOn]
+        | Omit = omit,
+        auto_scale: bool | Omit = omit,
+        auto_scale_max_gpus: int | Omit = omit,
+        auto_scaled: bool | Omit = omit,
+        capacity_pool_id: str | Omit = omit,
+        cluster_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionClusterConfig
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaClusterConfig
+        | Omit = omit,
+        cluster_type: Literal["KUBERNETES", "SLURM"] | Omit = omit,
+        cuda_version: str | Omit = omit,
+        duration_days: int | Omit = omit,
+        install_traefik: bool | Omit = omit,
+        num_capacity_pool_gpus: int | Omit = omit,
+        num_preemptible_gpus: int | Omit = omit,
+        num_reserved_gpus: int | Omit = omit,
+        nvidia_driver_version: str | Omit = omit,
+        oidc_config: cluster_create_params.GPUClusterCreateRequestNvidiaVersionOidcConfig
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaOidcConfig
+        | Omit = omit,
+        project_id: str | Omit = omit,
+        reservation_end_time: Union[str, datetime] | Omit = omit,
+        reservation_start_time: Union[str, datetime] | Omit = omit,
+        shared_volume: cluster_create_params.GPUClusterCreateRequestNvidiaVersionSharedVolume
+        | cluster_create_params.GPUClusterCreateRequestLegacyNvidiaSharedVolume
+        | Omit = omit,
+        slurm_image: str | Omit = omit,
+        slurm_shm_size_gib: int | Omit = omit,
+        volume_id: str | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> Cluster:
         return await self._post(
             "/compute/clusters",
             body=await async_maybe_transform(
@@ -633,6 +1031,7 @@ class AsyncClustersResource(AsyncAPIResource):
                     "cluster_name": cluster_name,
                     "gpu_type": gpu_type,
                     "num_gpus": num_gpus,
+                    "nvidia_version_id": nvidia_version_id,
                     "region": region,
                     "acceptance_tests_params": acceptance_tests_params,
                     "add_ons": add_ons,
@@ -649,7 +1048,6 @@ class AsyncClustersResource(AsyncAPIResource):
                     "num_preemptible_gpus": num_preemptible_gpus,
                     "num_reserved_gpus": num_reserved_gpus,
                     "nvidia_driver_version": nvidia_driver_version,
-                    "nvidia_version_id": nvidia_version_id,
                     "oidc_config": oidc_config,
                     "project_id": project_id,
                     "reservation_end_time": reservation_end_time,
