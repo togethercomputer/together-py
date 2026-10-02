@@ -384,6 +384,32 @@ class TestBetaModelsPublic:
         assert "TP1" in result.output
         assert "cr_1" not in result.output
 
+    @pytest.mark.respx(base_url=base_url)
+    def test_public_table_shows_serverless_pricing(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        respx_mock.get("/supported-models").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _supported_model_body(
+                            products=["PRODUCT_SERVERLESS"],
+                            pricing={"input": 0.15, "cachedInput": 0.05, "output": 0.6},
+                        )
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["beta", "models", "public", "--project", "proj"])
+
+        assert result.exit_code == 0, result.output
+        assert "Serverless" in result.output
+        assert "Input $0.15" in result.output
+        assert "Cached $0.05" in result.output
+        assert "Output $0.6" in result.output
+
 
 class TestBetaModelsOrg:
     @pytest.mark.respx(base_url=base_url)
