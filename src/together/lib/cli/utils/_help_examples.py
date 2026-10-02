@@ -507,6 +507,9 @@ BETA_ENDPOINTS_GET_HELP_EXAMPLES = """[dim]Examples:[/dim]
 ## Beta models API commands
 
 BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Deploy a model to a dedicated endpoint:
+  [primary]tg beta models deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
+
 [dim]-[/dim] Find a supported base model, then register your own:
   [primary]tg beta models public --search Qwen[/primary]
   [primary]tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
@@ -519,7 +522,7 @@ BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta models ls[/primary]
   [primary]tg beta models ml_yyyyyyyyyyyy[/primary]
 
-[dim]-[/dim] List configs for a model to be used with [primary]tg beta endpoints deploy --config[/primary]:
+[dim]-[/dim] List configs for a model to be used with [primary]tg beta models deploy --config[/primary]:
   [primary]tg beta models configs ml_yyyyyyyyyyyy[/primary]
 
 [dim]-[/dim] Download a revision locally:
@@ -568,7 +571,7 @@ BETA_MODELS_PUBLIC_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 BETA_MODELS_CONFIGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] List configs you can pass to [primary]tg beta endpoints deploy --config[/primary]:
+[dim]-[/dim] List configs you can pass to [primary]tg beta models deploy --config[/primary]:
   [primary]tg beta models configs ml_xxxxxxxxxxxx[/primary]
 """
 

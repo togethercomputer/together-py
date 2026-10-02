@@ -398,6 +398,18 @@ def test_parse_command_and_flags_does_not_treat_beta_endpoints_subcommand_as_ret
     assert argv == ["beta", "endpoints", "deploy", "ml_1", "--endpoint", "e"]
 
 
+def test_parse_command_and_flags_beta_models_deploy_alias() -> None:
+    from together.lib.cli import app
+    from together.lib.cli.utils._preparse_tokens import preparse_tokens
+
+    cmd, flags, is_beta, argv = preparse_tokens(app, ["beta", "models", "deploy", "ml_1", "--endpoint", "e"])
+    assert cmd == "models deploy"
+    assert is_beta is True
+    assert "model" in flags
+    assert "endpoint_name_or_id" in flags
+    assert argv == ["beta", "models", "deploy", "ml_1", "--endpoint", "e"]
+
+
 def test_parse_command_and_flags_implicit_retrieve_fine_tuning_spelling() -> None:
     from together.lib.cli import app
     from together.lib.cli.utils._preparse_tokens import preparse_tokens

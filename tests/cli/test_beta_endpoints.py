@@ -180,8 +180,9 @@ class TestBetaEndpointsDeploy:
         assert "Do not pass --model-revision when --model already includes a revision" in result.output
 
     @pytest.mark.usefixtures("plain_cli_help")
-    def test_deploy_help_omits_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
+    @pytest.mark.parametrize("group", ["endpoints", "models"])
+    def test_deploy_help_omits_scale_to_zero_window(self, group: str, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", group, "deploy", "--help"])
 
         output = " ".join(result.output.split())
         assert result.exit_code == 0
@@ -192,6 +193,27 @@ class TestBetaEndpointsDeploy:
         assert "--placement.hipaa" in output
         assert "--scale-to-zero-window" not in output
         assert "--enable-lora" not in output
+        assert f"tg beta {group} deploy" in output
+
+    @pytest.mark.usefixtures("plain_cli_help")
+    def test_models_deploy_help_matches_endpoints_deploy(self, cli_runner: CliRunner) -> None:
+        endpoints = cli_runner.invoke(["beta", "endpoints", "deploy", "--help"])
+        models = cli_runner.invoke(["beta", "models", "deploy", "--help"])
+
+        assert endpoints.exit_code == 0, endpoints.output
+        assert models.exit_code == 0, models.output
+        assert models.output == endpoints.output.replace("tg beta endpoints deploy", "tg beta models deploy").replace(
+            "beta endpoints deploy", "beta models deploy"
+        )
+
+    @pytest.mark.usefixtures("plain_cli_help")
+    def test_models_help_lists_deploy_alias(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["beta", "models", "--help"])
+
+        output = " ".join(result.output.split())
+        assert result.exit_code == 0, result.output
+        assert "Create a deployment on a new or existing endpoint" in output
+        assert "tg beta models deploy" in output
 
     def test_deploy_rejects_scale_to_zero_window(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "endpoints", "deploy", "--scale-to-zero-window"])
@@ -426,7 +448,8 @@ class TestBetaEndpointsDeploy:
         assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
-    def test_deploy_onto_existing_endpoint(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+    @pytest.mark.parametrize("group", ["endpoints", "models"])
+    def test_deploy_onto_existing_endpoint(self, group: str, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_model_and_config(respx_mock)
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
@@ -436,7 +459,7 @@ class TestBetaEndpointsDeploy:
         result = cli_runner.invoke(
             [
                 "beta",
-                "endpoints",
+                group,
                 "deploy",
                 "--project",
                 "proj",
