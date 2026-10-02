@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import uuid
+import asyncio
 from typing import Any, Optional, cast
 from typing_extensions import Annotated
 
@@ -34,6 +35,9 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
 )
 from together.lib.cli.api.beta.endpoints._utils._build_autoscaling import build_autoscaling
+
+_SHADOW_EXPERIMENT_LOOKUP_ATTEMPTS = 4
+_SHADOW_EXPERIMENT_LOOKUP_BASE_DELAY_SECONDS = 0.1
 
 
 async def shadow(
@@ -215,9 +219,13 @@ async def create_or_find_shadow_experiment(
         )
     except APIError as e:
         if "already exists" in e.message.lower():
-            async for experiment in client.beta.endpoints.shadow_experiments.list(endpoint_id=endpoint_id):
-                if experiment.name == name:
-                    return experiment
+            # The create response can reach us before the experiment is visible to list requests.
+            for attempt in range(_SHADOW_EXPERIMENT_LOOKUP_ATTEMPTS):
+                async for experiment in client.beta.endpoints.shadow_experiments.list(endpoint_id=endpoint_id):
+                    if experiment.name == name:
+                        return experiment
+                if attempt + 1 < _SHADOW_EXPERIMENT_LOOKUP_ATTEMPTS:
+                    await asyncio.sleep(_SHADOW_EXPERIMENT_LOOKUP_BASE_DELAY_SECONDS * 2**attempt)
             raise ValueError(
                 f"Shadow experiment {name} not found for endpoint {endpoint_id}. This is likely a bug in the CLI. Please report it to the Together team."
             ) from None

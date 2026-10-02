@@ -322,6 +322,53 @@ class TestBetaEndpointShadow:
         assert output["deployment"]["id"] == "dep_shadow_2"
 
     @pytest.mark.respx(base_url=base_url)
+    def test_shadow_retries_eventually_consistent_experiment_lookup(
+        self,
+        respx_mock: MockRouter,
+        cli_runner: CliRunner,
+    ) -> None:
+        _mock_endpoint(respx_mock)
+        _mock_model_and_config(respx_mock)
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            return_value=httpx.Response(
+                409,
+                json={"error": {"message": "Shadow experiment already exists", "type": "conflict"}},
+            )
+        )
+        list_route = respx_mock.get("/projects/proj/endpoints/ep_1/shadowExperiments").mock(
+            side_effect=[
+                httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None}),
+                httpx.Response(
+                    200,
+                    json={
+                        "object": "list",
+                        "data": [_shadow_experiment_body(name="shadow-rate-0.1")],
+                        "next_cursor": None,
+                    },
+                ),
+            ]
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body(deployment_id="dep_shadow_2"))
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/shadowExperiments/exp_1/targets").mock(
+            return_value=httpx.Response(
+                200,
+                json=_shadow_target_body(
+                    target_id="target_2",
+                    target_deployment_id="dep_shadow_2",
+                ),
+            )
+        )
+
+        with patch("together.lib.cli.api.beta.endpoints.shadow.asyncio.sleep", new_callable=AsyncMock) as sleep:
+            result = cli_runner.invoke(_shadow_cli_args())
+
+        assert result.exit_code == 0, result.output
+        assert list_route.call_count == 2
+        sleep.assert_awaited_once_with(0.1)
+
+    @pytest.mark.respx(base_url=base_url)
     def test_shadow_reuses_existing_experiment_from_later_page(
         self,
         respx_mock: MockRouter,
@@ -393,7 +440,8 @@ class TestBetaEndpointShadow:
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
         )
 
-        result = cli_runner.invoke(_shadow_cli_args())
+        with patch("together.lib.cli.api.beta.endpoints.shadow.asyncio.sleep", new_callable=AsyncMock):
+            result = cli_runner.invoke(_shadow_cli_args())
 
         assert result.exit_code != 0
         assert "likely a bug in the CLI" in result.output
