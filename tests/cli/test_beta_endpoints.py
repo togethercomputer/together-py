@@ -961,6 +961,47 @@ class TestBetaEndpointsDeployAdapter:
         assert not any(call.request.method == "DELETE" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
+    def test_deploy_adapter_with_merge_creates_new_deployment(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        respx_mock.get("/projects/proj/models/ml_adapter").mock(
+            return_value=httpx.Response(200, json=_adapter_model_body())
+        )
+        respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(
+                200,
+                json={"object": "list", "data": [_lora_config_body("cr_merged", "disabled")], "next_cursor": None},
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json=_deployment_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_adapter",
+                "--merge",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert create_deployment_route.call_count == 1
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["model"] == "projects/proj/models/ml_adapter"
+        assert deployment_body["config"] == "projects/proj/configs/cr_merged"
+        assert not any(call.request.url.path.endswith("/adapters") for call in cast(list[Call], respx_mock.calls))
+
+    @pytest.mark.respx(base_url=base_url)
     def test_deploy_adapter_fails_when_no_lora_config(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_adapter_models(respx_mock)
         respx_mock.get("/projects/proj/configs").mock(

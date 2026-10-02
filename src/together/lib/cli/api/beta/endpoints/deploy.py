@@ -194,6 +194,16 @@ async def deploy(
             validator=Number(gte=0),
         ),
     ] = None,
+    merge: Annotated[
+        bool,
+        Parameter(
+            negative=False,
+            help=(
+                "For a LoRA adapter model, create a new deployment that serves the adapter merged into its "
+                "base model, instead of attaching the adapter to a base-model deployment."
+            ),
+        ),
+    ] = False,
     config: CLIConfigParameter,
 ) -> None:
     """Create a deployment on a new or existing dedicated inference endpoint.
@@ -202,7 +212,8 @@ async def deploy(
     existing deployment of its base model whose config has `adapter_mode` fixed or dynamic. With
     `--deployment-name`, use the deployment of that name when it exists. If the endpoint has no
     such deployment, create one from a fixed or dynamic config and then attach the adapter. The
-    command fails when no fixed or dynamic config exists.
+    command fails when no fixed or dynamic config exists. Pass `--merge` to instead create a new
+    deployment of the adapter itself, which the API merges into its base model.
     """
     model_path_match = MODEL_PATH_RE.match(model)
     if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
@@ -214,7 +225,8 @@ async def deploy(
     if placement_id and inline_placement_value is not None:
         raise ValueError("Use either --placement or inline placement options, not both.")
 
-    adapter_model = await load_adapter_model(config, model)
+    # --merge deploys an adapter like any other model; the API merges it into its base model.
+    adapter_model = None if merge else await load_adapter_model(config, model)
     if adapter_model is not None:
         adapter_revision = model_path_match.group(3) if model_path_match is not None else None
         await _deploy_adapter(
