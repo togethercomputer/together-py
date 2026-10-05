@@ -53,6 +53,8 @@ _SAFE_FILE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 # Replay PUT+body. 307/308 are spec-correct (S3/GCS); 301/302/303 match prior httpx auto-follow.
 _UPLOAD_REPLAY_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 _MAX_UPLOAD_REDIRECTS = 20
+_MAX_UPLOAD_RETRIES = 2
+_UPLOAD_INITIAL_RETRY_DELAY = 0.5
 _INSECURE_UPLOAD_REDIRECTS_ENV = "TOGETHER_ALLOW_INSECURE_UPLOAD_REDIRECTS"
 
 
@@ -352,23 +354,38 @@ def _put_file_content(
     """
 
     hops = 0
+    retries = 0
     progress_callback = _monotonic_upload_progress(progress_callback)
     _ = file_size  # each hop fstats the fd; caller size can be stale
     while True:
         # Open + fstat the same fd so Content-Length matches the streamed body even
         # if the file is appended/truncated between hops (or vs. the caller's stat).
-        with file.open("rb") as file_handle:
-            put_size = os.fstat(file_handle.fileno()).st_size
-            response = http_client.put(
-                url=url,
-                content=_iter_open_file_upload_chunks(
-                    file_handle,
-                    total_bytes=put_size,
-                    progress_callback=progress_callback,
-                ),
-                headers={"Content-Length": str(put_size)},
-                follow_redirects=False,
+        try:
+            with file.open("rb") as file_handle:
+                put_size = os.fstat(file_handle.fileno()).st_size
+                response = http_client.put(
+                    url=url,
+                    content=_iter_open_file_upload_chunks(
+                        file_handle,
+                        total_bytes=put_size,
+                        progress_callback=progress_callback,
+                    ),
+                    headers={"Content-Length": str(put_size)},
+                    follow_redirects=False,
+                )
+        except httpx.TransportError:
+            if retries >= _MAX_UPLOAD_RETRIES:
+                raise
+            retries += 1
+            delay = _UPLOAD_INITIAL_RETRY_DELAY * 2 ** (retries - 1)
+            log.warning(
+                "File upload interrupted. Retry %d/%d in %.1fs...",
+                retries,
+                _MAX_UPLOAD_RETRIES,
+                delay,
             )
+            time.sleep(delay)
+            continue
         if response.status_code not in _UPLOAD_REPLAY_REDIRECT_STATUSES:
             return response
         hops += 1
@@ -395,21 +412,36 @@ async def _aput_file_content(
     """Async counterpart of ``_put_file_content``."""
 
     hops = 0
+    retries = 0
     progress_callback = _monotonic_upload_progress(progress_callback)
     _ = file_size  # each hop fstats the fd; caller size can be stale
     while True:
-        with file.open("rb") as file_handle:
-            put_size = os.fstat(file_handle.fileno()).st_size
-            response = await http_client.put(
-                url=url,
-                content=_aiter_open_file_upload_chunks(
-                    file_handle,
-                    total_bytes=put_size,
-                    progress_callback=progress_callback,
-                ),
-                headers={"Content-Length": str(put_size)},
-                follow_redirects=False,
+        try:
+            with file.open("rb") as file_handle:
+                put_size = os.fstat(file_handle.fileno()).st_size
+                response = await http_client.put(
+                    url=url,
+                    content=_aiter_open_file_upload_chunks(
+                        file_handle,
+                        total_bytes=put_size,
+                        progress_callback=progress_callback,
+                    ),
+                    headers={"Content-Length": str(put_size)},
+                    follow_redirects=False,
+                )
+        except httpx.TransportError:
+            if retries >= _MAX_UPLOAD_RETRIES:
+                raise
+            retries += 1
+            delay = _UPLOAD_INITIAL_RETRY_DELAY * 2 ** (retries - 1)
+            log.warning(
+                "File upload interrupted. Retry %d/%d in %.1fs...",
+                retries,
+                _MAX_UPLOAD_RETRIES,
+                delay,
             )
+            await asyncio.sleep(delay)
+            continue
         if response.status_code not in _UPLOAD_REPLAY_REDIRECT_STATUSES:
             return response
         hops += 1
