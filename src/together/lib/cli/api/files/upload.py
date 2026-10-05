@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Optional, Annotated, cast, get_args
 from pathlib import Path
 
@@ -60,7 +59,7 @@ async def upload(
             enabled=not config.json,
             purpose=purpose,
             check=False,
-            raise_if_already_exists=not config.json,
+            raise_if_already_exists=True,
         )
     except FileAlreadyExistsError as e:
         if is_json_mode():
