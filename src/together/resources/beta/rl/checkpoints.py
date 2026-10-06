@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing_extensions import Literal
+
 import httpx
 
 from ...._types import Body, Omit, Query, Headers, NotGiven, omit, not_given
@@ -87,6 +89,7 @@ class CheckpointsResource(SyncAPIResource):
         base_model: str | Omit = omit,
         limit: int | Omit = omit,
         session_id: str | Omit = omit,
+        type: Literal["CHECKPOINT_TYPE_TRAINING", "CHECKPOINT_TYPE_INFERENCE"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -94,11 +97,10 @@ class CheckpointsResource(SyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> CheckpointsListResponse:
-        """Lists training checkpoints owned by the caller.
-
-        Filter by session or base model
-        to recover a checkpoint ID for resume. Inference checkpoints are not included;
-        they remain on the training session and in the model catalog.
+        """
+        Lists training and inference checkpoints owned by the caller, newest first.
+        Filter by type, session, or base model, for example to recover a checkpoint ID
+        for resume.
 
         Args:
           after: Cursor for pagination (ID of the last checkpoint from the previous page)
@@ -108,6 +110,13 @@ class CheckpointsResource(SyncAPIResource):
           limit: Maximum number of checkpoints to return (1-100)
 
           session_id: Only return checkpoints produced by this training session
+
+          type: Only return checkpoints of this type. CHECKPOINT_TYPE_TRAINING is the full
+              training state (weights and optimizer state), for resuming a training session
+              with its optimizer state; CHECKPOINT_TYPE_INFERENCE is a model ready for serving
+              or download, also added to your models. When set, it must be
+              CHECKPOINT_TYPE_TRAINING or CHECKPOINT_TYPE_INFERENCE; when omitted, checkpoints
+              of both types are returned.
 
           extra_headers: Send extra headers
 
@@ -130,6 +139,7 @@ class CheckpointsResource(SyncAPIResource):
                         "base_model": base_model,
                         "limit": limit,
                         "session_id": session_id,
+                        "type": type,
                     },
                     checkpoint_list_params.CheckpointListParams,
                 ),
@@ -157,8 +167,9 @@ class CheckpointsResource(SyncAPIResource):
         Args:
           id: ID of the checkpoint
 
-          variant: Checkpoint variant to download: merged (full model) or adapter (LoRA weights
-              only)
+          variant: Files to download. CHECKPOINT_VARIANT_MERGED is the full model with the trained
+              weights applied; CHECKPOINT_VARIANT_ADAPTER is the LoRA adapter weights only,
+              available for checkpoints from LoRA training sessions.
 
           extra_headers: Send extra headers
 
@@ -246,6 +257,7 @@ class AsyncCheckpointsResource(AsyncAPIResource):
         base_model: str | Omit = omit,
         limit: int | Omit = omit,
         session_id: str | Omit = omit,
+        type: Literal["CHECKPOINT_TYPE_TRAINING", "CHECKPOINT_TYPE_INFERENCE"] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -253,11 +265,10 @@ class AsyncCheckpointsResource(AsyncAPIResource):
         extra_body: Body | None = None,
         timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> CheckpointsListResponse:
-        """Lists training checkpoints owned by the caller.
-
-        Filter by session or base model
-        to recover a checkpoint ID for resume. Inference checkpoints are not included;
-        they remain on the training session and in the model catalog.
+        """
+        Lists training and inference checkpoints owned by the caller, newest first.
+        Filter by type, session, or base model, for example to recover a checkpoint ID
+        for resume.
 
         Args:
           after: Cursor for pagination (ID of the last checkpoint from the previous page)
@@ -267,6 +278,13 @@ class AsyncCheckpointsResource(AsyncAPIResource):
           limit: Maximum number of checkpoints to return (1-100)
 
           session_id: Only return checkpoints produced by this training session
+
+          type: Only return checkpoints of this type. CHECKPOINT_TYPE_TRAINING is the full
+              training state (weights and optimizer state), for resuming a training session
+              with its optimizer state; CHECKPOINT_TYPE_INFERENCE is a model ready for serving
+              or download, also added to your models. When set, it must be
+              CHECKPOINT_TYPE_TRAINING or CHECKPOINT_TYPE_INFERENCE; when omitted, checkpoints
+              of both types are returned.
 
           extra_headers: Send extra headers
 
@@ -289,6 +307,7 @@ class AsyncCheckpointsResource(AsyncAPIResource):
                         "base_model": base_model,
                         "limit": limit,
                         "session_id": session_id,
+                        "type": type,
                     },
                     checkpoint_list_params.CheckpointListParams,
                 ),
@@ -316,8 +335,9 @@ class AsyncCheckpointsResource(AsyncAPIResource):
         Args:
           id: ID of the checkpoint
 
-          variant: Checkpoint variant to download: merged (full model) or adapter (LoRA weights
-              only)
+          variant: Files to download. CHECKPOINT_VARIANT_MERGED is the full model with the trained
+              weights applied; CHECKPOINT_VARIANT_ADAPTER is the LoRA adapter weights only,
+              available for checkpoints from LoRA training sessions.
 
           extra_headers: Send extra headers
 

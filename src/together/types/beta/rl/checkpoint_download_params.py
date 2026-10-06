@@ -11,7 +11,9 @@ __all__ = ["CheckpointDownloadParams"]
 
 class CheckpointDownloadParams(TypedDict, total=False):
     variant: Required[CheckpointVariant]
-    """
-    Checkpoint variant to download: merged (full model) or adapter (LoRA weights
-    only)
+    """Files to download.
+
+    CHECKPOINT_VARIANT_MERGED is the full model with the trained weights applied;
+    CHECKPOINT_VARIANT_ADAPTER is the LoRA adapter weights only, available for
+    checkpoints from LoRA training sessions.
     """

@@ -28,7 +28,13 @@ class Checkpoint(BaseModel):
     """Training step at time of save"""
 
     type: CheckpointType
-    """Whether this is a training checkpoint or an inference checkpoint"""
+    """Kind of checkpoint.
+
+    CHECKPOINT_TYPE_TRAINING is the full training state (weights and optimizer
+    state), for resuming a training session with its optimizer state;
+    CHECKPOINT_TYPE_INFERENCE is a model ready for serving or download, also added
+    to your models.
+    """
 
     lora_rank: Optional[int] = None
     """LoRA rank of the session that produced this checkpoint.

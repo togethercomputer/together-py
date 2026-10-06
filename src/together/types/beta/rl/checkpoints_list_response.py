@@ -25,10 +25,10 @@ class Meta(BaseModel):
 
 
 class CheckpointsListResponse(BaseModel):
-    """A page of training checkpoints"""
+    """A page of checkpoints"""
 
     data: List[Checkpoint]
-    """Training checkpoints in this page"""
+    """Checkpoints in this page"""
 
     meta: Meta
     """Pagination metadata"""

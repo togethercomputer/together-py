@@ -71,6 +71,7 @@ class TestCheckpoints:
             base_model="base_model",
             limit=0,
             session_id="session_id",
+            type="CHECKPOINT_TYPE_TRAINING",
         )
         assert_matches_type(CheckpointsListResponse, checkpoint, path=["response"])
 
@@ -192,6 +193,7 @@ class TestAsyncCheckpoints:
             base_model="base_model",
             limit=0,
             session_id="session_id",
+            type="CHECKPOINT_TYPE_TRAINING",
         )
         assert_matches_type(CheckpointsListResponse, checkpoint, path=["response"])
 
