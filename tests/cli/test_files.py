@@ -13,6 +13,7 @@ from respx import MockRouter
 
 from tests.cli.utils import CliRunner
 from together.lib.cli._track_cli import CliTrackingEvents
+from together.lib.resources.files import FileAlreadyExistsError
 from together.types.file_response import FileResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -309,3 +310,20 @@ class TestFilesUpload:
         assert result.exit_code == 0
         call_kw = upload_mock.call_args.kwargs
         assert call_kw["progress_callback"] is None
+        assert call_kw["raise_if_already_exists"] is True
+
+    def test_upload_json_already_exists_emits_error(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / "data.jsonl"
+        f.write_text("{}\n")
+        with patch.object(_files_upload_cli, "check_file") as check_mock, patch(
+            "together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock
+        ) as upload_mock:
+            check_mock.return_value = {"is_check_passed": True}
+            upload_mock.side_effect = FileAlreadyExistsError("file-existing")
+            result = cli_runner.invoke(["files", "upload", str(f), "--json"])
+        assert result.exit_code == 1
+        assert json.loads(result.output) == {
+            "error": "File already exists. Delete the existing file before re-uploading.",
+            "file_id": "file-existing",
+        }
+        assert upload_mock.call_args.kwargs["raise_if_already_exists"] is True

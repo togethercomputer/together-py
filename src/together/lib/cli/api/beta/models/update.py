@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Any, List, Optional
 from typing_extensions import Annotated
 
@@ -9,6 +8,7 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.models._utils import print_model_detail
 
@@ -33,8 +33,10 @@ async def update(
         update_mask.append("description")
 
     if not update_mask:
-        console.print("Error: At least one update option must be specified.")
-        sys.exit(1)
+        exit_with_message(
+            "Error: At least one update option must be specified.",
+            diagnostic="At least one beta model update option must be specified",
+        )
 
     response = await show_loading_status(
         "Updating beta model...",

@@ -22,6 +22,16 @@ async def stop(
     """Stop a dedicated inference endpoint."""
     await show_loading_status("Stopping endpoint...", config.client.endpoints.update(endpoint_id, state="STOPPED"))
 
+    if wait and config.json:
+        endpoint = await config.client.endpoints.retrieve(endpoint_id)
+        while endpoint.state != "STOPPED":
+            await asyncio.sleep(1)
+            endpoint = await config.client.endpoints.retrieve(endpoint_id)
+        console.print_json(
+            openapi_dumps({"message": "Endpoint stopped", "id": endpoint.id, "state": endpoint.state}).decode("utf-8")
+        )
+        return
+
     if config.json:
         console.print_json(openapi_dumps({"message": "Successfully marked endpoint as stopping"}).decode("utf-8"))
         return
@@ -32,6 +42,5 @@ async def stop(
             while (await config.client.endpoints.retrieve(endpoint_id)).state != "STOPPED":
                 await asyncio.sleep(1)
         console.print("[green]√[/green] Endpoint stopped")
-
     else:
         console.print("[green]√[/green] Endpoint is stopping.\n  This may take a few minutes.")

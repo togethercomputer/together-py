@@ -29,5 +29,6 @@ async def check(
     else:
         status = "[green]OK[/green]" if report["is_check_passed"] else "[red]X[/red]"
         console.print(f"{status} {escape_rich_markup(str(report['message']))}")
+
     if report["is_check_passed"] is False:
         raise CliDiagnosticExit("File validation failed")
