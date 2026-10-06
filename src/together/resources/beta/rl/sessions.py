@@ -60,7 +60,6 @@ class SessionsResource(SyncAPIResource):
         lora_config: LoraConfigParam | Omit = omit,
         metadata: SessionMetadataParam | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
-        resume_from_hf_checkpoint: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -78,8 +77,7 @@ class SessionsResource(SyncAPIResource):
 
           load_optimizer: Whether to restore optimizer state and step from a training checkpoint. Omitted
               or true restores them; false loads weights only with a fresh optimizer and
-              step 0. Not valid for inference or HuggingFace checkpoints, which have no
-              optimizer state.
+              step 0. Not valid for inference checkpoints, which have no optimizer state.
 
           lora_config: LoRA adapter configuration for the session
 
@@ -88,10 +86,6 @@ class SessionsResource(SyncAPIResource):
           resume_from_checkpoint_id: Checkpoint ID to resume from. LoRA training checkpoints may resume on another
               model resource with compatible base-model weights. Full-weight training
               checkpoints require the original base model.
-
-          resume_from_hf_checkpoint: HuggingFace repo (or hf://) to resume model weights from. Accepts either a full
-              model or a PEFT adapter directory. Mutually exclusive with
-              resume_from_checkpoint_id.
 
           extra_headers: Send extra headers
 
@@ -111,7 +105,6 @@ class SessionsResource(SyncAPIResource):
                     "lora_config": lora_config,
                     "metadata": metadata,
                     "resume_from_checkpoint_id": resume_from_checkpoint_id,
-                    "resume_from_hf_checkpoint": resume_from_hf_checkpoint,
                 },
                 session_create_params.SessionCreateParams,
             ),
@@ -341,7 +334,6 @@ class AsyncSessionsResource(AsyncAPIResource):
         lora_config: LoraConfigParam | Omit = omit,
         metadata: SessionMetadataParam | Omit = omit,
         resume_from_checkpoint_id: str | Omit = omit,
-        resume_from_hf_checkpoint: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -359,8 +351,7 @@ class AsyncSessionsResource(AsyncAPIResource):
 
           load_optimizer: Whether to restore optimizer state and step from a training checkpoint. Omitted
               or true restores them; false loads weights only with a fresh optimizer and
-              step 0. Not valid for inference or HuggingFace checkpoints, which have no
-              optimizer state.
+              step 0. Not valid for inference checkpoints, which have no optimizer state.
 
           lora_config: LoRA adapter configuration for the session
 
@@ -369,10 +360,6 @@ class AsyncSessionsResource(AsyncAPIResource):
           resume_from_checkpoint_id: Checkpoint ID to resume from. LoRA training checkpoints may resume on another
               model resource with compatible base-model weights. Full-weight training
               checkpoints require the original base model.
-
-          resume_from_hf_checkpoint: HuggingFace repo (or hf://) to resume model weights from. Accepts either a full
-              model or a PEFT adapter directory. Mutually exclusive with
-              resume_from_checkpoint_id.
 
           extra_headers: Send extra headers
 
@@ -392,7 +379,6 @@ class AsyncSessionsResource(AsyncAPIResource):
                     "lora_config": lora_config,
                     "metadata": metadata,
                     "resume_from_checkpoint_id": resume_from_checkpoint_id,
-                    "resume_from_hf_checkpoint": resume_from_hf_checkpoint,
                 },
                 session_create_params.SessionCreateParams,
             ),

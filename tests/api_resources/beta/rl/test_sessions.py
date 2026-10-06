@@ -51,7 +51,6 @@ class TestSessions:
                 }
             },
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
-            resume_from_hf_checkpoint="your-org/llama-3-8b-finetuned",
         )
         assert_matches_type(Session, session, path=["response"])
 
@@ -284,7 +283,6 @@ class TestAsyncSessions:
                 }
             },
             resume_from_checkpoint_id="123e4567-e89b-12d3-a456-426614174000",
-            resume_from_hf_checkpoint="your-org/llama-3-8b-finetuned",
         )
         assert_matches_type(Session, session, path=["response"])
 

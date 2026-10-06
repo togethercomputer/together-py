@@ -21,8 +21,7 @@ class SessionCreateParams(TypedDict, total=False):
     """Whether to restore optimizer state and step from a training checkpoint.
 
     Omitted or true restores them; false loads weights only with a fresh optimizer
-    and step 0. Not valid for inference or HuggingFace checkpoints, which have no
-    optimizer state.
+    and step 0. Not valid for inference checkpoints, which have no optimizer state.
     """
 
     lora_config: LoraConfigParam
@@ -37,11 +36,4 @@ class SessionCreateParams(TypedDict, total=False):
     LoRA training checkpoints may resume on another model resource with compatible
     base-model weights. Full-weight training checkpoints require the original base
     model.
-    """
-
-    resume_from_hf_checkpoint: str
-    """HuggingFace repo (or hf://) to resume model weights from.
-
-    Accepts either a full model or a PEFT adapter directory. Mutually exclusive with
-    resume_from_checkpoint_id.
     """
