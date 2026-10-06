@@ -29,9 +29,11 @@ from .dppo_loss_params import DppoLossParams as DppoLossParams
 from .grpo_loss_params import GrpoLossParams as GrpoLossParams
 from .operation_status import OperationStatus as OperationStatus
 from .optimizer_config import OptimizerConfig as OptimizerConfig
+from .quantization_job import QuantizationJob as QuantizationJob
 from .sample_operation import SampleOperation as SampleOperation
 from .sampled_sequence import SampledSequence as SampledSequence
 from .session_metadata import SessionMetadata as SessionMetadata
+from .shaping_job_type import ShapingJobType as ShapingJobType
 from .weight_sync_type import WeightSyncType as WeightSyncType
 from .adam_config_param import AdamConfigParam as AdamConfigParam
 from .cispo_loss_params import CispoLossParams as CispoLossParams
@@ -42,8 +44,10 @@ from .muon_config_param import MuonConfigParam as MuonConfigParam
 from .optim_step_result import OptimStepResult as OptimStepResult
 from .tensor_data_param import TensorDataParam as TensorDataParam
 from .checkpoint_variant import CheckpointVariant as CheckpointVariant
+from .quantization_event import QuantizationEvent as QuantizationEvent
 from .rl_supported_model import RlSupportedModel as RlSupportedModel
 from .session_error_code import SessionErrorCode as SessionErrorCode
+from .shaping_job_status import ShapingJobStatus as ShapingJobStatus
 from .prompt_top_logprobs import PromptTopLogprobs as PromptTopLogprobs
 from .rl_supported_models import RlSupportedModels as RlSupportedModels
 from .session_list_params import SessionListParams as SessionListParams
@@ -53,9 +57,11 @@ from .grpo_loss_ratio_type import GrpoLossRatioType as GrpoLossRatioType
 from .inference_checkpoint import InferenceCheckpoint as InferenceCheckpoint
 from .operation_error_code import OperationErrorCode as OperationErrorCode
 from .optim_step_operation import OptimStepOperation as OptimStepOperation
+from .quantization_results import QuantizationResults as QuantizationResults
 from .wandb_metadata_param import WandbMetadataParam as WandbMetadataParam
 from .model_resources_error import ModelResourcesError as ModelResourcesError
 from .muon_scaling_strategy import MuonScalingStrategy as MuonScalingStrategy
+from .quantization_estimate import QuantizationEstimate as QuantizationEstimate
 from .session_create_params import SessionCreateParams as SessionCreateParams
 from .session_update_params import SessionUpdateParams as SessionUpdateParams
 from .checkpoint_list_params import CheckpointListParams as CheckpointListParams
@@ -93,6 +99,18 @@ from .model_resource_estimate_cost_params import ModelResourceEstimateCostParams
 from .model_resources_estimate_cost_response import (
     ModelResourcesEstimateCostResponse as ModelResourcesEstimateCostResponse,
 )
+from .prepare_for_fp4_inference_create_params import (
+    PrepareForFp4InferenceCreateParams as PrepareForFp4InferenceCreateParams,
+)
+from .prepare_for_fp4_inference_list_response import (
+    PrepareForFp4InferenceListResponse as PrepareForFp4InferenceListResponse,
+)
 from .operation_custom_forward_backward_params import (
     OperationCustomForwardBackwardParams as OperationCustomForwardBackwardParams,
+)
+from .prepare_for_fp4_inference_estimate_cost_params import (
+    PrepareForFp4InferenceEstimateCostParams as PrepareForFp4InferenceEstimateCostParams,
+)
+from .prepare_for_fp4_inference_list_events_response import (
+    PrepareForFp4InferenceListEventsResponse as PrepareForFp4InferenceListEventsResponse,
 )

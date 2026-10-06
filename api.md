@@ -417,6 +417,32 @@ Methods:
 - <code title="get /rl/checkpoints">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">list</a>(\*\*<a href="src/together/types/beta/rl/checkpoint_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/checkpoints_list_response.py">CheckpointsListResponse</a></code>
 - <code title="get /rl/checkpoints/{id}/download">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">download</a>(id, \*\*<a href="src/together/types/beta/rl/checkpoint_download_params.py">params</a>) -> <a href="./src/together/types/beta/rl/checkpoint_download_response.py">CheckpointDownloadResponse</a></code>
 
+### PrepareForFp4Inference
+
+Types:
+
+```python
+from together.types.beta.rl import (
+    QuantizationEstimate,
+    QuantizationEvent,
+    QuantizationJob,
+    QuantizationResults,
+    ShapingJobStatus,
+    ShapingJobType,
+    PrepareForFp4InferenceListResponse,
+    PrepareForFp4InferenceListEventsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /shaping/prepare-for-fp4-inference">client.beta.rl.prepare_for_fp4_inference.<a href="./src/together/resources/beta/rl/prepare_for_fp4_inference.py">create</a>(\*\*<a href="src/together/types/beta/rl/prepare_for_fp4_inference_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/quantization_job.py">QuantizationJob</a></code>
+- <code title="get /shaping/{id}">client.beta.rl.prepare_for_fp4_inference.<a href="./src/together/resources/beta/rl/prepare_for_fp4_inference.py">retrieve</a>(id) -> <a href="./src/together/types/beta/rl/quantization_job.py">QuantizationJob</a></code>
+- <code title="get /shaping">client.beta.rl.prepare_for_fp4_inference.<a href="./src/together/resources/beta/rl/prepare_for_fp4_inference.py">list</a>() -> <a href="./src/together/types/beta/rl/prepare_for_fp4_inference_list_response.py">PrepareForFp4InferenceListResponse</a></code>
+- <code title="post /shaping/{id}/cancel">client.beta.rl.prepare_for_fp4_inference.<a href="./src/together/resources/beta/rl/prepare_for_fp4_inference.py">cancel</a>(id) -> <a href="./src/together/types/beta/rl/quantization_job.py">QuantizationJob</a></code>
+- <code title="post /shaping/prepare-for-fp4-inference/estimate">client.beta.rl.prepare_for_fp4_inference.<a href="./src/together/resources/beta/rl/prepare_for_fp4_inference.py">estimate_cost</a>(\*\*<a href="src/together/types/beta/rl/prepare_for_fp4_inference_estimate_cost_params.py">params</a>) -> <a href="./src/together/types/beta/rl/quantization_estimate.py">QuantizationEstimate</a></code>
+- <code title="get /shaping/{id}/events">client.beta.rl.prepare_for_fp4_inference.<a href="./src/together/resources/beta/rl/prepare_for_fp4_inference.py">list_events</a>(id) -> <a href="./src/together/types/beta/rl/prepare_for_fp4_inference_list_events_response.py">PrepareForFp4InferenceListEventsResponse</a></code>
+
 ### ModelResources
 
 Types:

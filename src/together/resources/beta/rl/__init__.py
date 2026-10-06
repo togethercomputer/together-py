@@ -48,6 +48,14 @@ from .supported_models import (
     SupportedModelsResourceWithStreamingResponse,
     AsyncSupportedModelsResourceWithStreamingResponse,
 )
+from .prepare_for_fp4_inference import (
+    PrepareForFp4InferenceResource,
+    AsyncPrepareForFp4InferenceResource,
+    PrepareForFp4InferenceResourceWithRawResponse,
+    AsyncPrepareForFp4InferenceResourceWithRawResponse,
+    PrepareForFp4InferenceResourceWithStreamingResponse,
+    AsyncPrepareForFp4InferenceResourceWithStreamingResponse,
+)
 
 __all__ = [
     "SessionsResource",
@@ -68,6 +76,12 @@ __all__ = [
     "AsyncCheckpointsResourceWithRawResponse",
     "CheckpointsResourceWithStreamingResponse",
     "AsyncCheckpointsResourceWithStreamingResponse",
+    "PrepareForFp4InferenceResource",
+    "AsyncPrepareForFp4InferenceResource",
+    "PrepareForFp4InferenceResourceWithRawResponse",
+    "AsyncPrepareForFp4InferenceResourceWithRawResponse",
+    "PrepareForFp4InferenceResourceWithStreamingResponse",
+    "AsyncPrepareForFp4InferenceResourceWithStreamingResponse",
     "ModelResourcesResource",
     "AsyncModelResourcesResource",
     "ModelResourcesResourceWithRawResponse",

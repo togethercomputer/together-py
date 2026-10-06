@@ -44,6 +44,14 @@ from .supported_models import (
     SupportedModelsResourceWithStreamingResponse,
     AsyncSupportedModelsResourceWithStreamingResponse,
 )
+from .prepare_for_fp4_inference import (
+    PrepareForFp4InferenceResource,
+    AsyncPrepareForFp4InferenceResource,
+    PrepareForFp4InferenceResourceWithRawResponse,
+    AsyncPrepareForFp4InferenceResourceWithRawResponse,
+    PrepareForFp4InferenceResourceWithStreamingResponse,
+    AsyncPrepareForFp4InferenceResourceWithStreamingResponse,
+)
 
 __all__ = ["RlResource", "AsyncRlResource"]
 
@@ -60,6 +68,10 @@ class RlResource(SyncAPIResource):
     @cached_property
     def checkpoints(self) -> CheckpointsResource:
         return CheckpointsResource(self._client)
+
+    @cached_property
+    def prepare_for_fp4_inference(self) -> PrepareForFp4InferenceResource:
+        return PrepareForFp4InferenceResource(self._client)
 
     @cached_property
     def model_resources(self) -> ModelResourcesResource:
@@ -101,6 +113,10 @@ class AsyncRlResource(AsyncAPIResource):
     @cached_property
     def checkpoints(self) -> AsyncCheckpointsResource:
         return AsyncCheckpointsResource(self._client)
+
+    @cached_property
+    def prepare_for_fp4_inference(self) -> AsyncPrepareForFp4InferenceResource:
+        return AsyncPrepareForFp4InferenceResource(self._client)
 
     @cached_property
     def model_resources(self) -> AsyncModelResourcesResource:
@@ -147,6 +163,10 @@ class RlResourceWithRawResponse:
         return CheckpointsResourceWithRawResponse(self._rl.checkpoints)
 
     @cached_property
+    def prepare_for_fp4_inference(self) -> PrepareForFp4InferenceResourceWithRawResponse:
+        return PrepareForFp4InferenceResourceWithRawResponse(self._rl.prepare_for_fp4_inference)
+
+    @cached_property
     def model_resources(self) -> ModelResourcesResourceWithRawResponse:
         return ModelResourcesResourceWithRawResponse(self._rl.model_resources)
 
@@ -170,6 +190,10 @@ class AsyncRlResourceWithRawResponse:
     @cached_property
     def checkpoints(self) -> AsyncCheckpointsResourceWithRawResponse:
         return AsyncCheckpointsResourceWithRawResponse(self._rl.checkpoints)
+
+    @cached_property
+    def prepare_for_fp4_inference(self) -> AsyncPrepareForFp4InferenceResourceWithRawResponse:
+        return AsyncPrepareForFp4InferenceResourceWithRawResponse(self._rl.prepare_for_fp4_inference)
 
     @cached_property
     def model_resources(self) -> AsyncModelResourcesResourceWithRawResponse:
@@ -197,6 +221,10 @@ class RlResourceWithStreamingResponse:
         return CheckpointsResourceWithStreamingResponse(self._rl.checkpoints)
 
     @cached_property
+    def prepare_for_fp4_inference(self) -> PrepareForFp4InferenceResourceWithStreamingResponse:
+        return PrepareForFp4InferenceResourceWithStreamingResponse(self._rl.prepare_for_fp4_inference)
+
+    @cached_property
     def model_resources(self) -> ModelResourcesResourceWithStreamingResponse:
         return ModelResourcesResourceWithStreamingResponse(self._rl.model_resources)
 
@@ -220,6 +248,10 @@ class AsyncRlResourceWithStreamingResponse:
     @cached_property
     def checkpoints(self) -> AsyncCheckpointsResourceWithStreamingResponse:
         return AsyncCheckpointsResourceWithStreamingResponse(self._rl.checkpoints)
+
+    @cached_property
+    def prepare_for_fp4_inference(self) -> AsyncPrepareForFp4InferenceResourceWithStreamingResponse:
+        return AsyncPrepareForFp4InferenceResourceWithStreamingResponse(self._rl.prepare_for_fp4_inference)
 
     @cached_property
     def model_resources(self) -> AsyncModelResourcesResourceWithStreamingResponse:
