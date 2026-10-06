@@ -16,7 +16,7 @@ from detect_agent import determine_agent
 
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._console import console, error_console
 
 _MARKUP_RE = re.compile(r"\[/?[^\]]+\]")
 
@@ -72,6 +72,17 @@ def emit_json(data: object) -> None:
         finally:
             console.print = current  # type: ignore[method-assign]
     _emitted = True
+
+
+def emit_json_stderr(data: object) -> None:
+    """Write one compact JSON document to stderr and flush.
+
+    Stdout stays reserved for the single result document. Use this for an event
+    that has to be readable before the process blocks, such as an OAuth URL.
+    Does not mark JSON as emitted, so a later ``emit_json`` is still the result.
+    """
+    error_console.file.write(openapi_dumps(data).decode("utf-8") + "\n")
+    error_console.file.flush()
 
 
 def exit_with_message(human: str, *, error: str | None = None, diagnostic: str | None = None) -> NoReturn:

@@ -43,7 +43,7 @@ from filelock import FileLock
 
 from together import TogetherError
 from together.lib.cli.utils._console import console
-from together.lib.cli.utils._json_mode import emit_json, is_json_mode
+from together.lib.cli.utils._json_mode import emit_json, is_json_mode, emit_json_stderr
 
 _CERT_ALGO = {
     "ecdsa": "ecdsa-sha2-nistp256-cert-v01@openssh.com",
@@ -204,8 +204,11 @@ def _callback_code(request_path: str, expected_state: str) -> Optional[str]:
     return query["code"][0]
 
 
-def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
-    """Authorization-code + PKCE flow against Dex. Returns the raw id_token."""
+def _pkce_login(issuer: str, client_id: str, scope: str) -> tuple[str, str]:
+    """Authorization-code + PKCE flow against Dex.
+
+    Returns ``(id_token, authorization_url)``.
+    """
     ctx = _certifi_ssl_context()
     disc = _http_json(issuer.rstrip("/") + "/.well-known/openid-configuration", ctx=ctx, purpose="OIDC discovery")
     authorization_endpoint = _validate_discovery_endpoint(
@@ -252,14 +255,20 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
         "code_challenge_method": "S256",
     }
     auth_url = authorization_endpoint + "?" + urllib.parse.urlencode(params)
-    if not is_json_mode():
+    if is_json_mode():
+        # Flush before blocking on the callback. Stderr, not stdout: a second
+        # emit_json for the command result would concatenate two documents.
+        emit_json_stderr(
+            {
+                "action": "login",
+                "url": auth_url,
+                "message": "Open this URL to log in, then return to this command.",
+            }
+        )
+        webbrowser.open(auth_url)
+    else:
         console.print(f"[dim]Opening browser for login: {issuer}[/dim]")
-    if not webbrowser.open(auth_url):
-        if is_json_mode():
-            emit_json(
-                {"action": "login", "url": auth_url, "message": "Open this URL to log in, then return to this command."}
-            )
-        else:
+        if not webbrowser.open(auth_url):
             console.print(f"Open this URL to log in:\n{auth_url}")
     server.handle_request()
     server.server_close()
@@ -285,7 +294,13 @@ def _pkce_login(issuer: str, client_id: str, scope: str) -> str:
     )
     if "id_token" not in tok:
         raise TogetherError(f"token endpoint returned no id_token: {tok}")
-    return str(tok["id_token"])
+    return str(tok["id_token"]), auth_url
+
+
+def _json_result(payload: dict[str, Any], login_url: str | None) -> dict[str, Any]:
+    if login_url is not None:
+        payload["url"] = login_url
+    return payload
 
 
 def _sign(ca_url: str, ott: str, pub_blob: str, ctx: Optional[ssl.SSLContext]) -> str:
@@ -682,6 +697,7 @@ async def ssh(
     cache_lock = (
         FileLock(key_path + ".lock", timeout=_CACHE_LOCK_TIMEOUT_SECONDS) if cache else contextlib.nullcontext()
     )
+    login_url: str | None = None
     with cache_lock:
         if cache and not refresh and os.path.exists(key_path) and _cert_is_valid(cert_path):
             if not is_json_mode():
@@ -696,7 +712,7 @@ async def ssh(
                     "[dim]Keep this terminal command running until login completes. "
                     "If you are logged out of Together Web, log in in the browser first.[/dim]"
                 )
-            ott = _pkce_login(issuer, client_id, scope)
+            ott, login_url = _pkce_login(issuer, client_id, scope)
             crt = _sign(ca_url, ott, pub_blob, ca_ctx)
             _atomic_write(cert_path, f"{_CERT_ALGO[key_type]} {crt} together-ssh\n", 0o644)
 
@@ -714,14 +730,17 @@ async def ssh(
             managed_config, main_config = _write_ssh_config(ssh_config_alias, entry, cache_root)
             if is_json_mode():
                 emit_json(
-                    {
-                        "ok": True,
-                        "alias": ssh_config_alias,
-                        "managed_config": managed_config,
-                        "main_config": main_config,
-                        "ssh_config": entry,
-                        "command": f"ssh {shlex.quote(ssh_config_alias)}",
-                    }
+                    _json_result(
+                        {
+                            "ok": True,
+                            "alias": ssh_config_alias,
+                            "managed_config": managed_config,
+                            "main_config": main_config,
+                            "ssh_config": entry,
+                            "command": f"ssh {shlex.quote(ssh_config_alias)}",
+                        },
+                        login_url,
+                    )
                 )
                 return
             console.print(f"[green]Wrote SSH alias '{ssh_config_alias}' to {managed_config}[/green]")
@@ -729,14 +748,14 @@ async def ssh(
             console.print(f"Use it with: ssh {shlex.quote(ssh_config_alias)}")
         else:
             if is_json_mode():
-                emit_json({"alias": ssh_config_alias, "ssh_config": entry})
+                emit_json(_json_result({"alias": ssh_config_alias, "ssh_config": entry}, login_url))
                 return
             console.print(entry)
         return
     if print_ssh_command:
         rendered = _shell_command(cmd)
         if is_json_mode():
-            emit_json({"command": rendered, "argv": cmd})
+            emit_json(_json_result({"command": rendered, "argv": cmd}, login_url))
             return
         console.print(rendered)
         return
