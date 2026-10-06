@@ -668,6 +668,7 @@ class TestClustersSSHHelpers:
         os.makedirs(os.path.dirname(key_path), mode=0o700)
         with open(key_path, "w") as key_file:
             key_file.write("key")
+
         def _cert_valid(*_args: Any, **_kwargs: Any) -> bool:
             return True
 
