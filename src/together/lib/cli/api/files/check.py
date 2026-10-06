@@ -26,11 +26,9 @@ async def check(
 
     if config.json:
         console.print_json(openapi_dumps(report).decode("utf-8"))
-        if report["is_check_passed"] is False:
-            sys.exit(1)
-        return
     else:
         status = "[green]OK[/green]" if report["is_check_passed"] else "[red]X[/red]"
         console.print(f"{status} {escape_rich_markup(str(report['message']))}")
+
     if report["is_check_passed"] is False:
         raise CliDiagnosticExit("File validation failed")

@@ -141,8 +141,12 @@ def _install_pkce_fakes(monkeypatch: pytest.MonkeyPatch, *, browser_opened: bool
                 request = handler.__new__(handler)
                 request.path = f"/login-callback?code=good&state={state}"
                 request.wfile = io.BytesIO()
-                request.send_response = lambda *_args, **_kwargs: None
-                request.end_headers = lambda *_args, **_kwargs: None
+
+                def _discard(*_args: Any, **_kwargs: Any) -> None:
+                    return None
+
+                request.send_response = _discard
+                request.end_headers = _discard
                 request.do_GET()
 
             def server_close(self) -> None:
@@ -628,8 +632,15 @@ class TestClustersSSHHelpers:
     ) -> None:
         dex = "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123"
         opened = _install_pkce_fakes(monkeypatch, browser_opened=browser_opened, complete=True)
-        monkeypatch.setattr(ssh_cli, "_get_or_create_keypair", lambda *_args, **_kwargs: "cHVi")
-        monkeypatch.setattr(ssh_cli, "_sign", lambda *_args, **_kwargs: "Y2VydA")
+
+        def _pubkey(*_args: Any, **_kwargs: Any) -> str:
+            return "cHVi"
+
+        def _crt(*_args: Any, **_kwargs: Any) -> str:
+            return "Y2VydA"
+
+        monkeypatch.setattr(ssh_cli, "_get_or_create_keypair", _pubkey)
+        monkeypatch.setattr(ssh_cli, "_sign", _crt)
         monkeypatch.setenv("HOME", str(tmp_path / "home"))
 
         use_json_mode(True)
@@ -657,7 +668,10 @@ class TestClustersSSHHelpers:
         os.makedirs(os.path.dirname(key_path), mode=0o700)
         with open(key_path, "w") as key_file:
             key_file.write("key")
-        monkeypatch.setattr(ssh_cli, "_cert_is_valid", lambda *_args, **_kwargs: True)
+        def _cert_valid(*_args: Any, **_kwargs: Any) -> bool:
+            return True
+
+        monkeypatch.setattr(ssh_cli, "_cert_is_valid", _cert_valid)
 
         def fail_login(*_args: Any, **_kwargs: Any) -> tuple[str, str]:
             raise AssertionError("cached certificate should not start a browser login")
