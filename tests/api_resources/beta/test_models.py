@@ -450,6 +450,7 @@ class TestModels:
     @parametrize
     def test_method_list_supported_with_all_params(self, client: Together) -> None:
         model = client.beta.models.list_supported(
+            adapter_mode="ADAPTER_MODE_FIXED",
             after="after",
             limit=0,
             modality="MODALITY_TEXT",
@@ -948,6 +949,7 @@ class TestAsyncModels:
     @parametrize
     async def test_method_list_supported_with_all_params(self, async_client: AsyncTogether) -> None:
         model = await async_client.beta.models.list_supported(
+            adapter_mode="ADAPTER_MODE_FIXED",
             after="after",
             limit=0,
             modality="MODALITY_TEXT",

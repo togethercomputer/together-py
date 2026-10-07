@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal, Annotated, TypedDict
+
+from ..._utils import PropertyInfo
 
 __all__ = ["ModelListSupportedParams"]
 
 
 class ModelListSupportedParams(TypedDict, total=False):
+    adapter_mode: Annotated[
+        Literal["ADAPTER_MODE_FIXED", "ADAPTER_MODE_DYNAMIC", "ADAPTER_MODE_DISABLED"],
+        PropertyInfo(alias="adapterMode"),
+    ]
+    """
+    Filter models to those with a deployment profile in the selected adapter serving
+    mode.
+    """
+
     after: str
     """Cursor from a previous supported-model list response."""
 
