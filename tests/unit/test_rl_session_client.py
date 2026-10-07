@@ -9,9 +9,7 @@ import httpx
 import pytest
 
 from together import NotFoundError, omit
-from tests.unit.rl_wait import patch_wait
-from tests.unit._rl_fakes import FakeClient
-from together.lib.beta.rl import (
+from together.rl import (
     Sample,
     Trainer,
     Gradient,
@@ -37,11 +35,13 @@ from together.lib.beta.rl import (
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
-from together.lib.beta.rl.clients import (
+from tests.unit.rl_wait import patch_wait
+from together.rl.clients import (
     session as session_client_module,
     trainer as trainer_module,
     generator as generator_module,
 )
+from tests.unit._rl_fakes import FakeClient
 from together.types.beta.rl.tensor_data import TensorData as TensorDataModel
 from together.types.beta.rl.loss_fn_output import LossFnOutput
 from together.types.beta.rl.sample_operation import SampleOperation
@@ -109,8 +109,8 @@ def test_sample_wraps_model_input(monkeypatch: pytest.MonkeyPatch) -> None:
     result = _generator(trainer).sample(prompt=model_input, num_samples=3)
 
     assert result is expected
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
     assert kwargs["model_inputs"] == [model_input]
@@ -133,8 +133,8 @@ def test_sample_batch_passes_multiple_model_inputs(monkeypatch: pytest.MonkeyPat
     result = _generator(trainer).sample_batch(prompts=model_inputs)
 
     assert result == expected
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["model_inputs"] == model_inputs
     trainer.stop()
 
@@ -153,8 +153,8 @@ def test_sample_requests_routing_capture(monkeypatch: pytest.MonkeyPatch) -> Non
     )
 
     assert result is expected
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["return_routed_experts"] is True
     assert kwargs["topk_prompt_logprobs"] == 5
     trainer.stop()
@@ -170,8 +170,8 @@ def test_compute_logprobs_requests_prompt_logprobs(monkeypatch: pytest.MonkeyPat
     logprobs = _generator(trainer).compute_logprobs(model_input)
 
     assert logprobs == [0.0, -1.5]
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
     assert kwargs["model_inputs"] == [model_input]
@@ -197,8 +197,8 @@ def test_compute_logprobs_batch_requests_prompt_logprobs(monkeypatch: pytest.Mon
     logprobs = _generator(trainer).compute_logprobs_batch(model_inputs)
 
     assert logprobs == [[0.0, -1.5], [0.0, -0.2]]
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "sample"
     assert args == ("sess",)
     assert kwargs["model_inputs"] == model_inputs
@@ -224,8 +224,8 @@ def test_forward_scores_the_batch_without_gradients(monkeypatch: pytest.MonkeyPa
 
     assert result.loss_fn_outputs is not None
     assert result.loss_fn_outputs[0].tensors["logprobs"].data == [-1.0, -2.0, -3.0]
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "forward_backward"
     assert args == ("sess",)
     assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
@@ -244,8 +244,8 @@ def test_forward_backward_accumulates_gradients(monkeypatch: pytest.MonkeyPatch)
 
     trainer.trainer.forward_backward(samples=[_small_sample()], loss=_CROSS_ENTROPY)
 
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["forward_only"] is omit
     assert kwargs["return_loss_fn_outputs"] is omit
     trainer.stop()
@@ -261,8 +261,8 @@ def test_custom_forward_backward_passes_samples_and_gradients(monkeypatch: pytes
     result = trainer.trainer.custom_forward_backward(samples=samples, gradients=gradients)
 
     assert result == {"metrics": {"grad_norm": 0.5}}
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "custom_forward_backward"
     assert args == ("sess",)
     assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
@@ -293,8 +293,8 @@ def test_forward_backward_passes_samples_and_loss(monkeypatch: pytest.MonkeyPatc
     result = trainer.trainer.forward_backward(samples=samples, loss=loss)
 
     assert result.loss == 1.0
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "forward_backward"
     assert args == ("sess",)
     assert kwargs["samples"] == [_sample_payload(sample) for sample in samples]
@@ -312,8 +312,8 @@ def test_optim_step_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     assert result.step == "1"
-    assert client.beta.rl.operations.last_call is not None
-    method, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, _, kwargs = client.post_training.operations.last_call
     assert method == "optim_step"
     assert kwargs["adam_params"] == {"beta1": 0.9, "learning_rate": 1e-4, "grad_clip_norm": 1.0}
     trainer.stop()
@@ -328,8 +328,8 @@ def test_optim_step_forwards_muon_params(monkeypatch: pytest.MonkeyPatch) -> Non
         muon_params=MuonParams(learning_rate=0.02, momentum=0.95),
     )
 
-    assert client.beta.rl.operations.last_call is not None
-    method, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, _, kwargs = client.post_training.operations.last_call
     assert method == "optim_step"
     assert kwargs["muon_params"] == {"learning_rate": 0.02, "momentum": 0.95}
     trainer.stop()
@@ -343,8 +343,8 @@ def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
     result = trainer.trainer.weights_sync()
 
     assert int(result.weights_version) == 2
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "weights_sync"
     assert args == ("sess",)
     assert kwargs["weight_sync_type"] == "WEIGHT_SYNC_TYPE_SYNCHRONOUS"
@@ -359,8 +359,8 @@ def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     result = trainer.create_training_checkpoint()
 
     assert result.checkpoint_id == "ckpt-1"
-    assert client.beta.rl.operations.last_call is not None
-    method, args, _ = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, _ = client.post_training.operations.last_call
     assert method == "create_training_checkpoint"
     assert args == ("sess",)
     trainer.stop()
@@ -403,7 +403,7 @@ def test_stop_closes_client() -> None:
 
     trainer.stop()
 
-    assert client.beta.rl.sessions.last_stop == "sess"
+    assert client.post_training.sessions.last_stop == "sess"
     assert client.closed is True
 
 
@@ -414,7 +414,7 @@ def test_context_manager_stops() -> None:
     with trainer:
         assert trainer._session_id == "sess"
 
-    assert client.beta.rl.sessions.last_stop == "sess"
+    assert client.post_training.sessions.last_stop == "sess"
     assert client.closed is True
 
 
@@ -425,7 +425,7 @@ async def test_async_context_manager_stops() -> None:
     async with trainer:
         assert trainer._session_id == "sess"
 
-    assert client.beta.rl.sessions.last_stop == "sess"
+    assert client.post_training.sessions.last_stop == "sess"
     assert client.closed is True
 
 
@@ -433,11 +433,11 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_client = MagicMock()
-    fake_client.beta.rl.sessions.create = AsyncMock(return_value=SimpleNamespace(id="sess-1"))
-    fake_client.beta.rl.sessions.retrieve = AsyncMock(
+    fake_client.post_training.sessions.create = AsyncMock(return_value=SimpleNamespace(id="sess-1"))
+    fake_client.post_training.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_RUNNING")
     )
-    fake_client.beta.rl.model_resources.retrieve = AsyncMock(
+    fake_client.post_training.model_resources.retrieve = AsyncMock(
         return_value=SimpleNamespace(
             compute_config=SimpleNamespace(num_generator_replicas=1),
         )
@@ -459,8 +459,8 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
     assert trainer._session_id == "sess-1"
     assert isinstance(trainer.generator, Generator)
     assert create_client.call_args.kwargs["max_retries"] == 7
-    fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
-    await_args = fake_client.beta.rl.sessions.create.await_args
+    fake_client.post_training.sessions.retrieve.assert_awaited_once_with("sess-1")
+    await_args = fake_client.post_training.sessions.create.await_args
     assert await_args is not None
     create_kwargs = await_args.kwargs
     assert create_kwargs["model_resources_id"] == "res-1"
@@ -471,11 +471,11 @@ async def test_create_async_attaches_to_model_resources_and_returns_trainer(
 
 async def test_create_async_closes_client_on_terminal_status(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_client = MagicMock()
-    fake_client.beta.rl.sessions.create = AsyncMock(return_value=SimpleNamespace(id="sess-1"))
-    fake_client.beta.rl.sessions.retrieve = AsyncMock(
+    fake_client.post_training.sessions.create = AsyncMock(return_value=SimpleNamespace(id="sess-1"))
+    fake_client.post_training.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_ERROR")
     )
-    fake_client.beta.rl.model_resources.retrieve = AsyncMock(
+    fake_client.post_training.model_resources.retrieve = AsyncMock(
         return_value=SimpleNamespace(
             compute_config=SimpleNamespace(num_generator_replicas=1),
         )
@@ -510,7 +510,7 @@ async def test_create_async_closes_client_on_terminal_status(monkeypatch: pytest
 )
 async def test_wait_for_creation_raises_on_terminal_status(status: str) -> None:
     client = MagicMock()
-    client.beta.rl.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
+    client.post_training.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
     trainer = SessionClient("sess", _client=cast(Any, client))
 
     with pytest.raises(RuntimeError, match=status):
@@ -519,7 +519,7 @@ async def test_wait_for_creation_raises_on_terminal_status(status: str) -> None:
 
 async def test_wait_for_creation_times_out() -> None:
     client = MagicMock()
-    client.beta.rl.sessions.retrieve = AsyncMock(
+    client.post_training.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_CREATING")
     )
     trainer = SessionClient("sess", _client=cast(Any, client))
@@ -536,8 +536,8 @@ def _instant_stop(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_stop_async_closes_client() -> None:
     client = MagicMock()
     output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED")
-    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
-    client.beta.rl.sessions.retrieve = AsyncMock()
+    client.post_training.sessions.stop = AsyncMock(return_value=output)
+    client.post_training.sessions.retrieve = AsyncMock()
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
@@ -545,8 +545,8 @@ async def test_stop_async_closes_client() -> None:
 
     assert result is output
     assert trainer._loop.closed
-    client.beta.rl.sessions.stop.assert_awaited_once_with("sess")
-    client.beta.rl.sessions.retrieve.assert_not_awaited()
+    client.post_training.sessions.stop.assert_awaited_once_with("sess")
+    client.post_training.sessions.retrieve.assert_not_awaited()
     client.close.assert_awaited_once()
 
 
@@ -554,15 +554,15 @@ async def test_stop_async_waits_until_session_is_inactive(monkeypatch: pytest.Mo
     _instant_stop(monkeypatch)
     client = MagicMock()
     output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
-    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
-    client.beta.rl.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
+    client.post_training.sessions.stop = AsyncMock(return_value=output)
+    client.post_training.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
     result = await trainer.stop_async()
 
     assert result is output
-    client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess")
+    client.post_training.sessions.retrieve.assert_awaited_once_with("sess")
     client.close.assert_awaited_once()
 
 
@@ -576,8 +576,8 @@ async def test_stop_async_treats_missing_session_as_inactive(monkeypatch: pytest
     )
     client = MagicMock()
     output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
-    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
-    client.beta.rl.sessions.retrieve = AsyncMock(side_effect=not_found)
+    client.post_training.sessions.stop = AsyncMock(return_value=output)
+    client.post_training.sessions.retrieve = AsyncMock(side_effect=not_found)
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
@@ -591,8 +591,8 @@ async def test_stop_async_warns_on_timeout_and_closes_client(monkeypatch: pytest
     _instant_stop(monkeypatch)
     client = MagicMock()
     output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
-    client.beta.rl.sessions.stop = AsyncMock(return_value=output)
-    client.beta.rl.sessions.retrieve = AsyncMock(
+    client.post_training.sessions.stop = AsyncMock(return_value=output)
+    client.post_training.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
     )
     client.close = AsyncMock()
@@ -608,8 +608,8 @@ async def test_stop_async_warns_on_timeout_and_closes_client(monkeypatch: pytest
 async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
     _instant_stop(monkeypatch)
     client = MagicMock()
-    client.beta.rl.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING"))
-    client.beta.rl.sessions.retrieve = AsyncMock(side_effect=KeyboardInterrupt)
+    client.post_training.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING"))
+    client.post_training.sessions.retrieve = AsyncMock(side_effect=KeyboardInterrupt)
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
@@ -621,7 +621,7 @@ async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytes
 
 def test_stop_marks_the_handle_closed() -> None:
     client = MagicMock()
-    client.beta.rl.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
+    client.post_training.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
     trainer.stop()
@@ -631,14 +631,14 @@ def test_stop_marks_the_handle_closed() -> None:
 
 async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_client = MagicMock()
-    fake_client.beta.rl.sessions.create = AsyncMock()
-    fake_client.beta.rl.sessions.retrieve = AsyncMock(
+    fake_client.post_training.sessions.create = AsyncMock()
+    fake_client.post_training.sessions.retrieve = AsyncMock(
         return_value=SimpleNamespace(
             status="TRAINING_SESSION_STATUS_RUNNING",
             resources_id="res-1",
         )
     )
-    fake_client.beta.rl.model_resources.retrieve = AsyncMock(
+    fake_client.post_training.model_resources.retrieve = AsyncMock(
         return_value=SimpleNamespace(
             compute_config=SimpleNamespace(num_generator_replicas=1),
         )
@@ -652,14 +652,14 @@ async def test_attach_async_binds_existing_session(monkeypatch: pytest.MonkeyPat
     assert trainer._session_id == "sess-1"
     assert isinstance(trainer.generator, Generator)
     assert create_client.call_args.kwargs["max_retries"] == 7
-    fake_client.beta.rl.sessions.retrieve.assert_awaited_once_with("sess-1")
-    fake_client.beta.rl.sessions.create.assert_not_awaited()
+    fake_client.post_training.sessions.retrieve.assert_awaited_once_with("sess-1")
+    fake_client.post_training.sessions.create.assert_not_awaited()
     fake_client.close.assert_not_awaited()
 
 
 async def test_attach_async_hides_sampling_for_trainer_only_resources(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_client = FakeClient()
-    fake_client.beta.rl.model_resources.num_generator_replicas = 0
+    fake_client.post_training.model_resources.num_generator_replicas = 0
 
     def fake_together(**_kwargs: Any) -> FakeClient:
         return fake_client
@@ -675,7 +675,7 @@ async def test_attach_async_hides_sampling_for_trainer_only_resources(monkeypatc
 
 async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_client = MagicMock()
-    fake_client.beta.rl.sessions.retrieve = AsyncMock(side_effect=RuntimeError("not found"))
+    fake_client.post_training.sessions.retrieve = AsyncMock(side_effect=RuntimeError("not found"))
     fake_client.close = AsyncMock()
 
     def fake_together(**_kw: Any) -> MagicMock:
@@ -691,26 +691,26 @@ async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.M
 
 async def test_detach_async_closes_client_without_stopping() -> None:
     client = MagicMock()
-    client.beta.rl.sessions.stop = AsyncMock()
+    client.post_training.sessions.stop = AsyncMock()
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
     await trainer.detach_async()
 
     client.close.assert_awaited_once()
-    client.beta.rl.sessions.stop.assert_not_awaited()
+    client.post_training.sessions.stop.assert_not_awaited()
 
 
 def test_detach_marks_the_handle_closed_without_stopping() -> None:
     client = MagicMock()
-    client.beta.rl.sessions.stop = AsyncMock()
+    client.post_training.sessions.stop = AsyncMock()
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
     trainer.detach()
 
     assert trainer._loop.closed
     client.close.assert_awaited_once()
-    client.beta.rl.sessions.stop.assert_not_awaited()
+    client.post_training.sessions.stop.assert_not_awaited()
 
 
 async def test_submit_and_wait_raises_on_empty_output(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -768,8 +768,8 @@ def test_forward_backward_inline_below_threshold(monkeypatch: pytest.MonkeyPatch
     )
 
     assert result.loss == 0.5
-    assert client.beta.rl.operations.last_call is not None
-    method, args, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    method, args, kwargs = client.post_training.operations.last_call
     assert method == "forward_backward"
     assert args == ("sess",)
     assert kwargs.get("extra_body") is None
@@ -800,8 +800,8 @@ def test_forward_backward_materializes_generator_weights(monkeypatch: pytest.Mon
         loss=LossConfig(type="LOSS_TYPE_CROSS_ENTROPY"),
     )
 
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["samples"][0]["loss_fn_inputs"]["weights"]["data"] == [1.0, 0.0, 1.0]
     trainer.stop()
 
@@ -842,8 +842,8 @@ def test_forward_backward_sends_proto_loss_type(monkeypatch: pytest.MonkeyPatch)
 
     trainer.trainer.forward_backward(samples=[_policy_sample()], loss=cast(Any, {"type": "ppo"}))
 
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["loss"] == {"type": "LOSS_TYPE_PPO"}
     trainer.stop()
 
@@ -873,8 +873,8 @@ def test_forward_backward_accepts_each_generated_loss(
 
     session.trainer.forward_backward(samples=(item for item in [sample]), loss=cast(Any, loss))
 
-    assert client.beta.rl.operations.last_call is not None
-    assert client.beta.rl.operations.last_call[2]["loss"] == loss
+    assert client.post_training.operations.last_call is not None
+    assert client.post_training.operations.last_call[2]["loss"] == loss
     session.stop()
 
 
@@ -901,7 +901,7 @@ def test_forward_backward_rejects_invalid_loss_config_before_submission(
     with pytest.raises(ValueError, match=message):
         session.trainer.forward_backward(samples=[_policy_sample()], loss=cast(Any, loss))
 
-    assert client.beta.rl.operations.last_call is None
+    assert client.post_training.operations.last_call is None
     assert client.captured_put_body is None
     session.stop()
 
@@ -960,7 +960,7 @@ def test_training_operations_reject_invalid_loss_inputs_before_submission(
                 gradients=[Gradient(data=[0.1, 0.2, 0.3], dtype="D_TYPE_FLOAT32")],
             )
 
-    assert client.beta.rl.operations.last_call is None
+    assert client.post_training.operations.last_call is None
     assert client.captured_put_body is None
     session.stop()
 
@@ -987,8 +987,8 @@ def test_forward_warns_but_submits_undeclared_loss_input(monkeypatch: pytest.Mon
     with pytest.warns(UserWarning, match="logprobs"):
         session.trainer.forward(samples=[sample], loss=_CROSS_ENTROPY)
 
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["samples"] == [_sample_payload(sample)]
     session.stop()
 
@@ -1028,8 +1028,8 @@ async def test_forward_backward_uploads_large_payload(monkeypatch: pytest.Monkey
     assert uploaded["samples"][0]["model_input"]["chunks"][0]["encoded_text"]["tokens"] == long_tokens
 
     # Inline request carries all samples with truncated sequences
-    assert client.beta.rl.operations.last_call is not None
-    _, _, kwargs = client.beta.rl.operations.last_call
+    assert client.post_training.operations.last_call is not None
+    _, _, kwargs = client.post_training.operations.last_call
     assert kwargs["extra_body"] == {"payload_id": "pid-123"}
     assert len(kwargs["samples"]) == 1
     sent = kwargs["samples"][0]
@@ -1107,7 +1107,7 @@ def test_weights_mask_conflict_before_upload(monkeypatch: pytest.MonkeyPatch, me
     try:
         with pytest.raises(ValueError, match="cannot contain both weights and mask"):
             getattr(session.trainer, method)(**kwargs)
-        assert client.beta.rl.operations.last_call is None
+        assert client.post_training.operations.last_call is None
         assert client.captured_put_body is None
     finally:
         session.stop()
@@ -1127,11 +1127,11 @@ def test_grpo_reference_requirement(monkeypatch: pytest.MonkeyPatch, method: str
         if beta > 0 and not reference:
             with pytest.raises(ValueError, match="reference_logprobs"):
                 getattr(session.trainer, method)(samples=[sample], loss=loss)
-            assert client.beta.rl.operations.last_call is None
+            assert client.post_training.operations.last_call is None
             assert client.captured_put_body is None
         else:
             getattr(session.trainer, method)(samples=[sample], loss=loss)
-            assert client.beta.rl.operations.last_call is not None
+            assert client.post_training.operations.last_call is not None
             assert client.captured_put_body is not None
     finally:
         session.stop()

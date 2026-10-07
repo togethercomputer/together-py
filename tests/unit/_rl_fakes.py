@@ -85,14 +85,9 @@ class FakeRL:
         self.model_resources = FakeModelResources()
 
 
-class FakeBeta:
-    def __init__(self) -> None:
-        self.rl = FakeRL()
-
-
 class FakeClient:
     def __init__(self) -> None:
-        self.beta = FakeBeta()
+        self.post_training = FakeRL()
         self.closed = False
         self.base_url = httpx.URL("https://api.together.xyz/v1/")
         self.api_key = "test-api-key"

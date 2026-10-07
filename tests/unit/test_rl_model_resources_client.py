@@ -6,20 +6,20 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from together.rl import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
 from together._types import omit
-from together.lib.beta.rl import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
-from together.lib.beta.rl.clients import model_resources as model_resources_client_module
-from together.lib.beta.rl.clients.session import SessionClient
-from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
+from together.rl.clients import model_resources as model_resources_client_module
+from together.rl.clients.session import SessionClient
+from together.rl.clients.model_resources import ModelResourcesClient
 
 _STOPPING = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPING")
 
 
 def _fake_client(status: str = "MODEL_RESOURCES_STATUS_READY") -> MagicMock:
     client = MagicMock()
-    client.beta.rl.model_resources.create = AsyncMock(return_value=SimpleNamespace(id="res-1"))
-    client.beta.rl.model_resources.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.create = AsyncMock(return_value=SimpleNamespace(id="res-1"))
+    client.post_training.model_resources.retrieve = AsyncMock(return_value=SimpleNamespace(status=status))
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     return client
 
@@ -38,10 +38,10 @@ async def test_create_async_returns_resource(monkeypatch: pytest.MonkeyPatch) ->
     resources = await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
 
     assert resources.model_resources_id == "res-1"
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["base_model"] == "Qwen/Qwen3-0.6B"
     assert create_kwargs["lora_enabled"] is True
-    client.beta.rl.model_resources.retrieve.assert_awaited_with("res-1")
+    client.post_training.model_resources.retrieve.assert_awaited_with("res-1")
 
 
 @pytest.mark.parametrize("num_generator_replicas", [0, 1, 2])
@@ -59,7 +59,7 @@ async def test_create_async_passes_compute_config(
         interval=0.0,
     )
 
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["compute_config"] == {"num_generator_replicas": num_generator_replicas}
 
 
@@ -75,7 +75,7 @@ async def test_create_async_omits_compute_config_so_the_server_decides(
         interval=0.0,
     )
 
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["compute_config"] is omit
 
 
@@ -91,7 +91,7 @@ async def test_create_async_forwards_optimizer_config(monkeypatch: pytest.Monkey
         interval=0.0,
     )
 
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["optimizer_config"] == {"muon": {"scaling_strategy": "MUON_SCALING_STRATEGY_MATCH_ADAM"}}
 
 
@@ -101,7 +101,7 @@ async def test_create_async_omits_optimizer_config_by_default(monkeypatch: pytes
 
     await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
 
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["optimizer_config"] is model_resources_client_module.omit
 
 
@@ -116,7 +116,7 @@ def test_create_forwards_base_weights_ref(monkeypatch: pytest.MonkeyPatch) -> No
         interval=0.0,
     )
 
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["base_weights_ref"] == "together://ml_abc@rv_def"
 
 
@@ -126,7 +126,7 @@ async def test_create_async_omits_base_weights_ref_by_default(monkeypatch: pytes
 
     await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
 
-    create_kwargs = client.beta.rl.model_resources.create.await_args.kwargs
+    create_kwargs = client.post_training.model_resources.create.await_args.kwargs
     assert create_kwargs["base_weights_ref"] is omit
 
 
@@ -137,7 +137,7 @@ async def test_create_async_stops_and_closes_on_terminal_status(monkeypatch: pyt
     with pytest.raises(RuntimeError, match="MODEL_RESOURCES_STATUS_ERROR"):
         await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.1, interval=0.0)
 
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1")
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
 
 
@@ -148,14 +148,14 @@ async def test_create_async_times_out_and_cleans_up(monkeypatch: pytest.MonkeyPa
     with pytest.raises(TimeoutError):
         await ModelResourcesClient.create_async(base_model="Qwen/Qwen3-0.6B", timeout=0.0, interval=0.0)
 
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1")
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
 
 
 async def test_stop_async_closes_client() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
-    client.beta.rl.model_resources.retrieve = AsyncMock()
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.retrieve = AsyncMock()
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
@@ -163,8 +163,8 @@ async def test_stop_async_closes_client() -> None:
 
     assert result is _STOPPING
     assert resources._loop.closed
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
-    client.beta.rl.model_resources.retrieve.assert_not_awaited()
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.post_training.model_resources.retrieve.assert_not_awaited()
     client.close.assert_awaited_once()
 
 
@@ -172,24 +172,24 @@ async def test_stop_async_waits_until_resources_stop_billing(monkeypatch: pytest
     monkeypatch.setattr(model_resources_client_module, "DEFAULT_MODEL_RESOURCES_STOP_INTERVAL", 0.0)
     client = MagicMock()
     output = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=output)
-    client.beta.rl.model_resources.retrieve = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.stop = AsyncMock(return_value=output)
+    client.post_training.model_resources.retrieve = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
     result = await resources.stop_async()
 
     assert result is output
-    client.beta.rl.model_resources.retrieve.assert_awaited_once_with("res-1")
+    client.post_training.model_resources.retrieve.assert_awaited_once_with("res-1")
     client.close.assert_awaited_once()
 
 
 def test_retrieve_returns_resource() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.retrieve = AsyncMock(
+    client.post_training.model_resources.retrieve = AsyncMock(
         return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
     )
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
@@ -201,7 +201,7 @@ def test_retrieve_returns_resource() -> None:
 
 async def test_retrieve_async_returns_resource() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.retrieve = AsyncMock(
+    client.post_training.model_resources.retrieve = AsyncMock(
         return_value=SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_READY")
     )
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
@@ -209,7 +209,7 @@ async def test_retrieve_async_returns_resource() -> None:
     result = await resources.retrieve_async()
 
     assert result.id == "res-1"
-    client.beta.rl.model_resources.retrieve.assert_awaited_once_with("res-1")
+    client.post_training.model_resources.retrieve.assert_awaited_once_with("res-1")
 
 
 async def test_create_session_async_uses_model_resources_id(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -274,14 +274,14 @@ async def test_attach_async_binds_existing_resource(monkeypatch: pytest.MonkeyPa
     resources = await ModelResourcesClient.attach_async(model_resources_id="res-1")
 
     assert resources.model_resources_id == "res-1"
-    client.beta.rl.model_resources.retrieve.assert_awaited_once_with("res-1")
-    client.beta.rl.model_resources.create.assert_not_awaited()
+    client.post_training.model_resources.retrieve.assert_awaited_once_with("res-1")
+    client.post_training.model_resources.create.assert_not_awaited()
     client.close.assert_not_awaited()
 
 
 async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _fake_client()
-    client.beta.rl.model_resources.retrieve = AsyncMock(side_effect=RuntimeError("not found"))
+    client.post_training.model_resources.retrieve = AsyncMock(side_effect=RuntimeError("not found"))
     _patch_together(monkeypatch, client)
 
     with pytest.raises(RuntimeError, match="not found"):
@@ -292,73 +292,73 @@ async def test_attach_async_raises_and_closes_when_missing(monkeypatch: pytest.M
 
 async def test_detach_async_closes_client_without_stopping() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock()
+    client.post_training.model_resources.stop = AsyncMock()
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
     await resources.detach_async()
 
     client.close.assert_awaited_once()
-    client.beta.rl.model_resources.stop.assert_not_awaited()
+    client.post_training.model_resources.stop.assert_not_awaited()
 
 
 def test_detach_marks_the_handle_closed_without_stopping() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock()
+    client.post_training.model_resources.stop = AsyncMock()
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
     resources.detach()
 
     assert resources._loop.closed
     client.close.assert_awaited_once()
-    client.beta.rl.model_resources.stop.assert_not_awaited()
+    client.post_training.model_resources.stop.assert_not_awaited()
 
 
 def test_context_manager_stops() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
     with resources:
         assert resources.model_resources_id == "res-1"
 
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
     client.close.assert_awaited_once()
 
 
 async def test_async_context_manager_stops() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
     async with resources:
         assert resources.model_resources_id == "res-1"
 
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=omit)
     client.close.assert_awaited_once()
 
 
 async def test_stop_forwards_force_to_the_api() -> None:
     client = MagicMock()
-    client.beta.rl.model_resources.stop = AsyncMock(return_value=_STOPPING)
+    client.post_training.model_resources.stop = AsyncMock(return_value=_STOPPING)
     client.close = AsyncMock()
     resources = ModelResourcesClient("res-1", _client=cast(Any, client))
 
     await resources.stop_async(force=True)
 
-    client.beta.rl.model_resources.stop.assert_awaited_once_with("res-1", force=True)
+    client.post_training.model_resources.stop.assert_awaited_once_with("res-1", force=True)
 
 
 def test_model_resources_client_is_publicly_exported() -> None:
-    from together.lib.beta.rl import ModelResourcesClient as FromRl, ModelResourcesStatus
+    from together.rl import ModelResourcesClient as FromRl, ModelResourcesStatus
 
     assert FromRl is ModelResourcesClient
     assert ModelResourcesStatus is not None
 
 
 def test_rl_public_api_hides_generated_param_suffixes() -> None:
-    import together.lib.beta.rl as rl
+    import together.rl as rl
 
     assert not [name for name in rl.__all__ if name.endswith("Param")]

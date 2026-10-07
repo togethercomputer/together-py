@@ -23,8 +23,9 @@ pip install together
 uv add together
 ```
 
-The RL training SDK (`together.lib.beta.rl`) is included. Its Tinker-compatible entry point,
-`together.lib.beta.rl.tinker`, additionally requires the `tinker` extra (Python 3.11+).
+The RL training SDK (`together.rl`) is included. Its Tinker-compatible entry point,
+`together.rl.tinker`, additionally requires the `tinker` extra (Python 3.11+).
+`together.lib.beta.rl` still imports as an alias.
 
 ```sh
 pip install 'together[tinker]'

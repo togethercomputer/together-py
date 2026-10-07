@@ -15,7 +15,7 @@ from respx import MockRouter
 from respx.models import Call
 
 from together import Together, AsyncTogether
-from together.lib.beta.rl import (
+from together.rl import (
     Sample,
     Trainer,
     AdamParams,
@@ -33,15 +33,25 @@ from together.lib.beta.rl import (
     download_checkpoint,
     download_checkpoint_async,
 )
+from together.rl._payloads import _VALIDATION_OMITTED_KEYS
 from together.types.beta.rl import (
     loss_config_param,
     tensor_data_param,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
-from together.lib.beta.rl._payloads import _VALIDATION_OMITTED_KEYS
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
+
+
+@pytest.fixture(autouse=True)
+def _expose_rl_namespace(request: pytest.FixtureRequest) -> None:
+    """The lib calls ``client.post_training``. Generated clients still mount RL under ``beta``."""
+    for name in ("client", "async_client"):
+        if name in request.fixturenames:
+            instance = cast(Any, request.getfixturevalue(name))
+            instance.post_training = instance.beta.rl
+
 
 LEGACY_RL_LOSS_INPUT_NAMES = frozenset(
     {
@@ -449,7 +459,7 @@ class TestRLRequestBody:
         def fake_together(**_kw: Any) -> AsyncTogether:
             return async_client
 
-        from together.lib.beta.rl.clients import session as session_client_module
+        from together.rl.clients import session as session_client_module
 
         monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
 
@@ -466,11 +476,9 @@ class TestRLRequestBody:
 
     async def test_download_checkpoint_async_returns_empty_list_for_empty_data(self, tmp_path: Any) -> None:
         fake_client = SimpleNamespace(
-            beta=SimpleNamespace(
-                rl=SimpleNamespace(
-                    checkpoints=SimpleNamespace(
-                        download=AsyncMock(return_value=SimpleNamespace(data=[])),
-                    )
+            post_training=SimpleNamespace(
+                checkpoints=SimpleNamespace(
+                    download=AsyncMock(return_value=SimpleNamespace(data=[])),
                 )
             )
         )
@@ -530,7 +538,7 @@ def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockR
 @pytest.mark.parametrize("filename", ["../escape.bin", "nested/escape.bin", "/escape.bin"])
 def test_download_checkpoint_rejects_unsafe_filename(filename: str, tmp_path: Any) -> None:
     client = MagicMock()
-    client.beta.rl.checkpoints.download.return_value = SimpleNamespace(
+    client.post_training.checkpoints.download.return_value = SimpleNamespace(
         data=[SimpleNamespace(url="https://files.test/escape.bin", filename=filename)]
     )
     client.get.side_effect = AssertionError("unsafe filename must be rejected before download")
@@ -542,18 +550,28 @@ def test_download_checkpoint_rejects_unsafe_filename(filename: str, tmp_path: An
 
 
 def test_public_rl_names_have_no_param_suffix() -> None:
-    module = importlib.import_module("together.lib.beta.rl")
+    module = importlib.import_module("together.rl")
     param_names = [name for name in module.__all__ if name.endswith("Param")]
     assert param_names == []
 
 
 def test_public_rl_names_are_importable() -> None:
-    module = importlib.import_module("together.lib.beta.rl")
+    module = importlib.import_module("together.rl")
     assert [name for name in module.__all__ if not hasattr(module, name)] == []
 
 
+def test_legacy_rl_import_path_aliases_together_rl() -> None:
+    import together.rl as rl
+    import together.lib.beta.rl as legacy
+    from together.lib.beta import rl as from_beta
+
+    assert from_beta is legacy
+    assert legacy.SessionClient is rl.SessionClient
+    assert list(legacy.__all__) == list(rl.__all__)
+
+
 def test_public_rl_legacy_loss_inputs_are_not_exported() -> None:
-    module = importlib.import_module("together.lib.beta.rl")
+    module = importlib.import_module("together.rl")
     assert LEGACY_RL_LOSS_INPUT_NAMES.isdisjoint(module.__all__)
     assert all(not hasattr(module, name) for name in LEGACY_RL_LOSS_INPUT_NAMES)
 

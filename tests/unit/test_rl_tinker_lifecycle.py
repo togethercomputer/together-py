@@ -14,21 +14,28 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
-from together.lib.beta import rl
-from together.lib.beta.rl import (
+from together.rl import (
     Sample,
     LossConfig,
     tinker as tinker_compat,
     _request_types,
 )
+from together.lib.beta import rl
+from together.rl.tinker import _service, _teardown
 from tests.unit._rl_tinker import (
     _noop,
     _ignore,
     _session_mock,
     _model_resources_mock,
 )
-from together.lib.beta.rl.tinker import _service, _teardown
-from together.lib.beta.rl.clients.session import SessionClient
+from together.rl.clients.session import SessionClient
+
+
+def test_legacy_tinker_import_is_the_same_module() -> None:
+    import together.rl.tinker as tinker
+    import together.lib.beta.rl.tinker as legacy
+
+    assert legacy is tinker
 
 
 def test_module_reexports_types_without_genuine_clients() -> None:
@@ -332,11 +339,9 @@ def test_async_close_releases_a_session_built_on_the_blocking_path() -> None:
     """aclose has to reach the session's own gate, not just drop the handles it holds.
     Mocked handles cannot show this — only a real session owns a gate."""
     client = SimpleNamespace(
-        beta=SimpleNamespace(
-            rl=SimpleNamespace(
-                sessions=SimpleNamespace(
-                    stop=AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
-                )
+        post_training=SimpleNamespace(
+            sessions=SimpleNamespace(
+                stop=AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
             )
         ),
         close=AsyncMock(),
@@ -380,11 +385,9 @@ def test_exit_hook_releases_an_await_built_client() -> None:
     """Every handle shares the process loop, so how a session was built no longer decides
     whether the blocking exit hook can release it."""
     client = SimpleNamespace(
-        beta=SimpleNamespace(
-            rl=SimpleNamespace(
-                sessions=SimpleNamespace(
-                    stop=AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
-                )
+        post_training=SimpleNamespace(
+            sessions=SimpleNamespace(
+                stop=AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
             )
         ),
         close=AsyncMock(),
@@ -399,7 +402,7 @@ def test_exit_hook_releases_an_await_built_client() -> None:
     lifecycle.close(automatic=True)
 
     assert lifecycle.closed is True
-    client.beta.rl.sessions.stop.assert_awaited()
+    client.post_training.sessions.stop.assert_awaited()
 
 
 _CHECKPOINT_UUID = "123e4567-e89b-12d3-a456-426614174000"
@@ -456,7 +459,7 @@ def test_create_training_client_from_state_describes_then_starts(
 
 def test_describe_rejects_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     client = MagicMock()
-    client.beta.rl.checkpoints.retrieve.return_value = _training_checkpoint(kind="CHECKPOINT_TYPE_INFERENCE")
+    client.post_training.checkpoints.retrieve.return_value = _training_checkpoint(kind="CHECKPOINT_TYPE_INFERENCE")
     client.__enter__.return_value = client
     monkeypatch.setattr(_service, "Together", lambda **_: client)
 

@@ -12,9 +12,9 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
-from together.lib.beta.rl import tinker as tinker_compat
-from together.lib.beta.rl.tinker import _service
-from together.lib.beta.rl.clients.session import SessionClient
+from together.rl import tinker as tinker_compat
+from together.rl.tinker import _service
+from together.rl.clients.session import SessionClient
 
 _OPERATION = SimpleNamespace(id="op-1", status="TRAINING_OPERATION_STATUS_PENDING", output=None, error=None)
 _WEIGHTS_SYNC_OUTPUT = {"weights_version": 1}
@@ -47,7 +47,7 @@ def _model_resources_mock(model_resources_id: str) -> Any:
 
 def _session_with_operations(**operations: Any) -> SessionClient:
     client = SimpleNamespace(
-        beta=SimpleNamespace(rl=SimpleNamespace(operations=SimpleNamespace(**operations))),
+        post_training=SimpleNamespace(operations=SimpleNamespace(**operations)),
         close=AsyncMock(),
     )
     return SessionClient("sess", _client=cast(Any, client))

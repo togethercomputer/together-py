@@ -6,15 +6,15 @@ from dataclasses import dataclass
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
+from ..._types import omit
 from .._arrays import coerce_model_input
-from ....._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
-from .....types.beta.rl.sample_result import SampleResult
-from .....types.beta.rl.sampling_params import SamplingParams
-from .....types.beta.rl.sample_operation import Output as SampleBatchResult, SampleOperation
-from .....types.beta.rl.model_input_param import ModelInput
-from .....types.beta.rl.operation_sample_params import OperationSampleParams
+from ...types.beta.rl.sample_result import SampleResult
+from ...types.beta.rl.sampling_params import SamplingParams
+from ...types.beta.rl.sample_operation import Output as SampleBatchResult, SampleOperation
+from ...types.beta.rl.model_input_param import ModelInput
+from ...types.beta.rl.operation_sample_params import OperationSampleParams
 
 
 async def _submit_sample_batch(
@@ -51,7 +51,7 @@ async def _submit_sample_batch(
         expected_type=OperationSampleParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.beta.rl.operations.sample(
+    return await session._client.post_training.operations.sample(
         session._session_id,
         idempotency_key=str(uuid4()),
         model_inputs=cast("list[ModelInput]", body["model_inputs"]),

@@ -6,14 +6,14 @@ from typing import Union, TypeVar
 from collections.abc import Callable, Awaitable
 from typing_extensions import TypeAlias
 
-from ...._client import AsyncTogether
-from ....types.beta.rl.sample_operation import SampleOperation
-from ....types.beta.rl.optim_step_operation import OptimStepOperation
-from ....types.beta.rl.weights_sync_operation import WeightsSyncOperation
-from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
-from ....types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
-from ....types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
-from ....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
+from .._client import AsyncTogether
+from ..types.beta.rl.sample_operation import SampleOperation
+from ..types.beta.rl.optim_step_operation import OptimStepOperation
+from ..types.beta.rl.weights_sync_operation import WeightsSyncOperation
+from ..types.beta.rl.forward_backward_operation import ForwardBackwardOperation
+from ..types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
+from ..types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
+from ..types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
 
 OperationResponse: TypeAlias = Union[
     ForwardBackwardOperation,
@@ -62,36 +62,36 @@ async def async_retrieve_operation(
     operation: OperationResponse,
 ) -> OperationResponse:
     if isinstance(operation, ForwardBackwardOperation):
-        return await client.beta.rl.operations.retrieve_forward_backward(
+        return await client.post_training.operations.retrieve_forward_backward(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, CustomForwardBackwardOperation):
-        return await client.beta.rl.operations.retrieve_custom_forward_backward(
+        return await client.post_training.operations.retrieve_custom_forward_backward(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, OptimStepOperation):
-        return await client.beta.rl.operations.retrieve_optim_step(
+        return await client.post_training.operations.retrieve_optim_step(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, WeightsSyncOperation):
-        return await client.beta.rl.operations.retrieve_weights_sync(
+        return await client.post_training.operations.retrieve_weights_sync(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, SampleOperation):
-        return await client.beta.rl.operations.retrieve_sample(
+        return await client.post_training.operations.retrieve_sample(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, InferenceCheckpointOperation):
-        return await client.beta.rl.operations.retrieve_inference_checkpoint(
+        return await client.post_training.operations.retrieve_inference_checkpoint(
             operation_id=operation.id,
             session_id=session_id,
         )
-    return await client.beta.rl.operations.retrieve_training_checkpoint(
+    return await client.post_training.operations.retrieve_training_checkpoint(
         operation_id=operation.id,
         session_id=session_id,
     )

@@ -12,7 +12,7 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from tests.unit.rl_wait import patch_wait
-from together.lib.beta.rl import tinker as tinker_compat, _payloads
+from together.rl import tinker as tinker_compat, _payloads
 from tests.unit._rl_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
@@ -20,8 +20,8 @@ from tests.unit._rl_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.lib.beta.rl.tinker import _sampling
-from together.lib.beta.rl.clients.session import SessionClient
+from together.rl.tinker import _sampling
+from together.rl.clients.session import SessionClient
 from together.types.beta.rl.sample_result import SampleResult
 from together.types.beta.rl.sampled_sequence import SampledSequence
 

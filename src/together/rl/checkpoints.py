@@ -5,9 +5,9 @@ from pathlib import Path
 
 import httpx
 
-from ...._types import omit
-from ...._client import Together, AsyncTogether
-from ....types.beta.rl.checkpoint_variant import CheckpointVariant
+from .._types import omit
+from .._client import Together, AsyncTogether
+from ..types.beta.rl.checkpoint_variant import CheckpointVariant
 
 logger = logging.getLogger("together")
 
@@ -47,7 +47,7 @@ def download_checkpoint(
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
 
-    response = client.beta.rl.checkpoints.download(
+    response = client.post_training.checkpoints.download(
         id=checkpoint_id,
         variant=variant,
     )
@@ -102,7 +102,7 @@ async def download_checkpoint_async(
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
 
-    response = await client.beta.rl.checkpoints.download(
+    response = await client.post_training.checkpoints.download(
         id=checkpoint_id,
         variant=variant,
     )

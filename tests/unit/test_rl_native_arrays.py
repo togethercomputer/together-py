@@ -19,9 +19,7 @@ from typing_extensions import override
 
 import pytest
 
-from tests.unit.rl_wait import patch_wait
-from tests.unit._rl_fakes import FakeClient
-from together.lib.beta.rl import (
+from together.rl import (
     Sample,
     Gradient,
     LossConfig,
@@ -33,7 +31,9 @@ from together.lib.beta.rl import (
     EncodedTextChunk,
     ForwardBackwardResult,
 )
-from together.lib.beta.rl._arrays import coerce_sample, coerce_gradient, coerce_model_input
+from tests.unit.rl_wait import patch_wait
+from together.rl._arrays import coerce_sample, coerce_gradient, coerce_model_input
+from tests.unit._rl_fakes import FakeClient
 
 
 @pytest.fixture
@@ -123,8 +123,8 @@ def _sample(loss_fn_inputs: Any, tokens: Any = (1, 2)) -> Sample:
 
 
 def _last_kwargs(client: FakeClient) -> dict[str, Any]:
-    assert client.beta.rl.operations.last_call is not None
-    return client.beta.rl.operations.last_call[2]
+    assert client.post_training.operations.last_call is not None
+    return client.post_training.operations.last_call[2]
 
 
 def test_numpy_array_value_takes_the_array_dtype(np: Any) -> None:

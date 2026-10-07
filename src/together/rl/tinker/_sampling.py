@@ -18,7 +18,7 @@ from ._converters import (
 from .._operations import OperationResponse
 from ..clients.session import SessionClient
 from ..clients.generator import _submit_sample_batch
-from .....types.beta.rl.model_input_param import ModelInput as WireModelInput
+from ...types.beta.rl.model_input_param import ModelInput as WireModelInput
 
 _MAX_TOPK_PROMPT_LOGPROBS = 20
 

@@ -10,7 +10,7 @@ from respx import MockRouter
 from respx.models import Call, Route
 
 from together import Together, AsyncTogether
-from together.lib.beta.rl import SessionClient
+from together.rl import SessionClient
 from together._base_client import BaseClient
 
 BASE_URL = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -170,7 +170,10 @@ async def test_rl_wrappers_generate_retry_keys(
             200, json={"id": OPERATION_ID, "status": "TRAINING_OPERATION_STATUS_COMPLETED", "output": output}
         )
     )
-    session = SessionClient("session-id", _client=AsyncTogether(api_key="test-key", base_url=BASE_URL))
+    rl_client = AsyncTogether(api_key="test-key", base_url=BASE_URL)
+    # Resources still live under beta until the GA client move.
+    cast(Any, rl_client).post_training = rl_client.beta.rl
+    session = SessionClient("session-id", _client=rl_client)
     try:
         resource = session if owner == "session" else getattr(session, owner)
         for _ in range(2):
