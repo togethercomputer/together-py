@@ -1460,6 +1460,53 @@ def list_deployments(jig: Jig) -> Any:
     return jig.api.with_raw_response.list()
 
 
+def list_revisions(jig: Jig, limit: int | None, before: int | None) -> None:
+    """List deployment revision history"""
+    response = jig.api.list_revisions(
+        jig.name,
+        limit=limit if limit is not None else omit,
+        before=before if before is not None else omit,
+    )
+    table = ListTable("Deployment Revisions", empty_message=f"No revisions found for deployment {jig.name}")
+    table.add_primary_column("Revision")
+    table.add_column("ID", ratio=2)
+    table.add_column("Action")
+    table.add_column("Image", ratio=2)
+    table.add_column("Activated")
+
+    for event in response.data:
+        table.add_row(
+            str(event.revision_number),
+            event.revision_id,
+            event.action,
+            event.image,
+            event.activated_at.isoformat(),
+        )
+    console.print(table)
+
+    if response.data:
+        next_before = response.data[-1].event_number
+        console.print("\n[blue dim]To display older revisions, run:[/blue dim]")
+        console.print(f"  [dim]-[/dim] [white]tg beta jig revisions list --before {next_before}[/white]")
+
+
+def retrieve_revision(jig: Jig, revision_identifier: str) -> Any:
+    """Get deployment revision details"""
+    return jig.api.with_raw_response.retrieve_revision(revision_identifier, id=jig.name)
+
+
+def rollback(jig: Jig, revision_identifier: str, json_output: bool = False) -> Any:
+    """Roll back deployment to a previous revision"""
+    raw = jig.api.with_raw_response.rollback(jig.name, revision_identifier=revision_identifier)
+    if json_output:
+        return raw
+    deployment = raw.parse()
+    return (
+        f"\N{ANTICLOCKWISE DOWNWARDS AND UPWARDS OPEN CIRCLE ARROWS} Rolled back {jig.name} "
+        f"to revision {revision_identifier}\n\n{jig.format_status(deployment)}"
+    )
+
+
 def secrets_set(jig: Jig, name: str, value: str, description: str) -> None:
     """Set a secret (create or update)"""
     jig.set_secret(name, value, description)
@@ -1573,9 +1620,7 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     jig.prewarm(volume=name)
 
 
-def _s3_origin_content(uri: str, role_arn: str) -> Any:
-    # `origin` and the volume status fields aren't in the generated SDK types yet. Unknown request keys
-    # are sent as-is and unknown response fields are kept as model extras, hence the untyped access.
+def _s3_origin_content(uri: str, role_arn: str) -> dict[str, Any]:
     return {"type": "files", "origin": {"s3": {"uri": uri, "role_arn": role_arn}}}
 
 
@@ -1909,6 +1954,48 @@ def list_deployments_cli(
 ) -> None:
     """List all deployments."""
     _run_jig_cmd(config, toml_config, list_deployments)
+
+
+def list_revisions_cli(
+    limit: Annotated[Optional[int], Parameter(help="Maximum revision events to return")] = None,
+    before: Annotated[Optional[int], Parameter(help="Return events before this event number")] = None,
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """List deployment revision history."""
+
+    def inner(jig: Jig) -> Any:
+        if config.json:
+            return jig.api.with_raw_response.list_revisions(
+                jig.name,
+                limit=limit if limit is not None else omit,
+                before=before if before is not None else omit,
+            )
+        list_revisions(jig, limit, before)
+        return None
+
+    _run_jig_cmd(config, toml_config, inner)
+
+
+def retrieve_revision_cli(
+    revision_identifier: Annotated[str, Parameter(name="--revision", help="Revision number or revision ID")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Get deployment revision details."""
+    _run_jig_cmd(config, toml_config, lambda jig: retrieve_revision(jig, revision_identifier))
+
+
+def rollback_cli(
+    revision_identifier: Annotated[str, Parameter(name="--revision", help="Revision number or revision ID to restore")],
+    *,
+    config: CLIConfigParameter,
+    toml_config: TomlConfigParameter = None,
+) -> None:
+    """Roll back deployment to a previous revision."""
+    _run_jig_cmd(config, toml_config, lambda jig: rollback(jig, revision_identifier, config.json))
 
 
 def secrets_set_cli(
