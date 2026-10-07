@@ -7,7 +7,7 @@ import pytest
 
 from together._compat import model_parse
 from together._models import BaseModel, construct_type_unchecked
-from together.lib.beta.rl import _payloads
+from together.rl import _payloads
 from together.types.beta.rl.sample_operation import Output as SampleOutput
 from together.types.beta.rl.forward_backward_result import ForwardBackwardResult
 

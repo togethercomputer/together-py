@@ -7,24 +7,24 @@ from collections.abc import Iterable
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
+from ..._types import Omit, omit
 from .._arrays import coerce_sample, coerce_gradient
 from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, InputSpec, validate_sample, validate_loss_config
-from ....._types import Omit, omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
 from .._request_types import Sample, LossConfig
-from .....types.beta.rl.loss_type import LossType
-from .....types.beta.rl.adam_params import AdamParams
-from .....types.beta.rl.muon_params import MuonParams
-from .....types.beta.rl.weight_sync_type import WeightSyncType
-from .....types.beta.rl.optim_step_result import OptimStepResult
-from .....types.beta.rl.weights_sync_result import WeightsSyncResult
-from .....types.beta.rl.forward_backward_result import ForwardBackwardResult
-from .....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
-from .....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
-from .....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
-from .....types.beta.rl.operation_forward_backward_params import OperationForwardBackwardParams
-from .....types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
+from ...types.beta.rl.loss_type import LossType
+from ...types.beta.rl.adam_params import AdamParams
+from ...types.beta.rl.muon_params import MuonParams
+from ...types.beta.rl.weight_sync_type import WeightSyncType
+from ...types.beta.rl.optim_step_result import OptimStepResult
+from ...types.beta.rl.weights_sync_result import WeightsSyncResult
+from ...types.beta.rl.forward_backward_result import ForwardBackwardResult
+from ...types.beta.rl.forward_backward_operation import ForwardBackwardOperation
+from ...types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
+from ...types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
+from ...types.beta.rl.operation_forward_backward_params import OperationForwardBackwardParams
+from ...types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
 
 _PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {
     proto.removeprefix("LOSS_TYPE_").lower(): proto for proto in get_args(LossType)
@@ -80,7 +80,7 @@ async def _submit_forward_backward(
         expected_type=OperationForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.beta.rl.operations.forward_backward(
+    return await session._client.post_training.operations.forward_backward(
         session._session_id,
         idempotency_key=str(uuid4()),
         loss=proto_loss,
@@ -109,7 +109,7 @@ async def _submit_custom_forward_backward(
         expected_type=OperationCustomForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.beta.rl.operations.custom_forward_backward(
+    return await session._client.post_training.operations.custom_forward_backward(
         session._session_id,
         idempotency_key=str(uuid4()),
         samples=cast("list[Any]", body["samples"]),
@@ -292,7 +292,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> OptimStepResult:
-        operation = await self._session._client.beta.rl.operations.optim_step(
+        operation = await self._session._client.post_training.operations.optim_step(
             self._session._session_id,
             idempotency_key=str(uuid4()),
             adam_params=adam_params if adam_params is not None else omit,
@@ -328,7 +328,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> WeightsSyncResult:
-        operation = await self._session._client.beta.rl.operations.weights_sync(
+        operation = await self._session._client.post_training.operations.weights_sync(
             self._session._session_id,
             idempotency_key=str(uuid4()),
             weight_sync_type=weight_sync_type,

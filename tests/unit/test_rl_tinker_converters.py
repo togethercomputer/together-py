@@ -10,9 +10,9 @@ import numpy as np
 from tinker import types
 from tinker.types.image_chunk import ImageChunk
 
-from together.lib.beta.rl import _losses as rl_losses
+from together.rl import _losses as rl_losses
 from tests.unit._rl_tinker import _tensors, _rl_loop_datum, _advantage_datum
-from together.lib.beta.rl.tinker import _losses, _converters
+from together.rl.tinker import _losses, _converters
 from together.types.beta.rl.tensor_data import TensorData as WireTensorData
 from together.types.beta.rl.sample_result import SampleResult
 from together.types.beta.rl.loss_fn_output import LossFnOutput

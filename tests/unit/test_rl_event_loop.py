@@ -17,8 +17,7 @@ from concurrent.futures import Future, CancelledError
 
 import pytest
 
-from tests.unit._rl_fakes import FakeClient
-from together.lib.beta.rl import (
+from together.rl import (
     ModelInput,
     SampleResult,
     SessionClient,
@@ -26,15 +25,16 @@ from together.lib.beta.rl import (
     EncodedTextChunk,
     _loop as loop_module,
 )
-from together.lib.beta.rl._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
-from together.lib.beta.rl.clients import (
+from together.rl._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
+from together.rl.clients import (
     session as session_client_module,
     model_resources as model_resources_client_module,
 )
+from tests.unit._rl_fakes import FakeClient
+from together.rl.clients.trainer import Trainer
+from together.rl.clients.generator import Generator
 from together.types.beta.rl.session import Session
-from together.lib.beta.rl.clients.trainer import Trainer
-from together.lib.beta.rl.clients.generator import Generator
-from together.lib.beta.rl.clients.model_resources import ModelResourcesClient
+from together.rl.clients.model_resources import ModelResourcesClient
 
 _PROMPT = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
 
@@ -650,7 +650,7 @@ def test_detach_then_stop_warns_that_the_remote_is_still_running(
     with caplog.at_level(logging.WARNING, logger="together"):
         assert session.stop() is None
 
-    assert client.beta.rl.sessions.last_stop is None
+    assert client.post_training.sessions.last_stop is None
     assert "keeps running" in caplog.text
 
 
@@ -701,7 +701,7 @@ def test_context_manager_exit_after_a_detach_is_quiet(
 
     assert handle._loop.closed
     assert caplog.text == ""
-    assert getattr(client.beta.rl, remote_name).last_stop is None
+    assert getattr(client.post_training, remote_name).last_stop is None
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="fork is Unix-only")

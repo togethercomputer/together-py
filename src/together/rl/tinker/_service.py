@@ -8,11 +8,11 @@ from typing import Any, NoReturn
 from .. import LoraConfig, ModelResources, ModelResourcesClient
 from .._loop import run_untracked
 from ._compat import tinker
+from ..._client import Together
 from ._teardown import _Lifecycle, _stop_on_exit, _exit_on_sigterm
 from ._training import TrainingClient
-from ....._client import Together
 from ..clients.session import SessionClient
-from .....types.beta.rl.checkpoint import Checkpoint
+from ...types.beta.rl.checkpoint import Checkpoint
 
 # Tinker HTTP-client options that Together's resource client does not honor.
 _KNOWN_IGNORED_KWARGS = frozenset(
@@ -258,7 +258,7 @@ def _describe_training_checkpoint(
     base_url: str | None,
 ) -> Checkpoint:
     with Together(api_key=api_key, base_url=base_url) as client:
-        checkpoint = client.beta.rl.checkpoints.retrieve(checkpoint_id)
+        checkpoint = client.post_training.checkpoints.retrieve(checkpoint_id)
     if checkpoint.type != "CHECKPOINT_TYPE_TRAINING":
         raise ValueError(
             f"Checkpoint {checkpoint_id!r} has type {checkpoint.type!r}; "

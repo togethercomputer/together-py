@@ -5,7 +5,7 @@ from __future__ import annotations
 from types import MappingProxyType
 from collections.abc import Mapping
 
-from together.lib.beta.rl._losses import LOSS_SPECS as _WIRE_LOSS_SPECS, LossSpec
+from together.rl._losses import LOSS_SPECS as _WIRE_LOSS_SPECS, LossSpec
 
 from ._compat import types
 

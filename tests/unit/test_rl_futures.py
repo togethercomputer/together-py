@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock
 import pytest
 
 from tests.unit.rl_wait import patch_wait
-from together.lib.beta.rl import SessionClient, _operations as rl_ops
-from together.lib.beta.rl._futures import OperationFuture
+from together.rl import SessionClient, _operations as rl_ops
+from together.rl._futures import OperationFuture
 from together.types.beta.rl.operation_error import OperationError
 from together.types.beta.rl.sample_operation import SampleOperation
 

@@ -9,9 +9,9 @@ from dataclasses import replace, dataclass
 from collections.abc import Set as AbstractSet, Mapping
 from typing_extensions import Required
 
+from ..types.beta.rl import loss_config_param
 from ._request_types import Sample, LossConfig
-from ....types.beta.rl import loss_config_param
-from ....types.beta.rl.loss_type import LossType
+from ..types.beta.rl.loss_type import LossType
 
 
 @dataclass(frozen=True)

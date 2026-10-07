@@ -8,11 +8,11 @@ from typing_extensions import TypeAlias
 
 import httpx
 
-from ...._types import Omit
-from ...._utils import transform
-from ...._client import AsyncTogether
-from ...._compat import model_parse
-from ...._models import BaseModel
+from .._types import Omit
+from .._utils import transform
+from .._client import AsyncTogether
+from .._compat import model_parse
+from .._models import BaseModel
 from ._operations import OperationResponse, require_output
 
 if TYPE_CHECKING:
