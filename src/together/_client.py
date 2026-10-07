@@ -61,6 +61,7 @@ if TYPE_CHECKING:
         videos,
         batches,
         clusters,
+        projects,
         endpoints,
         embeddings,
         completions,
@@ -73,6 +74,7 @@ if TYPE_CHECKING:
     from .resources.rerank import RerankResource, AsyncRerankResource
     from .resources.videos import VideosResource, AsyncVideosResource
     from .resources.batches import BatchesResource, AsyncBatchesResource
+    from .resources.projects import ProjectsResource, AsyncProjectsResource
     from .resources.beta.beta import BetaResource, AsyncBetaResource
     from .resources.chat.chat import ChatResource, AsyncChatResource
     from .resources.embeddings import EmbeddingsResource, AsyncEmbeddingsResource
@@ -250,6 +252,12 @@ class Together(SyncAPIClient):
         from .resources.endpoints import EndpointsResource
 
         return EndpointsResource(self)
+
+    @cached_property
+    def projects(self) -> ProjectsResource:
+        from .resources.projects import ProjectsResource
+
+        return ProjectsResource(self)
 
     @cached_property
     def rerank(self) -> RerankResource:
@@ -578,6 +586,12 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncEndpointsResource(self)
 
     @cached_property
+    def projects(self) -> AsyncProjectsResource:
+        from .resources.projects import AsyncProjectsResource
+
+        return AsyncProjectsResource(self)
+
+    @cached_property
     def rerank(self) -> AsyncRerankResource:
         from .resources.rerank import AsyncRerankResource
 
@@ -837,6 +851,12 @@ class TogetherWithRawResponse:
         return EndpointsResourceWithRawResponse(self._client.endpoints)
 
     @cached_property
+    def projects(self) -> projects.ProjectsResourceWithRawResponse:
+        from .resources.projects import ProjectsResourceWithRawResponse
+
+        return ProjectsResourceWithRawResponse(self._client.projects)
+
+    @cached_property
     def rerank(self) -> rerank.RerankResourceWithRawResponse:
         from .resources.rerank import RerankResourceWithRawResponse
 
@@ -942,6 +962,12 @@ class AsyncTogetherWithRawResponse:
         from .resources.endpoints import AsyncEndpointsResourceWithRawResponse
 
         return AsyncEndpointsResourceWithRawResponse(self._client.endpoints)
+
+    @cached_property
+    def projects(self) -> projects.AsyncProjectsResourceWithRawResponse:
+        from .resources.projects import AsyncProjectsResourceWithRawResponse
+
+        return AsyncProjectsResourceWithRawResponse(self._client.projects)
 
     @cached_property
     def rerank(self) -> rerank.AsyncRerankResourceWithRawResponse:
@@ -1051,6 +1077,12 @@ class TogetherWithStreamedResponse:
         return EndpointsResourceWithStreamingResponse(self._client.endpoints)
 
     @cached_property
+    def projects(self) -> projects.ProjectsResourceWithStreamingResponse:
+        from .resources.projects import ProjectsResourceWithStreamingResponse
+
+        return ProjectsResourceWithStreamingResponse(self._client.projects)
+
+    @cached_property
     def rerank(self) -> rerank.RerankResourceWithStreamingResponse:
         from .resources.rerank import RerankResourceWithStreamingResponse
 
@@ -1156,6 +1188,12 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.endpoints import AsyncEndpointsResourceWithStreamingResponse
 
         return AsyncEndpointsResourceWithStreamingResponse(self._client.endpoints)
+
+    @cached_property
+    def projects(self) -> projects.AsyncProjectsResourceWithStreamingResponse:
+        from .resources.projects import AsyncProjectsResourceWithStreamingResponse
+
+        return AsyncProjectsResourceWithStreamingResponse(self._client.projects)
 
     @cached_property
     def rerank(self) -> rerank.AsyncRerankResourceWithStreamingResponse:

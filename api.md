@@ -882,6 +882,18 @@ Methods:
 - <code title="post /endpoints/{endpointId}/adapters">client.endpoints.adapters.<a href="./src/together/resources/endpoints/adapters.py">add</a>(endpoint_id, \*\*<a href="src/together/types/endpoints/adapter_add_params.py">params</a>) -> <a href="./src/together/types/endpoints/adapter_add_response.py">AdapterAddResponse</a></code>
 - <code title="delete /endpoints/{endpointId}/adapters">client.endpoints.adapters.<a href="./src/together/resources/endpoints/adapters.py">remove</a>(endpoint_id, \*\*<a href="src/together/types/endpoints/adapter_remove_params.py">params</a>) -> <a href="./src/together/types/endpoints/adapter_remove_response.py">AdapterRemoveResponse</a></code>
 
+# Projects
+
+Types:
+
+```python
+from together.types import Project
+```
+
+Methods:
+
+- <code title="get /projects">client.projects.<a href="./src/together/resources/projects.py">list</a>(\*\*<a href="src/together/types/project_list_params.py">params</a>) -> <a href="./src/together/types/project.py">SyncCursorPagination[Project]</a></code>
+
 # Rerank
 
 Types:

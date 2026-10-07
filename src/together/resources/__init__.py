@@ -88,6 +88,14 @@ from .clusters import (
     ClustersResourceWithStreamingResponse,
     AsyncClustersResourceWithStreamingResponse,
 )
+from .projects import (
+    ProjectsResource,
+    AsyncProjectsResource,
+    ProjectsResourceWithRawResponse,
+    AsyncProjectsResourceWithRawResponse,
+    ProjectsResourceWithStreamingResponse,
+    AsyncProjectsResourceWithStreamingResponse,
+)
 from .endpoints import (
     EndpointsResource,
     AsyncEndpointsResource,
@@ -208,6 +216,12 @@ __all__ = [
     "AsyncEndpointsResourceWithRawResponse",
     "EndpointsResourceWithStreamingResponse",
     "AsyncEndpointsResourceWithStreamingResponse",
+    "ProjectsResource",
+    "AsyncProjectsResource",
+    "ProjectsResourceWithRawResponse",
+    "AsyncProjectsResourceWithRawResponse",
+    "ProjectsResourceWithStreamingResponse",
+    "AsyncProjectsResourceWithStreamingResponse",
     "RerankResource",
     "AsyncRerankResource",
     "RerankResourceWithRawResponse",

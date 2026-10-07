@@ -3,6 +3,7 @@
 from __future__ import annotations  # noqa
 
 from .cluster import Cluster as Cluster
+from .project import Project as Project
 from .batch_job import BatchJob as BatchJob
 from .embedding import Embedding as Embedding
 from .file_list import FileList as FileList
@@ -38,6 +39,7 @@ from .cluster_list_params import ClusterListParams as ClusterListParams
 from .finetune_event_type import FinetuneEventType as FinetuneEventType
 from .model_list_response import ModelListResponse as ModelListResponse
 from .model_upload_params import ModelUploadParams as ModelUploadParams
+from .project_list_params import ProjectListParams as ProjectListParams
 from .video_create_params import VideoCreateParams as VideoCreateParams
 from .endpoint_list_params import EndpointListParams as EndpointListParams
 from .eval_create_response import EvalCreateResponse as EvalCreateResponse
