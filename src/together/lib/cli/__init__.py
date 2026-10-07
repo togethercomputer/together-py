@@ -608,6 +608,10 @@ models_app = app.command(App(name="models", help="List and upload models", help_
 models_app.command((f"{_CLI}.models.list:list"), alias="ls", help="List available models")
 models_app.command((f"{_CLI}.models.upload:upload"), help="Upload a model", help_epilogue=MODELS_UPLOAD_HELP_EXAMPLES)
 
+## Projects API commands
+projects_app = app.command(App(name="projects", help="List accessible projects"))
+projects_app.command((f"{_CLI}.projects.list:list"), alias="ls", help="List accessible projects")
+
 ## Endpoints API commands
 endpoints_app = app.command(App(name="endpoints", help="Deploy and manage dedicated endpoints"))
 endpoints_app.command(
