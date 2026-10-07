@@ -749,6 +749,25 @@ CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
+## Training commands
+
+TRAINING_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] List model resources:
+  [primary]tg training ls-resources[/primary]
+
+[dim]-[/dim] List training sessions you created:
+  [primary]tg training ls-sessions --created-by me[/primary]
+
+[dim]-[/dim] List inference checkpoints for one session:
+  [primary]tg training ls-checkpoints --type inference --session <session-id>[/primary]
+
+[dim]-[/dim] List training checkpoints (weights and optimizer state):
+  [primary]tg training ls-checkpoints --type training[/primary]
+
+[dim]-[/dim] Fetch a model resource, training session, or checkpoint by ID:
+  [primary]tg training get <id>[/primary]
+"""
+
 ## Beta > Jig commands
 
 JIG_HELP_EXAMPLES = """[dim]Examples:[/dim]

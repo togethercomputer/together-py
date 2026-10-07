@@ -43,6 +43,7 @@ from together.lib.cli.utils._help_examples import (
     CLUSTERS_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
+    TRAINING_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
     JIG_BUILD_HELP_EXAMPLES,
     TOP_LEVEL_HELP_EXAMPLES,
@@ -601,6 +602,40 @@ fine_tuning_app.command(
     (f"{_CLI}.fine_tuning.model_limits:model_limits"),
     help="Get fine-tuning limits for a model",
     help_epilogue=FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
+)
+
+## Training commands
+training_app = app.command(
+    App(
+        name="training",
+        help="List and inspect model resources, training sessions, and checkpoints",
+        help_epilogue=TRAINING_HELP_EXAMPLES,
+    )
+)
+training_app.command(
+    (f"{_CLI}.training.ls_resources:list_resources"),
+    name="ls-resources",
+    help="List model resources",
+    sort_key=1,
+)
+training_app.command(
+    (f"{_CLI}.training.ls_sessions:list_sessions"),
+    name="ls-sessions",
+    help="List training sessions",
+    sort_key=2,
+)
+training_app.command(
+    (f"{_CLI}.training.ls_checkpoints:list_checkpoints"),
+    name="ls-checkpoints",
+    help="List training and inference checkpoints",
+    sort_key=3,
+)
+training_app.command(
+    (f"{_CLI}.training.retrieve:retrieve"),
+    name="get",
+    alias="retrieve",
+    help="Get a model resource, training session, or checkpoint by ID",
+    sort_key=4,
 )
 
 ## Models API commands
