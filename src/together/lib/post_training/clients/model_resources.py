@@ -283,7 +283,9 @@ class ModelResourcesClient:
         return await self._loop.run_teardown_async(self._stop_remote(force=force))
 
     async def _stop_remote(self, *, force: bool) -> ModelResources:
-        output = await self._client.post_training.model_resources.stop(self._model_resources_id, force=force if force else omit)
+        output = await self._client.post_training.model_resources.stop(
+            self._model_resources_id, force=force if force else omit
+        )
         if output.status not in _TERMINAL_STATUSES:
             start = time.monotonic()
             while True:

@@ -94,8 +94,12 @@ async def test_async_client_propagates_stable_retry_key(
 ) -> None:
     post_route, get_route = operation_routes
 
-    await async_client.post_training.operations.create_training_checkpoint("session-id", idempotency_key="first-operation")
-    await async_client.post_training.operations.create_training_checkpoint("session-id", idempotency_key="second-operation")
+    await async_client.post_training.operations.create_training_checkpoint(
+        "session-id", idempotency_key="first-operation"
+    )
+    await async_client.post_training.operations.create_training_checkpoint(
+        "session-id", idempotency_key="second-operation"
+    )
     await async_client.post_training.operations.create_training_checkpoint(
         "session-id",
         idempotency_key="caller-provided-key",

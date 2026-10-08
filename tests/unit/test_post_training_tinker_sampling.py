@@ -11,6 +11,8 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
+from together.post_training import tinker as tinker_compat
+from together.lib.post_training import _payloads
 from tests.unit.post_training_wait import patch_wait
 from tests.unit._post_training_tinker import (
     _OPERATION,
@@ -19,8 +21,6 @@ from tests.unit._post_training_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.post_training import tinker as tinker_compat
-from together.lib.post_training import _payloads
 from together.lib.post_training.tinker import _sampling
 from together.lib.post_training.clients.session import SessionClient
 from together.types.post_training.sample_result import SampleResult

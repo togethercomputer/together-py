@@ -17,7 +17,6 @@ from concurrent.futures import Future, CancelledError
 
 import pytest
 
-from tests.unit._post_training_fakes import FakeClient
 from together.post_training import (
     ModelInput,
     SampleResult,
@@ -26,6 +25,7 @@ from together.post_training import (
     EncodedTextChunk,
 )
 from together.lib.post_training import _loop as loop_module
+from tests.unit._post_training_fakes import FakeClient
 from together.lib.post_training._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
 from together.lib.post_training.clients import (
     session as session_client_module,

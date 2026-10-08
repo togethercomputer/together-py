@@ -12,6 +12,8 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
+from together.post_training import WeightSyncType, tinker as tinker_compat
+from together.lib.post_training import _operations as rl_ops
 from tests.unit.post_training_wait import patch_wait
 from tests.unit._post_training_tinker import (
     _OPERATION,
@@ -23,8 +25,6 @@ from tests.unit._post_training_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.post_training import WeightSyncType, tinker as tinker_compat
-from together.lib.post_training import _operations as rl_ops
 from together.lib.post_training.tinker import _training
 
 

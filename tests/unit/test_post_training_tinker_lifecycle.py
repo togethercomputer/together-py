@@ -15,14 +15,14 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from together.lib.beta import rl
+from together.post_training import Sample, LossConfig, tinker as tinker_compat
+from together.lib.post_training import _request_types
 from tests.unit._post_training_tinker import (
     _noop,
     _ignore,
     _session_mock,
     _model_resources_mock,
 )
-from together.post_training import Sample, LossConfig, tinker as tinker_compat
-from together.lib.post_training import _request_types
 from together.lib.post_training.tinker import _service, _teardown
 from together.lib.post_training.clients.session import SessionClient
 

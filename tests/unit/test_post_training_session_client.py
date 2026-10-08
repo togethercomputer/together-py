@@ -10,8 +10,6 @@ import httpx
 import pytest
 
 from together import NotFoundError, omit
-from tests.unit.post_training_wait import patch_wait
-from tests.unit._post_training_fakes import FakeClient
 from together.post_training import (
     Sample,
     Trainer,
@@ -38,6 +36,8 @@ from together.post_training import (
     InferenceCheckpointResult,
 )
 from together.lib.post_training import _losses as rl_losses, _payloads as rl_payloads_module, _operations as rl_ops
+from tests.unit.post_training_wait import patch_wait
+from tests.unit._post_training_fakes import FakeClient
 from together.lib.post_training.clients import (
     session as session_client_module,
     trainer as trainer_module,
@@ -558,7 +558,9 @@ async def test_stop_async_waits_until_session_is_inactive(monkeypatch: pytest.Mo
     client = MagicMock()
     output = SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
     client.post_training.sessions.stop = AsyncMock(return_value=output)
-    client.post_training.sessions.retrieve = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
+    client.post_training.sessions.retrieve = AsyncMock(
+        return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED")
+    )
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
 
@@ -611,7 +613,9 @@ async def test_stop_async_warns_on_timeout_and_closes_client(monkeypatch: pytest
 async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
     _instant_stop(monkeypatch)
     client = MagicMock()
-    client.post_training.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING"))
+    client.post_training.sessions.stop = AsyncMock(
+        return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPING")
+    )
     client.post_training.sessions.retrieve = AsyncMock(side_effect=KeyboardInterrupt)
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
@@ -624,7 +628,9 @@ async def test_stop_async_does_not_swallow_keyboard_interrupt(monkeypatch: pytes
 
 def test_stop_marks_the_handle_closed() -> None:
     client = MagicMock()
-    client.post_training.sessions.stop = AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
+    client.post_training.sessions.stop = AsyncMock(
+        return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED")
+    )
     client.close = AsyncMock()
     trainer = SessionClient("sess", _client=cast(Any, client))
     trainer.stop()

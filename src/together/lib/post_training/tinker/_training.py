@@ -405,7 +405,9 @@ class TrainingClient:
     async def _submit_save_state_async(self) -> OperationFuture[types.SaveWeightsResponse]:
         session = self._session
         operation = await session.run_async(
-            session._client.post_training.operations.create_training_checkpoint(session.session_id, idempotency_key=str(uuid4()))
+            session._client.post_training.operations.create_training_checkpoint(
+                session.session_id, idempotency_key=str(uuid4())
+            )
         )
         return OperationFuture(session, operation, partial(_resolve_save_state, session=session))
 
@@ -430,7 +432,9 @@ class TrainingClient:
     async def _submit_save_weights_for_sampler_async(self) -> OperationFuture[types.SaveWeightsForSamplerResponse]:
         session = self._session
         operation = await session.run_async(
-            session._client.post_training.operations.create_inference_checkpoint(session.session_id, idempotency_key=str(uuid4()))
+            session._client.post_training.operations.create_inference_checkpoint(
+                session.session_id, idempotency_key=str(uuid4())
+            )
         )
         return OperationFuture(session, operation, partial(_resolve_save_weights_for_sampler, session=session))
 
