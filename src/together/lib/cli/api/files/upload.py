@@ -69,7 +69,7 @@ async def upload(
                     "file_id": e.file_id,
                 }
             )
-            raise SystemExit(1) from None
+            raise CliDiagnosticExit("File already exists") from None
         console.print(
             f"[yellow]File already exists under ID: [bold]{e.file_id}[/bold]. "
             "If you want to re-upload it, please delete the existing file first.[/yellow]"
