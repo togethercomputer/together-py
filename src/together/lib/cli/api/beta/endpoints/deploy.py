@@ -40,7 +40,7 @@ from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     load_base_model,
     list_model_configs,
     load_adapter_model,
-    select_lora_config,
+    select_lora_config_for_deploy,
     find_compatible_deployment,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
@@ -90,7 +90,7 @@ async def deploy(
         Parameter(
             help=(
                 "Config revision ID (cr_...) for this model. The CLI selects it automatically when exactly one "
-                "compatible config exists; otherwise use `tg beta models configs <MODEL_ID>` and pass one explicitly."
+                "compatible config exists. When several exist, pass one explicitly or pick it at the prompt."
             ),
             name="config",
         ),
@@ -210,7 +210,8 @@ async def deploy(
             negative=False,
             help=(
                 "For a LoRA adapter model, attach the adapter to a base-model deployment whose config has "
-                "adapter_mode dynamic (preferred) or fixed, creating that deployment when none exists. "
+                "adapter_mode dynamic or fixed, creating that deployment when none exists. "
+                "If several configs can host the adapter, pass --config or pick one at the prompt. "
                 "Adapter models require either --merge or --attach-adapter."
             ),
         ),
@@ -223,10 +224,11 @@ async def deploy(
 
     - `--merge`: create a new deployment of the adapter itself, which the API merges into its base model.
     - `--attach-adapter`: attach it to an existing deployment of its base model whose config has
-      `adapter_mode` dynamic or fixed. Dynamic wins over fixed when both a deployment and a config
-      are available. With `--deployment-name`, use the deployment of that name when it exists. If
-      the endpoint has no such deployment, create one from a dynamic config when one exists,
-      otherwise a fixed config, and then attach the adapter. The command fails when neither exists.
+      `adapter_mode` dynamic or fixed. An existing dynamic deployment is preferred over a fixed one.
+      With `--deployment-name`, use the deployment of that name when it exists. If the endpoint has
+      no such deployment, create one. When more than one fixed or dynamic config exists and
+      `--config` was not passed, the command prompts for a config, or fails in non-interactive mode.
+      The command fails when no fixed or dynamic config exists.
     """
     model_path_match = MODEL_PATH_RE.match(model)
     if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:
@@ -247,9 +249,9 @@ async def deploy(
         raise ValueError(f"{flag} only applies to LoRA adapter models, and {model} is not an adapter.")
     if adapter_model is not None and not (merge or attach_adapter):
         raise ValueError(
-            f"{model} is a LoRA adapter. Choose how to deploy it:\n"
-            "  --merge           create a new deployment with the adapter merged into its base model\n"
-            "  --attach-adapter  attach the adapter to a base-model deployment that serves LoRA adapters"
+            f"{model} is a LoRA adapter.\n\nChoose how to deploy it:\n"
+            "  --attach-adapter*  Attach the adapter to a deployment for serving multiple LoRA adapters\n"
+            "  --merge            Create a new deployment with the adapter merged into its base model"
         )
 
     # --merge deploys an adapter like any other model; the API merges it into its base model.
@@ -434,7 +436,11 @@ async def _deploy_adapter(
             ),
         )
 
-    config_value = None if existing is not None else select_lora_config(configs, config_id, model=base.name or base.id)
+    config_value = (
+        None
+        if existing is not None
+        else await select_lora_config_for_deploy(config, configs, config_id, model=base.name or base.id)
+    )
     if existing is None and deployment_name is None:
         short_uuid = str(uuid.uuid4())[:8]
         deployment_name = f"{base.name}-{short_uuid}".replace("/", "-")

@@ -6,11 +6,13 @@ import pytest
 
 from together.types.beta import Model, EndpointDeployment
 from together.types.beta.models.config import Config
+from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     select_lora_config,
     config_adapter_mode,
     config_serves_adapters,
     deployment_serves_model,
+    select_lora_config_for_deploy,
 )
 
 
@@ -89,13 +91,30 @@ def test_deployment_serves_model_matches_revision_path() -> None:
     assert not deployment_serves_model(_deployment(modelId="ml_other", model="projects/proj/models/ml_other"), base)
 
 
-def test_select_lora_config_prefers_dynamic_over_fixed() -> None:
+def test_select_lora_config_requires_a_choice_when_fixed_and_dynamic_exist() -> None:
     fixed = _config(id="cr_fixed", selectors=[{"key": "adapter_mode", "value": "fixed"}])
     dynamic = _config(id="cr_dynamic", selectors=[{"key": "adapter_mode", "value": "dynamic"}])
 
-    selected = select_lora_config([fixed, dynamic], None, model="my-project/base")
+    with pytest.raises(ValueError, match="Multiple configs found"):
+        select_lora_config([fixed, dynamic], None, model="my-project/base")
 
-    assert selected.id == "cr_dynamic"
+
+async def test_select_lora_config_prompts_when_fixed_and_dynamic_exist(monkeypatch: pytest.MonkeyPatch) -> None:
+    fixed = _config(id="cr_fixed", selectors=[{"key": "adapter_mode", "value": "fixed"}])
+    dynamic = _config(id="cr_dynamic", selectors=[{"key": "adapter_mode", "value": "dynamic"}])
+
+    async def choose(_self: object, _field: str) -> str:
+        return "cr_fixed"
+
+    monkeypatch.setattr(
+        "together.lib.cli.utils._prompt.PromptParameter.prompt",
+        choose,
+    )
+    cli = CLIConfig(client=None, non_interactive=False, json=False, project_id="proj")  # type: ignore[arg-type]
+
+    selected = await select_lora_config_for_deploy(cli, [fixed, dynamic], None, model="my-project/base")
+
+    assert selected.id == "cr_fixed"
 
 
 def test_select_lora_config_falls_back_to_fixed_when_no_dynamic_config() -> None:

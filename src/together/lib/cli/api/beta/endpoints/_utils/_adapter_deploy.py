@@ -13,6 +13,7 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
+    prompt_for_config,
     resolve_config,
 )
 from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import selector_value
@@ -80,11 +81,10 @@ def deployment_serves_model(deployment: EndpointDeployment, model: Model) -> boo
 
 
 def select_lora_config(configs: list[Config], config_id: str | None, *, model: str) -> Config:
-    """Pick a LoRA config, preferring dynamic adapter mode over fixed.
+    """Pick a fixed or dynamic LoRA config.
 
-    An explicit ``config_id`` must itself be fixed or dynamic. With no id, dynamic configs
-    are used when any exist; fixed is the fallback. Several configs in that preferred mode
-    still require ``--config``.
+    An explicit ``config_id`` must itself be fixed or dynamic. With no id, the only LoRA
+    config is used. Several LoRA configs fail here; interactive deploy prompts instead.
     """
     if config_id is not None:
         selected = find_config(configs, config_id)
@@ -101,23 +101,39 @@ def select_lora_config(configs: list[Config], config_id: str | None, *, model: s
             )
         return selected
 
-    lora_configs = [item for item in configs if config_serves_adapters(item)]
+    lora_configs = _ordered_lora_configs(configs)
     if not lora_configs:
         raise ValueError(
             f"No fixed or dynamic LoRA config found for {model}. "
             "An adapter can only deploy onto a config with adapter_mode fixed or dynamic. "
             f"List configs with `tg beta models configs {model}`."
         )
-    preferred = _configs_for_preferred_adapter_mode(lora_configs)
-    if len(preferred) == 1:
-        return preferred[0]
-    return resolve_config(preferred, None, model=model)
+    if len(lora_configs) == 1:
+        return lora_configs[0]
+    return resolve_config(lora_configs, None, model=model)
 
 
-def _configs_for_preferred_adapter_mode(configs: list[Config]) -> list[Config]:
-    """Keep configs in the best LoRA mode present. Dynamic outranks fixed."""
-    best = min(_adapter_mode_rank(config_adapter_mode(item)) for item in configs)
-    return [item for item in configs if _adapter_mode_rank(config_adapter_mode(item)) == best]
+async def select_lora_config_for_deploy(
+    cli: CLIConfigParameter,
+    configs: list[Config],
+    config_id: str | None,
+    *,
+    model: str,
+) -> Config:
+    """Same as ``select_lora_config``, but prompt when several LoRA configs exist."""
+    if config_id is not None or cli.non_interactive:
+        return select_lora_config(configs, config_id, model=model)
+
+    lora_configs = _ordered_lora_configs(configs)
+    if len(lora_configs) <= 1:
+        return select_lora_config(configs, None, model=model)
+    return await prompt_for_config(lora_configs, model=model)
+
+
+def _ordered_lora_configs(configs: list[Config]) -> list[Config]:
+    """LoRA-capable configs, dynamic before fixed. Order is for display, not auto-selection."""
+    lora_configs = [item for item in configs if config_serves_adapters(item)]
+    return sorted(lora_configs, key=lambda item: (_adapter_mode_rank(config_adapter_mode(item)), item.id or ""))
 
 
 def _adapter_mode_rank(mode: str | None) -> int:

@@ -12,7 +12,7 @@ from together.types.beta.supported_model import SupportedModel
 from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
-    resolve_config,
+    choose_config,
     resolve_configs,
     config_from_profile,
     validate_requested_config,
@@ -219,7 +219,8 @@ async def _resolve_config_for_model(
     model_input: str,
     revision_id: str | None = None,
 ) -> ResolvedModelAndConfig:
-    selected = resolve_config(
+    selected = await choose_config(
+        config,
         await resolve_configs(config, reference_model_id),
         config_id,
         model=model_input,
@@ -240,7 +241,8 @@ async def _resolve_via_configs(
     The deploy target is the config's reference model — correct when the user
     passed a bare reference-model id that is not retrievable under --project.
     """
-    selected = resolve_config(
+    selected = await choose_config(
+        config,
         await resolve_configs(config, reference_model_id),
         config_id,
         model=model_input,

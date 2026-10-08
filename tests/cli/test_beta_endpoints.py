@@ -666,8 +666,8 @@ class TestBetaEndpointsDeployAdapter:
         )
 
         assert result.exit_code != 0
-        assert "--merge" in result.output
-        assert "--attach-adapter" in result.output
+        assert result.output.index("--attach-adapter") < result.output.index("--merge")
+        assert "Normal experience for testing" in result.output
         assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
     def test_deploy_rejects_merge_with_attach_adapter(self, cli_runner: CliRunner) -> None:
@@ -1134,7 +1134,7 @@ class TestBetaEndpointsDeployAdapter:
         assert "adapter_mode disabled" in json.loads(result.output)["error"]
 
     @pytest.mark.respx(base_url=base_url)
-    def test_deploy_adapter_prefers_dynamic_config_over_fixed(
+    def test_deploy_adapter_requires_config_when_fixed_and_dynamic_exist(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         _mock_adapter_models(respx_mock)
@@ -1151,20 +1151,6 @@ class TestBetaEndpointsDeployAdapter:
         respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
         respx_mock.get("/projects/proj/endpoints/ep_1/deployments").mock(
             return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
-        )
-        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
-            return_value=httpx.Response(
-                200,
-                json=_deployment_body(
-                    model="projects/proj/models/ml_base",
-                    modelId="ml_base",
-                    config="projects/proj/configs/cr_dynamic",
-                    configId="cr_dynamic",
-                ),
-            )
-        )
-        respx_mock.post("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters").mock(
-            return_value=httpx.Response(200, json=_adapter_entry_body())
         )
 
         result = cli_runner.invoke(
@@ -1183,9 +1169,10 @@ class TestBetaEndpointsDeployAdapter:
             ]
         )
 
-        assert result.exit_code == 0, result.output
-        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
-        assert deployment_body["config"] == "projects/proj/configs/cr_dynamic"
+        assert result.exit_code != 0
+        assert "Multiple configs found" in result.output
+        assert "--config" in result.output
+        assert not any(call.request.method == "POST" for call in cast(list[Call], respx_mock.calls))
 
     @pytest.mark.respx(base_url=base_url)
     def test_deploy_adapter_prefers_dynamic_deployment_over_fixed(
