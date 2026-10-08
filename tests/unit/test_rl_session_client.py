@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 from typing import Any, cast
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -30,6 +31,8 @@ from together.lib.beta.rl import (
     SessionMetadata,
     EncodedTextChunk,
     WeightsSyncResult,
+    TrainingCheckpoint,
+    InferenceCheckpoint,
     ForwardBackwardResult,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
@@ -352,13 +355,14 @@ def test_weights_sync_passes_params(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    patch_wait(monkeypatch, TrainingCheckpointResult(checkpoint_id="ckpt-1"))
+    checkpoint = TrainingCheckpoint(id="ckpt-1", step=42, created_at=datetime(2026, 10, 8, tzinfo=timezone.utc))
+    patch_wait(monkeypatch, TrainingCheckpointResult(checkpoint=checkpoint))
     client = FakeClient()
     trainer = _make_session(client)
 
     result = trainer.create_training_checkpoint()
 
-    assert result.checkpoint_id == "ckpt-1"
+    assert result.checkpoint == checkpoint
     assert client.beta.rl.operations.last_call is not None
     method, args, _ = client.beta.rl.operations.last_call
     assert method == "create_training_checkpoint"
@@ -367,13 +371,14 @@ def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_create_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    patch_wait(monkeypatch, InferenceCheckpointResult(model_name="model-1"))
+    checkpoint = InferenceCheckpoint(id="ckpt-1", step=42, created_at=datetime(2026, 10, 8, tzinfo=timezone.utc))
+    patch_wait(monkeypatch, InferenceCheckpointResult(checkpoint=checkpoint))
     client = FakeClient()
     trainer = _make_session(client)
 
     result = trainer.create_inference_checkpoint()
 
-    assert result.registered_model_name == "model-1"
+    assert result.checkpoint == checkpoint
     trainer.stop()
 
 

@@ -11,9 +11,8 @@ through unchanged; only the service client swaps. Unsupported Tinker clients
 (``RestClient``, ``resources``, …) are not exposed; ``ServiceClient.create_rest_client``
 raises ``tinker.TinkerError``. ``save_state`` returns a bare checkpoint UUID; resume
 describes that id and starts a new session. ``save_weights_for_sampler`` creates an
-inference checkpoint and returns the registered ``model_name`` (Tinker ``name`` /
-TTL are ignored). ``forward`` fills per-datum ``loss_fn_outputs`` with real logprobs,
-and ``forward_backward`` does too when asked via ``return_loss_fn_outputs`` — an
+inference checkpoint and returns its UUID (Tinker ``name`` / TTL are ignored).
+``forward`` fills per-datum ``loss_fn_outputs`` with real logprobs, and ``forward_backward`` does too when asked via ``return_loss_fn_outputs`` — an
 argument Tinker itself has no equivalent for, since on Together the two operations
 are one. Both publish the total loss under ``metrics["loss:sum"]``.
 """

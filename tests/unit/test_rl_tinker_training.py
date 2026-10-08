@@ -95,11 +95,11 @@ async def test_allow_stale_reaches_the_returned_sampling_client_async(monkeypatc
 
 
 _CHECKPOINT_UUID = "123e4567-e89b-12d3-a456-426614174000"
-_REGISTERED_MODEL = "user/Qwen3.5-4B-adapter-rl-step-42-20260827-123e4567"
+_CHECKPOINT_OUTPUT = {"checkpoint": {"id": _CHECKPOINT_UUID, "step": 42, "created_at": "2026-10-08T00:00:00Z"}}
 
 
 def test_save_state_returns_bare_uuid(monkeypatch: pytest.MonkeyPatch) -> None:
-    timeouts = patch_wait(monkeypatch, {"checkpoint_id": _CHECKPOINT_UUID})
+    timeouts = patch_wait(monkeypatch, _CHECKPOINT_OUTPUT)
     create = AsyncMock(return_value=_OPERATION)
     session = _session_with_operations(create_training_checkpoint=create)
 
@@ -113,7 +113,7 @@ def test_save_state_returns_bare_uuid(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_save_state_warns_on_ttl_and_overwrite(monkeypatch: pytest.MonkeyPatch) -> None:
-    patch_wait(monkeypatch, {"checkpoint_id": _CHECKPOINT_UUID})
+    patch_wait(monkeypatch, _CHECKPOINT_OUTPUT)
     session = _session_with_operations(create_training_checkpoint=AsyncMock(return_value=_OPERATION))
     client = _training_client(session)
 
@@ -123,8 +123,8 @@ def test_save_state_warns_on_ttl_and_overwrite(monkeypatch: pytest.MonkeyPatch) 
         client.save_state("checkpoint-001", overwrite=True).result()
 
 
-def test_save_weights_for_sampler_returns_registered_model_name(monkeypatch: pytest.MonkeyPatch) -> None:
-    timeouts = patch_wait(monkeypatch, {"model_name": _REGISTERED_MODEL})
+def test_save_weights_for_sampler_returns_bare_uuid(monkeypatch: pytest.MonkeyPatch) -> None:
+    timeouts = patch_wait(monkeypatch, _CHECKPOINT_OUTPUT)
     create = AsyncMock(return_value=_OPERATION)
     session = _session_with_operations(create_inference_checkpoint=create)
 
@@ -132,11 +132,11 @@ def test_save_weights_for_sampler_returns_registered_model_name(monkeypatch: pyt
 
     create.assert_awaited_once_with("sess", idempotency_key=ANY)
     assert timeouts == [None]
-    assert saved.path == _REGISTERED_MODEL
+    assert saved.path == _CHECKPOINT_UUID
 
 
 def test_save_weights_for_sampler_warns_on_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
-    patch_wait(monkeypatch, {"model_name": _REGISTERED_MODEL})
+    patch_wait(monkeypatch, _CHECKPOINT_OUTPUT)
     session = _session_with_operations(create_inference_checkpoint=AsyncMock(return_value=_OPERATION))
     client = _training_client(session)
 

@@ -93,8 +93,8 @@ def _warn_ignored_save_state_args(ttl_seconds: int | None, overwrite: bool) -> N
 def _warn_ignored_sampler_ttl(ttl_seconds: int | None) -> None:
     if ttl_seconds is not None:
         warnings.warn(
-            "Together ignores ttl_seconds: inference checkpoints are registered under a "
-            "server-assigned model_name with no caller-controlled TTL",
+            "Together ignores ttl_seconds: inference checkpoints are server-assigned UUIDs "
+            "with no caller-controlled TTL",
             stacklevel=2,
         )
 
@@ -115,7 +115,7 @@ async def _resolve_optim_step(completed: OperationResponse) -> types.OptimStepRe
 async def _resolve_save_state(completed: OperationResponse, *, session: SessionClient) -> types.SaveWeightsResponse:
     resolved = await resolve_operation_payload(completed, session=session)
     saved = TrainingCheckpointResult.model_validate(resolved)
-    return types.SaveWeightsResponse(path=saved.checkpoint_id)
+    return types.SaveWeightsResponse(path=saved.checkpoint.id)
 
 
 async def _resolve_save_weights_for_sampler(
@@ -123,7 +123,7 @@ async def _resolve_save_weights_for_sampler(
 ) -> types.SaveWeightsForSamplerResponse:
     resolved = await resolve_operation_payload(completed, session=session)
     saved = InferenceCheckpointResult.model_validate(resolved)
-    return types.SaveWeightsForSamplerResponse(path=saved.registered_model_name)
+    return types.SaveWeightsForSamplerResponse(path=saved.checkpoint.id)
 
 
 async def _resolve_custom_forward_backward(
