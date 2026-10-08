@@ -22,7 +22,8 @@ API_KEY = "0000000000000000000000000000000000000000"
 
 
 class CliRunner:
-    def __init__(self, capsys: pytest.CaptureFixture[str]):
+    def __init__(self, capsys: pytest.CaptureFixture[str], *, agent: bool = False):
+        self.agent = agent
         self.env = {
             "TOGETHER_BASE_URL": base_url,
             "TOGETHER_API_KEY": API_KEY,
@@ -41,7 +42,11 @@ class CliRunner:
             # pytest-asyncio's loop (RuntimeError: asyncio.run() cannot be called from a running event loop).
             with patch("sys.stdin", io.StringIO(input)):
                 with patch.dict(os.environ, self.env, clear=False):
-                    app.meta(iargs)
+                    with patch(
+                        "together.lib.cli.utils._json_mode.agent_detected",
+                        return_value=self.agent,
+                    ):
+                        app.meta(iargs)
 
             output = self.capsys.readouterr()
             err_out = output.err

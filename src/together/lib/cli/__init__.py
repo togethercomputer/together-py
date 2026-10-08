@@ -31,6 +31,7 @@ from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
+from together.lib.cli.utils._json_mode import emit_json, is_json_mode, use_json_mode, resolve_output_json
 from together.lib.cli.utils._cli_extras import inform_cli_extras_tip
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
@@ -55,6 +56,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
+    TRAINING_FP4_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
@@ -82,6 +84,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_CONFIGS_HELP_EXAMPLES,
     FINE_TUNING_PREVIEW_HELP_EXAMPLES,
+    TRAINING_FP4_CREATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
@@ -201,10 +204,7 @@ def _create_client(
         # After debug hooks so `--debug` still emits `→ GET` before we exit,
         # but before analytics so a request that is never sent is not tracked.
         async def block_requests_for_api_key(_: httpx.Request) -> None:
-            console.print(
-                "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-            )
-            console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+            _print_missing_api_key()
             raise CliDiagnosticExit("Together API key missing")
 
         client._client.event_hooks["request"].append(block_requests_for_api_key)
@@ -215,10 +215,7 @@ def _create_client(
     # calls, so a missing key is not fatal for them. The block hook installed
     # above still errors clearly if such a command ever does hit the API.
     if require_api_key and client.api_key == "":
-        console.print(
-            "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-        )
-        console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+        _print_missing_api_key()
         sys.exit(1)
 
     return client, missing_api_key
@@ -262,8 +259,15 @@ async def launcher(
     ] = None,
     output_json: Annotated[
         Optional[bool],
-        Parameter(name="json", group=global_options, negative=(), help="Output the response in JSON format"),
-    ] = False,
+        Parameter(
+            name="json",
+            group=global_options,
+            help=(
+                "Output the response as JSON. Defaults to on when an AI agent is detected; "
+                "pass --no-json to force text output."
+            ),
+        ),
+    ] = None,
 ) -> None:
     if debug:
         setup_cli_debug_logging()
@@ -285,6 +289,22 @@ async def launcher(
             teardown_cli_debug()
 
 
+_MISSING_API_KEY = (
+    "Together API key missing. Pass --api-key or set the TOGETHER_API_KEY environment variable. "
+    "You can find your API key at https://api.together.ai/settings/api-keys"
+)
+
+
+def _print_missing_api_key() -> None:
+    if is_json_mode():
+        emit_json({"error": _MISSING_API_KEY})
+        return
+    console.print(
+        "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
+    )
+    console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+
+
 async def _run_launcher(
     tokens: tuple[str, ...],
     *,
@@ -297,6 +317,9 @@ async def _run_launcher(
     project_id: Optional[str],
     output_json: Optional[bool],
 ) -> None:
+    resolved_json = resolve_output_json(output_json)
+    use_json_mode(resolved_json)
+
     (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
@@ -338,12 +361,12 @@ async def _run_launcher(
             log_debug_note(f"resolved project {client.project_id}")
 
     is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
-    non_interactive_mode = non_interactive or output_json or not is_interactive
+    non_interactive_mode = bool(non_interactive) or resolved_json or not is_interactive
 
     config = CLIConfig(
         client=client,
         non_interactive=non_interactive_mode,
-        json=output_json or False,
+        json=resolved_json,
         project_id=project_id,
     )
 
@@ -485,12 +508,15 @@ async def _run_launcher(
             raise e
         elif isinstance(e, CycloptsError):
             e.verbose = True if debug else False
-            console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
+            if config.json:
+                emit_json({"error": str(e)})
+            else:
+                console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
         elif not isinstance(e, APIError):
             # API Errors are handled better inside the run_command() function
             # We don't want to raise them here as that will print a stack trace which we do not want.
             if config.json:
-                console.print_json(openapi_dumps({"error": str(e)}).decode("utf-8"))
+                emit_json({"error": str(e)})
             else:
                 console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
 
@@ -505,6 +531,7 @@ async def _run_launcher(
                 non_interactive=config.non_interactive,
                 allow_prompt=command_succeeded,
             )
+            use_json_mode(False)
 
 
 # Register commands
@@ -578,6 +605,28 @@ fine_tuning_app.command(
     help="Get fine-tuning limits for a model",
     help_epilogue=FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
 )
+
+## Training API commands
+training_app = app.command(App(name="training", help="Prepare trained models for inference"))
+_FP4 = f"{_CLI}.training.prepare_for_fp4_inference"
+training_fp4_app = training_app.command(
+    App(
+        name="prepare-for-fp4-inference",
+        alias="fp4",
+        help="Merge fine-tuned adapters into their base model and prepare them for FP4 inference",
+        help_epilogue=TRAINING_FP4_HELP_EXAMPLES,
+    )
+)
+training_fp4_app.command(
+    f"{_FP4}.create:create",
+    help="Start an FP4 preparation job",
+    help_epilogue=TRAINING_FP4_CREATE_HELP_EXAMPLES,
+)
+training_fp4_app.command(f"{_FP4}.estimate:estimate", help="Estimate the price and duration of an FP4 preparation job")
+training_fp4_app.command(f"{_FP4}.list:list", alias="ls", help="List FP4 preparation jobs")
+training_fp4_app.command(f"{_FP4}.retrieve:retrieve", alias="get", help="Get FP4 preparation job details")
+training_fp4_app.command(f"{_FP4}.list_events:list_events", help="List events for an FP4 preparation job")
+training_fp4_app.command(f"{_FP4}.cancel:cancel", help="Cancel an FP4 preparation job")
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))
@@ -859,6 +908,15 @@ beta_models_app = beta_app.command(
         help="Register and manage models for dedicated inference",
         help_epilogue=BETA_MODELS_HELP_EXAMPLES,
     )
+)
+# `tg beta models deploy` is the same command as `tg beta endpoints deploy`.
+beta_models_app.command(
+    (f"{_CLI}.beta.endpoints.deploy:deploy"),
+    help="Create a deployment on a new or existing endpoint",
+    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
+        "tg beta endpoints deploy",
+        "tg beta models deploy",
+    ),
 )
 beta_models_app.command((f"{_CLI}.beta.models.list:list"), alias="ls", help="List models in the caller's project")
 beta_models_app.command(

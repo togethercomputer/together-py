@@ -4,4 +4,4 @@ from typing_extensions import Literal, TypeAlias
 
 __all__ = ["FilePurpose"]
 
-FilePurpose: TypeAlias = Literal["fine-tune", "eval", "batch-api"]
+FilePurpose: TypeAlias = Literal["fine-tune", "calibration", "eval", "batch-api"]

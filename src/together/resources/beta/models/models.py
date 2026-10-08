@@ -520,6 +520,7 @@ class ModelsResource(SyncAPIResource):
     def list_supported(
         self,
         *,
+        adapter_mode: Literal["ADAPTER_MODE_FIXED", "ADAPTER_MODE_DYNAMIC", "ADAPTER_MODE_DISABLED"] | Omit = omit,
         after: str | Omit = omit,
         limit: int | Omit = omit,
         modality: Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "MODALITY_VIDEO"] | Omit = omit,
@@ -537,6 +538,9 @@ class ModelsResource(SyncAPIResource):
         together with their capabilities and certified deployment profiles.
 
         Args:
+          adapter_mode: Filter models to those with a deployment profile in the selected adapter serving
+              mode.
+
           after: Cursor from a previous supported-model list response.
 
           limit: Maximum number of models to return.
@@ -565,6 +569,7 @@ class ModelsResource(SyncAPIResource):
                 timeout=timeout,
                 query=maybe_transform(
                     {
+                        "adapter_mode": adapter_mode,
                         "after": after,
                         "limit": limit,
                         "modality": modality,
@@ -1086,6 +1091,7 @@ class AsyncModelsResource(AsyncAPIResource):
     def list_supported(
         self,
         *,
+        adapter_mode: Literal["ADAPTER_MODE_FIXED", "ADAPTER_MODE_DYNAMIC", "ADAPTER_MODE_DISABLED"] | Omit = omit,
         after: str | Omit = omit,
         limit: int | Omit = omit,
         modality: Literal["MODALITY_TEXT", "MODALITY_IMAGE", "MODALITY_AUDIO", "MODALITY_VIDEO"] | Omit = omit,
@@ -1103,6 +1109,9 @@ class AsyncModelsResource(AsyncAPIResource):
         together with their capabilities and certified deployment profiles.
 
         Args:
+          adapter_mode: Filter models to those with a deployment profile in the selected adapter serving
+              mode.
+
           after: Cursor from a previous supported-model list response.
 
           limit: Maximum number of models to return.
@@ -1131,6 +1140,7 @@ class AsyncModelsResource(AsyncAPIResource):
                 timeout=timeout,
                 query=maybe_transform(
                     {
+                        "adapter_mode": adapter_mode,
                         "after": after,
                         "limit": limit,
                         "modality": modality,

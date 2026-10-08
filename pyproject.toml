@@ -1,6 +1,6 @@
 [project]
 name = "together"
-version = "2.39.0"
+version = "2.40.0"
 description = "The official Python library for the together API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -158,9 +158,9 @@ exclude = [
     ".git",
     "examples",
     # tinker needs Python >= 3.11; checks run on 3.10
-    "src/together/lib/beta/rl/tinker",
-    "tests/unit/_rl_tinker.py",
-    "tests/unit/test_rl_tinker_*.py",
+    "src/together/lib/post_training/tinker",
+    "tests/unit/_post_training_tinker.py",
+    "tests/unit/test_post_training_tinker_*.py",
 ]
 
 reportImplicitOverride = true
@@ -180,7 +180,7 @@ show_error_codes = true
 # We also exclude our `tests` as mypy doesn't always infer
 # types correctly and Pyright will still catch any type errors.
 # tinker needs Python >= 3.11; checks run on 3.10
-exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/beta/rl/tinker/.*"]
+exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/post_training/tinker/.*"]
 
 strict_equality = true
 implicit_reexport = true

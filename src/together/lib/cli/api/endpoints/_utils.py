@@ -10,6 +10,7 @@ from together.types import DedicatedEndpoint
 from together.lib.utils.tools import format_datetime
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import emit_json, is_json_mode
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -33,19 +34,38 @@ def handle_endpoint_api_errors(prefix: str) -> Callable[[F], F]:
                 if "not found" in error_lower and "endpoint" in error_lower:
                     endpoint_id = kwargs.get("endpoint_id", "")
                     endpoint_display = f"'{endpoint_id}'" if endpoint_id else ""
-                    console.print(f"{prefix}: Failed")
-                    console.print(f"{prefix}: Endpoint {endpoint_display} not found.")
-                    console.print(f"{prefix}: The endpoint may have been deleted or the ID may be incorrect.")
-                    console.print(f"{prefix}: Use 'together endpoints list' to see your endpoints.")
+                    if is_json_mode():
+                        emit_json(
+                            {
+                                "error": f"{prefix}: Endpoint {endpoint_display} not found.",
+                                "hint": "The endpoint may have been deleted or the ID may be incorrect. Use 'tg endpoints list' to see your endpoints.",
+                            }
+                        )
+                    else:
+                        console.print(f"{prefix}: Failed")
+                        console.print(f"{prefix}: Endpoint {endpoint_display} not found.")
+                        console.print(f"{prefix}: The endpoint may have been deleted or the ID may be incorrect.")
+                        console.print(f"{prefix}: Use 'together endpoints list' to see your endpoints.")
                     raise CliDiagnosticExit(f"{prefix}: endpoint not found") from None
                 if "permission" in error_lower or "forbidden" in error_lower or "unauthorized" in error_lower:
-                    console.print(f"{prefix}: Failed")
-                    console.print(f"{prefix}: You don't have permission to access this resource.")
-                    console.print(f"{prefix}: This may belong to another user or organization.")
+                    if is_json_mode():
+                        emit_json(
+                            {
+                                "error": f"{prefix}: You don't have permission to access this resource.",
+                                "hint": "This may belong to another user or organization.",
+                            }
+                        )
+                    else:
+                        console.print(f"{prefix}: Failed")
+                        console.print(f"{prefix}: You don't have permission to access this resource.")
+                        console.print(f"{prefix}: This may belong to another user or organization.")
                     raise CliDiagnosticExit(f"{prefix}: permission denied") from None
                 if "credentials" in error_lower or "authentication" in error_lower:
-                    console.print(f"{prefix}: Failed")
-                    console.print(f"{prefix}: Invalid API key or authentication failed.")
+                    if is_json_mode():
+                        emit_json({"error": f"{prefix}: Invalid API key or authentication failed."})
+                    else:
+                        console.print(f"{prefix}: Failed")
+                        console.print(f"{prefix}: Invalid API key or authentication failed.")
                     raise CliDiagnosticExit(f"{prefix}: authentication failed") from None
                 raise e
 

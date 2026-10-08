@@ -7,7 +7,7 @@ __all__ = ["RollingConfig"]
 
 class RollingConfig(BaseModel):
     """
-    Rolling strategy configuration for capacity-preserving batches that ramp target replicas up while draining source replicas.
+    Rolling strategy configuration for small batches that ramp target replicas up while shrinking source replicas to what their remaining traffic share needs.
     """
 
     pass

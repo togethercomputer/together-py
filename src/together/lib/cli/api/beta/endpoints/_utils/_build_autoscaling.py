@@ -4,8 +4,7 @@ import re
 from typing import Literal, cast, overload
 
 from together.types.beta import ScalingMetricParam, DeploymentAutoscalingParam
-from together.lib.cli.utils._exit import CliDiagnosticExit
-from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 
 # Wire format is protobuf Duration JSON, seconds only (e.g. "30s", "600s").
 # CLI also accepts bare seconds (`30`) and Go-style units (`10m`, `1h`, `10m30s`).
@@ -120,8 +119,10 @@ def normalize_duration(value: str | None, *, option_name: str) -> str | None:
     converted = _human_duration_to_proto(value)
     if converted is not None and _DURATION_RE.match(converted):
         return converted
-    console.print(f"Error: {option_name} must be a duration, e.g. 30, 30s, 10m, or 1h (got {value!r}).")
-    raise CliDiagnosticExit(f"Invalid duration for {option_name}")
+    exit_with_message(
+        f"Error: {option_name} must be a duration, e.g. 30, 30s, 10m, or 1h (got {value!r}).",
+        diagnostic=f"Invalid duration for {option_name}",
+    )
 
 
 def build_scaling_metrics(
@@ -135,14 +136,18 @@ def build_scaling_metrics(
         return None
 
     if scaling_metric is None or scaling_target is None:
-        console.print("Error: --scaling-metric and --scaling-target must be set together.")
-        raise CliDiagnosticExit("Autoscaling metric and target must be set together")
+        exit_with_message(
+            "Error: --scaling-metric and --scaling-target must be set together.",
+            diagnostic="Autoscaling metric and target must be set together",
+        )
 
     metric_type = _METRIC_TYPES.get(scaling_metric)
     if metric_type is None:
         known = ", ".join(SCALING_METRIC_NAMES)
-        console.print(f"Error: unknown --scaling-metric {scaling_metric!r}. Choose one of: {known}.")
-        raise CliDiagnosticExit("Unknown autoscaling metric")
+        exit_with_message(
+            f"Error: unknown --scaling-metric {scaling_metric!r}. Choose one of: {known}.",
+            diagnostic="Unknown autoscaling metric",
+        )
 
     metric: ScalingMetricParam = {
         "name": scaling_metric,
@@ -152,17 +157,17 @@ def build_scaling_metrics(
 
     if scaling_percentile is not None:
         if scaling_percentile not in _VALID_PERCENTILES:
-            console.print(
+            exit_with_message(
                 f"Error: --scaling-percentile must be one of {', '.join(sorted(_VALID_PERCENTILES))} "
-                f"(got {scaling_percentile!r})."
+                f"(got {scaling_percentile!r}).",
+                diagnostic="Invalid autoscaling percentile",
             )
-            raise CliDiagnosticExit("Invalid autoscaling percentile")
         if metric_type != "METRIC_TARGET_TYPE_VALUE":
-            console.print(
+            exit_with_message(
                 f"Error: --scaling-percentile only applies to latency metrics "
-                f"(ttft, e2e_latency, decoding_speed), not {scaling_metric!r}."
+                f"(ttft, e2e_latency, decoding_speed), not {scaling_metric!r}.",
+                diagnostic="Autoscaling percentile requires a latency metric",
             )
-            raise CliDiagnosticExit("Autoscaling percentile requires a latency metric")
         metric["percentile"] = scaling_percentile
 
     return [metric]
@@ -217,19 +222,23 @@ def build_autoscaling(
             min_replicas = 1
     elif (min_replicas == 0 or max_replicas == 0) and not (min_replicas == 0 and max_replicas == 0):
         # Updates are patchy: don't invent the other bound when stopping.
-        console.print("Error: to stop a deployment, pass both --min-replicas 0 and --max-replicas 0.")
-        raise CliDiagnosticExit("Scaling to zero requires both replica bounds")
+        exit_with_message(
+            "Error: to stop a deployment, pass both --min-replicas 0 and --max-replicas 0.",
+            diagnostic="Scaling to zero requires both replica bounds",
+        )
 
     if min_replicas is not None and max_replicas is not None and (min_replicas == 0) != (max_replicas == 0):
-        console.print(
+        exit_with_message(
             "Error: --min-replicas and --max-replicas must both be 0 to stop a deployment. "
-            "Pass --min-replicas 0 --max-replicas 0."
+            "Pass --min-replicas 0 --max-replicas 0.",
+            diagnostic="Scaling to zero requires both replica bounds",
         )
-        raise CliDiagnosticExit("Scaling to zero requires both replica bounds")
 
     if min_replicas is not None and max_replicas is not None and min_replicas > max_replicas:
-        console.print(f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})")
-        raise CliDiagnosticExit("Autoscaling minimum replicas cannot exceed maximum replicas")
+        exit_with_message(
+            f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})",
+            diagnostic="Autoscaling minimum replicas cannot exceed maximum replicas",
+        )
 
     autoscaling = {
         key: value
@@ -245,6 +254,8 @@ def build_autoscaling(
     if not autoscaling:
         if not required:
             return None
-        console.print("Error: deployment create requires autoscaling. Pass --min-replicas and/or --max-replicas.")
-        raise CliDiagnosticExit("Deployment creation requires autoscaling")
+        exit_with_message(
+            "Error: deployment create requires autoscaling. Pass --min-replicas and/or --max-replicas.",
+            diagnostic="Deployment creation requires autoscaling",
+        )
     return cast(DeploymentAutoscalingParam, autoscaling)

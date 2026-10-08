@@ -11,8 +11,8 @@ from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.types.cluster_create_params import (
     ClusterCreateParams,
-    GPUClusterCreateRequestNvidiaVersionAddOn as AddOn,
-    GPUClusterCreateRequestNvidiaVersionSharedVolume as SharedVolume,
+    GPUClusterCreateRequestNvidiaVersionAddOn as CreateAddOn,
+    GPUClusterCreateRequestNvidiaVersionSharedVolume as CreateSharedVolume,
 )
 from together.types.cluster_list_regions_response import (
     RegionDriverVersion,
@@ -257,7 +257,7 @@ async def create(
         params["capacity_pool_id"] = capacity_pool_id
     if install_traefik is not None:
         params["install_traefik"] = install_traefik
-    add_ons: list[AddOn] = []
+    add_ons: list[CreateAddOn] = []
     if headlamp_addon is not None:
         add_ons.append(
             {
@@ -341,7 +341,7 @@ async def create(
                     input(f"Clusters: Storage volume name [{default_volume_name}]: ").strip() or default_volume_name
                 )
                 size = input("Clusters: Storage volume size (TiB) [1]: ").strip()
-                params["shared_volume"] = SharedVolume(
+                params["shared_volume"] = CreateSharedVolume(
                     region=params["region"],
                     size_tib=int(size) if size else 1,
                     volume_name=vol_name,

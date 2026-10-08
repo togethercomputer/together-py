@@ -1,119 +1,123 @@
-# Maintainer note: this package is the single import point that keeps *Param
-# names out of the public surface. Request-only schemas already generate
-# suffix-free names (`no_params_suffix` in openapi.stainless.yml). Dual-use
-# schemas generate both a response model and a *Param request TypedDict, so
-# only one side can hold the clean name: bind it to whichever side callers
-# spell out by name. Callers construct the config types, so their request
-# TypedDicts win; the response models keep their clean names in
-# `together.types.beta.rl`.
-#
-# A leading underscore inside this package marks a name as private to its own
-# module. Everything re-exported below is the public surface; a name without an
-# underscore that is not listed here (`_losses.LOSS_SPECS`, `_losses.validate_sample`)
-# is package-internal but shared across modules.
+"""Compatibility alias for :mod:`together.post_training`.
 
-from .clients import Trainer, Generator, SessionClient, ModelResourcesClient
-from ._futures import OperationFuture
-from .checkpoints import download_checkpoint, download_checkpoint_async
-from ._request_types import Sample, LossConfig, TensorData
-from ....types.beta.rl.session import Session
-from ....types.beta.rl.checkpoint import Checkpoint
-from ....types.beta.rl.adam_params import AdamParams
-from ....types.beta.rl.muon_params import MuonParams
-from ....types.beta.rl.stop_reason import StopReason
-from ....types.beta.rl.sample_result import SampleResult
-from ....types.beta.rl.session_error import SessionError
-from ....types.beta.rl.loss_fn_output import LossFnOutput
-from ....types.beta.rl.session_status import SessionStatus
-from ....types.beta.rl.checkpoint_type import CheckpointType
-from ....types.beta.rl.dro_loss_params import DroLossParams
-from ....types.beta.rl.model_resources import ModelResources
-from ....types.beta.rl.ppo_loss_params import PpoLossParams
-from ....types.beta.rl.sampling_params import SamplingParams
-from ....types.beta.rl.dppo_loss_params import DppoLossParams
-from ....types.beta.rl.grpo_loss_params import GrpoLossParams
-from ....types.beta.rl.sampled_sequence import SampledSequence
-from ....types.beta.rl.weight_sync_type import WeightSyncType
-from ....types.beta.rl.adam_config_param import AdamConfigParam as AdamConfig
-from ....types.beta.rl.cispo_loss_params import CispoLossParams
-from ....types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
-from ....types.beta.rl.model_input_param import ModelInput
-from ....types.beta.rl.muon_config_param import MuonConfigParam as MuonConfig
-from ....types.beta.rl.optim_step_result import OptimStepResult
-from ....types.beta.rl.checkpoint_variant import CheckpointVariant
-from ....types.beta.rl.session_error_code import SessionErrorCode
-from ....types.beta.rl.training_checkpoint import TrainingCheckpoint
-from ....types.beta.rl.weights_sync_result import WeightsSyncResult
-from ....types.beta.rl.inference_checkpoint import InferenceCheckpoint
-from ....types.beta.rl.wandb_metadata_param import WandbMetadataParam as WandbMetadata
-from ....types.beta.rl.muon_scaling_strategy import MuonScalingStrategy
-from ....types.beta.rl.model_resources_status import ModelResourcesStatus
-from ....types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
-from ....types.beta.rl.policy_version_segment import PolicyVersionSegment
-from ....types.beta.rl.session_metadata_param import SessionMetadataParam as SessionMetadata
-from ....types.beta.rl.forward_backward_result import ForwardBackwardResult
-from ....types.beta.rl.model_input_chunk_param import ModelInputChunk
-from ....types.beta.rl.encoded_text_chunk_param import EncodedTextChunk
-from ....types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
-from ....types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
-from ....types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
-from ....types.beta.rl.model_resource_create_params import ComputeConfig
-from ....types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
-from ....types.beta.rl.operation_custom_forward_backward_params import Gradient
+The public names below are the old ``together.lib.beta.rl`` import path.
+Submodule imports (``together.lib.beta.rl.tinker`` and the rest) resolve to the
+same module objects as ``together.lib.post_training.*``.
+"""
 
-__all__ = [
-    "ModelResourcesClient",
-    "SessionClient",
-    "Trainer",
-    "Generator",
-    "OperationFuture",
-    "download_checkpoint",
-    "download_checkpoint_async",
-    "ModelResources",
-    "ModelResourcesStatus",
-    "ComputeConfig",
-    "Sample",
-    "LossConfig",
-    "SessionMetadata",
-    "WandbMetadata",
-    "SamplingParams",
-    "AdamParams",
-    "MuonParams",
-    "LoraConfig",
-    "OptimizerConfig",
-    "AdamConfig",
-    "MuonConfig",
-    "MuonScalingStrategy",
-    "Checkpoint",
-    "CheckpointType",
-    "CheckpointVariant",
-    "Gradient",
-    "WeightSyncType",
-    "ModelInput",
-    "ModelInputChunk",
-    "EncodedTextChunk",
-    "GrpoLossParams",
-    "PpoLossParams",
-    "DppoLossParams",
-    "CispoLossParams",
-    "DroLossParams",
-    "CrossEntropyLossParams",
-    "TensorData",
-    "Session",
-    "SessionStatus",
-    "SessionError",
-    "SessionErrorCode",
-    "TrainingCheckpoint",
-    "InferenceCheckpoint",
-    "SampleResult",
-    "SampledSequence",
-    "StopReason",
-    "ForwardBackwardResult",
-    "LossFnOutput",
-    "CustomForwardBackwardResult",
-    "OptimStepResult",
-    "WeightsSyncResult",
-    "TrainingCheckpointResult",
-    "InferenceCheckpointResult",
-    "PolicyVersionSegment",
-]
+from __future__ import annotations
+
+import sys
+import importlib
+import importlib.abc
+import importlib.util
+from types import ModuleType
+from typing import Sequence
+from typing_extensions import override
+from importlib.machinery import ModuleSpec
+
+from together.post_training import (
+    Sample as Sample,
+    Session as Session,
+    Trainer as Trainer,
+    Gradient as Gradient,
+    Generator as Generator,
+    AdamConfig as AdamConfig,
+    AdamParams as AdamParams,
+    Checkpoint as Checkpoint,
+    LoraConfig as LoraConfig,
+    LossConfig as LossConfig,
+    ModelInput as ModelInput,
+    MuonConfig as MuonConfig,
+    MuonParams as MuonParams,
+    StopReason as StopReason,
+    TensorData as TensorData,
+    LossFnOutput as LossFnOutput,
+    SampleResult as SampleResult,
+    SessionError as SessionError,
+    ComputeConfig as ComputeConfig,
+    DroLossParams as DroLossParams,
+    PpoLossParams as PpoLossParams,
+    SessionClient as SessionClient,
+    SessionStatus as SessionStatus,
+    WandbMetadata as WandbMetadata,
+    CheckpointType as CheckpointType,
+    DppoLossParams as DppoLossParams,
+    GrpoLossParams as GrpoLossParams,
+    ModelResources as ModelResources,
+    SamplingParams as SamplingParams,
+    WeightSyncType as WeightSyncType,
+    CispoLossParams as CispoLossParams,
+    ModelInputChunk as ModelInputChunk,
+    OperationFuture as OperationFuture,
+    OptimizerConfig as OptimizerConfig,
+    OptimStepResult as OptimStepResult,
+    SampledSequence as SampledSequence,
+    SessionMetadata as SessionMetadata,
+    EncodedTextChunk as EncodedTextChunk,
+    SessionErrorCode as SessionErrorCode,
+    CheckpointVariant as CheckpointVariant,
+    WeightsSyncResult as WeightsSyncResult,
+    TrainingCheckpoint as TrainingCheckpoint,
+    InferenceCheckpoint as InferenceCheckpoint,
+    MuonScalingStrategy as MuonScalingStrategy,
+    ModelResourcesClient as ModelResourcesClient,
+    ModelResourcesStatus as ModelResourcesStatus,
+    PolicyVersionSegment as PolicyVersionSegment,
+    ForwardBackwardResult as ForwardBackwardResult,
+    CrossEntropyLossParams as CrossEntropyLossParams,
+    TrainingCheckpointResult as TrainingCheckpointResult,
+    InferenceCheckpointResult as InferenceCheckpointResult,
+    CustomForwardBackwardResult as CustomForwardBackwardResult,
+    __all__ as __all__,
+    download_checkpoint as download_checkpoint,
+    download_checkpoint_async as download_checkpoint_async,
+)
+
+_OLD_PREFIX = "together.lib.beta.rl"
+_NEW_PREFIX = "together.lib.post_training"
+
+
+class _AliasLoader(importlib.abc.Loader):
+    def __init__(self, target: str) -> None:
+        self._target = target
+        self._real_spec: ModuleSpec | None = None
+
+    @override
+    def create_module(self, spec: ModuleSpec) -> ModuleType:
+        del spec
+        module = importlib.import_module(self._target)
+        # importlib overwrites ``__spec__`` after create_module returns. Relative
+        # imports compare ``__package__`` to ``__spec__.parent``, so keep the
+        # implementation spec.
+        self._real_spec = module.__spec__
+        return module
+
+    @override
+    def exec_module(self, module: ModuleType) -> None:
+        if self._real_spec is not None:
+            module.__spec__ = self._real_spec
+
+
+class _AliasFinder(importlib.abc.MetaPathFinder):
+    @override
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[str] | None = None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        del path, target
+        if not fullname.startswith(_OLD_PREFIX + "."):
+            return None
+        target_name = _NEW_PREFIX + fullname[len(_OLD_PREFIX) :]
+        return importlib.util.spec_from_loader(fullname, _AliasLoader(target_name))
+
+
+def _install_submodule_alias() -> None:
+    if any(isinstance(finder, _AliasFinder) for finder in sys.meta_path):
+        return
+    sys.meta_path.insert(0, _AliasFinder())
+
+
+_install_submodule_alias()

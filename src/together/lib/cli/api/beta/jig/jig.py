@@ -40,6 +40,13 @@ from together.types.beta.jig.volume import Volume
 from together.lib.cli.utils._console import console
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.components.list import ListTable
+from together.lib.cli.utils._json_mode import (
+    emit_json,
+    is_json_mode,
+    json_was_emitted,
+    exit_with_message,
+    suppress_human_output,
+)
 from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
@@ -1002,8 +1009,11 @@ Note: Additional replicas may still be scaling up.""")
                         return
 
                     if event.replica_status_reason == "CrashLoopBackOff":
+                        logs = self.logs(rid)
+                        if is_json_mode():
+                            raise CliDiagnosticExit(f"Deployment container is crash looping\n{logs}")
                         console.print(f"\N{CROSS MARK} [{rid}] Container is crash looping")
-                        console.print(self.logs(rid))
+                        console.print(logs)
                         raise CliDiagnosticExit("Deployment container is crash looping")
 
                     if event.volume_preload_status:
@@ -1024,15 +1034,26 @@ Note: Additional replicas may still be scaling up.""")
                         if rid not in wait_start:
                             wait_start[rid] = time.time()
                         if time.time() - wait_start[rid] > _TRACK_READY_TIMEOUT:
+                            logs = self.logs(rid)
+                            if is_json_mode():
+                                raise CliDiagnosticExit(
+                                    "Deployment container was running but did not become ready before timeout\n" + logs
+                                )
                             console.print(f"Deployment '{self.name}' may still be in progress.")
                             console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
-                            console.print(self.logs(rid))
+                            console.print(logs)
                             raise CliDiagnosticExit(
                                 "Deployment container was running but did not become ready before timeout"
                             )
 
                 time.sleep(_TRACK_POLL_INTERVAL)
 
+            message = (
+                f"Deployment tracking timed out after 10 minutes. Deployment '{self.name}' may still be in progress. "
+                "Run 'tg beta jig status' to check current state."
+            )
+            if is_json_mode():
+                raise CliDiagnosticExit(message)
             console.print(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
@@ -1202,6 +1223,31 @@ def _sync_together_from_config(config: CLIConfig) -> Together:
     )
 
 
+def _print_json_cli_result(result: Any) -> None:
+    if json_was_emitted() and result is None:
+        return
+    if result is None:
+        emit_json({"ok": True})
+        return
+    if isinstance(result, str):
+        emit_json({"ok": True, "message": result})
+        return
+    if isinstance(result, dict):
+        emit_json(typing.cast("dict[str, Any]", result))
+        return
+    if hasattr(result, "json") and callable(result.json):
+        body: Any = result.json()
+        if isinstance(body, (dict, list)):
+            emit_json(typing.cast(Any, body))
+        else:
+            emit_json({"ok": True, "result": body})
+        return
+    try:
+        emit_json(json.loads(openapi_dumps(result)))
+    except (TypeError, ValueError):
+        emit_json({"ok": True, "message": str(result)})
+
+
 def _print_cli_result(result: Any) -> None:
     if result is None:
         return
@@ -1217,8 +1263,18 @@ def _print_cli_result(result: Any) -> None:
         console.print(str(result))
 
 
+def _json_action(action: str, **fields: Any) -> dict[str, Any] | None:
+    if not is_json_mode() or json_was_emitted():
+        return None
+    return {"ok": True, "action": action, **fields}
+
+
 def _jig_fail(msg: str) -> typing.NoReturn:
-    console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
+    if is_json_mode():
+        if not json_was_emitted():
+            emit_json({"ok": False, "error": msg})
+    else:
+        console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
     raise CliDiagnosticExit(msg)
 
 
@@ -1248,8 +1304,17 @@ def _api_error_message(e: APIError) -> str:
 def _run_jig_cmd(config: CLIConfig, config_path: str | None, fn: Callable[[Jig], Any]) -> None:
     try:
         jig = Jig(_sync_together_from_config(config), config_path)
-        result = fn(jig)
-        _print_cli_result(result)
+        if is_json_mode():
+            with suppress_human_output():
+                result = fn(jig)
+            _print_json_cli_result(result)
+        else:
+            result = fn(jig)
+            _print_cli_result(result)
+    except CliDiagnosticExit as exc:
+        if is_json_mode() and not json_was_emitted():
+            emit_json({"ok": False, "error": str(exc) or "Command failed"})
+        raise
     except (KeyboardInterrupt, SystemExit):
         raise
     except AuthenticationError:
@@ -1271,6 +1336,17 @@ def init(
     """Initialize jig configuration."""
     _ = config
     if (pyproject := Path("pyproject.toml")).exists():
+        if is_json_mode():
+            emit_json(
+                {
+                    "ok": True,
+                    "action": "init",
+                    "path": "pyproject.toml",
+                    "created": False,
+                    "message": "pyproject.toml already exists",
+                }
+            )
+            return
         console.print("pyproject.toml already exists")
         return
 
@@ -1297,6 +1373,9 @@ gpu_type = "h100-80gb"
 gpu_count = 1
 """
     pyproject.write_text(content)
+    if is_json_mode():
+        emit_json({"ok": True, "action": "init", "path": "pyproject.toml", "created": True})
+        return
     console.print("""\N{CHECK MARK} Created pyproject.toml
   Edit the configuration and run 'jig deploy'""")
 
@@ -1394,6 +1473,8 @@ def secrets_unset(jig: Jig, name: str) -> None:
         jig.state.save()
         console.print(f"\N{CHECK MARK} Removed secret {name} from the deployment")
     except KeyError:
+        if is_json_mode():
+            raise JigError(f"Secret {name} is not set") from None
         console.print(f"\N{CROSS MARK} Secret {name} is not set")
 
 
@@ -1454,10 +1535,19 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
     except Exception as e:
         console.print(f"\N{CROSS MARK} Upload failed: {e}")
         console.print(f"\N{WASTEBASKET} Cleaning up volume {name}")
+        cleanup_note = ""
         try:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
+            cleanup_note = f" Failed to delete volume: {cleanup_error}"
+        if is_json_mode():
+            # Status lines above are swallowed in JSON mode; keep the failure in the document.
+            exit_with_message(
+                f"Upload failed: {e}",
+                error=f"Volume upload failed after the volume was created: {e}.{cleanup_note}".rstrip(),
+                diagnostic="Volume upload failed after the volume was created",
+            )
         raise CliDiagnosticExit("Volume upload failed after the volume was created") from None
 
     jig.prewarm(volume=name)
@@ -1645,7 +1735,12 @@ def dockerfile_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Generate Dockerfile."""
-    _run_jig_cmd(config, toml_config, dockerfile)
+
+    def inner(jig: Jig) -> Any:
+        dockerfile(jig)
+        return _json_action("dockerfile", path=jig.config.image.dockerfile_path)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def build_cli(
@@ -1660,7 +1755,12 @@ def build_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Build container image."""
-    _run_jig_cmd(config, toml_config, lambda jig: build(jig, tag, warmup, docker_args))
+
+    def inner(jig: Jig) -> Any:
+        build(jig, tag, warmup, docker_args)
+        return _json_action("build", name=jig.name, tag=tag, image=jig.image(tag))
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def push_cli(
@@ -1670,7 +1770,12 @@ def push_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Push image to registry."""
-    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag))
+
+    def inner(jig: Jig) -> Any:
+        push(jig, tag)
+        return _json_action("push", name=jig.name, tag=tag, image=jig.image(tag))
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def deploy_cli(
@@ -1688,11 +1793,12 @@ def deploy_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Deploy model."""
-    _run_jig_cmd(
-        config,
-        toml_config,
-        lambda jig: deploy(jig, tag, build_only, warmup, detach, docker_args, image),
-    )
+
+    def inner(jig: Jig) -> Any:
+        deploy(jig, tag, build_only, warmup, detach, docker_args, image)
+        return _json_action("deploy", name=jig.name, tag=tag)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def status_cli(
@@ -1710,7 +1816,14 @@ def endpoint_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment endpoint URL."""
-    _run_jig_cmd(config, toml_config, endpoint)
+
+    def inner(jig: Jig) -> Any:
+        url = endpoint(jig)
+        if is_json_mode():
+            return {"url": url}
+        return url
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def logs_cli(
@@ -1732,7 +1845,14 @@ def logs_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment logs."""
-    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, image_version))
+
+    def inner(jig: Jig) -> Any:
+        text = logs(jig, follow, replica_id, revision, image_version)
+        if is_json_mode():
+            return {"logs": text or ""}
+        return text
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def destroy_cli(
@@ -1741,7 +1861,14 @@ def destroy_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Destroy deployment."""
-    _run_jig_cmd(config, toml_config, destroy)
+
+    def inner(jig: Jig) -> Any:
+        message = destroy(jig)
+        if is_json_mode():
+            return {"ok": True, "action": "destroy", "name": jig.name, "message": message}
+        return message
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def submit_cli(
@@ -1793,7 +1920,12 @@ def secrets_set_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Set a secret (create or update)."""
-    _run_jig_cmd(config, toml_config, lambda jig: secrets_set(jig, name, value, description))
+
+    def inner(jig: Jig) -> Any:
+        secrets_set(jig, name, value, description)
+        return _json_action("set", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def secrets_unset_cli(
@@ -1803,7 +1935,12 @@ def secrets_unset_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Remove a secret from local state."""
-    _run_jig_cmd(config, toml_config, lambda jig: secrets_unset(jig, name))
+
+    def inner(jig: Jig) -> Any:
+        secrets_unset(jig, name)
+        return _json_action("unset", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def secrets_delete_cli(
@@ -1813,7 +1950,12 @@ def secrets_delete_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Delete a secret and unset it locally."""
-    _run_jig_cmd(config, toml_config, lambda jig: secrets_delete(jig, name))
+
+    def inner(jig: Jig) -> Any:
+        secrets_delete(jig, name)
+        return _json_action("delete", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def secrets_list_cli(
@@ -1867,10 +2009,20 @@ def jig_volumes_create_cli(
 ) -> None:
     """Create a volume from a local directory or S3."""
     if path := _local_volume_source(source, aws_oidc_role_arn, watch):
-        _run_jig_cmd(config, toml_config, lambda jig: volumes_create(jig, name, path))
+
+        def inner(jig: Jig) -> Any:
+            volumes_create(jig, name, path)
+            return _json_action("create", name=name, source=str(path))
+
+        _run_jig_cmd(config, toml_config, inner)
     else:
         role_arn = aws_oidc_role_arn or ""
-        _run_jig_cmd(config, toml_config, lambda jig: volumes_create_from_s3(jig, name, source, role_arn, watch))
+
+        def inner_s3(jig: Jig) -> Any:
+            volumes_create_from_s3(jig, name, source, role_arn, watch)
+            return _json_action("create", name=name, source=source)
+
+        _run_jig_cmd(config, toml_config, inner_s3)
 
 
 def jig_volumes_update_cli(
@@ -1884,10 +2036,20 @@ def jig_volumes_update_cli(
 ) -> None:
     """Create a new volume version from a local directory or S3."""
     if path := _local_volume_source(source, aws_oidc_role_arn, watch):
-        _run_jig_cmd(config, toml_config, lambda jig: volumes_update(jig, name, path))
+
+        def inner(jig: Jig) -> Any:
+            volumes_update(jig, name, path)
+            return _json_action("update", name=name, source=str(path))
+
+        _run_jig_cmd(config, toml_config, inner)
     else:
         role_arn = aws_oidc_role_arn or ""
-        _run_jig_cmd(config, toml_config, lambda jig: volumes_update_from_s3(jig, name, source, role_arn, watch))
+
+        def inner_s3(jig: Jig) -> Any:
+            volumes_update_from_s3(jig, name, source, role_arn, watch)
+            return _json_action("update", name=name, source=source)
+
+        _run_jig_cmd(config, toml_config, inner_s3)
 
 
 def jig_volumes_delete_cli(
@@ -1897,7 +2059,12 @@ def jig_volumes_delete_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Delete a volume."""
-    _run_jig_cmd(config, toml_config, lambda jig: volumes_delete(jig, name))
+
+    def inner(jig: Jig) -> Any:
+        volumes_delete(jig, name)
+        return _json_action("delete", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 # == Helpers ==

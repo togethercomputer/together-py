@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import uuid
 from typing import Any, Optional, cast
 from typing_extensions import Annotated
@@ -15,6 +14,7 @@ from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.endpoints import ShadowExperiment
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve
 from together.types.beta.shadow_endpoint_source_param import (
@@ -245,8 +245,10 @@ def build_sampling(
 
     if key:
         if rate is None:
-            console.print("Error: --rate is required with --key for key-based sampling.")
-            sys.exit(1)
+            exit_with_message(
+                "Error: --rate is required with --key for key-based sampling.",
+                diagnostic="Shadow key-based sampling requires --rate",
+            )
         return cast(SamplingKeyBased, {"key_based": {"key": key, "rate": rate}})
 
     effective_rate = rate if rate is not None else 0.1

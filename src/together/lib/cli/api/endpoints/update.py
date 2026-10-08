@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import Any, Dict, Optional
 from typing_extensions import Annotated
 
@@ -9,6 +8,7 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.lib.cli.api.endpoints._utils import print_endpoint, handle_endpoint_api_errors
 
@@ -28,8 +28,11 @@ async def update(
 ) -> None:
     """Update a dedicated inference endpoint's configuration."""
     if display_name is None and min_replicas is None and max_replicas is None and inactive_timeout is None:
-        console.print("[red]Error:[/red] At least one update option must be specified")
-        sys.exit(1)
+        exit_with_message(
+            "[red]Error:[/red] At least one update option must be specified",
+            error="At least one update option must be specified",
+            diagnostic="At least one endpoint update option must be specified",
+        )
 
     kwargs: Dict[str, Any] = {}
     if display_name is not None:

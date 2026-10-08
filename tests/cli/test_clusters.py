@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import ssl
 import json
@@ -7,6 +8,7 @@ import base64
 import socket
 import subprocess
 import urllib.error
+import urllib.parse
 from typing import Any, cast
 from http.server import BaseHTTPRequestHandler
 from email.message import Message
@@ -22,6 +24,7 @@ from together import TogetherError
 from together.types import ClusterListRegionsResponse
 from tests.cli.utils import CliRunner
 from together.lib.cli.api.clusters import ssh as ssh_cli, create as create_cli
+from together.lib.cli.utils._json_mode import use_json_mode
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -103,6 +106,64 @@ def _reserved_ipv6_port() -> tuple[socket.socket, int]:
     return sock, int(sock.getsockname()[1])
 
 
+def _json_values(text: str) -> list[Any]:
+    decoder = json.JSONDecoder()
+    index = 0
+    values: list[Any] = []
+    while index < len(text):
+        while index < len(text) and text[index].isspace():
+            index += 1
+        if index >= len(text):
+            break
+        value, index = decoder.raw_decode(text, index)
+        values.append(value)
+    return values
+
+
+def _install_pkce_fakes(monkeypatch: pytest.MonkeyPatch, *, browser_opened: bool, complete: bool) -> list[str]:
+    opened: list[str] = []
+
+    def http_json(url: str, data: dict[str, str] | None = None, **_kwargs: Any) -> dict[str, str]:
+        if data is None:
+            issuer = url.split("/.well-known/")[0]
+            return {
+                "authorization_endpoint": issuer + "/auth",
+                "token_endpoint": issuer + "/token",
+            }
+        return {"id_token": "id-token"}
+
+    def callback_server(handler: Any) -> tuple[Any, str]:
+        class Server:
+            def handle_request(self) -> None:
+                if not complete or not opened:
+                    return
+                state = urllib.parse.parse_qs(urllib.parse.urlparse(opened[0]).query)["state"][0]
+                request = handler.__new__(handler)
+                request.path = f"/login-callback?code=good&state={state}"
+                request.wfile = io.BytesIO()
+
+                def _discard(*_args: Any, **_kwargs: Any) -> None:
+                    return None
+
+                request.send_response = _discard
+                request.end_headers = _discard
+                request.do_GET()
+
+            def server_close(self) -> None:
+                return
+
+        return Server(), "http://localhost:3000/login-callback"
+
+    def open_browser(url: str) -> bool:
+        opened.append(url)
+        return browser_opened
+
+    monkeypatch.setattr(ssh_cli, "_http_json", http_json)
+    monkeypatch.setattr(ssh_cli, "_callback_server", callback_server)
+    monkeypatch.setattr(ssh_cli.webbrowser, "open", open_browser)
+    return opened
+
+
 class _CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         self.send_response(200)
@@ -161,7 +222,9 @@ class TestClustersSSHCallbackServer:
             first_socket.close()
             second_socket.close()
 
-    def test_pkce_login_explains_missing_callback(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_pkce_login_explains_missing_callback(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         class Server:
             def handle_request(self) -> None:
                 return
@@ -187,6 +250,30 @@ class TestClustersSSHCallbackServer:
 
         with pytest.raises(TogetherError, match="Browser login did not complete"):
             ssh_cli._pkce_login("https://dex.example/t-abc", "together-cli", "openid email")
+
+        captured = capsys.readouterr()
+        assert "https://dex.example/auth" not in captured.out
+        assert captured.err == ""
+
+    @pytest.mark.parametrize("browser_opened", [True, False])
+    def test_json_login_url_is_one_stderr_document_even_when_browser_opens(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], browser_opened: bool
+    ) -> None:
+        opened = _install_pkce_fakes(monkeypatch, browser_opened=browser_opened, complete=False)
+        use_json_mode(True)
+        try:
+            with pytest.raises(TogetherError, match="Browser login did not complete"):
+                ssh_cli._pkce_login("https://dex.example/t-abc", "together-cli", "openid email")
+        finally:
+            use_json_mode(False)
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        documents = _json_values(captured.err)
+        assert len(documents) == 1
+        assert documents[0]["action"] == "login"
+        assert documents[0]["url"] == opened[0]
+        assert documents[0]["url"].startswith("https://dex.example/t-abc/auth?")
 
 
 class TestClustersSSHHelpers:
@@ -521,6 +608,87 @@ class TestClustersSSHHelpers:
         monkeypatch.setattr(subprocess, "run", run_ssh_keygen_future)
 
         assert ssh_cli._cert_is_valid(str(cert_path)) is False
+
+    @pytest.mark.parametrize("browser_opened", [True, False])
+    @pytest.mark.parametrize(
+        ("kwargs", "result_keys"),
+        [
+            ({"print_ssh_command": True}, {"command", "argv", "url"}),
+            ({"ssh_config_alias": "test-oidc"}, {"alias", "ssh_config", "url"}),
+            (
+                {"ssh_config_alias": "test-oidc", "write_ssh_config": True},
+                {"ok", "alias", "managed_config", "main_config", "ssh_config", "command", "url"},
+            ),
+        ],
+    )
+    async def test_json_ssh_login_result_is_one_stdout_document(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        tmp_path: Any,
+        browser_opened: bool,
+        kwargs: dict[str, Any],
+        result_keys: set[str],
+    ) -> None:
+        dex = "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123"
+        opened = _install_pkce_fakes(monkeypatch, browser_opened=browser_opened, complete=True)
+
+        def _pubkey(*_args: Any, **_kwargs: Any) -> str:
+            return "cHVi"
+
+        def _crt(*_args: Any, **_kwargs: Any) -> str:
+            return "Y2VydA"
+
+        monkeypatch.setattr(ssh_cli, "_get_or_create_keypair", _pubkey)
+        monkeypatch.setattr(ssh_cli, "_sign", _crt)
+        monkeypatch.setenv("HOME", str(tmp_path / "home"))
+
+        use_json_mode(True)
+        try:
+            await ssh_cli.ssh(dex, login="jhu", cache_dir=str(tmp_path / "cache"), **kwargs)
+        finally:
+            use_json_mode(False)
+
+        captured = capsys.readouterr()
+        login_documents = _json_values(captured.err)
+        result_documents = _json_values(captured.out)
+        assert len(login_documents) == 1
+        assert login_documents[0]["action"] == "login"
+        assert login_documents[0]["url"] == opened[0]
+        assert len(result_documents) == 1
+        assert set(result_documents[0]) == result_keys
+        assert result_documents[0]["url"] == opened[0]
+        assert "action" not in result_documents[0]
+
+    async def test_json_cached_cert_emits_one_document_and_no_login_url(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Any
+    ) -> None:
+        dex = "https://dex.s1.us-central-2a.cloud.together.ai/t-abc123"
+        key_path, _cert_path = ssh_cli._cache_paths(dex, "jhu", "ecdsa", str(tmp_path))
+        os.makedirs(os.path.dirname(key_path), mode=0o700)
+        with open(key_path, "w") as key_file:
+            key_file.write("key")
+
+        def _cert_valid(*_args: Any, **_kwargs: Any) -> bool:
+            return True
+
+        monkeypatch.setattr(ssh_cli, "_cert_is_valid", _cert_valid)
+
+        def fail_login(*_args: Any, **_kwargs: Any) -> tuple[str, str]:
+            raise AssertionError("cached certificate should not start a browser login")
+
+        monkeypatch.setattr(ssh_cli, "_pkce_login", fail_login)
+        use_json_mode(True)
+        try:
+            await ssh_cli.ssh(dex, login="jhu", cache_dir=str(tmp_path), print_ssh_command=True)
+        finally:
+            use_json_mode(False)
+
+        captured = capsys.readouterr()
+        assert captured.err == ""
+        documents = _json_values(captured.out)
+        assert len(documents) == 1
+        assert set(documents[0]) == {"command", "argv"}
 
     async def test_print_modes_require_cache(self) -> None:
         with pytest.raises(TogetherError, match="require cached"):

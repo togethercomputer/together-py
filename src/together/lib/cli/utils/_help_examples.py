@@ -507,6 +507,9 @@ BETA_ENDPOINTS_GET_HELP_EXAMPLES = """[dim]Examples:[/dim]
 ## Beta models API commands
 
 BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Deploy a model to a dedicated endpoint:
+  [primary]tg beta models deploy Qwen/Qwen2.5-7B --endpoint my-endpoint[/primary]
+
 [dim]-[/dim] Find a supported base model, then register your own:
   [primary]tg beta models public --search Qwen[/primary]
   [primary]tg beta models create --name my-model --base-model ml_xxxxxxxxxxxx[/primary]
@@ -519,7 +522,7 @@ BETA_MODELS_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg beta models ls[/primary]
   [primary]tg beta models ml_yyyyyyyyyyyy[/primary]
 
-[dim]-[/dim] List configs for a model to be used with [primary]tg beta endpoints deploy --config[/primary]:
+[dim]-[/dim] List configs for a model to be used with [primary]tg beta models deploy --config[/primary]:
   [primary]tg beta models configs ml_yyyyyyyyyyyy[/primary]
 
 [dim]-[/dim] Download a revision locally:
@@ -568,7 +571,7 @@ BETA_MODELS_PUBLIC_HELP_EXAMPLES = """[dim]Examples:[/dim]
 """
 
 BETA_MODELS_CONFIGS_HELP_EXAMPLES = """[dim]Examples:[/dim]
-[dim]-[/dim] List configs you can pass to [primary]tg beta endpoints deploy --config[/primary]:
+[dim]-[/dim] List configs you can pass to [primary]tg beta models deploy --config[/primary]:
   [primary]tg beta models configs ml_xxxxxxxxxxxx[/primary]
 """
 
@@ -909,4 +912,26 @@ JIG_VOLUMES_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 
 [dim]-[/dim] Snapshot your S3 bucket again as the next volume version:
   [primary]tg beta jig volumes update --name model-weights --source s3://my-bucket/weights --aws-oidc-role-arn arn:aws:iam::123456789012:role/together[/primary]
+"""
+
+TRAINING_FP4_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Estimate the price of preparing an adapter:
+  [primary]tg training fp4 estimate <adapter-object-id>[/primary]
+
+[dim]-[/dim] Prepare an adapter and wait for the job to finish:
+  [primary]tg training fp4 create <adapter-object-id> --watch[/primary]
+
+[dim]-[/dim] Follow a running job:
+  [primary]tg training fp4 get <job-id> --watch[/primary]
+
+[dim]-[/dim] Cancel a job:
+  [primary]tg training fp4 cancel <job-id>[/primary]
+"""
+
+TRAINING_FP4_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Prepare the adapter's current revision:
+  [primary]tg training fp4 create <adapter-object-id>[/primary]
+
+[dim]-[/dim] Prepare a specific revision without the confirmation prompt, and wait for it:
+  [primary]tg training fp4 create <adapter-object-id> -r <revision-id> -y --watch[/primary]
 """
