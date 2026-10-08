@@ -35,25 +35,6 @@ def _resource_body(resource_id: str = "res-1", **overrides: Any) -> dict[str, An
     return body
 
 
-def _inference_checkpoint(checkpoint_id: str = "ckpt-inf-1", *, step: int = 4) -> dict[str, Any]:
-    return {
-        "id": checkpoint_id,
-        "created_at": "2026-01-02T00:00:00Z",
-        "step": step,
-        "registration": {
-            "model": {"id": "ml_model", "revision_id": "rev-1"},
-        },
-    }
-
-
-def _training_checkpoint(checkpoint_id: str = "ckpt-train-1") -> dict[str, Any]:
-    return {
-        "id": checkpoint_id,
-        "created_at": "2026-01-02T00:00:00Z",
-        "step": 4,
-    }
-
-
 def _session_body(session_id: str = "sess-1", **overrides: Any) -> dict[str, Any]:
     body: dict[str, Any] = {
         "id": session_id,
@@ -83,8 +64,9 @@ def _checkpoint_body(
     checkpoint_id: str = "ckpt-inf-1",
     *,
     checkpoint_type: str = "CHECKPOINT_TYPE_INFERENCE",
+    **overrides: Any,
 ) -> dict[str, Any]:
-    return {
+    body: dict[str, Any] = {
         "id": checkpoint_id,
         "base_model": "Qwen/Qwen3-0.6B",
         "created_at": "2026-01-02T00:00:00Z",
@@ -93,6 +75,8 @@ def _checkpoint_body(
         "type": checkpoint_type,
         "lora_rank": 16,
     }
+    body.update(overrides)
+    return body
 
 
 def _not_found() -> httpx.Response:
@@ -262,104 +246,121 @@ class TestTrainingSessions:
 
 class TestTrainingCheckpoints:
     @pytest.mark.respx(base_url=base_url)
-    def test_ls_checkpoints_flattens_inference_checkpoints_across_session_pages(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
-        def respond(request: httpx.Request) -> httpx.Response:
-            if request.url.params.get("after") == "sess-1":
-                body = {
+    def test_ls_checkpoints_filters_by_type(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/rl/checkpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
                     "data": [
-                        _session_body(
-                            "sess-2",
-                            inference_checkpoints=[_inference_checkpoint("ckpt-inf-2")],
+                        _checkpoint_body(
+                            "ckpt-inf-1",
+                            inference_registration={"model": {"id": "ml_model", "revision_id": "rev-1"}},
                         )
                     ],
                     "meta": _meta(),
-                }
-            else:
-                body = {
-                    "data": [
-                        _session_body(
-                            "sess-1",
-                            inference_checkpoints=[],
-                            training_checkpoints=[_training_checkpoint()],
-                        )
-                    ],
-                    "meta": _meta(has_more=True, next_cursor="sess-1", limit=100),
-                }
-            return httpx.Response(200, json=body)
+                },
+            )
+        )
 
-        route = respx_mock.get("/rl/training-sessions").mock(side_effect=respond)
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--type", "inference", "--json"])
+
+        assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["type"] == "CHECKPOINT_TYPE_INFERENCE"
+        payload = json.loads(result.out_out)
+        assert [item["id"] for item in payload["data"]] == ["ckpt-inf-1"]
+        assert payload["data"][0]["type"] == "CHECKPOINT_TYPE_INFERENCE"
+        assert payload["data"][0]["inference_registration"]["model"]["id"] == "ml_model"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ls_checkpoints_training_type(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/rl/checkpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "data": [_checkpoint_body("ckpt-train-1", checkpoint_type="CHECKPOINT_TYPE_TRAINING")],
+                    "meta": _meta(has_more=True, next_cursor="ckpt-train-1"),
+                },
+            )
+        )
+
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--type", "training"])
+
+        assert result.exit_code == 0, result.output
+        assert cast(Call, route.calls[0]).request.url.params["type"] == "CHECKPOINT_TYPE_TRAINING"
+        assert "ckpt-train-1" in result.output
+        assert "training" in result.output
+        assert "tg training ls-checkpoints --type training --after ckpt-train-1" in result.output
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_ls_checkpoints_omitted_type_returns_both(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/rl/checkpoints").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "data": [
+                        _checkpoint_body(),
+                        _checkpoint_body("ckpt-train-1", checkpoint_type="CHECKPOINT_TYPE_TRAINING"),
+                    ],
+                    "meta": _meta(),
+                },
+            )
+        )
 
         result = cli_runner.invoke(["training", "ls-checkpoints", "--json"])
 
         assert result.exit_code == 0, result.output
-        assert route.call_count == 2
-        assert cast(Call, route.calls[0]).request.url.params["limit"] == "100"
+        assert "type" not in cast(Call, route.calls[0]).request.url.params
         payload = json.loads(result.out_out)
-        assert [item["id"] for item in payload["data"]] == ["ckpt-inf-2"]
-        assert payload["data"][0]["session_id"] == "sess-2"
-        assert payload["data"][0]["registration"]["model"]["id"] == "ml_model"
-        assert "ckpt-train-1" not in result.out_out
+        assert [item["type"] for item in payload["data"]] == [
+            "CHECKPOINT_TYPE_INFERENCE",
+            "CHECKPOINT_TYPE_TRAINING",
+        ]
 
     @pytest.mark.respx(base_url=base_url)
-    def test_ls_checkpoints_session_flag_does_not_list_sessions(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
-        respx_mock.get("/rl/training-sessions/sess-1").mock(
+    def test_ls_checkpoints_session_limit_and_cursor(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
+        route = respx_mock.get("/rl/checkpoints").mock(
             return_value=httpx.Response(
                 200,
-                json=_session_body(
-                    inference_checkpoints=[
-                        _inference_checkpoint("ckpt-a", step=1),
-                        _inference_checkpoint("ckpt-b", step=2),
-                    ]
-                ),
+                json={
+                    "data": [_checkpoint_body("ckpt-b")],
+                    "meta": _meta(has_more=True, next_cursor="ckpt-b"),
+                },
             )
         )
 
-        result = cli_runner.invoke(["training", "ls-checkpoints", "--session", "sess-1", "--limit", "1", "--json"])
+        result = cli_runner.invoke(
+            [
+                "training",
+                "ls-checkpoints",
+                "--type",
+                "inference",
+                "--session",
+                "sess-1",
+                "--limit",
+                "1",
+                "--after",
+                "ckpt-a",
+                "--json",
+            ]
+        )
 
         assert result.exit_code == 0, result.output
+        params = cast(Call, route.calls[0]).request.url.params
+        assert params["type"] == "CHECKPOINT_TYPE_INFERENCE"
+        assert params["session_id"] == "sess-1"
+        assert params["limit"] == "1"
+        assert params["after"] == "ckpt-a"
         payload = json.loads(result.out_out)
-        assert [item["id"] for item in payload["data"]] == ["ckpt-a"]
+        assert [item["id"] for item in payload["data"]] == ["ckpt-b"]
         assert payload["meta"]["has_more"] is True
-        assert payload["meta"]["next_cursor"] == "ckpt-a"
+        assert payload["meta"]["next_cursor"] == "ckpt-b"
 
-    @pytest.mark.respx(base_url=base_url)
-    def test_ls_checkpoints_after_skips_to_the_next_checkpoint(
-        self, respx_mock: MockRouter, cli_runner: CliRunner
-    ) -> None:
-        respx_mock.get("/rl/training-sessions/sess-1").mock(
-            return_value=httpx.Response(
-                200,
-                json=_session_body(
-                    inference_checkpoints=[
-                        _inference_checkpoint("ckpt-a", step=1),
-                        _inference_checkpoint("ckpt-b", step=2),
-                    ]
-                ),
-            )
-        )
+    def test_ls_checkpoints_rejects_non_positive_limit(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--limit", "0"])
 
-        result = cli_runner.invoke(["training", "ls-checkpoints", "--session-id", "sess-1", "--after", "ckpt-a"])
-
-        assert result.exit_code == 0, result.output
-        assert "ckpt-b" in result.output
-        assert "ckpt-a" not in result.output
-
-    @pytest.mark.respx(base_url=base_url)
-    def test_ls_checkpoints_unknown_cursor(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
-        respx_mock.get("/rl/training-sessions").mock(
-            return_value=httpx.Response(200, json={"data": [_session_body()], "meta": _meta()})
-        )
-
-        result = cli_runner.invoke(["training", "ls-checkpoints", "--after", "missing-ckpt"])
-
-        assert result.exit_code == 0, result.output
-        assert "missing-ckpt" in result.output
-        assert "was not found" in result.output
-        assert "No inference checkpoints found" in result.output
+        assert result.exit_code == 1
+        assert "--limit must be at least 1" in result.output
 
 
 class TestTrainingGet:
