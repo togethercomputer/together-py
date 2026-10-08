@@ -9,7 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.rl import (
+from together.types.post_training import (
     SampleOperation,
     OptimStepOperation,
     WeightsSyncOperation,

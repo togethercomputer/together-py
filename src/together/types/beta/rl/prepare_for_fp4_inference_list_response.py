@@ -4,7 +4,7 @@ from typing import List
 from typing_extensions import Literal
 
 from ...._models import BaseModel
-from .quantization_job import QuantizationJob
+from ...post_training.quantization_job import QuantizationJob
 
 __all__ = ["PrepareForFp4InferenceListResponse"]
 

@@ -9,10 +9,7 @@ import pytest
 
 from together import Together, AsyncTogether
 from tests.utils import assert_matches_type
-from together.types.beta.rl import (
-    Session,
-    SessionsListResponse,
-)
+from together.types.post_training import Session, SessionsListResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 

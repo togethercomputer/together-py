@@ -6,8 +6,8 @@ from typing import Iterable
 from typing_extensions import Required, Annotated, TypedDict
 
 from ...._utils import PropertyInfo
-from .sampling_params import SamplingParams
-from .model_input_param import ModelInput
+from ...post_training.sampling_params import SamplingParams
+from ...post_training.model_input_param import ModelInput
 
 __all__ = ["OperationSampleParams"]
 

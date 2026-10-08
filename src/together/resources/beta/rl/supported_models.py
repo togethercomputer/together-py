@@ -14,7 +14,7 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.rl.rl_supported_models import RlSupportedModels
+from ....types.post_training.rl_supported_models import RlSupportedModels
 
 __all__ = ["SupportedModelsResource", "AsyncSupportedModelsResource"]
 

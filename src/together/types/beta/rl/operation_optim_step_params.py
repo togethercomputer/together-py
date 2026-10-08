@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing_extensions import Required, Annotated, TypedDict
 
 from ...._utils import PropertyInfo
-from .adam_params import AdamParams
-from .muon_params import MuonParams
+from ...post_training.adam_params import AdamParams
+from ...post_training.muon_params import MuonParams
 
 __all__ = ["OperationOptimStepParams"]
 

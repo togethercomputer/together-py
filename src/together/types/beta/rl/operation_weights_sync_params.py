@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing_extensions import Required, Annotated, TypedDict
 
 from ...._utils import PropertyInfo
-from .weight_sync_type import WeightSyncType
+from ...post_training.weight_sync_type import WeightSyncType
 
 __all__ = ["OperationWeightsSyncParams"]
 

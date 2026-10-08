@@ -6,9 +6,9 @@ from typing import Dict, Iterable
 from typing_extensions import Required, Annotated, TypedDict
 
 from ...._utils import PropertyInfo
-from .loss_config_param import LossConfig
-from .model_input_param import ModelInput
-from .tensor_data_param import TensorDataParam
+from ...post_training.loss_config_param import LossConfig
+from ...post_training.model_input_param import ModelInput
+from ...post_training.tensor_data_param import TensorDataParam
 
 __all__ = ["OperationForwardBackwardParams", "Sample"]
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .checkpoint_variant import CheckpointVariant
+from ...post_training.checkpoint_variant import CheckpointVariant
 
 __all__ = ["CheckpointDownloadParams"]
 

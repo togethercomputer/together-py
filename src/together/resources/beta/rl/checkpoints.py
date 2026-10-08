@@ -17,11 +17,12 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.rl import CheckpointVariant, checkpoint_list_params, checkpoint_download_params
-from ....types.beta.rl.checkpoint import Checkpoint
-from ....types.beta.rl.checkpoint_variant import CheckpointVariant
-from ....types.beta.rl.checkpoints_list_response import CheckpointsListResponse
-from ....types.beta.rl.checkpoint_download_response import CheckpointDownloadResponse
+from ....types.beta.rl import checkpoint_list_params, checkpoint_download_params
+from ....types.post_training import CheckpointVariant
+from ....types.post_training.checkpoint import Checkpoint
+from ....types.post_training.checkpoint_variant import CheckpointVariant
+from ....types.post_training.checkpoints_list_response import CheckpointsListResponse
+from ....types.post_training.checkpoint_download_response import CheckpointDownloadResponse
 
 __all__ = ["CheckpointsResource", "AsyncCheckpointsResource"]
 

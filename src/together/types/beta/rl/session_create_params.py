@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing_extensions import Required, TypedDict
 
-from .lora_config_param import LoraConfigParam
-from .session_metadata_param import SessionMetadataParam
+from ...post_training.lora_config_param import LoraConfigParam
+from ...post_training.session_metadata_param import SessionMetadataParam
 
 __all__ = ["SessionCreateParams"]
 

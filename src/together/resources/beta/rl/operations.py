@@ -18,30 +18,26 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.rl import (
-    AdamParams,
-    LossConfig,
-    MuonParams,
-    SamplingParams,
-    WeightSyncType,
     operation_sample_params,
     operation_optim_step_params,
     operation_weights_sync_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
-from ....types.beta.rl.adam_params import AdamParams
-from ....types.beta.rl.muon_params import MuonParams
-from ....types.beta.rl.sampling_params import SamplingParams
-from ....types.beta.rl.sample_operation import SampleOperation
-from ....types.beta.rl.weight_sync_type import WeightSyncType
-from ....types.beta.rl.loss_config_param import LossConfig
-from ....types.beta.rl.model_input_param import ModelInput
-from ....types.beta.rl.optim_step_operation import OptimStepOperation
-from ....types.beta.rl.weights_sync_operation import WeightsSyncOperation
-from ....types.beta.rl.forward_backward_operation import ForwardBackwardOperation
-from ....types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
-from ....types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
-from ....types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
+from ....types.post_training import AdamParams, LossConfig, MuonParams, SamplingParams, WeightSyncType
+from ....types.post_training.adam_params import AdamParams
+from ....types.post_training.muon_params import MuonParams
+from ....types.post_training.sampling_params import SamplingParams
+from ....types.post_training.sample_operation import SampleOperation
+from ....types.post_training.weight_sync_type import WeightSyncType
+from ....types.post_training.loss_config_param import LossConfig
+from ....types.post_training.model_input_param import ModelInput
+from ....types.post_training.optim_step_operation import OptimStepOperation
+from ....types.post_training.weights_sync_operation import WeightsSyncOperation
+from ....types.post_training.forward_backward_operation import ForwardBackwardOperation
+from ....types.post_training.training_checkpoint_operation import TrainingCheckpointOperation
+from ....types.post_training.inference_checkpoint_operation import InferenceCheckpointOperation
+from ....types.post_training.custom_forward_backward_operation import CustomForwardBackwardOperation
 
 __all__ = ["OperationsResource", "AsyncOperationsResource"]
 

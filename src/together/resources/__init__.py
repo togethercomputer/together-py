@@ -128,6 +128,14 @@ from .fine_tuning import (
     FineTuningResourceWithStreamingResponse,
     AsyncFineTuningResourceWithStreamingResponse,
 )
+from .post_training import (
+    PostTrainingResource,
+    AsyncPostTrainingResource,
+    PostTrainingResourceWithRawResponse,
+    AsyncPostTrainingResourceWithRawResponse,
+    PostTrainingResourceWithStreamingResponse,
+    AsyncPostTrainingResourceWithStreamingResponse,
+)
 from .code_interpreter import (
     CodeInterpreterResource,
     AsyncCodeInterpreterResource,
@@ -144,6 +152,12 @@ __all__ = [
     "AsyncBetaResourceWithRawResponse",
     "BetaResourceWithStreamingResponse",
     "AsyncBetaResourceWithStreamingResponse",
+    "PostTrainingResource",
+    "AsyncPostTrainingResource",
+    "PostTrainingResourceWithRawResponse",
+    "AsyncPostTrainingResourceWithRawResponse",
+    "PostTrainingResourceWithStreamingResponse",
+    "AsyncPostTrainingResourceWithStreamingResponse",
     "ClustersResource",
     "AsyncClustersResource",
     "ClustersResourceWithRawResponse",

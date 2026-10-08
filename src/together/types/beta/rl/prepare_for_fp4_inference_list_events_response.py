@@ -4,7 +4,7 @@ from typing import List
 from typing_extensions import Literal
 
 from ...._models import BaseModel
-from .quantization_event import QuantizationEvent
+from ...post_training.quantization_event import QuantizationEvent
 
 __all__ = ["PrepareForFp4InferenceListEventsResponse"]
 

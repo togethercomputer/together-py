@@ -18,15 +18,11 @@ from ...._response import (
     async_to_streamed_response_wrapper,
 )
 from ...._base_client import make_request_options
-from ....types.beta.rl import (
-    session_list_params,
-    session_create_params,
-    session_update_params,
-)
-from ....types.beta.rl.session import Session
-from ....types.beta.rl.lora_config_param import LoraConfigParam
-from ....types.beta.rl.session_metadata_param import SessionMetadataParam
-from ....types.beta.rl.sessions_list_response import SessionsListResponse
+from ....types.beta.rl import session_list_params, session_create_params, session_update_params
+from ....types.post_training.session import Session
+from ....types.post_training.lora_config_param import LoraConfigParam
+from ....types.post_training.session_metadata_param import SessionMetadataParam
+from ....types.post_training.sessions_list_response import SessionsListResponse
 
 __all__ = ["SessionsResource", "AsyncSessionsResource"]
 

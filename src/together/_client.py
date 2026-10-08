@@ -66,6 +66,7 @@ if TYPE_CHECKING:
         embeddings,
         completions,
         fine_tuning,
+        post_training,
         code_interpreter,
     )
     from .resources.evals import EvalsResource, AsyncEvalsResource
@@ -84,6 +85,7 @@ if TYPE_CHECKING:
     from .resources.models.models import ModelsResource, AsyncModelsResource
     from .resources.clusters.clusters import ClustersResource, AsyncClustersResource
     from .resources.endpoints.endpoints import EndpointsResource, AsyncEndpointsResource
+    from .resources.post_training.post_training import PostTrainingResource, AsyncPostTrainingResource
     from .resources.code_interpreter.code_interpreter import CodeInterpreterResource, AsyncCodeInterpreterResource
 
 __all__ = [
@@ -180,6 +182,12 @@ class Together(SyncAPIClient):
         from .resources.beta import BetaResource
 
         return BetaResource(self)
+
+    @cached_property
+    def post_training(self) -> PostTrainingResource:
+        from .resources.post_training import PostTrainingResource
+
+        return PostTrainingResource(self)
 
     @cached_property
     def clusters(self) -> ClustersResource:
@@ -514,6 +522,12 @@ class AsyncTogether(AsyncAPIClient):
         return AsyncBetaResource(self)
 
     @cached_property
+    def post_training(self) -> AsyncPostTrainingResource:
+        from .resources.post_training import AsyncPostTrainingResource
+
+        return AsyncPostTrainingResource(self)
+
+    @cached_property
     def clusters(self) -> AsyncClustersResource:
         from .resources.clusters import AsyncClustersResource
 
@@ -779,6 +793,12 @@ class TogetherWithRawResponse:
         return BetaResourceWithRawResponse(self._client.beta)
 
     @cached_property
+    def post_training(self) -> post_training.PostTrainingResourceWithRawResponse:
+        from .resources.post_training import PostTrainingResourceWithRawResponse
+
+        return PostTrainingResourceWithRawResponse(self._client.post_training)
+
+    @cached_property
     def clusters(self) -> clusters.ClustersResourceWithRawResponse:
         from .resources.clusters import ClustersResourceWithRawResponse
 
@@ -890,6 +910,12 @@ class AsyncTogetherWithRawResponse:
         from .resources.beta import AsyncBetaResourceWithRawResponse
 
         return AsyncBetaResourceWithRawResponse(self._client.beta)
+
+    @cached_property
+    def post_training(self) -> post_training.AsyncPostTrainingResourceWithRawResponse:
+        from .resources.post_training import AsyncPostTrainingResourceWithRawResponse
+
+        return AsyncPostTrainingResourceWithRawResponse(self._client.post_training)
 
     @cached_property
     def clusters(self) -> clusters.AsyncClustersResourceWithRawResponse:
@@ -1005,6 +1031,12 @@ class TogetherWithStreamedResponse:
         return BetaResourceWithStreamingResponse(self._client.beta)
 
     @cached_property
+    def post_training(self) -> post_training.PostTrainingResourceWithStreamingResponse:
+        from .resources.post_training import PostTrainingResourceWithStreamingResponse
+
+        return PostTrainingResourceWithStreamingResponse(self._client.post_training)
+
+    @cached_property
     def clusters(self) -> clusters.ClustersResourceWithStreamingResponse:
         from .resources.clusters import ClustersResourceWithStreamingResponse
 
@@ -1116,6 +1148,12 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.beta import AsyncBetaResourceWithStreamingResponse
 
         return AsyncBetaResourceWithStreamingResponse(self._client.beta)
+
+    @cached_property
+    def post_training(self) -> post_training.AsyncPostTrainingResourceWithStreamingResponse:
+        from .resources.post_training import AsyncPostTrainingResourceWithStreamingResponse
+
+        return AsyncPostTrainingResourceWithStreamingResponse(self._client.post_training)
 
     @cached_property
     def clusters(self) -> clusters.AsyncClustersResourceWithStreamingResponse:

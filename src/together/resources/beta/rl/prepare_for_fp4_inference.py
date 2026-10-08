@@ -16,8 +16,8 @@ from ...._response import (
 )
 from ...._base_client import make_request_options
 from ....types.beta.rl import prepare_for_fp4_inference_create_params, prepare_for_fp4_inference_estimate_cost_params
-from ....types.beta.rl.quantization_job import QuantizationJob
-from ....types.beta.rl.quantization_estimate import QuantizationEstimate
+from ....types.post_training.quantization_job import QuantizationJob
+from ....types.post_training.quantization_estimate import QuantizationEstimate
 from ....types.beta.rl.prepare_for_fp4_inference_list_response import PrepareForFp4InferenceListResponse
 from ....types.beta.rl.prepare_for_fp4_inference_list_events_response import PrepareForFp4InferenceListEventsResponse
 
