@@ -11,18 +11,18 @@ from together import APIError, BaseModel, NotFoundError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.beta.rl.session import Session
+from together.types.post_training.session import Session
 from together.lib.cli.utils._console import console
-from together.types.beta.rl.checkpoint import Checkpoint
+from together.types.post_training.checkpoint import Checkpoint
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.rl._display import (
+from together.lib.cli.api.training._display import (
     cell,
     print_session,
     checkpoint_kind,
     print_checkpoint,
     print_model_resource,
 )
-from together.types.beta.rl.model_resources import ModelResources
+from together.types.post_training.model_resources import ModelResources
 
 
 @dataclass
@@ -41,11 +41,11 @@ async def retrieve(
 ) -> None:
     """Retrieve a model resource, training session, or checkpoint by ID."""
     resource, session, checkpoint = await show_loading_status(
-        "Loading RL object...",
+        "Loading training object...",
         asyncio.gather(
-            _lookup(config.client.beta.rl.model_resources.retrieve(id)),
-            _lookup(config.client.beta.rl.sessions.retrieve(id)),
-            _lookup(config.client.beta.rl.checkpoints.retrieve(id)),
+            _lookup(config.client.post_training.model_resources.retrieve(id)),
+            _lookup(config.client.post_training.sessions.retrieve(id)),
+            _lookup(config.client.post_training.checkpoints.retrieve(id)),
         ),
     )
     found = _first_hit(resource, session, checkpoint)

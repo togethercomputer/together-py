@@ -40,7 +40,7 @@ from together.lib.cli.utils._help_examples import (
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
     BATCHES_HELP_EXAMPLES,
-    BETA_RL_HELP_EXAMPLES,
+    TRAINING_HELP_EXAMPLES,
     CLUSTERS_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
@@ -607,14 +607,46 @@ fine_tuning_app.command(
 )
 
 ## Training API commands
-training_app = app.command(App(name="training", help="Prepare trained models for inference"))
-_FP4 = f"{_CLI}.training.prepare_for_fp4_inference"
+training_app = app.command(
+    App(
+        name="training",
+        help="Inspect training resources and prepare models for inference",
+        help_epilogue=TRAINING_HELP_EXAMPLES,
+    )
+)
+_TRAINING = f"{_CLI}.training"
+training_app.command(
+    (f"{_TRAINING}.ls_resources:list_resources"),
+    name="ls-resources",
+    help="List model resources",
+    sort_key=1,
+)
+training_app.command(
+    (f"{_TRAINING}.ls_sessions:list_sessions"),
+    name="ls-sessions",
+    help="List training sessions",
+    sort_key=2,
+)
+training_app.command(
+    (f"{_TRAINING}.ls_checkpoints:list_checkpoints"),
+    name="ls-checkpoints",
+    help="List inference checkpoints",
+    sort_key=3,
+)
+training_app.command(
+    (f"{_TRAINING}.retrieve:retrieve"),
+    name="get",
+    help="Get a model resource, training session, or checkpoint by ID",
+    sort_key=4,
+)
+_FP4 = f"{_TRAINING}.prepare_for_fp4_inference"
 training_fp4_app = training_app.command(
     App(
         name="prepare-for-fp4-inference",
         alias="fp4",
         help="Merge fine-tuned adapters into their base model and prepare them for FP4 inference",
         help_epilogue=TRAINING_FP4_HELP_EXAMPLES,
+        sort_key=5,
     )
 )
 training_fp4_app.command(
@@ -999,39 +1031,6 @@ beta_models_app.command(
     help_epilogue=BETA_MODELS_CONFIGS_HELP_EXAMPLES,
 )
 
-### Beta RL commands
-beta_rl_app = beta_app.command(
-    App(
-        name="rl",
-        help="List and inspect RL model resources, training sessions, and checkpoints",
-        help_epilogue=BETA_RL_HELP_EXAMPLES,
-    )
-)
-beta_rl_app.command(
-    (f"{_CLI}.beta.rl.ls_resources:list_resources"),
-    name="ls-resources",
-    help="List model resources",
-    sort_key=1,
-)
-beta_rl_app.command(
-    (f"{_CLI}.beta.rl.ls_sessions:list_sessions"),
-    name="ls-sessions",
-    help="List training sessions",
-    sort_key=2,
-)
-beta_rl_app.command(
-    (f"{_CLI}.beta.rl.ls_checkpoints:list_checkpoints"),
-    name="ls-checkpoints",
-    help="List inference checkpoints",
-    sort_key=3,
-)
-beta_rl_app.command(
-    (f"{_CLI}.beta.rl.retrieve:retrieve"),
-    name="get",
-    help="Get a model resource, training session, or checkpoint by ID",
-    sort_key=4,
-)
-
 ### Jig commands
 jig_app = beta_app.command(
     App(name="jig", help="Build, deploy, and manage custom containers", help_epilogue=JIG_HELP_EXAMPLES)
@@ -1160,13 +1159,6 @@ def main() -> None:
         App(name="beta models", help="Register and manage models for dedicated inference", group=BETA_GROUP_TITLE)
     )
     app.command(App(name="beta jig", help="Container deployment", group=BETA_GROUP_TITLE))
-    app.command(
-        App(
-            name="beta rl",
-            help="List and inspect RL model resources, sessions, and checkpoints",
-            group=BETA_GROUP_TITLE,
-        )
-    )
     beta_root_app.show = False
 
     _propagate_global_param_group(app)

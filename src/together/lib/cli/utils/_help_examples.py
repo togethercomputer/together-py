@@ -749,20 +749,23 @@ CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg clusters remediations create <cluster-id> <instance-id> --mode REBOOT_VM[/primary]
 """
 
-## Beta RL commands
+## Training commands
 
-BETA_RL_HELP_EXAMPLES = """[dim]Examples:[/dim]
+TRAINING_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] List model resources:
-  [primary]tg beta rl ls-resources[/primary]
+  [primary]tg training ls-resources[/primary]
 
 [dim]-[/dim] List training sessions you created:
-  [primary]tg beta rl ls-sessions --created-by me[/primary]
+  [primary]tg training ls-sessions --created-by me[/primary]
 
 [dim]-[/dim] List inference checkpoints for one session:
-  [primary]tg beta rl ls-checkpoints --session <session-id>[/primary]
+  [primary]tg training ls-checkpoints --session <session-id>[/primary]
 
 [dim]-[/dim] Fetch a model resource, training session, or checkpoint by ID:
-  [primary]tg beta rl get <id>[/primary]
+  [primary]tg training get <id>[/primary]
+
+[dim]-[/dim] Prepare a fine-tuned adapter for FP4 inference:
+  [primary]tg training fp4 create <adapter-object-id>[/primary]
 """
 
 ## Beta > Jig commands

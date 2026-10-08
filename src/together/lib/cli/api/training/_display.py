@@ -5,12 +5,12 @@ import shlex
 from rich.markup import escape as escape_rich_markup
 
 from together.lib.utils.tools import format_datetime
-from together.types.beta.rl.session import Session
+from together.types.post_training.session import Session
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
-from together.types.beta.rl.checkpoint import Checkpoint
-from together.types.beta.rl.model_resources import ModelResources
-from together.types.beta.rl.inference_checkpoint import InferenceCheckpoint
+from together.types.post_training.checkpoint import Checkpoint
+from together.types.post_training.model_resources import ModelResources
+from together.types.post_training.inference_checkpoint import InferenceCheckpoint
 
 _STATUS_COLORS = {
     "ready": "green",
@@ -166,9 +166,13 @@ def print_session(session: Session) -> None:
 
 
 def _registered_model(checkpoint: InferenceCheckpoint) -> str:
-    if checkpoint.registration is None:
+    registration = checkpoint.registration
+    if registration is None:
         return "-"
-    return checkpoint.registration.registered_model_name
+    artifact = registration.model or registration.adapter
+    if artifact is None:
+        return "-"
+    return artifact.id
 
 
 def print_checkpoints_table(rows: list[tuple[str, InferenceCheckpoint]]) -> None:

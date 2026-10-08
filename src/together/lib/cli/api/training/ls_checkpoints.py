@@ -10,13 +10,13 @@ from rich.markup import escape as escape_rich_markup
 from together import omit
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
-from together.types.beta.rl.session import Session
+from together.types.post_training.session import Session
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.rl._params import SessionStatusName, session_status_query, require_positive_limit
-from together.lib.cli.api.beta.rl._display import shell_arg, print_next_page, print_checkpoints_table
+from together.lib.cli.api.training._params import SessionStatusName, session_status_query, require_positive_limit
+from together.lib.cli.api.training._display import shell_arg, print_next_page, print_checkpoints_table
 from together.lib.cli.utils._mock_pagination import AfterParameter
-from together.types.beta.rl.inference_checkpoint import InferenceCheckpoint
+from together.types.post_training.inference_checkpoint import InferenceCheckpoint
 
 # Inference checkpoints are stored on the training session. The checkpoints
 # list endpoint returns training checkpoints only, so this command pages
@@ -123,7 +123,7 @@ async def _collect(
     status: list[SessionStatusName] | None,
 ) -> _CheckpointPage:
     if session:
-        loaded = await config.client.beta.rl.sessions.retrieve(session)
+        loaded = await config.client.post_training.sessions.retrieve(session)
         return _slice(
             [(loaded.id, checkpoint) for checkpoint in loaded.inference_checkpoints], after=after, limit=limit
         )
@@ -139,7 +139,7 @@ async def _collect(
             truncated = True
             break
         pages += 1
-        page = await config.client.beta.rl.sessions.list(
+        page = await config.client.post_training.sessions.list(
             after=session_cursor or omit,
             limit=_SESSION_PAGE_SIZE,
             created_by=created_by or omit,
@@ -225,7 +225,7 @@ def _next_command(
     model_resources_id: str | None,
     status: list[SessionStatusName] | None,
 ) -> str:
-    parts = ["tg beta rl ls-checkpoints"]
+    parts = ["tg training ls-checkpoints"]
     if limit is not None:
         parts.append(f"--limit {limit}")
     if session:

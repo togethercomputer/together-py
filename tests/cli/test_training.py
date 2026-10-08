@@ -28,6 +28,7 @@ def _resource_body(resource_id: str = "res-1", **overrides: Any) -> dict[str, An
         "lora_enabled": True,
         "optimizer_config": {"adam": {}},
         "status": "MODEL_RESOURCES_STATUS_READY",
+        "status_details": {},
         "updated_at": "2026-01-01T01:00:00Z",
     }
     body.update(overrides)
@@ -40,8 +41,7 @@ def _inference_checkpoint(checkpoint_id: str = "ckpt-inf-1", *, step: int = 4) -
         "created_at": "2026-01-02T00:00:00Z",
         "step": step,
         "registration": {
-            "model_name": "acme/rl-model",
-            "registered_at": "2026-01-02T00:01:00Z",
+            "model": {"id": "ml_model", "revision_id": "rev-1"},
         },
     }
 
@@ -111,10 +111,10 @@ def _mock_get_misses(respx_mock: MockRouter, object_id: str, *, hit: str) -> Non
         respx_mock.get(path).mock(return_value=_not_found())
 
 
-class TestBetaRlHelp:
+class TestTrainingHelp:
     @pytest.mark.usefixtures("plain_cli_help")
-    def test_rl_help_lists_commands(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "rl", "--help"])
+    def test_training_help_lists_commands(self, cli_runner: CliRunner) -> None:
+        result = cli_runner.invoke(["training", "--help"])
 
         assert result.exit_code == 0, result.output
         assert "ls-resources" in result.output
@@ -122,16 +122,17 @@ class TestBetaRlHelp:
         assert "ls-checkpoints" in result.output
         assert "List inference checkpoints" in result.output
         assert "get" in result.output
+        assert "prepare-for-fp4-inference" in result.output
 
     @pytest.mark.usefixtures("plain_cli_help")
-    def test_beta_help_includes_rl(self, cli_runner: CliRunner) -> None:
+    def test_beta_help_omits_training_commands(self, cli_runner: CliRunner) -> None:
         result = cli_runner.invoke(["beta", "--help"])
 
         assert result.exit_code == 0, result.output
-        assert "List and inspect RL" in result.output
+        assert "ls-resources" not in result.output
 
 
-class TestBetaRlResources:
+class TestTrainingResources:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_json_and_filters(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/rl/model-resources").mock(
@@ -143,8 +144,7 @@ class TestBetaRlResources:
 
         result = cli_runner.invoke(
             [
-                "beta",
-                "rl",
+                "training",
                 "ls-resources",
                 "--limit",
                 "2",
@@ -182,31 +182,31 @@ class TestBetaRlResources:
             )
         )
 
-        result = cli_runner.invoke(["beta", "rl", "ls-resources"])
+        result = cli_runner.invoke(["training", "ls-resources"])
 
         assert result.exit_code == 0, result.output
         assert "res-1" in result.output
         assert "Qwen/Qwen3-0.6B" in result.output
         assert "ready" in result.output
-        assert "tg beta rl ls-resources --after res-1" in result.output
+        assert "tg training ls-resources --after res-1" in result.output
 
     @pytest.mark.respx(base_url=base_url)
     def test_ls_resources_empty(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/rl/model-resources").mock(return_value=httpx.Response(200, json={"data": [], "meta": _meta()}))
 
-        result = cli_runner.invoke(["beta", "rl", "ls-resources"])
+        result = cli_runner.invoke(["training", "ls-resources"])
 
         assert result.exit_code == 0, result.output
         assert "No model resources found" in result.output
 
     def test_ls_resources_rejects_non_positive_limit(self, cli_runner: CliRunner) -> None:
-        result = cli_runner.invoke(["beta", "rl", "ls-resources", "--limit", "0"])
+        result = cli_runner.invoke(["training", "ls-resources", "--limit", "0"])
 
         assert result.exit_code == 1
         assert "--limit must be at least 1" in result.output
 
 
-class TestBetaRlSessions:
+class TestTrainingSessions:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_sessions_filters_and_json(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         route = respx_mock.get("/rl/training-sessions").mock(
@@ -218,8 +218,7 @@ class TestBetaRlSessions:
 
         result = cli_runner.invoke(
             [
-                "beta",
-                "rl",
+                "training",
                 "ls-sessions",
                 "--resources",
                 "res-1",
@@ -252,16 +251,16 @@ class TestBetaRlSessions:
             )
         )
 
-        result = cli_runner.invoke(["beta", "rl", "ls-sessions", "--status", "running"])
+        result = cli_runner.invoke(["training", "ls-sessions", "--status", "running"])
 
         assert result.exit_code == 0, result.output
         assert "sess-1" in result.output
         assert "run-a" in result.output
         assert "running" in result.output
-        assert "tg beta rl ls-sessions --status running --after sess-1" in result.output
+        assert "tg training ls-sessions --status running --after sess-1" in result.output
 
 
-class TestBetaRlCheckpoints:
+class TestTrainingCheckpoints:
     @pytest.mark.respx(base_url=base_url)
     def test_ls_checkpoints_flattens_inference_checkpoints_across_session_pages(
         self, respx_mock: MockRouter, cli_runner: CliRunner
@@ -292,7 +291,7 @@ class TestBetaRlCheckpoints:
 
         route = respx_mock.get("/rl/training-sessions").mock(side_effect=respond)
 
-        result = cli_runner.invoke(["beta", "rl", "ls-checkpoints", "--json"])
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--json"])
 
         assert result.exit_code == 0, result.output
         assert route.call_count == 2
@@ -300,7 +299,7 @@ class TestBetaRlCheckpoints:
         payload = json.loads(result.out_out)
         assert [item["id"] for item in payload["data"]] == ["ckpt-inf-2"]
         assert payload["data"][0]["session_id"] == "sess-2"
-        assert payload["data"][0]["registration"]["model_name"] == "acme/rl-model"
+        assert payload["data"][0]["registration"]["model"]["id"] == "ml_model"
         assert "ckpt-train-1" not in result.out_out
 
     @pytest.mark.respx(base_url=base_url)
@@ -319,7 +318,7 @@ class TestBetaRlCheckpoints:
             )
         )
 
-        result = cli_runner.invoke(["beta", "rl", "ls-checkpoints", "--session", "sess-1", "--limit", "1", "--json"])
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--session", "sess-1", "--limit", "1", "--json"])
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.out_out)
@@ -343,7 +342,7 @@ class TestBetaRlCheckpoints:
             )
         )
 
-        result = cli_runner.invoke(["beta", "rl", "ls-checkpoints", "--session-id", "sess-1", "--after", "ckpt-a"])
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--session-id", "sess-1", "--after", "ckpt-a"])
 
         assert result.exit_code == 0, result.output
         assert "ckpt-b" in result.output
@@ -355,7 +354,7 @@ class TestBetaRlCheckpoints:
             return_value=httpx.Response(200, json={"data": [_session_body()], "meta": _meta()})
         )
 
-        result = cli_runner.invoke(["beta", "rl", "ls-checkpoints", "--after", "missing-ckpt"])
+        result = cli_runner.invoke(["training", "ls-checkpoints", "--after", "missing-ckpt"])
 
         assert result.exit_code == 0, result.output
         assert "missing-ckpt" in result.output
@@ -363,7 +362,7 @@ class TestBetaRlCheckpoints:
         assert "No inference checkpoints found" in result.output
 
 
-class TestBetaRlGet:
+class TestTrainingGet:
     @pytest.mark.respx(base_url=base_url)
     def test_get_model_resource(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         respx_mock.get("/rl/model-resources/res-1").mock(
@@ -371,7 +370,7 @@ class TestBetaRlGet:
         )
         _mock_get_misses(respx_mock, "res-1", hit="resource")
 
-        result = cli_runner.invoke(["beta", "rl", "get", "res-1", "--json"])
+        result = cli_runner.invoke(["training", "get", "res-1", "--json"])
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.out_out)
@@ -384,7 +383,7 @@ class TestBetaRlGet:
         respx_mock.get("/rl/training-sessions/sess-1").mock(return_value=httpx.Response(200, json=_session_body()))
         _mock_get_misses(respx_mock, "sess-1", hit="session")
 
-        result = cli_runner.invoke(["beta", "rl", "get", "sess-1"])
+        result = cli_runner.invoke(["training", "get", "sess-1"])
 
         assert result.exit_code == 0, result.output
         assert "Training session" in result.output
@@ -396,7 +395,7 @@ class TestBetaRlGet:
         respx_mock.get("/rl/checkpoints/ckpt-inf-1").mock(return_value=httpx.Response(200, json=_checkpoint_body()))
         _mock_get_misses(respx_mock, "ckpt-inf-1", hit="checkpoint")
 
-        result = cli_runner.invoke(["beta", "rl", "get", "ckpt-inf-1", "--json"])
+        result = cli_runner.invoke(["training", "get", "ckpt-inf-1", "--json"])
 
         assert result.exit_code == 0, result.output
         payload = json.loads(result.out_out)
@@ -415,7 +414,7 @@ class TestBetaRlGet:
         )
         _mock_get_misses(respx_mock, "ckpt-train-1", hit="checkpoint")
 
-        result = cli_runner.invoke(["beta", "rl", "get", "ckpt-train-1"])
+        result = cli_runner.invoke(["training", "get", "ckpt-train-1"])
 
         assert result.exit_code == 0, result.output
         assert "Training checkpoint" in result.output
@@ -434,7 +433,7 @@ class TestBetaRlGet:
         respx_mock.get("/rl/training-sessions/sess-1").mock(return_value=httpx.Response(200, json=_session_body()))
         respx_mock.get("/rl/checkpoints/sess-1").mock(return_value=_not_found())
 
-        result = cli_runner.invoke(["beta", "rl", "get", "sess-1", "--json"])
+        result = cli_runner.invoke(["training", "get", "sess-1", "--json"])
 
         assert result.exit_code == 0, result.output
         assert json.loads(result.out_out)["kind"] == "training_session"
@@ -443,7 +442,7 @@ class TestBetaRlGet:
     def test_get_missing_id(self, respx_mock: MockRouter, cli_runner: CliRunner) -> None:
         _mock_get_misses(respx_mock, "missing", hit="")
 
-        result = cli_runner.invoke(["beta", "rl", "get", "missing", "--json"])
+        result = cli_runner.invoke(["training", "get", "missing", "--json"])
 
         assert result.exit_code == 1
         payload = json.loads(result.out_out)
@@ -460,7 +459,7 @@ class TestBetaRlGet:
         respx_mock.get("/rl/training-sessions/missing").mock(return_value=_not_found())
         respx_mock.get("/rl/checkpoints/missing").mock(return_value=_not_found())
 
-        result = cli_runner.invoke(["beta", "rl", "get", "missing"])
+        result = cli_runner.invoke(["training", "get", "missing"])
 
         assert result.exit_code == 1
         assert "model resources unavailable" in result.output

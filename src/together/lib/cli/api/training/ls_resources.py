@@ -10,8 +10,8 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.loader import show_loading_status
-from together.lib.cli.api.beta.rl._params import ResourceStatusName, resource_status_query, require_positive_limit
-from together.lib.cli.api.beta.rl._display import shell_arg, page_cursor, print_next_page, print_resources_table
+from together.lib.cli.api.training._params import ResourceStatusName, resource_status_query, require_positive_limit
+from together.lib.cli.api.training._display import shell_arg, page_cursor, print_next_page, print_resources_table
 from together.lib.cli.utils._mock_pagination import AfterParameter
 
 
@@ -33,7 +33,7 @@ async def list_resources(
     require_positive_limit(limit)
     response = await show_loading_status(
         "Loading model resources...",
-        config.client.beta.rl.model_resources.list(
+        config.client.post_training.model_resources.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
             created_by=created_by or omit,
@@ -58,7 +58,7 @@ def _next_command(
     created_by: str | None,
     status: list[ResourceStatusName] | None,
 ) -> str:
-    parts = ["tg beta rl ls-resources"]
+    parts = ["tg training ls-resources"]
     if limit is not None:
         parts.append(f"--limit {limit}")
     if created_by:
