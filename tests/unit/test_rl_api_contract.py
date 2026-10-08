@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import asyncio
 import inspect
-from typing import Any, Optional, cast, get_origin, get_type_hints
+from typing import Any, Optional, get_origin, get_type_hints
 from dataclasses import field, dataclass
 from typing_extensions import Required
 
@@ -112,8 +112,6 @@ async def test_routing_key_round_trip(
 ) -> None:
     transport = _RLTransport()
     client = AsyncTogether(api_key="test-key", http_client=httpx.AsyncClient(transport=httpx.MockTransport(transport)))
-    # Resources still live under beta until the GA client move.
-    cast(Any, client).post_training = client.beta.rl
     session = SessionClient("session", _client=client)
     prompt = ModelInput(chunks=[{"encoded_text": {"tokens": list(range(20))}}])
     sample_kwargs: dict[str, Any] = {

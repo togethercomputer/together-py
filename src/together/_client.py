@@ -75,6 +75,14 @@ if TYPE_CHECKING:
     from .resources.batches import BatchesResource, AsyncBatchesResource
     from .resources.beta.beta import BetaResource, AsyncBetaResource
     from .resources.chat.chat import ChatResource, AsyncChatResource
+    from .resources.beta.rl.rl import (
+        RlResource,
+        AsyncRlResource,
+        RlResourceWithRawResponse,
+        AsyncRlResourceWithRawResponse,
+        RlResourceWithStreamingResponse,
+        AsyncRlResourceWithStreamingResponse,
+    )
     from .resources.embeddings import EmbeddingsResource, AsyncEmbeddingsResource
     from .resources.audio.audio import AudioResource, AsyncAudioResource
     from .resources.completions import CompletionsResource, AsyncCompletionsResource
@@ -178,6 +186,11 @@ class Together(SyncAPIClient):
         from .resources.beta import BetaResource
 
         return BetaResource(self)
+
+    # Handwritten (not generated): stable namespace for resources Stainless still emits under beta.rl.
+    @cached_property
+    def training(self) -> RlResource:
+        return self.beta.rl
 
     @cached_property
     def clusters(self) -> ClustersResource:
@@ -505,6 +518,11 @@ class AsyncTogether(AsyncAPIClient):
 
         return AsyncBetaResource(self)
 
+    # Handwritten (not generated): stable namespace for resources Stainless still emits under beta.rl.
+    @cached_property
+    def training(self) -> AsyncRlResource:
+        return self.beta.rl
+
     @cached_property
     def clusters(self) -> AsyncClustersResource:
         from .resources.clusters import AsyncClustersResource
@@ -764,6 +782,11 @@ class TogetherWithRawResponse:
 
         return BetaResourceWithRawResponse(self._client.beta)
 
+    # Handwritten (not generated): same object as with_raw_response.beta.rl.
+    @cached_property
+    def training(self) -> RlResourceWithRawResponse:
+        return self.beta.rl
+
     @cached_property
     def clusters(self) -> clusters.ClustersResourceWithRawResponse:
         from .resources.clusters import ClustersResourceWithRawResponse
@@ -870,6 +893,11 @@ class AsyncTogetherWithRawResponse:
         from .resources.beta import AsyncBetaResourceWithRawResponse
 
         return AsyncBetaResourceWithRawResponse(self._client.beta)
+
+    # Handwritten (not generated): same object as with_raw_response.beta.rl.
+    @cached_property
+    def training(self) -> AsyncRlResourceWithRawResponse:
+        return self.beta.rl
 
     @cached_property
     def clusters(self) -> clusters.AsyncClustersResourceWithRawResponse:
@@ -978,6 +1006,11 @@ class TogetherWithStreamedResponse:
 
         return BetaResourceWithStreamingResponse(self._client.beta)
 
+    # Handwritten (not generated): same object as with_streaming_response.beta.rl.
+    @cached_property
+    def training(self) -> RlResourceWithStreamingResponse:
+        return self.beta.rl
+
     @cached_property
     def clusters(self) -> clusters.ClustersResourceWithStreamingResponse:
         from .resources.clusters import ClustersResourceWithStreamingResponse
@@ -1084,6 +1117,11 @@ class AsyncTogetherWithStreamedResponse:
         from .resources.beta import AsyncBetaResourceWithStreamingResponse
 
         return AsyncBetaResourceWithStreamingResponse(self._client.beta)
+
+    # Handwritten (not generated): same object as with_streaming_response.beta.rl.
+    @cached_property
+    def training(self) -> AsyncRlResourceWithStreamingResponse:
+        return self.beta.rl
 
     @cached_property
     def clusters(self) -> clusters.AsyncClustersResourceWithStreamingResponse:

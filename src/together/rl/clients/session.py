@@ -194,8 +194,8 @@ class SessionClient:
                 http_client=DefaultAsyncHttpxClient(limits=_CLIENT_LIMITS),
             )
             try:
-                session = await client.post_training.sessions.retrieve(session_id)
-                model_resources = await client.post_training.model_resources.retrieve(session.resources_id)
+                session = await client.training.sessions.retrieve(session_id)
+                model_resources = await client.training.model_resources.retrieve(session.resources_id)
             except BaseException:
                 await client.close()
                 raise
@@ -281,7 +281,7 @@ class SessionClient:
     ) -> None:
         start = time.monotonic()
         while True:
-            current = await self._client.post_training.sessions.retrieve(self._session_id)
+            current = await self._client.training.sessions.retrieve(self._session_id)
             elapsed = time.monotonic() - start
             print(f"[session:{self._session_id}] status={current.status} elapsed={elapsed:.1f}s")  # noqa: T201
             if current.status == _RUNNING_STATUS:
@@ -297,7 +297,7 @@ class SessionClient:
 
     @on_client_loop
     async def retrieve_async(self) -> Session:
-        return await self._client.post_training.sessions.retrieve(self._session_id)
+        return await self._client.training.sessions.retrieve(self._session_id)
 
     @classmethod
     async def create_async(
@@ -324,8 +324,8 @@ class SessionClient:
             )
             session_id: str | None = None
             try:
-                model_resources = await client.post_training.model_resources.retrieve(model_resources_id)
-                session = await client.post_training.sessions.create(
+                model_resources = await client.training.model_resources.retrieve(model_resources_id)
+                session = await client.training.sessions.create(
                     model_resources_id=model_resources_id,
                     display_name=display_name if display_name is not None else omit,
                     metadata=metadata if metadata is not None else omit,
@@ -349,7 +349,7 @@ class SessionClient:
                 if session_id is not None:
                     print(f"[session:{session_id}] stopping session due to {type(exc).__name__}...")  # noqa: T201
                     try:
-                        await client.post_training.sessions.stop(session_id)
+                        await client.training.sessions.stop(session_id)
                         print(f"[session:{session_id}] stopped")  # noqa: T201
                     except Exception as cleanup_exc:
                         # Swallowed so it cannot mask exc, the failure that triggered cleanup.
@@ -368,7 +368,7 @@ class SessionClient:
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> InferenceCheckpointResult:
-        operation = await self._client.post_training.operations.create_inference_checkpoint(
+        operation = await self._client.training.operations.create_inference_checkpoint(
             self._session_id, idempotency_key=str(uuid4())
         )
         result = await self._submit_and_wait(
@@ -385,7 +385,7 @@ class SessionClient:
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> TrainingCheckpointResult:
-        operation = await self._client.post_training.operations.create_training_checkpoint(
+        operation = await self._client.training.operations.create_training_checkpoint(
             self._session_id, idempotency_key=str(uuid4())
         )
         result = await self._submit_and_wait(
@@ -400,12 +400,12 @@ class SessionClient:
         return await self._loop.run_teardown_async(self._stop_remote())
 
     async def _stop_remote(self) -> Session:
-        output = await self._client.post_training.sessions.stop(self._session_id)
+        output = await self._client.training.sessions.stop(self._session_id)
         if output.status not in _INACTIVE_STATUSES:
             start = time.monotonic()
             while True:
                 try:
-                    current = await self._client.post_training.sessions.retrieve(self._session_id)
+                    current = await self._client.training.sessions.retrieve(self._session_id)
                 except NotFoundError:
                     # Already gone. Transient retrieve failures are retried by the
                     # HTTP client (max_retries); remaining errors still raise.

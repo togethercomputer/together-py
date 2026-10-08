@@ -33,7 +33,7 @@ async def list_resources(
     require_positive_limit(limit)
     response = await show_loading_status(
         "Loading model resources...",
-        config.client.beta.rl.model_resources.list(
+        config.client.training.model_resources.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
             created_by=created_by or omit,

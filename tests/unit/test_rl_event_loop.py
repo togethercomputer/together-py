@@ -650,7 +650,7 @@ def test_detach_then_stop_warns_that_the_remote_is_still_running(
     with caplog.at_level(logging.WARNING, logger="together"):
         assert session.stop() is None
 
-    assert client.post_training.sessions.last_stop is None
+    assert client.training.sessions.last_stop is None
     assert "keeps running" in caplog.text
 
 
@@ -701,7 +701,7 @@ def test_context_manager_exit_after_a_detach_is_quiet(
 
     assert handle._loop.closed
     assert caplog.text == ""
-    assert getattr(client.post_training, remote_name).last_stop is None
+    assert getattr(client.training, remote_name).last_stop is None
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="fork is Unix-only")

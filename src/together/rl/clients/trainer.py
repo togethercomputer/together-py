@@ -80,7 +80,7 @@ async def _submit_forward_backward(
         expected_type=OperationForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.post_training.operations.forward_backward(
+    return await session._client.training.operations.forward_backward(
         session._session_id,
         idempotency_key=str(uuid4()),
         loss=proto_loss,
@@ -109,7 +109,7 @@ async def _submit_custom_forward_backward(
         expected_type=OperationCustomForwardBackwardParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.post_training.operations.custom_forward_backward(
+    return await session._client.training.operations.custom_forward_backward(
         session._session_id,
         idempotency_key=str(uuid4()),
         samples=cast("list[Any]", body["samples"]),
@@ -292,7 +292,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> OptimStepResult:
-        operation = await self._session._client.post_training.operations.optim_step(
+        operation = await self._session._client.training.operations.optim_step(
             self._session._session_id,
             idempotency_key=str(uuid4()),
             adam_params=adam_params if adam_params is not None else omit,
@@ -328,7 +328,7 @@ class Trainer:
         timeout: float | None = DEFAULT_OPERATION_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
     ) -> WeightsSyncResult:
-        operation = await self._session._client.post_training.operations.weights_sync(
+        operation = await self._session._client.training.operations.weights_sync(
             self._session._session_id,
             idempotency_key=str(uuid4()),
             weight_sync_type=weight_sync_type,

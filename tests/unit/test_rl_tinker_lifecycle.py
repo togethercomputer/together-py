@@ -339,7 +339,7 @@ def test_async_close_releases_a_session_built_on_the_blocking_path() -> None:
     """aclose has to reach the session's own gate, not just drop the handles it holds.
     Mocked handles cannot show this — only a real session owns a gate."""
     client = SimpleNamespace(
-        post_training=SimpleNamespace(
+        training=SimpleNamespace(
             sessions=SimpleNamespace(
                 stop=AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
             )
@@ -385,7 +385,7 @@ def test_exit_hook_releases_an_await_built_client() -> None:
     """Every handle shares the process loop, so how a session was built no longer decides
     whether the blocking exit hook can release it."""
     client = SimpleNamespace(
-        post_training=SimpleNamespace(
+        training=SimpleNamespace(
             sessions=SimpleNamespace(
                 stop=AsyncMock(return_value=SimpleNamespace(status="TRAINING_SESSION_STATUS_STOPPED"))
             )
@@ -402,7 +402,7 @@ def test_exit_hook_releases_an_await_built_client() -> None:
     lifecycle.close(automatic=True)
 
     assert lifecycle.closed is True
-    client.post_training.sessions.stop.assert_awaited()
+    client.training.sessions.stop.assert_awaited()
 
 
 _CHECKPOINT_UUID = "123e4567-e89b-12d3-a456-426614174000"
@@ -459,7 +459,7 @@ def test_create_training_client_from_state_describes_then_starts(
 
 def test_describe_rejects_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     client = MagicMock()
-    client.post_training.checkpoints.retrieve.return_value = _training_checkpoint(kind="CHECKPOINT_TYPE_INFERENCE")
+    client.training.checkpoints.retrieve.return_value = _training_checkpoint(kind="CHECKPOINT_TYPE_INFERENCE")
     client.__enter__.return_value = client
     monkeypatch.setattr(_service, "Together", lambda **_: client)
 

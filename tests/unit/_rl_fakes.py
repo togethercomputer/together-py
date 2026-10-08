@@ -87,7 +87,7 @@ class FakeRL:
 
 class FakeClient:
     def __init__(self) -> None:
-        self.post_training = FakeRL()
+        self.training = FakeRL()
         self.closed = False
         self.base_url = httpx.URL("https://api.together.xyz/v1/")
         self.api_key = "test-api-key"

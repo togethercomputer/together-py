@@ -62,36 +62,36 @@ async def async_retrieve_operation(
     operation: OperationResponse,
 ) -> OperationResponse:
     if isinstance(operation, ForwardBackwardOperation):
-        return await client.post_training.operations.retrieve_forward_backward(
+        return await client.training.operations.retrieve_forward_backward(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, CustomForwardBackwardOperation):
-        return await client.post_training.operations.retrieve_custom_forward_backward(
+        return await client.training.operations.retrieve_custom_forward_backward(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, OptimStepOperation):
-        return await client.post_training.operations.retrieve_optim_step(
+        return await client.training.operations.retrieve_optim_step(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, WeightsSyncOperation):
-        return await client.post_training.operations.retrieve_weights_sync(
+        return await client.training.operations.retrieve_weights_sync(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, SampleOperation):
-        return await client.post_training.operations.retrieve_sample(
+        return await client.training.operations.retrieve_sample(
             operation_id=operation.id,
             session_id=session_id,
         )
     if isinstance(operation, InferenceCheckpointOperation):
-        return await client.post_training.operations.retrieve_inference_checkpoint(
+        return await client.training.operations.retrieve_inference_checkpoint(
             operation_id=operation.id,
             session_id=session_id,
         )
-    return await client.post_training.operations.retrieve_training_checkpoint(
+    return await client.training.operations.retrieve_training_checkpoint(
         operation_id=operation.id,
         session_id=session_id,
     )

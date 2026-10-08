@@ -258,7 +258,7 @@ def _describe_training_checkpoint(
     base_url: str | None,
 ) -> Checkpoint:
     with Together(api_key=api_key, base_url=base_url) as client:
-        checkpoint = client.post_training.checkpoints.retrieve(checkpoint_id)
+        checkpoint = client.training.checkpoints.retrieve(checkpoint_id)
     if checkpoint.type != "CHECKPOINT_TYPE_TRAINING":
         raise ValueError(
             f"Checkpoint {checkpoint_id!r} has type {checkpoint.type!r}; "

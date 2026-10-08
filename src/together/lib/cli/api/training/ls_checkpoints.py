@@ -58,7 +58,7 @@ async def list_checkpoints(
     require_positive_limit(limit)
     response = await show_loading_status(
         "Loading checkpoints...",
-        config.client.beta.rl.checkpoints.list(
+        config.client.training.checkpoints.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
             session_id=session or omit,

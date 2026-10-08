@@ -374,7 +374,7 @@ class TrainingClient:
     async def optim_step_async(self, adam_params: types.AdamParams) -> OperationFuture[types.OptimStepResponse]:
         session = self._session
         operation = await session.run_async(
-            session._client.post_training.operations.optim_step(
+            session._client.training.operations.optim_step(
                 session.session_id,
                 idempotency_key=str(uuid4()),
                 adam_params=_to_adam_params(adam_params),
@@ -405,7 +405,9 @@ class TrainingClient:
     async def _submit_save_state_async(self) -> OperationFuture[types.SaveWeightsResponse]:
         session = self._session
         operation = await session.run_async(
-            session._client.post_training.operations.create_training_checkpoint(session.session_id, idempotency_key=str(uuid4()))
+            session._client.training.operations.create_training_checkpoint(
+                session.session_id, idempotency_key=str(uuid4())
+            )
         )
         return OperationFuture(session, operation, partial(_resolve_save_state, session=session))
 
@@ -430,7 +432,9 @@ class TrainingClient:
     async def _submit_save_weights_for_sampler_async(self) -> OperationFuture[types.SaveWeightsForSamplerResponse]:
         session = self._session
         operation = await session.run_async(
-            session._client.post_training.operations.create_inference_checkpoint(session.session_id, idempotency_key=str(uuid4()))
+            session._client.training.operations.create_inference_checkpoint(
+                session.session_id, idempotency_key=str(uuid4())
+            )
         )
         return OperationFuture(session, operation, partial(_resolve_save_weights_for_sampler, session=session))
 

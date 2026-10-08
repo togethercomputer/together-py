@@ -143,7 +143,7 @@ class ModelResourcesClient:
         async def attach_on_process_loop() -> ModelResourcesClient:
             client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
             try:
-                await client.post_training.model_resources.retrieve(model_resources_id)
+                await client.training.model_resources.retrieve(model_resources_id)
             except BaseException:
                 await client.close()
                 raise
@@ -169,7 +169,7 @@ class ModelResourcesClient:
             client = AsyncTogether(api_key=api_key, base_url=base_url, timeout=_PROVISIONING_TIMEOUT)
             model_resources_id: str | None = None
             try:
-                model_resources = await client.post_training.model_resources.create(
+                model_resources = await client.training.model_resources.create(
                     base_model=base_model,
                     base_weights_ref=base_weights_ref if base_weights_ref is not None else omit,
                     lora_enabled=lora_enabled,
@@ -187,7 +187,7 @@ class ModelResourcesClient:
                     tag = f"[model-resources:{model_resources_id}]"
                     print(f"{tag} stopping model resources due to {type(exc).__name__}...")  # noqa: T201
                     try:
-                        await client.post_training.model_resources.stop(model_resources_id)
+                        await client.training.model_resources.stop(model_resources_id)
                         print(f"{tag} stopped")  # noqa: T201
                     except Exception as cleanup_exc:
                         # Swallowed so it cannot mask exc, the failure that triggered cleanup.
@@ -200,7 +200,7 @@ class ModelResourcesClient:
     async def _wait_for_ready_async(self, *, timeout: float | None, interval: float) -> None:
         start = time.monotonic()
         while True:
-            current = await self._client.post_training.model_resources.retrieve(self._model_resources_id)
+            current = await self._client.training.model_resources.retrieve(self._model_resources_id)
             elapsed = time.monotonic() - start
             tag = f"[model-resources:{self._model_resources_id}]"
             print(f"{tag} status={current.status} elapsed={elapsed:.1f}s")  # noqa: T201
@@ -220,7 +220,7 @@ class ModelResourcesClient:
 
     @on_client_loop
     async def retrieve_async(self) -> ModelResources:
-        return await self._client.post_training.model_resources.retrieve(self._model_resources_id)
+        return await self._client.training.model_resources.retrieve(self._model_resources_id)
 
     def create_session(
         self,
@@ -283,12 +283,14 @@ class ModelResourcesClient:
         return await self._loop.run_teardown_async(self._stop_remote(force=force))
 
     async def _stop_remote(self, *, force: bool) -> ModelResources:
-        output = await self._client.post_training.model_resources.stop(self._model_resources_id, force=force if force else omit)
+        output = await self._client.training.model_resources.stop(
+            self._model_resources_id, force=force if force else omit
+        )
         if output.status not in _TERMINAL_STATUSES:
             start = time.monotonic()
             while True:
                 try:
-                    current = await self._client.post_training.model_resources.retrieve(self._model_resources_id)
+                    current = await self._client.training.model_resources.retrieve(self._model_resources_id)
                 except NotFoundError:
                     # Already gone. Transient retrieve failures are retried by the
                     # HTTP client; remaining errors still raise.

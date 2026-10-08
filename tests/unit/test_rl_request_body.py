@@ -44,15 +44,6 @@ from together.types.beta.rl import (
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
-@pytest.fixture(autouse=True)
-def _expose_rl_namespace(request: pytest.FixtureRequest) -> None:
-    """The lib calls ``client.post_training``. Generated clients still mount RL under ``beta``."""
-    for name in ("client", "async_client"):
-        if name in request.fixturenames:
-            instance = cast(Any, request.getfixturevalue(name))
-            instance.post_training = instance.beta.rl
-
-
 LEGACY_RL_LOSS_INPUT_NAMES = frozenset(
     {
         "LossInputs",
@@ -476,7 +467,7 @@ class TestRLRequestBody:
 
     async def test_download_checkpoint_async_returns_empty_list_for_empty_data(self, tmp_path: Any) -> None:
         fake_client = SimpleNamespace(
-            post_training=SimpleNamespace(
+            training=SimpleNamespace(
                 checkpoints=SimpleNamespace(
                     download=AsyncMock(return_value=SimpleNamespace(data=[])),
                 )
@@ -495,7 +486,7 @@ class TestRLRequestBody:
         respx_mock.get("https://files.test/a.bin").mock(return_value=httpx.Response(200, content=b"a"))
         respx_mock.get("https://files.test/b.bin").mock(return_value=httpx.Response(200, content=b"bb"))
 
-        async_client.beta.rl.checkpoints.download = AsyncMock(  # type: ignore[method-assign]
+        async_client.training.checkpoints.download = AsyncMock(  # type: ignore[method-assign]
             return_value=SimpleNamespace(
                 data=[
                     SimpleNamespace(url="https://files.test/a.bin", filename="a.bin"),
@@ -517,7 +508,7 @@ def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockR
     respx_mock.get("https://files.test/a.bin").mock(return_value=httpx.Response(200, content=b"a"))
     respx_mock.get("https://files.test/b.bin").mock(return_value=httpx.Response(200, content=b"bb"))
 
-    client.beta.rl.checkpoints.download = MagicMock(  # type: ignore[method-assign]
+    client.training.checkpoints.download = MagicMock(  # type: ignore[method-assign]
         return_value=SimpleNamespace(
             data=[
                 SimpleNamespace(url="https://files.test/a.bin", filename="a.bin"),
@@ -538,7 +529,7 @@ def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockR
 @pytest.mark.parametrize("filename", ["../escape.bin", "nested/escape.bin", "/escape.bin"])
 def test_download_checkpoint_rejects_unsafe_filename(filename: str, tmp_path: Any) -> None:
     client = MagicMock()
-    client.post_training.checkpoints.download.return_value = SimpleNamespace(
+    client.training.checkpoints.download.return_value = SimpleNamespace(
         data=[SimpleNamespace(url="https://files.test/escape.bin", filename=filename)]
     )
     client.get.side_effect = AssertionError("unsafe filename must be rejected before download")

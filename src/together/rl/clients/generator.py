@@ -51,7 +51,7 @@ async def _submit_sample_batch(
         expected_type=OperationSampleParams,
     )
     extra_body = {"payload_id": large_payload_id} if large_payload_id is not None else None
-    return await session._client.post_training.operations.sample(
+    return await session._client.training.operations.sample(
         session._session_id,
         idempotency_key=str(uuid4()),
         model_inputs=cast("list[ModelInput]", body["model_inputs"]),

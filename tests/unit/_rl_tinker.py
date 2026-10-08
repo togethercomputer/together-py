@@ -47,7 +47,7 @@ def _model_resources_mock(model_resources_id: str) -> Any:
 
 def _session_with_operations(**operations: Any) -> SessionClient:
     client = SimpleNamespace(
-        post_training=SimpleNamespace(operations=SimpleNamespace(**operations)),
+        training=SimpleNamespace(operations=SimpleNamespace(**operations)),
         close=AsyncMock(),
     )
     return SessionClient("sess", _client=cast(Any, client))

@@ -37,7 +37,7 @@ async def list_sessions(
     require_positive_limit(limit)
     response = await show_loading_status(
         "Loading training sessions...",
-        config.client.beta.rl.sessions.list(
+        config.client.training.sessions.list(
             limit=limit if limit is not None else omit,
             after=after or omit,
             created_by=created_by or omit,

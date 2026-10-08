@@ -4,12 +4,10 @@ import shlex
 
 from rich.markup import escape as escape_rich_markup
 
+from together.rl import Session, Checkpoint, ModelResources
 from together.lib.utils.tools import format_datetime
-from together.types.beta.rl.session import Session
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
-from together.types.beta.rl.checkpoint import Checkpoint
-from together.types.beta.rl.model_resources import ModelResources
 
 _STATUS_COLORS = {
     "ready": "green",
