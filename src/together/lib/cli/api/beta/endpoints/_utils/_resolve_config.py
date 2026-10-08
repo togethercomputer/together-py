@@ -63,11 +63,14 @@ async def choose_config(
 
 async def prompt_for_config(configs: list[Config], *, model: str) -> Config:
     """Ask which config to deploy. A cancelled or unavailable prompt fails like ``--non-interactive``."""
-    from together.lib.cli.api.beta.models._utils import print_configs_table
     from together.lib.cli.utils._prompt import PromptParameter
+    from together.lib.cli.api.beta.models._utils import print_configs_table
 
     print_configs_table(configs, empty_message="")
-    choices = [(item.id, item.id) for item in configs if item.id]
+    choices: list[str | tuple[str, str]] = []
+    for item in configs:
+        if item.id:
+            choices.append((item.id, item.id))
     try:
         selected_id = await PromptParameter(
             message="Which config should this deployment use?",

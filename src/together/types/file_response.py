@@ -17,7 +17,7 @@ class ValidationReport(BaseModel):
 
     Present once
     validation has run; absent on files that bypassed validation
-    (non-`fine-tune` purposes) or have not yet been validated.
+    or have not yet been validated.
     """
 
     valid: bool
@@ -93,12 +93,12 @@ class FileResponse(BaseModel):
     processing_status: Optional[Literal["PENDING", "QUEUED", "RUNNING", "COMPLETED", "FAILED", "INVALID_FORMAT"]] = None
     """Lifecycle state of the file validation pipeline.
 
-    Files for non-`fine-tune` purposes skip validation.
+    Files for purposes that do not require validation skip validation.
     """
 
     validation_report: Optional[ValidationReport] = None
     """Report produced by the file validation pipeline.
 
-    Present once validation has run; absent on files that bypassed validation
-    (non-`fine-tune` purposes) or have not yet been validated.
+    Present once validation has run; absent on files that bypassed validation or
+    have not yet been validated.
     """

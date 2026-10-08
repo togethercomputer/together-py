@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import os
 import sys
 import inspect
-from typing import Optional, Annotated, get_args, get_origin
+from typing import Any, Optional, Annotated, get_args, get_origin
 
 import httpx
 from cyclopts import App, Group, Parameter, CycloptsError, MissingArgumentError
@@ -14,7 +13,6 @@ from together._version import __version__
 from together.lib.utils import log_debug
 from together._exceptions import APIError
 from together._utils._json import openapi_dumps
-from together._utils._logs import setup_logging
 from together.lib.cli._track_cli import (
     CliTrackingEvents,
     track_cli,
@@ -22,10 +20,18 @@ from together.lib.cli._track_cli import (
     format_cli_error_for_telemetry,
 )
 from together.lib.cli.utils._exit import CliDiagnosticExit
+from together.lib.cli.utils._debug import (
+    log_debug_note,
+    log_debug_session,
+    teardown_cli_debug,
+    setup_cli_debug_logging,
+    install_http_debug_hooks,
+)
 from together.lib.cli.utils.config import CLIConfig
 from together.lib.cli.utils._prompt import PromptParameter
 from together.lib.cli.utils._console import CliBrokenPipeError, console
 from together.lib.cli.utils._api_error import try_handle_server_error_message
+from together.lib.cli.utils._json_mode import emit_json, is_json_mode, use_json_mode, resolve_output_json
 from together.lib.cli.utils._cli_extras import inform_cli_extras_tip
 from together.lib.cli.utils._completion import _is_agent_or_ci, install_completion
 from together.lib.cli.utils._help_examples import (
@@ -34,6 +40,7 @@ from together.lib.cli.utils._help_examples import (
     FILES_HELP_EXAMPLES,
     MODELS_HELP_EXAMPLES,
     BATCHES_HELP_EXAMPLES,
+    CLUSTERS_HELP_EXAMPLES,
     JIG_LOGS_HELP_EXAMPLES,
     JIG_PUSH_HELP_EXAMPLES,
     ENDPOINTS_HELP_EXAMPLES,
@@ -48,13 +55,15 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
-    BETA_CLUSTERS_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
     JIG_JOB_STATUS_HELP_EXAMPLES,
+    CLUSTERS_CREATE_HELP_EXAMPLES,
+    CLUSTERS_UPDATE_HELP_EXAMPLES,
     JIG_SECRETS_SET_HELP_EXAMPLES,
     BATCHES_DOWNLOAD_HELP_EXAMPLES,
+    CLUSTERS_STORAGE_HELP_EXAMPLES,
     ENDPOINTS_CREATE_HELP_EXAMPLES,
     ENDPOINTS_UPDATE_HELP_EXAMPLES,
     BETA_ENDPOINTS_AB_HELP_EXAMPLES,
@@ -73,24 +82,21 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_CONFIGS_HELP_EXAMPLES,
     FINE_TUNING_PREVIEW_HELP_EXAMPLES,
-    BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
-    BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
-    BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
     BETA_ENDPOINTS_SHADOW_HELP_EXAMPLES,
     BETA_ENDPOINTS_UPDATE_HELP_EXAMPLES,
+    CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_ENDPOINTS_ROLLOUT_HELP_EXAMPLES,
     FILES_RETRIEVE_CONTENT_HELP_EXAMPLES,
+    CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+    CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+    CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
     FINE_TUNING_LIST_METRICS_HELP_EXAMPLES,
     FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
-    BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_HELP_EXAMPLES,
-    BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
-    BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
-    BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
-    BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
+    CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
     BETA_MODELS_REMOTE_UPLOADS_CREATE_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_TOKENIZED_DATASET_HELP_EXAMPLES,
 )
@@ -115,8 +121,9 @@ _GLOBAL_PARAM_HELP = {
 
 # Commands that authenticate out-of-band (OIDC / step-ca) and make no Together
 # API calls, so the launcher must not require an API key or run the up-front
-# whoami() for them. Values match preparse_tokens() command paths (beta prefix
-# stripped; reported separately via is_beta_command).
+# whoami() for them. Values match preparse_tokens() command paths with the beta
+# prefix stripped, so this covers both `tg clusters ssh` and the hidden
+# `tg beta clusters ssh` alias.
 _NO_AUTH_COMMANDS = frozenset({"clusters ssh"})
 
 
@@ -140,6 +147,12 @@ def _propagate_global_param_group(target_app: App) -> None:
         _propagate_global_param_group(sub)
 
 
+# Stainless requires a non-empty key to construct a client. When the user has
+# none, we substitute this placeholder and block real requests. Do not treat the
+# placeholder as a real key in --debug session output.
+_PLACEHOLDER_API_KEY = "0" * 40
+
+
 def _create_client(
     api_key: Optional[str],
     base_url: Optional[str],
@@ -147,7 +160,9 @@ def _create_client(
     max_retries: Optional[int],
     project_id: Optional[str],
     require_api_key: bool = True,
-) -> AsyncTogether:
+    debug: bool = False,
+) -> tuple[AsyncTogether, bool]:
+    missing_api_key = False
     try:
         client = AsyncTogether(
             api_key=api_key,
@@ -158,22 +173,14 @@ def _create_client(
         )
     except Exception as e:
         if "api_key" in str(e):
+            missing_api_key = True
             client = AsyncTogether(
-                api_key="0000000000000000000000000000000000000000",
+                api_key=_PLACEHOLDER_API_KEY,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries if max_retries is not None else 0,
                 project_id=project_id,
             )
-
-            def block_requests_for_api_key(_: httpx.Request) -> None:
-                console.print(
-                    "[red]x[/red] api key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-                )
-                console.print("You can find your api key at https://api.together.ai/settings/api-keys")
-                raise CliDiagnosticExit("Together API key missing")
-
-            client._client.event_hooks["request"].append(block_requests_for_api_key)
         else:
             raise e
 
@@ -187,19 +194,28 @@ def _create_client(
         except Exception as e:
             log_debug("Error tracking api request", error=e)
 
+    if debug:
+        install_http_debug_hooks(client._client)
+
+    if missing_api_key:
+        # After debug hooks so `--debug` still emits `→ GET` before we exit,
+        # but before analytics so a request that is never sent is not tracked.
+        async def block_requests_for_api_key(_: httpx.Request) -> None:
+            _print_missing_api_key()
+            raise CliDiagnosticExit("Together API key missing")
+
+        client._client.event_hooks["request"].append(block_requests_for_api_key)
+
     client._client.event_hooks["request"].append(track_request)
 
-    # Out-of-band-auth commands (e.g. `beta clusters ssh`) make no Together API
+    # Out-of-band-auth commands (e.g. `clusters ssh`) make no Together API
     # calls, so a missing key is not fatal for them. The block hook installed
     # above still errors clearly if such a command ever does hit the API.
     if require_api_key and client.api_key == "":
-        console.print(
-            "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
-        )
-        console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+        _print_missing_api_key()
         sys.exit(1)
 
-    return client
+    return client, missing_api_key
 
 
 global_options = Group(
@@ -214,7 +230,14 @@ async def launcher(
     base_url: Annotated[Optional[str], Parameter(show=False)] = None,
     timeout: Annotated[Optional[int], Parameter(show=False)] = None,
     max_retries: Annotated[Optional[int], Parameter(show=False)] = None,
-    debug: Annotated[Optional[bool], Parameter(show=False)] = False,
+    debug: Annotated[
+        Optional[bool],
+        Parameter(
+            group=global_options,
+            negative=(),
+            help="Print HTTP request/response details to stderr and write a full log, including bodies, to a temp file",
+        ),
+    ] = False,
     non_interactive: Annotated[
         Optional[bool], Parameter(group=global_options, negative=(), help="Disable interactive prompts")
     ] = False,
@@ -233,39 +256,114 @@ async def launcher(
     ] = None,
     output_json: Annotated[
         Optional[bool],
-        Parameter(name="json", group=global_options, negative=(), help="Output the response in JSON format"),
-    ] = False,
+        Parameter(
+            name="json",
+            group=global_options,
+            help=(
+                "Output the response as JSON. Defaults to on when an AI agent is detected; "
+                "pass --no-json to force text output."
+            ),
+        ),
+    ] = None,
 ) -> None:
     if debug:
-        os.environ.setdefault("TOGETHER_LOG", "debug")
-        setup_logging()
+        setup_cli_debug_logging()
+
+    try:
+        await _run_launcher(
+            tokens,
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            debug=debug,
+            non_interactive=non_interactive,
+            project_id=project_id,
+            output_json=output_json,
+        )
+    finally:
+        if debug:
+            teardown_cli_debug()
+
+
+_MISSING_API_KEY = (
+    "Together API key missing. Pass --api-key or set the TOGETHER_API_KEY environment variable. "
+    "You can find your API key at https://api.together.ai/settings/api-keys"
+)
+
+
+def _print_missing_api_key() -> None:
+    if is_json_mode():
+        emit_json({"error": _MISSING_API_KEY})
+        return
+    console.print(
+        "[red]Error:[/red] Together API Key missing.\n\nThe api key must be set either by passing --api-key to the command or by setting the TOGETHER_API_KEY environment variable",
+    )
+    console.print("You can find your api key at https://api.together.ai/settings/api-keys")
+
+
+async def _run_launcher(
+    tokens: tuple[str, ...],
+    *,
+    api_key: Optional[str],
+    base_url: Optional[str],
+    timeout: Optional[int],
+    max_retries: Optional[int],
+    debug: Optional[bool],
+    non_interactive: Optional[bool],
+    project_id: Optional[str],
+    output_json: Optional[bool],
+) -> None:
+    resolved_json = resolve_output_json(output_json)
+    use_json_mode(resolved_json)
 
     (parsed_command, explicit_args, is_beta_command, remaining) = preparse_tokens(app, [*tokens])
 
     # Some commands authenticate out-of-band (OIDC / step-ca signed certificates)
     # and never call the Together API. They must not be gated on an API key or the
-    # up-front whoami() used for project resolution. `tg beta clusters ssh` is one:
-    # its auth is entirely the cluster's Dex OIDC flow (see
-    # together.lib.cli.api.beta.clusters.ssh). Before the whoami() was added for
-    # project resolution these commands worked with no key; skip client setup so
-    # they stay keyless.
-    no_auth_command = is_beta_command and parsed_command in _NO_AUTH_COMMANDS
+    # up-front whoami() used for project resolution. `tg clusters ssh` is one
+    # (the hidden `tg beta clusters ssh` alias is the same command): its auth is
+    # entirely the cluster's Dex OIDC flow (see together.lib.cli.api.clusters.ssh).
+    # Before the whoami() was added for project resolution these commands worked
+    # with no key; skip client setup so they stay keyless.
+    no_auth_command = parsed_command in _NO_AUTH_COMMANDS
 
-    client = _create_client(api_key, base_url, timeout, max_retries, project_id, require_api_key=not no_auth_command)
+    client, missing_api_key = _create_client(
+        api_key,
+        base_url,
+        timeout,
+        max_retries,
+        project_id,
+        require_api_key=not no_auth_command,
+        debug=bool(debug),
+    )
+
+    if debug:
+        log_debug_session(
+            command=parsed_command,
+            is_beta_command=is_beta_command,
+            base_url=str(client.base_url),
+            project_id=client.project_id,
+            api_key=None if missing_api_key else (client.api_key or None),
+            timeout=client.timeout,
+            max_retries=client.max_retries,
+        )
 
     # Skip the project-resolution whoami() for out-of-band-auth commands: it is a
     # Together API call and would reintroduce the API-key dependency for keyless
-    # commands like `beta clusters ssh`.
+    # commands like `clusters ssh`.
     if not no_auth_command and client.project_id is None:
         client.project_id = await _resolve_project_id(client)
+        if debug and client.project_id:
+            log_debug_note(f"resolved project {client.project_id}")
 
     is_interactive = sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty() and not _is_agent_or_ci()
-    non_interactive_mode = non_interactive or output_json or not is_interactive
+    non_interactive_mode = bool(non_interactive) or resolved_json or not is_interactive
 
     config = CLIConfig(
         client=client,
         non_interactive=non_interactive_mode,
-        json=output_json or False,
+        json=resolved_json,
         project_id=project_id,
     )
 
@@ -407,12 +505,15 @@ async def launcher(
             raise e
         elif isinstance(e, CycloptsError):
             e.verbose = True if debug else False
-            console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
+            if config.json:
+                emit_json({"error": str(e)})
+            else:
+                console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
         elif not isinstance(e, APIError):
             # API Errors are handled better inside the run_command() function
             # We don't want to raise them here as that will print a stack trace which we do not want.
             if config.json:
-                console.print_json(openapi_dumps({"error": str(e)}).decode("utf-8"))
+                emit_json({"error": str(e)})
             else:
                 console.print(f"[red]Error:[/red] {escape_rich_markup(str(e))}")
 
@@ -427,6 +528,7 @@ async def launcher(
                 non_interactive=config.non_interactive,
                 allow_prompt=command_succeeded,
             )
+            use_json_mode(False)
 
 
 # Register commands
@@ -583,97 +685,110 @@ beta_root_app = App(name="beta", help="Experimental and beta features")
 beta_app = app.command(beta_root_app)
 
 ### Clusters API commands
-clusters_app = beta_app.command(
-    App(name="clusters", help="Create and manage GPU clusters", help_epilogue=BETA_CLUSTERS_HELP_EXAMPLES)
+clusters_app = app.command(
+    App(name="clusters", help="Create and manage GPU clusters", help_epilogue=CLUSTERS_HELP_EXAMPLES)
 )
-clusters_app.command((f"{_CLI}.beta.clusters.list:list"), alias="ls", help="List your clusters")
-clusters_app.command(
-    (f"{_CLI}.beta.clusters.create:create"),
+# Hidden alias so `tg beta clusters` keeps working without showing up in help.
+# Cyclopts stores `show` on the App, so this is a separate App that shares subcommands.
+_beta_clusters_alias = beta_app.command(
+    App(name="clusters", show=False, help="Create and manage GPU clusters", help_epilogue=CLUSTERS_HELP_EXAMPLES)
+)
+
+
+def _clusters_command(obj: Any, /, *args: Any, **kwargs: Any) -> Any:
+    clusters_app.command(obj, *args, **kwargs)
+    _beta_clusters_alias.command(obj, *args, **kwargs)
+    return obj
+
+
+_clusters_command((f"{_CLI}.clusters.list:list"), alias="ls", help="List your clusters")
+_clusters_command(
+    (f"{_CLI}.clusters.create:create"),
     alias="-c",
     help="Create a new cluster",
-    help_epilogue=BETA_CLUSTERS_CREATE_HELP_EXAMPLES,
+    help_epilogue=CLUSTERS_CREATE_HELP_EXAMPLES,
 )
-clusters_app.command((f"{_CLI}.beta.clusters.retrieve:retrieve"), alias="get", help="Get cluster details")
-clusters_app.command(
-    (f"{_CLI}.beta.clusters.update:update"),
+_clusters_command((f"{_CLI}.clusters.retrieve:retrieve"), alias="get", help="Get cluster details")
+_clusters_command(
+    (f"{_CLI}.clusters.update:update"),
     help="Update a cluster",
-    help_epilogue=BETA_CLUSTERS_UPDATE_HELP_EXAMPLES,
+    help_epilogue=CLUSTERS_UPDATE_HELP_EXAMPLES,
 )
-clusters_app.command((f"{_CLI}.beta.clusters.delete:delete"), alias="-d", help="Delete a cluster")
-clusters_app.command((f"{_CLI}.beta.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
-clusters_app.command(
-    (f"{_CLI}.beta.clusters.get_credentials:get_credentials"),
+_clusters_command((f"{_CLI}.clusters.delete:delete"), alias="-d", help="Delete a cluster")
+_clusters_command((f"{_CLI}.clusters.list_regions:list_regions"), help="List regions for deploying clusters")
+_clusters_command(
+    (f"{_CLI}.clusters.get_credentials:get_credentials"),
     help="Get credentials for a cluster",
-    help_epilogue=BETA_CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
+    help_epilogue=CLUSTERS_GET_CREDENTIALS_HELP_EXAMPLES,
 )
-clusters_app.command(
-    (f"{_CLI}.beta.clusters.ssh:ssh"),
+_clusters_command(
+    (f"{_CLI}.clusters.ssh:ssh"),
     help="SSH into a cluster via an OIDC-signed certificate",
 )
 
 ### Clusters > Storage API commands
-storage_app = clusters_app.command(
+storage_app = _clusters_command(
     App(
         name="storage",
         help="Manage cluster storage volumes",
         group="Subcommands",
-        help_epilogue=BETA_CLUSTERS_STORAGE_HELP_EXAMPLES,
+        help_epilogue=CLUSTERS_STORAGE_HELP_EXAMPLES,
     )
 )
-storage_app.command((f"{_CLI}.beta.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster")
+storage_app.command((f"{_CLI}.clusters.storage.list:list"), alias="ls", help="List storage volumes for a cluster")
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.create:create"),
+    (f"{_CLI}.clusters.storage.create:create"),
     alias="-c",
     help="Create a new storage volume for a cluster",
-    help_epilogue=BETA_CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
+    help_epilogue=CLUSTERS_STORAGE_CREATE_HELP_EXAMPLES,
 )
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.update:update"),
+    (f"{_CLI}.clusters.storage.update:update"),
     help="Resize a storage volume",
-    help_epilogue=BETA_CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
+    help_epilogue=CLUSTERS_STORAGE_UPDATE_HELP_EXAMPLES,
 )
 storage_app.command(
-    (f"{_CLI}.beta.clusters.storage.retrieve:retrieve"),
+    (f"{_CLI}.clusters.storage.retrieve:retrieve"),
     alias="get",
     help="Get storage volume details",
 )
-storage_app.command((f"{_CLI}.beta.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
+storage_app.command((f"{_CLI}.clusters.storage.delete:delete"), help="Delete a storage volume", alias="-d")
 
 ### Clusters > Remediations API commands
-remediations_app = clusters_app.command(
+remediations_app = _clusters_command(
     App(
         name="remediations",
         help="Manage node remediations",
         group="Subcommands",
-        help_epilogue=BETA_CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
+        help_epilogue=CLUSTERS_REMEDIATIONS_HELP_EXAMPLES,
     )
 )
 remediations_app.command(
-    (f"{_CLI}.beta.clusters.remediations.create:create"),
+    (f"{_CLI}.clusters.remediations.create:create"),
     alias="-c",
     help="Create a node remediation",
-    help_epilogue=BETA_CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
+    help_epilogue=CLUSTERS_REMEDIATIONS_CREATE_HELP_EXAMPLES,
 )
 remediations_app.command(
-    (f"{_CLI}.beta.clusters.remediations.list:list"),
+    (f"{_CLI}.clusters.remediations.list:list"),
     alias="ls",
     help="List node remediations",
 )
 remediations_app.command(
-    (f"{_CLI}.beta.clusters.remediations.retrieve:retrieve"),
+    (f"{_CLI}.clusters.remediations.retrieve:retrieve"),
     alias="get",
     help="Get remediation details",
 )
 remediations_app.command(
-    (f"{_CLI}.beta.clusters.remediations.approve:approve"),
+    (f"{_CLI}.clusters.remediations.approve:approve"),
     help="Approve a pending remediation",
 )
 remediations_app.command(
-    (f"{_CLI}.beta.clusters.remediations.cancel:cancel"),
+    (f"{_CLI}.clusters.remediations.cancel:cancel"),
     help="Cancel a pending remediation",
 )
 remediations_app.command(
-    (f"{_CLI}.beta.clusters.remediations.reject:reject"),
+    (f"{_CLI}.clusters.remediations.reject:reject"),
     help="Reject a pending remediation",
 )
 
@@ -769,6 +884,15 @@ beta_models_app = beta_app.command(
         help_epilogue=BETA_MODELS_HELP_EXAMPLES,
     )
 )
+# `tg beta models deploy` is the same command as `tg beta endpoints deploy`.
+beta_models_app.command(
+    (f"{_CLI}.beta.endpoints.deploy:deploy"),
+    help="Create a deployment on a new or existing endpoint",
+    help_epilogue=BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES.replace(
+        "tg beta endpoints deploy",
+        "tg beta models deploy",
+    ),
+)
 beta_models_app.command((f"{_CLI}.beta.models.list:list"), alias="ls", help="List models in the caller's project")
 beta_models_app.command(
     (f"{_CLI}.beta.models.public:public"),
@@ -788,7 +912,10 @@ beta_models_app.command(
     (f"{_CLI}.beta.models.list_files:list_files"), name="ls-files", help="List files in a model or adapter"
 )
 beta_models_app.command(
-    (f"{_CLI}.beta.models.list_revisions:list_revisions"), name="ls-revisions", help="List revisions for a model"
+    (f"{_CLI}.beta.models.list_revisions:list_revisions"),
+    name="ls-revisions",
+    alias="list-revisions",
+    help="List revisions for a model",
 )
 beta_models_app.command((f"{_CLI}.beta.models.retrieve:retrieve"), alias="get", help="Get a model by ID")
 beta_models_app.command(
@@ -968,7 +1095,6 @@ def main() -> None:
 
     # Shown in the root help page, but not a functional command
     BETA_GROUP_TITLE = "Beta Commands"
-    app.command(App(name="beta clusters", help="Create and manage GPU clusters", group=BETA_GROUP_TITLE))
     app.command(
         App(name="beta endpoints", help="Deploy and manage dedicated inference endpoints", group=BETA_GROUP_TITLE)
     )

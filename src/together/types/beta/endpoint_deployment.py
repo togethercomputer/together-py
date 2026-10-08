@@ -116,7 +116,11 @@ class EndpointDeployment(BaseModel):
     """Timestamp when the deployment was last updated."""
 
     desired_replicas: Optional[int] = FieldInfo(alias="desiredReplicas", default=None)
-    """Number of replicas the autoscaler currently wants across all regions."""
+    """Number of replicas the autoscaler currently wants across all regions.
+
+    Not settable on any request; steer it through `autoscaling.minReplicas` and
+    `autoscaling.maxReplicas`.
+    """
 
     estimated_effective_traffic_share: Optional[float] = FieldInfo(alias="estimatedEffectiveTrafficShare", default=None)
     """
@@ -128,6 +132,17 @@ class EndpointDeployment(BaseModel):
     """Minutes without an inference request before the deployment stops automatically.
 
     Omitted or 0 means automatic stopping is disabled.
+    """
+
+    max_concurrent_requests_per_replica: Optional[str] = FieldInfo(
+        alias="maxConcurrentRequestsPerReplica", default=None
+    )
+    """Maximum number of inference requests that may be in flight to a single replica.
+
+    If omitted, the platform uses one less than the config's per-replica concurrency
+    limit to reserve a health-check slot. Values above that maximum are reduced on
+    create and update; 0 means unlimited when the config limit is 1 or less. Changes
+    take effect without restarting replicas.
     """
 
     placement: Optional[Placement] = None

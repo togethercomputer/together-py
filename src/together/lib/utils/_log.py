@@ -12,12 +12,21 @@ TOGETHER_LOG = os.environ.get("TOGETHER_LOG")
 
 WARNING_MESSAGES_ONCE: Set[str] = set()
 
+# When the CLI --debug handler is attached, skip the raw print() path so messages
+# are not duplicated (and so they go through the formatted/redacted handler).
+_cli_debug_console_redirect = False
+
+
+def set_cli_debug_console_redirect(enabled: bool) -> None:
+    global _cli_debug_console_redirect
+    _cli_debug_console_redirect = enabled
+
 
 def _console_log_level() -> str | None:
-    if TOGETHER_LOG in ["debug", "info"]:
-        return TOGETHER_LOG
-    else:
-        return None
+    env = os.environ.get("TOGETHER_LOG", TOGETHER_LOG)
+    if env in ["debug", "info"]:
+        return env
+    return None
 
 
 def logfmt(props: Dict[str, Any]) -> str:
@@ -40,27 +49,29 @@ def logfmt(props: Dict[str, Any]) -> str:
 
 def log_debug(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
-    if _console_log_level() == "debug":
+    if _console_log_level() == "debug" and not _cli_debug_console_redirect:
         print(msg, file=sys.stderr)  # noqa
     logger.debug(msg)
 
 
 def log_info(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
-    if _console_log_level() in ["debug", "info"]:
+    if _console_log_level() in ["debug", "info"] and not _cli_debug_console_redirect:
         print(msg, file=sys.stderr)  # noqa
     logger.info(msg)
 
 
 def log_warn(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
-    print(msg, file=sys.stderr)  # noqa
+    if not _cli_debug_console_redirect:
+        print(msg, file=sys.stderr)  # noqa
     logger.warning(msg)
 
 
 def log_warn_once(message: str | Any, **params: Any) -> None:
     msg = logfmt(dict(message=message, **params))
     if msg not in WARNING_MESSAGES_ONCE:
-        print(msg, file=sys.stderr)  # noqa
+        if not _cli_debug_console_redirect:
+            print(msg, file=sys.stderr)  # noqa
         logger.warning(msg)
         WARNING_MESSAGES_ONCE.add(msg)

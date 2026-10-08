@@ -5,8 +5,8 @@ from typing import Any
 import pytest
 
 from together.types.beta import Model, EndpointDeployment
-from together.types.beta.models.config import Config
 from together.lib.cli.utils.config import CLIConfig
+from together.types.beta.models.config import Config
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     select_lora_config,
     config_adapter_mode,

@@ -10,7 +10,8 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.utils._json_mode import exit_with_message
+from together.lib.cli.components.loader import loading_status, show_loading_status
 from together.lib.cli.api.endpoints._utils import print_endpoint, handle_endpoint_api_errors
 
 from .hardware import hardware as list_hardware
@@ -57,27 +58,30 @@ async def create(
 ) -> None:
     """Create a new dedicated inference endpoint."""
     if min_replicas > max_replicas:
-        console.print(
+        exit_with_message(
             f"Error: --min-replicas ({min_replicas}) cannot be greater than --max-replicas ({max_replicas})",
+            diagnostic="Endpoint minimum replicas cannot exceed maximum replicas",
         )
-        raise CliDiagnosticExit("Endpoint minimum replicas cannot exceed maximum replicas")
 
     if availability_zone:
         try:
             valid_zones = await config.client.endpoints.list_avzones()
             if availability_zone not in valid_zones.avzones:
-                console.print(f"Error: Invalid availability zone '{availability_zone}'")
-                if valid_zones.avzones:
-                    console.print("Available zones:")
-                    for zone in sorted(valid_zones.avzones):
-                        console.print(f"  {zone}")
-                raise CliDiagnosticExit("Endpoint availability zone is invalid")
+                zones = sorted(valid_zones.avzones)
+                zone_lines = "\n".join(f"  {zone}" for zone in zones)
+                human = f"Error: Invalid availability zone '{availability_zone}'"
+                if zone_lines:
+                    human = f"{human}\nAvailable zones:\n{zone_lines}"
+                listed = f" Available zones: {', '.join(zones)}." if zones else ""
+                exit_with_message(
+                    human,
+                    error=f"Invalid availability zone '{availability_zone}'.{listed}",
+                    diagnostic="Endpoint availability zone is invalid",
+                )
+        except CliDiagnosticExit:
+            raise
         except Exception:
             pass
-
-    if config.json and wait:
-        console.print("Error: --json and --wait cannot be used together.")
-        return
 
     if no_prompt_cache is not None and not config.json:
         console.print("Warning: --no-prompt-cache is deprecated and no longer has any effect.")
@@ -125,19 +129,26 @@ async def create(
             raise CliDiagnosticExit("Endpoint model is unavailable") from None
         raise e
 
+    if wait:
+
+        async def _wait_until_started() -> None:
+            while (await config.client.endpoints.retrieve(response.id)).state != "STARTED":
+                await asyncio.sleep(1)
+
+        if config.json:
+            await _wait_until_started()
+            response = await config.client.endpoints.retrieve(response.id)
+        else:
+            console.print("[green]√[/green] Dedicated endpoint created.")
+            print_endpoint(response)
+            with loading_status("Waiting for endpoint to start..."):
+                await _wait_until_started()
+            console.print("[green]√[/green] Endpoint started")
+            return
+
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
     console.print("[green]√[/green] Dedicated endpoint created.")
     print_endpoint(response)
-
-    if wait:
-        with console.status(
-            "[progress.description]Waiting for endpoint to start...[/progress.description]",
-            spinner="dots",
-            spinner_style="bar.pulse",
-        ):
-            while (await config.client.endpoints.retrieve(response.id)).state != "STARTED":
-                await asyncio.sleep(1)
-        console.print("[green]√[/green] Endpoint started")

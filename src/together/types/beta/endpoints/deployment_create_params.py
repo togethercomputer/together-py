@@ -49,6 +49,14 @@ class DeploymentCreateParams(TypedDict, total=False):
     through 1440.
     """
 
+    max_concurrent_requests_per_replica: Annotated[str, PropertyInfo(alias="maxConcurrentRequestsPerReplica")]
+    """Maximum number of inference requests that may be in flight to a single replica.
+
+    If omitted, the platform uses one less than the config's per-replica concurrency
+    limit to reserve a health-check slot. Values above that maximum are reduced on
+    create; 0 means unlimited when the config limit is 1 or less.
+    """
+
     model: str
     """
     Model resource name in the form

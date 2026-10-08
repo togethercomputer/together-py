@@ -13,8 +13,8 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
-    prompt_for_config,
     resolve_config,
+    prompt_for_config,
 )
 from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import selector_value
 

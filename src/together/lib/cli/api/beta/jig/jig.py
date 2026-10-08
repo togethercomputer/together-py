@@ -19,7 +19,7 @@ import asyncio
 import tempfile
 import subprocess
 import concurrent.futures
-from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated, cast
+from typing import TYPE_CHECKING, Any, Union, Literal, Callable, Optional, Annotated
 from pathlib import Path
 from datetime import datetime as dt
 from functools import cached_property
@@ -36,9 +36,17 @@ from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfig, CLIConfigParameter
 from together.types.beta.deployment import Deployment
+from together.types.beta.jig.volume import Volume
 from together.lib.cli.utils._console import console
 from together.resources.beta.jig.jig import JigResource
 from together.lib.cli.components.list import ListTable
+from together.lib.cli.utils._json_mode import (
+    emit_json,
+    is_json_mode,
+    json_was_emitted,
+    exit_with_message,
+    suppress_human_output,
+)
 from together.lib.cli.api.beta.jig._uploader import Uploader
 from together.lib.cli.utils._mock_pagination import AfterParameter, mock_pagination
 
@@ -669,14 +677,24 @@ class Jig:
             self.state.save()
 
     def validate_volumes(self) -> None:
-        """Warn when a mounted volume has multiple versions but no version is set in the config."""
+        """Fail on mounted volume versions that aren't ready, and warn when a volume has multiple
+        versions but no version is set in the config."""
         for vm in self.config.deploy.volume_mounts:
-            if vm.version is not None:
-                continue
             try:
                 volume = self.api.volumes.retrieve(vm.name)
             except APIError:
                 continue  # missing/inaccessible volumes are surfaced by the deployment call itself
+            version = vm.version or 0
+            status, message = _volume_version_status(volume, version)
+            if status in ("pending", "syncing"):
+                raise JigError(
+                    f"Volume '{vm.name}' version {version} is still syncing. "
+                    f"Check status with: jig volumes describe --name {vm.name}"
+                )
+            if status == "failed":
+                raise JigError(f"Volume '{vm.name}' version {version} failed to sync: {message}")
+            if vm.version is not None:
+                continue
             versions = {int(v) for v in volume.version_history or {}} | {volume.current_version or 0}
             if len(versions) > 1:
                 console.print(
@@ -906,6 +924,7 @@ class Jig:
             "autoscaling": self.config.deploy.autoscaling,
             "termination_grace_period_seconds": self.config.deploy.termination_grace_period_seconds,
             "volumes": [{**asdict(vm), "version": vm.version or 0} for vm in self.config.deploy.volume_mounts],
+            "model_mounts": [mm.to_api() for mm in self.config.deploy.model_mounts],
         }
 
         if self.config.deploy.health_check_path:
@@ -913,19 +932,13 @@ class Jig:
         if self.config.deploy.command:
             deploy_data["command"] = self.config.deploy.command
 
-        # Fields the generated SDK does not know yet travel in extra_body: opt-in
-        # experimental features, and model_mounts until the SDK is regenerated
-        # from tdep's OpenAPI. model_mounts is always sent (possibly empty) so a
-        # redeploy without it clears the mounts, mirroring volumes.
+        # Fields the generated SDK does not know yet travel in extra_body.
         experimental = {k: v for k, v in asdict(self.config.experimental).items() if v}
         if capacity_type := experimental.pop("capacity_type", None):
             deploy_data["capacity_type"] = capacity_type
-        extra_body: dict[str, Any] = {
-            "model_mounts": [mm.to_api() for mm in self.config.deploy.model_mounts],
-        }
+        extra_kwargs: dict[str, Any] = {}
         if experimental:
-            extra_body["experimental"] = experimental
-        extra_kwargs: dict[str, Any] = {"extra_body": extra_body}
+            extra_kwargs["extra_body"] = {"experimental": experimental}
 
         self.sync_secrets_from_deployment()
         if "TOGETHER_API_KEY" not in self.state.secrets:
@@ -996,8 +1009,11 @@ Note: Additional replicas may still be scaling up.""")
                         return
 
                     if event.replica_status_reason == "CrashLoopBackOff":
+                        logs = self.logs(rid)
+                        if is_json_mode():
+                            raise CliDiagnosticExit(f"Deployment container is crash looping\n{logs}")
                         console.print(f"\N{CROSS MARK} [{rid}] Container is crash looping")
-                        console.print(self.logs(rid))
+                        console.print(logs)
                         raise CliDiagnosticExit("Deployment container is crash looping")
 
                     if event.volume_preload_status:
@@ -1018,15 +1034,26 @@ Note: Additional replicas may still be scaling up.""")
                         if rid not in wait_start:
                             wait_start[rid] = time.time()
                         if time.time() - wait_start[rid] > _TRACK_READY_TIMEOUT:
+                            logs = self.logs(rid)
+                            if is_json_mode():
+                                raise CliDiagnosticExit(
+                                    "Deployment container was running but did not become ready before timeout\n" + logs
+                                )
                             console.print(f"Deployment '{self.name}' may still be in progress.")
                             console.print(f"\N{CROSS MARK} [{rid}] Running but not ready after {_TRACK_READY_TIMEOUT}s")
-                            console.print(self.logs(rid))
+                            console.print(logs)
                             raise CliDiagnosticExit(
                                 "Deployment container was running but did not become ready before timeout"
                             )
 
                 time.sleep(_TRACK_POLL_INTERVAL)
 
+            message = (
+                f"Deployment tracking timed out after 10 minutes. Deployment '{self.name}' may still be in progress. "
+                "Run 'tg beta jig status' to check current state."
+            )
+            if is_json_mode():
+                raise CliDiagnosticExit(message)
             console.print(f"""\N{CROSS MARK} Deployment tracking timed out after 10 minutes
 Deployment '{self.name}' may still be in progress.
 Run 'jig status' to check current state.""")
@@ -1142,11 +1169,9 @@ Configuration:""")
             lines.append(f"  Capacity Type: {d.capacity_type}")
         vol = d.volumes[0] if d.volumes else None
         lines.append(f"  Volume: {vol.name} \N{RIGHTWARDS ARROW} {vol.mount_path}" if vol else "  Volume: (none)")
-        # model_mounts is not in the generated Deployment model yet; the response
-        # keeps unknown fields, so read it as plain data.
-        for mm in cast(list[dict[str, Any]], getattr(d, "model_mounts", None) or []):
-            pinned = f"{mm.get('model_id')}@{mm['revision_id']}" if mm.get("revision_id") else str(mm.get("model_id"))
-            lines.append(f"  Model: {pinned} \N{RIGHTWARDS ARROW} {mm.get('mount_path')}")
+        for mm in d.api_model_mounts or []:
+            pinned = f"{mm.api_model_id}@{mm.revision_id}" if mm.revision_id else mm.api_model_id
+            lines.append(f"  Model: {pinned} \N{RIGHTWARDS ARROW} {mm.mount_path}")
         storage = f" ┃ {d.storage}GB Storage" if d.storage else ""
         lines.append(f"  Resources: {d.cpu} core CPU ┃ {d.memory}GB Memory{storage}")
 
@@ -1198,6 +1223,31 @@ def _sync_together_from_config(config: CLIConfig) -> Together:
     )
 
 
+def _print_json_cli_result(result: Any) -> None:
+    if json_was_emitted() and result is None:
+        return
+    if result is None:
+        emit_json({"ok": True})
+        return
+    if isinstance(result, str):
+        emit_json({"ok": True, "message": result})
+        return
+    if isinstance(result, dict):
+        emit_json(typing.cast("dict[str, Any]", result))
+        return
+    if hasattr(result, "json") and callable(result.json):
+        body: Any = result.json()
+        if isinstance(body, (dict, list)):
+            emit_json(typing.cast(Any, body))
+        else:
+            emit_json({"ok": True, "result": body})
+        return
+    try:
+        emit_json(json.loads(openapi_dumps(result)))
+    except (TypeError, ValueError):
+        emit_json({"ok": True, "message": str(result)})
+
+
 def _print_cli_result(result: Any) -> None:
     if result is None:
         return
@@ -1213,8 +1263,18 @@ def _print_cli_result(result: Any) -> None:
         console.print(str(result))
 
 
+def _json_action(action: str, **fields: Any) -> dict[str, Any] | None:
+    if not is_json_mode() or json_was_emitted():
+        return None
+    return {"ok": True, "action": action, **fields}
+
+
 def _jig_fail(msg: str) -> typing.NoReturn:
-    console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
+    if is_json_mode():
+        if not json_was_emitted():
+            emit_json({"ok": False, "error": msg})
+    else:
+        console.print(f"[blue]Jig:[/blue] [red]Failed[/red] {msg}")
     raise CliDiagnosticExit(msg)
 
 
@@ -1244,8 +1304,17 @@ def _api_error_message(e: APIError) -> str:
 def _run_jig_cmd(config: CLIConfig, config_path: str | None, fn: Callable[[Jig], Any]) -> None:
     try:
         jig = Jig(_sync_together_from_config(config), config_path)
-        result = fn(jig)
-        _print_cli_result(result)
+        if is_json_mode():
+            with suppress_human_output():
+                result = fn(jig)
+            _print_json_cli_result(result)
+        else:
+            result = fn(jig)
+            _print_cli_result(result)
+    except CliDiagnosticExit as exc:
+        if is_json_mode() and not json_was_emitted():
+            emit_json({"ok": False, "error": str(exc) or "Command failed"})
+        raise
     except (KeyboardInterrupt, SystemExit):
         raise
     except AuthenticationError:
@@ -1267,6 +1336,17 @@ def init(
     """Initialize jig configuration."""
     _ = config
     if (pyproject := Path("pyproject.toml")).exists():
+        if is_json_mode():
+            emit_json(
+                {
+                    "ok": True,
+                    "action": "init",
+                    "path": "pyproject.toml",
+                    "created": False,
+                    "message": "pyproject.toml already exists",
+                }
+            )
+            return
         console.print("pyproject.toml already exists")
         return
 
@@ -1293,6 +1373,9 @@ gpu_type = "h100-80gb"
 gpu_count = 1
 """
     pyproject.write_text(content)
+    if is_json_mode():
+        emit_json({"ok": True, "action": "init", "path": "pyproject.toml", "created": True})
+        return
     console.print("""\N{CHECK MARK} Created pyproject.toml
   Edit the configuration and run 'jig deploy'""")
 
@@ -1390,6 +1473,8 @@ def secrets_unset(jig: Jig, name: str) -> None:
         jig.state.save()
         console.print(f"\N{CHECK MARK} Removed secret {name} from the deployment")
     except KeyError:
+        if is_json_mode():
+            raise JigError(f"Secret {name} is not set") from None
         console.print(f"\N{CROSS MARK} Secret {name} is not set")
 
 
@@ -1450,10 +1535,19 @@ def volumes_create(jig: Jig, name: str, source: Path) -> None:
     except Exception as e:
         console.print(f"\N{CROSS MARK} Upload failed: {e}")
         console.print(f"\N{WASTEBASKET} Cleaning up volume {name}")
+        cleanup_note = ""
         try:
             jig.api.volumes.delete(name)
         except Exception as cleanup_error:
             console.print(f"\N{WARNING SIGN} Failed to delete volume: {cleanup_error}")
+            cleanup_note = f" Failed to delete volume: {cleanup_error}"
+        if is_json_mode():
+            # Status lines above are swallowed in JSON mode; keep the failure in the document.
+            exit_with_message(
+                f"Upload failed: {e}",
+                error=f"Volume upload failed after the volume was created: {e}.{cleanup_note}".rstrip(),
+                diagnostic="Volume upload failed after the volume was created",
+            )
         raise CliDiagnosticExit("Volume upload failed after the volume was created") from None
 
     jig.prewarm(volume=name)
@@ -1477,6 +1571,83 @@ def volumes_update(jig: Jig, name: str, source: Path) -> None:
     console.print("\N{CHECK MARK} Volume updated successfully")
 
     jig.prewarm(volume=name)
+
+
+def _s3_origin_content(uri: str, role_arn: str) -> Any:
+    # `origin` and the volume status fields aren't in the generated SDK types yet. Unknown request keys
+    # are sent as-is and unknown response fields are kept as model extras, hence the untyped access.
+    return {"type": "files", "origin": {"s3": {"uri": uri, "role_arn": role_arn}}}
+
+
+def _status_of(model: object) -> tuple[str, str | None]:
+    return getattr(model, "status", None) or "ready", getattr(model, "status_message", None)
+
+
+def volumes_create_from_s3(jig: Jig, name: str, uri: str, role_arn: str, watch: bool) -> None:
+    """Create a volume whose files Together syncs from S3"""
+    try:
+        volume = jig.api.volumes.create(name=name, type="readOnly", content=_s3_origin_content(uri, role_arn))
+    except APIError as e:
+        if "already exists" in e.message:
+            raise JigError(f"Volume {name} already exists, use 'jig volumes update' instead") from None
+        raise
+    console.print(f"\N{CHECK MARK} Created volume {name}")
+    _follow_s3_sync(jig, name, volume.current_version or 0, watch)
+
+
+def volumes_update_from_s3(jig: Jig, name: str, uri: str, role_arn: str, watch: bool) -> None:
+    """Snapshot S3 into a new volume version"""
+    try:
+        volume = jig.api.volumes.update(name, content=_s3_origin_content(uri, role_arn))
+    except NotFoundError:
+        raise JigError(f"Volume {name} not found") from None
+    console.print(f"\N{CHECK MARK} Updated volume {name} to version {volume.current_version}")
+    _follow_s3_sync(jig, name, volume.current_version or 0, watch)
+
+
+def _follow_s3_sync(jig: Jig, name: str, version: int, watch: bool) -> None:
+    if not watch:
+        console.print(
+            f"\N{WARNING SIGN}  Files are syncing from S3. The volume can be mounted once it's ready.\n"
+            f"   Check status with: [primary]jig volumes describe --name {name}[/primary]"
+        )
+        return
+
+    started = time.monotonic()
+    label = f"Syncing {name} v{version} from S3"
+    try:
+        with console.status(f"{label}...") as spinner:
+            while True:
+                volume = jig.api.volumes.retrieve(name, version=version)
+                status, message = _status_of(volume)
+                if status == "ready":
+                    break
+                if status == "failed":
+                    raise JigError(f"Sync of volume {name} v{version} failed: {message}")
+                files = (volume.content.files if volume.content else None) or []
+                copied = sum(f.size or 0 for f in files) / 1e9
+                spinner.update(f"{label}... {len(files)} files, {copied:.1f} GB ({_elapsed(started)})")
+                time.sleep(2)
+    except KeyboardInterrupt:
+        console.print(f"\nStopped watching, the sync continues. Check status with: jig volumes describe --name {name}")
+        sys.exit(130)
+    console.print(f"\N{CHECK MARK} Volume {name} v{version} is ready ({_elapsed(started)})")
+    jig.prewarm(volume=name)
+
+
+def _elapsed(since: float) -> str:
+    minutes, seconds = divmod(int(time.monotonic() - since), 60)
+    return f"{minutes}m{seconds:02d}s" if minutes else f"{seconds}s"
+
+
+def _volume_version_status(volume: Volume, version: int) -> tuple[str, str | None]:
+    """Status of a volume version; versions from before statuses existed are ready."""
+    if version == (volume.current_version or 0):
+        return _status_of(volume)
+    item = (volume.version_history or {}).get(str(version))
+    if item is None:
+        return "ready", None  # unknown versions are rejected by the deployment call itself
+    return _status_of(item)
 
 
 def volumes_delete(jig: Jig, name: str) -> None:
@@ -1519,11 +1690,20 @@ async def jig_volumes_list(
 
     table.add_primary_column("ID")
     table.add_column("Name")
+    table.add_column("Version")
+    table.add_column("Status")
     table.add_column("Created At")
     table.add_column("Updated At")
 
     for volume in data:
-        table.add_row(volume.id, volume.name, volume.created_at, volume.updated_at)
+        table.add_row(
+            volume.id,
+            volume.name,
+            str(volume.current_version),
+            _status_of(volume)[0],
+            volume.created_at,
+            volume.updated_at,
+        )
 
     console.print(table)
     if next_cursor:
@@ -1555,7 +1735,12 @@ def dockerfile_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Generate Dockerfile."""
-    _run_jig_cmd(config, toml_config, dockerfile)
+
+    def inner(jig: Jig) -> Any:
+        dockerfile(jig)
+        return _json_action("dockerfile", path=jig.config.image.dockerfile_path)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def build_cli(
@@ -1570,7 +1755,12 @@ def build_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Build container image."""
-    _run_jig_cmd(config, toml_config, lambda jig: build(jig, tag, warmup, docker_args))
+
+    def inner(jig: Jig) -> Any:
+        build(jig, tag, warmup, docker_args)
+        return _json_action("build", name=jig.name, tag=tag, image=jig.image(tag))
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def push_cli(
@@ -1580,7 +1770,12 @@ def push_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Push image to registry."""
-    _run_jig_cmd(config, toml_config, lambda jig: push(jig, tag))
+
+    def inner(jig: Jig) -> Any:
+        push(jig, tag)
+        return _json_action("push", name=jig.name, tag=tag, image=jig.image(tag))
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def deploy_cli(
@@ -1598,11 +1793,12 @@ def deploy_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Deploy model."""
-    _run_jig_cmd(
-        config,
-        toml_config,
-        lambda jig: deploy(jig, tag, build_only, warmup, detach, docker_args, image),
-    )
+
+    def inner(jig: Jig) -> Any:
+        deploy(jig, tag, build_only, warmup, detach, docker_args, image)
+        return _json_action("deploy", name=jig.name, tag=tag)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def status_cli(
@@ -1620,7 +1816,14 @@ def endpoint_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment endpoint URL."""
-    _run_jig_cmd(config, toml_config, endpoint)
+
+    def inner(jig: Jig) -> Any:
+        url = endpoint(jig)
+        if is_json_mode():
+            return {"url": url}
+        return url
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def logs_cli(
@@ -1642,7 +1845,14 @@ def logs_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Get deployment logs."""
-    _run_jig_cmd(config, toml_config, lambda jig: logs(jig, follow, replica_id, revision, image_version))
+
+    def inner(jig: Jig) -> Any:
+        text = logs(jig, follow, replica_id, revision, image_version)
+        if is_json_mode():
+            return {"logs": text or ""}
+        return text
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def destroy_cli(
@@ -1651,7 +1861,14 @@ def destroy_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Destroy deployment."""
-    _run_jig_cmd(config, toml_config, destroy)
+
+    def inner(jig: Jig) -> Any:
+        message = destroy(jig)
+        if is_json_mode():
+            return {"ok": True, "action": "destroy", "name": jig.name, "message": message}
+        return message
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def submit_cli(
@@ -1703,7 +1920,12 @@ def secrets_set_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Set a secret (create or update)."""
-    _run_jig_cmd(config, toml_config, lambda jig: secrets_set(jig, name, value, description))
+
+    def inner(jig: Jig) -> Any:
+        secrets_set(jig, name, value, description)
+        return _json_action("set", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def secrets_unset_cli(
@@ -1713,7 +1935,12 @@ def secrets_unset_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Remove a secret from local state."""
-    _run_jig_cmd(config, toml_config, lambda jig: secrets_unset(jig, name))
+
+    def inner(jig: Jig) -> Any:
+        secrets_unset(jig, name)
+        return _json_action("unset", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def secrets_delete_cli(
@@ -1723,7 +1950,12 @@ def secrets_delete_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Delete a secret and unset it locally."""
-    _run_jig_cmd(config, toml_config, lambda jig: secrets_delete(jig, name))
+
+    def inner(jig: Jig) -> Any:
+        secrets_delete(jig, name)
+        return _json_action("delete", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 def secrets_list_cli(
@@ -1742,30 +1974,82 @@ def secrets_list_cli(
     _run_jig_cmd(config, toml_config, inner)
 
 
+_VolumeSourceParameter = Annotated[
+    str, Parameter(name="--source", help="Local directory to upload, or s3://bucket/prefix to sync from")
+]
+_RoleArnParameter = Annotated[
+    Optional[str],
+    Parameter(name="--aws-oidc-role-arn", help="IAM role Together assumes via OIDC to read an s3:// source"),
+]
+_WatchParameter = Annotated[bool, Parameter(help="Wait until an s3:// source has finished syncing", negative=())]
+
+
+def _local_volume_source(source: str, role_arn: str | None, watch: bool) -> Path | None:
+    """The local directory to upload, or None for an s3:// source."""
+    if source.startswith("s3://"):
+        if not role_arn:
+            _jig_fail("--aws-oidc-role-arn is required for s3:// sources")
+        return None
+    if role_arn or watch:
+        _jig_fail("--aws-oidc-role-arn and --watch only apply to s3:// sources")
+    path = Path(source)
+    if not path.is_dir():
+        _jig_fail(f"Not a directory: {source}")
+    return path
+
+
 def jig_volumes_create_cli(
     name: Annotated[str, Parameter(name="--name", help="Volume name")],
-    source: Annotated[Path, Parameter(name="--source", help="Source directory path")],
+    source: _VolumeSourceParameter,
+    aws_oidc_role_arn: _RoleArnParameter = None,
+    watch: _WatchParameter = False,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
-    """Create a volume and upload files."""
-    if not source.is_dir():
-        _jig_fail(f"Not a directory: {source}")
-    _run_jig_cmd(config, toml_config, lambda jig: volumes_create(jig, name, source))
+    """Create a volume from a local directory or S3."""
+    if path := _local_volume_source(source, aws_oidc_role_arn, watch):
+
+        def inner(jig: Jig) -> Any:
+            volumes_create(jig, name, path)
+            return _json_action("create", name=name, source=str(path))
+
+        _run_jig_cmd(config, toml_config, inner)
+    else:
+        role_arn = aws_oidc_role_arn or ""
+
+        def inner_s3(jig: Jig) -> Any:
+            volumes_create_from_s3(jig, name, source, role_arn, watch)
+            return _json_action("create", name=name, source=source)
+
+        _run_jig_cmd(config, toml_config, inner_s3)
 
 
 def jig_volumes_update_cli(
     name: Annotated[str, Parameter(name="--name", help="Volume name")],
-    source: Annotated[Path, Parameter(name="--source", help="New source directory path")],
+    source: _VolumeSourceParameter,
+    aws_oidc_role_arn: _RoleArnParameter = None,
+    watch: _WatchParameter = False,
     *,
     config: CLIConfigParameter,
     toml_config: TomlConfigParameter = None,
 ) -> None:
-    """Update a volume and re-upload files."""
-    if not source.is_dir():
-        _jig_fail(f"Not a directory: {source}")
-    _run_jig_cmd(config, toml_config, lambda jig: volumes_update(jig, name, source))
+    """Create a new volume version from a local directory or S3."""
+    if path := _local_volume_source(source, aws_oidc_role_arn, watch):
+
+        def inner(jig: Jig) -> Any:
+            volumes_update(jig, name, path)
+            return _json_action("update", name=name, source=str(path))
+
+        _run_jig_cmd(config, toml_config, inner)
+    else:
+        role_arn = aws_oidc_role_arn or ""
+
+        def inner_s3(jig: Jig) -> Any:
+            volumes_update_from_s3(jig, name, source, role_arn, watch)
+            return _json_action("update", name=name, source=source)
+
+        _run_jig_cmd(config, toml_config, inner_s3)
 
 
 def jig_volumes_delete_cli(
@@ -1775,7 +2059,12 @@ def jig_volumes_delete_cli(
     toml_config: TomlConfigParameter = None,
 ) -> None:
     """Delete a volume."""
-    _run_jig_cmd(config, toml_config, lambda jig: volumes_delete(jig, name))
+
+    def inner(jig: Jig) -> Any:
+        volumes_delete(jig, name)
+        return _json_action("delete", name=name)
+
+    _run_jig_cmd(config, toml_config, inner)
 
 
 # == Helpers ==

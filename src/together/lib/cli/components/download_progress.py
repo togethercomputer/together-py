@@ -60,7 +60,9 @@ class DownloadProgressTracker:
         )
 
     def __enter__(self) -> DownloadProgressTracker:
-        if not self.enabled or not console.is_terminal:
+        from together.lib.cli.utils._debug import is_enabled
+
+        if not self.enabled or not console.is_terminal or is_enabled():
             return self
         self._progress = Progress(
             SpinnerColumn(style="bar.pulse"),
@@ -121,16 +123,27 @@ class DownloadProgressTracker:
             self.completed_files += 1
             if skipped:
                 self.skipped_files += 1
-            if not self.enabled or self._progress is None:
+            if not self._should_report():
                 return
-            if self.show_files:
+            if self._progress is not None and self.show_files:
                 assert self._files_task is not None
                 self._progress.update(
                     self._files_task,
                     completed=self.completed_files,
                     description=f"Files ({self.completed_files}/{self.total_files})",
                 )
+            if self.show_files:
                 if skipped:
-                    self._progress.console.print(f"[dim]↷[/dim] {file_path} skipped (already exists)")
+                    console.print(f"[dim]↷[/dim] {file_path} skipped (already exists)")
                 else:
-                    self._progress.console.print(f"[success]✓[/success] {file_path} complete")
+                    console.print(f"[success]✓[/success] {file_path} complete")
+
+    def _should_report(self) -> bool:
+        """Live bar is skipped under --debug / non-TTY; still emit ✓/↷ lines in debug."""
+        if not self.enabled:
+            return False
+        if self._progress is not None:
+            return True
+        from together.lib.cli.utils._debug import is_enabled
+
+        return is_enabled()

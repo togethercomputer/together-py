@@ -4,6 +4,8 @@ from typing import Dict, List, Optional
 from typing_extensions import Literal
 
 from ...._models import BaseModel
+from .volume_origin import VolumeOrigin
+from .volume_status import VolumeStatus
 
 __all__ = ["Volume", "Content", "ContentFile", "VersionHistory", "VersionHistoryContent"]
 
@@ -20,11 +22,16 @@ class ContentFile(BaseModel):
 
 
 class Content(BaseModel):
+    """Content currently available on a volume version."""
+
     files: Optional[List[ContentFile]] = None
     """
     Files is the list of files to preload into the volume, if the volume content
     type is "files".
     """
+
+    origin: Optional[VolumeOrigin] = None
+    """External source Together copied into this volume version."""
 
     source_prefix: Optional[str] = None
     """
@@ -40,12 +47,18 @@ class Content(BaseModel):
 
 
 class VersionHistoryContent(BaseModel):
-    """Content specifies the new content to preload to this volume."""
+    """Content configuration used to create this version."""
+
+    origin: Optional[VolumeOrigin] = None
+    """
+    External source Together copies into a new volume version; mutually exclusive
+    with source_prefix.
+    """
 
     source_prefix: Optional[str] = None
     """
     SourcePrefix is the file path prefix for the content to be preloaded into the
-    volume
+    volume. Mutually exclusive with Origin
     """
 
     type: Optional[Literal["files"]] = None
@@ -56,12 +69,22 @@ class VersionHistoryContent(BaseModel):
 
 
 class VersionHistory(BaseModel):
+    """Metadata for a previous volume version."""
+
     content: Optional[VersionHistoryContent] = None
-    """Content specifies the new content to preload to this volume."""
+    """Content configuration used to create this version."""
 
     mounted_by: Optional[List[str]] = None
+    """Deployment IDs currently mounting this version."""
+
+    status: Optional[VolumeStatus] = None
+    """Status of this volume version."""
+
+    status_message: Optional[str] = None
+    """Message explaining why this volume version failed, when applicable."""
 
     version: Optional[int] = None
+    """Numeric version identifier for this volume content."""
 
 
 class Volume(BaseModel):
@@ -69,6 +92,7 @@ class Volume(BaseModel):
     """ID is the unique identifier for this volume"""
 
     content: Optional[Content] = None
+    """Content currently available on a volume version."""
 
     created_at: Optional[str] = None
     """CreatedAt is the ISO8601 timestamp when this volume was created"""
@@ -87,6 +111,12 @@ class Volume(BaseModel):
 
     object: Optional[str] = None
     """Object is the type identifier for this response (always "volume")"""
+
+    status: Optional[VolumeStatus] = None
+    """Status of the current volume version."""
+
+    status_message: Optional[str] = None
+    """Message explaining why the current volume version failed, when applicable."""
 
     type: Optional[Literal["readOnly"]] = None
 

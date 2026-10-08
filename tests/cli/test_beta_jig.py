@@ -15,6 +15,7 @@ from respx.models import Call
 
 import together.lib.cli.api.beta.jig.jig as _jig_mod
 from tests.cli.utils import CliRunner
+from together.types.beta.deployment import ModelMount as DeploymentModelMount
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -553,3 +554,215 @@ class TestBetaJigModelMounts:
         deploy = _jig_mod.DeployConfig(model_mounts=[_jig_mod.ModelMount(model="ml_abc123", mount_path="/models")])
         jig = SimpleNamespace(config=SimpleNamespace(deploy=deploy))
         _jig_mod.Jig.validate_model_mounts(cast(Any, jig))
+
+    def test_deploy_sends_model_mounts_as_sdk_param(self) -> None:
+        calls: list[dict[str, Any]] = []
+
+        def _noop_track(_response: Any) -> None:
+            return None
+
+        class _Api:
+            def update(self, _id: str, **kwargs: Any) -> SimpleNamespace:
+                calls.append(kwargs)
+                return SimpleNamespace(status="Updating")
+
+        deploy = _jig_mod.DeployConfig(
+            model_mounts=[_jig_mod.ModelMount(model="ml_abc123@rv_xyz789", mount_path="/models")]
+        )
+        jig = SimpleNamespace(
+            api=_Api(),
+            config=SimpleNamespace(deploy=deploy, experimental=_jig_mod.ExperimentalConfig()),
+            name=_DEPLOY_NAME,
+            registry=lambda: "registry.together.ai/test/",
+            state=SimpleNamespace(secrets={"TOGETHER_API_KEY": f"{_DEPLOY_NAME}-TOGETHER_API_KEY"}),
+            sync_secrets_from_deployment=lambda: None,
+            validate_model_mounts=lambda: None,
+            validate_volumes=lambda: None,
+            track=_noop_track,
+            together=SimpleNamespace(api_key="test-key", base_url=httpx.URL(base_url)),
+        )
+
+        _jig_mod.Jig.deploy(cast(Any, jig), existing_image="example.com/acme/app:tag")
+
+        assert calls[0]["model_mounts"] == [
+            {"model_id": "ml_abc123", "revision_id": "rv_xyz789", "mount_path": "/models"}
+        ]
+        assert "extra_body" not in calls[0]
+
+    def test_status_formats_generated_model_mounts(self) -> None:
+        deployment = _jig_mod.Deployment(
+            name=_DEPLOY_NAME,
+            image="registry.together.ai/test/app@sha256:abcdef123456",
+            status="Ready",
+            gpu_count=1,
+            gpu_type="h100-80gb",
+            cpu=1,
+            memory=8,
+            storage=100,
+            volumes=[],
+            environment_variables=[],
+            model_mounts=[
+                DeploymentModelMount(model_id="ml_abc123", revision_id="rv_xyz789", mount_path="/models"),
+            ],
+        )
+
+        def _short_image(image: str) -> str:
+            return image.removeprefix("registry.together.ai/test/")
+
+        jig = SimpleNamespace(
+            registry=lambda: "registry.together.ai/test/",
+            short_image=_short_image,
+        )
+
+        output = _jig_mod.Jig.format_status(cast(Any, jig), deployment)
+
+        assert "Model: ml_abc123@rv_xyz789" in output
+        assert "/models" in output
+
+
+_S3_URI = "s3://my-bucket/weights"
+_ROLE_ARN = "arn:aws:iam::123456789012:role/together"
+
+
+class TestBetaJigS3Volumes:
+    @pytest.mark.respx(base_url=base_url)
+    def test_create_starts_sync_without_waiting(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        route = respx_mock.post("/deployments/storage/volumes").mock(
+            return_value=httpx.Response(200, json=_volume_api_body("weights", status="syncing"))
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(
+                [
+                    "beta",
+                    "jig",
+                    "volumes",
+                    "create",
+                    "--name",
+                    "weights",
+                    "--source",
+                    _S3_URI,
+                    "--aws-oidc-role-arn",
+                    _ROLE_ARN,
+                ]
+            )
+
+        assert json.loads(cast(Call, route.calls[0]).request.content)["content"] == {
+            "type": "files",
+            "origin": {"s3": {"uri": _S3_URI, "role_arn": _ROLE_ARN}},
+        }
+        assert "Created volume weights" in result.output
+        assert "jig volumes describe --name weights" in result.output
+        assert result.exit_code == 0
+
+    def test_s3_source_requires_role_arn(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(["beta", "jig", "volumes", "create", "--name", "weights", "--source", _S3_URI])
+        assert "--aws-oidc-role-arn is required" in result.output
+        assert result.exit_code == 1
+
+    def test_role_arn_rejected_for_local_source(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(
+                [
+                    "beta",
+                    "jig",
+                    "volumes",
+                    "create",
+                    "--name",
+                    "w",
+                    "--source",
+                    str(tmp_path),
+                    "--aws-oidc-role-arn",
+                    _ROLE_ARN,
+                ]
+            )
+        assert "only apply to s3:// sources" in result.output
+        assert result.exit_code == 1
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_update_watch_follows_sync_until_ready(
+        self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner
+    ) -> None:
+        _write_jig_project(tmp_path)
+        respx_mock.patch("/deployments/storage/volumes/weights").mock(
+            return_value=httpx.Response(200, json=_volume_api_body("weights", current_version=3, status="syncing"))
+        )
+        polls = respx_mock.get("/deployments/storage/volumes/weights").mock(
+            side_effect=[
+                httpx.Response(200, json=_volume_api_body("weights", current_version=3, status="syncing")),
+                httpx.Response(200, json=_volume_api_body("weights", current_version=3, status="ready")),
+            ]
+        )
+        prewarm = respx_mock.post("/deployments/prewarm").mock(return_value=httpx.Response(200, json={}))
+
+        with patch.object(_jig_mod.time, "sleep"), _chdir(tmp_path):
+            result = cli_runner.invoke(
+                ["beta", "jig", "volumes", "update", "--name", "weights", "--source", _S3_URI]
+                + ["--aws-oidc-role-arn", _ROLE_ARN, "--watch"]
+            )
+
+        assert "Updated volume weights to version 3" in result.output
+        assert "Volume weights v3 is ready" in result.output
+        assert cast(Call, polls.calls[0]).request.url.params["version"] == "3"
+        assert prewarm.called
+        assert result.exit_code == 0
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_watch_reports_sync_failure(self, respx_mock: MockRouter, tmp_path: Path, cli_runner: CliRunner) -> None:
+        _write_jig_project(tmp_path)
+        respx_mock.post("/deployments/storage/volumes").mock(
+            return_value=httpx.Response(200, json=_volume_api_body("weights", status="syncing"))
+        )
+        respx_mock.get("/deployments/storage/volumes/weights").mock(
+            return_value=httpx.Response(
+                200,
+                json=_volume_api_body("weights", status="failed", status_message="bucket 'my-bucket' does not exist"),
+            )
+        )
+
+        with _chdir(tmp_path):
+            result = cli_runner.invoke(
+                ["beta", "jig", "volumes", "create", "--name", "weights", "--source", _S3_URI]
+                + ["--aws-oidc-role-arn", _ROLE_ARN, "--watch"]
+            )
+
+        assert "bucket 'my-bucket' does not exist" in result.output
+        assert result.exit_code == 1
+
+    @pytest.mark.parametrize(
+        "volume,expected_error",
+        [
+            (_volume_api_body("w", status="pending"), "still syncing"),
+            (_volume_api_body("w", status="syncing"), "still syncing"),
+            (
+                _volume_api_body(
+                    "w",
+                    current_version=1,
+                    version_history={"0": {"version": 0, "status": "failed", "status_message": "access denied"}},
+                ),
+                "failed to sync: access denied",
+            ),
+        ],
+    )
+    def test_validate_volumes_rejects_versions_that_are_not_ready(
+        self, volume: dict[str, object], expected_error: str
+    ) -> None:
+        from together.types.beta.jig.volume import Volume
+
+        def retrieve(_name: str) -> Volume:
+            return Volume.construct(**cast(dict[str, Any], volume))
+
+        jig = SimpleNamespace(
+            config=SimpleNamespace(
+                deploy=SimpleNamespace(volume_mounts=[_jig_mod.VolumeMount(name="w", mount_path="/w")])
+            ),
+            api=SimpleNamespace(volumes=SimpleNamespace(retrieve=retrieve)),
+        )
+        with pytest.raises(_jig_mod.JigError, match=expected_error):
+            _jig_mod.Jig.validate_volumes(cast(Any, jig))

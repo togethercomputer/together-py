@@ -1,6 +1,7 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from typing import Optional
+from typing_extensions import Literal
 
 from pydantic import Field as FieldInfo
 
@@ -59,6 +60,14 @@ class SupportedModelDeploymentProfile(BaseModel):
 
     quantization: str
     """Quantization method for the profile, if available."""
+
+    adapter_mode: Optional[Literal["ADAPTER_MODE_FIXED", "ADAPTER_MODE_DYNAMIC", "ADAPTER_MODE_DISABLED"]] = FieldInfo(
+        alias="adapterMode", default=None
+    )
+    """
+    Adapter serving mode for deployments created from this profile; omitted when no
+    certified config is pinned.
+    """
 
     tensor_parallel_size: Optional[int] = FieldInfo(alias="tensorParallelSize", default=None)
     """Deprecated.

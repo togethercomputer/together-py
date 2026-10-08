@@ -15,6 +15,7 @@ from tests.cli.utils import CliRunner
 from tests.cli.test_files import FILE_ROW_NEWER, _file_response
 from tests.cli.test_models import _UPLOAD_BODY, list_data
 from tests.cli.test_batches import _BATCH_JOB, _BATCH_CREATE
+from tests.cli.test_clusters import _VOLUME_BODY, _REGIONS_BODY, _cluster_body
 from tests.cli.test_endpoints import DEDICATED_EP, ENDPOINT_LIST_ITEM, model_data
 from tests.cli.test_fine_tuning import (
     _FT_EVENT,
@@ -23,7 +24,6 @@ from tests.cli.test_fine_tuning import (
     _FT_PREVIEW_BODY,
     _FT_RETRIEVE_BODY,
 )
-from tests.cli.test_beta_clusters import _VOLUME_BODY, _REGIONS_BODY, _cluster_body
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -90,7 +90,7 @@ def _mock_json_mode_http(respx_mock: MockRouter) -> None:
 
 class JSONValidator:
     def __init__(self, namespace: str | Sequence[str], cli_runner: CliRunner, *, skip: bool = False):
-        # One argv segment per CLI word: "files" or ("beta", "clusters"), not "beta clusters".
+        # One argv segment per CLI word: "files" or ("clusters", "storage"), not "clusters storage".
         self.namespace_parts: tuple[str, ...] = (namespace,) if isinstance(namespace, str) else tuple(namespace)
         self.cli_runner = cli_runner
         self._skip = skip
@@ -198,27 +198,27 @@ class TestJSONMode:
         models.run_and_assert("list --type dedicated")
         models.run_and_assert("upload --model-name model-123/version-123 --model-source s3://model-123/version-123")
 
-    def test_beta_clusters_json_mode(self, cli_runner: CliRunner) -> None:
-        beta_clusters = JSONValidator(("beta", "clusters"), cli_runner)
-        beta_clusters.run_and_assert(
+    def test_clusters_json_mode(self, cli_runner: CliRunner) -> None:
+        clusters = JSONValidator(("clusters",), cli_runner)
+        clusters.run_and_assert(
             "create --non-interactive --cluster-type KUBERNETES --gpu-type H100_SXM "
             "--nvidia-driver-version 565 --cuda-version 12.6 --region us-central-8 --num-gpus 8 "
             "--billing-type ON_DEMAND --name together-py-testing-suite --volume 123"
         )
-        beta_clusters.run_and_assert("delete cluster-123")
-        beta_clusters.run_and_assert("get-credentials cluster-123")
-        beta_clusters.run_and_assert("list")
-        beta_clusters.run_and_assert("list-regions")
-        beta_clusters.run_and_assert("retrieve cluster-123")
-        beta_clusters.run_and_assert("update cluster-123 --num-gpus 16 --cluster-type KUBERNETES")
+        clusters.run_and_assert("delete cluster-123")
+        clusters.run_and_assert("get-credentials cluster-123")
+        clusters.run_and_assert("list")
+        clusters.run_and_assert("list-regions")
+        clusters.run_and_assert("retrieve cluster-123")
+        clusters.run_and_assert("update cluster-123 --num-gpus 16 --cluster-type KUBERNETES")
 
-    def test_beta_clusters_storage_json_mode(self, cli_runner: CliRunner) -> None:
-        beta_clusters_storage = JSONValidator(("beta", "clusters", "storage"), cli_runner)
-        beta_clusters_storage.run_and_assert("create --region us-east-1 --size-tib 1 --volume-name test-volume")
-        beta_clusters_storage.run_and_assert("update storage-123 --size-tib 4")
-        beta_clusters_storage.run_and_assert("delete storage-123")
-        beta_clusters_storage.run_and_assert("list")
-        beta_clusters_storage.run_and_assert("retrieve storage-123")
+    def test_clusters_storage_json_mode(self, cli_runner: CliRunner) -> None:
+        clusters_storage = JSONValidator(("clusters", "storage"), cli_runner)
+        clusters_storage.run_and_assert("create --region us-east-1 --size-tib 1 --volume-name test-volume")
+        clusters_storage.run_and_assert("update storage-123 --size-tib 4")
+        clusters_storage.run_and_assert("delete storage-123")
+        clusters_storage.run_and_assert("list")
+        clusters_storage.run_and_assert("retrieve storage-123")
 
     def test_jig_json_mode(self, cli_runner: CliRunner) -> None:
         jig = JSONValidator(("beta", "jig"), cli_runner)

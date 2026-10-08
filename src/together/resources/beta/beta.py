@@ -4,14 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .rl.rl import (
-    RlResource,
-    AsyncRlResource,
-    RlResourceWithRawResponse,
-    AsyncRlResourceWithRawResponse,
-    RlResourceWithStreamingResponse,
-    AsyncRlResourceWithStreamingResponse,
-)
 from .jig.jig import (
     JigResource,
     AsyncJigResource,
@@ -30,14 +22,6 @@ from .models.models import (
     ModelsResourceWithStreamingResponse,
     AsyncModelsResourceWithStreamingResponse,
 )
-from .clusters.clusters import (
-    ClustersResource,
-    AsyncClustersResource,
-    ClustersResourceWithRawResponse,
-    AsyncClustersResourceWithRawResponse,
-    ClustersResourceWithStreamingResponse,
-    AsyncClustersResourceWithStreamingResponse,
-)
 from .endpoints.endpoints import (
     EndpointsResource,
     AsyncEndpointsResource,
@@ -48,6 +32,7 @@ from .endpoints.endpoints import (
 )
 
 if TYPE_CHECKING:
+    from ..clusters import ClustersResource, AsyncClustersResource
     from ..realtime import RealtimeResource, AsyncRealtimeResource
 
 __all__ = ["BetaResource", "AsyncBetaResource"]
@@ -63,12 +48,16 @@ class BetaResource(SyncAPIResource):
         return ModelsResource(self._client)
 
     @cached_property
-    def rl(self) -> RlResource:
-        return RlResource(self._client)
-
-    @cached_property
     def jig(self) -> JigResource:
         return JigResource(self._client)
+
+    # Handwritten (not generated): shim for dropping beta.clusters in a minor
+    # Delete this on next major version bump.
+    @cached_property
+    def clusters(self) -> ClustersResource:
+        from ..clusters import ClustersResource
+
+        return ClustersResource(self._client)
 
     # Handwritten (not generated): realtime transcription over WebSocket.
     # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
@@ -77,10 +66,6 @@ class BetaResource(SyncAPIResource):
         from ..realtime import RealtimeResource
 
         return RealtimeResource(self._client)
-
-    @cached_property
-    def clusters(self) -> ClustersResource:
-        return ClustersResource(self._client)
 
     @cached_property
     def with_raw_response(self) -> BetaResourceWithRawResponse:
@@ -112,12 +97,16 @@ class AsyncBetaResource(AsyncAPIResource):
         return AsyncModelsResource(self._client)
 
     @cached_property
-    def rl(self) -> AsyncRlResource:
-        return AsyncRlResource(self._client)
-
-    @cached_property
     def jig(self) -> AsyncJigResource:
         return AsyncJigResource(self._client)
+
+    # Handwritten (not generated): shim for dropping beta.clusters in a minor
+    # Delete this on next major version bump.
+    @cached_property
+    def clusters(self) -> AsyncClustersResource:
+        from ..clusters import AsyncClustersResource
+
+        return AsyncClustersResource(self._client)
 
     # Handwritten (not generated): realtime transcription over WebSocket.
     # Guarded by tests/unit/test_realtime_wiring.py against regen drops.
@@ -126,10 +115,6 @@ class AsyncBetaResource(AsyncAPIResource):
         from ..realtime import AsyncRealtimeResource
 
         return AsyncRealtimeResource(self._client)
-
-    @cached_property
-    def clusters(self) -> AsyncClustersResource:
-        return AsyncClustersResource(self._client)
 
     @cached_property
     def with_raw_response(self) -> AsyncBetaResourceWithRawResponse:
@@ -164,16 +149,8 @@ class BetaResourceWithRawResponse:
         return ModelsResourceWithRawResponse(self._beta.models)
 
     @cached_property
-    def rl(self) -> RlResourceWithRawResponse:
-        return RlResourceWithRawResponse(self._beta.rl)
-
-    @cached_property
     def jig(self) -> JigResourceWithRawResponse:
         return JigResourceWithRawResponse(self._beta.jig)
-
-    @cached_property
-    def clusters(self) -> ClustersResourceWithRawResponse:
-        return ClustersResourceWithRawResponse(self._beta.clusters)
 
 
 class AsyncBetaResourceWithRawResponse:
@@ -189,16 +166,8 @@ class AsyncBetaResourceWithRawResponse:
         return AsyncModelsResourceWithRawResponse(self._beta.models)
 
     @cached_property
-    def rl(self) -> AsyncRlResourceWithRawResponse:
-        return AsyncRlResourceWithRawResponse(self._beta.rl)
-
-    @cached_property
     def jig(self) -> AsyncJigResourceWithRawResponse:
         return AsyncJigResourceWithRawResponse(self._beta.jig)
-
-    @cached_property
-    def clusters(self) -> AsyncClustersResourceWithRawResponse:
-        return AsyncClustersResourceWithRawResponse(self._beta.clusters)
 
 
 class BetaResourceWithStreamingResponse:
@@ -214,16 +183,8 @@ class BetaResourceWithStreamingResponse:
         return ModelsResourceWithStreamingResponse(self._beta.models)
 
     @cached_property
-    def rl(self) -> RlResourceWithStreamingResponse:
-        return RlResourceWithStreamingResponse(self._beta.rl)
-
-    @cached_property
     def jig(self) -> JigResourceWithStreamingResponse:
         return JigResourceWithStreamingResponse(self._beta.jig)
-
-    @cached_property
-    def clusters(self) -> ClustersResourceWithStreamingResponse:
-        return ClustersResourceWithStreamingResponse(self._beta.clusters)
 
 
 class AsyncBetaResourceWithStreamingResponse:
@@ -239,13 +200,5 @@ class AsyncBetaResourceWithStreamingResponse:
         return AsyncModelsResourceWithStreamingResponse(self._beta.models)
 
     @cached_property
-    def rl(self) -> AsyncRlResourceWithStreamingResponse:
-        return AsyncRlResourceWithStreamingResponse(self._beta.rl)
-
-    @cached_property
     def jig(self) -> AsyncJigResourceWithStreamingResponse:
         return AsyncJigResourceWithStreamingResponse(self._beta.jig)
-
-    @cached_property
-    def clusters(self) -> AsyncClustersResourceWithStreamingResponse:
-        return AsyncClustersResourceWithStreamingResponse(self._beta.clusters)

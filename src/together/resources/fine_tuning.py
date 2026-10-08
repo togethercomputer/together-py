@@ -155,9 +155,9 @@ class FineTuningResource(SyncAPIResource):
             max_grad_norm (float, optional): Max gradient norm. Defaults to 1.0, set to 0 to disable.
             weight_decay (float, optional): Weight decay. Defaults to 0.0.
             lora (bool, optional): Whether to use LoRA adapters. Defaults to True.
-            lora_r (int, optional): Rank of LoRA adapters. Defaults to 8.
+            lora_r (int, optional): Rank of LoRA adapters. Defaults to the model's own default rank.
             lora_dropout (float, optional): Dropout rate for LoRA adapters. Defaults to 0.
-            lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to 8.
+            lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to twice the rank.
             lora_trainable_modules (str, optional): Trainable modules for LoRA adapters. Defaults to "all-linear".
             train_vision (bool, optional): Whether to train the vision encoder (Only for multimodal models). Defaults to False.
             suffix (str, optional): Up to 40 character suffix that will be added to your fine-tuned model name.
@@ -940,9 +940,9 @@ class AsyncFineTuningResource(AsyncAPIResource):
             max_grad_norm (float, optional): Max gradient norm. Defaults to 1.0, set to 0 to disable.
             weight_decay (float, optional): Weight decay. Defaults to 0.0.
             lora (bool, optional): Whether to use LoRA adapters. Defaults to True.
-            lora_r (int, optional): Rank of LoRA adapters. Defaults to 8.
+            lora_r (int, optional): Rank of LoRA adapters. Defaults to the model's own default rank.
             lora_dropout (float, optional): Dropout rate for LoRA adapters. Defaults to 0.
-            lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to 8.
+            lora_alpha (float, optional): Alpha for LoRA adapters. Defaults to twice the rank.
             lora_trainable_modules (str, optional): Trainable modules for LoRA adapters. Defaults to "all-linear".
             train_vision (bool, optional): Whether to train the vision encoder (Only for multimodal models). Defaults to False.
             suffix (str, optional): Up to 40 character suffix that will be added to your fine-tuned model name.

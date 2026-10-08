@@ -121,8 +121,8 @@ class RolloutsResource(SyncAPIResource):
           metrics: Optional metric gates evaluated after each step's soak. Canary only; rejected on
               rolling and blue-green rollouts.
 
-          rolling: Rolling strategy configuration for capacity-preserving batches that ramp target
-              replicas up while draining source replicas.
+          rolling: Rolling strategy configuration for small batches that ramp target replicas up
+              while shrinking source replicas to what their remaining traffic share needs.
 
           extra_headers: Send extra headers
 
@@ -556,8 +556,8 @@ class RolloutsResource(SyncAPIResource):
           metrics: Optional metric gates evaluated after each step's soak. Canary only; rejected on
               rolling and blue-green rollouts.
 
-          rolling: Rolling strategy configuration for capacity-preserving batches that ramp target
-              replicas up while draining source replicas.
+          rolling: Rolling strategy configuration for small batches that ramp target replicas up
+              while shrinking source replicas to what their remaining traffic share needs.
 
           extra_headers: Send extra headers
 
@@ -850,8 +850,8 @@ class AsyncRolloutsResource(AsyncAPIResource):
           metrics: Optional metric gates evaluated after each step's soak. Canary only; rejected on
               rolling and blue-green rollouts.
 
-          rolling: Rolling strategy configuration for capacity-preserving batches that ramp target
-              replicas up while draining source replicas.
+          rolling: Rolling strategy configuration for small batches that ramp target replicas up
+              while shrinking source replicas to what their remaining traffic share needs.
 
           extra_headers: Send extra headers
 
@@ -1285,8 +1285,8 @@ class AsyncRolloutsResource(AsyncAPIResource):
           metrics: Optional metric gates evaluated after each step's soak. Canary only; rejected on
               rolling and blue-green rollouts.
 
-          rolling: Rolling strategy configuration for capacity-preserving batches that ramp target
-              replicas up while draining source replicas.
+          rolling: Rolling strategy configuration for small batches that ramp target replicas up
+              while shrinking source replicas to what their remaining traffic share needs.
 
           extra_headers: Send extra headers
 

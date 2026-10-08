@@ -13,6 +13,8 @@ from together.types.beta import (
     Deployment,
     DeploymentLogs,
     JigListResponse,
+    DeploymentRevision,
+    DeploymentRevisionEventList,
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -94,6 +96,13 @@ class TestJig:
             max_replicas=0,
             memory=1000,
             min_replicas=0,
+            model_mounts=[
+                {
+                    "model_id": "ml_CbJNwQC2ZqCU2iFT3mrCh",
+                    "mount_path": "/models",
+                    "revision_id": "rv_8kQ2mN4pL7xR9tV1wY3zA",
+                }
+            ],
             name="x",
             port=1,
             storage=400,
@@ -201,6 +210,13 @@ class TestJig:
             max_replicas=0,
             memory=1000,
             min_replicas=0,
+            model_mounts=[
+                {
+                    "model_id": "ml_CbJNwQC2ZqCU2iFT3mrCh",
+                    "mount_path": "/models",
+                    "revision_id": "rv_8kQ2mN4pL7xR9tV1wY3zA",
+                }
+            ],
             port=1,
             storage=400,
             termination_grace_period_seconds=0,
@@ -281,6 +297,53 @@ class TestJig:
             )
 
     @parametrize
+    def test_method_list_revisions(self, client: Together) -> None:
+        jig = client.beta.jig.list_revisions(
+            id="id",
+        )
+        assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+    @parametrize
+    def test_method_list_revisions_with_all_params(self, client: Together) -> None:
+        jig = client.beta.jig.list_revisions(
+            id="id",
+            before=0,
+            limit=0,
+        )
+        assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+    @parametrize
+    def test_raw_response_list_revisions(self, client: Together) -> None:
+        response = client.beta.jig.with_raw_response.list_revisions(
+            id="id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        jig = response.parse()
+        assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+    @parametrize
+    def test_streaming_response_list_revisions(self, client: Together) -> None:
+        with client.beta.jig.with_streaming_response.list_revisions(
+            id="id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            jig = response.parse()
+            assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_list_revisions(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.beta.jig.with_raw_response.list_revisions(
+                id="",
+            )
+
+    @parametrize
     def test_method_retrieve_logs(self, client: Together) -> None:
         jig = client.beta.jig.retrieve_logs(
             id="id",
@@ -326,6 +389,96 @@ class TestJig:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             client.beta.jig.with_raw_response.retrieve_logs(
                 id="",
+            )
+
+    @parametrize
+    def test_method_retrieve_revision(self, client: Together) -> None:
+        jig = client.beta.jig.retrieve_revision(
+            revision_identifier="revisionIdentifier",
+            id="id",
+        )
+        assert_matches_type(DeploymentRevision, jig, path=["response"])
+
+    @parametrize
+    def test_raw_response_retrieve_revision(self, client: Together) -> None:
+        response = client.beta.jig.with_raw_response.retrieve_revision(
+            revision_identifier="revisionIdentifier",
+            id="id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        jig = response.parse()
+        assert_matches_type(DeploymentRevision, jig, path=["response"])
+
+    @parametrize
+    def test_streaming_response_retrieve_revision(self, client: Together) -> None:
+        with client.beta.jig.with_streaming_response.retrieve_revision(
+            revision_identifier="revisionIdentifier",
+            id="id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            jig = response.parse()
+            assert_matches_type(DeploymentRevision, jig, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_retrieve_revision(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.beta.jig.with_raw_response.retrieve_revision(
+                revision_identifier="revisionIdentifier",
+                id="",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `revision_identifier` but received ''"):
+            client.beta.jig.with_raw_response.retrieve_revision(
+                revision_identifier="",
+                id="id",
+            )
+
+    @parametrize
+    def test_method_rollback(self, client: Together) -> None:
+        jig = client.beta.jig.rollback(
+            id="id",
+            revision_identifier="revision_identifier",
+        )
+        assert_matches_type(Deployment, jig, path=["response"])
+
+    @parametrize
+    def test_raw_response_rollback(self, client: Together) -> None:
+        response = client.beta.jig.with_raw_response.rollback(
+            id="id",
+            revision_identifier="revision_identifier",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        jig = response.parse()
+        assert_matches_type(Deployment, jig, path=["response"])
+
+    @parametrize
+    def test_streaming_response_rollback(self, client: Together) -> None:
+        with client.beta.jig.with_streaming_response.rollback(
+            id="id",
+            revision_identifier="revision_identifier",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            jig = response.parse()
+            assert_matches_type(Deployment, jig, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    def test_path_params_rollback(self, client: Together) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            client.beta.jig.with_raw_response.rollback(
+                id="",
+                revision_identifier="revision_identifier",
             )
 
 
@@ -407,6 +560,13 @@ class TestAsyncJig:
             max_replicas=0,
             memory=1000,
             min_replicas=0,
+            model_mounts=[
+                {
+                    "model_id": "ml_CbJNwQC2ZqCU2iFT3mrCh",
+                    "mount_path": "/models",
+                    "revision_id": "rv_8kQ2mN4pL7xR9tV1wY3zA",
+                }
+            ],
             name="x",
             port=1,
             storage=400,
@@ -514,6 +674,13 @@ class TestAsyncJig:
             max_replicas=0,
             memory=1000,
             min_replicas=0,
+            model_mounts=[
+                {
+                    "model_id": "ml_CbJNwQC2ZqCU2iFT3mrCh",
+                    "mount_path": "/models",
+                    "revision_id": "rv_8kQ2mN4pL7xR9tV1wY3zA",
+                }
+            ],
             port=1,
             storage=400,
             termination_grace_period_seconds=0,
@@ -594,6 +761,53 @@ class TestAsyncJig:
             )
 
     @parametrize
+    async def test_method_list_revisions(self, async_client: AsyncTogether) -> None:
+        jig = await async_client.beta.jig.list_revisions(
+            id="id",
+        )
+        assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+    @parametrize
+    async def test_method_list_revisions_with_all_params(self, async_client: AsyncTogether) -> None:
+        jig = await async_client.beta.jig.list_revisions(
+            id="id",
+            before=0,
+            limit=0,
+        )
+        assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+    @parametrize
+    async def test_raw_response_list_revisions(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.jig.with_raw_response.list_revisions(
+            id="id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        jig = await response.parse()
+        assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_list_revisions(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.jig.with_streaming_response.list_revisions(
+            id="id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            jig = await response.parse()
+            assert_matches_type(DeploymentRevisionEventList, jig, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_list_revisions(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.beta.jig.with_raw_response.list_revisions(
+                id="",
+            )
+
+    @parametrize
     async def test_method_retrieve_logs(self, async_client: AsyncTogether) -> None:
         jig = await async_client.beta.jig.retrieve_logs(
             id="id",
@@ -639,4 +853,94 @@ class TestAsyncJig:
         with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
             await async_client.beta.jig.with_raw_response.retrieve_logs(
                 id="",
+            )
+
+    @parametrize
+    async def test_method_retrieve_revision(self, async_client: AsyncTogether) -> None:
+        jig = await async_client.beta.jig.retrieve_revision(
+            revision_identifier="revisionIdentifier",
+            id="id",
+        )
+        assert_matches_type(DeploymentRevision, jig, path=["response"])
+
+    @parametrize
+    async def test_raw_response_retrieve_revision(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.jig.with_raw_response.retrieve_revision(
+            revision_identifier="revisionIdentifier",
+            id="id",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        jig = await response.parse()
+        assert_matches_type(DeploymentRevision, jig, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_retrieve_revision(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.jig.with_streaming_response.retrieve_revision(
+            revision_identifier="revisionIdentifier",
+            id="id",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            jig = await response.parse()
+            assert_matches_type(DeploymentRevision, jig, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_retrieve_revision(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.beta.jig.with_raw_response.retrieve_revision(
+                revision_identifier="revisionIdentifier",
+                id="",
+            )
+
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `revision_identifier` but received ''"):
+            await async_client.beta.jig.with_raw_response.retrieve_revision(
+                revision_identifier="",
+                id="id",
+            )
+
+    @parametrize
+    async def test_method_rollback(self, async_client: AsyncTogether) -> None:
+        jig = await async_client.beta.jig.rollback(
+            id="id",
+            revision_identifier="revision_identifier",
+        )
+        assert_matches_type(Deployment, jig, path=["response"])
+
+    @parametrize
+    async def test_raw_response_rollback(self, async_client: AsyncTogether) -> None:
+        response = await async_client.beta.jig.with_raw_response.rollback(
+            id="id",
+            revision_identifier="revision_identifier",
+        )
+
+        assert response.is_closed is True
+        assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+        jig = await response.parse()
+        assert_matches_type(Deployment, jig, path=["response"])
+
+    @parametrize
+    async def test_streaming_response_rollback(self, async_client: AsyncTogether) -> None:
+        async with async_client.beta.jig.with_streaming_response.rollback(
+            id="id",
+            revision_identifier="revision_identifier",
+        ) as response:
+            assert not response.is_closed
+            assert response.http_request.headers.get("X-Stainless-Lang") == "python"
+
+            jig = await response.parse()
+            assert_matches_type(Deployment, jig, path=["response"])
+
+        assert cast(Any, response.is_closed) is True
+
+    @parametrize
+    async def test_path_params_rollback(self, async_client: AsyncTogether) -> None:
+        with pytest.raises(ValueError, match=r"Expected a non-empty value for `id` but received ''"):
+            await async_client.beta.jig.with_raw_response.rollback(
+                id="",
+                revision_identifier="revision_identifier",
             )

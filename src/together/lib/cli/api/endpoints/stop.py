@@ -8,7 +8,7 @@ from cyclopts import Parameter
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.loader import loading_status, show_loading_status
 from together.lib.cli.api.endpoints._utils import handle_endpoint_api_errors
 
 
@@ -22,20 +22,25 @@ async def stop(
     """Stop a dedicated inference endpoint."""
     await show_loading_status("Stopping endpoint...", config.client.endpoints.update(endpoint_id, state="STOPPED"))
 
+    if wait and config.json:
+        endpoint = await config.client.endpoints.retrieve(endpoint_id)
+        while endpoint.state != "STOPPED":
+            await asyncio.sleep(1)
+            endpoint = await config.client.endpoints.retrieve(endpoint_id)
+        console.print_json(
+            openapi_dumps({"message": "Endpoint stopped", "id": endpoint.id, "state": endpoint.state}).decode("utf-8")
+        )
+        return
+
     if config.json:
         console.print_json(openapi_dumps({"message": "Successfully marked endpoint as stopping"}).decode("utf-8"))
         return
 
     if wait:
         console.print("[green]√[/green] Successfully requested endpoint to stop.")
-        with console.status(
-            "[progress.description]Waiting for endpoint to stop...[/progress.description]",
-            spinner="dots",
-            spinner_style="bar.pulse",
-        ):
+        with loading_status("Waiting for endpoint to stop..."):
             while (await config.client.endpoints.retrieve(endpoint_id)).state != "STOPPED":
                 await asyncio.sleep(1)
         console.print("[green]√[/green] Endpoint stopped")
-
     else:
         console.print("[green]√[/green] Endpoint is stopping.\n  This may take a few minutes.")

@@ -8,9 +8,9 @@ from cyclopts.validators import Number
 
 from together import omit
 from together._utils._json import openapi_dumps
-from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import exit_with_message
 from together.lib.cli.components.loader import show_loading_status
 from together.types.beta.endpoints.ab_experiment import AbExperiment
 from together.lib.cli.api.beta.endpoints.retrieve import retrieve as retrieve_endpoint
@@ -108,6 +108,15 @@ async def update(
             validator=Number(gte=0, lte=1440),
         ),
     ] = None,
+    max_concurrent_requests_per_replica: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Updated maximum in-flight inference requests per replica. "
+                "0 means unlimited when the config limit is 1 or less."
+            )
+        ),
+    ] = None,
     etag: Annotated[
         Optional[str],
         Parameter(
@@ -141,12 +150,17 @@ async def update(
     if inactive_timeout is not None:
         kwargs["inactive_timeout"] = inactive_timeout
         update_mask.append("inactiveTimeout")
+    if max_concurrent_requests_per_replica is not None:
+        kwargs["max_concurrent_requests_per_replica"] = max_concurrent_requests_per_replica
+        update_mask.append("maxConcurrentRequestsPerReplica")
     if etag is not None:
         kwargs["etag"] = etag
 
     if not update_mask and traffic_weight is None and ab_percent is None:
-        console.print("Error: At least one update option must be specified.")
-        raise CliDiagnosticExit("At least one endpoint update option must be specified")
+        exit_with_message(
+            "Error: At least one update option must be specified.",
+            diagnostic="At least one endpoint update option must be specified",
+        )
 
     endpoint = await find_endpoint_by_deployment(config.client, id)
 

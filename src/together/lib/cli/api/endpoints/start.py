@@ -5,10 +5,11 @@ from typing import Annotated
 
 from cyclopts import Parameter
 
+from together.types import DedicatedEndpoint
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
-from together.lib.cli.components.loader import show_loading_status
+from together.lib.cli.components.loader import loading_status, show_loading_status
 
 
 async def start(
@@ -25,19 +26,26 @@ async def start(
         "Starting endpoint...", config.client.endpoints.update(endpoint_id, state="STARTED")
     )
 
+    if wait:
+
+        async def _wait_until_started() -> DedicatedEndpoint:
+            current = await config.client.endpoints.retrieve(endpoint_id)
+            while current.state != "STARTED":
+                await asyncio.sleep(1)
+                current = await config.client.endpoints.retrieve(endpoint_id)
+            return current
+
+        if config.json:
+            response = await _wait_until_started()
+        else:
+            console.print("[green]√[/green] Successfully requested endpoint to start.")
+            with loading_status("Waiting for endpoint to start..."):
+                await _wait_until_started()
+            console.print("[green]√[/green] Endpoint started")
+            return
+
     if config.json:
         console.print_json(openapi_dumps(response).decode("utf-8"))
         return
 
-    if wait:
-        console.print("[green]√[/green] Successfully requested endpoint to start.")
-        with console.status(
-            "[progress.description]Waiting for endpoint to start...[/progress.description]",
-            spinner="dots",
-            spinner_style="bar.pulse",
-        ):
-            while (await config.client.endpoints.retrieve(endpoint_id)).state != "STARTED":
-                await asyncio.sleep(1)
-        console.print("[green]√[/green] Endpoint started")
-    else:
-        console.print("[green]√[/green] Endpoint is starting.\n  This may take a few minutes.")
+    console.print("[green]√[/green] Endpoint is starting.\n  This may take a few minutes.")

@@ -13,6 +13,12 @@ __all__ = ["AdapterUpdateResponse"]
 class AdapterUpdateResponse(BaseModel):
     """Adapter attached to a deployment with desired revision and observed load state."""
 
+    id: str
+    """
+    Row identifier for this adapter attachment; changes if the adapter is removed
+    and re-added.
+    """
+
     adapter_model_id: str = FieldInfo(alias="adapterModelId")
     """Adapter model identifier attached to the deployment."""
 

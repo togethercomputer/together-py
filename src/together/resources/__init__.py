@@ -80,6 +80,22 @@ from .batches import (
     BatchesResourceWithStreamingResponse,
     AsyncBatchesResourceWithStreamingResponse,
 )
+from .clusters import (
+    ClustersResource,
+    AsyncClustersResource,
+    ClustersResourceWithRawResponse,
+    AsyncClustersResourceWithRawResponse,
+    ClustersResourceWithStreamingResponse,
+    AsyncClustersResourceWithStreamingResponse,
+)
+from .projects import (
+    ProjectsResource,
+    AsyncProjectsResource,
+    ProjectsResourceWithRawResponse,
+    AsyncProjectsResourceWithRawResponse,
+    ProjectsResourceWithStreamingResponse,
+    AsyncProjectsResourceWithStreamingResponse,
+)
 from .endpoints import (
     EndpointsResource,
     AsyncEndpointsResource,
@@ -112,6 +128,14 @@ from .fine_tuning import (
     FineTuningResourceWithStreamingResponse,
     AsyncFineTuningResourceWithStreamingResponse,
 )
+from .post_training import (
+    PostTrainingResource,
+    AsyncPostTrainingResource,
+    PostTrainingResourceWithRawResponse,
+    AsyncPostTrainingResourceWithRawResponse,
+    PostTrainingResourceWithStreamingResponse,
+    AsyncPostTrainingResourceWithStreamingResponse,
+)
 from .code_interpreter import (
     CodeInterpreterResource,
     AsyncCodeInterpreterResource,
@@ -128,6 +152,18 @@ __all__ = [
     "AsyncBetaResourceWithRawResponse",
     "BetaResourceWithStreamingResponse",
     "AsyncBetaResourceWithStreamingResponse",
+    "PostTrainingResource",
+    "AsyncPostTrainingResource",
+    "PostTrainingResourceWithRawResponse",
+    "AsyncPostTrainingResourceWithRawResponse",
+    "PostTrainingResourceWithStreamingResponse",
+    "AsyncPostTrainingResourceWithStreamingResponse",
+    "ClustersResource",
+    "AsyncClustersResource",
+    "ClustersResourceWithRawResponse",
+    "AsyncClustersResourceWithRawResponse",
+    "ClustersResourceWithStreamingResponse",
+    "AsyncClustersResourceWithStreamingResponse",
     "ChatResource",
     "AsyncChatResource",
     "ChatResourceWithRawResponse",
@@ -194,6 +230,12 @@ __all__ = [
     "AsyncEndpointsResourceWithRawResponse",
     "EndpointsResourceWithStreamingResponse",
     "AsyncEndpointsResourceWithStreamingResponse",
+    "ProjectsResource",
+    "AsyncProjectsResource",
+    "ProjectsResourceWithRawResponse",
+    "AsyncProjectsResourceWithRawResponse",
+    "ProjectsResourceWithStreamingResponse",
+    "AsyncProjectsResourceWithStreamingResponse",
     "RerankResource",
     "AsyncRerankResource",
     "RerankResourceWithRawResponse",

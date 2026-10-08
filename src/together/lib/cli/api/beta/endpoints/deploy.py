@@ -40,8 +40,8 @@ from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     load_base_model,
     list_model_configs,
     load_adapter_model,
-    select_lora_config_for_deploy,
     find_compatible_deployment,
+    select_lora_config_for_deploy,
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     construct_config_path,
@@ -184,6 +184,15 @@ async def deploy(
             validator=Number(gte=0, lte=1440),
         ),
     ] = None,
+    max_concurrent_requests_per_replica: Annotated[
+        Optional[str],
+        Parameter(
+            help=(
+                "Maximum in-flight inference requests per replica. Omit for the platform default; "
+                "0 means unlimited when the config limit is 1 or less."
+            )
+        ),
+    ] = None,
     traffic_weight: Annotated[
         Optional[float],
         Parameter(
@@ -274,6 +283,7 @@ async def deploy(
             placement_id=placement_id,
             placement_value=inline_placement_value if not placement_id else PlacementProfile(profile=placement_id),
             inactive_timeout=inactive_timeout,
+            max_concurrent_requests_per_replica=max_concurrent_requests_per_replica,
             traffic_weight=traffic_weight,
         )
         return
@@ -330,6 +340,7 @@ async def deploy(
             autoscaling=autoscaling,
             placement=placement_value,
             inactive_timeout=inactive_timeout,
+            max_concurrent_requests_per_replica=max_concurrent_requests_per_replica,
             traffic_weight=traffic_weight,
             hardware_pricing=hardware_pricing,
         )
@@ -347,6 +358,9 @@ async def deploy(
                 config=construct_config_path(config_value),
                 autoscaling=autoscaling,
                 inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
+                max_concurrent_requests_per_replica=(
+                    max_concurrent_requests_per_replica if max_concurrent_requests_per_replica is not None else omit
+                ),
                 # Revision is already embedded in model_path when present.
                 model_revision_id=omit,
                 placement=placement_value or omit,
@@ -355,7 +369,8 @@ async def deploy(
     except Exception as e:
         if is_new_endpoint:
             await config.client.beta.endpoints.delete(endpoint.id)
-            console.print(f"Error creating deployment. Rolling back.")
+            if not config.json:
+                console.print("Error creating deployment. Rolling back.")
         raise e
 
     if traffic_weight is not None:
@@ -402,6 +417,7 @@ async def _deploy_adapter(
     placement_id: str | None,
     placement_value: Placement | None,
     inactive_timeout: int | None,
+    max_concurrent_requests_per_replica: str | None,
     traffic_weight: float | None,
 ) -> None:
     autoscaling = build_autoscaling(
@@ -473,6 +489,7 @@ async def _deploy_adapter(
             autoscaling=autoscaling if existing is None else {},
             placement=None if existing is not None else placement_value,
             inactive_timeout=None if existing is not None else inactive_timeout,
+            max_concurrent_requests_per_replica=(None if existing is not None else max_concurrent_requests_per_replica),
             traffic_weight=traffic_weight,
             hardware_pricing=hardware_pricing,
         )
@@ -489,6 +506,7 @@ async def _deploy_adapter(
                 placement_id=placement_id,
                 placement_value=placement_value,
                 inactive_timeout=inactive_timeout,
+                max_concurrent_requests_per_replica=max_concurrent_requests_per_replica,
             ):
                 console.print(
                     "[yellow]Replica, placement, and timeout flags apply only when a new deployment is created.[/yellow]\n"
@@ -527,6 +545,9 @@ async def _deploy_adapter(
                     config=construct_config_path(config_value),
                     autoscaling=autoscaling,
                     inactive_timeout=inactive_timeout if inactive_timeout is not None else omit,
+                    max_concurrent_requests_per_replica=(
+                        max_concurrent_requests_per_replica if max_concurrent_requests_per_replica is not None else omit
+                    ),
                     model_revision_id=omit,
                     placement=placement_value or omit,
                 ),
@@ -603,6 +624,7 @@ def _adapter_create_flags_ignored(
     placement_id: str | None,
     placement_value: Placement | None,
     inactive_timeout: int | None,
+    max_concurrent_requests_per_replica: str | None,
 ) -> bool:
     return any(
         (
@@ -616,6 +638,7 @@ def _adapter_create_flags_ignored(
             placement_id is not None,
             placement_value is not None,
             inactive_timeout is not None,
+            max_concurrent_requests_per_replica is not None,
         )
     )
 
@@ -639,6 +662,7 @@ def _print_deployment_preview(
     autoscaling: DeploymentAutoscalingParam,
     placement: Placement | None,
     inactive_timeout: int | None,
+    max_concurrent_requests_per_replica: str | None,
     traffic_weight: float | None,
     hardware_pricing: HardwarePricing | None = None,
     adapter_label: str | None = None,
@@ -689,6 +713,8 @@ def _print_deployment_preview(
 
     if inactive_timeout is not None:
         add_row("--inactive-timeout", str(inactive_timeout))
+    if max_concurrent_requests_per_replica is not None:
+        add_row("--max-concurrent-requests-per-replica", max_concurrent_requests_per_replica)
     if traffic_weight is not None:
         add_row("--traffic-weight", str(traffic_weight))
     add_row("--model", f"{model.name} ({model_path})")

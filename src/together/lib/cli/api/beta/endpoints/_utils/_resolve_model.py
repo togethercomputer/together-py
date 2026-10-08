@@ -7,6 +7,7 @@ from together import NotFoundError
 from together.types.beta import Model, Endpoint
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.lib.cli.utils._console import console
+from together.lib.cli.utils._json_mode import is_json_mode
 from together.types.beta.models.config import Config
 from together.types.beta.supported_model import SupportedModel
 from together.types.beta.supported_model_deployment_profile import SupportedModelDeploymentProfile
@@ -354,6 +355,13 @@ def _profile_gpu(profile: SupportedModelDeploymentProfile) -> str:
     return ""
 
 
+def _ambiguous_profile_error(profiles: list[SupportedModelDeploymentProfile], *, detail: str) -> str:
+    choices = "; ".join(
+        f"model={_profile_cli_model(profile)} config={_profile_config_id(profile)}" for profile in profiles
+    )
+    return f"{detail} Choices: {choices}" if choices else detail
+
+
 def _print_deployment_profiles(profiles: list[SupportedModelDeploymentProfile], *, model_input: str) -> None:
     from together.lib.cli.components.list import ListTable
 
@@ -402,18 +410,24 @@ def _select_deployment_profile(
         return profile
 
     if config_id is None:
+        detail = f"Multiple configs found for {model_input}. Pass --model <model-id> and --config <config-id>."
+        if is_json_mode():
+            raise ValueError(_ambiguous_profile_error(profiles, detail=detail))
         _print_deployment_profiles(profiles, model_input=model_input)
-        raise ValueError(f"Multiple configs found for {model_input}. Pass --model <model-id> and --config <config-id>.")
+        raise ValueError(detail)
 
     matching = [profile for profile in profiles if _profile_matches_config(profile, config_id)]
     if len(matching) == 0:
         return None
     if len(matching) > 1:
-        _print_deployment_profiles(matching, model_input=model_input)
-        raise ValueError(
+        detail = (
             f"Multiple profiles for {model_input} match config {config_id}. "
             "Pass a more specific --model <model-id> from the table above."
         )
+        if is_json_mode():
+            raise ValueError(_ambiguous_profile_error(matching, detail=detail))
+        _print_deployment_profiles(matching, model_input=model_input)
+        raise ValueError(detail)
     return matching[0]
 
 

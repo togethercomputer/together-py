@@ -88,3 +88,32 @@ async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncTogether]:
 @pytest.fixture()
 def cli_runner(capsys: pytest.CaptureFixture[str]) -> CliRunner:
     return CliRunner(capsys)
+
+
+@pytest.fixture(autouse=True)
+def cli_json_mode_defaults_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Command JSON output must not follow the developer shell's agent detection.
+
+    ``--json`` / ``CliRunner(agent=True)`` opt in. Help formatting is separate and
+    still follows ``detect_agent`` at import time.
+    """
+    monkeypatch.setattr("together.lib.cli.utils._json_mode.agent_detected", lambda: False)
+    from together.lib.cli.utils._json_mode import use_json_mode
+
+    use_json_mode(False)
+
+
+@pytest.fixture()
+def plain_cli_help(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force cyclopts' plain help formatter for deterministic `--help` assertions.
+
+    The default formatter is chosen at import time based on agent detection: the
+    rich table formatter ellipsizes option names longer than 30 characters, so
+    tests asserting on full option names would pass locally in agent shells but
+    fail in CI.
+    """
+    from cyclopts.help import PlainFormatter
+
+    from together.lib.cli import app
+
+    monkeypatch.setattr(app, "help_formatter", PlainFormatter())

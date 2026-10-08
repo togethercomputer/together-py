@@ -60,6 +60,7 @@ class DeploymentsResource(SyncAPIResource):
         config: str | Omit = omit,
         config_id: str | Omit = omit,
         inactive_timeout: int | Omit = omit,
+        max_concurrent_requests_per_replica: str | Omit = omit,
         model: str | Omit = omit,
         model_id: str | Omit = omit,
         model_revision_id: str | Omit = omit,
@@ -97,6 +98,11 @@ class DeploymentsResource(SyncAPIResource):
 
           inactive_timeout: Inactive timeout in minutes. Use 0 or omit to disable automatic stopping;
               otherwise accepted values are 30 through 1440.
+
+          max_concurrent_requests_per_replica: Maximum number of inference requests that may be in flight to a single replica.
+              If omitted, the platform uses one less than the config's per-replica concurrency
+              limit to reserve a health-check slot. Values above that maximum are reduced on
+              create; 0 means unlimited when the config limit is 1 or less.
 
           model: Model resource name in the form
               `projects/{projectId}/models/{modelId}[/revisions/{revisionId}]`. Omit the
@@ -138,6 +144,7 @@ class DeploymentsResource(SyncAPIResource):
                     "config": config,
                     "config_id": config_id,
                     "inactive_timeout": inactive_timeout,
+                    "max_concurrent_requests_per_replica": max_concurrent_requests_per_replica,
                     "model": model,
                     "model_id": model_id,
                     "model_revision_id": model_revision_id,
@@ -221,6 +228,7 @@ class DeploymentsResource(SyncAPIResource):
         autoscaling: DeploymentAutoscalingParam | Omit = omit,
         etag: str | Omit = omit,
         inactive_timeout: int | Omit = omit,
+        max_concurrent_requests_per_replica: str | Omit = omit,
         name: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -250,6 +258,11 @@ class DeploymentsResource(SyncAPIResource):
 
           inactive_timeout: Updated inactive timeout in minutes. Use 0 to disable automatic stopping;
               otherwise accepted values are 30 through 1440.
+
+          max_concurrent_requests_per_replica: Updated maximum number of inference requests that may be in flight to a single
+              replica. Values above the deployment config's per-replica concurrency limit
+              minus one are reduced on update; 0 means unlimited when the config limit is 1 or
+              less. Changes take effect without restarting replicas.
 
           name: Updated endpoint string.
 
@@ -282,6 +295,7 @@ class DeploymentsResource(SyncAPIResource):
                     "autoscaling": autoscaling,
                     "etag": etag,
                     "inactive_timeout": inactive_timeout,
+                    "max_concurrent_requests_per_replica": max_concurrent_requests_per_replica,
                     "name": name,
                 },
                 deployment_update_params.DeploymentUpdateParams,
@@ -470,6 +484,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
         config: str | Omit = omit,
         config_id: str | Omit = omit,
         inactive_timeout: int | Omit = omit,
+        max_concurrent_requests_per_replica: str | Omit = omit,
         model: str | Omit = omit,
         model_id: str | Omit = omit,
         model_revision_id: str | Omit = omit,
@@ -507,6 +522,11 @@ class AsyncDeploymentsResource(AsyncAPIResource):
 
           inactive_timeout: Inactive timeout in minutes. Use 0 or omit to disable automatic stopping;
               otherwise accepted values are 30 through 1440.
+
+          max_concurrent_requests_per_replica: Maximum number of inference requests that may be in flight to a single replica.
+              If omitted, the platform uses one less than the config's per-replica concurrency
+              limit to reserve a health-check slot. Values above that maximum are reduced on
+              create; 0 means unlimited when the config limit is 1 or less.
 
           model: Model resource name in the form
               `projects/{projectId}/models/{modelId}[/revisions/{revisionId}]`. Omit the
@@ -548,6 +568,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
                     "config": config,
                     "config_id": config_id,
                     "inactive_timeout": inactive_timeout,
+                    "max_concurrent_requests_per_replica": max_concurrent_requests_per_replica,
                     "model": model,
                     "model_id": model_id,
                     "model_revision_id": model_revision_id,
@@ -631,6 +652,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
         autoscaling: DeploymentAutoscalingParam | Omit = omit,
         etag: str | Omit = omit,
         inactive_timeout: int | Omit = omit,
+        max_concurrent_requests_per_replica: str | Omit = omit,
         name: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
@@ -660,6 +682,11 @@ class AsyncDeploymentsResource(AsyncAPIResource):
 
           inactive_timeout: Updated inactive timeout in minutes. Use 0 to disable automatic stopping;
               otherwise accepted values are 30 through 1440.
+
+          max_concurrent_requests_per_replica: Updated maximum number of inference requests that may be in flight to a single
+              replica. Values above the deployment config's per-replica concurrency limit
+              minus one are reduced on update; 0 means unlimited when the config limit is 1 or
+              less. Changes take effect without restarting replicas.
 
           name: Updated endpoint string.
 
@@ -692,6 +719,7 @@ class AsyncDeploymentsResource(AsyncAPIResource):
                     "autoscaling": autoscaling,
                     "etag": etag,
                     "inactive_timeout": inactive_timeout,
+                    "max_concurrent_requests_per_replica": max_concurrent_requests_per_replica,
                     "name": name,
                 },
                 deployment_update_params.DeploymentUpdateParams,

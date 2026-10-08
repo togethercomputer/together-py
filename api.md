@@ -300,16 +300,99 @@ Methods:
 - <code title="get /projects/{projectId}/configs/{id}">client.beta.models.configs.<a href="./src/together/resources/beta/models/configs.py">retrieve</a>(id, \*, project_id) -> <a href="./src/together/types/beta/models/config.py">Config</a></code>
 - <code title="get /projects/{projectId}/configs">client.beta.models.configs.<a href="./src/together/resources/beta/models/configs.py">list</a>(\*, project_id, \*\*<a href="src/together/types/beta/models/config_list_params.py">params</a>) -> <a href="./src/together/types/beta/models/config.py">SyncCursorPagination[Config]</a></code>
 
-## Rl
-
-### Sessions
+## Jig
 
 Types:
 
 ```python
-from together.types.beta.rl import (
+from together.types.beta import (
+    ContainerDeploymentStatus,
+    Deployment,
+    DeploymentLogs,
+    DeploymentRevision,
+    DeploymentRevisionEvent,
+    DeploymentRevisionEventList,
+    JigListResponse,
+)
+```
+
+Methods:
+
+- <code title="get /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve</a>(id) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
+- <code title="patch /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">update</a>(id, \*\*<a href="src/together/types/beta/jig_update_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
+- <code title="get /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list</a>() -> <a href="./src/together/types/beta/jig_list_response.py">JigListResponse</a></code>
+- <code title="post /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">deploy</a>(\*\*<a href="src/together/types/beta/jig_deploy_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
+- <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
+- <code title="get /deployments/{id}/revisions">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list_revisions</a>(id, \*\*<a href="src/together/types/beta/jig_list_revisions_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_revision_event_list.py">DeploymentRevisionEventList</a></code>
+- <code title="get /deployments/{id}/logs">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_logs</a>(id, \*\*<a href="src/together/types/beta/jig_retrieve_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_logs.py">DeploymentLogs</a></code>
+- <code title="get /deployments/{id}/revisions/{revisionIdentifier}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_revision</a>(revision_identifier, \*, id) -> <a href="./src/together/types/beta/deployment_revision.py">DeploymentRevision</a></code>
+- <code title="post /deployments/{id}/rollback">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">rollback</a>(id, \*\*<a href="src/together/types/beta/jig_rollback_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
+
+### Queue
+
+Types:
+
+```python
+from together.types.beta.jig import (
+    QueueRetrieveResponse,
+    QueueCancelResponse,
+    QueueClearResponse,
+    QueueMetricsResponse,
+    QueueSubmitResponse,
+)
+```
+
+Methods:
+
+- <code title="get /queue/status">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">retrieve</a>(\*\*<a href="src/together/types/beta/jig/queue_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_retrieve_response.py">QueueRetrieveResponse</a></code>
+- <code title="post /queue/cancel">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/jig/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_cancel_response.py">QueueCancelResponse</a></code>
+- <code title="post /queue/clear">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">clear</a>(\*\*<a href="src/together/types/beta/jig/queue_clear_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_clear_response.py">QueueClearResponse</a></code>
+- <code title="get /queue/metrics">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">metrics</a>(\*\*<a href="src/together/types/beta/jig/queue_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_metrics_response.py">QueueMetricsResponse</a></code>
+- <code title="post /queue/submit">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">submit</a>(\*\*<a href="src/together/types/beta/jig/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_submit_response.py">QueueSubmitResponse</a></code>
+
+### Volumes
+
+Types:
+
+```python
+from together.types.beta.jig import S3Origin, Volume, VolumeOrigin, VolumeStatus, VolumeListResponse
+```
+
+Methods:
+
+- <code title="post /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">create</a>(\*\*<a href="src/together/types/beta/jig/volume_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
+- <code title="get /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">retrieve</a>(id, \*\*<a href="src/together/types/beta/jig/volume_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
+- <code title="patch /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/volume_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
+- <code title="get /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">list</a>() -> <a href="./src/together/types/beta/jig/volume_list_response.py">VolumeListResponse</a></code>
+- <code title="delete /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">delete</a>(id) -> object</code>
+
+### Secrets
+
+Types:
+
+```python
+from together.types.beta.jig import Secret, SecretListResponse
+```
+
+Methods:
+
+- <code title="post /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">create</a>(\*\*<a href="src/together/types/beta/jig/secret_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
+- <code title="get /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
+- <code title="patch /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/secret_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
+- <code title="get /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">list</a>() -> <a href="./src/together/types/beta/jig/secret_list_response.py">SecretListResponse</a></code>
+- <code title="delete /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">delete</a>(id) -> object</code>
+
+# PostTraining
+
+## Sessions
+
+Types:
+
+```python
+from together.types.post_training import (
     InferenceCheckpoint,
     LoraConfig,
+    ModelRegistryArtifact,
     Session,
     SessionError,
     SessionErrorCode,
@@ -323,18 +406,18 @@ from together.types.beta.rl import (
 
 Methods:
 
-- <code title="post /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">create</a>(\*\*<a href="src/together/types/beta/rl/session_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
-- <code title="get /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">retrieve</a>(session_id) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
-- <code title="patch /rl/training-sessions/{session_id}">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">update</a>(session_id, \*\*<a href="src/together/types/beta/rl/session_update_params.py">params</a>) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
-- <code title="get /rl/training-sessions">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">list</a>(\*\*<a href="src/together/types/beta/rl/session_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/sessions_list_response.py">SessionsListResponse</a></code>
-- <code title="post /rl/training-sessions/{session_id}/stop">client.beta.rl.sessions.<a href="./src/together/resources/beta/rl/sessions.py">stop</a>(session_id) -> <a href="./src/together/types/beta/rl/session.py">Session</a></code>
+- <code title="post /rl/training-sessions">client.post_training.sessions.<a href="./src/together/resources/post_training/sessions.py">create</a>(\*\*<a href="src/together/types/post_training/session_create_params.py">params</a>) -> <a href="./src/together/types/post_training/session.py">Session</a></code>
+- <code title="get /rl/training-sessions/{session_id}">client.post_training.sessions.<a href="./src/together/resources/post_training/sessions.py">retrieve</a>(session_id) -> <a href="./src/together/types/post_training/session.py">Session</a></code>
+- <code title="patch /rl/training-sessions/{session_id}">client.post_training.sessions.<a href="./src/together/resources/post_training/sessions.py">update</a>(session_id, \*\*<a href="src/together/types/post_training/session_update_params.py">params</a>) -> <a href="./src/together/types/post_training/session.py">Session</a></code>
+- <code title="get /rl/training-sessions">client.post_training.sessions.<a href="./src/together/resources/post_training/sessions.py">list</a>(\*\*<a href="src/together/types/post_training/session_list_params.py">params</a>) -> <a href="./src/together/types/post_training/sessions_list_response.py">SessionsListResponse</a></code>
+- <code title="post /rl/training-sessions/{session_id}/stop">client.post_training.sessions.<a href="./src/together/resources/post_training/sessions.py">stop</a>(session_id) -> <a href="./src/together/types/post_training/session.py">Session</a></code>
 
-### Operations
+## Operations
 
 Types:
 
 ```python
-from together.types.beta.rl import (
+from together.types.post_training import (
     AdamParams,
     CispoLossParams,
     CrossEntropyLossParams,
@@ -381,27 +464,27 @@ from together.types.beta.rl import (
 
 Methods:
 
-- <code title="post /rl/training-sessions/{session_id}/operations/inference-checkpoint">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">create_inference_checkpoint</a>(session_id) -> <a href="./src/together/types/beta/rl/inference_checkpoint_operation.py">InferenceCheckpointOperation</a></code>
-- <code title="post /rl/training-sessions/{session_id}/operations/training-checkpoint">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">create_training_checkpoint</a>(session_id) -> <a href="./src/together/types/beta/rl/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
-- <code title="post /rl/training-sessions/{session_id}/operations/custom-forward-backward">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">custom_forward_backward</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_custom_forward_backward_params.py">params</a>) -> <a href="./src/together/types/beta/rl/custom_forward_backward_operation.py">CustomForwardBackwardOperation</a></code>
-- <code title="post /rl/training-sessions/{session_id}/operations/forward-backward">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">forward_backward</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_forward_backward_params.py">params</a>) -> <a href="./src/together/types/beta/rl/forward_backward_operation.py">ForwardBackwardOperation</a></code>
-- <code title="post /rl/training-sessions/{session_id}/operations/optim-step">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">optim_step</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_optim_step_params.py">params</a>) -> <a href="./src/together/types/beta/rl/optim_step_operation.py">OptimStepOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_custom_forward_backward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/custom_forward_backward_operation.py">CustomForwardBackwardOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_forward_backward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/forward_backward_operation.py">ForwardBackwardOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_inference_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/inference_checkpoint_operation.py">InferenceCheckpointOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/optim-step/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_optim_step</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/optim_step_operation.py">OptimStepOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/sample/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_sample</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/sample_operation.py">SampleOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_training_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
-- <code title="get /rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">retrieve_weights_sync</a>(operation_id, \*, session_id) -> <a href="./src/together/types/beta/rl/weights_sync_operation.py">WeightsSyncOperation</a></code>
-- <code title="post /rl/training-sessions/{session_id}/operations/sample">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">sample</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_sample_params.py">params</a>) -> <a href="./src/together/types/beta/rl/sample_operation.py">SampleOperation</a></code>
-- <code title="post /rl/training-sessions/{session_id}/operations/weights-sync">client.beta.rl.operations.<a href="./src/together/resources/beta/rl/operations.py">weights_sync</a>(session_id, \*\*<a href="src/together/types/beta/rl/operation_weights_sync_params.py">params</a>) -> <a href="./src/together/types/beta/rl/weights_sync_operation.py">WeightsSyncOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/inference-checkpoint">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">create_inference_checkpoint</a>(session_id) -> <a href="./src/together/types/post_training/inference_checkpoint_operation.py">InferenceCheckpointOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/training-checkpoint">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">create_training_checkpoint</a>(session_id) -> <a href="./src/together/types/post_training/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/custom-forward-backward">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">custom_forward_backward</a>(session_id, \*\*<a href="src/together/types/post_training/operation_custom_forward_backward_params.py">params</a>) -> <a href="./src/together/types/post_training/custom_forward_backward_operation.py">CustomForwardBackwardOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/forward-backward">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">forward_backward</a>(session_id, \*\*<a href="src/together/types/post_training/operation_forward_backward_params.py">params</a>) -> <a href="./src/together/types/post_training/forward_backward_operation.py">ForwardBackwardOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/optim-step">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">optim_step</a>(session_id, \*\*<a href="src/together/types/post_training/operation_optim_step_params.py">params</a>) -> <a href="./src/together/types/post_training/optim_step_operation.py">OptimStepOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/custom-forward-backward/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_custom_forward_backward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/custom_forward_backward_operation.py">CustomForwardBackwardOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/forward-backward/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_forward_backward</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/forward_backward_operation.py">ForwardBackwardOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/inference-checkpoint/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_inference_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/inference_checkpoint_operation.py">InferenceCheckpointOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/optim-step/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_optim_step</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/optim_step_operation.py">OptimStepOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/sample/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_sample</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/sample_operation.py">SampleOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/training-checkpoint/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_training_checkpoint</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/training_checkpoint_operation.py">TrainingCheckpointOperation</a></code>
+- <code title="get /rl/training-sessions/{session_id}/operations/weights-sync/{operation_id}">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">retrieve_weights_sync</a>(operation_id, \*, session_id) -> <a href="./src/together/types/post_training/weights_sync_operation.py">WeightsSyncOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/sample">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">sample</a>(session_id, \*\*<a href="src/together/types/post_training/operation_sample_params.py">params</a>) -> <a href="./src/together/types/post_training/sample_operation.py">SampleOperation</a></code>
+- <code title="post /rl/training-sessions/{session_id}/operations/weights-sync">client.post_training.operations.<a href="./src/together/resources/post_training/operations.py">weights_sync</a>(session_id, \*\*<a href="src/together/types/post_training/operation_weights_sync_params.py">params</a>) -> <a href="./src/together/types/post_training/weights_sync_operation.py">WeightsSyncOperation</a></code>
 
-### Checkpoints
+## Checkpoints
 
 Types:
 
 ```python
-from together.types.beta.rl import (
+from together.types.post_training import (
     Checkpoint,
     CheckpointDownloadResponse,
     CheckpointFile,
@@ -413,16 +496,42 @@ from together.types.beta.rl import (
 
 Methods:
 
-- <code title="get /rl/checkpoints/{id}">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">retrieve</a>(id) -> <a href="./src/together/types/beta/rl/checkpoint.py">Checkpoint</a></code>
-- <code title="get /rl/checkpoints">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">list</a>(\*\*<a href="src/together/types/beta/rl/checkpoint_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/checkpoints_list_response.py">CheckpointsListResponse</a></code>
-- <code title="get /rl/checkpoints/{id}/download">client.beta.rl.checkpoints.<a href="./src/together/resources/beta/rl/checkpoints.py">download</a>(id, \*\*<a href="src/together/types/beta/rl/checkpoint_download_params.py">params</a>) -> <a href="./src/together/types/beta/rl/checkpoint_download_response.py">CheckpointDownloadResponse</a></code>
+- <code title="get /rl/checkpoints/{id}">client.post_training.checkpoints.<a href="./src/together/resources/post_training/checkpoints.py">retrieve</a>(id) -> <a href="./src/together/types/post_training/checkpoint.py">Checkpoint</a></code>
+- <code title="get /rl/checkpoints">client.post_training.checkpoints.<a href="./src/together/resources/post_training/checkpoints.py">list</a>(\*\*<a href="src/together/types/post_training/checkpoint_list_params.py">params</a>) -> <a href="./src/together/types/post_training/checkpoints_list_response.py">CheckpointsListResponse</a></code>
+- <code title="get /rl/checkpoints/{id}/download">client.post_training.checkpoints.<a href="./src/together/resources/post_training/checkpoints.py">download</a>(id, \*\*<a href="src/together/types/post_training/checkpoint_download_params.py">params</a>) -> <a href="./src/together/types/post_training/checkpoint_download_response.py">CheckpointDownloadResponse</a></code>
 
-### ModelResources
+## PrepareForFp4Inference
 
 Types:
 
 ```python
-from together.types.beta.rl import (
+from together.types.post_training import (
+    QuantizationEstimate,
+    QuantizationEvent,
+    QuantizationJob,
+    QuantizationResults,
+    ShapingJobStatus,
+    ShapingJobType,
+    PrepareForFp4InferenceListResponse,
+    PrepareForFp4InferenceListEventsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /shaping/prepare-for-fp4-inference">client.post_training.prepare_for_fp4_inference.<a href="./src/together/resources/post_training/prepare_for_fp4_inference.py">create</a>(\*\*<a href="src/together/types/post_training/prepare_for_fp4_inference_create_params.py">params</a>) -> <a href="./src/together/types/post_training/quantization_job.py">QuantizationJob</a></code>
+- <code title="get /shaping/{id}">client.post_training.prepare_for_fp4_inference.<a href="./src/together/resources/post_training/prepare_for_fp4_inference.py">retrieve</a>(id) -> <a href="./src/together/types/post_training/quantization_job.py">QuantizationJob</a></code>
+- <code title="get /shaping">client.post_training.prepare_for_fp4_inference.<a href="./src/together/resources/post_training/prepare_for_fp4_inference.py">list</a>() -> <a href="./src/together/types/post_training/prepare_for_fp4_inference_list_response.py">PrepareForFp4InferenceListResponse</a></code>
+- <code title="post /shaping/{id}/cancel">client.post_training.prepare_for_fp4_inference.<a href="./src/together/resources/post_training/prepare_for_fp4_inference.py">cancel</a>(id) -> <a href="./src/together/types/post_training/quantization_job.py">QuantizationJob</a></code>
+- <code title="post /shaping/prepare-for-fp4-inference/estimate">client.post_training.prepare_for_fp4_inference.<a href="./src/together/resources/post_training/prepare_for_fp4_inference.py">estimate_cost</a>(\*\*<a href="src/together/types/post_training/prepare_for_fp4_inference_estimate_cost_params.py">params</a>) -> <a href="./src/together/types/post_training/quantization_estimate.py">QuantizationEstimate</a></code>
+- <code title="get /shaping/{id}/events">client.post_training.prepare_for_fp4_inference.<a href="./src/together/resources/post_training/prepare_for_fp4_inference.py">list_events</a>(id) -> <a href="./src/together/types/post_training/prepare_for_fp4_inference_list_events_response.py">PrepareForFp4InferenceListEventsResponse</a></code>
+
+## ModelResources
+
+Types:
+
+```python
+from together.types.post_training import (
     AdamConfig,
     ModelResources,
     ModelResourcesError,
@@ -438,106 +547,30 @@ from together.types.beta.rl import (
 
 Methods:
 
-- <code title="post /rl/model-resources">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">create</a>(\*\*<a href="src/together/types/beta/rl/model_resource_create_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources.py">ModelResources</a></code>
-- <code title="get /rl/model-resources/{model_resources_id}">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">retrieve</a>(model_resources_id) -> <a href="./src/together/types/beta/rl/model_resources.py">ModelResources</a></code>
-- <code title="get /rl/model-resources">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">list</a>(\*\*<a href="src/together/types/beta/rl/model_resource_list_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources_list_response.py">ModelResourcesListResponse</a></code>
-- <code title="post /rl/model-resources/estimate-cost">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">estimate_cost</a>(\*\*<a href="src/together/types/beta/rl/model_resource_estimate_cost_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources_estimate_cost_response.py">ModelResourcesEstimateCostResponse</a></code>
-- <code title="post /rl/model-resources/{model_resources_id}/stop">client.beta.rl.model_resources.<a href="./src/together/resources/beta/rl/model_resources.py">stop</a>(model_resources_id, \*\*<a href="src/together/types/beta/rl/model_resource_stop_params.py">params</a>) -> <a href="./src/together/types/beta/rl/model_resources.py">ModelResources</a></code>
+- <code title="post /rl/model-resources">client.post_training.model_resources.<a href="./src/together/resources/post_training/model_resources.py">create</a>(\*\*<a href="src/together/types/post_training/model_resource_create_params.py">params</a>) -> <a href="./src/together/types/post_training/model_resources.py">ModelResources</a></code>
+- <code title="get /rl/model-resources/{model_resources_id}">client.post_training.model_resources.<a href="./src/together/resources/post_training/model_resources.py">retrieve</a>(model_resources_id) -> <a href="./src/together/types/post_training/model_resources.py">ModelResources</a></code>
+- <code title="get /rl/model-resources">client.post_training.model_resources.<a href="./src/together/resources/post_training/model_resources.py">list</a>(\*\*<a href="src/together/types/post_training/model_resource_list_params.py">params</a>) -> <a href="./src/together/types/post_training/model_resources_list_response.py">ModelResourcesListResponse</a></code>
+- <code title="post /rl/model-resources/estimate-cost">client.post_training.model_resources.<a href="./src/together/resources/post_training/model_resources.py">estimate_cost</a>(\*\*<a href="src/together/types/post_training/model_resource_estimate_cost_params.py">params</a>) -> <a href="./src/together/types/post_training/model_resources_estimate_cost_response.py">ModelResourcesEstimateCostResponse</a></code>
+- <code title="post /rl/model-resources/{model_resources_id}/stop">client.post_training.model_resources.<a href="./src/together/resources/post_training/model_resources.py">stop</a>(model_resources_id, \*\*<a href="src/together/types/post_training/model_resource_stop_params.py">params</a>) -> <a href="./src/together/types/post_training/model_resources.py">ModelResources</a></code>
 
-### SupportedModels
+## SupportedModels
 
 Types:
 
 ```python
-from together.types.beta.rl import RlSupportedModel, RlSupportedModels
+from together.types.post_training import RlSupportedModel, RlSupportedModels
 ```
 
 Methods:
 
-- <code title="get /rl/supported-models">client.beta.rl.supported_models.<a href="./src/together/resources/beta/rl/supported_models.py">get</a>() -> <a href="./src/together/types/beta/rl/rl_supported_models.py">RlSupportedModels</a></code>
+- <code title="get /rl/supported-models">client.post_training.supported_models.<a href="./src/together/resources/post_training/supported_models.py">get</a>() -> <a href="./src/together/types/post_training/rl_supported_models.py">RlSupportedModels</a></code>
 
-## Jig
-
-Types:
-
-```python
-from together.types.beta import (
-    ContainerDeploymentStatus,
-    Deployment,
-    DeploymentLogs,
-    JigListResponse,
-)
-```
-
-Methods:
-
-- <code title="get /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve</a>(id) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
-- <code title="patch /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">update</a>(id, \*\*<a href="src/together/types/beta/jig_update_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
-- <code title="get /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">list</a>() -> <a href="./src/together/types/beta/jig_list_response.py">JigListResponse</a></code>
-- <code title="post /deployments">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">deploy</a>(\*\*<a href="src/together/types/beta/jig_deploy_params.py">params</a>) -> <a href="./src/together/types/beta/deployment.py">Deployment</a></code>
-- <code title="delete /deployments/{id}">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">destroy</a>(id) -> object</code>
-- <code title="get /deployments/{id}/logs">client.beta.jig.<a href="./src/together/resources/beta/jig/jig.py">retrieve_logs</a>(id, \*\*<a href="src/together/types/beta/jig_retrieve_logs_params.py">params</a>) -> <a href="./src/together/types/beta/deployment_logs.py">DeploymentLogs</a></code>
-
-### Queue
+# Clusters
 
 Types:
 
 ```python
-from together.types.beta.jig import (
-    QueueRetrieveResponse,
-    QueueCancelResponse,
-    QueueClearResponse,
-    QueueMetricsResponse,
-    QueueSubmitResponse,
-)
-```
-
-Methods:
-
-- <code title="get /queue/status">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">retrieve</a>(\*\*<a href="src/together/types/beta/jig/queue_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_retrieve_response.py">QueueRetrieveResponse</a></code>
-- <code title="post /queue/cancel">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">cancel</a>(\*\*<a href="src/together/types/beta/jig/queue_cancel_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_cancel_response.py">QueueCancelResponse</a></code>
-- <code title="post /queue/clear">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">clear</a>(\*\*<a href="src/together/types/beta/jig/queue_clear_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_clear_response.py">QueueClearResponse</a></code>
-- <code title="get /queue/metrics">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">metrics</a>(\*\*<a href="src/together/types/beta/jig/queue_metrics_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_metrics_response.py">QueueMetricsResponse</a></code>
-- <code title="post /queue/submit">client.beta.jig.queue.<a href="./src/together/resources/beta/jig/queue.py">submit</a>(\*\*<a href="src/together/types/beta/jig/queue_submit_params.py">params</a>) -> <a href="./src/together/types/beta/jig/queue_submit_response.py">QueueSubmitResponse</a></code>
-
-### Volumes
-
-Types:
-
-```python
-from together.types.beta.jig import Volume, VolumeListResponse
-```
-
-Methods:
-
-- <code title="post /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">create</a>(\*\*<a href="src/together/types/beta/jig/volume_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="get /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">retrieve</a>(id, \*\*<a href="src/together/types/beta/jig/volume_retrieve_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="patch /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/volume_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/volume.py">Volume</a></code>
-- <code title="get /deployments/storage/volumes">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">list</a>() -> <a href="./src/together/types/beta/jig/volume_list_response.py">VolumeListResponse</a></code>
-- <code title="delete /deployments/storage/volumes/{id}">client.beta.jig.volumes.<a href="./src/together/resources/beta/jig/volumes.py">delete</a>(id) -> object</code>
-
-### Secrets
-
-Types:
-
-```python
-from together.types.beta.jig import Secret, SecretListResponse
-```
-
-Methods:
-
-- <code title="post /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">create</a>(\*\*<a href="src/together/types/beta/jig/secret_create_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
-- <code title="get /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">retrieve</a>(id) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
-- <code title="patch /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">update</a>(id, \*\*<a href="src/together/types/beta/jig/secret_update_params.py">params</a>) -> <a href="./src/together/types/beta/jig/secret.py">Secret</a></code>
-- <code title="get /deployments/secrets">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">list</a>() -> <a href="./src/together/types/beta/jig/secret_list_response.py">SecretListResponse</a></code>
-- <code title="delete /deployments/secrets/{id}">client.beta.jig.secrets.<a href="./src/together/resources/beta/jig/secrets.py">delete</a>(id) -> object</code>
-
-## Clusters
-
-Types:
-
-```python
-from together.types.beta import (
+from together.types import (
     Cluster,
     ClusterListResponse,
     ClusterDeleteResponse,
@@ -547,45 +580,45 @@ from together.types.beta import (
 
 Methods:
 
-- <code title="post /compute/clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">create</a>(\*\*<a href="src/together/types/beta/cluster_create_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="get /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">retrieve</a>(cluster_id) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="put /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">update</a>(cluster_id, \*\*<a href="src/together/types/beta/cluster_update_params.py">params</a>) -> <a href="./src/together/types/beta/cluster.py">Cluster</a></code>
-- <code title="get /compute/clusters">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list</a>(\*\*<a href="src/together/types/beta/cluster_list_params.py">params</a>) -> <a href="./src/together/types/beta/cluster_list_response.py">ClusterListResponse</a></code>
-- <code title="delete /compute/clusters/{cluster_id}">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">delete</a>(cluster_id) -> <a href="./src/together/types/beta/cluster_delete_response.py">ClusterDeleteResponse</a></code>
-- <code title="get /compute/regions">client.beta.clusters.<a href="./src/together/resources/beta/clusters/clusters.py">list_regions</a>() -> <a href="./src/together/types/beta/cluster_list_regions_response.py">ClusterListRegionsResponse</a></code>
+- <code title="post /compute/clusters">client.clusters.<a href="./src/together/resources/clusters/clusters.py">create</a>(\*\*<a href="src/together/types/cluster_create_params.py">params</a>) -> <a href="./src/together/types/cluster.py">Cluster</a></code>
+- <code title="get /compute/clusters/{cluster_id}">client.clusters.<a href="./src/together/resources/clusters/clusters.py">retrieve</a>(cluster_id) -> <a href="./src/together/types/cluster.py">Cluster</a></code>
+- <code title="put /compute/clusters/{cluster_id}">client.clusters.<a href="./src/together/resources/clusters/clusters.py">update</a>(cluster_id, \*\*<a href="src/together/types/cluster_update_params.py">params</a>) -> <a href="./src/together/types/cluster.py">Cluster</a></code>
+- <code title="get /compute/clusters">client.clusters.<a href="./src/together/resources/clusters/clusters.py">list</a>(\*\*<a href="src/together/types/cluster_list_params.py">params</a>) -> <a href="./src/together/types/cluster_list_response.py">ClusterListResponse</a></code>
+- <code title="delete /compute/clusters/{cluster_id}">client.clusters.<a href="./src/together/resources/clusters/clusters.py">delete</a>(cluster_id) -> <a href="./src/together/types/cluster_delete_response.py">ClusterDeleteResponse</a></code>
+- <code title="get /compute/regions">client.clusters.<a href="./src/together/resources/clusters/clusters.py">list_regions</a>() -> <a href="./src/together/types/cluster_list_regions_response.py">ClusterListRegionsResponse</a></code>
 
-### Remediations
-
-Types:
-
-```python
-from together.types.beta.clusters import Remediation, RemediationListResponse
-```
-
-Methods:
-
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">create</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
-- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">retrieve</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
-- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">list</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/beta/clusters/remediation_list_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation_list_response.py">RemediationListResponse</a></code>
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">approve</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_approve_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">cancel</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
-- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject">client.beta.clusters.remediations.<a href="./src/together/resources/beta/clusters/remediations.py">reject</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/beta/clusters/remediation_reject_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/remediation.py">Remediation</a></code>
-
-### Storage
+## Remediations
 
 Types:
 
 ```python
-from together.types.beta.clusters import ClusterStorage, StorageListResponse, StorageDeleteResponse
+from together.types.clusters import Remediation, RemediationListResponse
 ```
 
 Methods:
 
-- <code title="post /compute/clusters/storage/volumes">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">create</a>(\*\*<a href="src/together/types/beta/clusters/storage_create_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="get /compute/clusters/storage/volumes/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">retrieve</a>(volume_id) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="put /compute/clusters/storage/volumes">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">update</a>(\*\*<a href="src/together/types/beta/clusters/storage_update_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/cluster_storage.py">ClusterStorage</a></code>
-- <code title="get /compute/clusters/storage/volumes">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">list</a>(\*\*<a href="src/together/types/beta/clusters/storage_list_params.py">params</a>) -> <a href="./src/together/types/beta/clusters/storage_list_response.py">StorageListResponse</a></code>
-- <code title="delete /compute/clusters/storage/volumes/{volume_id}">client.beta.clusters.storage.<a href="./src/together/resources/beta/clusters/storage.py">delete</a>(volume_id) -> <a href="./src/together/types/beta/clusters/storage_delete_response.py">StorageDeleteResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.clusters.remediations.<a href="./src/together/resources/clusters/remediations.py">create</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/clusters/remediation_create_params.py">params</a>) -> <a href="./src/together/types/clusters/remediation.py">Remediation</a></code>
+- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}">client.clusters.remediations.<a href="./src/together/resources/clusters/remediations.py">retrieve</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/clusters/remediation.py">Remediation</a></code>
+- <code title="get /compute/clusters/{cluster_id}/instances/{instance_id}/remediations">client.clusters.remediations.<a href="./src/together/resources/clusters/remediations.py">list</a>(instance_id, \*, cluster_id, \*\*<a href="src/together/types/clusters/remediation_list_params.py">params</a>) -> <a href="./src/together/types/clusters/remediation_list_response.py">RemediationListResponse</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/approve">client.clusters.remediations.<a href="./src/together/resources/clusters/remediations.py">approve</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/clusters/remediation_approve_params.py">params</a>) -> <a href="./src/together/types/clusters/remediation.py">Remediation</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/cancel">client.clusters.remediations.<a href="./src/together/resources/clusters/remediations.py">cancel</a>(remediation_id, \*, cluster_id, instance_id) -> <a href="./src/together/types/clusters/remediation.py">Remediation</a></code>
+- <code title="post /compute/clusters/{cluster_id}/instances/{instance_id}/remediations/{remediation_id}/reject">client.clusters.remediations.<a href="./src/together/resources/clusters/remediations.py">reject</a>(remediation_id, \*, cluster_id, instance_id, \*\*<a href="src/together/types/clusters/remediation_reject_params.py">params</a>) -> <a href="./src/together/types/clusters/remediation.py">Remediation</a></code>
+
+## Storage
+
+Types:
+
+```python
+from together.types.clusters import ClusterStorage, StorageListResponse, StorageDeleteResponse
+```
+
+Methods:
+
+- <code title="post /compute/clusters/storage/volumes">client.clusters.storage.<a href="./src/together/resources/clusters/storage.py">create</a>(\*\*<a href="src/together/types/clusters/storage_create_params.py">params</a>) -> <a href="./src/together/types/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="get /compute/clusters/storage/volumes/{volume_id}">client.clusters.storage.<a href="./src/together/resources/clusters/storage.py">retrieve</a>(volume_id) -> <a href="./src/together/types/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="put /compute/clusters/storage/volumes">client.clusters.storage.<a href="./src/together/resources/clusters/storage.py">update</a>(\*\*<a href="src/together/types/clusters/storage_update_params.py">params</a>) -> <a href="./src/together/types/clusters/cluster_storage.py">ClusterStorage</a></code>
+- <code title="get /compute/clusters/storage/volumes">client.clusters.storage.<a href="./src/together/resources/clusters/storage.py">list</a>(\*\*<a href="src/together/types/clusters/storage_list_params.py">params</a>) -> <a href="./src/together/types/clusters/storage_list_response.py">StorageListResponse</a></code>
+- <code title="delete /compute/clusters/storage/volumes/{volume_id}">client.clusters.storage.<a href="./src/together/resources/clusters/storage.py">delete</a>(volume_id) -> <a href="./src/together/types/clusters/storage_delete_response.py">StorageDeleteResponse</a></code>
 
 # Chat
 
@@ -849,6 +882,18 @@ Methods:
 - <code title="get /endpoints/{endpointId}/adapters">client.endpoints.adapters.<a href="./src/together/resources/endpoints/adapters.py">list</a>(endpoint_id) -> <a href="./src/together/types/endpoints/adapter_list_response.py">AdapterListResponse</a></code>
 - <code title="post /endpoints/{endpointId}/adapters">client.endpoints.adapters.<a href="./src/together/resources/endpoints/adapters.py">add</a>(endpoint_id, \*\*<a href="src/together/types/endpoints/adapter_add_params.py">params</a>) -> <a href="./src/together/types/endpoints/adapter_add_response.py">AdapterAddResponse</a></code>
 - <code title="delete /endpoints/{endpointId}/adapters">client.endpoints.adapters.<a href="./src/together/resources/endpoints/adapters.py">remove</a>(endpoint_id, \*\*<a href="src/together/types/endpoints/adapter_remove_params.py">params</a>) -> <a href="./src/together/types/endpoints/adapter_remove_response.py">AdapterRemoveResponse</a></code>
+
+# Projects
+
+Types:
+
+```python
+from together.types import Project
+```
+
+Methods:
+
+- <code title="get /projects">client.projects.<a href="./src/together/resources/projects.py">list</a>(\*\*<a href="src/together/types/project_list_params.py">params</a>) -> <a href="./src/together/types/project.py">SyncCursorPagination[Project]</a></code>
 
 # Rerank
 

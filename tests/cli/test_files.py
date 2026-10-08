@@ -12,6 +12,8 @@ import pytest
 from respx import MockRouter
 
 from tests.cli.utils import CliRunner
+from together.lib.cli._track_cli import CliTrackingEvents
+from together.lib.resources.files import FileAlreadyExistsError
 from together.types.file_response import FileResponse
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
@@ -80,12 +82,22 @@ class TestFilesCheck:
     def test_check_non_jsonl_extension(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         bad = tmp_path / "bad.txt"
         bad.write_text("notjson", encoding="utf-8")
-        result = cli_runner.invoke(["files", "check", str(bad)])
+        with patch("together.lib.cli.track_cli") as track_cli:
+            result = cli_runner.invoke(["files", "check", str(bad)])
         assert result.exit_code == 1
         assert "Checks passed" not in result.output
         assert "Unknown extension" in result.output
         assert result.output.startswith("X ")
         result.output.encode("cp1252")
+        failed = [call.args[1] for call in track_cli.call_args_list if call.args[0] is CliTrackingEvents.CommandFailed]
+        assert failed[0]["error"] == "File validation failed"
+
+    def test_check_failure_json_exits_nonzero(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        bad = tmp_path / "bad.txt"
+        bad.write_text("notjson", encoding="utf-8")
+        result = cli_runner.invoke(["files", "check", str(bad), "--json"])
+        assert result.exit_code == 1
+        assert json.loads(result.output)["is_check_passed"] is False
 
 
 class TestFilesDelete:
@@ -246,7 +258,7 @@ class TestFilesUpload:
         f.write_text("{}\n")
         with patch.object(_files_upload_cli, "check_file") as check_mock, patch(
             "together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock
-        ) as upload_mock:
+        ) as upload_mock, patch("together.lib.cli.track_cli") as track_cli:
             check_mock.return_value = {"is_check_passed": False, "message": "failed validation"}
             result = cli_runner.invoke(["files", "upload", str(f)])
         assert result.exit_code == 1
@@ -254,6 +266,8 @@ class TestFilesUpload:
         result.output.encode("cp1252")
         check_mock.assert_called_once()
         upload_mock.assert_not_called()
+        failed = [call.args[1] for call in track_cli.call_args_list if call.args[0] is CliTrackingEvents.CommandFailed]
+        assert failed[0]["error"] == "File validation failed"
 
     def test_upload_eval_jsonl_trailing_blank_passes_check(self, tmp_path: Path, cli_runner: CliRunner) -> None:
         f = tmp_path / "data.jsonl"
@@ -296,3 +310,20 @@ class TestFilesUpload:
         assert result.exit_code == 0
         call_kw = upload_mock.call_args.kwargs
         assert call_kw["progress_callback"] is None
+        assert call_kw["raise_if_already_exists"] is True
+
+    def test_upload_json_already_exists_emits_error(self, tmp_path: Path, cli_runner: CliRunner) -> None:
+        f = tmp_path / "data.jsonl"
+        f.write_text("{}\n")
+        with patch.object(_files_upload_cli, "check_file") as check_mock, patch(
+            "together.resources.files.AsyncFilesResource.upload", new_callable=AsyncMock
+        ) as upload_mock:
+            check_mock.return_value = {"is_check_passed": True}
+            upload_mock.side_effect = FileAlreadyExistsError("file-existing")
+            result = cli_runner.invoke(["files", "upload", str(f), "--json"])
+        assert result.exit_code == 1
+        assert json.loads(result.output) == {
+            "error": "File already exists. Delete the existing file before re-uploading.",
+            "file_id": "file-existing",
+        }
+        assert upload_mock.call_args.kwargs["raise_if_already_exists"] is True

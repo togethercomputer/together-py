@@ -44,6 +44,15 @@ class DeploymentAdapterStatus(BaseModel):
     projects/{projectId}/models/{adapterModelId}.
     """
 
+    adapter_valid: Optional[bool] = FieldInfo(alias="adapterValid", default=None)
+    """
+    Optional inference-probe verdict for this adapter on this cluster; absent until
+    validation concludes.
+    """
+
+    adapter_valid_reason: Optional[str] = FieldInfo(alias="adapterValidReason", default=None)
+    """Human-readable probe rejection detail when adapterValid is false."""
+
     loaded_at: Optional[datetime] = FieldInfo(alias="loadedAt", default=None)
     """Time when the adapter first reached READY in this cluster."""
 
