@@ -37,9 +37,10 @@ from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
 )
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
+    load_model,
     load_base_model,
+    is_adapter_model,
     list_model_configs,
-    load_adapter_model,
     find_compatible_deployment,
     select_lora_config_for_deploy,
 )
@@ -252,7 +253,8 @@ async def deploy(
     if merge and attach_adapter:
         raise ValueError("Use either --merge or --attach-adapter, not both.")
 
-    adapter_model = await load_adapter_model(config, model)
+    loaded_model = await load_model(config, model)
+    adapter_model = loaded_model if loaded_model is not None and is_adapter_model(loaded_model) else None
     if adapter_model is None and (merge or attach_adapter):
         flag = "--merge" if merge else "--attach-adapter"
         raise ValueError(f"{flag} only applies to LoRA adapter models, and {model} is not an adapter.")
@@ -288,7 +290,13 @@ async def deploy(
         )
         return
 
-    resolved = await resolve_model_and_config(config, model, config_id=config_id)
+    resolved = await resolve_model_and_config(
+        config,
+        model,
+        config_id=config_id,
+        loaded_model=loaded_model,
+        reuse_loaded_model=True,
+    )
     resolved_model, config_value = resolved.model, resolved.config
     # Prefer revision pin from a fully-qualified model path; fall back to the
     # deprecated --model-revision flag.

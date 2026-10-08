@@ -140,9 +140,38 @@ def _adapter_mode_rank(mode: str | None) -> int:
     return _ADAPTER_MODE_RANK.get(mode or "", 9)
 
 
+async def load_model(config: CLIConfigParameter, model_input: str) -> Model | None:
+    """Load a project model once. None means deploy should use public or configs resolution."""
+    path_match = MODEL_PATH_RE.match(model_input)
+    if path_match:
+        try:
+            return await config.client.beta.models.retrieve(id=path_match.group(2), project_id=path_match.group(1))
+        except NotFoundError:
+            return None
+
+    if "/" not in model_input:
+        # Bare ids are often public reference models. A direct retrieve needs a
+        # project id and 404s when the id is not in that project. Either failure
+        # used to fall through to config lookup; keep doing that instead of
+        # aborting the deploy.
+        try:
+            return await config.client.beta.models.retrieve(
+                id=model_input,
+                project_id=config.project_id or config.client.project_id,
+            )
+        except (NotFoundError, ValueError):
+            return None
+
+    me = await config.client.whoami()
+    prefix, _, _name = model_input.partition("/")
+    if prefix != me.project_slug:
+        return None
+    return await _find_private_model_by_name(config, model_input)
+
+
 async def load_adapter_model(config: CLIConfigParameter, model_input: str) -> Model | None:
     """Load ``model_input`` when it is a LoRA adapter. Return None for every other model."""
-    model = await _load_model(config, model_input)
+    model = await load_model(config, model_input)
     if model is None or not is_adapter_model(model):
         return None
     return model
@@ -223,34 +252,6 @@ def _find_deployment_by_name(deployments: list[EndpointDeployment], name: str) -
         if deployment.name == name or (deployment.name or "").rsplit("/", 1)[-1] == bare:
             return deployment
     return None
-
-
-async def _load_model(config: CLIConfigParameter, model_input: str) -> Model | None:
-    path_match = MODEL_PATH_RE.match(model_input)
-    if path_match:
-        try:
-            return await config.client.beta.models.retrieve(id=path_match.group(2), project_id=path_match.group(1))
-        except NotFoundError:
-            return None
-
-    if "/" not in model_input:
-        # Bare ids are often public reference models. A direct retrieve needs a
-        # project id and 404s when the id is not in that project. Either failure
-        # used to fall through to config lookup; keep doing that instead of
-        # aborting the deploy.
-        try:
-            return await config.client.beta.models.retrieve(
-                id=model_input,
-                project_id=config.project_id or config.client.project_id,
-            )
-        except (NotFoundError, ValueError):
-            return None
-
-    me = await config.client.whoami()
-    prefix, _, _name = model_input.partition("/")
-    if prefix != me.project_slug:
-        return None
-    return await _find_private_model_by_name(config, model_input)
 
 
 def _lookup_config(deployment: EndpointDeployment, by_id: dict[str, Config]) -> Config | None:

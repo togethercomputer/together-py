@@ -129,8 +129,22 @@ async def resolve_model_and_config(
     model_input: str,
     *,
     config_id: str | None = None,
+    loaded_model: Model | None = None,
+    reuse_loaded_model: bool = False,
 ) -> ResolvedModelAndConfig:
-    """Resolve a deployable model and the config revision to pair with it."""
+    """Resolve a deployable model and the config revision to pair with it.
+
+    Pass ``reuse_loaded_model`` after ``load_model`` so a second whoami and
+    private-model list are skipped. ``loaded_model`` is None when that lookup missed.
+    """
+    if reuse_loaded_model:
+        return await _resolve_from_loaded_model(
+            config,
+            model_input,
+            loaded_model,
+            config_id=config_id,
+        )
+
     # 2. Full model path → keep the user's model; config from its base/reference.
     path_match = MODEL_PATH_RE.match(model_input)
     if path_match:
@@ -182,6 +196,58 @@ async def resolve_model_and_config(
         )
 
     return await _resolve_public_model_and_config(config, model_input, config_id=config_id)
+
+
+async def _resolve_from_loaded_model(
+    config: CLIConfigParameter,
+    model_input: str,
+    loaded_model: Model | None,
+    *,
+    config_id: str | None,
+) -> ResolvedModelAndConfig:
+    """Continue config resolution from a model ``load_model`` already fetched."""
+    path_match = MODEL_PATH_RE.match(model_input)
+    if path_match:
+        if loaded_model is None:
+            raise ValueError(f"Model {model_input} not found.")
+        return await _resolve_config_for_model(
+            config,
+            loaded_model,
+            reference_model_id=_reference_model_id(loaded_model),
+            config_id=config_id,
+            model_input=model_input,
+            revision_id=path_match.group(3),
+        )
+
+    if "/" not in model_input:
+        # A bare id is only a project model when --project was set. Otherwise the
+        # id is a public reference and must go through configs, even if a default
+        # project retrieve happened to find something.
+        if config.project_id and loaded_model is not None:
+            return await _resolve_config_for_model(
+                config,
+                loaded_model,
+                reference_model_id=_reference_model_id(loaded_model),
+                config_id=config_id,
+                model_input=model_input,
+            )
+        return await _resolve_via_configs(config, model_input, config_id=config_id, model_input=model_input)
+
+    if loaded_model is not None:
+        return await _resolve_config_for_model(
+            config,
+            loaded_model,
+            reference_model_id=_reference_model_id(loaded_model),
+            config_id=config_id,
+            model_input=model_input,
+        )
+    return await _resolve_public_model_and_config(config, model_input, config_id=config_id)
+
+
+def _reference_model_id(model: Model) -> str:
+    reference_model_id = model.base_model_id or model.id
+    assert reference_model_id is not None
+    return reference_model_id
 
 
 async def _resolve_explicit_model(
