@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from together import NotFoundError
 from together.types.beta import Model, EndpointDeployment
 from together.lib.cli.utils.config import CLIConfig
 from together.types.beta.models.config import Config
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
     select_lora_config,
     config_adapter_mode,
+    load_adapter_model,
     config_serves_adapters,
     deployment_serves_model,
     select_lora_config_for_deploy,
@@ -147,3 +150,43 @@ def test_select_lora_config_fails_when_none_can_host_an_adapter() -> None:
 
     with pytest.raises(ValueError, match="No fixed or dynamic LoRA config"):
         select_lora_config([disabled], None, model="ml_base")
+
+
+def _cli(client: Any, *, project_id: str | None) -> CLIConfig:
+    return CLIConfig(client=client, non_interactive=True, json=True, project_id=project_id)
+
+
+async def test_bare_id_without_project_is_not_an_adapter() -> None:
+    client = MagicMock()
+    client.project_id = None
+    client.beta.models.retrieve = AsyncMock(
+        side_effect=ValueError(
+            "Missing project_id argument; Please provide it at the client level, "
+            "e.g. AsyncTogether(project_id='abcd') or per method."
+        )
+    )
+
+    assert await load_adapter_model(_cli(client, project_id=None), "ml_public") is None
+
+
+async def test_bare_id_not_in_project_is_not_an_adapter() -> None:
+    client = MagicMock()
+    client.project_id = "proj"
+    client.beta.models.retrieve = AsyncMock(
+        side_effect=NotFoundError(message="Model not found", response=MagicMock(), body=None),
+    )
+
+    assert await load_adapter_model(_cli(client, project_id="proj"), "ml_public") is None
+    client.beta.models.retrieve.assert_awaited_once_with(id="ml_public", project_id="proj")
+
+
+async def test_bare_id_in_project_still_loads_an_adapter() -> None:
+    adapter = _model(id="ml_lora", weights={"type": "WEIGHTS_TYPE_ADAPTER"})
+    client = MagicMock()
+    client.project_id = "proj"
+    client.beta.models.retrieve = AsyncMock(return_value=adapter)
+
+    loaded = await load_adapter_model(_cli(client, project_id="proj"), "ml_lora")
+
+    assert loaded is adapter
+    client.beta.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj")

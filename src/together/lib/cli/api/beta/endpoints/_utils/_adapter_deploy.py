@@ -234,9 +234,16 @@ async def _load_model(config: CLIConfigParameter, model_input: str) -> Model | N
             return None
 
     if "/" not in model_input:
+        # Bare ids are often public reference models. A direct retrieve needs a
+        # project id and 404s when the id is not in that project. Either failure
+        # used to fall through to config lookup; keep doing that instead of
+        # aborting the deploy.
         try:
-            return await config.client.beta.models.retrieve(id=model_input)
-        except NotFoundError:
+            return await config.client.beta.models.retrieve(
+                id=model_input,
+                project_id=config.project_id or config.client.project_id,
+            )
+        except (NotFoundError, ValueError):
             return None
 
     me = await config.client.whoami()
