@@ -159,8 +159,8 @@ exclude = [
     "examples",
     # tinker needs Python >= 3.11; checks run on 3.10
     "src/together/lib/post_training/tinker",
-    "tests/unit/_rl_tinker.py",
-    "tests/unit/test_rl_tinker_*.py",
+    "tests/unit/_post_training_tinker.py",
+    "tests/unit/test_post_training_tinker_*.py",
 ]
 
 reportImplicitOverride = true

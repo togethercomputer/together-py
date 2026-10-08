@@ -15,7 +15,7 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from together.lib.beta import rl
-from tests.unit._rl_tinker import (
+from tests.unit._post_training_tinker import (
     _noop,
     _ignore,
     _session_mock,

@@ -17,7 +17,7 @@ from concurrent.futures import Future, CancelledError
 
 import pytest
 
-from tests.unit._rl_fakes import FakeClient
+from tests.unit._post_training_fakes import FakeClient
 from together.post_training import (
     ModelInput,
     SampleResult,

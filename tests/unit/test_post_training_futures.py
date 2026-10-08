@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from tests.unit.rl_wait import patch_wait
+from tests.unit.post_training_wait import patch_wait
 from together.post_training import SessionClient
 from together.lib.post_training import _operations as rl_ops
 from together.lib.post_training._futures import OperationFuture

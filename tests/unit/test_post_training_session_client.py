@@ -10,8 +10,8 @@ import httpx
 import pytest
 
 from together import NotFoundError, omit
-from tests.unit.rl_wait import patch_wait
-from tests.unit._rl_fakes import FakeClient
+from tests.unit.post_training_wait import patch_wait
+from tests.unit._post_training_fakes import FakeClient
 from together.post_training import (
     Sample,
     Trainer,

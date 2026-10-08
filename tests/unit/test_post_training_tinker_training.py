@@ -12,8 +12,8 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
-from tests.unit.rl_wait import patch_wait
-from tests.unit._rl_tinker import (
+from tests.unit.post_training_wait import patch_wait
+from tests.unit._post_training_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
     _close,
