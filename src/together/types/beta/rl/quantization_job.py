@@ -49,7 +49,14 @@ class ParamsInputs(BaseModel):
     calibration_file_id: Optional[str] = None
     """Conversation dataset file ID to use for calibration.
 
-    This field is accepted and stored but not yet validated or used.
+    Upload it first with `POST /v1/files` using purpose `calibration` and file type
+    `jsonl`. Each JSONL row must contain a `messages` array and may contain a
+    `tools` array. When provided, the job draws half of the calibration corpus from
+    this file and half from a general-text corpus. When omitted, the job calibrates
+    on the general-text corpus only. The request is rejected unless the file exists
+    in the request project, has finished uploading, has passed files API validation
+    as a conversation dataset, is not empty, and is at most 64 MiB. A `fine-tune`
+    purpose file is also accepted so a training file can be reused.
     """
 
 
