@@ -5,9 +5,9 @@ import shlex
 from rich.markup import escape as escape_rich_markup
 
 from together.lib.utils.tools import format_datetime
-from together.types.post_training.session import Session
 from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
+from together.types.post_training.session import Session
 from together.types.post_training.checkpoint import Checkpoint
 from together.types.post_training.model_resources import ModelResources
 

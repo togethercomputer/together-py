@@ -48,9 +48,7 @@ async def list_checkpoints(
     print_checkpoints_table(response.data or [])
     cursor = page_cursor(response.meta)
     if cursor:
-        print_next_page(
-            _next_command(cursor, limit=limit, checkpoint_type=checkpoint_type, session=session)
-        )
+        print_next_page(_next_command(cursor, limit=limit, checkpoint_type=checkpoint_type, session=session))
 
 
 def _next_command(
