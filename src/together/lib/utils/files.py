@@ -14,6 +14,7 @@ from together.lib.constants import (
     NUM_BYTES_IN_GB,
     MAX_FILE_SIZE_GB,
     PARQUET_EXPECTED_COLUMNS,
+    MAX_CALIBRATION_FILE_SIZE_BYTES,
 )
 
 CHECK_PROGRESS_STEP_BYTES = 1024 * 1024
@@ -167,7 +168,16 @@ def check_file(
 
     file_size = os.stat(file.as_posix()).st_size
 
-    if file_size > MAX_FILE_SIZE_GB * NUM_BYTES_IN_GB:
+    if purpose == "calibration" and file_size > MAX_CALIBRATION_FILE_SIZE_BYTES:
+        max_size_mib = MAX_CALIBRATION_FILE_SIZE_BYTES // (1024 * 1024)
+        report_dict["message"] = (
+            f"Maximum supported calibration file size is {max_size_mib} MiB. "
+            f"Found file with size of {round(file_size / (1024 * 1024), 3)} MiB."
+        )
+        report_dict["file_size"] = file_size
+        report_dict["is_check_passed"] = False
+        return report_dict
+    elif file_size > MAX_FILE_SIZE_GB * NUM_BYTES_IN_GB:
         report_dict["message"] = (
             f"Maximum supported file size is {MAX_FILE_SIZE_GB} GB. Found file with size of {round(file_size / NUM_BYTES_IN_GB, 3)} GB."
         )
@@ -263,6 +273,10 @@ def _check_csv(
         Dict[str, Any]: A dictionary with the results of the check.
     """
     report_dict: Dict[str, Any] = {}
+    if purpose == "calibration":
+        report_dict["is_check_passed"] = False
+        report_dict["message"] = "CSV files are not supported for calibration. Only JSONL files are supported."
+        return report_dict
     if purpose != "eval":
         report_dict["is_check_passed"] = False
         report_dict["message"] = (
@@ -396,6 +410,17 @@ def _check_parquet(
     progress_callback: CheckProgressCallback | None = None,
     total_bytes: int = 0,
 ) -> Dict[str, Any]:
+    if purpose == "eval":
+        return {
+            "is_check_passed": False,
+            "message": f"Parquet files are not supported for {purpose}. Only JSONL and CSV files are supported.",
+        }
+    if purpose == "calibration":
+        return {
+            "is_check_passed": False,
+            "message": "Parquet files are not supported for calibration. Only JSONL files are supported.",
+        }
+
     try:
         # Pyarrow is optional as it's large (~80MB) and isn't compatible with older systems.
         from pyarrow import ArrowInvalid, parquet
@@ -405,13 +430,6 @@ def _check_parquet(
         ) from e
 
     report_dict: Dict[str, Any] = {}
-    if purpose == "eval":
-        report_dict["is_check_passed"] = False
-        report_dict["message"] = (
-            f"Parquet files are not supported for {purpose}. Only JSONL and CSV files are supported."
-        )
-        return report_dict
-
     try:
         _notify_check_progress(progress_callback, 0, total_bytes, "parquet")
         table = parquet.read_table(str(file), memory_map=True)  # type: ignore[reportUnknownMemberType]
