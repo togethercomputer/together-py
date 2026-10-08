@@ -11,10 +11,9 @@ from together import APIError, BaseModel, NotFoundError
 from together._utils._json import openapi_dumps
 from together.lib.cli.utils._exit import CliDiagnosticExit
 from together.lib.cli.utils.config import CLIConfigParameter
-from together.types.post_training.session import Session
 from together.lib.cli.utils._console import console
-from together.types.post_training.checkpoint import Checkpoint
 from together.lib.cli.components.loader import show_loading_status
+from together.types.post_training.session import Session
 from together.lib.cli.api.training._display import (
     cell,
     print_session,
@@ -22,6 +21,7 @@ from together.lib.cli.api.training._display import (
     print_checkpoint,
     print_model_resource,
 )
+from together.types.post_training.checkpoint import Checkpoint
 from together.types.post_training.model_resources import ModelResources
 
 
