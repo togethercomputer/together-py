@@ -360,7 +360,7 @@ def test_create_training_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = trainer.create_training_checkpoint()
 
-    assert result.checkpoint == checkpoint
+    assert result == checkpoint
     assert client.post_training.operations.last_call is not None
     method, args, _ = client.post_training.operations.last_call
     assert method == "create_training_checkpoint"
@@ -376,7 +376,7 @@ def test_create_inference_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = trainer.create_inference_checkpoint()
 
-    assert result.checkpoint == checkpoint
+    assert result == checkpoint
     trainer.stop()
 
 

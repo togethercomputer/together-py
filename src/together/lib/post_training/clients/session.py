@@ -21,6 +21,8 @@ from ...._exceptions import NotFoundError
 from ...._base_client import DefaultAsyncHttpxClient
 from ....types.post_training.session import Session
 from ....types.post_training.lora_config_param import LoraConfigParam as LoraConfig
+from ....types.post_training.training_checkpoint import TrainingCheckpoint
+from ....types.post_training.inference_checkpoint import InferenceCheckpoint
 from ....types.post_training.session_metadata_param import SessionMetadataParam as SessionMetadata
 from ....types.post_training.training_checkpoint_result import TrainingCheckpointResult
 from ....types.post_training.inference_checkpoint_result import InferenceCheckpointResult
@@ -212,7 +214,7 @@ class SessionClient:
         *,
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> InferenceCheckpointResult:
+    ) -> InferenceCheckpoint:
         return self.run(
             self.create_inference_checkpoint_async(
                 timeout=timeout,
@@ -225,7 +227,7 @@ class SessionClient:
         *,
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> TrainingCheckpointResult:
+    ) -> TrainingCheckpoint:
         return self.run(
             self.create_training_checkpoint_async(
                 timeout=timeout,
@@ -367,7 +369,7 @@ class SessionClient:
         *,
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> InferenceCheckpointResult:
+    ) -> InferenceCheckpoint:
         operation = await self._client.post_training.operations.create_inference_checkpoint(
             self._session_id, idempotency_key=str(uuid4())
         )
@@ -376,7 +378,7 @@ class SessionClient:
             timeout=timeout,
             interval=interval,
         )
-        return cast(InferenceCheckpointResult, result)
+        return cast(InferenceCheckpointResult, result).checkpoint
 
     @on_client_loop
     async def create_training_checkpoint_async(
@@ -384,7 +386,7 @@ class SessionClient:
         *,
         timeout: float | None = DEFAULT_CHECKPOINT_TIMEOUT,
         interval: float = DEFAULT_OPERATION_INTERVAL,
-    ) -> TrainingCheckpointResult:
+    ) -> TrainingCheckpoint:
         operation = await self._client.post_training.operations.create_training_checkpoint(
             self._session_id, idempotency_key=str(uuid4())
         )
@@ -393,7 +395,7 @@ class SessionClient:
             timeout=timeout,
             interval=interval,
         )
-        return cast(TrainingCheckpointResult, result)
+        return cast(TrainingCheckpointResult, result).checkpoint
 
     async def stop_async(self) -> Session | None:
         """Stop the remote session and wait until it is inactive."""

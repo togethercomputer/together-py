@@ -374,7 +374,7 @@ class TestRLRequestBody:
                 json={
                     "id": "op-1",
                     "status": "TRAINING_OPERATION_STATUS_COMPLETED",
-                    "output": {"checkpoint_id": "ckpt-1"},
+                    "output": {"checkpoint": {"id": "ckpt-1", "step": 1, "created_at": "2026-10-08T00:00:00Z"}},
                 },
             )
         )
@@ -398,7 +398,7 @@ class TestRLRequestBody:
                 json={
                     "id": "op-1",
                     "status": "TRAINING_OPERATION_STATUS_COMPLETED",
-                    "output": {"model_name": "model-1"},
+                    "output": {"checkpoint": {"id": "ckpt-1", "step": 1, "created_at": "2026-10-08T00:00:00Z"}},
                 },
             )
         )
