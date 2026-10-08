@@ -5,8 +5,29 @@ from datetime import datetime
 
 from ...._models import BaseModel
 from .checkpoint_type import CheckpointType
+from .model_registry_artifact import ModelRegistryArtifact
 
-__all__ = ["Checkpoint"]
+__all__ = ["Checkpoint", "InferenceRegistration"]
+
+
+class InferenceRegistration(BaseModel):
+    """Model registry artifacts to deploy or download this inference checkpoint from.
+
+    Absent for training checkpoints and when the checkpoint was not uploaded to the registry.
+    """
+
+    adapter: Optional[ModelRegistryArtifact] = None
+    """LoRA adapter weights, deployed on top of the base model.
+
+    Set for LoRA training on the base model's own weights.
+    """
+
+    model: Optional[ModelRegistryArtifact] = None
+    """Full model weights.
+
+    Set for full-weight training, and for LoRA training on custom base weights,
+    where the merged model is deployed instead of the adapter.
+    """
 
 
 class Checkpoint(BaseModel):
@@ -36,9 +57,23 @@ class Checkpoint(BaseModel):
     to your models.
     """
 
+    inference_registration: Optional[InferenceRegistration] = None
+    """Model registry artifacts to deploy or download this inference checkpoint from.
+
+    Absent for training checkpoints and when the checkpoint was not uploaded to the
+    registry.
+    """
+
     lora_rank: Optional[int] = None
     """LoRA rank of the session that produced this checkpoint.
 
     Absent for full-weight sessions and for checkpoints saved before this field was
     recorded.
+    """
+
+    training_registration: Optional[ModelRegistryArtifact] = None
+    """
+    Model registry artifact holding this training checkpoint's training state, used
+    to resume training rather than to deploy. Absent for inference checkpoints and
+    when the checkpoint was not uploaded to the registry.
     """
