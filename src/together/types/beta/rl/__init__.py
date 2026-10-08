@@ -73,6 +73,7 @@ from .sessions_list_response import SessionsListResponse as SessionsListResponse
 from .weights_sync_operation import WeightsSyncOperation as WeightsSyncOperation
 from .forward_backward_result import ForwardBackwardResult as ForwardBackwardResult
 from .model_input_chunk_param import ModelInputChunk as ModelInputChunk
+from .model_registry_artifact import ModelRegistryArtifact as ModelRegistryArtifact
 from .operation_sample_params import OperationSampleParams as OperationSampleParams
 from .encoded_text_chunk_param import EncodedTextChunk as EncodedTextChunk
 from .checkpoints_list_response import CheckpointsListResponse as CheckpointsListResponse

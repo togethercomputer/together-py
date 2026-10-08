@@ -11,7 +11,7 @@ __all__ = ["TrainingCheckpointOperation"]
 
 
 class TrainingCheckpointOperation(BaseModel):
-    """Async save training checkpoint operation"""
+    """Async training checkpoint operation"""
 
     id: str
     """Operation ID"""

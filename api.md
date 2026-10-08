@@ -310,6 +310,7 @@ Types:
 from together.types.beta.rl import (
     InferenceCheckpoint,
     LoraConfig,
+    ModelRegistryArtifact,
     Session,
     SessionError,
     SessionErrorCode,

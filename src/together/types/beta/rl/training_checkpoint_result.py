@@ -1,12 +1,16 @@
 # File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 from ...._models import BaseModel
+from .training_checkpoint import TrainingCheckpoint
 
 __all__ = ["TrainingCheckpointResult"]
 
 
 class TrainingCheckpointResult(BaseModel):
-    """Result of a save training checkpoint operation"""
+    """Result of a training checkpoint operation"""
 
-    checkpoint_id: str
-    """ID of the saved training checkpoint (use for resume via Start)"""
+    checkpoint: TrainingCheckpoint
+    """The checkpoint this operation created.
+
+    The training session lists the same checkpoint in `training_checkpoints`.
+    """

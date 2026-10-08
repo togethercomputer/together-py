@@ -4,26 +4,9 @@ from typing import Union, Optional
 from datetime import datetime
 
 from ...._models import BaseModel
+from .model_registry_artifact import ModelRegistryArtifact
 
-__all__ = ["TrainingCheckpoint", "Registration"]
-
-
-class Registration(BaseModel):
-    """
-    Together model registry details, set when the checkpoint was uploaded to the registry
-    """
-
-    object_id: str
-    """Together model registry object ID for the training checkpoint artifact (e.g.
-
-    `ml_...`)
-    """
-
-    object_revision_id: Optional[str] = None
-    """Together model registry revision ID for the training checkpoint artifact (e.g.
-
-    `rv_...`), empty when the upload reported no revision
-    """
+__all__ = ["TrainingCheckpoint"]
 
 
 class TrainingCheckpoint(BaseModel):
@@ -38,8 +21,9 @@ class TrainingCheckpoint(BaseModel):
     step: Union[str, int]
     """Training step at time of save"""
 
-    registration: Optional[Registration] = None
+    registration: Optional[ModelRegistryArtifact] = None
     """
-    Together model registry details, set when the checkpoint was uploaded to the
-    registry
+    Model registry artifact holding this checkpoint's training state, used to resume
+    training rather than to deploy. Absent when the checkpoint was not uploaded to
+    the registry.
     """
