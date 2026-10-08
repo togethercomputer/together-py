@@ -7,16 +7,7 @@ The implementation lives in `together.lib.post_training`.
 
 from __future__ import annotations
 
-import sys
-import importlib
-import importlib.abc
-import importlib.util
-from types import ModuleType
-from typing import Sequence
-from typing_extensions import override
-from importlib.machinery import ModuleSpec
-
-from .lib.post_training import (
+from ..lib.post_training import (
     Sample as Sample,
     Session as Session,
     Trainer as Trainer,
@@ -73,49 +64,3 @@ from .lib.post_training import (
     download_checkpoint as download_checkpoint,
     download_checkpoint_async as download_checkpoint_async,
 )
-
-# `post_training.py` is a module. Give it a package path so
-# `together.post_training.tinker` (and the other implementation submodules)
-# can resolve, then hand those imports to `together.lib.post_training`.
-__path__: list[str] = []
-
-_PUBLIC_PREFIX = "together.post_training"
-_IMPL_PREFIX = "together.lib.post_training"
-
-
-class _ImplLoader(importlib.abc.Loader):
-    def __init__(self, target: str) -> None:
-        self._target = target
-
-    @override
-    def create_module(self, spec: ModuleSpec) -> ModuleType:
-        del spec
-        return importlib.import_module(self._target)
-
-    @override
-    def exec_module(self, module: ModuleType) -> None:
-        del module
-
-
-class _ImplFinder(importlib.abc.MetaPathFinder):
-    @override
-    def find_spec(
-        self,
-        fullname: str,
-        path: Sequence[str] | None = None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        del path, target
-        if not fullname.startswith(_PUBLIC_PREFIX + "."):
-            return None
-        target_name = _IMPL_PREFIX + fullname[len(_PUBLIC_PREFIX) :]
-        return importlib.util.spec_from_loader(fullname, _ImplLoader(target_name))
-
-
-def _install_impl_alias() -> None:
-    if any(isinstance(finder, _ImplFinder) for finder in sys.meta_path):
-        return
-    sys.meta_path.insert(0, _ImplFinder())
-
-
-_install_impl_alias()

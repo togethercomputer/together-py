@@ -81,15 +81,22 @@ _NEW_PREFIX = "together.lib.post_training"
 class _AliasLoader(importlib.abc.Loader):
     def __init__(self, target: str) -> None:
         self._target = target
+        self._real_spec: ModuleSpec | None = None
 
     @override
     def create_module(self, spec: ModuleSpec) -> ModuleType:
         del spec
-        return importlib.import_module(self._target)
+        module = importlib.import_module(self._target)
+        # importlib overwrites ``__spec__`` after create_module returns. Relative
+        # imports compare ``__package__`` to ``__spec__.parent``, so keep the
+        # implementation spec.
+        self._real_spec = module.__spec__
+        return module
 
     @override
     def exec_module(self, module: ModuleType) -> None:
-        del module
+        if self._real_spec is not None:
+            module.__spec__ = self._real_spec
 
 
 class _AliasFinder(importlib.abc.MetaPathFinder):

@@ -12,14 +12,15 @@ import pytest
 
 from together import AsyncTogether
 from together._compat import get_model_fields, field_is_required
-from together.post_training import Sample, Gradient, LossConfig, ModelInput, SessionClient, _payloads
+from together.post_training import Sample, Gradient, LossConfig, ModelInput, SessionClient
+from together.lib.post_training import _payloads
 from together.types.post_training import (
     operation_sample_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
-from together.post_training.clients.generator import Generator
 from together.resources.post_training.operations import OperationsResource, AsyncOperationsResource
+from together.lib.post_training.clients.generator import Generator
 from together.types.post_training.sampled_sequence import SampledSequence
 
 _ROUTING_KEY = "routing/session/0123456789abcdef0123456789abcdef.22"

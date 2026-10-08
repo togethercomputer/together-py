@@ -33,7 +33,7 @@ from together.post_training import (
     EncodedTextChunk,
     ForwardBackwardResult,
 )
-from together.post_training._arrays import coerce_sample, coerce_gradient, coerce_model_input
+from together.lib.post_training._arrays import coerce_sample, coerce_gradient, coerce_model_input
 
 
 @pytest.fixture

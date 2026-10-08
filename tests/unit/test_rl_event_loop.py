@@ -24,17 +24,17 @@ from together.post_training import (
     SessionClient,
     ModelInputChunk,
     EncodedTextChunk,
-    _loop as loop_module,
 )
-from together.post_training._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
-from together.post_training.clients import (
+from together.lib.post_training import _loop as loop_module
+from together.lib.post_training._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
+from together.lib.post_training.clients import (
     session as session_client_module,
     model_resources as model_resources_client_module,
 )
 from together.types.post_training.session import Session
-from together.post_training.clients.trainer import Trainer
-from together.post_training.clients.generator import Generator
-from together.post_training.clients.model_resources import ModelResourcesClient
+from together.lib.post_training.clients.trainer import Trainer
+from together.lib.post_training.clients.generator import Generator
+from together.lib.post_training.clients.model_resources import ModelResourcesClient
 
 _PROMPT = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
 

@@ -23,8 +23,9 @@ from tests.unit._rl_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.post_training import WeightSyncType, tinker as tinker_compat, _operations as rl_ops
-from together.post_training.tinker import _training
+from together.post_training import WeightSyncType, tinker as tinker_compat
+from together.lib.post_training import _operations as rl_ops
+from together.lib.post_training.tinker import _training
 
 
 def _scored_output(*logprobs: list[float]) -> dict[str, Any]:

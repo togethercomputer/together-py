@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from together.post_training import _operations as rl_ops
+from together.lib.post_training import _operations as rl_ops
 
 
 def patch_wait(

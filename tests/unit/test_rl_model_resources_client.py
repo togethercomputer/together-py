@@ -8,9 +8,9 @@ import pytest
 
 from together._types import omit
 from together.post_training import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
-from together.post_training.clients import model_resources as model_resources_client_module
-from together.post_training.clients.session import SessionClient
-from together.post_training.clients.model_resources import ModelResourcesClient
+from together.lib.post_training.clients import model_resources as model_resources_client_module
+from together.lib.post_training.clients.session import SessionClient
+from together.lib.post_training.clients.model_resources import ModelResourcesClient
 
 _STOPPING = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPING")
 

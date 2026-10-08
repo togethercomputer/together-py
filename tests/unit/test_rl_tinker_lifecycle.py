@@ -21,21 +21,18 @@ from tests.unit._rl_tinker import (
     _session_mock,
     _model_resources_mock,
 )
-from together.post_training import (
-    Sample,
-    LossConfig,
-    tinker as tinker_compat,
-    _request_types,
-)
-from together.post_training.tinker import _service, _teardown
-from together.post_training.clients.session import SessionClient
+from together.post_training import Sample, LossConfig, tinker as tinker_compat
+from together.lib.post_training import _request_types
+from together.lib.post_training.tinker import _service, _teardown
+from together.lib.post_training.clients.session import SessionClient
 
 
-def test_legacy_tinker_import_is_the_same_module() -> None:
+def test_legacy_tinker_import_reexports_the_implementation() -> None:
     import together.lib.beta.rl.tinker as legacy
     import together.post_training.tinker as tinker
 
-    assert legacy is tinker
+    assert legacy.ServiceClient is tinker.ServiceClient
+    assert legacy.types is tinker.types
 
 
 def test_module_reexports_types_without_genuine_clients() -> None:

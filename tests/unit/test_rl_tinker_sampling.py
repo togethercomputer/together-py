@@ -19,9 +19,10 @@ from tests.unit._rl_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.post_training import tinker as tinker_compat, _payloads
-from together.post_training.tinker import _sampling
-from together.post_training.clients.session import SessionClient
+from together.post_training import tinker as tinker_compat
+from together.lib.post_training import _payloads
+from together.lib.post_training.tinker import _sampling
+from together.lib.post_training.clients.session import SessionClient
 from together.types.post_training.sample_result import SampleResult
 from together.types.post_training.sampled_sequence import SampledSequence
 

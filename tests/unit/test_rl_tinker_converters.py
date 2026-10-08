@@ -11,8 +11,8 @@ from tinker import types
 from tinker.types.image_chunk import ImageChunk
 
 from tests.unit._rl_tinker import _tensors, _rl_loop_datum, _advantage_datum
-from together.post_training import _losses as rl_losses
-from together.post_training.tinker import _losses, _converters
+from together.lib.post_training import _losses as rl_losses
+from together.lib.post_training.tinker import _losses, _converters
 from together.types.post_training.tensor_data import TensorData as WireTensorData
 from together.types.post_training.sample_result import SampleResult
 from together.types.post_training.loss_fn_output import LossFnOutput

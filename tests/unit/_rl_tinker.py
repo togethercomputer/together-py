@@ -13,8 +13,8 @@ pytest.importorskip("tinker")
 from tinker import types
 
 from together.post_training import tinker as tinker_compat
-from together.post_training.tinker import _service
-from together.post_training.clients.session import SessionClient
+from together.lib.post_training.tinker import _service
+from together.lib.post_training.clients.session import SessionClient
 
 _OPERATION = SimpleNamespace(id="op-1", status="TRAINING_OPERATION_STATUS_PENDING", output=None, error=None)
 _WEIGHTS_SYNC_OUTPUT = {"weights_version": 1}

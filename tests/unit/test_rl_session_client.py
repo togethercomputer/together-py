@@ -36,11 +36,9 @@ from together.post_training import (
     ForwardBackwardResult,
     TrainingCheckpointResult,
     InferenceCheckpointResult,
-    _losses as rl_losses,
-    _payloads as rl_payloads_module,
-    _operations as rl_ops,
 )
-from together.post_training.clients import (
+from together.lib.post_training import _losses as rl_losses, _payloads as rl_payloads_module, _operations as rl_ops
+from together.lib.post_training.clients import (
     session as session_client_module,
     trainer as trainer_module,
     generator as generator_module,

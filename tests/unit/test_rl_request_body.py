@@ -29,17 +29,17 @@ from together.post_training import (
     SamplingParams,
     ModelInputChunk,
     EncodedTextChunk,
-    _losses as rl_losses,
     download_checkpoint,
     download_checkpoint_async,
 )
+from together.lib.post_training import _losses as rl_losses
 from together.types.post_training import (
     loss_config_param,
     tensor_data_param,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
-from together.post_training._payloads import _VALIDATION_OMITTED_KEYS
+from together.lib.post_training._payloads import _VALIDATION_OMITTED_KEYS
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
@@ -450,7 +450,7 @@ class TestRLRequestBody:
         def fake_together(**_kw: Any) -> AsyncTogether:
             return async_client
 
-        from together.post_training.clients import session as session_client_module
+        from together.lib.post_training.clients import session as session_client_module
 
         monkeypatch.setattr(session_client_module, "AsyncTogether", fake_together)
 
