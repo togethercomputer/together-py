@@ -34,12 +34,6 @@ from .endpoints import (
 )
 
 __all__ = [
-    "RlResource",
-    "AsyncRlResource",
-    "RlResourceWithRawResponse",
-    "AsyncRlResourceWithRawResponse",
-    "RlResourceWithStreamingResponse",
-    "AsyncRlResourceWithStreamingResponse",
     "EndpointsResource",
     "AsyncEndpointsResource",
     "EndpointsResourceWithRawResponse",

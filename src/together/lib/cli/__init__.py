@@ -55,6 +55,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_HELP_EXAMPLES,
     EVALS_CREATE_HELP_EXAMPLES,
     FILES_UPLOAD_HELP_EXAMPLES,
+    TRAINING_FP4_HELP_EXAMPLES,
     MODELS_UPLOAD_HELP_EXAMPLES,
     BATCHES_SUBMIT_HELP_EXAMPLES,
     BETA_ENDPOINTS_HELP_EXAMPLES,
@@ -82,6 +83,7 @@ from together.lib.cli.utils._help_examples import (
     JIG_VOLUMES_UPDATE_HELP_EXAMPLES,
     BETA_MODELS_CONFIGS_HELP_EXAMPLES,
     FINE_TUNING_PREVIEW_HELP_EXAMPLES,
+    TRAINING_FP4_CREATE_HELP_EXAMPLES,
     BETA_MODELS_DOWNLOAD_HELP_EXAMPLES,
     FINE_TUNING_DOWNLOAD_HELP_EXAMPLES,
     BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES,
@@ -602,6 +604,28 @@ fine_tuning_app.command(
     help="Get fine-tuning limits for a model",
     help_epilogue=FINE_TUNING_MODEL_LIMITS_HELP_EXAMPLES,
 )
+
+## Training API commands
+training_app = app.command(App(name="training", help="Prepare trained models for inference"))
+_FP4 = f"{_CLI}.training.prepare_for_fp4_inference"
+training_fp4_app = training_app.command(
+    App(
+        name="prepare-for-fp4-inference",
+        alias="fp4",
+        help="Merge fine-tuned adapters into their base model and prepare them for FP4 inference",
+        help_epilogue=TRAINING_FP4_HELP_EXAMPLES,
+    )
+)
+training_fp4_app.command(
+    f"{_FP4}.create:create",
+    help="Start an FP4 preparation job",
+    help_epilogue=TRAINING_FP4_CREATE_HELP_EXAMPLES,
+)
+training_fp4_app.command(f"{_FP4}.estimate:estimate", help="Estimate the price and duration of an FP4 preparation job")
+training_fp4_app.command(f"{_FP4}.list:list", alias="ls", help="List FP4 preparation jobs")
+training_fp4_app.command(f"{_FP4}.retrieve:retrieve", alias="get", help="Get FP4 preparation job details")
+training_fp4_app.command(f"{_FP4}.list_events:list_events", help="List events for an FP4 preparation job")
+training_fp4_app.command(f"{_FP4}.cancel:cancel", help="Cancel an FP4 preparation job")
 
 ## Models API commands
 models_app = app.command(App(name="models", help="List and upload models", help_epilogue=MODELS_HELP_EXAMPLES))

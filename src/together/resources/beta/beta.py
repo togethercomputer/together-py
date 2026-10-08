@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .jig.jig import (
     JigResource,
     AsyncJigResource,

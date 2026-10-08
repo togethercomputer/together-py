@@ -897,3 +897,25 @@ JIG_VOLUMES_UPDATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Snapshot your S3 bucket again as the next volume version:
   [primary]tg beta jig volumes update --name model-weights --source s3://my-bucket/weights --aws-oidc-role-arn arn:aws:iam::123456789012:role/together[/primary]
 """
+
+TRAINING_FP4_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Estimate the price of preparing an adapter:
+  [primary]tg training fp4 estimate <adapter-object-id>[/primary]
+
+[dim]-[/dim] Prepare an adapter and wait for the job to finish:
+  [primary]tg training fp4 create <adapter-object-id> --watch[/primary]
+
+[dim]-[/dim] Follow a running job:
+  [primary]tg training fp4 get <job-id> --watch[/primary]
+
+[dim]-[/dim] Cancel a job:
+  [primary]tg training fp4 cancel <job-id>[/primary]
+"""
+
+TRAINING_FP4_CREATE_HELP_EXAMPLES = """[dim]Examples:[/dim]
+[dim]-[/dim] Prepare the adapter's current revision:
+  [primary]tg training fp4 create <adapter-object-id>[/primary]
+
+[dim]-[/dim] Prepare a specific revision without the confirmation prompt, and wait for it:
+  [primary]tg training fp4 create <adapter-object-id> -r <revision-id> -y --watch[/primary]
+"""
