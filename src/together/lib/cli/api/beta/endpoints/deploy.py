@@ -31,13 +31,13 @@ from together.types.beta.endpoints.deployment_create_params import (
 )
 from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
     MODEL_PATH_RE,
+    load_model,
     resolve_endpoint,
     construct_model_path,
-    resolve_model_and_config,
+    resolve_loaded_model,
 )
 from together.lib.cli.api.beta.endpoints._utils._traffic_split import upsert_traffic_weight
 from together.lib.cli.api.beta.endpoints._utils._adapter_deploy import (
-    load_model,
     load_base_model,
     is_adapter_model,
     list_model_configs,
@@ -290,13 +290,7 @@ async def deploy(
         )
         return
 
-    resolved = await resolve_model_and_config(
-        config,
-        model,
-        config_id=config_id,
-        loaded_model=loaded_model,
-        reuse_loaded_model=True,
-    )
+    resolved = await resolve_loaded_model(config, model, loaded_model, config_id=config_id)
     resolved_model, config_value = resolved.model, resolved.config
     # Prefer revision pin from a fully-qualified model path; fall back to the
     # deprecated --model-revision flag.

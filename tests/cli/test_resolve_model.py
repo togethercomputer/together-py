@@ -233,99 +233,20 @@ async def test_private_named_model_uses_base_model_id_for_config_but_custom_path
 
 
 @pytest.mark.asyncio
-async def test_reuses_loaded_private_model_without_whoami_or_list() -> None:
-    private = _private_model()
+async def test_bare_id_from_client_project_is_kept() -> None:
+    model = _private_model(id="ml_lora", projectId="proj_from_client", baseModelId="ml_base")
     client = MagicMock()
-    client.whoami = AsyncMock()
-    client.beta.models.list = MagicMock()
-    client.beta.models.retrieve = AsyncMock()
-    client.beta.models.configs.list = AsyncMock(return_value=MagicMock(data=[_config()]))
-
-    resolved = await resolve_model_and_config(
-        _cli_config(client),
-        "my-slug/custom-model",
-        config_id=None,
-        loaded_model=private,
-        reuse_loaded_model=True,
-    )
-
-    client.whoami.assert_not_awaited()
-    client.beta.models.list.assert_not_called()
-    client.beta.models.retrieve.assert_not_awaited()
-    client.beta.models.configs.list.assert_awaited_once_with(reference_model_id="ml_base")
-    assert resolved.model.id == "ml_custom"
-
-
-@pytest.mark.asyncio
-async def test_reuses_missed_name_lookup_without_second_whoami() -> None:
-    client = MagicMock()
-    client.whoami = AsyncMock()
-    client.beta.models.list = MagicMock()
-    client.beta.models.list_supported = AsyncMock(
-        return_value=MagicMock(data=[_supported_model()]),
-    )
-
-    resolved = await resolve_model_and_config(
-        _cli_config(client),
-        "meta-llama/Llama-3-8b",
-        loaded_model=None,
-        reuse_loaded_model=True,
-    )
-
-    client.whoami.assert_not_awaited()
-    client.beta.models.list.assert_not_called()
-    client.beta.models.list_supported.assert_awaited_once_with(search="meta-llama/Llama-3-8b")
-    assert resolved.model.name == "meta-llama/Llama-3-8B-FP16"
-
-
-@pytest.mark.asyncio
-async def test_reuses_loaded_model_path_without_second_retrieve() -> None:
-    ft = _private_model(id="ml_ft", baseModelId="ml_base")
-    client = MagicMock()
-    client.whoami = AsyncMock()
-    client.beta.models.retrieve = AsyncMock()
-    client.beta.models.configs.list = AsyncMock(return_value=MagicMock(data=[_config()]))
-
-    resolved = await resolve_model_and_config(
-        _cli_config(client),
-        "projects/proj_mine/models/ml_ft/revisions/rv_pin",
-        loaded_model=ft,
-        reuse_loaded_model=True,
-    )
-
-    client.whoami.assert_not_awaited()
-    client.beta.models.retrieve.assert_not_awaited()
-    client.beta.models.configs.list.assert_awaited_once_with(reference_model_id="ml_base")
-    assert resolved.model.id == "ml_ft"
-    assert resolved.revision_id == "rv_pin"
-
-
-@pytest.mark.asyncio
-async def test_reused_bare_id_without_project_still_uses_configs() -> None:
-    private = _private_model(id="ml_public_looking")
-    reference = _private_model(
-        id="ml_base",
-        projectId="proj_public",
-        name="together/some-named-model",
-        baseModelId=None,
-    )
-    client = MagicMock()
-    client.whoami = AsyncMock()
-    client.beta.models.retrieve = AsyncMock(return_value=reference)
+    client.project_id = "proj_from_client"
+    client.beta.models.retrieve = AsyncMock(return_value=model)
     client.beta.models.configs.list = AsyncMock(return_value=MagicMock(data=[_config()]))
     cli = CLIConfig(client=client, non_interactive=True, json=True, project_id=None)
 
-    resolved = await resolve_model_and_config(
-        cli,
-        "ml_public_looking",
-        loaded_model=private,
-        reuse_loaded_model=True,
-    )
+    resolved = await resolve_model_and_config(cli, "ml_lora", config_id=None)
 
-    client.whoami.assert_not_awaited()
-    client.beta.models.configs.list.assert_awaited_once_with(reference_model_id="ml_public_looking")
-    client.beta.models.retrieve.assert_awaited_once_with(id="ml_base", project_id="proj_public")
-    assert resolved.model.id == "ml_base"
+    client.beta.models.retrieve.assert_awaited_once_with(id="ml_lora", project_id="proj_from_client")
+    client.beta.models.configs.list.assert_awaited_once_with(reference_model_id="ml_base")
+    assert resolved.model.id == "ml_lora"
+    assert resolved.model.project_id == "proj_from_client"
 
 
 @pytest.mark.asyncio

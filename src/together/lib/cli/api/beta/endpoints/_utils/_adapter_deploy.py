@@ -7,10 +7,7 @@ from together import NotFoundError
 from together.types.beta import Model, EndpointDeployment
 from together.lib.cli.utils.config import CLIConfigParameter
 from together.types.beta.models.config import Config
-from together.lib.cli.api.beta.endpoints._utils._resolve_model import (
-    MODEL_PATH_RE,
-    _find_private_model_by_name,
-)
+from together.lib.cli.api.beta.endpoints._utils._resolve_model import MODEL_PATH_RE, load_model
 from together.lib.cli.api.beta.endpoints._utils._resolve_config import (
     find_config,
     resolve_config,
@@ -138,35 +135,6 @@ def _ordered_lora_configs(configs: list[Config]) -> list[Config]:
 
 def _adapter_mode_rank(mode: str | None) -> int:
     return _ADAPTER_MODE_RANK.get(mode or "", 9)
-
-
-async def load_model(config: CLIConfigParameter, model_input: str) -> Model | None:
-    """Load a project model once. None means deploy should use public or configs resolution."""
-    path_match = MODEL_PATH_RE.match(model_input)
-    if path_match:
-        try:
-            return await config.client.beta.models.retrieve(id=path_match.group(2), project_id=path_match.group(1))
-        except NotFoundError:
-            return None
-
-    if "/" not in model_input:
-        # Bare ids are often public reference models. A direct retrieve needs a
-        # project id and 404s when the id is not in that project. Either failure
-        # used to fall through to config lookup; keep doing that instead of
-        # aborting the deploy.
-        try:
-            return await config.client.beta.models.retrieve(
-                id=model_input,
-                project_id=config.project_id or config.client.project_id,
-            )
-        except (NotFoundError, ValueError):
-            return None
-
-    me = await config.client.whoami()
-    prefix, _, _name = model_input.partition("/")
-    if prefix != me.project_slug:
-        return None
-    return await _find_private_model_by_name(config, model_input)
 
 
 async def load_adapter_model(config: CLIConfigParameter, model_input: str) -> Model | None:
