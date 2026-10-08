@@ -5,11 +5,11 @@ from typing import Any, cast
 
 import pytest
 
+from together.rl import _payloads
 from together._compat import model_parse
 from together._models import BaseModel, construct_type_unchecked
-from together.rl import _payloads
-from together.types.beta.rl.sample_operation import Output as SampleOutput
-from together.types.beta.rl.forward_backward_result import ForwardBackwardResult
+from together.types.post_training.sample_operation import Output as SampleOutput
+from together.types.post_training.forward_backward_result import ForwardBackwardResult
 
 
 @pytest.mark.parametrize(

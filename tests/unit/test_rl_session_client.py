@@ -45,9 +45,9 @@ from together.rl.clients import (
     generator as generator_module,
 )
 from tests.unit._rl_fakes import FakeClient
-from together.types.beta.rl.tensor_data import TensorData as TensorDataModel
-from together.types.beta.rl.loss_fn_output import LossFnOutput
-from together.types.beta.rl.sample_operation import SampleOperation
+from together.types.post_training.tensor_data import TensorData as TensorDataModel
+from together.types.post_training.loss_fn_output import LossFnOutput
+from together.types.post_training.sample_operation import SampleOperation
 
 
 def _make_session(client: FakeClient | None = None) -> SessionClient:

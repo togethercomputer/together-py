@@ -29,10 +29,10 @@ from ._converters import (
 from .._operations import OperationResponse
 from ..clients.session import SessionClient
 from ..clients.trainer import _submit_forward_backward, _submit_custom_forward_backward
-from ...types.beta.rl.forward_backward_result import ForwardBackwardResult
-from ...types.beta.rl.training_checkpoint_result import TrainingCheckpointResult
-from ...types.beta.rl.inference_checkpoint_result import InferenceCheckpointResult
-from ...types.beta.rl.operation_custom_forward_backward_params import Gradient
+from ...types.post_training.forward_backward_result import ForwardBackwardResult
+from ...types.post_training.training_checkpoint_result import TrainingCheckpointResult
+from ...types.post_training.inference_checkpoint_result import InferenceCheckpointResult
+from ...types.post_training.operation_custom_forward_backward_params import Gradient
 
 # The client-side loss for forward_backward_custom: (data, autograd leaves) -> (scalar loss
 # tensor, metrics). The leaves are torch tensors, typed Any because torch is optional here.

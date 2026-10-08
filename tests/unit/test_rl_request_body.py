@@ -34,7 +34,7 @@ from together.rl import (
     download_checkpoint_async,
 )
 from together.rl._payloads import _VALIDATION_OMITTED_KEYS
-from together.types.beta.rl import (
+from together.types.post_training import (
     loss_config_param,
     tensor_data_param,
     operation_forward_backward_params,
@@ -42,15 +42,6 @@ from together.types.beta.rl import (
 )
 
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
-
-
-@pytest.fixture(autouse=True)
-def _expose_rl_namespace(request: pytest.FixtureRequest) -> None:
-    """The lib calls ``client.post_training``. Generated clients still mount RL under ``beta``."""
-    for name in ("client", "async_client"):
-        if name in request.fixturenames:
-            instance = cast(Any, request.getfixturevalue(name))
-            instance.post_training = instance.beta.rl
 
 
 LEGACY_RL_LOSS_INPUT_NAMES = frozenset(
@@ -495,7 +486,7 @@ class TestRLRequestBody:
         respx_mock.get("https://files.test/a.bin").mock(return_value=httpx.Response(200, content=b"a"))
         respx_mock.get("https://files.test/b.bin").mock(return_value=httpx.Response(200, content=b"bb"))
 
-        async_client.beta.rl.checkpoints.download = AsyncMock(  # type: ignore[method-assign]
+        async_client.post_training.checkpoints.download = AsyncMock(  # type: ignore[method-assign]
             return_value=SimpleNamespace(
                 data=[
                     SimpleNamespace(url="https://files.test/a.bin", filename="a.bin"),
@@ -517,7 +508,7 @@ def test_download_checkpoint_downloads_files(client: Together, respx_mock: MockR
     respx_mock.get("https://files.test/a.bin").mock(return_value=httpx.Response(200, content=b"a"))
     respx_mock.get("https://files.test/b.bin").mock(return_value=httpx.Response(200, content=b"bb"))
 
-    client.beta.rl.checkpoints.download = MagicMock(  # type: ignore[method-assign]
+    client.post_training.checkpoints.download = MagicMock(  # type: ignore[method-assign]
         return_value=SimpleNamespace(
             data=[
                 SimpleNamespace(url="https://files.test/a.bin", filename="a.bin"),

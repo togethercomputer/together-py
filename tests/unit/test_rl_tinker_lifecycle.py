@@ -52,7 +52,7 @@ def test_module_reexports_types_without_genuine_clients() -> None:
 
 def test_request_types_are_reexported() -> None:
     """The package re-export must resolve to the handwritten request types, not to a
-    regenerated types.beta.rl symbol of the same name."""
+    regenerated types.post_training symbol of the same name."""
     assert Sample is _request_types.Sample
     assert LossConfig is _request_types.LossConfig
     assert {"Sample", "LossConfig"} <= set(rl.__all__)

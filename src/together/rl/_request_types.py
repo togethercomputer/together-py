@@ -5,15 +5,15 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing_extensions import Required, TypedDict
 
-from ..types.beta.rl.loss_type import LossType
-from ..types.beta.rl.dro_loss_params import DroLossParams
-from ..types.beta.rl.ppo_loss_params import PpoLossParams
-from ..types.beta.rl.dppo_loss_params import DppoLossParams
-from ..types.beta.rl.grpo_loss_params import GrpoLossParams
-from ..types.beta.rl.cispo_loss_params import CispoLossParams
-from ..types.beta.rl.model_input_param import ModelInput
-from ..types.beta.rl.tensor_data_param import TensorDataParam as TensorData
-from ..types.beta.rl.cross_entropy_loss_params import CrossEntropyLossParams
+from ..types.post_training.loss_type import LossType
+from ..types.post_training.dro_loss_params import DroLossParams
+from ..types.post_training.ppo_loss_params import PpoLossParams
+from ..types.post_training.dppo_loss_params import DppoLossParams
+from ..types.post_training.grpo_loss_params import GrpoLossParams
+from ..types.post_training.cispo_loss_params import CispoLossParams
+from ..types.post_training.model_input_param import ModelInput
+from ..types.post_training.tensor_data_param import TensorDataParam as TensorData
+from ..types.post_training.cross_entropy_loss_params import CrossEntropyLossParams
 
 
 class LossConfig(TypedDict, total=False):

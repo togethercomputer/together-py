@@ -11,14 +11,14 @@ from tinker import types
 from tinker.types.image_chunk import ImageChunk
 
 from together.rl import _losses as rl_losses
-from tests.unit._rl_tinker import _tensors, _rl_loop_datum, _advantage_datum
 from together.rl.tinker import _losses, _converters
-from together.types.beta.rl.tensor_data import TensorData as WireTensorData
-from together.types.beta.rl.sample_result import SampleResult
-from together.types.beta.rl.loss_fn_output import LossFnOutput
-from together.types.beta.rl.sampled_sequence import SampledSequence
-from together.types.beta.rl.prompt_top_logprobs import PromptTopLogprobs
-from together.types.beta.rl.forward_backward_result import ForwardBackwardResult
+from tests.unit._rl_tinker import _tensors, _rl_loop_datum, _advantage_datum
+from together.types.post_training.tensor_data import TensorData as WireTensorData
+from together.types.post_training.sample_result import SampleResult
+from together.types.post_training.loss_fn_output import LossFnOutput
+from together.types.post_training.sampled_sequence import SampledSequence
+from together.types.post_training.prompt_top_logprobs import PromptTopLogprobs
+from together.types.post_training.forward_backward_result import ForwardBackwardResult
 
 
 def test_datum_arrays_pass_through_unshifted() -> None:

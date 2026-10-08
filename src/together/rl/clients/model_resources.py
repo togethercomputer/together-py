@@ -19,11 +19,11 @@ from .session import (
 from ..._types import omit
 from ..._client import AsyncTogether
 from ..._exceptions import NotFoundError
-from ...types.beta.rl.model_resources import ModelResources
-from ...types.beta.rl.lora_config_param import LoraConfigParam as LoraConfig
-from ...types.beta.rl.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
-from ...types.beta.rl.session_metadata_param import SessionMetadataParam as SessionMetadata
-from ...types.beta.rl.model_resource_create_params import ComputeConfig
+from ...types.post_training.model_resources import ModelResources
+from ...types.post_training.lora_config_param import LoraConfigParam as LoraConfig
+from ...types.post_training.optimizer_config_param import OptimizerConfigParam as OptimizerConfig
+from ...types.post_training.session_metadata_param import SessionMetadataParam as SessionMetadata
+from ...types.post_training.model_resource_create_params import ComputeConfig
 
 _T = TypeVar("_T")
 

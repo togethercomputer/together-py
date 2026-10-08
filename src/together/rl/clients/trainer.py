@@ -13,18 +13,21 @@ from .._losses import CUSTOM_FORWARD_BACKWARD_INPUTS, InputSpec, validate_sample
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
 from .._request_types import Sample, LossConfig
-from ...types.beta.rl.loss_type import LossType
-from ...types.beta.rl.adam_params import AdamParams
-from ...types.beta.rl.muon_params import MuonParams
-from ...types.beta.rl.weight_sync_type import WeightSyncType
-from ...types.beta.rl.optim_step_result import OptimStepResult
-from ...types.beta.rl.weights_sync_result import WeightsSyncResult
-from ...types.beta.rl.forward_backward_result import ForwardBackwardResult
-from ...types.beta.rl.forward_backward_operation import ForwardBackwardOperation
-from ...types.beta.rl.custom_forward_backward_result import CustomForwardBackwardResult
-from ...types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
-from ...types.beta.rl.operation_forward_backward_params import OperationForwardBackwardParams
-from ...types.beta.rl.operation_custom_forward_backward_params import Gradient, OperationCustomForwardBackwardParams
+from ...types.post_training.loss_type import LossType
+from ...types.post_training.adam_params import AdamParams
+from ...types.post_training.muon_params import MuonParams
+from ...types.post_training.weight_sync_type import WeightSyncType
+from ...types.post_training.optim_step_result import OptimStepResult
+from ...types.post_training.weights_sync_result import WeightsSyncResult
+from ...types.post_training.forward_backward_result import ForwardBackwardResult
+from ...types.post_training.forward_backward_operation import ForwardBackwardOperation
+from ...types.post_training.custom_forward_backward_result import CustomForwardBackwardResult
+from ...types.post_training.custom_forward_backward_operation import CustomForwardBackwardOperation
+from ...types.post_training.operation_forward_backward_params import OperationForwardBackwardParams
+from ...types.post_training.operation_custom_forward_backward_params import (
+    Gradient,
+    OperationCustomForwardBackwardParams,
+)
 
 _PROTO_LOSS_TYPE_BY_SHORT_NAME: dict[str, LossType] = {
     proto.removeprefix("LOSS_TYPE_").lower(): proto for proto in get_args(LossType)

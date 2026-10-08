@@ -7,7 +7,7 @@ import httpx
 
 from .._types import omit
 from .._client import Together, AsyncTogether
-from ..types.beta.rl.checkpoint_variant import CheckpointVariant
+from ..types.post_training.checkpoint_variant import CheckpointVariant
 
 logger = logging.getLogger("together")
 

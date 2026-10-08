@@ -10,11 +10,11 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from tests.unit.rl_wait import patch_wait
 from together.rl import SessionClient, _operations as rl_ops
+from tests.unit.rl_wait import patch_wait
 from together.rl._futures import OperationFuture
-from together.types.beta.rl.operation_error import OperationError
-from together.types.beta.rl.sample_operation import SampleOperation
+from together.types.post_training.operation_error import OperationError
+from together.types.post_training.sample_operation import SampleOperation
 
 
 def _session() -> SessionClient:

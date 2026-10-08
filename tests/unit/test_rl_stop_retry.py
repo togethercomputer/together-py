@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, cast
 
 import httpx
 import pytest
@@ -34,8 +33,6 @@ async def test_stop_retries_transport_failure(resource_kind: str, synchronous: b
         max_retries=0,
         http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
     )
-    # Resources still live under beta until the GA client move.
-    cast(Any, client).post_training = client.beta.rl
     handle = SessionClient("resource", client) if session else ModelResourcesClient("resource", client)
     try:
         with pytest.raises(InternalServerError):

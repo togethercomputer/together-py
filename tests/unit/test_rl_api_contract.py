@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import asyncio
 import inspect
-from typing import Any, Optional, cast, get_origin, get_type_hints
+from typing import Any, Optional, get_origin, get_type_hints
 from dataclasses import field, dataclass
 from typing_extensions import Required
 
@@ -13,14 +13,14 @@ import pytest
 from together import AsyncTogether
 from together.rl import Sample, Gradient, LossConfig, ModelInput, SessionClient, _payloads
 from together._compat import get_model_fields, field_is_required
-from together.types.beta.rl import (
+from together.types.post_training import (
     operation_sample_params,
     operation_forward_backward_params,
     operation_custom_forward_backward_params,
 )
 from together.rl.clients.generator import Generator
-from together.resources.beta.rl.operations import OperationsResource, AsyncOperationsResource
-from together.types.beta.rl.sampled_sequence import SampledSequence
+from together.resources.post_training.operations import OperationsResource, AsyncOperationsResource
+from together.types.post_training.sampled_sequence import SampledSequence
 
 _ROUTING_KEY = "routing/session/0123456789abcdef0123456789abcdef.22"
 
@@ -112,8 +112,6 @@ async def test_routing_key_round_trip(
 ) -> None:
     transport = _RLTransport()
     client = AsyncTogether(api_key="test-key", http_client=httpx.AsyncClient(transport=httpx.MockTransport(transport)))
-    # Resources still live under beta until the GA client move.
-    cast(Any, client).post_training = client.beta.rl
     session = SessionClient("session", _client=client)
     prompt = ModelInput(chunks=[{"encoded_text": {"tokens": list(range(20))}}])
     sample_kwargs: dict[str, Any] = {

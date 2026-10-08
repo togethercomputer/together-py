@@ -11,8 +11,9 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
-from tests.unit.rl_wait import patch_wait
 from together.rl import tinker as tinker_compat, _payloads
+from tests.unit.rl_wait import patch_wait
+from together.rl.tinker import _sampling
 from tests.unit._rl_tinker import (
     _OPERATION,
     _WEIGHTS_SYNC_OUTPUT,
@@ -20,10 +21,9 @@ from tests.unit._rl_tinker import (
     _training_client,
     _session_with_operations,
 )
-from together.rl.tinker import _sampling
 from together.rl.clients.session import SessionClient
-from together.types.beta.rl.sample_result import SampleResult
-from together.types.beta.rl.sampled_sequence import SampledSequence
+from together.types.post_training.sample_result import SampleResult
+from together.types.post_training.sampled_sequence import SampledSequence
 
 
 def test_sample_forwards_prompt_logprob_options(monkeypatch: pytest.MonkeyPatch) -> None:

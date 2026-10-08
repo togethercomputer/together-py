@@ -24,9 +24,9 @@ from typing_extensions import Literal, TypeAlias
 
 from ._losses import INPUT_DTYPES
 from ._request_types import Sample
-from ..types.beta.rl.model_input_param import ModelInput
-from ..types.beta.rl.tensor_data_param import TensorDataParam as TensorData
-from ..types.beta.rl.operation_custom_forward_backward_params import Gradient
+from ..types.post_training.model_input_param import ModelInput
+from ..types.post_training.tensor_data_param import TensorDataParam as TensorData
+from ..types.post_training.operation_custom_forward_backward_params import Gradient
 
 _WireDtype: TypeAlias = Literal["int64", "float32"]
 

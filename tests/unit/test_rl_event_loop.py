@@ -33,8 +33,8 @@ from together.rl.clients import (
 from tests.unit._rl_fakes import FakeClient
 from together.rl.clients.trainer import Trainer
 from together.rl.clients.generator import Generator
-from together.types.beta.rl.session import Session
 from together.rl.clients.model_resources import ModelResourcesClient
+from together.types.post_training.session import Session
 
 _PROMPT = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
 

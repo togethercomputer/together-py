@@ -12,7 +12,7 @@ from ..._client import Together
 from ._teardown import _Lifecycle, _stop_on_exit, _exit_on_sigterm
 from ._training import TrainingClient
 from ..clients.session import SessionClient
-from ...types.beta.rl.checkpoint import Checkpoint
+from ...types.post_training.checkpoint import Checkpoint
 
 # Tinker HTTP-client options that Together's resource client does not honor.
 _KNOWN_IGNORED_KWARGS = frozenset(

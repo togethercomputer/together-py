@@ -7,13 +7,13 @@ from collections.abc import Callable, Awaitable
 from typing_extensions import TypeAlias
 
 from .._client import AsyncTogether
-from ..types.beta.rl.sample_operation import SampleOperation
-from ..types.beta.rl.optim_step_operation import OptimStepOperation
-from ..types.beta.rl.weights_sync_operation import WeightsSyncOperation
-from ..types.beta.rl.forward_backward_operation import ForwardBackwardOperation
-from ..types.beta.rl.training_checkpoint_operation import TrainingCheckpointOperation
-from ..types.beta.rl.inference_checkpoint_operation import InferenceCheckpointOperation
-from ..types.beta.rl.custom_forward_backward_operation import CustomForwardBackwardOperation
+from ..types.post_training.sample_operation import SampleOperation
+from ..types.post_training.optim_step_operation import OptimStepOperation
+from ..types.post_training.weights_sync_operation import WeightsSyncOperation
+from ..types.post_training.forward_backward_operation import ForwardBackwardOperation
+from ..types.post_training.training_checkpoint_operation import TrainingCheckpointOperation
+from ..types.post_training.inference_checkpoint_operation import InferenceCheckpointOperation
+from ..types.post_training.custom_forward_backward_operation import CustomForwardBackwardOperation
 
 OperationResponse: TypeAlias = Union[
     ForwardBackwardOperation,
