@@ -9,7 +9,7 @@ from .optimizer_config import OptimizerConfig
 from .model_resources_error import ModelResourcesError
 from .model_resources_status import ModelResourcesStatus
 
-__all__ = ["ModelResources", "ComputeConfig"]
+__all__ = ["ModelResources", "ComputeConfig", "StatusDetails"]
 
 
 class ComputeConfig(BaseModel):
@@ -23,6 +23,17 @@ class ComputeConfig(BaseModel):
 
     gpu_type: Optional[Literal["H100-80GB", "B200-SXM"]] = None
     """GPU type selected for this resource."""
+
+
+class StatusDetails(BaseModel):
+    """Details of the resource's current status, such as its place in the queue."""
+
+    queue_position: Optional[int] = None
+    """
+    Estimated place of the resource in the queue: the number of older resources of
+    the same GPU type still waiting for GPUs, plus one. Set only while the resource
+    waits for GPUs.
+    """
 
 
 class ModelResources(BaseModel):
@@ -51,6 +62,9 @@ class ModelResources(BaseModel):
 
     status: ModelResourcesStatus
     """Lifecycle status of the model resource"""
+
+    status_details: StatusDetails
+    """Details of the resource's current status, such as its place in the queue."""
 
     updated_at: datetime
     """Timestamp when the model resource was last updated"""
