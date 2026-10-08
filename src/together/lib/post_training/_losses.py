@@ -10,8 +10,8 @@ from collections.abc import Set as AbstractSet, Mapping
 from typing_extensions import Required
 
 from ._request_types import Sample, LossConfig
-from ..types.post_training import loss_config_param
-from ..types.post_training.loss_type import LossType
+from ...types.post_training import loss_config_param
+from ...types.post_training.loss_type import LossType
 
 
 @dataclass(frozen=True)

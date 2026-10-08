@@ -6,15 +6,15 @@ from dataclasses import dataclass
 
 from .._loop import LoopGate, on_client_loop
 from .session import SessionClient
-from ..._types import omit
 from .._arrays import coerce_model_input
+from ...._types import omit
 from .._payloads import prepare_operation_body, resolve_result_payload
 from .._operations import DEFAULT_OPERATION_TIMEOUT, DEFAULT_OPERATION_INTERVAL
-from ...types.post_training.sample_result import SampleResult
-from ...types.post_training.sampling_params import SamplingParams
-from ...types.post_training.sample_operation import Output as SampleBatchResult, SampleOperation
-from ...types.post_training.model_input_param import ModelInput
-from ...types.post_training.operation_sample_params import OperationSampleParams
+from ....types.post_training.sample_result import SampleResult
+from ....types.post_training.sampling_params import SamplingParams
+from ....types.post_training.sample_operation import Output as SampleBatchResult, SampleOperation
+from ....types.post_training.model_input_param import ModelInput
+from ....types.post_training.operation_sample_params import OperationSampleParams
 
 
 async def _submit_sample_batch(

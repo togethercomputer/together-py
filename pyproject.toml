@@ -158,7 +158,7 @@ exclude = [
     ".git",
     "examples",
     # tinker needs Python >= 3.11; checks run on 3.10
-    "src/together/rl/tinker",
+    "src/together/lib/post_training/tinker",
     "tests/unit/_rl_tinker.py",
     "tests/unit/test_rl_tinker_*.py",
 ]
@@ -180,7 +180,7 @@ show_error_codes = true
 # We also exclude our `tests` as mypy doesn't always infer
 # types correctly and Pyright will still catch any type errors.
 # tinker needs Python >= 3.11; checks run on 3.10
-exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/rl/tinker/.*"]
+exclude = ["src/together/_files.py", "_dev/.*.py", "tests/.*", "src/together/lib/post_training/tinker/.*"]
 
 strict_equality = true
 implicit_reexport = true

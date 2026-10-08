@@ -19,7 +19,9 @@ from typing_extensions import override
 
 import pytest
 
-from together.rl import (
+from tests.unit.rl_wait import patch_wait
+from tests.unit._rl_fakes import FakeClient
+from together.post_training import (
     Sample,
     Gradient,
     LossConfig,
@@ -31,9 +33,7 @@ from together.rl import (
     EncodedTextChunk,
     ForwardBackwardResult,
 )
-from tests.unit.rl_wait import patch_wait
-from together.rl._arrays import coerce_sample, coerce_gradient, coerce_model_input
-from tests.unit._rl_fakes import FakeClient
+from together.post_training._arrays import coerce_sample, coerce_gradient, coerce_model_input
 
 
 @pytest.fixture

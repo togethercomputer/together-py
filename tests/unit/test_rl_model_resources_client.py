@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from together.rl import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
 from together._types import omit
-from together.rl.clients import model_resources as model_resources_client_module
-from together.rl.clients.session import SessionClient
-from together.rl.clients.model_resources import ModelResourcesClient
+from together.post_training import MuonConfig, ComputeConfig, WandbMetadata, OptimizerConfig, SessionMetadata
+from together.post_training.clients import model_resources as model_resources_client_module
+from together.post_training.clients.session import SessionClient
+from together.post_training.clients.model_resources import ModelResourcesClient
 
 _STOPPING = SimpleNamespace(id="res-1", status="MODEL_RESOURCES_STATUS_STOPPING")
 
@@ -352,13 +352,13 @@ async def test_stop_forwards_force_to_the_api() -> None:
 
 
 def test_model_resources_client_is_publicly_exported() -> None:
-    from together.rl import ModelResourcesClient as FromRl, ModelResourcesStatus
+    from together.post_training import ModelResourcesClient as FromRl, ModelResourcesStatus
 
     assert FromRl is ModelResourcesClient
     assert ModelResourcesStatus is not None
 
 
 def test_rl_public_api_hides_generated_param_suffixes() -> None:
-    import together.rl as rl
+    import together.post_training as rl
 
     assert not [name for name in rl.__all__ if name.endswith("Param")]

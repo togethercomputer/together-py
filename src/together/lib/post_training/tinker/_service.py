@@ -8,11 +8,11 @@ from typing import Any, NoReturn
 from .. import LoraConfig, ModelResources, ModelResourcesClient
 from .._loop import run_untracked
 from ._compat import tinker
-from ..._client import Together
 from ._teardown import _Lifecycle, _stop_on_exit, _exit_on_sigterm
 from ._training import TrainingClient
+from ...._client import Together
 from ..clients.session import SessionClient
-from ...types.post_training.checkpoint import Checkpoint
+from ....types.post_training.checkpoint import Checkpoint
 
 # Tinker HTTP-client options that Together's resource client does not honor.
 _KNOWN_IGNORED_KWARGS = frozenset(

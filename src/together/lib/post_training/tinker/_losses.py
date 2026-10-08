@@ -5,9 +5,8 @@ from __future__ import annotations
 from types import MappingProxyType
 from collections.abc import Mapping
 
-from together.rl._losses import LOSS_SPECS as _WIRE_LOSS_SPECS, LossSpec
-
 from ._compat import types
+from .._losses import LOSS_SPECS as _WIRE_LOSS_SPECS, LossSpec
 
 LOSS_SPECS: Mapping[types.LossFnType, LossSpec] = MappingProxyType(
     {

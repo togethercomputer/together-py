@@ -5,9 +5,9 @@ from pathlib import Path
 
 import httpx
 
-from .._types import omit
-from .._client import Together, AsyncTogether
-from ..types.post_training.checkpoint_variant import CheckpointVariant
+from ..._types import omit
+from ..._client import Together, AsyncTogether
+from ...types.post_training.checkpoint_variant import CheckpointVariant
 
 logger = logging.getLogger("together")
 

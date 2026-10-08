@@ -10,7 +10,9 @@ import httpx
 import pytest
 
 from together import NotFoundError, omit
-from together.rl import (
+from tests.unit.rl_wait import patch_wait
+from tests.unit._rl_fakes import FakeClient
+from together.post_training import (
     Sample,
     Trainer,
     Gradient,
@@ -38,13 +40,11 @@ from together.rl import (
     _payloads as rl_payloads_module,
     _operations as rl_ops,
 )
-from tests.unit.rl_wait import patch_wait
-from together.rl.clients import (
+from together.post_training.clients import (
     session as session_client_module,
     trainer as trainer_module,
     generator as generator_module,
 )
-from tests.unit._rl_fakes import FakeClient
 from together.types.post_training.tensor_data import TensorData as TensorDataModel
 from together.types.post_training.loss_fn_output import LossFnOutput
 from together.types.post_training.sample_operation import SampleOperation

@@ -10,8 +10,8 @@ from respx import MockRouter
 from respx.models import Call, Route
 
 from together import Together, AsyncTogether
-from together.rl import SessionClient
 from together._base_client import BaseClient
+from together.post_training import SessionClient
 
 BASE_URL = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 IDEMPOTENCY_HEADER = "Idempotency-Key"

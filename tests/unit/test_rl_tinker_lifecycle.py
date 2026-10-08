@@ -14,26 +14,26 @@ pytest.importorskip("tinker")
 
 from tinker import types
 
-from together.rl import (
-    Sample,
-    LossConfig,
-    tinker as tinker_compat,
-    _request_types,
-)
 from together.lib.beta import rl
-from together.rl.tinker import _service, _teardown
 from tests.unit._rl_tinker import (
     _noop,
     _ignore,
     _session_mock,
     _model_resources_mock,
 )
-from together.rl.clients.session import SessionClient
+from together.post_training import (
+    Sample,
+    LossConfig,
+    tinker as tinker_compat,
+    _request_types,
+)
+from together.post_training.tinker import _service, _teardown
+from together.post_training.clients.session import SessionClient
 
 
 def test_legacy_tinker_import_is_the_same_module() -> None:
-    import together.rl.tinker as tinker
     import together.lib.beta.rl.tinker as legacy
+    import together.post_training.tinker as tinker
 
     assert legacy is tinker
 

@@ -20,9 +20,9 @@ from .. import (
 from ._compat import types
 from ._losses import loss_spec
 from .._losses import INPUT_DTYPES, validate_keys, validate_input_keys
-from ...types.post_training.model_input_param import ModelInput as WireModelInput
-from ...types.post_training.tensor_data_param import TensorDataParam as WireTensorData
-from ...types.post_training.model_input_chunk_param import ModelInputChunk as WireModelInputChunk
+from ....types.post_training.model_input_param import ModelInput as WireModelInput
+from ....types.post_training.tensor_data_param import TensorDataParam as WireTensorData
+from ....types.post_training.model_input_chunk_param import ModelInputChunk as WireModelInputChunk
 
 _TOPK_MASK_LOGPROB = -99999.0
 

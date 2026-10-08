@@ -1,8 +1,8 @@
-"""Compatibility alias for :mod:`together.post_training`.
+"""Public import surface for the post-training SDK (`client.post_training`).
 
-The public names below are the old ``together.lib.beta.rl`` import path.
-Submodule imports (``together.lib.beta.rl.tinker`` and the rest) resolve to the
-same module objects as ``together.lib.post_training.*``.
+    from together.post_training import SessionClient, Trainer
+
+The implementation lives in `together.lib.post_training`.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Sequence
 from typing_extensions import override
 from importlib.machinery import ModuleSpec
 
-from together.post_training import (
+from .lib.post_training import (
     Sample as Sample,
     Session as Session,
     Trainer as Trainer,
@@ -74,11 +74,16 @@ from together.post_training import (
     download_checkpoint_async as download_checkpoint_async,
 )
 
-_OLD_PREFIX = "together.lib.beta.rl"
-_NEW_PREFIX = "together.lib.post_training"
+# `post_training.py` is a module. Give it a package path so
+# `together.post_training.tinker` (and the other implementation submodules)
+# can resolve, then hand those imports to `together.lib.post_training`.
+__path__: list[str] = []
+
+_PUBLIC_PREFIX = "together.post_training"
+_IMPL_PREFIX = "together.lib.post_training"
 
 
-class _AliasLoader(importlib.abc.Loader):
+class _ImplLoader(importlib.abc.Loader):
     def __init__(self, target: str) -> None:
         self._target = target
 
@@ -92,7 +97,7 @@ class _AliasLoader(importlib.abc.Loader):
         del module
 
 
-class _AliasFinder(importlib.abc.MetaPathFinder):
+class _ImplFinder(importlib.abc.MetaPathFinder):
     @override
     def find_spec(
         self,
@@ -101,16 +106,16 @@ class _AliasFinder(importlib.abc.MetaPathFinder):
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
         del path, target
-        if not fullname.startswith(_OLD_PREFIX + "."):
+        if not fullname.startswith(_PUBLIC_PREFIX + "."):
             return None
-        target_name = _NEW_PREFIX + fullname[len(_OLD_PREFIX) :]
-        return importlib.util.spec_from_loader(fullname, _AliasLoader(target_name))
+        target_name = _IMPL_PREFIX + fullname[len(_PUBLIC_PREFIX) :]
+        return importlib.util.spec_from_loader(fullname, _ImplLoader(target_name))
 
 
-def _install_submodule_alias() -> None:
-    if any(isinstance(finder, _AliasFinder) for finder in sys.meta_path):
+def _install_impl_alias() -> None:
+    if any(isinstance(finder, _ImplFinder) for finder in sys.meta_path):
         return
-    sys.meta_path.insert(0, _AliasFinder())
+    sys.meta_path.insert(0, _ImplFinder())
 
 
-_install_submodule_alias()
+_install_impl_alias()

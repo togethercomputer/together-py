@@ -17,7 +17,8 @@ from concurrent.futures import Future, CancelledError
 
 import pytest
 
-from together.rl import (
+from tests.unit._rl_fakes import FakeClient
+from together.post_training import (
     ModelInput,
     SampleResult,
     SessionClient,
@@ -25,16 +26,15 @@ from together.rl import (
     EncodedTextChunk,
     _loop as loop_module,
 )
-from together.rl._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
-from together.rl.clients import (
+from together.post_training._loop import LoopGate, _ProcessLoop, run_untracked, run_untracked_async
+from together.post_training.clients import (
     session as session_client_module,
     model_resources as model_resources_client_module,
 )
-from tests.unit._rl_fakes import FakeClient
-from together.rl.clients.trainer import Trainer
-from together.rl.clients.generator import Generator
-from together.rl.clients.model_resources import ModelResourcesClient
 from together.types.post_training.session import Session
+from together.post_training.clients.trainer import Trainer
+from together.post_training.clients.generator import Generator
+from together.post_training.clients.model_resources import ModelResourcesClient
 
 _PROMPT = ModelInput(chunks=[ModelInputChunk(encoded_text=EncodedTextChunk(tokens=[101, 102]))])
 

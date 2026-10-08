@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from together import AsyncTogether, InternalServerError
-from together.rl import SessionClient, ModelResourcesClient
+from together.post_training import SessionClient, ModelResourcesClient
 
 
 @pytest.mark.parametrize("resource_kind", ["session", "model_resources"])

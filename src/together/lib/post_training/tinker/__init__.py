@@ -3,7 +3,7 @@
 For the supported RL training-loop subset, a script written against the
 ``tinker`` SDK runs on Together by changing only its import line::
 
-    import together.rl.tinker as tinker
+    import together.post_training.tinker as tinker
 
 Types resolve to the genuine ``tinker.types`` ones (via ``__getattr__``), so
 objects built by ``tinker_cookbook`` — renderer prompts, ``Datum``s — pass
