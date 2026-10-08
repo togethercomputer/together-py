@@ -630,7 +630,7 @@ training_app.command(
 training_app.command(
     (f"{_TRAINING}.ls_checkpoints:list_checkpoints"),
     name="ls-checkpoints",
-    help="List inference checkpoints",
+    help="List training and inference checkpoints",
     sort_key=3,
 )
 training_app.command(

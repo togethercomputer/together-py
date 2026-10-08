@@ -10,7 +10,6 @@ from together.lib.cli.utils._console import console
 from together.lib.cli.components.list import ListTable
 from together.types.post_training.checkpoint import Checkpoint
 from together.types.post_training.model_resources import ModelResources
-from together.types.post_training.inference_checkpoint import InferenceCheckpoint
 
 _STATUS_COLORS = {
     "ready": "green",
@@ -165,29 +164,29 @@ def print_session(session: Session) -> None:
     print_detail("Training session", rows)
 
 
-def _registered_model(checkpoint: InferenceCheckpoint) -> str:
-    registration = checkpoint.registration
-    if registration is None:
-        return "-"
-    artifact = registration.model or registration.adapter
-    if artifact is None:
-        return "-"
-    return artifact.id
+def _registered_model(checkpoint: Checkpoint) -> str:
+    registration = checkpoint.inference_registration
+    if registration is not None:
+        artifact = registration.model or registration.adapter
+        if artifact is not None:
+            return artifact.id
+    if checkpoint.training_registration is not None:
+        return checkpoint.training_registration.id
+    return "-"
 
 
-def print_checkpoints_table(rows: list[tuple[str, InferenceCheckpoint]]) -> None:
-    table = ListTable(
-        "Inference checkpoints",
-        empty_message="No inference checkpoints found.",
-    )
+def print_checkpoints_table(checkpoints: list[Checkpoint]) -> None:
+    table = ListTable("Checkpoints", empty_message="No checkpoints found.")
     table.add_primary_column("ID", ratio=2, overflow="fold")
+    table.add_column("Type", width=10, no_wrap=True)
     table.add_column("Session", ratio=2, overflow="fold")
     table.add_column("Step", width=6, no_wrap=True)
     table.add_column("Model", ratio=3, overflow="fold")
-    for session_id, checkpoint in rows:
+    for checkpoint in checkpoints:
         table.add_row(
             cell(checkpoint.id),
-            cell(session_id),
+            cell(readable_enum(checkpoint.type, "CHECKPOINT_TYPE_")),
+            cell(checkpoint.session_id),
             cell(checkpoint.step),
             cell(_registered_model(checkpoint)),
         )

@@ -120,7 +120,7 @@ class TestTrainingHelp:
         assert "ls-resources" in result.output
         assert "ls-sessions" in result.output
         assert "ls-checkpoints" in result.output
-        assert "List inference checkpoints" in result.output
+        assert "List training and inference checkpoints" in result.output
         assert "get" in result.output
         assert "prepare-for-fp4-inference" in result.output
 

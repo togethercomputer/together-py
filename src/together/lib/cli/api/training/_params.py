@@ -9,6 +9,7 @@ from together.lib.cli.utils._console import console
 
 ResourceStatusName: TypeAlias = Literal["pending", "creating", "ready", "error", "stopped", "stopping"]
 SessionStatusName: TypeAlias = Literal["creating", "running", "stopped", "stopping", "error", "expired"]
+CheckpointTypeName: TypeAlias = Literal["training", "inference"]
 
 ResourceStatusQuery: TypeAlias = Literal[
     "MODEL_RESOURCES_STATUS_PENDING",
@@ -26,6 +27,7 @@ SessionStatusQuery: TypeAlias = Literal[
     "TRAINING_SESSION_STATUS_ERROR",
     "TRAINING_SESSION_STATUS_EXPIRED",
 ]
+CheckpointTypeQuery: TypeAlias = Literal["CHECKPOINT_TYPE_TRAINING", "CHECKPOINT_TYPE_INFERENCE"]
 
 _RESOURCE_STATUS: dict[ResourceStatusName, ResourceStatusQuery] = {
     "pending": "MODEL_RESOURCES_STATUS_PENDING",
@@ -34,6 +36,10 @@ _RESOURCE_STATUS: dict[ResourceStatusName, ResourceStatusQuery] = {
     "error": "MODEL_RESOURCES_STATUS_ERROR",
     "stopped": "MODEL_RESOURCES_STATUS_STOPPED",
     "stopping": "MODEL_RESOURCES_STATUS_STOPPING",
+}
+_CHECKPOINT_TYPE: dict[CheckpointTypeName, CheckpointTypeQuery] = {
+    "training": "CHECKPOINT_TYPE_TRAINING",
+    "inference": "CHECKPOINT_TYPE_INFERENCE",
 }
 _SESSION_STATUS: dict[SessionStatusName, SessionStatusQuery] = {
     "creating": "TRAINING_SESSION_STATUS_CREATING",
@@ -55,6 +61,12 @@ def resource_status_query(values: list[ResourceStatusName] | None) -> List[Resou
     if not values:
         return omit
     return cast(List[ResourceStatusQuery], [_RESOURCE_STATUS[value] for value in values])
+
+
+def checkpoint_type_query(value: CheckpointTypeName | None) -> CheckpointTypeQuery | Omit:
+    if value is None:
+        return omit
+    return _CHECKPOINT_TYPE[value]
 
 
 def session_status_query(values: list[SessionStatusName] | None) -> List[SessionStatusQuery] | Omit:

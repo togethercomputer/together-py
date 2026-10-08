@@ -759,7 +759,10 @@ TRAINING_HELP_EXAMPLES = """[dim]Examples:[/dim]
   [primary]tg training ls-sessions --created-by me[/primary]
 
 [dim]-[/dim] List inference checkpoints for one session:
-  [primary]tg training ls-checkpoints --session <session-id>[/primary]
+  [primary]tg training ls-checkpoints --type inference --session <session-id>[/primary]
+
+[dim]-[/dim] List training checkpoints:
+  [primary]tg training ls-checkpoints --type training[/primary]
 
 [dim]-[/dim] Fetch a model resource, training session, or checkpoint by ID:
   [primary]tg training get <id>[/primary]
