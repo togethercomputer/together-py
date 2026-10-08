@@ -1134,7 +1134,7 @@ class TestBetaEndpointsDeployAdapter:
         assert "adapter_mode disabled" in json.loads(result.output)["error"]
 
     @pytest.mark.respx(base_url=base_url)
-    def test_deploy_adapter_requires_config_when_several_lora_configs_exist(
+    def test_deploy_adapter_prefers_dynamic_config_over_fixed(
         self, respx_mock: MockRouter, cli_runner: CliRunner
     ) -> None:
         _mock_adapter_models(respx_mock)
@@ -1144,6 +1144,139 @@ class TestBetaEndpointsDeployAdapter:
                 json={
                     "object": "list",
                     "data": [_lora_config_body("cr_fixed", "fixed"), _lora_config_body("cr_dynamic", "dynamic")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(200, json={"object": "list", "data": [], "next_cursor": None})
+        )
+        create_deployment_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(
+                200,
+                json=_deployment_body(
+                    model="projects/proj/models/ml_base",
+                    modelId="ml_base",
+                    config="projects/proj/configs/cr_dynamic",
+                    configId="cr_dynamic",
+                ),
+            )
+        )
+        respx_mock.post("/projects/proj/endpoints/ep_1/deployments/dep_1/adapters").mock(
+            return_value=httpx.Response(200, json=_adapter_entry_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_adapter",
+                "--attach-adapter",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        deployment_body = json.loads(cast(Call, create_deployment_route.calls[0]).request.content.decode())
+        assert deployment_body["config"] == "projects/proj/configs/cr_dynamic"
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_adapter_prefers_dynamic_deployment_over_fixed(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_adapter_models(respx_mock)
+        respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [_lora_config_body("cr_fixed", "fixed"), _lora_config_body("cr_dynamic", "dynamic")],
+                    "next_cursor": None,
+                },
+            )
+        )
+        respx_mock.get("/projects/proj/endpoints/ep_1").mock(return_value=httpx.Response(200, json=_endpoint_body()))
+        lora_deployment: dict[str, Any] = {
+            "model": "projects/proj/models/ml_base/revisions/rv_base",
+            "modelId": "ml_base",
+            "trafficMode": "TRAFFIC_MODE_LIVE",
+            "status": {"state": "DEPLOYMENT_STATE_READY", "readyReplicas": 1, "message": "ready"},
+        }
+        respx_mock.get("/projects/proj/endpoints/ep_1/deployments").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _deployment_body(
+                            id="dep_fixed",
+                            name="fixed",
+                            config="projects/proj/configs/cr_fixed",
+                            configId="cr_fixed",
+                            **lora_deployment,
+                        ),
+                        _deployment_body(
+                            id="dep_dynamic",
+                            name="dynamic",
+                            config="projects/proj/configs/cr_dynamic",
+                            configId="cr_dynamic",
+                            **lora_deployment,
+                        ),
+                    ],
+                    "next_cursor": None,
+                },
+            )
+        )
+        attach_route = respx_mock.post("/projects/proj/endpoints/ep_1/deployments/dep_dynamic/adapters").mock(
+            return_value=httpx.Response(200, json=_adapter_entry_body())
+        )
+
+        result = cli_runner.invoke(
+            [
+                "beta",
+                "endpoints",
+                "deploy",
+                "--project",
+                "proj",
+                "--endpoint",
+                "ep_1",
+                "--model",
+                "ml_adapter",
+                "--attach-adapter",
+                "--json",
+            ]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert attach_route.call_count == 1
+        assert json.loads(result.output)["deployment"]["id"] == "dep_dynamic"
+        assert not any(
+            call.request.method == "POST" and call.request.url.path.endswith("/deployments")
+            for call in cast(list[Call], respx_mock.calls)
+        )
+
+    @pytest.mark.respx(base_url=base_url)
+    def test_deploy_adapter_requires_config_when_several_dynamic_configs_exist(
+        self, respx_mock: MockRouter, cli_runner: CliRunner
+    ) -> None:
+        _mock_adapter_models(respx_mock)
+        respx_mock.get("/projects/proj/configs").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "object": "list",
+                    "data": [
+                        _lora_config_body("cr_dynamic_a", "dynamic"),
+                        _lora_config_body("cr_dynamic_b", "dynamic"),
+                        _lora_config_body("cr_fixed", "fixed"),
+                    ],
                     "next_cursor": None,
                 },
             )

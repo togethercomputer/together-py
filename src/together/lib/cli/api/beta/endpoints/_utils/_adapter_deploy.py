@@ -19,6 +19,8 @@ from together.lib.cli.api.beta.endpoints._utils._hardware_pricing import selecto
 
 ADAPTER_WEIGHTS_TYPE = "WEIGHTS_TYPE_ADAPTER"
 _LORA_ADAPTER_MODES = frozenset({"fixed", "dynamic"})
+# Lower rank wins. Dynamic is preferred over fixed when both can host the adapter.
+_ADAPTER_MODE_RANK = {"dynamic": 0, "fixed": 1}
 _CONFIG_PATH_RE = re.compile(r"^projects/([^/]+)/configs/([^/]+)$")
 _STATE_RANK = {
     "DEPLOYMENT_STATE_READY": 0,
@@ -78,7 +80,12 @@ def deployment_serves_model(deployment: EndpointDeployment, model: Model) -> boo
 
 
 def select_lora_config(configs: list[Config], config_id: str | None, *, model: str) -> Config:
-    """Pick a fixed or dynamic LoRA config, or fail when none can host an adapter."""
+    """Pick a LoRA config, preferring dynamic adapter mode over fixed.
+
+    An explicit ``config_id`` must itself be fixed or dynamic. With no id, dynamic configs
+    are used when any exist; fixed is the fallback. Several configs in that preferred mode
+    still require ``--config``.
+    """
     if config_id is not None:
         selected = find_config(configs, config_id)
         if selected is None:
@@ -101,9 +108,20 @@ def select_lora_config(configs: list[Config], config_id: str | None, *, model: s
             "An adapter can only deploy onto a config with adapter_mode fixed or dynamic. "
             f"List configs with `tg beta models configs {model}`."
         )
-    if len(lora_configs) == 1:
-        return lora_configs[0]
-    return resolve_config(lora_configs, None, model=model)
+    preferred = _configs_for_preferred_adapter_mode(lora_configs)
+    if len(preferred) == 1:
+        return preferred[0]
+    return resolve_config(preferred, None, model=model)
+
+
+def _configs_for_preferred_adapter_mode(configs: list[Config]) -> list[Config]:
+    """Keep configs in the best LoRA mode present. Dynamic outranks fixed."""
+    best = min(_adapter_mode_rank(config_adapter_mode(item)) for item in configs)
+    return [item for item in configs if _adapter_mode_rank(config_adapter_mode(item)) == best]
+
+
+def _adapter_mode_rank(mode: str | None) -> int:
+    return _ADAPTER_MODE_RANK.get(mode or "", 9)
 
 
 async def load_adapter_model(config: CLIConfigParameter, model_input: str) -> Model | None:
@@ -152,11 +170,12 @@ async def find_compatible_deployment(
     config_id: str | None,
     deployment_name: str | None = None,
 ) -> EndpointDeployment | None:
-    """Pick a base-model deployment whose config is fixed or dynamic LoRA mode.
+    """Pick a base-model deployment whose config is dynamic or fixed LoRA mode.
 
-    When ``deployment_name`` is set, the deployment with that name is returned as-is when it
-    exists; the API reports any incompatibility when the adapter is attached. Returns None when no
-    such deployment exists, so the caller creates it.
+    Dynamic deployments are preferred over fixed ones. Within a mode, non-shadow deployments
+    come first, then healthier state. When ``deployment_name`` is set, the deployment with that
+    name is returned as-is when it exists; the API reports any incompatibility when the adapter
+    is attached. Returns None when no such deployment exists, so the caller creates it.
     """
     deployments: list[EndpointDeployment] = []
     async for deployment in config.client.beta.endpoints.deployments.list(endpoint_id):
@@ -166,7 +185,7 @@ async def find_compatible_deployment(
         return _find_deployment_by_name(deployments, deployment_name)
 
     by_id = {item.id: item for item in configs if item.id}
-    matches: list[EndpointDeployment] = []
+    matches: list[tuple[EndpointDeployment, Config]] = []
     for deployment in deployments:
         if not deployment_serves_model(deployment, base):
             continue
@@ -175,10 +194,11 @@ async def find_compatible_deployment(
             continue
         if config_id is not None and find_config([model_config], config_id) is None:
             continue
-        matches.append(deployment)
+        matches.append((deployment, model_config))
     if not matches:
         return None
-    return min(matches, key=_deployment_preference)
+    deployment, _model_config = min(matches, key=lambda item: _deployment_preference(item[0], item[1]))
+    return deployment
 
 
 def _find_deployment_by_name(deployments: list[EndpointDeployment], name: str) -> EndpointDeployment | None:
@@ -240,9 +260,9 @@ async def _config_for_deployment(
     return loaded
 
 
-def _deployment_preference(deployment: EndpointDeployment) -> tuple[int, int]:
+def _deployment_preference(deployment: EndpointDeployment, model_config: Config) -> tuple[int, int, int]:
     traffic_mode = getattr(deployment, "traffic_mode", None)
     shadow = 1 if traffic_mode == "TRAFFIC_MODE_SHADOW" else 0
     status = getattr(deployment, "status", None)
     state = getattr(status, "state", "") if status is not None else ""
-    return (shadow, _STATE_RANK.get(state, 9))
+    return (_adapter_mode_rank(config_adapter_mode(model_config)), shadow, _STATE_RANK.get(state, 9))

@@ -210,7 +210,7 @@ async def deploy(
             negative=False,
             help=(
                 "For a LoRA adapter model, attach the adapter to a base-model deployment whose config has "
-                "adapter_mode fixed or dynamic, creating that deployment when none exists. "
+                "adapter_mode dynamic (preferred) or fixed, creating that deployment when none exists. "
                 "Adapter models require either --merge or --attach-adapter."
             ),
         ),
@@ -223,9 +223,10 @@ async def deploy(
 
     - `--merge`: create a new deployment of the adapter itself, which the API merges into its base model.
     - `--attach-adapter`: attach it to an existing deployment of its base model whose config has
-      `adapter_mode` fixed or dynamic. With `--deployment-name`, use the deployment of that name when
-      it exists. If the endpoint has no such deployment, create one from a fixed or dynamic config
-      and then attach the adapter. The command fails when no fixed or dynamic config exists.
+      `adapter_mode` dynamic or fixed. Dynamic wins over fixed when both a deployment and a config
+      are available. With `--deployment-name`, use the deployment of that name when it exists. If
+      the endpoint has no such deployment, create one from a dynamic config when one exists,
+      otherwise a fixed config, and then attach the adapter. The command fails when neither exists.
     """
     model_path_match = MODEL_PATH_RE.match(model)
     if model_revision is not None and model_path_match is not None and model_path_match.group(3) is not None:

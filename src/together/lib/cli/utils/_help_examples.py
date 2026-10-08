@@ -397,7 +397,7 @@ BETA_ENDPOINTS_DEPLOY_HELP_EXAMPLES = """[dim]Examples:[/dim]
 [dim]-[/dim] Deploy a private model by ID onto an existing endpoint:
   [primary]tg beta endpoints deploy ml_xxxxxxxxxxxx --endpoint ep_yyyyyyyyyyyy[/primary]
 
-[dim]-[/dim] Deploy a LoRA adapter onto a fixed or dynamic base-model deployment:
+[dim]-[/dim] Deploy a LoRA adapter onto a dynamic (preferred) or fixed base-model deployment:
   [primary]tg beta endpoints deploy ml_adapter --endpoint my-endpoint[/primary]
 
 [dim]-[/dim] Pin a config and start with autoscaling:

@@ -89,6 +89,24 @@ def test_deployment_serves_model_matches_revision_path() -> None:
     assert not deployment_serves_model(_deployment(modelId="ml_other", model="projects/proj/models/ml_other"), base)
 
 
+def test_select_lora_config_prefers_dynamic_over_fixed() -> None:
+    fixed = _config(id="cr_fixed", selectors=[{"key": "adapter_mode", "value": "fixed"}])
+    dynamic = _config(id="cr_dynamic", selectors=[{"key": "adapter_mode", "value": "dynamic"}])
+
+    selected = select_lora_config([fixed, dynamic], None, model="my-project/base")
+
+    assert selected.id == "cr_dynamic"
+
+
+def test_select_lora_config_falls_back_to_fixed_when_no_dynamic_config() -> None:
+    disabled = _config(id="cr_disabled", selectors=[{"key": "adapter_mode", "value": "disabled"}])
+    fixed = _config(id="cr_fixed", selectors=[{"key": "adapter_mode", "value": "fixed"}])
+
+    selected = select_lora_config([disabled, fixed], None, model="my-project/base")
+
+    assert selected.id == "cr_fixed"
+
+
 def test_select_lora_config_picks_the_only_fixed_or_dynamic_config() -> None:
     disabled = _config(id="cr_disabled", selectors=[{"key": "adapter_mode", "value": "disabled"}])
     dynamic = _config(id="cr_dynamic", selectors=[{"key": "adapter_mode", "value": "dynamic"}])
